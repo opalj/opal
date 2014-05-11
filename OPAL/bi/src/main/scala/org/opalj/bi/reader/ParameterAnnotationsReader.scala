@@ -26,11 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 package reader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
 import java.io.DataInputStream
 
@@ -56,9 +56,6 @@ trait ParameterAnnotationsReader extends AnnotationAbstractions {
     def ParameterAnnotations(
         cp: Constant_Pool,
         in: DataInputStream): ParameterAnnotations = {
-
-        import util.ControlAbstractions.repeat
-
         repeat(in.readUnsignedByte) {
             repeat(in.readUnsignedShort) {
                 Annotation(cp, in)

@@ -37,7 +37,7 @@ libraryDependencies in ThisBuild += "org.scalatest" %% "scalatest" % "2.1.3" % "
 
 testOptions in ThisBuild <<= 
   baseDirectory map { 
-	bd => Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/target/test-reports"))
+	bd => Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/shippable/testresults"))
   }
 
 testOptions in ThisBuild += Tests.Argument("-o")

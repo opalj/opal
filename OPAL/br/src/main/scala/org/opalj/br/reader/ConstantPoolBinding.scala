@@ -27,15 +27,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import language.implicitConversions
 import reflect.ClassTag
 
-import bat.reader.Constant_PoolReader
+import bi.{ AttributeParent, AttributesParent }
+import bi.reader.Constant_PoolReader
 
 /**
  * A representation of the constant pool.
@@ -49,58 +49,73 @@ import bat.reader.Constant_PoolReader
  */
 trait ConstantPoolBinding extends Constant_PoolReader {
 
-    type ClassFile <: bat.resolved.ClassFile
+    type ClassFile <: br.ClassFile
 
     implicit def cpIndexTocpEntry(
         index: Constant_Pool_Index)(
             implicit cp: Constant_Pool): Constant_Pool_Entry =
         cp(index)
 
-    trait Constant_Pool_Entry extends bat.reader.ConstantPoolEntry {
+    trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
         def asString: String =
-            throw new BATException("conversion to string is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to string is not supported")
 
         def asFieldType: FieldType =
-            throw new BATException("conversion to field type is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to field type is not supported")
 
         def asMethodDescriptor: MethodDescriptor =
-            throw new BATException("conversion to method descriptor is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to method descriptor is not supported")
 
         def asFieldTypeSignature: FieldTypeSignature =
-            throw new BATException("conversion to field type signature is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to field type signature is not supported")
 
         def asSignature(ap: AttributeParent): Signature =
-            throw new BATException("conversion to signature attribute is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to signature attribute is not supported")
 
         def asConstantValue(cp: Constant_Pool): ConstantValue[_] =
-            throw new BATException("conversion of "+this.getClass.getSimpleName+" to constant value is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion of "+this.getClass.getSimpleName+" to constant value is not supported")
 
         def asConstantFieldValue(cp: Constant_Pool): ConstantFieldValue[_] =
-            throw new BATException("conversion of "+this.getClass.getSimpleName+" to constant field value is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion of "+this.getClass.getSimpleName+" to constant field value is not supported")
 
         def asFieldref(cp: Constant_Pool): (ObjectType, String, FieldType) =
-            throw new BATException("conversion to field ref is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to field ref is not supported")
 
         def asMethodref(cp: Constant_Pool): (ReferenceType, String, MethodDescriptor) =
-            throw new BATException("conversion to method ref is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to method ref is not supported")
 
         def asObjectType(cp: Constant_Pool): ObjectType =
-            throw new BATException("conversion to object type is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to object type is not supported")
 
         def asReferenceType(cp: Constant_Pool): ReferenceType =
-            throw new BATException("conversion to object type is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to object type is not supported")
 
         def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument =
-            throw new BATException("conversion to bootstrap argument is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to bootstrap argument is not supported")
 
         def asMethodHandle(cp: Constant_Pool): MethodHandle =
-            throw new BATException("conversion to method handle is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to method handle is not supported")
 
         def asNameAndType: CONSTANT_NameAndType_info =
-            throw new BATException("conversion to name and type info is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to name and type info is not supported")
 
         def asInvokeDynamic: CONSTANT_InvokeDynamic_info =
-            throw new BATException("conversion to invoke dynamic info is not supported")
+            throw new BytecodeProcessingFailedException(
+                "conversion to invoke dynamic info is not supported")
     }
 
     val Constant_Pool_EntryManifest: ClassTag[Constant_Pool_Entry] = implicitly
@@ -214,7 +229,8 @@ trait ConstantPoolBinding extends Constant_PoolReader {
                 case AttributesParent.Method ⇒
                     SignatureParser.parseMethodTypeSignature(value)
                 case AttributesParent.Code ⇒
-                    throw new BATException("unexpected signature attribute found in a code_attribute's attributes table")
+                    throw new BytecodeProcessingFailedException(
+                        "unexpected signature attribute found in a code_attribute's attributes table")
             }
 
         override def asConstantValue(cp: Constant_Pool) =
@@ -320,51 +336,51 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
         override def asMethodHandle(cp: Constant_Pool): MethodHandle = {
             (this.referenceKind: @scala.annotation.switch) match {
-                case REF_getField.referenceKind ⇒ {
+                case bi.REF_getField.referenceKind ⇒ {
                     val (declaringType, name, fieldType) =
                         cp(referenceIndex).asFieldref(cp)
                     GetFieldMethodHandle(declaringType, name, fieldType)
                 }
-                case REF_getStatic.referenceKind ⇒ {
+                case bi.REF_getStatic.referenceKind ⇒ {
                     val (declaringType, name, fieldType) =
                         cp(referenceIndex).asFieldref(cp)
                     GetStaticMethodHandle(declaringType, name, fieldType)
                 }
-                case REF_putField.referenceKind ⇒ {
+                case bi.REF_putField.referenceKind ⇒ {
                     val (declaringType, name, fieldType) =
                         cp(referenceIndex).asFieldref(cp)
                     PutFieldMethodHandle(declaringType, name, fieldType)
                 }
-                case REF_putStatic.referenceKind ⇒ {
+                case bi.REF_putStatic.referenceKind ⇒ {
                     val (declaringType, name, fieldType) =
                         cp(referenceIndex).asFieldref(cp)
                     PutStaticMethodHandle(declaringType, name, fieldType)
                 }
-                case REF_invokeVirtual.referenceKind ⇒ {
+                case bi.REF_invokeVirtual.referenceKind ⇒ {
                     val (receiverType, name, methodDescriptor) =
                         cp(referenceIndex).asMethodref(cp)
                     InvokeVirtualMethodHandle(receiverType, name, methodDescriptor)
                 }
 
-                case REF_invokeStatic.referenceKind ⇒ {
+                case bi.REF_invokeStatic.referenceKind ⇒ {
                     val (receiverType, name, methodDescriptor) =
                         cp(referenceIndex).asMethodref(cp)
                     InvokeStaticMethodHandle(receiverType, name, methodDescriptor)
                 }
 
-                case REF_invokeSpecial.referenceKind ⇒ {
+                case bi.REF_invokeSpecial.referenceKind ⇒ {
                     val (receiverType, name, methodDescriptor) =
                         cp(referenceIndex).asMethodref(cp)
                     InvokeSpecialMethodHandle(receiverType, name, methodDescriptor)
                 }
 
-                case REF_newInvokeSpecial.referenceKind ⇒ {
+                case bi.REF_newInvokeSpecial.referenceKind ⇒ {
                     val (receiverType, name, methodDescriptor) =
                         cp(referenceIndex).asMethodref(cp)
                     NewInvokeSpecialMethodHandle(receiverType, name, methodDescriptor)
                 }
 
-                case REF_invokeInterface.referenceKind ⇒ {
+                case bi.REF_invokeInterface.referenceKind ⇒ {
                     val (receiverType, name, methodDescriptor) =
                         cp(referenceIndex).asMethodref(cp)
                     InvokeInterfaceMethodHandle(receiverType, name, methodDescriptor)

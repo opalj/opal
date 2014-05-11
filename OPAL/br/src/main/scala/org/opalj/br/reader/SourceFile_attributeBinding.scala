@@ -26,12 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
-import bat.reader.SourceFile_attributeReader
+import bi.reader.SourceFile_attributeReader
 
 /**
  * The factory method to create the source file attribute.
@@ -43,7 +42,7 @@ trait SourceFile_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type SourceFile_attribute = de.tud.cs.st.bat.resolved.SourceFile
+    type SourceFile_attribute = br.SourceFile
 
     def SourceFile_attribute(
         cp: Constant_Pool,

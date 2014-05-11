@@ -26,16 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
 package l1
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import ObjectType.ArithmeticException
+import br._
 
 /**
  * Domain to track long values at a configurable level of precision.
@@ -218,14 +216,14 @@ trait PreciseLongValues extends Domain with Configuration {
         value2: DomainValue): IntegerLikeValueOrArithmeticException = {
         withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             if (v2 == 0)
-                ThrowsException(InitializedObjectValue(pc, ArithmeticException))
+                ThrowsException(InitializedObjectValue(pc, ObjectType.ArithmeticException))
             else
                 ComputedValue(LongValue(pc, v1 / v2))
         } {
             if (throwArithmeticExceptions)
                 ComputedValueAndException(
                     LongValue(pc),
-                    InitializedObjectValue(pc, ArithmeticException))
+                    InitializedObjectValue(pc, ObjectType.ArithmeticException))
             else
                 ComputedValue(LongValue(pc))
         }
@@ -265,14 +263,14 @@ trait PreciseLongValues extends Domain with Configuration {
         value2: DomainValue): IntegerLikeValueOrArithmeticException =
         withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
             if (v2 == 0l)
-                ThrowsException(InitializedObjectValue(pc, ArithmeticException))
+                ThrowsException(InitializedObjectValue(pc, ObjectType.ArithmeticException))
             else
                 ComputedValue(LongValue(pc, v1 % v2))
         } {
             if (throwArithmeticExceptions)
                 ComputedValueAndException(
                     LongValue(pc),
-                    InitializedObjectValue(pc, ArithmeticException))
+                    InitializedObjectValue(pc, ObjectType.ArithmeticException))
             else
                 ComputedValue(LongValue(pc))
         }

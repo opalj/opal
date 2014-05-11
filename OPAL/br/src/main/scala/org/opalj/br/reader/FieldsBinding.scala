@@ -26,13 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.FieldsReader
+import bi.reader.FieldsReader
 
 /**
  *
@@ -41,7 +40,7 @@ import de.tud.cs.st.bat.reader.FieldsReader
 trait FieldsBinding extends FieldsReader {
     this: ConstantPoolBinding with AttributeBinding ⇒
 
-    type Field_Info = de.tud.cs.st.bat.resolved.Field
+    type Field_Info = br.Field
     val Field_InfoManifest: ClassTag[Field_Info] = implicitly
 
     def Field_Info(

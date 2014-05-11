@@ -26,9 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
+
+import bi.ACC_TRANSIENT
+import bi.ACC_VOLATILE
+import bi.AccessFlagsContexts
+import bi.AccessFlags
 
 /**
  * Represents a single field declaration/definition.
@@ -36,8 +40,8 @@ package resolved
  * @note Identity (w.r.t. `equals`/`hashCode`) is intentionally by reference (default
  *      behavior).
  * @param accessFlags This field's access flags. To analyze the access flags
- *      bit vector use [[de.tud.cs.st.bat.AccessFlag]] or
- *      [[de.tud.cs.st.bat.AccessFlagsIterator]] or use pattern matching.
+ *      bit vector use [[org.opalj.bi.AccessFlag]] or
+ *      [[org.opalj.bi.AccessFlagsIterator]] or use pattern matching.
  * @param name The name of this field. The name is interned (see `String.intern()` for
  *     details.)
  *     Note, that this name is not required to be a valid Java programming

@@ -30,15 +30,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 
-import instructions._
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
-import de.tud.cs.st.bat.resolved.instructions.LoadMethodHandle
-import de.tud.cs.st.bat.resolved.instructions.LoadMethodHandle_W
+
+import br._
+import br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import br.instructions._
 
 /**
  * @author Michael Eichberg

@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.AttributesAbstractions
+import bi.reader.AttributesAbstractions
 
 /**
  * Defines the common bindings for all "resolved" attributes.
@@ -42,7 +41,7 @@ import de.tud.cs.st.bat.reader.AttributesAbstractions
  */
 trait AttributeBinding extends AttributesAbstractions {
 
-    type Attribute = de.tud.cs.st.bat.resolved.Attribute
+    type Attribute = org.opalj.br.Attribute
 
     val AttributeManifest: ClassTag[Attribute] = implicitly
 

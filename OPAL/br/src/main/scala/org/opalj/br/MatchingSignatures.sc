@@ -26,21 +26,55 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
-package resolved
+package org.opalj
+package br
 
 object SigTest {
 
-    // This is the signature of a field with type java.util.LinkedList<de.tud.cs.se.flashcards.model.FlashcardObserver>
-    val cts = ClassTypeSignature(Some("java/util/"), SimpleClassTypeSignature("LinkedList", Some(List(ProperTypeArgument(None, ClassTypeSignature(Some("de/tud/cs/se/flashcards/model/"), SimpleClassTypeSignature("FlashcardObserver", None), List()))))), List())
+    // This is the signature of a field with type
+    // java.util.LinkedList<de.tud.cs.se.flashcards.model.FlashcardObserver>
+    val cts = ClassTypeSignature(
+        Some("java/util/"),
+        SimpleClassTypeSignature("LinkedList",
+            Some(
+                List(
+                    ProperTypeArgument(
+                        None,
+                        ClassTypeSignature(
+                            Some("de/tud/cs/se/flashcards/model/"),
+                            SimpleClassTypeSignature("FlashcardObserver", None),
+                            List()
+                        ))))),
+        List()
+    )
 
     cts match {
-        case ClassTypeSignature(Some("java/util/"), SimpleClassTypeSignature("LinkedList", Some(List(ProperTypeArgument(None, ClassTypeSignature(Some("de/tud/cs/se/flashcards/model/"), SimpleClassTypeSignature("FlashcardObserver", None), List()))))), List()) ⇒ true
+        case ClassTypeSignature(
+            Some("java/util/"),
+            SimpleClassTypeSignature("LinkedList",
+                Some(List(
+                    ProperTypeArgument(
+                        None,
+                        ClassTypeSignature(
+                            Some("de/tud/cs/se/flashcards/model/"),
+                            SimpleClassTypeSignature("FlashcardObserver", None),
+                            List()))))),
+            List()) ⇒ true
         case _ ⇒ false
     }
 
     cts match {
-        case ClassTypeSignature(Some("java/util/"), SimpleClassTypeSignature("LinkedList", Some(List(ProperTypeArgument(None, BasicClassTypeSignature(ObjectType("de/tud/cs/se/flashcards/model/FlashcardObserver")))))), List()) ⇒ true
+        case ClassTypeSignature(
+            Some("java/util/"),
+            SimpleClassTypeSignature("LinkedList",
+                Some(List(
+                    ProperTypeArgument(
+                        None,
+                        // using explicit matcher...
+                        BasicClassTypeSignature(
+                            ObjectType("de/tud/cs/se/flashcards/model/FlashcardObserver")
+                            ))))),
+            List()) ⇒ true
         case _ ⇒ false
     }
 

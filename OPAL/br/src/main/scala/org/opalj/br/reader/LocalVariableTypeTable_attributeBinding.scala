@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.LocalVariableTypeTable_attributeReader
+import bi.reader.LocalVariableTypeTable_attributeReader
 
 /**
  * The factory methods to create local variable type tables and their entries.
@@ -45,9 +44,9 @@ trait LocalVariableTypeTable_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type LocalVariableTypeTable_attribute = de.tud.cs.st.bat.resolved.LocalVariableTypeTable
+    type LocalVariableTypeTable_attribute = br.LocalVariableTypeTable
 
-    type LocalVariableTypeTableEntry = de.tud.cs.st.bat.resolved.LocalVariableType
+    type LocalVariableTypeTableEntry = br.LocalVariableType
     val LocalVariableTypeTableEntryManifest: ClassTag[LocalVariableTypeTableEntry] = implicitly
 
     def LocalVariableTypeTableEntry(

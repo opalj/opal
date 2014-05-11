@@ -54,7 +54,7 @@ object Disassembler {
             // to load class files stored in folders or in jars within jars.
             val classFile = ClassFileReader.ClassFile(args(0), classFileName)
 
-            de.tud.cs.st.util.writeAndOpenDesktopApplication(
+            org.opalj.util.writeAndOpenDesktopApplication(
                 classFile.toXHTML.toString,
                 classFile.fqn,
                 ".html")

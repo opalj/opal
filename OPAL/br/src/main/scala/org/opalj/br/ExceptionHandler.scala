@@ -26,12 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 
 /**
- * An entry in the exceptions table of a [[de.tud.cs.st.bat.resolved.Code]]
+ * An entry in the exceptions table of a [[org.opalj.br.Code]]
  * block.
  *
  * @param startPC A valid index into the code array. It points to the first instruction

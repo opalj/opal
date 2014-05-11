@@ -26,18 +26,19 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package project
+
+import scala.collection.Set
+import scala.collection.Map
+
+import br._
+import br.analyses.Project
 
 import domain._
 import domain.l0
 import domain.l1
-import analyses.Project
-import scala.collection.Set
-import scala.collection.Map
 
 /**
  * Domain object that can be used to calculate a call graph using CHA. This domain

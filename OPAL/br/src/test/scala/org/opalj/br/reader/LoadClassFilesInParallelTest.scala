@@ -26,8 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package br
 
 import java.io.File
 import java.util.zip.ZipFile
@@ -40,8 +40,6 @@ import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
-
-import resolved.ClassFile
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library
@@ -73,13 +71,13 @@ class LoadClassFilesInParallelTest
         if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
     } {
         it should ("be able to completely read all classes in the jar file"+file.getPath+" in parallel") in {
-            resolved.reader.Java8Framework.ClassFiles(file) foreach { cs ⇒
+            reader.Java8Framework.ClassFiles(file) foreach { cs ⇒
                 val (cf, s) = cs
                 commonValidator(cf, s)
             }
         }
         it should ("be able to read the public interface of all classes in the jar file"+file.getPath+" in parallel") in {
-            resolved.reader.Java8LibraryFramework.ClassFiles(file) foreach { cs ⇒
+            reader.Java8LibraryFramework.ClassFiles(file) foreach { cs ⇒
                 val (cf, s) = cs
                 interfaceValidator(cf, s)
             }

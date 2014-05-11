@@ -26,16 +26,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package av
 
 /**
- * Exception that is thrown if some error is detected that is most likely the
- * result of a bug in OPAL (or an invalid class file).
- *
- * @author Michael Eichberg
+ * Used to report errors in the specification.
  */
-class BATException(
-    message: String)
-        extends RuntimeException(message)
-
+case class SpecificationError(val description: String) extends Exception(description)

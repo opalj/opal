@@ -38,21 +38,21 @@ import reflect.ClassTag
  */
 object ClassFileReader
         extends Constant_PoolBinding
-        with de.tud.cs.st.bat.reader.ClassFileReader
-        with de.tud.cs.st.bat.reader.FieldsReader
-        with de.tud.cs.st.bat.reader.MethodsReader
-        with de.tud.cs.st.bat.reader.AttributesReader
-        with de.tud.cs.st.bat.reader.SkipUnknown_attributeReader {
+        with bi.reader.ClassFileReader
+        with bi.reader.FieldsReader
+        with bi.reader.MethodsReader
+        with bi.reader.AttributesReader
+        with bi.reader.SkipUnknown_attributeReader {
 
-    type ClassFile = org.opalj.da.ClassFile
+    type ClassFile = da.ClassFile
 
-    type Attribute = org.opalj.da.Attribute
+    type Attribute = da.Attribute
     val AttributeManifest: ClassTag[Attribute] = implicitly
 
-    type Field_Info = org.opalj.da.Field_Info
+    type Field_Info = da.Field_Info
     val Field_InfoManifest: ClassTag[Field_Info] = implicitly
 
-    type Method_Info = org.opalj.da.Method_Info
+    type Method_Info = da.Method_Info
     val Method_InfoManifest: ClassTag[Method_Info] = implicitly
 
     def ClassFile(

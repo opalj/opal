@@ -26,15 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
-import bat.reader.FieldsReader
-import bat.reader.MethodsReader
-import bat.reader.AttributesReader
-import bat.reader.SkipUnknown_attributeReader
+import bi.reader.FieldsReader
+import bi.reader.MethodsReader
+import bi.reader.AttributesReader
+import bi.reader.SkipUnknown_attributeReader
 
 /**
  * This "framework" can be used to read in Java 7 (version 51) class files if you

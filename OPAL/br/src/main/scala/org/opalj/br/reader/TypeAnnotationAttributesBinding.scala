@@ -26,16 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.AnnotationsReader
-import de.tud.cs.st.bat.reader.RuntimeInvisibleTypeAnnotations_attributeReader
-import de.tud.cs.st.bat.reader.RuntimeVisibleTypeAnnotations_attributeReader
+import bi.reader.AnnotationsReader
+import bi.reader.RuntimeInvisibleTypeAnnotations_attributeReader
+import bi.reader.RuntimeVisibleTypeAnnotations_attributeReader
 
 /**
  * Factory methods to create representations of the attributes related to

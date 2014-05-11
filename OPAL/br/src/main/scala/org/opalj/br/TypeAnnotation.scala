@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 
 /**
  * Describes the kind of the target of a [[TypeAnnotation]].
@@ -58,8 +57,8 @@ sealed trait TypeAnnotationPathElement
  * [[TypeAnnotations]] were introduced with Java 8 and
  * are associated with a [[ClassFile]],
  * [[Field]], [[Method]] or [[Code]] using a
- * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleTypeAnnotationTable]] or a
- * [[de.tud.cs.st.bat.resolved.RuntimeVisibleTypeAnnotationTable]] attribute.
+ * [[org.opalj.br.RuntimeInvisibleTypeAnnotationTable]] or a
+ * [[org.opalj.br.RuntimeVisibleTypeAnnotationTable]] attribute.
  *
  * @author Michael Eichberg
  */

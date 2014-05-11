@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
+package org.opalj
 
 import java.io.File
 
@@ -42,7 +42,7 @@ package object util {
      * Afterwards the system's native application that claims to be able to handle
      * files with the given suffix is opened. If this fails, the string is printed to
      * the console.
-     * 
+     *
      * @param filenamePrefix A string the identifies the content of the file. (E.g.,
      *      "ClassHierarchy" or "CHACallGraph")
      * @param filenameSuffix The suffix of the file that identifies the used file format.
@@ -55,11 +55,9 @@ package object util {
         filenamePrefix: String,
         filenameSuffix: String): Option[File] = {
 
-        import ControlAbstractions._
-
         try {
             val desktop = java.awt.Desktop.getDesktop()
-            val file = java.io.File.createTempFile(filenamePrefix, filenameSuffix)
+            val file = File.createTempFile(filenamePrefix, filenameSuffix)
             process { new java.io.FileOutputStream(file) } { fos ⇒
                 fos.write(data.getBytes("UTF-8"))
             }

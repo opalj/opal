@@ -26,8 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package util
+package org.opalj
 package graphs
 
 /**
@@ -35,7 +34,7 @@ package graphs
  *
  * Two nodes are considered equal if they have the same unique id.
  *
- * @see [[de.tud.cs.st.bat.resolved.analyses.ClassHierarchy]]'s `toGraph` method for
+ * @see [[org.opalj.br.analyses.ClassHierarchy]]'s `toGraph` method for
  *      an example usage.
  *
  * @author Michael Eichberg

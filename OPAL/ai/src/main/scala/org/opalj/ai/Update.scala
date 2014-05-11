@@ -26,9 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 
 /**
@@ -47,7 +45,7 @@ sealed trait Update[+V] {
      * Merges a given `updateType` value with the type of this update and returns a
      * new `UpdateType` value.
      *
-     * @see [[de.tud.cs.st.bat.resolved.ai.UpdateType]] for further details.
+     * @see [[org.opalj.ai.UpdateType]] for further details.
      */
     def &:(updateType: UpdateType): UpdateType
 
@@ -145,7 +143,7 @@ case object NoUpdate extends Update[Nothing] {
  * are aligned and it is possible to conveniently switch between them. Contrary to
  * an `Update` object an `UpdateType` object never has any payload, it just characterizes
  * an update. However, by passing a value to an `UpdateType` the `UpdateType`
- * is turned into a corresponding [[de.tud.cs.st.bat.resolved.ai.Update]] object.
+ * is turned into a corresponding [[org.opalj.ai.Update]] object.
  *
  * ==Example==
  * {{{

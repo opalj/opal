@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
+package org.opalj
 package util
-package debug
 
 /**
  * Measures the execution time of some code.
@@ -197,7 +196,7 @@ object PerformanceEvaluation {
 
     /**
      * Times the execution of a given function `f` until the execution time has
-     * stabilized and the average time for evaluating `f` is only changing in a 
+     * stabilized and the average time for evaluating `f` is only changing in a
      * well-defined manner.
      *
      * In general `time` repeats the execution of `f` as long as the average changes
@@ -207,12 +206,12 @@ object PerformanceEvaluation {
      * have more than `10*minimalNumberOfRelevantRuns` runs that did not contribute
      * to the calculation of the average, the last run is added anyway. This way, we
      * ensure that the evaluation will more likely terminate in reasonable time without
-     * affecting the average too much. Nevertheless, if the behavior of `f` is 
-     * extremely eratic, the evaluation may not terminate. 
+     * affecting the average too much. Nevertheless, if the behavior of `f` is
+     * extremely eratic, the evaluation may not terminate.
      *
      * ==Example Usage==
      * {{{
-     * import de.tud.cs.st.util.debug.PerformanceEvaluation._
+     * import org.opalj.util.debug.PerformanceEvaluation._
      *
      * time[String](2,4,3,{
      *      Thread.sleep(300).toString
@@ -233,9 +232,9 @@ object PerformanceEvaluation {
      *      case the variation between two runs will be too coarse grained to get
      *      meaningful results.
      *
-     * @param epsilon The maximum percentage that *the final run* is allowed to affect 
+     * @param epsilon The maximum percentage that *the final run* is allowed to affect
      *      the average. In other words,
-     *      if the effect of the last execution on the average is less than `epsilon` 
+     *      if the effect of the last execution on the average is less than `epsilon`
      *      percent. The evaluation halts and the result of the last run is returned.
      * @param consideredRunsEpsilon Controls which runs are taken into consideration
      *      when calculating the average. Only those runs are used that are at most
@@ -245,7 +244,7 @@ object PerformanceEvaluation {
      *      during the evaluation of `f`.
      * @param f The function that will be measured.
      * @param r A function that is called back whenever `f` was successfully evaluated.
-     *      The signature is: 
+     *      The signature is:
      *      {{{
      *      def r(averageInNs:Double, lastExecutionTimeInNs : Long, consideredExecutionTimesInNs : Seq[Long]) : Unit
      *      }}}
@@ -271,20 +270,28 @@ object PerformanceEvaluation {
 
         var runsSinceLastUpdate = 0
         var times = List.empty[Long]
-        time { f } { t ⇒ times = t :: times }
+        time { f } { t ⇒
+            times = t :: times
+            if (t <= 199999) { // < 2 milliseconds
+                r(t, t, times)
+                Console.err.println("The time required by the function is too small to get meaningful measurements.")
+                return result
+            }
+        }
         var avg: Double = times.head
         do {
             time {
                 result = f
             } { t ⇒
+
                 if (t <= avg * filterE) {
                     // let's throw away all runs that are significantly slower than the last run
                     times = t :: times.filter(_ <= t * filterE)
                     avg = times.sum.toDouble / times.size.toDouble
-                    runsSinceLastUpdate  = 0
+                    runsSinceLastUpdate = 0
                 } else {
                     runsSinceLastUpdate += 1
-                    if (runsSinceLastUpdate > minimalNumberOfRelevantRuns*10) {
+                    if (runsSinceLastUpdate > minimalNumberOfRelevantRuns * 10) {
                         // for whatever reason the current average seems to be "too" slow
                         // let's add the last run to rise the average 
                         times = t :: times

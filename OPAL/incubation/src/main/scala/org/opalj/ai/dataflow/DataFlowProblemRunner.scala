@@ -30,16 +30,18 @@ package org.opalj
 package ai
 package dataflow
 
-import de.tud.cs.st.bat.resolved._
-import de.tud.cs.st.bat.resolved.analyses._
-import de.tud.cs.st.bat.resolved.ai._
-import de.tud.cs.st.bat.resolved.ai.domain._
-import de.tud.cs.st.bat.resolved.ai.domain.l0._
-import de.tud.cs.st.bat.resolved.instructions._
-import de.tud.cs.st.bat.AccessFlagsMatcher
+import java.net.URL
 
 import scala.collection.{ Map, Set }
-import java.net.URL
+
+import bi.AccessFlagsMatcher
+
+import br._
+import br.analyses._
+import br.instructions._
+
+import domain._
+import domain.l0._
 
 /**
  * Support methods to make it possible to solve a single [[DataFlowProblem]].
@@ -62,7 +64,7 @@ class DataFlowProblemRunner(
         override def analyze(
             project: Project[URL],
             parameters: Seq[String] = List.empty): ReportableAnalysisResult = {
-            import de.tud.cs.st.util.debug.PerformanceEvaluation.{ time, ns2sec }
+            import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
             val dataFlowProblem = time {
                 dataFlowProblemFactory(project, parameters)

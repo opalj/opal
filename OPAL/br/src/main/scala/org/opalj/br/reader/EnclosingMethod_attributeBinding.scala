@@ -26,12 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
-import de.tud.cs.st.bat.reader.EnclosingMethod_attributeReader
+import bi.reader.EnclosingMethod_attributeReader
 
 /**
  *
@@ -42,7 +41,7 @@ trait EnclosingMethod_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type EnclosingMethod_attribute = de.tud.cs.st.bat.resolved.EnclosingMethod
+    type EnclosingMethod_attribute = br.EnclosingMethod
 
     def EnclosingMethod_attribute(
         cp: Constant_Pool,

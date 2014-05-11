@@ -26,40 +26,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
-package checking
+package org.opalj
+package de
 
 import org.junit.runner.RunWith
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 
+import av._
+
 /**
- * Tests that the dependency's framework implemented design is as expected.
+ * Tests that the implemented architecture of the dependency extraction
+ * library is consistent with its specifiation/with the intended
+ * architecture.
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
-    behavior of "the Dependency Extraction Framework's implemented architecture"
+    behavior of "the Dependency Extraction Library's implemented architecture"
 
     it should "be well modularized in the sense that a superpackage does not depend on a subpackage" in {
         val expected =
             new Specification {
 
                 val DependencyExtractorElements: SourceElementsMatcher =
-                    "de.tud.cs.st.bat.resolved.dependency.DependencyExtractor*"
+                    "org.opalj.de.DependencyExtractor*"
 
                 val DependencyTypeElements: SourceElementsMatcher =
-                    "de.tud.cs.st.bat.resolved.dependency.DependencyType*"
+                    "org.opalj.de.DependencyType*"
 
                 val DependencyProcessorElements: SourceElementsMatcher =
-                    "de.tud.cs.st.bat.resolved.dependency.DependencyProcessor*"
+                    "org.opalj.de.DependencyProcessor*"
 
                 ensemble('DependencyExtractorCore) {
                     DependencyExtractorElements and
@@ -68,7 +70,7 @@ class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
                 }
 
                 ensemble('DependencyExtractionSupport) {
-                    "de.tud.cs.st.bat.resolved.dependency.*" except DependencyExtractorElements
+                    "org.opalj.de.*" except DependencyExtractorElements
                 }
 
                 'DependencyExtractorCore is_only_allowed_to_use empty

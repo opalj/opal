@@ -26,16 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package project
 
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-import reader.Java7Framework
+import br._
+import br.reader.Java8Framework
 
 /**
  * Tests if the same same call graph is created when we run the call graph
@@ -59,8 +58,8 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
     // PROJECT SETUP
     //
     def file = TestSupport.locateTestResources(testFileName, testFilePath)
-    val classFiles = Java7Framework.ClassFiles(file)
-    val project = bat.resolved.analyses.Project(classFiles)
+    val classFiles = Java8Framework.ClassFiles(file)
+    val project = br.analyses.Project(classFiles)
 
     //
     // GRAPH CONSTRUCTION

@@ -26,13 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
+package org.opalj
+package de
 
-import analyses.SomeProject
-import analyses.ProjectInformationKey
+import br._
+import br.analyses.SomeProject
+import br.analyses.ProjectInformationKey
 
 /**
  * Collects all dependencies extracted by a [[DependencyExtractor]].
@@ -54,7 +53,7 @@ class DependencyCollectingDependencyProcessor(
 
     import scala.collection.mutable.Set
     import java.util.concurrent.{ ConcurrentHashMap ⇒ CMap }
-    import de.tud.cs.st.collection.{ convert, putIfAbsentAndGet }
+    import org.opalj.collection.{ convert, putIfAbsentAndGet }
 
     private[this] val deps = new CMap[VirtualSourceElement, CMap[VirtualSourceElement, Set[DependencyType]]](
         // we assume that every source element has roughly ten dependencies on other source elements

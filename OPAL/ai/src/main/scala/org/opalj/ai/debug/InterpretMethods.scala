@@ -26,9 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package debug
 
@@ -38,14 +36,14 @@ import java.io.DataInputStream
 import java.io.ByteArrayInputStream
 
 import scala.Console._
-
 import scala.util.control.ControlThrowable
-
-import de.tud.cs.st.util.ControlAbstractions.process
-import de.tud.cs.st.util.debug.PerformanceEvaluation
-import de.tud.cs.st.util.debug.PerformanceEvaluation.ns2sec
-
 import scala.collection.JavaConversions.enumerationAsScalaIterator
+
+import org.opalj.util.PerformanceEvaluation
+import org.opalj.util.PerformanceEvaluation.ns2sec
+
+import br._
+
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using

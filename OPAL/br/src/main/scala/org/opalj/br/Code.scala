@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 
 import instructions._
 
@@ -79,7 +78,6 @@ case class Code(
      * for every instruction.
      */
     def foreach(f: (PC, Instruction) ⇒ Unit): Unit = {
-        import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
         foreachNonNullValueOf(instructions)(f)
     }
 
@@ -95,7 +93,7 @@ case class Code(
         }
 
     def handlerInstructionsFor(pc: PC): PCs = {
-        var pcs = de.tud.cs.st.collection.mutable.UShortSet.empty
+        var pcs = org.opalj.collection.mutable.UShortSet.empty
         exceptionHandlers foreach { handler ⇒
             if (handler.startPC <= pc && handler.endPC > pc)
                 pcs = handler.handlerPC +≈: pcs
@@ -492,7 +490,7 @@ case class Code(
     /**
      * Matches pairs of two consecutive instructions. For each matched pair,
      * the program counter of the first instruction is returned.
-     * 
+     *
      * ==Example Usage==
      * {{{
      * for {
@@ -564,6 +562,6 @@ object Code {
      * Used to determine the potential handlers in case that an exception is
      * thrown by an instruction.
      */
-    protected[resolved] val preDefinedClassHierarchy =
+    val preDefinedClassHierarchy =
         analyses.ClassHierarchy.preInitializedClassHierarchy
 }

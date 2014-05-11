@@ -26,22 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
-package resolved
+package org.opalj
 package ai
 package domain
 
-import reader.Java8Framework
-import l0._
-
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-
 import org.junit.runner.RunWith
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
+
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import br._
+import br.reader.Java8Framework
+import l0._
 
 /**
  * Basic tests of the abstract interpreter related to handling arrays.
@@ -72,7 +73,7 @@ class MethodsWithArraysTest
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 
-        de.tud.cs.st.bat.resolved.ai.debug.XHTML.dumpOnFailureDuringValidation(
+        org.opalj.ai.debug.XHTML.dumpOnFailureDuringValidation(
             Some(classFile),
             Some(method),
             method.body.get,

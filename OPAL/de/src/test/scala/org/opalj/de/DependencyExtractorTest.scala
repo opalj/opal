@@ -26,17 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
+package org.opalj
+package de
 
-import reader.Java8Framework.ClassFiles
-import DependencyType._
+import java.net.URL
 
 import org.scalatest.FunSuite
 
-import java.net.URL
+import br.reader.Java8Framework.ClassFiles
+import DependencyType._
+
 
 /**
  * Tests that the dependency extractor does not miss some dependencies and

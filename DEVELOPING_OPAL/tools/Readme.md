@@ -1,3 +1,3 @@
 #Overview
-The Developer Tools Project contains tools useful when developing analyses using OPAL.
+The Tools project contains tools useful when extending OPAL or developing analyses using OPAL.
 

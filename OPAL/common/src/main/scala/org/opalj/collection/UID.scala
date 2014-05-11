@@ -26,12 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
+package org.opalj
 package collection
 
 /**
  * Supertrait of all data structures that have – by construction - unique ids. I.e., two
- * data structures that are not ''reference equal'' have to have two different ids.
+ * data structures that are not ''equal'' have to have two different ids.
  *
  * @author Michael Eichberg
  */
@@ -50,8 +50,8 @@ object UID {
 
     /**
      * Returns the element stored in the given array at the position identified
-     * by the UID' unique id (`uid`) or – if no value is stored at the respective
-     * position – initializes the value with the value returned by `orElse` and
+     * by the [[UID]]'s unique `id` or – if no value is stored at the respective
+     * position – sets the value using the value returned by `orElse` and
      * returns that value.
      */
     @inline final def getOrElseUpdate[T <: AnyRef](

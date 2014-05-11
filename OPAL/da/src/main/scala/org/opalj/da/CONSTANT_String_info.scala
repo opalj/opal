@@ -40,7 +40,7 @@ package da
 case class CONSTANT_String_info(
         string_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
-    override def Constant_Type_Value = de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_String
+    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_String
 
     override def toString(implicit cp: Constant_Pool): String =
         cp(string_index).toString

@@ -1,2 +1,2 @@
 #Overview
-The VALIDATE project contains OPAL's integration tests and the specification of OPAL's architecture. The latter is validated when the tests are run.
+This project contains integration tests and the specification of the intended architecture of OPALs projects. The latter is validated when the tests are run.

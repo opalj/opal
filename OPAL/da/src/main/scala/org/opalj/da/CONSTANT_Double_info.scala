@@ -36,7 +36,6 @@ package da
 case class CONSTANT_Double_info(
         value: Double) extends Constant_Pool_Entry {
 
-    override def Constant_Type_Value =
-        de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_Double
+    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Double
 
 }

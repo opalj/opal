@@ -26,16 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.AnnotationAbstractions
-import de.tud.cs.st.bat.reader.AnnotationDefault_attributeReader
-import de.tud.cs.st.bat.reader.ElementValuePairsReader
+import bi.reader.AnnotationAbstractions
+import bi.reader.AnnotationDefault_attributeReader
+import bi.reader.ElementValuePairsReader
 
 /**
  * Factory methods to create representations of Java annotations.
@@ -47,38 +46,38 @@ trait AnnotationsBinding
         with ElementValuePairsReader
         with ConstantPoolBinding {
 
-    type Annotation = resolved.Annotation
+    type Annotation = br.Annotation
 
     val AnnotationManifest: ClassTag[Annotation] = implicitly
 
-    type ElementValue = resolved.ElementValue
+    type ElementValue = br.ElementValue
     val ElementValueManifest: ClassTag[ElementValue] = implicitly
 
-    type EnumValue = resolved.EnumValue
+    type EnumValue = br.EnumValue
 
-    type AnnotationValue = resolved.AnnotationValue
+    type AnnotationValue = br.AnnotationValue
 
-    type ByteValue = resolved.ByteValue
+    type ByteValue = br.ByteValue
 
-    type CharValue = resolved.CharValue
+    type CharValue = br.CharValue
 
-    type ShortValue = resolved.ShortValue
+    type ShortValue = br.ShortValue
 
-    type IntValue = resolved.IntValue
+    type IntValue = br.IntValue
 
-    type LongValue = resolved.LongValue
+    type LongValue = br.LongValue
 
-    type FloatValue = resolved.FloatValue
+    type FloatValue = br.FloatValue
 
-    type DoubleValue = resolved.DoubleValue
+    type DoubleValue = br.DoubleValue
 
-    type ArrayValue = resolved.ArrayValue
+    type ArrayValue = br.ArrayValue
 
-    type ClassValue = resolved.ClassValue
+    type ClassValue = br.ClassValue
 
-    type BooleanValue = resolved.BooleanValue
+    type BooleanValue = br.BooleanValue
 
-    type ElementValuePair = resolved.ElementValuePair
+    type ElementValuePair = br.ElementValuePair
     val ElementValuePairManifest: ClassTag[ElementValuePair] = implicitly
 
     def ElementValuePair(

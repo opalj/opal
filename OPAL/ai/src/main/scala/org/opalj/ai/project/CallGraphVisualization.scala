@@ -26,11 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package project
+
+import br._
 
 /**
  * Visualizes call graphs using Graphviz.
@@ -42,10 +42,11 @@ package project
  */
 object CallGraphVisualization {
 
-    import de.tud.cs.st.util.debug.PerformanceEvaluation.{ time, memory, asMB, ns2sec }
+    import java.net.URL
 
     import scala.Console.{ err, RED, RESET }
-    import java.net.URL
+
+    import org.opalj.util.PerformanceEvaluation.{ time, memory, asMB, ns2sec }
 
     /**
      * Traces the interpretation of a single method and prints out the results.
@@ -102,7 +103,7 @@ object CallGraphVisualization {
                                 println(RED+"cannot read file: "+e.getMessage() + RESET)
                                 sys.exit(-3)
                         }
-                    bat.resolved.analyses.Project(classFiles)
+                    br.analyses.Project(classFiles)
                 } { t ⇒ println("Setting up the project took: "+ns2sec(t)) }
             } { m ⇒ println("Required memory for base representation: "+asMB(m)) }
         val fqnFilter = args(2)
@@ -156,8 +157,8 @@ object CallGraphVisualization {
         //
         // Let's create the visualization
         //
-        import de.tud.cs.st.util.writeAndOpenDesktopApplication
-        import de.tud.cs.st.util.graphs.{ toDot, SimpleNode, Node }
+        import org.opalj.util.writeAndOpenDesktopApplication
+        import org.opalj.graphs.{ toDot, SimpleNode, Node }
         val nodes: Set[Node] = {
 
             var nodesForMethods = scala.collection.mutable.AnyRefMap.empty[Method, Node]

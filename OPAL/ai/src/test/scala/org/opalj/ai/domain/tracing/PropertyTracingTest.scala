@@ -26,16 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
 package tracing
 
-import reader.Java7Framework
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import org.junit.runner.RunWith
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
@@ -43,7 +40,11 @@ import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
-import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL
+
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import br._
+import br.reader.Java7Framework
 
 /**
  * This test(suite) basically tests OPAL-AIs support for tracing a property.

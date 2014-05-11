@@ -26,8 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 package reader
 
 import java.io.{ File, FileInputStream, InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
@@ -153,7 +153,6 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     //
     // IMPLEMENTATION
     //
-    import util.ControlAbstractions._
 
     private[this] var classFilePostProcessors: List[ClassFile ⇒ ClassFile] = Nil
 
@@ -217,7 +216,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             major_version >= 45 && // at least JDK 1.1
             (major_version < 52 /* Java 7 = 51.0 */ ||
                 (major_version == 52 && minor_version == 0 /*Java 8 == 52.0*/ ))))
-            throw new BATException(
+            throw new BytecodeProcessingFailedException(
                 "Unsupported class file version: "+major_version+"."+minor_version+
                     " (Supported: 45(Java 1.1) <= version <= 52(Java 8))")
 
@@ -227,12 +226,12 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         val super_class = in.readUnsignedShort
         val interfaces = {
             val interfaces_count = in.readUnsignedShort
-            util.ControlAbstractions.repeat(interfaces_count) {
+            repeat(interfaces_count) {
                 in.readUnsignedShort
             }
         }
-        val fields = Fields(cp,in)
-        val methods = Methods(cp,in)
+        val fields = Fields(cp, in)
+        val methods = Methods(cp, in)
         val attributes = Attributes(AttributesParent.ClassFile, cp, in)
 
         var classFile = ClassFile(

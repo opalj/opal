@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
+package org.opalj
 
 /**
  * Properties of unsigned short values.
@@ -34,7 +34,7 @@ package de.tud.cs.st
  * @author Michael Eichberg
  */
 object UShort {
-   
+
     /**
      * The maximum value of an unsigned short value (65535).
      */

@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package instructions
 
 import language.existentials
@@ -72,14 +71,15 @@ object LDC {
 
     def apply(constantValue: ConstantValue[_]): LDC[_] = {
         constantValue.value match {
-            case i: Int           ⇒ LoadInt(i)
-            case f: Float         ⇒ LoadFloat(f)
-            case r: ReferenceType ⇒ LoadClass(r)
-            case s: String        ⇒ LoadString(s)
-			case mh: MethodHandle => LoadMethodHandle(mh)
-			case md: MethodDescriptor => LoadMethodType(md)
+            case i: Int               ⇒ LoadInt(i)
+            case f: Float             ⇒ LoadFloat(f)
+            case r: ReferenceType     ⇒ LoadClass(r)
+            case s: String            ⇒ LoadString(s)
+            case mh: MethodHandle     ⇒ LoadMethodHandle(mh)
+            case md: MethodDescriptor ⇒ LoadMethodType(md)
             case _ ⇒
-                throw new BATException("unsupported constant value: "+constantValue)
+                throw new BytecodeProcessingFailedException(
+                    "unsupported constant value: "+constantValue)
         }
     }
 

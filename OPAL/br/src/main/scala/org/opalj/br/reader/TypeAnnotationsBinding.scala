@@ -26,16 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.TypeAnnotationsReader
-import de.tud.cs.st.bat.reader.TypeAnnotationTargetReader
-import de.tud.cs.st.bat.reader.TypeAnnotationPathReader
+import bi.reader.TypeAnnotationsReader
+import bi.reader.TypeAnnotationTargetReader
+import bi.reader.TypeAnnotationPathReader
 
 /**
  * Factory methods to create representations of Java type annotations.
@@ -49,17 +48,17 @@ trait TypeAnnotationsBinding
         with AnnotationsBinding
         with AttributeBinding {
 
-    type TypeAnnotation = resolved.TypeAnnotation
+    type TypeAnnotation = br.TypeAnnotation
 
     val TypeAnnotationManifest: ClassTag[TypeAnnotation] = implicitly
 
-    type TypeAnnotationTarget = resolved.TypeAnnotationTarget
+    type TypeAnnotationTarget = br.TypeAnnotationTarget
 
-    type TypeAnnotationPath = resolved.TypeAnnotationPath
+    type TypeAnnotationPath = br.TypeAnnotationPath
 
-    type TypeAnnotationPathElement = resolved.TypeAnnotationPathElement
+    type TypeAnnotationPathElement = br.TypeAnnotationPathElement
 
-    type LocalvarTableEntry = resolved.LocalvarTableEntry
+    type LocalvarTableEntry = br.LocalvarTableEntry
 
     //
     // TypeAnnotation

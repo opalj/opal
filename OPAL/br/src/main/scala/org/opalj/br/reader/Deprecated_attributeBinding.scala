@@ -26,11 +26,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
-import de.tud.cs.st.bat.reader.Deprecated_attributeReader
+import bi.reader.Deprecated_attributeReader
 
 /**
  * @author Michael Eichberg
@@ -40,12 +39,11 @@ trait Deprecated_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type Deprecated_attribute = de.tud.cs.st.bat.resolved.Attribute
+    type Deprecated_attribute = br.Attribute
 
     def Deprecated_attribute(
-            constant_pool: Constant_Pool,
-        attribute_name_index: Constant_Pool_Index) =
-        de.tud.cs.st.bat.resolved.Deprecated
+        constant_pool: Constant_Pool,
+        attribute_name_index: Constant_Pool_Index) = br.Deprecated
 
 }
 

@@ -26,9 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
+
+import bi.ACC_ABSTRACT
+import bi.ACC_FINAL
+import bi.ACC_STRICT
+import bi.ACC_NATIVE
+import bi.ACC_BRIDGE
+import bi.ACC_VARARGS
+import bi.ACC_SYNCHRONIZED
+import bi.AccessFlagsContexts
+import bi.AccessFlags
 
 /**
  * Represents a single method.

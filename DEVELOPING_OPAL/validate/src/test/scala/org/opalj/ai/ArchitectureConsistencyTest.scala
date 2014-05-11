@@ -26,26 +26,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package ai
 
-import dependency.checking.Specification
-
 import org.junit.runner.RunWith
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 
+import av.Specification
+
 /**
- * Tests that OPAL-AI's implemented design is as expected.
+ * Tests that the implemented architecture of the abstract interpretation
+ * framework is consistent with its specifiation/with the intended
+ * architecture.
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     behavior of "the Abstract Interpretation Framework's implemented architecture"
 
@@ -54,31 +56,31 @@ class ArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
             new Specification {
 
                 ensemble('Core) {
-                    "de.tud.cs.st.bat.resolved.ai.*" except
-                        classes("""de\.tud\.cs\.st\.bat\.resolved\.ai\..+Test.*""".r)
+                    "org.opalj.ai.*" except
+                        classes("""org\.opalj\.ai\..+Test.*""".r)
                 }
 
                 ensemble('Domain_Tracing) {
-                    "de.tud.cs.st.bat.resolved.ai.domain.tracing.*" except
-                        classes("""de\.tud\.cs\.st\.bat\.resolved\.ai\.domain\.tracing\..+Test.*""".r)
+                    "org.opalj.ai.domain.tracing.*" except
+                        classes("""org\.opalj\.ai\.domain\.tracing\..+Test.*""".r)
                 }
 
                 ensemble('Util) {
-                    "de.tud.cs.st.bat.resolved.ai.util.*"
+                    "org.opalj.ai.util.*"
                 }
 
                 ensemble('Domains) {
-                    "de.tud.cs.st.bat.resolved.ai.domain.*" except
-                        classes("""de\.tud\.cs\.st\.bat\.resolved\.ai\.domain\..+Test.*""".r)
+                    "org.opalj.ai.domain.*" except
+                        classes("""org\.opalj\.ai\.domain\..+Test.*""".r)
                 }
 
                 ensemble('Project) {
-                    "de.tud.cs.st.bat.resolved.ai.project.*" except
-                        classes("""de\.tud\.cs\.st\.bat\.resolved\.ai\.project\..+Test.*""".r)
+                    "org.opalj.ai.project.*" except
+                        classes("""org\.opalj\.ai\.project\..+Test.*""".r)
                 }
 
                 ensemble('Debug) {
-                    "de.tud.cs.st.bat.resolved.ai.debug.*"
+                    "org.opalj.ai.debug.*"
                 }
 
                 'Util is_only_allowed_to_use empty

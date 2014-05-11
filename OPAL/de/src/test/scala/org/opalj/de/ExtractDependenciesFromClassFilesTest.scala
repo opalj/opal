@@ -26,17 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
+package org.opalj
+package de
 
-import reader.Java8Framework.ClassFile
+import java.util.zip.ZipFile
 
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 
-import java.util.zip.ZipFile
+import br._
+import br.reader.Java8Framework.ClassFile
 
 /**
  * Tests whether all class files contained in the "test/classfiles" directory

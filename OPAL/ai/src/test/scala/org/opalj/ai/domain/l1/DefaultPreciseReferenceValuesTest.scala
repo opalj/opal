@@ -26,14 +26,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
 package l1
-
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -43,6 +39,10 @@ import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
+
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import br._
 
 /**
  * This test(suite) just loads a very large number of class files and performs

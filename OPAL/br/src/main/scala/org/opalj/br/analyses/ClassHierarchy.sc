@@ -26,15 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-import de.tud.cs.st.bat.resolved._
-import de.tud.cs.st.bat.resolved.analyses._
-import de.tud.cs.st.bat.resolved.instructions._
+import org.opalj.br._
+import org.opalj.br.analyses._
+import org.opalj.br.instructions._
 
 object ClassHierarchy {
 
     val ArrayListType = ObjectType("java/util/ArrayList")
-                                                  //> ArrayListType  : de.tud.cs.st.bat.resolved.ObjectType = ObjectType(java/uti
-                                                  //| l/ArrayList)
     val project = Project(new java.io.File("/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/jre/lib/rt.jar"))
 
     val ch = project.classHierarchy

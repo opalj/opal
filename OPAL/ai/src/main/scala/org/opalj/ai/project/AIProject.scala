@@ -26,13 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package project
 
-import bat.resolved.analyses.{ Project, ReportableAnalysisResult }
+import br._
+import br.analyses.{ Project, ReportableAnalysisResult }
 
 /**
  * Template class for analyzing complete Java projects that use the abstract interpreter.
@@ -118,7 +117,7 @@ trait AIProject[Source, D <: Domain with Report] {
                 entryPoints(project) map { analyze(_) }
 
         val theReports = reports.filter(_.isDefined).map(_.get)
-        bat.resolved.analyses.BasicReport(
+        br.analyses.BasicReport(
             "Number of reports: "+theReports.size+"\n"+theReports.mkString("\n"))
     }
 }

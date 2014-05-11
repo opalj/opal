@@ -26,17 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package debug
-
-import instructions._
 
 import java.awt.Desktop
 import java.io.FileOutputStream
 import java.io.File
+
+import scala.language.existentials
+import scala.util.control.ControlThrowable
 
 import scala.xml.Node
 import scala.xml.NodeSeq
@@ -44,8 +43,8 @@ import scala.xml.Unparsed
 import scala.xml.Text
 import scala.xml.Unparsed
 
-import scala.language.existentials
-import scala.util.control.ControlThrowable
+import br._
+import br.instructions._
 
 /**
  * Several utility methods to facilitate the development of the abstract interpreter/
@@ -58,8 +57,6 @@ import scala.util.control.ControlThrowable
  * @author Michael Eichberg
  */
 object XHTML {
-
-    import de.tud.cs.st.util.ControlAbstractions._
 
     private[this] val dumpMutex = new Object
 
@@ -78,7 +75,7 @@ object XHTML {
         _lastDump.set(currentTimeMillis)
     }
 
-    private[this] def lastDump =  _lastDump.get()
+    private[this] def lastDump = _lastDump.get()
 
     def dumpOnFailure[T, D <: Domain](
         classFile: ClassFile,

@@ -26,15 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
-package checking
-
-import analyses._
+package org.opalj
+package av
 
 import scala.collection.{ Set }
+
+import br._
+import br.analyses.SomeProject
 
 /**
  * Matches all classes, fields and methods that are declared in the specified package.

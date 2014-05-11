@@ -26,11 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
+
+import br.Code
+import br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy }
 
 /**
  * This class uses OPAL's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
@@ -50,8 +51,7 @@ trait PredefinedClassHierarchy extends ClassHierarchy { this: Domain ⇒
      *
      * @note '''This method is intended to be overridden.'''
      */
-    override def classHierarchy: analyses.ClassHierarchy =
-        Code.preDefinedClassHierarchy
+    override def classHierarchy: TheClassHierarchy = Code.preDefinedClassHierarchy
 
 }
 

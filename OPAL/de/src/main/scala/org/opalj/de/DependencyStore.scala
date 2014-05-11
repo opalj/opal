@@ -26,16 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
-
-import analyses.SomeProject
-import analyses.ProjectInformationKey
+package org.opalj
+package de
 
 import scala.collection.Map
 import scala.collection.Set
+
+import br._
+import br.analyses.SomeProject
+import br.analyses.ProjectInformationKey
+
 
 /**
  * Stores extracted dependencies.
@@ -58,7 +58,7 @@ object DependencyStore {
         classFiles: Traversable[ClassFile],
         createDependencyExtractor: (DependencyProcessor) ⇒ DependencyExtractor): DependencyStore = {
 
-        import util.debug.PerformanceEvaluation.{ time, ns2sec }
+        import util.PerformanceEvaluation.{ time, ns2sec }
         val dc = time {
             val dc = new DependencyCollectingDependencyProcessor(Some(classFiles.size * 10))
             val de = createDependencyExtractor(dc)

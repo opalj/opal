@@ -29,7 +29,7 @@
 package org.opalj
 package da
 
-import de.tud.cs.st.bat.{ AccessFlags, AccessFlagsContexts }
+import org.opalj.bi.{ AccessFlags, AccessFlagsContexts }
 
 import scala.xml.Node
 

@@ -26,8 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 package reader
 
 import scala.collection.mutable.Buffer
@@ -62,13 +62,13 @@ trait Constant_PoolAbstractions {
      * (The constant pool is the only structure that is passed around and hence it is the
      * only place where to store information/functions related to a specific class file).
      */
-    protected[bat]type DeferredActionsStore = Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry
+    type DeferredActionsStore = Buffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry
 
     /**
      * This method is called/needs to be called after the class file was completely
      * loaded to perform class file specific transformations.
      */
-    protected[bat] def applyDeferredActions(
+    def applyDeferredActions(
         cp: Constant_Pool,
         classFile: ClassFile): ClassFile
 

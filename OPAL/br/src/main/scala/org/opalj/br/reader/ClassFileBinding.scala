@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.ClassFileReader
+import bi.reader.ClassFileReader
 
 /**
  *
@@ -42,7 +41,7 @@ import de.tud.cs.st.bat.reader.ClassFileReader
 trait ClassFileBinding extends ClassFileReader {
     this: ConstantPoolBinding with MethodsBinding with FieldsBinding with AttributeBinding ⇒
 
-    type ClassFile = de.tud.cs.st.bat.resolved.ClassFile
+    type ClassFile = br.ClassFile
 
     type Fields <: IndexedSeq[Field_Info]
     type Methods <: IndexedSeq[Method_Info]
@@ -57,7 +56,7 @@ trait ClassFileBinding extends ClassFileReader {
         fields: Fields,
         methods: Methods,
         attributes: Attributes): ClassFile = {
-        de.tud.cs.st.bat.resolved.ClassFile(
+        br.ClassFile(
             minor_version, major_version, access_flags,
             cp(this_class_index).asObjectType(cp),
             // to handle the special case that this class file represents java.lang.Object

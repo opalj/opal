@@ -26,24 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
 package l1
 
-import de.tud.cs.st.bat.TestSupport
-import reader.Java7Framework.ClassFiles
+import org.junit.runner.RunWith
+import org.junit.Ignore
 
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
-import org.junit.runner.RunWith
-import org.junit.Ignore
 
-import de.tud.cs.st.util._
+import org.opalj.util._
+
+import br._
+import reader.Java7Framework.ClassFiles
 
 /**
  * Simple test case for ClassValues.

@@ -26,23 +26,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
 package l0
-
-import bat.reader.ClassFileReader
-import reader.Java8Framework.ClassFiles
-
-import de.tud.cs.st.bat.TestSupport
 
 import org.junit.runner.RunWith
 
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
+
+import br._
+import bi.reader.ClassFileReader
+import br.reader.Java8Framework.ClassFiles
+
 
 /**
  * This system test(suite) just loads a very large number of class files and performs

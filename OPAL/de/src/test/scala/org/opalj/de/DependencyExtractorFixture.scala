@@ -26,17 +26,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
+package org.opalj
+package de
 
-import reader.Java8Framework.ClassFiles
-import DependencyType._
+import java.net.URL
 
 import org.scalatest.FunSuite
 
-import java.net.URL
+import br._
+import br.reader.Java8Framework.ClassFiles
+
+import DependencyType._
 
 /**
  * Functionality useful when testing a dependency extractor.
@@ -45,7 +45,6 @@ import java.net.URL
  */
 object DependencyExtractorFixture extends FunSuite {
 
-   
     val FIELD_AND_METHOD_SEPARATOR = "."
 
     def sourceElementName(t: Type): String =
@@ -79,9 +78,9 @@ object DependencyExtractorFixture extends FunSuite {
     }
 
     def extractDependencies(
-            folder: String, 
-            jarFile: String,
-            createDependencyExtractor: (DependencyProcessor) => DependencyExtractor): Map[(String, String, DependencyType), Int] = {
+        folder: String,
+        jarFile: String,
+        createDependencyExtractor: (DependencyProcessor) ⇒ DependencyExtractor): Map[(String, String, DependencyType), Int] = {
         var dependencies: Map[(String, String, DependencyType), Int] = Map.empty
 
         val dependencyExtractor =

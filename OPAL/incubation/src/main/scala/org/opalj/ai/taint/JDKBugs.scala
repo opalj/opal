@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package ai
 
 import instructions._
@@ -54,10 +53,10 @@ package taint {
 
     //    import java.net.URL
     //    import analyses.{ Project, Analysis, AnalysisExecutor, ReportableAnalysisResult }
-    //    import de.tud.cs.st.bat.resolved.ai.project.{ AIProject, Report }
-    //    import de.tud.cs.st.bat.resolved.ai.domain._
-    //    import de.tud.cs.st.util.graphs._
-    //    import de.tud.cs.st.util.ControlAbstractions.process
+    //    import org.opalj.bat.resolved.ai.project.{ AIProject, Report }
+    //    import org.opalj.bat.resolved.ai.domain._
+    //    import org.opalj.util.graphs._
+    //    import org.opalj.util.ControlAbstractions.process
     //
     //    object JDKTaintAnalysis
     //            extends AIProject[URL,SomeDomain with Report]
@@ -150,7 +149,7 @@ package taint {
     //            with ProjectBasedTypeHierarchy[Source]
     //            with Report { thisDomain ⇒
     //
-    //        import de.tud.cs.st.util.Unknown
+    //        import org.opalj.util.Unknown
     //        import ObjectType._
     //
     //        protected def declaringClass = identifier._1.thisClass

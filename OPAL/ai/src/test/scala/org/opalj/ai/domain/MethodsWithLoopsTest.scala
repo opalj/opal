@@ -26,12 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
-package resolved
+package org.opalj
 package ai
 package domain
-
-import reader.Java8Framework
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -39,6 +36,9 @@ import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
+
+import br._
+import br.reader.Java8Framework
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -64,7 +64,7 @@ class MethodsWithLoopsTest
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 
-        de.tud.cs.st.bat.resolved.ai.debug.XHTML.dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
+        org.opalj.ai.debug.XHTML.dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             f(domain)
         }
     }

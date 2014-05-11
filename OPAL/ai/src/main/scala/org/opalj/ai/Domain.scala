@@ -26,25 +26,25 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import scala.reflect.ClassTag
 
-import reflect.ClassTag
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import br._
 
 /**
  * A domain is the fundamental abstraction mechanism in OPAL that enables the customization
- * of the abstract interpretation framework towards the needs of a specific analysis. 
- * 
- * A domain encodes the semantics of computations (e.g., the addition of two values) 
- * with respect to a domain's values (e.g., the representation of integer values). 
- * Customizing a domain is the fundamental mechanism of adapting the AI framework 
+ * of the abstract interpretation framework towards the needs of a specific analysis.
+ *
+ * A domain encodes the semantics of computations (e.g., the addition of two values)
+ * with respect to a domain's values (e.g., the representation of integer values).
+ * Customizing a domain is the fundamental mechanism of adapting the AI framework
  * to one's needs.
  *
- * This trait defines the interface between the abstract interpretation framework 
+ * This trait defines the interface between the abstract interpretation framework
  * and some (user defined) domain. I.e., this interface defines all methods that
  * are needed by OPAL to perform an abstract interpretation.
  *
@@ -60,9 +60,9 @@ import reflect.ClassTag
  * flow is, however, completely embedded into OPAL-AI.
  *
  * OPAL-AI uses the following three methods to inform a domain about the progress:
- *  - [[de.tud.cs.st.bat.resolved.ai.Domain.flow]]
- *  - [[de.tud.cs.st.bat.resolved.ai.Domain.evaluationCompleted]]
- *  - [[de.tud.cs.st.bat.resolved.ai.Domain.abstractInterpretationEnded]]
+ *  - [[org.opalj.ai.Domain.flow]]
+ *  - [[org.opalj.ai.Domain.evaluationCompleted]]
+ *  - [[org.opalj.ai.Domain.abstractInterpretationEnded]]
  * A domain that implements (`overrides`) one of these methods should always also delegate
  * the call to its superclass to make sure that every domain interested in these
  * events is informed.
@@ -161,7 +161,7 @@ trait Domain {
      *      value (e.g., `AnIntegerValue < 4`) it is possible to constrain the respective
      *      value on the subsequent paths (< 4 on one path and >= 4 on the other path).
      *      To make that possible, it is however necessary to distinguish the
-     *      `AnIntegervalue` from some other `AnIntegerValue` to avoid constraining 
+     *      `AnIntegervalue` from some other `AnIntegerValue` to avoid constraining
      *      unrelated values.
      *      {{{
      *      public void foo(int a,int b) {
@@ -200,10 +200,10 @@ trait Domain {
          *
          * This basically implements the join operator of complete lattices.
          *
-         * Join is called whenever an instruction is evaluated more than once and, hence, 
+         * Join is called whenever an instruction is evaluated more than once and, hence,
          * the values found on the paths need to be joined. This method is, however,
-         * only called if the two values are two different objects 
-		 * (`(this ne value) == true`), but both values have the same computational type.
+         * only called if the two values are two different objects
+         * (`(this ne value) == true`), but both values have the same computational type.
          *
          * ==Example==
          * For example, joining a `DomainValue` that represents the integer value 0
@@ -226,7 +226,7 @@ trait Domain {
          * The termination of the abstract interpretation directly depends on the fact
          * that at some point all values are fixed and don't change anymore. Hence,
          * it is important that '''the type of the update is only a
-         * [[de.tud.cs.st.bat.resolved.ai.StructuralUpdate]] if the value has changed in
+         * [[org.opalj.ai.StructuralUpdate]] if the value has changed in
          * a way relevant for future computations/analyses''' involving this value.
          * In other words, when two values are joined it has to be ensured that no
          * fall back to a previous value occurs. E.g., if you join the existing integer
@@ -294,7 +294,7 @@ trait Domain {
          * a summary may be sufficient.
          *
          * @note __The precise semantics and usage of `summarize(...)` is determined
-         *      by the domain__. 
+         *      by the domain__.
          *      The framework does not use/call this method.This method
          *      is solely predefined to facilitate the development of project-wide
          *      analyses.
@@ -378,7 +378,7 @@ trait Domain {
      * the result of a join of two incompatible values and are generally only found in
      * registers (in the locals) and then identify a value that is dead.
      *
-     * @see [[de.tud.cs.st.bat.resolved.ai.Domain.Value]] for further details.
+     * @see [[org.opalj.ai.Domain.Value]] for further details.
      */
     protected class IllegalValue extends Value { this: DomainIllegalValue ⇒
 
@@ -873,7 +873,7 @@ trait Domain {
      * real type unless the type is a primitive type.
      *
      * This default implementation always returns
-     * [[de.tud.cs.st.bat.resolved.ai.TypeUnknown]].
+     * [[org.opalj.ai.TypeUnknown]].
      *
      * ==Implementing `typeOfValue`==
      * This method is typically not implemented by a single `Domain` trait/object, but is
@@ -1498,8 +1498,8 @@ trait Domain {
         fieldType: FieldType): Computation[DomainValue, Nothing]
 
     /**
-     * Sets the field's value if the given `objectref` is not `null`(in the [[Domain]]). 
-     * In the latter case a `NullPointerException` is thrown. 
+     * Sets the field's value if the given `objectref` is not `null`(in the [[Domain]]).
+     * In the latter case a `NullPointerException` is thrown.
      */
     def putfield(
         pc: PC,
@@ -1649,8 +1649,8 @@ trait Domain {
 
     /**
      * Merges the given value `v1` with the value `v2` and returns the merged value
-     * which is `v1` if `v1` is an abstraction of `v2`, `v2` if `v2` is an abstraction 
-     * of `v1` or some other value if a new value is computed that abstracts over 
+     * which is `v1` if `v1` is an abstraction of `v2`, `v2` if `v2` is an abstraction
+     * of `v1` or some other value if a new value is computed that abstracts over
      * both values.
      *
      * This operation is commutative.
@@ -1833,7 +1833,7 @@ trait Domain {
      *
      * @param operandsArray The array that associates '''every instruction''' with its
      *      operand stack that is in effect.  Note, that only those elements of the
-     *      array contain values that are related to instructions that were 
+     *      array contain values that are related to instructions that were
      *      evaluated in the past. The other elements are `null`.
      *
      * @param localsArray The array that associates every instruction with its current
@@ -1848,9 +1848,9 @@ trait Domain {
      *      If the worklist already contains `successorPC`, the domain is allowed to move
      *      the PC to the beginning of the worklist. However, if the PC does not belong
      *      to the same (sub)routine, it is not allowed to be moved to the beginning
-     *      of the worklist. (Subroutines can only be found in code generated by old 
-     *      Java compilers; before Java 6. Subroutines are identified by jsr/ret 
-     *      instructions.) 
+     *      of the worklist. (Subroutines can only be found in code generated by old
+     *      Java compilers; before Java 6. Subroutines are identified by jsr/ret
+     *      instructions.)
      *      Note that the worklist may contain negative values or positive values between
      *      two negative values. These values are used for handling subroutine calls
      *      (jsr/ret) and should not be changed. Furthermore, no value (PC) should be moved
@@ -1898,7 +1898,7 @@ trait Domain {
      * Called by (OPAL)AI when the abstract interpretation of a method has ended. The
      * abstract interpretation of a method ends if either the fixpoint is reached or
      * the interpretation was aborted.
-     * 
+     *
      * By default this method does nothing.
      */
     def abstractInterpretationEnded(

@@ -26,21 +26,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
-package resolved
+package org.opalj
 package ai
 package domain
 
-import reader.Java7Framework
-
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-
 import org.junit.runner.RunWith
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
+
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import br._
+import br.reader.Java7Framework
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -58,7 +59,7 @@ class MethodsWithExceptionsTest
     import debug.XHTML.dumpOnFailureDuringValidation
     import domain.l1
     import MethodsWithExceptionsTest._
-    import de.tud.cs.st.collection.mutable.UShortSet
+    import org.opalj.collection.mutable.UShortSet
 
     private def evaluateMethod(name: String)(f: l1.DefaultRecordingDomain[String] ⇒ Unit) {
         val domain = new l1.DefaultRecordingDomain(name)

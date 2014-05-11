@@ -26,8 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 package reader
 
 import scala.reflect.ClassTag
@@ -88,7 +88,6 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
     registerAttributeReader(
         LocalVariableTable_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                import util.ControlAbstractions.repeat
 
                 val attribute_length = in.readInt()
                 LocalVariableTable_attribute(

@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
-
-import analyses._
+package org.opalj
+package de
 
 import java.net.URL
+
+import br._
+import br.analyses._
 
 /**
  * Counts the number of dependencies found in a project.
@@ -49,8 +48,8 @@ object DependencyCounting extends AnalysisExecutor with Analysis[URL, BasicRepor
     def analyze(project: Project[URL], parameters: Seq[String]) = {
         println("Press enter to start the dependency collection.")
         scala.io.StdIn.readLine
-        
-        import util.debug.PerformanceEvaluation._
+
+        import util.PerformanceEvaluation._
         val counter = time {
             val counter = new DependencyCountingDependencyProcessor with FilterSelfDependencies
             val extractor = new DependencyExtractor(counter)

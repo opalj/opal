@@ -26,9 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
+
+import bi.ACC_FINAL
+import bi.ACC_PUBLIC
+import bi.ACC_PROTECTED
+import bi.ACC_PRIVATE
+import bi.ACC_STATIC
+import bi.VisibilityModifier
 
 /**
  * Abstractions over the common properties of class members (Methods and Fields).

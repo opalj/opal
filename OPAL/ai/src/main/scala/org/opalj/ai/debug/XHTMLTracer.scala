@@ -26,17 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package debug
 
 import scala.language.existentials
 
-import instructions._
+import br.Code
+import br.instructions._
 
-import debug.XHTML._
+import XHTML._
 
 case class FlowEntity(
         val pc: PC,
@@ -335,5 +334,5 @@ trait XHTMLTracer extends AITracer {
 object AnXHTMLTracer extends XHTMLTracer {
 
     def instance(): AITracer = this
-    
+
 }

@@ -26,15 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
 package tracing
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-import de.tud.cs.st.bat.resolved.instructions.ReturnInstruction
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import br._
+import br.instructions.ReturnInstruction
 
 /**
  * Enables the tracing of a single boolean property where the precise semantics

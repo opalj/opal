@@ -26,8 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -44,7 +43,7 @@ package bat
  *
  * @author Michael Eichberg
  */
-package object resolved {
+package object br {
 
     type Attributes = Seq[Attribute]
 
@@ -74,9 +73,6 @@ package object resolved {
 
     type SourceElementID = Int
 
-    type PC = Int
-    type PCs = collection.UShortSet
-    
     type Opcode = Int
 
     /**

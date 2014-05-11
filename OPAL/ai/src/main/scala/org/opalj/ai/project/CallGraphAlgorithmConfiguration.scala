@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package project
 
-import bat.resolved.analyses.{ SomeProject, Project }
-import bat.resolved.ai.domain._
+import br._
+import br.analyses.{ SomeProject, Project }
+import domain._
 
 /**
  * Configuration of a specific call graph algorithm. Basically, the configuration
@@ -51,7 +50,7 @@ trait CallGraphAlgorithmConfiguration {
     type Contour
 
     /**
-     * The type of the cached values. 
+     * The type of the cached values.
      */
     type Value
 
@@ -64,7 +63,6 @@ trait CallGraphAlgorithmConfiguration {
      * Usually created only once per run.
      */
     def Cache(): this.type#Cache
-    
 
     /**
      * Returns the new domain object that will be used to analyze the given

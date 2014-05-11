@@ -33,13 +33,13 @@ package da
  *
  * @author Michael Eichberg
  */
-trait Constant_Pool_Entry extends de.tud.cs.st.bat.reader.ConstantPoolEntry {
+trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
     //
     // ABSTRACT DEFINITIONS
     //
 
-    def Constant_Type_Value: de.tud.cs.st.bat.ConstantPoolTags.Value
+    def Constant_Type_Value: bi.ConstantPoolTags.Value
 
     //
     // IMPLEMENTATION

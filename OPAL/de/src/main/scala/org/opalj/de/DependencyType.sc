@@ -1,26 +1,49 @@
-package de.tud.cs.st.bat.resolved.dependency
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2014
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+package org.opalj
+package de
 
 object DependencyTypeSheet {
 
-    val dt_1 = DependencyType.EXTENDS             //> dt_1  : de.tud.cs.st.bat.resolved.dependency.DependencyType.Value = type dec
-                                                  //| laration EXTENDS class type
+    val dt_1 = DependencyType.EXTENDS
 
-    val dt_1m = DependencyType.bitMask(dt_1)      //> dt_1m  : Long = 1
+    val dt_1m = DependencyType.bitMask(dt_1)
 
-    DependencyType.toSet(1l)                      //> res0: scala.collection.Set[de.tud.cs.st.bat.resolved.dependency.DependencyTy
-                                                  //| pe] = Set(type declaration EXTENDS class type)
+    DependencyType.toSet(1l)
 
-    val dt_35 = DependencyType.USES_TYPE_IN_TYPE_PARAMETERS
-                                                  //> dt_35  : de.tud.cs.st.bat.resolved.dependency.DependencyType.Value = uses ty
-                                                  //| pe in type parameters
-    val dt_35m = DependencyType.bitMask(dt_35)    //> dt_35m  : Long = 34359738368
+    val dt_35 = DependencyType.TYPE_IN_TYPE_PARAMETERS
+    val dt_35m = DependencyType.bitMask(dt_35)
 
-    dt_35.id                                      //> res1: Int = 35
+    dt_35.id
 
-    val dt_1_35m = dt_1m | dt_35m                 //> dt_1_35m  : Long = 34359738369
+    val dt_1_35m = dt_1m | dt_35m
 
-    DependencyType.toSet(dt_1_35m)                //> res2: scala.collection.Set[de.tud.cs.st.bat.resolved.dependency.DependencyTy
-                                                  //| pe] = Set(type declaration EXTENDS class type, uses type in type parameters)
-                                                  //| 
+    DependencyType.toSet(dt_1_35m)
 
 }

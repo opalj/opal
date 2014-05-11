@@ -26,14 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
+package org.opalj
 
 /**
  * Implementation of a library for parsing Java bytecode and creating arbitrary 
  * representations.
  * 
  * OPAL's primary representation of Java byte code
- * is the [[de.tud.cs.st.bat.resolved]] representation which is defined in the
+ * is the [[org.opalj.br]] representation which is defined in the
  * respective package.
  *
  * == This Package ==
@@ -41,7 +41,7 @@ package de.tud.cs.st
  *
  * @author Michael Eichberg
  */
-package object bat {
+package object bi {
 
     type AccessFlagsContext = AccessFlagsContexts.Value
 

@@ -26,16 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.StackMapTable_attributeReader
-import de.tud.cs.st.bat.reader.StackMapFrameReader
-import de.tud.cs.st.bat.reader.VerificationTypeInfoReader
+import bi.reader.StackMapTable_attributeReader
+import bi.reader.StackMapFrameReader
+import bi.reader.VerificationTypeInfoReader
 
 /**
  * Provides the factory methods to create a stack map table attribute and
@@ -50,27 +49,27 @@ trait StackMapTable_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type VerificationTypeInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
+    type VerificationTypeInfo = br.VerificationTypeInfo
     val VerificationTypeInfoManifest: ClassTag[VerificationTypeInfo] = implicitly
-    type StackMapTable_attribute = de.tud.cs.st.bat.resolved.StackMapTable
-    type StackMapFrame = de.tud.cs.st.bat.resolved.StackMapFrame
-    type FullFrame = de.tud.cs.st.bat.resolved.FullFrame
-    type SameFrame = de.tud.cs.st.bat.resolved.SameFrame
-    type AppendFrame = de.tud.cs.st.bat.resolved.AppendFrame
-    type SameFrameExtended = de.tud.cs.st.bat.resolved.SameFrameExtended
-    type ChopFrame = de.tud.cs.st.bat.resolved.ChopFrame
-    type SameLocals1StackItemFrame = de.tud.cs.st.bat.resolved.SameLocals1StackItemFrame
-    type SameLocals1StackItemFrameExtended = de.tud.cs.st.bat.resolved.SameLocals1StackItemFrameExtended
+    type StackMapTable_attribute = br.StackMapTable
+    type StackMapFrame = br.StackMapFrame
+    type FullFrame = br.FullFrame
+    type SameFrame = br.SameFrame
+    type AppendFrame = br.AppendFrame
+    type SameFrameExtended = br.SameFrameExtended
+    type ChopFrame = br.ChopFrame
+    type SameLocals1StackItemFrame = br.SameLocals1StackItemFrame
+    type SameLocals1StackItemFrameExtended = br.SameLocals1StackItemFrameExtended
 
-    type ObjectVariableInfo = de.tud.cs.st.bat.resolved.ObjectVariableInfo
-    type UninitializedVariableInfo = de.tud.cs.st.bat.resolved.UninitializedVariableInfo
-    type TopVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
-    type IntegerVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
-    type FloatVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
-    type LongVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
-    type DoubleVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
-    type NullVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
-    type UninitializedThisVariableInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
+    type ObjectVariableInfo = br.ObjectVariableInfo
+    type UninitializedVariableInfo = br.UninitializedVariableInfo
+    type TopVariableInfo = br.VerificationTypeInfo
+    type IntegerVariableInfo = br.VerificationTypeInfo
+    type FloatVariableInfo = br.VerificationTypeInfo
+    type LongVariableInfo = br.VerificationTypeInfo
+    type DoubleVariableInfo = br.VerificationTypeInfo
+    type NullVariableInfo = br.VerificationTypeInfo
+    type UninitializedThisVariableInfo = br.VerificationTypeInfo
 
     val StackMapFrameManifest: ClassTag[StackMapFrame] = implicitly
 
@@ -116,19 +115,19 @@ trait StackMapTable_attributeBinding
         verification_type_info_stack: VerificationTypeInfoStack): StackMapFrame =
         new FullFrame(frame_type, offset_delta, verification_type_info_locals, verification_type_info_stack)
 
-    def TopVariableInfo() = de.tud.cs.st.bat.resolved.TopVariableInfo
+    def TopVariableInfo() = br.TopVariableInfo
 
-    def IntegerVariableInfo() = de.tud.cs.st.bat.resolved.IntegerVariableInfo
+    def IntegerVariableInfo() = br.IntegerVariableInfo
 
-    def FloatVariableInfo() = de.tud.cs.st.bat.resolved.FloatVariableInfo
+    def FloatVariableInfo() = br.FloatVariableInfo
 
-    def LongVariableInfo() = de.tud.cs.st.bat.resolved.LongVariableInfo
+    def LongVariableInfo() = br.LongVariableInfo
 
-    def DoubleVariableInfo() = de.tud.cs.st.bat.resolved.DoubleVariableInfo
+    def DoubleVariableInfo() = br.DoubleVariableInfo
 
-    def NullVariableInfo() = de.tud.cs.st.bat.resolved.NullVariableInfo
+    def NullVariableInfo() = br.NullVariableInfo
 
-    def UninitializedThisVariableInfo() = de.tud.cs.st.bat.resolved.UninitializedThisVariableInfo
+    def UninitializedThisVariableInfo() = br.UninitializedThisVariableInfo
 
     def UninitializedVariableInfo(offset: Int) = new UninitializedVariableInfo(offset)
 

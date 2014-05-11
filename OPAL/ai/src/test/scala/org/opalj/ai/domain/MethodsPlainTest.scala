@@ -26,16 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
-
-import reader.Java7Framework.ClassFiles
-import l0._
-
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -44,6 +37,12 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.matchers.MatchResult
+
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import br._
+import br.reader.Java8Framework.ClassFiles
+import l0._
 
 /**
  * Basic tests of the abstract interpreter.

@@ -26,13 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package findrealbugs
+package org.opalj
+package frb
 package analyses
 
-import resolved._
-import resolved.analyses._
+import bi.AccessFlagsMatcher
+
+import br._
+import br.analyses._
 
 /**
  * This analysis reports outer classes that have (non-`static`) inner `Serializable`

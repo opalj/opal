@@ -29,10 +29,11 @@
 package org.opalj
 package da
 
+import bi.AccessFlags
+import bi.AccessFlagsContext
+import bi.AccessFlagsContexts
+
 import scala.xml.Node
-import de.tud.cs.st.bat.AccessFlags
-import de.tud.cs.st.bat.AccessFlagsContext
-import de.tud.cs.st.bat.AccessFlagsContexts
 
 /**
  * @author Michael Eichberg

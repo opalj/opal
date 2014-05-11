@@ -26,13 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package findrealbugs
+package org.opalj
+package frb
 
 import java.io._
 import java.util.Properties
-import de.tud.cs.st.util.ControlAbstractions
 
 /**
  * Provides methods for loading and saving a list of all disabled analysis names to/from
@@ -41,8 +39,6 @@ import de.tud.cs.st.util.ControlAbstractions
  * @author Florian Brandherm
  */
 object ConfigurationFile {
-
-    import ControlAbstractions.process
 
     /**
      * Name of the property that holds the list of disabled analyses.

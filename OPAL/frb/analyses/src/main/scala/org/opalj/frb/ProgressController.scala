@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package findrealbugs
+package org.opalj
+package frb
 
 /**
  * `FindRealBugs.analyze()` users can implement this interface in order to control the

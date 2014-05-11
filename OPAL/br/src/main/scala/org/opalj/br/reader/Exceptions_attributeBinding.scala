@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.Exceptions_attributeReader
+import bi.reader.Exceptions_attributeReader
 
 /**
  * The factory method to create a method's exception attribute.
@@ -45,7 +44,7 @@ trait Exceptions_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type Exceptions_attribute = de.tud.cs.st.bat.resolved.ExceptionTable
+    type Exceptions_attribute = br.ExceptionTable
     val Exceptions_attributeManifest: ClassTag[Exceptions_attribute] = implicitly
 
     def Exceptions_attribute(

@@ -26,14 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package analyses
 
-import instructions._
+import util.{ Counting, PerformanceEvaluation }
 
-import util.debug.{ Counting, PerformanceEvaluation }
+import bi.ACC_PUBLIC
+
+import instructions._
 import reader.Java8Framework.ClassFiles
 
 /**

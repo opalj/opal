@@ -26,12 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
-import bat.reader.CodeReader
+import bi.reader.CodeReader
 
 /**
  * This "framework" can be used to read Java 8 (version 52) class files. All

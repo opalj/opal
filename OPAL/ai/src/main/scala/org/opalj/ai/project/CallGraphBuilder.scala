@@ -26,18 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package project
 
-import analyses.SomeProject
-
-import de.tud.cs.st.collection.mutable.UShortSet
-import de.tud.cs.st.collection.UID
-
 import scala.collection.{ Set, Map }
+
+import org.opalj.collection.mutable.UShortSet
+import org.opalj.collection.UID
+
+import br._
+import br.analyses.SomeProject
+
 
 /**
  * Builds a call graph by first collecting all call graph edges before the final

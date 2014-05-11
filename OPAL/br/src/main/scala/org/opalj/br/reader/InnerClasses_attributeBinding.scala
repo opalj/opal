@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.InnerClasses_attributeReader
+import bi.reader.InnerClasses_attributeReader
 
 /**
  * The factory methods to create inner classes attributes and entries.
@@ -45,8 +44,8 @@ trait InnerClasses_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type InnerClasses_attribute = de.tud.cs.st.bat.resolved.InnerClassTable
-    type InnerClassesEntry = de.tud.cs.st.bat.resolved.InnerClass
+    type InnerClasses_attribute = br.InnerClassTable
+    type InnerClassesEntry = br.InnerClass
     val InnerClassesEntryManifest: ClassTag[InnerClassesEntry] = implicitly
 
     def InnerClasses_attribute(

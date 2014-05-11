@@ -30,17 +30,15 @@ package org.opalj.br.analyses;
 
 import java.io.File;
 
-import de.tud.cs.st.bat.resolved.analyses.*;
-import de.tud.cs.st.bat.resolved.ClassFile;
-import de.tud.cs.st.bat.resolved.Method;
-import de.tud.cs.st.bat.resolved.ai.AIResult;
-import de.tud.cs.st.bat.resolved.ai.BaseAI;
-import de.tud.cs.st.bat.resolved.ai.Domain;
-import de.tud.cs.st.bat.resolved.ai.debug.DomainRegistry;
-import de.tud.cs.st.bat.resolved.ai.debug.XHTML;
-
 import scala.collection.JavaConversions;
 
+import org.opalj.br.ClassFile;
+import org.opalj.br.Method;
+import org.opalj.ai.AIResult;
+import org.opalj.ai.BaseAI;
+import org.opalj.ai.Domain;
+import org.opalj.ai.debug.DomainRegistry;
+import org.opalj.ai.debug.XHTML;
 
 /**
  * Demonstrates how to create and access a <code>Project</code> using Java.

@@ -30,13 +30,14 @@ package org.opalj
 package ai
 package dataflow
 
-import de.tud.cs.st.bat.resolved._
-import de.tud.cs.st.bat.resolved.analyses._
-import de.tud.cs.st.bat.resolved.ai._
-import de.tud.cs.st.bat.resolved.ai.domain._
-import de.tud.cs.st.bat.resolved.ai.domain.l0._
-import de.tud.cs.st.bat.resolved.instructions._
-import de.tud.cs.st.bat.AccessFlagsMatcher
+import bi.AccessFlagsMatcher
+
+import br._
+import br.instructions._
+import br.analyses._
+
+import domain._
+import domain.l0._
 
 import scala.collection.{ Map, Set }
 

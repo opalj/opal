@@ -26,11 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 package reader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
 import java.io.DataInputStream
 
@@ -69,7 +69,6 @@ trait FieldsReader extends Constant_PoolAbstractions {
 
     // We need the constant pool to look up the attributes' names and other information.
     def Fields(cp: Constant_Pool, in: DataInputStream): Fields = {
-        import util.ControlAbstractions.repeat
         val fields_count = in.readUnsignedShort
         repeat(fields_count) {
             Field_Info(cp, in)

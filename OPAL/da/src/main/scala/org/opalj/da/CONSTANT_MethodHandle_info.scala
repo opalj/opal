@@ -37,6 +37,5 @@ case class CONSTANT_MethodHandle_info(
         reference_kind: Int,
         reference_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
-    override def Constant_Type_Value =
-        de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_MethodHandle
+    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_MethodHandle
 }

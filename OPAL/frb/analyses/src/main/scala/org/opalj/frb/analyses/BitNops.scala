@@ -26,16 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package findrealbugs
+package org.opalj
+package frb
 package analyses
 
-import resolved._
-import resolved.analyses._
-import resolved.instructions._
-import ai._
-import ai.domain._
+import org.opalj.br._
+import org.opalj.br.analyses._
+import org.opalj.br.instructions._
+
+import org.opalj.ai._
+import org.opalj.ai.domain._
 
 /**
  * A domain specifically for BitNops: only tracks individual integer values, but not

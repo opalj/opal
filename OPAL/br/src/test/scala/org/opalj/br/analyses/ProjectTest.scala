@@ -26,8 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
-package resolved
+package org.opalj
+package br
 package analyses
 
 import org.junit.runner.RunWith
@@ -157,7 +157,7 @@ class ProjectTest
             project
         ) should be('Defined)
         // let's make sure the class is a super class
-        project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(de.tud.cs.st.util.Yes)
+        project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(org.opalj.util.Yes)
 
         // let's test the resolving 
         resolveMethodReference(

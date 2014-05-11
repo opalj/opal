@@ -36,7 +36,6 @@ package da
 case class CONSTANT_Long_info(
         value: Long) extends Constant_Pool_Entry {
 
-    override def Constant_Type_Value =
-        de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_Long
+    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Long
 
 }

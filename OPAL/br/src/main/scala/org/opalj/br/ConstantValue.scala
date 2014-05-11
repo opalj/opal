@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 
 /**
  * Represents constant values; i.e., values pushed onto the stack by the ldc(2)(_w)
@@ -36,7 +35,7 @@ package resolved
  *
  * @note A `MethodHandle` or ''MethodType'' (i.e., a `MethodDescriptor`) is also
  *      a `ConstantValue`.
- *      
+ *
  * @author Michael Eichberg
  */
 trait ConstantValue[T >: Nothing] extends BootstrapArgument {
@@ -59,34 +58,44 @@ trait ConstantValue[T >: Nothing] extends BootstrapArgument {
     private[this] def className: String = this.getClass.getSimpleName
 
     def toBoolean: Boolean =
-        throw new BATException(className+" cannot be converted to a boolean value")
+        throw new BytecodeProcessingFailedException(
+            className+" cannot be converted to a boolean value")
 
     def toByte: Byte =
-        throw new BATException(className+" cannot be converted to a byte value")
+        throw new BytecodeProcessingFailedException(
+            className+" cannot be converted to a byte value")
 
     def toChar: Char =
-        throw new BATException(className+" cannot be converted to an char value")
+        throw new BytecodeProcessingFailedException(
+            className+" cannot be converted to an char value")
 
     def toShort: Short =
-        throw new BATException(className+" cannot be converted to a short value")
+        throw new BytecodeProcessingFailedException(
+            className+" cannot be converted to a short value")
 
     def toInt: Int =
-        throw new BATException(className+" cannot be converted to an int value")
+        throw new BytecodeProcessingFailedException(
+            className+" cannot be converted to an int value")
 
     def toLong: Long =
-        throw new BATException(className+" cannot be converted to a long value")
+        throw new BytecodeProcessingFailedException(
+            className+" cannot be converted to a long value")
 
     def toFloat: Float =
-        throw new BATException(className+" cannot be converted to a float value")
+        throw new BytecodeProcessingFailedException(
+            className+" cannot be converted to a float value")
 
     def toDouble: Double =
-        throw new BATException(className+" cannot be converted to a double value")
+        throw new BytecodeProcessingFailedException(
+            className+" cannot be converted to a double value")
 
     def toUTF8: String =
-        throw new BATException(className+" cannot be converted to a String(UTF8) value")
+        throw new BytecodeProcessingFailedException(
+            className+" cannot be converted to a String(UTF8) value")
 
     def toReferenceType: ReferenceType =
-        throw new BATException(className+" cannot be converted to a reference type")
+        throw new BytecodeProcessingFailedException(
+            className+" cannot be converted to a reference type")
 }
 
 /**

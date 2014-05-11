@@ -26,12 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
-import de.tud.cs.st.bat.reader.Unknown_attributeReader
+import bi.reader.Unknown_attributeReader
 
 /**
  * "Factory" to create unknown attributes which are used to represent class
@@ -44,7 +43,7 @@ trait Unknown_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type Unknown_attribute = de.tud.cs.st.bat.resolved.UnknownAttribute
+    type Unknown_attribute = br.UnknownAttribute
 
     def Unknown_attribute(
         cp: Constant_Pool,

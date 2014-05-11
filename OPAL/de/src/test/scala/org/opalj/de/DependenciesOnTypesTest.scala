@@ -26,20 +26,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
-
-import reader.Java8Framework.ClassFile
-import DependencyType._
+package org.opalj
+package de
 
 import org.junit.runner.RunWith
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Spec
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
+
+import br._
+import br.reader.Java8Framework.ClassFile
+
+import DependencyType._
+
 
 /**
  * Tests that the dependency extractor extracts the types as desired.

@@ -26,12 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
-import bat.reader.BootstrapMethods_attributeReader
+import bi.reader.BootstrapMethods_attributeReader
 
 import reflect.ClassTag
 
@@ -45,12 +44,12 @@ trait BootstrapMethods_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type BootstrapMethods_attribute = resolved.BootstrapMethodTable
+    type BootstrapMethods_attribute = BootstrapMethodTable
 
-    type BootstrapMethod = resolved.BootstrapMethod
+    type BootstrapMethod = br.BootstrapMethod
     val BootstrapMethodManifest: ClassTag[BootstrapMethod] = implicitly
 
-    type BootstrapArgument = resolved.BootstrapArgument
+    type BootstrapArgument = br.BootstrapArgument
     val BootstrapArgumentManifest: ClassTag[BootstrapArgument] = implicitly
 
     def BootstrapMethods_attribute(

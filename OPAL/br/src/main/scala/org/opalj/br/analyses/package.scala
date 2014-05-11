@@ -26,16 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 
 import java.io.File
 import java.net.URL
 
 /**
  * Defines implicit conversions to wrap some types of analyses such that they generate
- * results of type [[de.tud.cs.st.bat.resolved.analyses.ReportableAnalysisResult]].
+ * results of type [[org.opalj.br.analyses.ReportableAnalysisResult]].
  *
  * @author Michael Eichberg
  */

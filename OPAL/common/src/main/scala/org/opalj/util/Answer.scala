@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
+package org.opalj
 package util
 
 /**
@@ -113,8 +113,8 @@ sealed trait Answer {
  */
 object Answer {
     /**
-     * Returns [[de.tud.cs.st.util.Yes]] if `value` is `true` and
-     * [[de.tud.cs.st.util.No]] otherwise.
+     * Returns [[org.opalj.util.Yes]] if `value` is `true` and
+     * [[org.opalj.util.No]] otherwise.
      */
     def apply(value: Boolean): Answer = if (value) Yes else No
 }

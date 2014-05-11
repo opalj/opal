@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package analyses
 
 import reader.Java8Framework
@@ -42,13 +41,13 @@ import java.io.File
  * generates some analysis result that can be printed on the command line.
  *
  * To facilitate the usage of this trait several implicit conversions are defined that
- * wrap standard analyses ([[de.tud.cs.st.bat.resolved.analyses]]) such that they report
+ * wrap standard analyses ([[org.opalj.br.analyses]]) such that they report
  * results that are reportable.
  *
  * This class distinguishes between class files belonging to the code base under
  * analysis and those that belong to the libraries. Those belonging to the libraries
  * are loaded using the `ClassFileReader` for library classes (basically, all method
- * bodies are skipped [[de.tud.cs.st.bat.resolved.reader.Java8LibraryFramework]]).
+ * bodies are skipped [[org.opalj.br.reader.Java8LibraryFramework]]).
  * The parameter to specify library classes is `-libcp=`, the parameter to specify
  * the "normal" classpath is `-cp=`.
  *

@@ -26,14 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 
-import instructions._
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
 import scala.util.control.ControlThrowable
+
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import br._
+import br.instructions._
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode
@@ -41,7 +42,7 @@ import scala.util.control.ControlThrowable
  *
  * This framework basically traverses all instructions of a method in depth-first order
  * and evaluates each instruction using an exchangeable
- * [[de.tud.cs.st.bat.resolved.ai.Domain]].
+ * [[org.opalj.ai.Domain]].
  *
  * ==Interacting with OPAL-AI==
  * The primary means how to make use of this framework is to perform
@@ -109,7 +110,7 @@ trait AI[D <: Domain] {
      * interpretation of a method.
      *
      * This method is called by OPAL-AI at various different points (see
-     * [[de.tud.cs.st.bat.resolved.ai.AITracer]]) to report the analysis progress.
+     * [[org.opalj.ai.AITracer]]) to report the analysis progress.
      *
      * '''To attach a tracer to the abstract interpreter override this
      * method in subclasses''' and return some tracer object.
@@ -1848,7 +1849,8 @@ trait AI[D <: Domain] {
                     case 196 /*wide*/ ⇒ fallThrough()
 
                     case opcode ⇒
-                        throw new BATException("unsupported opcode: "+opcode)
+                        throw new BytecodeProcessingFailedException(
+                            "unsupported opcode: "+opcode)
                 }
 
                 theDomain.evaluationCompleted(pc, worklist, evaluated, operandsArray, localsArray, tracer)

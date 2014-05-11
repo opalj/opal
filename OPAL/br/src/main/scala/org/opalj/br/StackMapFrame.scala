@@ -26,17 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 
 /**
  * Part of the Java 6 stack map table attribute.
  *
  * @author Michael Eichberg
  */
-sealed trait StackMapFrame /*extends de.tud.cs.st.bat.StackMapFrame*/ {
-    type VerificationTypeInfo = de.tud.cs.st.bat.resolved.VerificationTypeInfo
+sealed trait StackMapFrame /*extends org.opalj.bat.StackMapFrame*/ {
+    type VerificationTypeInfo = br.VerificationTypeInfo
     // [DOCUMENTATION ONLY]	type VerificationTypeInfoLocals = IndexedSeq[VerificationTypeInfo]
     // [DOCUMENTATION ONLY]	type VerificationTypeInfoStack = IndexedSeq[VerificationTypeInfo]
 

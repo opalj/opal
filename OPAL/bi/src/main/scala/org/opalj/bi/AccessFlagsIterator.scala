@@ -26,8 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 
 /**
  * Enables iterating over a class( file member)'s access flags. I.e., given
@@ -53,7 +53,7 @@ class AccessFlagsIterator private (
                 return potentialAccessFlags(index)
             }
         }
-        throw new BATException("Unknown access flag(s): "+Integer.toHexString(flags))
+        throw new BytecodeProcessingFailedException("Unknown access flag(s): "+Integer.toHexString(flags))
     }
 }
 

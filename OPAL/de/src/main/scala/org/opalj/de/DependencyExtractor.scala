@@ -26,18 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
+package org.opalj
+package de
 
-import instructions._
-
-import analyses.SomeProject
+import br._
+import br.instructions._
+import br.analyses.SomeProject
 
 /**
- * Traverses a [[SourceElement]] and identifies all dependencies between the element
- * ([[ClassFile]], [[Field]] or [[Method]] declaration) and any element it
+ * Traverses a [[org.opalj.br.SourceElement]] and identifies all dependencies between the element
+ * ([[org.opalj.br.ClassFile]], [[org.opalj.br.Field]] or [[org.opalj.br.Method]] declaration) and any element it
  * depends on. The kind of the dependencies that are extracted are defined
  * by the [[DependencyType]] enumeration.
  *
@@ -168,7 +166,7 @@ class DependencyExtractor(
                 case UnknownAttribute.KindId     ⇒ /*do nothing*/
 
                 case _ ⇒
-                    throw new BATException(
+                    throw new BytecodeProcessingFailedException(
                         "Unexpected attribute: "+attribute+" for class declarations."
                     )
             }
@@ -232,7 +230,7 @@ class DependencyExtractor(
                 case Deprecated.KindId ⇒ /*do nothing*/
 
                 case _ ⇒
-                    throw new BATException(
+                    throw new BytecodeProcessingFailedException(
                         "Unexpected attribute: "+attribute+" for class declarations."
                     )
             }
@@ -314,7 +312,7 @@ class DependencyExtractor(
                     case LineNumberTable.KindId ⇒ /* Do Nothing */
 
                     case _ ⇒
-                        throw new BATException(
+                        throw new BytecodeProcessingFailedException(
                             "Unexpected attribute: "+attribute+" for class declarations."
                         )
                 }
@@ -378,7 +376,7 @@ class DependencyExtractor(
                 case Deprecated.KindId ⇒ /*do nothing*/
 
                 case _ ⇒
-                    throw new BATException(
+                    throw new BytecodeProcessingFailedException(
                         "Unexpected attribute: "+attribute+" for class declarations."
                     )
             }
@@ -758,7 +756,7 @@ class DependencyExtractor(
 
     /**
      * Prints a warning that the handling of
-     * [[de.tud.cs.st.bat.resolved.instructions.INVOKEDYNAMIC]] instructions is incomplete
+     * [[org.opalj.br.instructions.INVOKEDYNAMIC]] instructions is incomplete
      * (from the point of view of the dependencies to the "real" methods) and then
      * calls [[processInvokedynamicRuntimeDependencies]] to handle the instruction.
      *

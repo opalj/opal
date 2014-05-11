@@ -26,16 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import instructions._
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and
- * to return an array of [[de.tud.cs.st.bat.resolved.instructions.Instruction]]`s.
+ * to return an array of [[org.opalj.br.instructions.Instruction]]`s.
  *
  * The target array has the same size as the source array to make sure that branch offsets
  * etc. point to the correct instruction.
@@ -48,12 +47,11 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
 
     /**
      * Transforms an array of bytes into an array of
-     * [[de.tud.cs.st.bat.resolved.instructions.Instruction]]s.
+     * [[org.opalj.br.instructions.Instruction]]s.
      */
-    def Instructions(cp: Constant_Pool,source: Array[Byte]): Instructions = {
+    def Instructions(cp: Constant_Pool, source: Array[Byte]): Instructions = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
-        import util.ControlAbstractions.repeat
 
         val bas = new ByteArrayInputStream(source)
         val in = new DataInputStream(bas)
@@ -359,7 +357,9 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 196 ⇒
                     wide = true; WIDE
 
-                case opcode ⇒ throw new BATException("unsupported opcode: "+opcode)
+                case opcode ⇒
+                    throw new BytecodeProcessingFailedException(
+                        "unsupported opcode: "+opcode)
             }
 
         }

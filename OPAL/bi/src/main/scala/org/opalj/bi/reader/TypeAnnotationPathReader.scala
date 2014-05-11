@@ -26,13 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 package reader
 
-import reflect.ClassTag
-
 import java.io.DataInputStream
+
+import scala.reflect.ClassTag
 
 /**
  * Generic parser for the `type_path` field of type annotations. This
@@ -86,7 +86,6 @@ trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
         if (path_length == 0) {
             TypeAnnotationDirectlyOnType
         } else {
-            import util.ControlAbstractions.repeat
             TypeAnnotationPath(
                 repeat(path_length) {
                     val type_path_kind = in.readUnsignedByte()

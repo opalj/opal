@@ -40,7 +40,7 @@ package da
 case class CONSTANT_Utf8_info(
         value: String) extends Constant_Pool_Entry {
 
-    override def Constant_Type_Value = de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_Utf8
+    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Utf8
 
     override def asString = value
 

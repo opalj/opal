@@ -26,14 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-
-import instructions._
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+package org.opalj
+package av
+package viz
 
 import java.net.URL
+
+import br._
+import br.instructions._
+import br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 
 /**
  * Counts the number of instructions aggregated per package.
@@ -104,7 +105,7 @@ object InstructionStatistics extends AnalysisExecutor {
                 for {
                     fqpn ← instructionsPerFQPN.keys
                     if fqpn.length > rootFQPN.length()
-                    if fqpn.startsWith(rootFQPN)  
+                    if fqpn.startsWith(rootFQPN)
                     if fqpn.charAt(rootFQPN.length()) == '/' // javax is not a subpackage of java..
                 } {
                     var pnsToRemove = HashSet.empty[String]
@@ -145,7 +146,7 @@ object InstructionStatistics extends AnalysisExecutor {
             val theProjectStatistics = {
                 val rootPNs = instructionsPerFQPN.keys.map(_.split('/').head).toSet
                 val (children, instructionsInSubPackages) =
-                    processSubPackages("", rootPNs)                
+                    processSubPackages("", rootPNs)
                 s""""id": "<all_packages>",
                    "name": "<All Packages>:$instructionsInSubPackages",
                    "data": {

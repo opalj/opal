@@ -29,7 +29,7 @@
 package org.opalj
 package da
 
-import de.tud.cs.st.bat.reader.{ Constant_PoolReader, Constant_PoolAbstractions }
+import bi.reader.{ Constant_PoolReader, Constant_PoolAbstractions }
 
 import reflect.ClassTag
 

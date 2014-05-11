@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
+package org.opalj
 package util
 
 import org.junit.runner.RunWith
@@ -46,7 +46,6 @@ import org.scalatest.Matchers
 class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestExecution {
 
     behavior of "The ControlAbstractions.foreachNonNullValueOf macro"
-    import ControlAbstractions.foreachNonNullValueOf
 
     it should "evaluate the expression that passes in the array exactly once" in {
         var initialized = false
@@ -75,8 +74,7 @@ class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestEx
     }
 
     behavior of "The ControlAbstractions.repeat macro"
-    import ControlAbstractions.repeat
-
+  
     it should "return a empty seq when the number of times is 0" in {
         val result = repeat(0) { 1 }
         result.isEmpty should be(true)

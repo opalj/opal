@@ -26,11 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 
-import de.tud.cs.st.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet
+
+import br._
 
 /**
  * Implementation of an abstract interpretation framework – called OPAL-AI in the following.
@@ -46,10 +46,10 @@ import de.tud.cs.st.collection.immutable.UIDSet
  *      the result is undefined (i.e., OPAL-AI may report meaningless results, crash or run
  *      indefinitely).
  *
- * @see [[de.tud.cs.st.bat.resolved.ai.AI]] - Implements the abstract interpreter that
+ * @see [[org.opalj.ai.AI]] - Implements the abstract interpreter that
  *      process a methods code and uses a analysis-specific domain to perform the
  *      abstract computations.
- * @see [[de.tud.cs.st.bat.resolved.ai.Domain]] - The core interface between the abstract
+ * @see [[org.opalj.ai.Domain]] - The core interface between the abstract
  *      interpretation framework and the abstract domain that is responsible for
  *      performing the abstract computations.
  *
@@ -58,7 +58,7 @@ import de.tud.cs.st.collection.immutable.UIDSet
 package object ai {
 
     import language.existentials
-    
+
     /**
      * Type alias that can be used if the AI can process all kinds of domains.
      *
@@ -81,7 +81,7 @@ package object ai {
      * a type bound for array objects could be: `java.io.Serializable` and
      * `java.lang.Cloneable`. Here, independent means that no two types of the bound
      * are in a subtype relationship. Hence, an upper bound is always a special set where
-     * the values are not equal and are not in an inheritance relation. However, 
+     * the values are not equal and are not in an inheritance relation. However,
      * identifying independent types is the responsibility of the class hierarchy.
      *
      * In general, an upper bound identifies a single class type and a set of independent

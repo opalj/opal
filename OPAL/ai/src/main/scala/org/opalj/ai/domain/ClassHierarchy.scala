@@ -26,18 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import br._
 
 /**
  * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
  * the corresponding method defined in
- * `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy`.
+ * `org.opalj.bat.resolved.analyses.ClassHierarchy`.
  *
  * @author Michael Eichberg
  */
@@ -50,7 +50,7 @@ trait ClassHierarchy { this: Domain ⇒
     def classHierarchy: analyses.ClassHierarchy
 
     /**
-     * @see `de.tud.cs.st.bat.resolved.analyses.ClassHierarchy.isSubtypeOf(ReferenceType,
+     * @see `org.opalj.bat.resolved.analyses.ClassHierarchy.isSubtypeOf(ReferenceType,
      * 		ReferenceType)`
      */
     override def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =

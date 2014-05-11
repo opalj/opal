@@ -26,11 +26,19 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 
 import scala.annotation.tailrec
+
+import bi.ACC_ABSTRACT
+import bi.ACC_ANNOTATION
+import bi.ACC_INTERFACE
+import bi.ACC_ENUM
+import bi.ACC_FINAL
+import bi.ACC_PUBLIC
+import bi.AccessFlagsContexts
+import bi.AccessFlags
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -39,8 +47,8 @@ import scala.annotation.tailrec
  * @param majorVersion The major part of this class file's version number.
  * @param accessFlags The access flags of this class. To further analyze the access flags
  *  either use the corresponding convenience methods (e.g., isEnumDeclaration())
- *  or the class [[de.tud.cs.st.bat.AccessFlagsIterator]] or the classes which
- *  inherit from [[de.tud.cs.st.bat.AccessFlag]].
+ *  or the class [[org.opalj.bi.AccessFlagsIterator]] or the classes which
+ *  inherit from [[org.opalj.bi.AccessFlag]].
  * @param thisType The type implemented by this class file.
  * @param superclassType The class type from which this class inherits. `None` if this
  *      class file defines `java.lang.Object`.
@@ -50,7 +58,7 @@ import scala.annotation.tailrec
  *      and then by method descriptor.
  * @param attributes This class file's reified attributes. Which attributes
  *    are reified depends on the configuration of the class file reader; e.g.,
- *    [[de.tud.cs.st.bat.resolved.reader.Java7Framework]].
+ *    [[org.opalj.br.reader.Java7Framework]].
  *    The JVM specification defines the following attributes:
  *    - ''InnerClasses''
  *    - ''EnclosingMethod''
@@ -65,7 +73,7 @@ import scala.annotation.tailrec
  *    The ''BootstrapMethods'' attribute, which is also defined by the JVM specification,
  *    is, however, resolved and is not part of the attributes table of the class file.
  *    The ''BootstrapMethods'' attribute is basically the container for the bootstrap
- *    methods referred to by the [[de.tud.cs.st.bat.resolved.instructions.INVOKEDYNAMIC]]
+ *    methods referred to by the [[org.opalj.br.instructions.INVOKEDYNAMIC]]
  *    instructions.
  *
  * @note Equality of `ClassFile` objects is reference based and a class file's hash code
@@ -277,7 +285,7 @@ final class ClassFile private (
             "\t{version="+majorVersion+"."+minorVersion+"}\n)"
     }
 
-    protected[resolved] def updateAttributes(newAttributes: Attributes): ClassFile = {
+    protected[br] def updateAttributes(newAttributes: Attributes): ClassFile = {
         new ClassFile(
             this.minorVersion, this.majorVersion, this.accessFlags,
             this.thisType, this.superclassType, this.interfaceTypes,

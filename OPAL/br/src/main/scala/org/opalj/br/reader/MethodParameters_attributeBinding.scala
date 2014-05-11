@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.MethodParameters_attributeReader
+import bi.reader.MethodParameters_attributeReader
 
 /**
  * Implements the factory methods to create method parameter tables and their entries.
@@ -45,10 +44,10 @@ trait MethodParameters_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type MethodParameter = de.tud.cs.st.bat.resolved.MethodParameter
+    type MethodParameter = br.MethodParameter
     override val MethodParameterManifest: ClassTag[MethodParameter] = implicitly
 
-    type MethodParameters_attribute = de.tud.cs.st.bat.resolved.MethodParameterTable
+    type MethodParameters_attribute = br.MethodParameterTable
 
     override def MethodParameters_attribute(
         constant_pool: Constant_Pool,

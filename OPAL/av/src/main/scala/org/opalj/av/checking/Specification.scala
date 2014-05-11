@@ -26,22 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
-package checking
+package org.opalj
+package av
 
-import reader.Java8Framework.ClassFiles
-import analyses.{ ClassHierarchy, Project }
+import scala.language.implicitConversions
 
 import java.net.URL
-import scala.collection.immutable.SortedSet
-import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
+
 import scala.util.matching.Regex
 import scala.collection.{ Map ⇒ AMap, Set ⇒ ASet }
+import scala.collection.immutable.SortedSet
+import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
 
-import language.implicitConversions
+import br._
+import br.reader.Java8Framework.ClassFiles
+import br.analyses.{ ClassHierarchy, Project }
+
+import de._
 
 /**
  * A specification of a project's architectural constraints.
@@ -296,7 +297,7 @@ class Specification {
 
     def analyze(classFiles: Traversable[(ClassFile, URL)]): Set[SpecificationViolation] = {
 
-        import de.tud.cs.st.util.debug.PerformanceEvaluation.{ ns2sec, time, run }
+        import util.PerformanceEvaluation.{ ns2sec, time, run }
 
         // Create and update the support data structures
         //
@@ -426,11 +427,6 @@ object Specification {
     }
 }
 
-/**
- * Used to report errors in the specification.
- */
-case class SpecificationError(val description: String) extends Exception(description)
-
 trait DependencyChecker {
 
     def violations(): ASet[SpecificationViolation]
@@ -438,24 +434,4 @@ trait DependencyChecker {
     def targetEnsembles: Seq[Symbol]
 
     def sourceEnsembles: Seq[Symbol]
-}
-
-/**
- * Used to report deviations between the specified and the implemented architecture.
- */
-case class SpecificationViolation(
-        dependencyChecker: DependencyChecker,
-        source: VirtualSourceElement,
-        target: VirtualSourceElement,
-        dependencyType: DependencyType,
-        description: String) {
-
-    override def toString(): String = {
-        Console.RED +
-            description+" between "+Console.BLUE + dependencyChecker.sourceEnsembles.mkString(", ") + Console.RED+
-            " and "+Console.BLUE + dependencyChecker.targetEnsembles.mkString(", ") + Console.RESET+": "+
-            source.toJava+" "+
-            Console.BOLD + dependencyType + Console.RESET+" "+
-            target.toJava
-    }
 }

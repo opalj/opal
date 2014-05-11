@@ -30,14 +30,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package findrealbugs
+package org.opalj
+package frb
 package test
 package analysis
 
 import java.io.IOException
 import java.io.File
+
+import br._
 
 /**
  * Unit test for class `ConfigurationFile`.

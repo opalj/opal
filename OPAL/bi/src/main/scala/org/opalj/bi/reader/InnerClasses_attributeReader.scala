@@ -26,11 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 package reader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
 import java.io.DataInputStream
 
@@ -61,7 +61,6 @@ trait InnerClasses_attributeReader extends AttributeReader {
     //
     // IMPLEMENTATION
     //
-    import util.ControlAbstractions.repeat
 
     type InnerClasses = IndexedSeq[InnerClassesEntry]
 

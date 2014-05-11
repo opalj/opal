@@ -26,8 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 package reader
 
 import java.io.DataInputStream
@@ -70,8 +70,6 @@ trait AttributesReader
     //
     // IMPLEMENTATION
     //
-
-    import util.ControlAbstractions.repeat
 
     /**
      * This map associates attribute names with functions to read the corresponding

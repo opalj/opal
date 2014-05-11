@@ -26,13 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package analyses
 
 /**
- * @see [[de.tud.cs.st.bat.resolved.analyses]] for several predefined converter functions.
+ * @see [[org.opalj.br.analyses]] for several predefined converter functions.
  *
  * @tparam Source The type of the underlying source file.
  *

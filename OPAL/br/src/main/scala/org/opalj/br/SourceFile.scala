@@ -26,13 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 
 /**
  * The source file attribute is an optional attribute in the attributes
- * table of [[de.tud.cs.st.bat.resolved.ClassFile]] objects.
+ * table of [[org.opalj.br.ClassFile]] objects.
  *
  * @param sourceFile The name of the source file from which this class file was compiled;
  *  it will not contain any path information.

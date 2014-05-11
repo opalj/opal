@@ -26,8 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package br
 
 import java.io.File
 import java.util.zip.ZipFile
@@ -35,15 +35,15 @@ import java.util.zip.ZipEntry
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
 
+import org.junit.runner.RunWith
+
 import org.scalatest.FlatSpec
 import org.scalatest.FunSuite
 import org.scalatest.Matchers
-import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
 
-import resolved.reader.Java8Framework.ClassFile
-import util.ControlAbstractions._
+import reader.Java8Framework
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library
@@ -62,7 +62,7 @@ class LoadClassFilesTest extends FlatSpec with Matchers {
     behavior of "OPAL"
 
     for {
-        file ← TestSupport.locateTestResources("classfiles","bi").listFiles
+        file ← TestSupport.locateTestResources("classfiles", "bi").listFiles
         if file.isFile
         if file.canRead
         if file.getName.endsWith(".jar")
@@ -76,7 +76,7 @@ class LoadClassFilesTest extends FlatSpec with Matchers {
                 val data = new Array[Byte](jarEntry.getSize().toInt)
                 process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
                 it should ("be able to parse the class file "+jarEntry.getName+" in "+jarFile.getName) in {
-                    simpleValidator(ClassFile(new DataInputStream(new ByteArrayInputStream(data))))
+                    simpleValidator(Java8Framework.ClassFile(new DataInputStream(new ByteArrayInputStream(data))))
                 }
             }
         }

@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import bat.reader.Code_attributeReader
+import bi.reader.Code_attributeReader
 
 /**
  * Binding for the code attribute.
@@ -46,10 +45,10 @@ trait CodeAttributeBinding
         with CodeBinding
         with AttributeBinding {
 
-    type ExceptionTableEntry = de.tud.cs.st.bat.resolved.ExceptionHandler
+    type ExceptionTableEntry = br.ExceptionHandler
     val ExceptionTableEntryManifest: ClassTag[ExceptionTableEntry] = implicitly
 
-    type Code_attribute = de.tud.cs.st.bat.resolved.Code
+    type Code_attribute = br.Code
 
     def Code_attribute(
         cp: Constant_Pool,

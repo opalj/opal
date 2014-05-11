@@ -26,15 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
+package org.opalj
+package de
 
-import instructions._
-import ai.invokedynamic._
+import org.opalj.br._
+import org.opalj.br.instructions._
+import org.opalj.br.analyses.SomeProject
+
+import org.opalj.ai.invokedynamic._
+
 import DependencyType._
-import analyses.SomeProject
 
 /**
  * A [[DependencyExtractor]] that delegates the extraction of `Invokedynamic` related

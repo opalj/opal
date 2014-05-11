@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package findrealbugs
+package org.opalj
+package frb
 package analyses
 
-import resolved._
-import resolved.analyses._
-import resolved.instructions._
+import br._
+import br.analyses._
+import br.instructions._
 
 /**
  * This analysis reports classes whose `finalize()` method just calls `super.finalize()`.

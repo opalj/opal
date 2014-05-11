@@ -26,18 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package findrealbugs
+package org.opalj
+package frb
 package analyses
 
 import AnalysesHelpers._
-import resolved._
-import resolved.analyses._
-import resolved.instructions._
-import resolved.ai.project._
-import ai._
-import ai.domain.l1._
+
+import br._
+import br.analyses._
+import br.instructions._
+
 
 /**
  * This analysis reports classes that are annotated with an annotation with the simple

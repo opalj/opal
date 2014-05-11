@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package instructions
 
 /**
@@ -43,7 +42,8 @@ package instructions
 case object UNRESOLVED_INVOKEDYNAMIC extends InvocationInstruction {
 
     private def error: Nothing =
-        throw new BATException("this invokedynamic instruction was not resolved")
+        throw new BytecodeProcessingFailedException(
+            "this invokedynamic instruction was not resolved")
 
     def bootstrapMethod: BootstrapMethod = error
 

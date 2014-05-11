@@ -26,12 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
-import de.tud.cs.st.bat.reader.SourceDebugExtension_attributeReader
+import bi.reader.SourceDebugExtension_attributeReader
 
 /**
  * Provides the factory method to create a source debug extension attribute.
@@ -43,7 +42,7 @@ trait SourceDebugExtension_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type SourceDebugExtension_attribute = de.tud.cs.st.bat.resolved.SourceDebugExtension
+    type SourceDebugExtension_attribute = br.SourceDebugExtension
 
     def SourceDebugExtension_attribute(
         constant_pool: Constant_Pool,

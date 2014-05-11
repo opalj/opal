@@ -26,17 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
 package l2
 
-import instructions._
-import analyses.{ Project, ClassHierarchy }
+import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
+import br._
+import br.instructions._
+import br.analyses.{ Project, ClassHierarchy }
 
 /**
  * @author Michael Eichberg

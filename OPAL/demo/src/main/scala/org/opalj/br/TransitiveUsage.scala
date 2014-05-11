@@ -26,14 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-import dependency._
+package org.opalj
+package br
 
 import java.net.URL
+
+import br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+
+import de._
+
 
 /**
  * Calculates the transitive closure of all classes referred to by a given class.

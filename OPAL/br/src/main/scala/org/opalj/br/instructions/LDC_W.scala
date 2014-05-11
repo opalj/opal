@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package instructions
 
 import language.existentials
@@ -41,7 +40,7 @@ import language.existentials
 sealed abstract class LDC_W[@specialized(Int, Float) T]
         extends LoadConstantInstruction[T] {
 
-    override def opcode: Int = 19
+    override def opcode: Opcode = 19
 
     override def mnemonic: String = "ldc_w"
 
@@ -69,14 +68,15 @@ object LDC_W {
 
     def apply(constantValue: ConstantValue[_]): LDC_W[_] = {
         constantValue.value match {
-            case i: Int           ⇒ LoadInt_W(i)
-            case f: Float         ⇒ LoadFloat_W(f)
-            case r: ReferenceType ⇒ LoadClass_W(r)
-            case s: String        ⇒ LoadString_W(s)
-			case mh: MethodHandle => LoadMethodHandle_W(mh)
-			case md: MethodDescriptor => LoadMethodType_W(md)			
+            case i: Int               ⇒ LoadInt_W(i)
+            case f: Float             ⇒ LoadFloat_W(f)
+            case r: ReferenceType     ⇒ LoadClass_W(r)
+            case s: String            ⇒ LoadString_W(s)
+            case mh: MethodHandle     ⇒ LoadMethodHandle_W(mh)
+            case md: MethodDescriptor ⇒ LoadMethodType_W(md)
             case _ ⇒
-                throw new BATException("unsupported constant value: "+constantValue)
+                throw new BytecodeProcessingFailedException(
+                    "unsupported constant value: "+constantValue)
         }
     }
 

@@ -26,9 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
 
@@ -38,7 +36,7 @@ import reflect.ClassTag
  * Final binding of a `Domain`'s type `DomainValue` as well as all subtypes of it that are
  * also defined by `Domain`.
  *
- * The type `DomainValue` is set to the type [[de.tud.cs.st.bat.resolved.ai.Domain.Value]].
+ * The type `DomainValue` is set to the type [[org.opalj.ai.Domain.Value]].
  *
  * @author Michael Eichberg
  */

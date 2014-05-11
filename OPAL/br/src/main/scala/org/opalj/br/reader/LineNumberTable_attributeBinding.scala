@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.LineNumberTable_attributeReader
+import bi.reader.LineNumberTable_attributeReader
 
 /**
  * Implements the factory methods to create line number tables and their entries.
@@ -45,10 +44,10 @@ trait LineNumberTable_attributeBinding
         with ConstantPoolBinding
         with AttributeBinding {
 
-    type LineNumberTableEntry = de.tud.cs.st.bat.resolved.LineNumber
+    type LineNumberTableEntry = br.LineNumber
     val LineNumberTableEntryManifest: ClassTag[LineNumber] = implicitly
 
-    type LineNumberTable_attribute = de.tud.cs.st.bat.resolved.LineNumberTable
+    type LineNumberTable_attribute = br.LineNumberTable
 
     def LineNumberTable_attribute(
         constant_pool: Constant_Pool,

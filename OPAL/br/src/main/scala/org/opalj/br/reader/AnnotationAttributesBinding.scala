@@ -26,21 +26,20 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.AnnotationsReader
-import de.tud.cs.st.bat.reader.ParameterAnnotationsReader
-import de.tud.cs.st.bat.reader.RuntimeInvisibleAnnotations_attributeReader
-import de.tud.cs.st.bat.reader.RuntimeVisibleAnnotations_attributeReader
-import de.tud.cs.st.bat.reader.RuntimeInvisibleParameterAnnotations_attributeReader
-import de.tud.cs.st.bat.reader.RuntimeVisibleParameterAnnotations_attributeReader
-import de.tud.cs.st.bat.reader.ParameterAnnotationsReader
-import de.tud.cs.st.bat.reader.AnnotationDefault_attributeReader
+import bi.reader.AnnotationsReader
+import bi.reader.ParameterAnnotationsReader
+import bi.reader.RuntimeInvisibleAnnotations_attributeReader
+import bi.reader.RuntimeVisibleAnnotations_attributeReader
+import bi.reader.RuntimeInvisibleParameterAnnotations_attributeReader
+import bi.reader.RuntimeVisibleParameterAnnotations_attributeReader
+import bi.reader.ParameterAnnotationsReader
+import bi.reader.AnnotationDefault_attributeReader
 
 /**
  * Factory methods to create representations of the attributes related to
@@ -59,15 +58,15 @@ trait AnnotationAttributesBinding
         with AnnotationDefault_attributeReader
         with AttributeBinding {
 
-    type AnnotationDefault_attribute = resolved.ElementValue
+    type AnnotationDefault_attribute = ElementValue
 
-    type RuntimeVisibleAnnotations_attribute = resolved.RuntimeVisibleAnnotationTable
+    type RuntimeVisibleAnnotations_attribute = RuntimeVisibleAnnotationTable
 
-    type RuntimeInvisibleAnnotations_attribute = resolved.RuntimeInvisibleAnnotationTable
+    type RuntimeInvisibleAnnotations_attribute = RuntimeInvisibleAnnotationTable
 
-    type RuntimeVisibleParameterAnnotations_attribute = resolved.RuntimeVisibleParameterAnnotationTable
+    type RuntimeVisibleParameterAnnotations_attribute = RuntimeVisibleParameterAnnotationTable
 
-    type RuntimeInvisibleParameterAnnotations_attribute = resolved.RuntimeInvisibleParameterAnnotationTable
+    type RuntimeInvisibleParameterAnnotations_attribute = RuntimeInvisibleParameterAnnotationTable
 
     def AnnotationDefault_attribute(
         cp: Constant_Pool,

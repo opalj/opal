@@ -26,13 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
+package org.opalj
+package de
 
-import analyses.SomeProject
-import analyses.ProjectInformationKey
+import br._
+import br.analyses.SomeProject
+import br.analyses.ProjectInformationKey
 
 /**
  * Decorator for a given [[DependencyProcessor]].

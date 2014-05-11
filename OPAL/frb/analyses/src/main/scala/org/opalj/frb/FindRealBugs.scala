@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package findrealbugs
+package org.opalj
+package frb
 
 import analyses._
-import resolved._
-import resolved.analyses._
-import resolved.reader._
+import br._
+import br.analyses._
+import br.reader._
 import java.net.URL
 import java.io.File
 
@@ -178,7 +177,7 @@ object FindRealBugs {
                 // Invoke the analysis and immediately turn the `Iterable` result into a
                 // `Set`, to enforce immediate execution instead of delayed (on-demand)
                 // execution.
-                import util.debug.PerformanceEvaluation.{ run, ns2sec }
+                import util.PerformanceEvaluation.{ run, ns2sec }
 
                 run {
                     analyses(name).analyze(project, Seq.empty).toSet

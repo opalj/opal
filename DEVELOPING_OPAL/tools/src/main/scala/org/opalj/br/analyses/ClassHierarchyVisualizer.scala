@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package analyses
 
 /**
@@ -40,13 +39,14 @@ object ClassHierarchyVisualizer {
 
     def main(args: Array[String]) {
 
-        import reader.Java8Framework.ClassFiles
         import util.writeAndOpenDesktopApplication
-        import util.graphs.{ Node, toDot }
+        import graphs.{ Node, toDot }
+
+        import reader.Java8Framework.ClassFiles
 
         if (!args.forall(_.endsWith(".jar"))) {
             println("Usage: java …ClassHierarchy <JAR file>+")
-            println("(c) 2013 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+            println("(c) 2014 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
             sys.exit(-1)
         }
 

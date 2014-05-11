@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package project
 
-import bat.resolved.analyses.SomeProject
-import bat.resolved.ai.domain._
+import org.opalj.br._
+import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.domain._
 
 case class ComputedCallGraph(
     callGraph: CallGraph,

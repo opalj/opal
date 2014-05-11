@@ -30,15 +30,16 @@ package org.opalj
 package ai
 package dataflow
 
-import de.tud.cs.st.bat.resolved._
-import de.tud.cs.st.bat.resolved.analyses._
-import de.tud.cs.st.bat.resolved.ai._
-import de.tud.cs.st.bat.resolved.ai.domain._
-import de.tud.cs.st.bat.resolved.ai.domain.l0._
-import de.tud.cs.st.bat.resolved.instructions._
-import de.tud.cs.st.bat.AccessFlagsMatcher
-
 import scala.collection.{ Map, Set }
+
+import bi.AccessFlagsMatcher
+
+import br._
+import br.analyses._
+import br.instructions._
+
+import domain._
+import domain.l0._
 
 /**
  * Support methods to facilitate the definition of data-flow constraints.
@@ -76,11 +77,10 @@ trait DataFlowProblemSpecification extends DataFlowProblem {
     private[this] var theSinkInstructions: Map[Method, Set[PC]] = _
     def sinkInstructions: Map[Method, Set[PC]] = theSinkInstructions
 
-    
     //
     // Instantiating the problem
     //
-    
+
     def initialize(): Unit = {
         import scala.collection.immutable.HashMap
 
@@ -98,7 +98,6 @@ trait DataFlowProblemSpecification extends DataFlowProblem {
     }
 
 }
-
 
 trait ValueLocationMatcher extends Function1[SomeProject, Map[Method, Set[PC]]] {
 

@@ -26,16 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 package reader
-
-import reflect.ClassTag
 
 import java.io.DataInputStream
 
+import scala.reflect.ClassTag
+
 /**
- * Generic parser for the `target_type` and `target_info` fields of type annotations. 
+ * Generic parser for the `target_type` and `target_info` fields of type annotations.
  * This reader is intended to be used in conjunction with the
  * [[TypeAnnotationsReader]].
  *
@@ -106,8 +106,8 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
      * Factory method to create a `LocalvarTableEntry`. To completely resolve
      * such entries; i.e., to resolve the local_variable_table_index it may
      * be necessary to do some post-processing after all attributes belonging
-     * to a code block are loaded. This can be done using the method 
-     * [[de.tud.cs.st.bat.reader.AttributeReader.registerAttributesPostProcessor]].
+     * to a code block are loaded. This can be done using the method
+     * [[org.opalj.bi.reader.AttributeReader.registerAttributesPostProcessor]].
      */
     def LocalvarTableEntry(
         start_pc: Int,
@@ -148,8 +148,6 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
     //
 
     def LocalvarTable(in: DataInputStream): LocalvarTable = {
-        import util.ControlAbstractions.repeat
-
         repeat(in.readUnsignedShort) {
             LocalvarTableEntry(
                 in.readUnsignedShort(),

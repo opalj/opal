@@ -26,20 +26,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package analyses
 
-import util.ControlAbstractions.foreachNonNullValueOf
-import util.graphs.{ Node, toDot }
-import util.{ Answer, Yes, No, Unknown }
-
-import ObjectType.Object
-
-import annotation.tailrec
+import scala.annotation.tailrec
 import scala.collection.{ Map, Set, SeqView }
 import scala.collection.mutable.HashSet
+
+import util.{ Answer, Yes, No, Unknown }
+import graphs.{ Node, toDot }
+
+import ObjectType.Object
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -169,7 +167,7 @@ class ClassHierarchy private (
         interfaceTypesMap(objectType.id)
 
     /**
-     * Returns `true` if the type hierarchy information related to the given type's 
+     * Returns `true` if the type hierarchy information related to the given type's
      * supertypes is complete.
      */
     @inline def isDirectSupertypeInformationComplete(objectType: ObjectType): Boolean =
@@ -897,56 +895,56 @@ class ClassHierarchy private (
         implementingMethods
     }
 
-//    /**
-//     * Returns all methods declared by this class. I.e., all methods declared by
-//     * this class as well as all methods declared by its superclasses.
-//     */
-//    def allMethods(
-//        project: SomeProject,
-//        objectType: ObjectType,
-//        filter: (Method) ⇒ Boolean = m ⇒ !m.isPrivate): Set[Method] = {
-//
-//        val allMethods = scala.collection.mutable.HashSet.empty[Method]
-//
-//        foreachSuperclass(objectType, project) { superclass ⇒
-//            for (method ← superclass.methods if filter(method)) {
-//                allMethods += method
-//            }
-//        }
-//
-//        allMethods
-//    }
-//
-//    /**
-//     * Returns the set of the most specific methods declared by the superclasses.
-//     * A method is more specific than another method if it is
-//     *
-//     * @param filter Filters irrelevant methods. By default, `private` methods
-//     *      are filtered.
-//     */
-//    def superMethods(
-//        project: SomeProject,
-//        objectType: ObjectType,
-//        filter: (Method) ⇒ Boolean = m ⇒ !m.isPrivate): Set[Method] = {
-//
-//        // TODO split up...
-//        supertypes(objectType).map(allMethods(project, _)).flatten
-//    }
-//
-//    def overriddenMethods(
-//        project: SomeProject,
-//        objectType: ObjectType): Set[Method] = {
-//
-//        val ownMethods = project.classFile(objectType).get.methods
-//        superMethods(
-//            project,
-//            objectType,
-//            (m) ⇒ {
-//                !m.isPrivate &&
-//                    (!m.hasDefaultVisibility || objectType.packageName == project.classFile(m).thisType.packageName)
-//            }
-//        ).filter(sm ⇒ ownMethods.exists(_.hasSameSignature(sm)))
-//    }
+    //    /**
+    //     * Returns all methods declared by this class. I.e., all methods declared by
+    //     * this class as well as all methods declared by its superclasses.
+    //     */
+    //    def allMethods(
+    //        project: SomeProject,
+    //        objectType: ObjectType,
+    //        filter: (Method) ⇒ Boolean = m ⇒ !m.isPrivate): Set[Method] = {
+    //
+    //        val allMethods = scala.collection.mutable.HashSet.empty[Method]
+    //
+    //        foreachSuperclass(objectType, project) { superclass ⇒
+    //            for (method ← superclass.methods if filter(method)) {
+    //                allMethods += method
+    //            }
+    //        }
+    //
+    //        allMethods
+    //    }
+    //
+    //    /**
+    //     * Returns the set of the most specific methods declared by the superclasses.
+    //     * A method is more specific than another method if it is
+    //     *
+    //     * @param filter Filters irrelevant methods. By default, `private` methods
+    //     *      are filtered.
+    //     */
+    //    def superMethods(
+    //        project: SomeProject,
+    //        objectType: ObjectType,
+    //        filter: (Method) ⇒ Boolean = m ⇒ !m.isPrivate): Set[Method] = {
+    //
+    //        // TODO split up...
+    //        supertypes(objectType).map(allMethods(project, _)).flatten
+    //    }
+    //
+    //    def overriddenMethods(
+    //        project: SomeProject,
+    //        objectType: ObjectType): Set[Method] = {
+    //
+    //        val ownMethods = project.classFile(objectType).get.methods
+    //        superMethods(
+    //            project,
+    //            objectType,
+    //            (m) ⇒ {
+    //                !m.isPrivate &&
+    //                    (!m.hasDefaultVisibility || objectType.packageName == project.classFile(m).thisType.packageName)
+    //            }
+    //        ).filter(sm ⇒ ownMethods.exists(_.hasSameSignature(sm)))
+    //    }
 
     /**
      * The direct subtypes of the given type.
@@ -1108,8 +1106,6 @@ object ClassHierarchy {
 
         import scala.collection.mutable.HashSet
         import scala.collection.mutable.HashMap
-        import de.tud.cs.st.util.ControlAbstractions.foreachNonNullValueOf
-        import de.tud.cs.st.util.ControlAbstractions.processSource
 
         def processPredefinedClassHierarchy(
             createInputStream: () ⇒ java.io.InputStream): Iterator[TypeDeclaration] = {

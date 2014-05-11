@@ -26,9 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package analyses
 
 import scala.collection.{ Set, Map }
@@ -44,10 +43,10 @@ import scala.collection.mutable.{ AnyRefMap, OpenHashMap }
  *  1. It directly gives access to the project's class hierarchy.
  *  1. It serves as a container for project-wide information (e.g., a call graph,
  *     information about the mutability of classes, constant values,...) that can be queried
- *     using [[de.tud.cs.st.bat.resolved.analyses.ProjectInformationKey]]s.
+ *     using [[org.opalj.br.analyses.ProjectInformationKey]]s.
  *     The list of project wide information that can be made available is equivalent
  *     to the list of (concrete/singleton) objects implementing the trait
- *     [[de.tud.cs.st.bat.resolved.analyses.ProjectInformationKey]].
+ *     [[org.opalj.br.analyses.ProjectInformationKey]].
  *
  * ==Thread Safety==
  * This class is thread-safe.

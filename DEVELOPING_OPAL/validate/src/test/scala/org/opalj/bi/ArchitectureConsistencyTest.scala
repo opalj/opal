@@ -27,9 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bt
+package bi
 
-import de.tud.cs.st.bat.resolved.dependency.checking.Specification
+import av.Specification
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -38,22 +38,23 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 
 /**
- * Tests that the Bytecode Toolkit's design is as expected.
+ * Tests that the implemented architecture of the infrastructure project
+ * is consistent with its specifiation/with the intended architecture.
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class BytecodeToolkitArchitectureTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
-    behavior of "the Bytecode Toolkit's implemented architecture"
+    behavior of "the Infrastructure Project's implemented architecture"
 
     it should "be consistent with the specified architecture" in {
         val expected =
             new Specification {
 
-                ensemble('Core) {
-                    "de.tud.cs.st.bat.**" except
-                        classes("""de\.tud\.cs\.st\.bat\..+Test.*""".r)
+                ensemble('Bi) {
+                    "org.opalj.bi.**" except
+                        classes("""org\.opalj\.bi\..+Test.*""".r)
                 }
 
                 //
@@ -61,12 +62,12 @@ class BytecodeToolkitArchitectureTest extends FlatSpec with Matchers with Before
                 //
 
                 ensemble('Util) {
-                    "de.tud.cs.st.util.**"
+                    "org.opalj.util.**"
                 }
 
                 'Util is_only_allowed_to_use empty
 
-                'Core is_only_allowed_to_use ('Util)
+                'Bi is_only_allowed_to_use ('Util)
 
             }
 

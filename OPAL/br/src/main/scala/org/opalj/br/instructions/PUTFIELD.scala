@@ -26,15 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package instructions
 
 /**
  * Set field in object.
  *
- * @see [[de.tud.cs.st.bat.resolved.instructions.FieldAccess]] for additional
+ * @see [[org.opalj.br.instructions.FieldAccess]] for additional
  *      pattern matching support.
  *
  * @author Michael Eichberg

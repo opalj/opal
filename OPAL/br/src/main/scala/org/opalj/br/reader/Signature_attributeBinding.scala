@@ -26,12 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
-import de.tud.cs.st.bat.reader.Signature_attributeReader
+import bi.{ AttributeParent, AttributesParent }
+import bi.reader.Signature_attributeReader
 
 /**
  * Implements the factory method defined and used by the generic signature attribute reader.

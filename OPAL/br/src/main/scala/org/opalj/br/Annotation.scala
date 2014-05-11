@@ -26,20 +26,19 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 
 /**
  * An annotation of a class, field, method or method parameter.
  *
  * Annotations are associated with a class, field, or method using a
- * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleAnnotationTable]] or a
- * [[de.tud.cs.st.bat.resolved.RuntimeVisibleAnnotationTable]] attribute.
+ * [[org.opalj.br.RuntimeInvisibleAnnotationTable]] or a
+ * [[org.opalj.br.RuntimeVisibleAnnotationTable]] attribute.
  *
  * Annotations are associated with a method parameter using a
- * [[de.tud.cs.st.bat.resolved.RuntimeInvisibleParameterAnnotationTable]] or
- * a [[de.tud.cs.st.bat.resolved.RuntimeVisibleParameterAnnotationTable]] attribute.
+ * [[org.opalj.br.RuntimeInvisibleParameterAnnotationTable]] or
+ * a [[org.opalj.br.RuntimeVisibleParameterAnnotationTable]] attribute.
  *
  * @author Michael Eichberg
  * @author Arne Lottmann

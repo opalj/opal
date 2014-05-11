@@ -26,8 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 package reader
 
 import java.io.DataInputStream
@@ -95,7 +95,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    protected[bat] def registerDeferredAction(
+    def registerDeferredAction(
         cp: Constant_Pool)(
             deferredAction: ClassFile ⇒ ClassFile): Unit = {
         val store = cp(0).asInstanceOf[DeferredActionsStore]
@@ -104,7 +104,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
         }
     }
 
-    override protected[bat] def applyDeferredActions(
+    override def applyDeferredActions(
         cp: Constant_Pool,
         classFile: ClassFile): ClassFile = {
         var transformedClassFile = classFile
@@ -178,7 +178,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                     i += 1; CONSTANT_MethodType_info(in.readUnsignedShort)
                 case CONSTANT_InvokeDynamic_ID ⇒
                     i += 1; CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
-                case _ ⇒ throw new BATException("unknown constant pool tag: "+tag)
+                case _ ⇒ throw new BytecodeProcessingFailedException("unknown constant pool tag: "+tag)
             }
         }
         constant_pool_entries

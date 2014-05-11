@@ -26,12 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package findrealbugs.analyses
+package org.opalj
+package frb.analyses
 
-import resolved._
-import resolved.analyses._
+import br._
+import br.analyses._
 
 /**
  * This analysis reports methods that have the same name but different signatures when

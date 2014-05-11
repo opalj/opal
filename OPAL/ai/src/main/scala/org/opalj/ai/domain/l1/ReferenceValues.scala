@@ -26,17 +26,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
 package l1
 
-import de.tud.cs.st.util.{ Answer, Yes, No, Unknown }
-import de.tud.cs.st.collection.immutable.{ UIDSet, UIDSet0, UIDSet1 }
-
 import scala.collection.SortedSet
+
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+import org.opalj.collection.immutable.{ UIDSet, UIDSet0, UIDSet1 }
+
+import br._
 
 /**
  * @author Michael Eichberg

@@ -26,12 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
-package dependency
+package org.opalj
+package de
 
-import reader.Java7Framework.ClassFiles
+import br._
+import br.reader.Java8Framework.ClassFiles
 
 /**
  * This class (the implementation) demonstrates how to load all class files
@@ -42,7 +41,7 @@ import reader.Java7Framework.ClassFiles
  */
 object DependencyMatrix {
 
-    import util.debug.PerformanceEvaluation.{ time, ns2ms }
+    import util.PerformanceEvaluation.{ time, ns2ms }
 
     private def printUsage(): Unit = {
         println("Loads all classes stored in the jar files and creates a dependency matrix.")

@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
 package reader
 
 import reflect.ClassTag
 
-import de.tud.cs.st.bat.reader.MethodsReader
+import bi.reader.MethodsReader
 
 /**
  *
@@ -42,7 +41,7 @@ import de.tud.cs.st.bat.reader.MethodsReader
 trait MethodsBinding extends MethodsReader {
     this: ConstantPoolBinding with AttributeBinding ⇒
 
-    type Method_Info = de.tud.cs.st.bat.resolved.Method
+    type Method_Info = br.Method
     val Method_InfoManifest: ClassTag[Method_Info] = implicitly
 
     def Method_Info(

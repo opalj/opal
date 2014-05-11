@@ -26,20 +26,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat
-package resolved
+package org.opalj
 package ai
 package domain
 
-import l0._
-import reader.Java7Framework
-
 import org.junit.runner.RunWith
+
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
+
+import br._
+import br.reader.Java8Framework.ClassFiles
+import l0._
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -75,7 +76,7 @@ class MethodsWithBranchesTest
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 
-        de.tud.cs.st.bat.resolved.ai.debug.XHTML.dumpOnFailureDuringValidation(
+        org.opalj.ai.debug.XHTML.dumpOnFailureDuringValidation(
             Some(classFile),
             Some(method),
             method.body.get,
@@ -168,8 +169,7 @@ class MethodsWithBranchesTest
 }
 private object MethodsWithBranchesTest {
 
-    val classFiles = Java7Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
 
     val classFile = classFiles.map(_._1).
         find(_.thisType.fqn == "ai/MethodsWithBranches").get

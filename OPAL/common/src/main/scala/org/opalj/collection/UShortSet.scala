@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
+package org.opalj
 package collection
 
 /**
@@ -114,10 +114,13 @@ trait UShortSet {
     /**
      * The number of elements of this set.
      *
-     * @note The size is calculated using the iterator, hence its complexity is O(n).
+     * @note The size is calculated using an iterator, hence its complexity is O(n).
      */
     def size: Int = iterator.size
 
+    /**
+     * Returns `true` if this set is empty. 
+     */
     def isEmpty: Boolean
 
     def nonEmpty: Boolean = !isEmpty

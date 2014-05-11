@@ -26,14 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
+package br
+
+import java.net.URL
 
 import instructions._
 import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-
-import java.net.URL
 
 /**
  * Counts the number of static and virtual method calls.
@@ -48,7 +47,7 @@ object VirtualAndStaticMethodCalls extends AnalysisExecutor {
 
         def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
 
-            import util.debug.PerformanceEvaluation.{ time, ns2sec }
+            import util.PerformanceEvaluation.{ time, ns2sec }
             var staticCalls = 0
             var virtualCalls = 0
             var executionTimeInSecs = 0d

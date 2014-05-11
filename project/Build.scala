@@ -111,7 +111,7 @@ object OPALBuild extends Build {
 			Seq (
 				test in assembly := {},
 				jarName in assembly := "FindREALBugs-" + version.value+".jar",
-				mainClass in assembly := Some("de.tud.cs.st.bat.findrealbugs.FindRealBugsCLI")
+				mainClass in assembly := Some("org.opalj.frb.cli.FindRealBugsCLI")
 			)
 	) dependsOn(findRealBugsAnalyses % "test->test;compile->compile")
 

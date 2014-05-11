@@ -37,6 +37,5 @@ case class CONSTANT_InvokeDynamic_info(
         bootstrap_method_attr_index: Int,
         name_and_type_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
-    override def Constant_Type_Value =
-        de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_InvokeDynamic
+    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_InvokeDynamic
 }

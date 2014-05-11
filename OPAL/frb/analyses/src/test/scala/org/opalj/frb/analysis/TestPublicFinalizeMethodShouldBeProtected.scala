@@ -26,16 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package findrealbugs
+package org.opalj
+package frb
 package test
 package analysis
 
 import AnalysisTest._
 import analyses._
-import resolved._
-import resolved.analyses._
+import br._
+import br.analyses._
 import java.net.URL
 
 /**

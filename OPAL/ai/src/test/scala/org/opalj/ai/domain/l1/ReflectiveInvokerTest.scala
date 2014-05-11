@@ -26,18 +26,19 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package domain
 package l1
 
+import org.junit.runner.RunWith
+
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.ParallelTestExecution
-import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
+
+import br._
 
 /**
  * Tests the ReflectiveInvoker trait.

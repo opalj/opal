@@ -26,8 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 package reader
 
 import reflect.ClassTag
@@ -98,8 +98,6 @@ trait TypeAnnotationsReader extends AnnotationAbstractions {
      * </pre>
      */
     def TypeAnnotations(cp: Constant_Pool, in: DataInputStream): TypeAnnotations = {
-        import util.ControlAbstractions.repeat
-
         repeat(in.readUnsignedShort) {
             TypeAnnotation(cp, in)
         }

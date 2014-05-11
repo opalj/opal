@@ -26,9 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
-package resolved
+package org.opalj
 package ai
 package util
 
@@ -49,7 +47,7 @@ class packageTest
         with Matchers
         with ParallelTestExecution {
 
-    import de.tud.cs.st.bat.resolved.ai.util._
+    import org.opalj.ai.util._
 
     behavior of "the function removeFirstWhile"
 

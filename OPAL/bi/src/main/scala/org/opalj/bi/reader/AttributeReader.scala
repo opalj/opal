@@ -26,15 +26,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st
-package bat
+package org.opalj
+package bi
 package reader
 
 import java.io.DataInputStream
 
 /**
  * Generic infrastructure used by specific parsers of class file attributes to register
- * with the overall framework ([[de.tud.cs.st.bat.reader.AttributesReader]]).
+ * with the overall framework ([[org.opalj.bi.reader.AttributesReader]]).
  *
  * @author Michael Eichberg
  */
@@ -65,7 +65,7 @@ trait AttributeReader
      * or to remove attributes if they are completely resolved.
      *
      * @see The implementation of
-     *      [[de.tud.cs.st.bat.resolved.reader.LineNumberTable_attributeBinding]]
+     *      [[org.opalj.br.reader.LineNumberTable_attributeBinding]]
      *      for a concrete example.
      */
     def registerAttributesPostProcessor(p: (Attributes) ⇒ Attributes): Unit

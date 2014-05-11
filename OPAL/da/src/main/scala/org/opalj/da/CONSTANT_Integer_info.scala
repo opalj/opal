@@ -36,7 +36,6 @@ package da
 case class CONSTANT_Integer_info(
         value: Int) extends Constant_Pool_Entry {
 
-    override def Constant_Type_Value =
-        de.tud.cs.st.bat.ConstantPoolTags.CONSTANT_Integer
+    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Integer
 
 }
