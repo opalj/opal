@@ -112,7 +112,7 @@ class ClassValuesTest
         import domain.ClassValue 
         val method = classFile.methods.find(m ⇒ m.name == "literalStringAsParameterInClassForName").get
         BaseAI(classFile, method, domain)
-        domain.returnedValue.map(_.asInstanceOf[ClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
+        domain.returnedValue.map(_.asInstanceOf[domain.DomainClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
     }
 
     it should ("be able to trace static class values of primitves") in {
@@ -120,7 +120,7 @@ class ClassValuesTest
         import domain.ClassValue
         val method = classFile.methods.find(m ⇒ m.name == "staticPrimitveClassValue").get
         BaseAI(classFile, method, domain)
-        domain.returnedValue.map(_.asInstanceOf[ClassValue].value) should be(Some(IntegerType))
+        domain.returnedValue.map(_.asInstanceOf[domain.DomainClassValue].value) should be(Some(IntegerType))
     }
 
     ignore should ("be able to trace known string variables in method parameters in Class.forName calls") in {
@@ -128,7 +128,7 @@ class ClassValuesTest
         import domain.ClassValue
         val method = classFile.methods.find(m ⇒ m.name == "stringVariableAsParameterInClassForName").get
         BaseAI(classFile, method, domain)
-        domain.returnedValue.map(_.asInstanceOf[ClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
+        domain.returnedValue.map(_.asInstanceOf[domain.DomainClassValue].value) should be(Some(ObjectType("java/lang/Integer")))
     }
 }
 
