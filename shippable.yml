@@ -6,8 +6,3 @@ jdk:
 notifications:
   email:
     - eichberg@informatik.tu-darmstadt.de
-# ensure the test output dir is created
-before_script:
-  - mkdir -p shippable/testresults 
-after_script:
-  - mv -v target/test-reports/* shippable/testresults   
