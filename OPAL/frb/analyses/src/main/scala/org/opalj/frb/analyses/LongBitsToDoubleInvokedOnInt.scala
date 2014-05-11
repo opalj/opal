@@ -77,10 +77,12 @@ class LongBitsToDoubleInvokedOnInt[Source]
             classFile ← project.classFiles
             if !project.isLibraryType(classFile)
             method @ MethodWithBody(body) ← classFile.methods
-            pc ← body.slidingCollect(2) {
-                case (pc, Seq(I2L,
-                    INVOKESTATIC(`doubleType`, "longBitsToDouble",
-                        `longBitsToDoubleDescriptor`))) ⇒ pc
+            pc ← body.matchPair {
+                case (
+                    I2L,
+                    INVOKESTATIC(`doubleType`, "longBitsToDouble", `longBitsToDoubleDescriptor`)
+                    ) ⇒ true
+                case _ ⇒ false
             }
         } yield {
             LineAndColumnBasedReport(

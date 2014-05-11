@@ -524,6 +524,33 @@ case class Code(
     }
 
     /**
+     * Finds a sequence of 3 consecutive instructions for which the given function returns
+     * `true`, and returns the `PC` of the first instruction in each found sequence.
+     */
+    def matchTriple(f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = {
+        val max_pc = instructions.size
+        var pc1 = 0
+        var pc2 = pcOfNextInstruction(pc1)
+        if (pc2 >= max_pc)
+            return List.empty
+        var pc3 = pcOfNextInstruction(pc2)
+
+        var result: List[PC] = List.empty
+        while (pc3 < max_pc) {
+            if (f(instructions(pc1), instructions(pc2), instructions(pc3))) {
+                result = pc1 :: result
+            }
+
+            // Move forward by 1 instruction at a time. Even though (..., 1, 2, 3, _, ...)
+            // didn't match, it's possible that (..., _, 1, 2, 3, ...) matches.
+            pc1 = pc2
+            pc2 = pc3
+            pc3 = pcOfNextInstruction(pc3)
+        }
+        result
+    }
+
+    /**
      * A complete representation of this code attribute (including instructions,
      * attributes, etc.).
      */

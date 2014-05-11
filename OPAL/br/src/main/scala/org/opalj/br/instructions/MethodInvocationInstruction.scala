@@ -78,6 +78,14 @@ abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstru
     def isVirtualMethodCall: Boolean = true
 }
 
+object VirtualMethodInvocationInstruction {
+
+    def unapply(instruction: VirtualMethodInvocationInstruction): Option[(ReferenceType, String, MethodDescriptor)] = {
+        Some((instruction.declaringClass, instruction.name, instruction.methodDescriptor))
+    }
+
+}
+
 /**
  * Invocation of a method where the target method is statically resovled.
  *

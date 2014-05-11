@@ -99,18 +99,14 @@ class InefficientToArray[Source]
             classFile ← project.classFiles
             if !project.isLibraryType(classFile)
             method @ MethodWithBody(body) ← classFile.methods
-            pc ← body.slidingCollect(3)({
-                case (pc, Seq(ICONST_0, ANEWARRAY(_), instr3)) if (instr3 match {
-                    // TODO: Perhaps we should add a new VirtualMethodCall(...) pattern 
-                    // matcher to OPAL, which would allow INVOKEINTERFACE and INVOKEVIRTUAL
-                    // checks to be combined into one.
-                    case INVOKEINTERFACE(targetType, "toArray", `toArrayDescriptor`) ⇒
-                        isCollectionType(targetType)
-                    case INVOKEVIRTUAL(targetType, "toArray", `toArrayDescriptor`) ⇒
-                        isCollectionType(targetType)
-                    case _ ⇒ false
-                }) ⇒ pc
-            })
+            pc ← body.matchTriple {
+                case (ICONST_0,
+                    _: ANEWARRAY,
+                    VirtualMethodInvocationInstruction(targetType, "toArray", `toArrayDescriptor`)
+                    ) ⇒
+                    isCollectionType(targetType)
+                case _ ⇒ false
+            }
         } yield {
             LineAndColumnBasedReport(
                 project.source(classFile.thisType),
