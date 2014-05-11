@@ -48,7 +48,7 @@ import domain.l0._
  * ==Usage==
  *
  *  1. Set the project
- *  1. Initialize [[sourceValues ]] and [[sinkInstructions]] (These methods needs to be
+ *  1. Initialize [[sourceValues]] and [[sinkInstructions]] (These methods needs to be
  *     overridden by your subclass.)
  *  1. Call [[solve]]. After you have called [[solve]] you are no longer allowed
  *      to change the project or the sources and sinks.
