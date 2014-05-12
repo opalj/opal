@@ -79,7 +79,7 @@ class ObjectTypeTest extends FunSuite with ParallelTestExecution {
 
     test("onPrimitiveWrapperMatch") {
 
-        val matcher = ObjectType.primitiveWrapperMatcher[Int, (Int, Int)](
+        val matcher = ObjectType.primitiveTypeWrapperMatcher[Int, (Int, Int)](
             (id) ⇒ (id, BooleanType.WrapperType.id),
             (id) ⇒ (id, ByteType.WrapperType.id),
             (id) ⇒ (id, CharType.WrapperType.id),

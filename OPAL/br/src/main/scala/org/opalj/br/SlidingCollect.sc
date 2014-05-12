@@ -26,12 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-import scala.collection.parallel.ParSeq
-
 import org.opalj._
-
 import org.opalj.util.PerformanceEvaluation._
-
 import org.opalj.br._
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -237,15 +233,6 @@ object SlidingCollect {
 */
     def pcsWithNewMethodDescriptorMatcherAndSetAndMatchPair =
         time(2, 4, 5, {
-            val theTypes = scala.collection.mutable.HashSet(
-                ObjectType("java/lang/Boolean"),
-                ObjectType("java/lang/Byte"),
-                ObjectType("java/lang/Character"),
-                ObjectType("java/lang/Short"),
-                ObjectType("java/lang/Integer"),
-                ObjectType("java/lang/Long"),
-                ObjectType("java/lang/Float"),
-                ObjectType("java/lang/Double"))
             val theMethods = scala.collection.mutable.HashSet(
                 "booleanValue",
                 "byteValue",
@@ -266,7 +253,7 @@ object SlidingCollect {
                         ) ⇒ {
                         (receiver1 eq receiver2) &&
                             (returnType ne parameterType) && // coercion to another type performed
-                            theTypes.contains(receiver1) &&
+                            receiver1.isPrimitiveTypeWrapper &&
                             theMethods.contains(name)
                     }
                     case _ ⇒ false
@@ -347,16 +334,7 @@ object SlidingCollect {
 
     def pcsWithNewMethodDescriptorMatcherAndUnrolled =
         time(2, 4, 5, {
-            val theTypes = scala.collection.mutable.HashSet(
-                ObjectType("java/lang/Boolean"),
-                ObjectType("java/lang/Byte"),
-                ObjectType("java/lang/Character"),
-                ObjectType("java/lang/Short"),
-                ObjectType("java/lang/Integer"),
-                ObjectType("java/lang/Long"),
-                ObjectType("java/lang/Float"),
-                ObjectType("java/lang/Double"))
-            val theMethods = scala.collection.mutable.HashSet(
+             val theMethods = scala.collection.mutable.HashSet(
                 "booleanValue",
                 "byteValue",
                 "charValue",
@@ -366,7 +344,7 @@ object SlidingCollect {
                 "floatValue",
                 "doubleValue")
 
-            var result: List[(String, String, UShort)] = List.empty
+            var result: List[(String, String, org.opalj.UShort)] = List.empty
             for {
                 classFile ← project.par.map(_._1)
                 method @ MethodWithBody(body) ← classFile.methods
@@ -383,7 +361,7 @@ object SlidingCollect {
                             case INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)) ⇒
                                 instructions(next_pc) match {
                                     case INVOKEVIRTUAL(`receiver1`, name, NoArgumentMethodDescriptor(returnType: BaseType)) if (returnType ne parameterType) &&
-                                        (theTypes.contains(receiver1) &&
+                                        (receiver1.isPrimitiveTypeWrapper &&
                                             theMethods.contains(name)) ⇒ {
                                         result = (classFile.fqn, method.toJava, pc) :: result
                                         // we have matched the sequence
@@ -410,4 +388,35 @@ object SlidingCollect {
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsWithNewMethodDescriptorMatcherAndUnrolled
+		
+		
+		
+		/* FOR SCALA CONSOLE
+import org.opalj.br._
+import org.opalj.br.instructions._
+import org.opalj.br.reader.Java8Framework.ClassFiles
+
+// read in the entire JDK 
+val project = ClassFiles(new java.io.File("/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/jre/lib"))
+            	
+val theMethods = Set(
+	"booleanValue","byteValue","charValue","shortValue",
+	"intValue","longValue","floatValue","doubleValue")
+
+for {
+    classFile ← project.par.map(_._1)
+    method @ MethodWithBody(body) ← classFile.methods
+    pc ← body.matchPair({
+        case (
+            INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
+            INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
+            ) ⇒ {
+            (receiver1 eq receiver2) &&
+                receiver1.isPrimitiveTypeWrapper &&
+                theMethods.contains(name)
+        }
+        case _ ⇒ false
+    })
+} println (classFile.fqn +" {"+ method.toJava+"} ::"+ method.body.get.lineNumber(pc))
+		*/
 }
