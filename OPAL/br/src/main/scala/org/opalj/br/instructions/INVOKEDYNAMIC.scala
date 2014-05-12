@@ -101,6 +101,10 @@ case class INVOKEDYNAMIC(
                     ObjectType.LambdaMetafactory, metafactoryMethodName , _) => {
                         
                 bootstrapMethod.bootstrapArguments.tail.head match {
+                    // array types in oracle's jdk 8 don't make use of invokedynamic
+                    // instructions, and if an interface contains a lambda expression,
+                    // the type in the resulting invokedynamic instruction's method handle
+                    // is ObjectType, so we can safely cast receiverType to ObjectType
                     case h: MethodCallMethodHandle => {
                         for {
                             classFile ← project.classFile(h.receiverType.asObjectType)

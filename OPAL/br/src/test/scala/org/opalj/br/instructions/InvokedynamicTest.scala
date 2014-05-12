@@ -81,8 +81,7 @@ class InvokedynamicTest extends FunSpec with Matchers {
 
     private def testMethod(classFile: ClassFile, name: String) {
         for {
-            method ← classFile.methods.find(_.name == name) if method.body.isDefined
-            body ← method.body
+            method @ MethodWithBody(body) ← classFile.findMethod(name)
             instruction ← body.instructions if instruction.isInstanceOf[INVOKEDYNAMIC]
             invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
             annotations = method.runtimeVisibleAnnotations
@@ -115,7 +114,7 @@ class InvokedynamicTest extends FunSpec with Matchers {
             ElementValuePair("name", StringValue(methodName)) ← pairs
             classFile ← project.classFile(receiverType.asObjectType)
         } yield {
-            classFile.methods.find(_.name == methodName)
+            classFile.findMethod(methodName)
         }).head
     }
 }
