@@ -6,37 +6,27 @@ import sbtassembly.Plugin.AssemblyKeys._
 object OPALBuild extends Build {
 	 
 	lazy val buildSettings =
-		Defaults.defaultSettings ++
-		sbtassembly.Plugin.assemblySettings ++
-		Seq(
-			// Override the default version string  ("0.1-SNAPSHOT"),
-			// this will be used in the .jar file names
-			version := "snapshot",
-
-			organization := "org.opalj",
-
-			// Enable this to avoid including the Scala runtime into fat .jars,
-			// which would reduce the .jar's file size greatly. However, then the
-			// user will need the Scala runtime installed in order to run the .jar.
-			//assemblyOption in assembly ~= { _.copy(includeScala = false) },
-
-			// Don't run tests as part of the "assembly" command, it's too inconvenient
-			test in assembly := {}
-		)
-
+		Defaults.defaultSettings 
+	 
 	lazy val opal = Project(
 		id = "OPAL",
-		base = file(".")
-	) aggregate(
-		util, 
-		bt, 
-		ai/*,
-		dependencies, 		 
-		opalDeveloperTools,
-		OPAL_VALIDATION, 
-		demo,		
-		findrealbugs,
-		incubation*/)
+		base = file("."),
+		settings = buildSettings ++ sbtunidoc.Plugin.unidocSettings
+	).
+	aggregate(
+		common, 
+		bi,
+		br,
+		ai,
+		da,
+		de, 
+		av,		 
+		opalDeveloperTools, 
+		VALIDATE,
+		demos,		
+		findRealBugsAnalyses,
+		findRealBugsCLI,
+		incubation)
 
 	/*****************************************************************************
 	 *
@@ -44,47 +34,62 @@ object OPALBuild extends Build {
 	 *
  	 */
 	
-	lazy val util = Project(
-		id = "Util",
-		base = file("util")
+	lazy val common = Project(
+		id = "Common",
+		base = file("OPAL/common")
 	)	
 	
-	lazy val bt = Project(
-		id = "BytecodeToolkit",
-		base = file("core")
-	) dependsOn(util)
+	lazy val bi = Project(
+		id = "BytecodeInfrastructure",
+		base = file("OPAL/bi")
+	) dependsOn(common)
+
+	lazy val br = Project(
+		id = "BytecodeRepresentation",
+		base = file("OPAL/br")
+	) dependsOn(bi)
+	
+	lazy val da = Project(
+		id = "BytecodeDisassembler",
+		base = file("OPAL/da")
+	) dependsOn(bi % "test->test;compile->compile")
 
 	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",
-		base = file("ext/ai")
-	) dependsOn(bt % "test->test;compile->compile")
+		base = file("OPAL/ai")
+	) dependsOn(br % "test->test;compile->compile")
 
 	// The project "DependenciesExtractionLibrary" depends on
-	// AI to be able to resolve calls using 
-	// MethodHandle/MethodType/"invokedynamic"/...
-	lazy val dependenciesExtraction = Project(
+	// the abstract interpretation framework to be able to 
+	// resolve calls using MethodHandle/MethodType/"invokedynamic"/...
+	lazy val de = Project(
 		id = "DependenciesExtractionLibrary",
-		base = file("ext/dependencies")
+		base = file("OPAL/de")
 	) dependsOn(ai % "test->test;compile->compile")
 
-	lazy val architectureValidation = Project(
+	lazy val av = Project(
 		id = "ArchitectureValidation",
-		base = file("av")
-	) dependsOn(dependenciesExtraction % "test->test;compile->compile")
+		base = file("OPAL/av")
+	) dependsOn(de % "test->test;compile->compile")
 
 	lazy val opalDeveloperTools = Project(
 		id = "OpalDeveloperTools",
-		base = file("ext/tools")
-	) dependsOn(dependenciesExtraction % "test->test;compile->compile")
+		base = file("DEVELOPING_OPAL/tools")
+	) dependsOn(de % "test->test;compile->compile")
 
 	// This project validates OPAL's implemented architecture; hence
 	// it is not a "project" in the classical sense!
-	lazy val OPAL_VALIDATION = Project(
+	lazy val VALIDATE = Project(
 		id = "VALIDATE_OPAL",
-		base = file("VALIDATE")
+		base = file("DEVELOPING_OPAL/validate")
 	) dependsOn(
 		opalDeveloperTools % "test->test;compile->compile",
-		architectureValidation % "test->test;compile->compile")
+		av % "test->test;compile->compile")
+
+	lazy val demos = Project(
+		id = "Demos",
+		base = file("OPAL/demo")
+	) dependsOn(av)
 
 	/*****************************************************************************
 	 *
@@ -92,22 +97,27 @@ object OPALBuild extends Build {
 	 *
  	 */
 
-	lazy val findrealbugs = Project(
-		id = "FindRealBugs",
-		base = file("ext/findrealbugs"),
-		settings = buildSettings ++ Seq(
-			mainClass in assembly := Some("de.tud.cs.st.bat.findrealbugs.FindRealBugsCLI")
-		)
+	lazy val findRealBugsAnalyses = Project(
+		id = "FindRealBugsAnalyses",
+		base = file("OPAL/frb/analyses")
 	) dependsOn(ai % "test->test;compile->compile")
 
-	lazy val demo = Project(
-		id = "Demo",
-		base = file("demo")
-	) dependsOn(dependenciesExtraction, architectureValidation)
+	lazy val findRealBugsCLI = Project(
+		id = "FindRealBugsCLI",
+		base = file("OPAL/frb/cli"),
+		settings = 
+			buildSettings ++
+			sbtassembly.Plugin.assemblySettings ++ 
+			Seq (
+				test in assembly := {},
+				jarName in assembly := "FindREALBugs-" + version.value+".jar",
+				mainClass in assembly := Some("org.opalj.frb.cli.FindRealBugsCLI")
+			)
+	) dependsOn(findRealBugsAnalyses % "test->test;compile->compile")
 
 	lazy val incubation = Project(
 		id = "Incubation",
-		base = file("incubation")
-	) dependsOn(dependenciesExtraction, architectureValidation)
+		base = file("OPAL/incubation")
+	) dependsOn(av)
 
 }

@@ -1,0 +1,2 @@
+interface java/lang/Cloneable extends java/lang/Object
+interface java/io/Serializable extends java/lang/Object
