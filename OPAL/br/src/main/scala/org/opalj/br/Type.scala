@@ -559,6 +559,11 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def asObjectType: ObjectType = this
 
+    @inline final def isPrimitiveTypeWrapper: Boolean = {
+        val thisId = this.id
+        thisId <= ObjectType.javaLangDoubleId && thisId >= ObjectType.javaLangBooleanId
+    }
+
     def simpleName: String = ObjectType.simpleName(fqn)
 
     def packageName: String = ObjectType.packageName(fqn)
@@ -723,7 +728,10 @@ final object ObjectType {
     final val Serializable = ObjectType("java/io/Serializable")
     final val Cloneable = ObjectType("java/lang/Cloneable")
 
-    def primitiveWrapperMatcher[Args, T](
+    private final val javaLangBooleanId = Boolean.id
+    private final val javaLangDoubleId = Double.id
+
+    def primitiveTypeWrapperMatcher[Args, T](
         booleanMatch: (Args) ⇒ T,
         byteMatch: (Args) ⇒ T,
         charMatch: (Args) ⇒ T,
@@ -743,20 +751,21 @@ final object ObjectType {
         fs(6) = floatMatch
         fs(7) = doubleMatch
 
-        val booleanId = Boolean.id
-        val doubleId = Double.id
-
         (objectType: ObjectType, args: Args) ⇒ {
             val oid = objectType.id
-            if (oid < booleanId || oid > doubleId) {
+            if (oid > javaLangDoubleId || oid < javaLangBooleanId) {
                 orElse(args)
             } else {
-                val index = oid - booleanId
+                val index = oid - javaLangBooleanId
                 fs(index)(args)
             }
         }
     }
 
+    @inline final def isPrimitiveTypeWrapper(objectType: ObjectType): Boolean = {
+        val oid = objectType.id
+        oid <= javaLangDoubleId && oid >= javaLangBooleanId
+    }
 }
 
 /**
