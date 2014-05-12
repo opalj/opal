@@ -36,6 +36,7 @@ package ai
  * 
  * @author Lars Schulte
  */
+
 package object taint {
 
   case class CallStackEntry(classFile: ClassFile, method: Method)
@@ -48,6 +49,7 @@ package object taint {
 
   // Initialized (exactly once) by the "analyze" method of the main analysis class.
   protected[taint] var restrictedPackages: Set[String] = null
+  
 
   def definedInRestrictedPackage(packageName: String): Boolean =
     restrictedPackages.contains(packageName)

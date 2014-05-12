@@ -26,29 +26,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package jdkBugsTest;
-
+package invokeVirtualTest;
 
 /**
- * This is a helper class for InterfaceTest.
+ * This is a helper class for InvokeVirtualTest2
+ * An instance of this class is created and then the
+ * method getClass is called
  * 
  * @author Lars Schulte
  */
-public class ConcreteHelper2 implements InterfaceHelper {
+public class InvokeVirtualHelper2 {
 
-	@Override
-	public Object getClass(String s) {
-		Object o = method1(s);
-		return o;
-	}
-
-	public static Object method1(String s) {
+	public Class getClass(String s) {
 		Class c = null;
 		try {
 			c = Class.forName(s);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
+
 		return c;
+
 	}
 }

@@ -26,26 +26,39 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package jdkBugsTest;
+package invokeVirtualTest;
 
 /**
- * This is a helper class for InvokeVirtualTest2
- * An instance of this class is created and then the
- * method getClass is called
+ * This is a test for the JDKBugs Class.forName() analysis. It has a call to
+ * Class.forName() via a virtual method.
  * 
  * @author Lars Schulte
  */
-public class InvokeVirtualHelper2 {
+class InvokeVirtualTest extends InvokeVirtualHelper {
 
-	public Class getClass(String s) {
+	public Object method1(String s) {
+		return method2(s);
+	}
+
+	private Object method2(String s) {
 		Class c = null;
 		try {
 			c = Class.forName(s);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-
-		return c;
-
+		return method3(c);
 	}
+
+	public Object method3(Class c) {
+		try {
+			return c.newInstance();
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 }

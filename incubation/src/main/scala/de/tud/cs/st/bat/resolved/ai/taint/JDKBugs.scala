@@ -192,9 +192,10 @@ trait TaintAnalysisDomain[Source]
   var taintedFields: List[String] = List.empty
 
   /**
-   * checks if this analysis looks for uses of a tainted global field
-   * it is needed to prevent a loop if there are two methods within a
-   * class that both set a global field
+   * predicates if the analysis is currently in the process of looking
+   * for the use of a previously tainted global field. If this is true then this
+   * boolean prevents the analysis from analyzing "putfield" instructions that
+   * could lead the analysis to run into an endless loop
    */
   val checkForGlobalFields: Boolean
 
@@ -210,6 +211,11 @@ trait TaintAnalysisDomain[Source]
    */
   var objectTypesWithCreatedInstance: List[ObjectType] = List.empty
 
+  case class CachedInterfaceCall(methodName: String, methodDescriptor: MethodDescriptor, operands: List[DomainValue], result: Boolean)
+  
+  protected var cachedInterfaceCalls: List[CachedInterfaceCall] = List.empty 
+  
+  
   /**
    * @note
    * Calling this method only makes sense when the analysis of this domain's method
@@ -300,10 +306,17 @@ trait TaintAnalysisDomain[Source]
     methodName: String,
     methodDescriptor: MethodDescriptor,
     operands: List[DomainValue]): MethodCallResult = {
+    
+//    println(pc)
+//    println(declaringClass)
+//    println(methodName)
+//    println(methodDescriptor)
+//    println(operands)
+//    println()
 
     def doTypeLevelInvoke =
       super.invokeinterface(pc, declaringClass, methodName, methodDescriptor, operands)
-
+    
     if (isIrrelevantInvoke(methodDescriptor, declaringClass))
       return doTypeLevelInvoke;
 
@@ -311,6 +324,18 @@ trait TaintAnalysisDomain[Source]
     if (relevantOperands.isEmpty)
       return doTypeLevelInvoke;
 
+    var temp = cachedInterfaceCalls.filter(x => 
+      x.methodDescriptor == methodDescriptor && 
+      x.methodName == methodName &&
+      x.operands == operands)
+      
+    if(temp != null){
+      if (temp.exists(x => x.result == true)){
+      } else {
+      }
+      return doTypeLevelInvoke;
+    }
+    
     // If we reach this point, we have an invocation of a relevant method 
     // with a relevant parameter that is not our final sink...
 
@@ -322,7 +347,21 @@ trait TaintAnalysisDomain[Source]
         project).getOrElse {
           return doTypeLevelInvoke
         }
-
+    
+        val filter : (ObjectType => Boolean) = operands.last match {
+    	case x : SObjectValue => 
+    	  if(x.isPrecise){
+    	    (x.upperTypeBound.contains(_))
+    	  } else {
+    	    (_ => true)
+    	  }
+    	case _ => {
+    	  //println("No SObjectValue: " + operands + " " + declaringClass+ " " + methodName) 
+    	  (_ => false )
+    	} 
+    }
+    
+    
     // look up every class that implements the method and was previously
     // instanced
     val implementingMethods = classHierarchy.lookupImplementingMethods(
@@ -330,12 +369,14 @@ trait TaintAnalysisDomain[Source]
       methodName,
       methodDescriptor,
       project,
-      (objectTypesWithCreatedInstance.contains(_)))
-
+      filter)
+      
+      
     // analyze every found method implementation
     implementingMethods.foreach { (m: Method) =>
       {
-        inspectMethod(pc, m, operands)
+    	    val call = CachedInterfaceCall(methodName, methodDescriptor, operands, inspectMethod(pc, m, operands))
+    	    cachedInterfaceCalls = call :: cachedInterfaceCalls
       }
     }
     return doTypeLevelInvoke
@@ -618,11 +659,12 @@ trait TaintAnalysisDomain[Source]
 
   /**
    * create a new taint analysis for the specified method
+   * returns true if the analysis was succesfull
    */
   def inspectMethod(
     pc: PC,
     method: Method,
-    operands: List[DomainValue]) : Unit = {
+    operands: List[DomainValue]) : Boolean = {
 
     val classFile = project.classFile(method)
 
@@ -643,20 +685,17 @@ trait TaintAnalysisDomain[Source]
       val parameters = DomainValues(calleeDomain)(calleeParameters)
 
       if (isRecursiveCall(classFile, method, parameters)) {
-        //return doTypeLevelInvoke;
+    	  false
       } else {
 
         // If we reach this point, we have an invocation of a relevant method 
         // with a relevant parameter that is not our final sink and which is
         // not native and which is not a recursive call
-
         val v = method.body.get
         // Analyze the method
         val aiResult = BaseAI.perform(classFile, method, calleeDomain)(Some(calleeParameters))
-        //aiResult.domain.postAnalysis()
         if (!aiResult.domain.isRelevantValueReturned) {
-          // No relevant Value returned!
-          // return doTypeLevelInvoke;
+          false
         } else {
         	aiResult.domain.postAnalysis
           if (aiResult.domain.callToClassForNameFound) {
@@ -669,9 +708,12 @@ trait TaintAnalysisDomain[Source]
           contextNode.addChild(callerNode)
 
           relevantValuesOrigins = (pc, returnNode) :: relevantValuesOrigins
+          
+          true
         }
       }
     }
+    false
   }
 
   /**
@@ -744,6 +786,7 @@ class CalledTaintAnalysisDomain[Source](
   
   objectTypesWithCreatedInstance = previousTaintAnalysisDomain.objectTypesWithCreatedInstance
   taintedFields = previousTaintAnalysisDomain.taintedFields
+  objectTypesWithCreatedInstance = previousTaintAnalysisDomain.objectTypesWithCreatedInstance
 
   val contextNode = new SimpleNode((relevantParameters, contextIdentifier))
 

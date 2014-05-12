@@ -26,16 +26,20 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package jdkBugsTest;
+package interfaceTest;
 
 /**
- * This is a helperMethod for InvokeVirtualTest 
- * its purpose is to server as abstract class
+ * This is a test for the JDKBugs Class.forName() analysis. It has a call to
+ * Class.forName() via an interface method. The analysis should only
+ * analyze ConcreteHelper as it is known to be the precise type
  * 
  * @author Lars Schulte
  */
-public abstract class InvokeVirtualHelper {
+public class InterfaceTest {
 
-	public abstract Object method3(Class c);
-
+	public static Object method1(String s) throws ClassNotFoundException {
+		InterfaceHelper interfaceHelper = new ConcreteHelper();
+		Object o = interfaceHelper.getClass(s);
+		return o;
+	}
 }

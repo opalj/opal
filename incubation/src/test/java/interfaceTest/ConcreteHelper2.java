@@ -26,13 +26,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package jdkBugsTest;
+package interfaceTest;
+
 
 /**
- * This is a helper class for InterfaceTest
+ * This is a helper class for InterfaceTest.
  * 
  * @author Lars Schulte
  */
-public interface InterfaceHelper {
-	public Object getClass(String s);
+public class ConcreteHelper2 implements InterfaceHelper {
+
+	@Override
+	public Object getClass(String s) {
+		Object o = method1(s);
+		return o;
+	}
+
+	private static Object method1(String s) {
+		Class c = null;
+		try {
+			c = Class.forName(s);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return c;
+	}
 }

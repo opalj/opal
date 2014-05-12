@@ -26,20 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package jdkBugsTest;
+package invokeVirtualTest;
 
 /**
  * This is a test for the JDKBugs Class.forName() analysis. It has a call to
- * Class.forName() via an interface method. InterfaceHelper is the interface
- * that gets implemented by ConcreteHelper and ConcreteHelper2. 
+ * Class.forName() by using an instance of InvokeVirtualHelper2
  * 
  * @author Lars Schulte
  */
-public class InterfaceTest {
+public class InvokeVirtualTest2 {
 
-	public static Object method1(String s) throws ClassNotFoundException {
-		InterfaceHelper interfaceHelper = new ConcreteHelper();
-		Object o = interfaceHelper.getClass(s);
-		return o;
+	public Class method1(String s) {
+		return method2(s);
 	}
+
+	public Class method2(String s) {
+		InvokeVirtualHelper2 ivh2 = new InvokeVirtualHelper2();
+		return ivh2.getClass(s);
+	}
+
 }
