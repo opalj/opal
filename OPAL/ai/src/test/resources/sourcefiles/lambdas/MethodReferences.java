@@ -46,12 +46,13 @@ import static de.tud.cs.st.bat.test.invokedynamic.annotations.TargetResolution.*
  * @author Arne Lottmann
  */
 public class MethodReferences {
+    @InvokedMethod(resolution = DYNAMIC, receiverType = Value.class, name = "isEmpty", lineNumber = 52)
 	public void filterOutEmptyValues() {
 		java.util.List<Value> values = java.util.Arrays.asList(new Value("foo"), new Value(""));
 		values.stream().filter(Value::isEmpty);
 	}
 
-	@InvokedMethod(resolution = DYNAMIC, receiverType = Value.class, name = "compare", lineNumber = 57)
+	@InvokedMethod(resolution = DYNAMIC, receiverType = Value.class, name = "compare", lineNumber = 58, isStatic = true)
 	public void compareValues() {
 		java.util.Comparator<Value> comparator = Value::compare;
 		System.out.println(comparator.compare(new Value("a"), new Value("b")));
