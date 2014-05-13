@@ -727,6 +727,9 @@ final object ObjectType {
     // two reference types where the subtype is an array type 
     final val Serializable = ObjectType("java/io/Serializable")
     final val Cloneable = ObjectType("java/lang/Cloneable")
+    
+    // the following type is relevant to invokedynamic handling
+    final val LambdaMetafactory = ObjectType("java/lang/invoke/LambdaMetafactory")
 
     private final val javaLangBooleanId = Boolean.id
     private final val javaLangDoubleId = Double.id
