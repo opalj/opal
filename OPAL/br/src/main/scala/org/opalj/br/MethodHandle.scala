@@ -53,8 +53,8 @@ sealed trait FieldAccessMethodHandle extends MethodHandle {
     def declaringClassType: ObjectType
     def name: String
     def fieldType: FieldType
-    
-    def asVirtualField = VirtualField(declaringClassType,name,fieldType)
+
+    def asVirtualField = VirtualField(declaringClassType, name, fieldType)
 
     override def toJava: String = {
         val handleType = getClass.getSimpleName.toString
@@ -103,6 +103,13 @@ trait MethodCallMethodHandle extends MethodHandle {
         val methodCall = name + methodDescriptor.toUMLNotation
         handleType+": "+typeName+"."+methodCall
     }
+}
+
+object MethodCallMethodHandle {
+
+    def unapply(handle: MethodCallMethodHandle): Option[(ReferenceType, String, MethodDescriptor)] =
+        Some((handle.receiverType, handle.name, handle.methodDescriptor))
+
 }
 
 case class InvokeVirtualMethodHandle(

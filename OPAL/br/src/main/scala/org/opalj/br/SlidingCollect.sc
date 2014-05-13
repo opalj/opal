@@ -334,7 +334,7 @@ object SlidingCollect {
 
     def pcsWithNewMethodDescriptorMatcherAndUnrolled =
         time(2, 4, 5, {
-             val theMethods = scala.collection.mutable.HashSet(
+            val theMethods = scala.collection.mutable.HashSet(
                 "booleanValue",
                 "byteValue",
                 "charValue",
@@ -356,30 +356,30 @@ object SlidingCollect {
                 var next_pc = body.pcOfNextInstruction(pc)
 
                 while (next_pc < max_pc) {
-                    if (pc + 3 == next_pc) {
-                        instructions(pc) match {
-                            case INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)) ⇒
-                                instructions(next_pc) match {
-                                    case INVOKEVIRTUAL(`receiver1`, name, NoArgumentMethodDescriptor(returnType: BaseType)) if (returnType ne parameterType) &&
-                                        (receiver1.isPrimitiveTypeWrapper &&
-                                            theMethods.contains(name)) ⇒ {
-                                        result = (classFile.fqn, method.toJava, pc) :: result
-                                        // we have matched the sequence
-                                        pc = body.pcOfNextInstruction(next_pc)
-                                    }
-                                    case _ ⇒
-                                        pc = next_pc
-                                        next_pc = body.pcOfNextInstruction(pc)
-
+                    // if (pc + 3 == next_pc) {
+                    instructions(pc) match {
+                        case INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)) ⇒
+                            instructions(next_pc) match {
+                                case INVOKEVIRTUAL(`receiver1`, name, NoArgumentMethodDescriptor(returnType: BaseType)) if (returnType ne parameterType) &&
+                                    (receiver1.isPrimitiveTypeWrapper &&
+                                        theMethods.contains(name)) ⇒ {
+                                    result = (classFile.fqn, method.toJava, pc) :: result
+                                    // we have matched the sequence
+                                    pc = body.pcOfNextInstruction(next_pc)
                                 }
-                            case _ ⇒
-                                pc = next_pc
-                                next_pc = body.pcOfNextInstruction(pc)
-                        }
-                    } else {
-                        pc = next_pc
-                        next_pc = body.pcOfNextInstruction(pc)
+                                case _ ⇒
+                                    pc = next_pc
+                                    next_pc = body.pcOfNextInstruction(pc)
+
+                            }
+                        case _ ⇒
+                            pc = next_pc
+                            next_pc = body.pcOfNextInstruction(pc)
                     }
+                    // } else {
+                    //     pc = next_pc
+                    //       next_pc = body.pcOfNextInstruction(pc)
+                    // }
                 }
             }
             result
@@ -388,15 +388,13 @@ object SlidingCollect {
             println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
         }
     pcsWithNewMethodDescriptorMatcherAndUnrolled
-		
-		
-		
-		/* FOR SCALA CONSOLE
+
+    /* FOR SCALA CONSOLE
 import org.opalj.br._
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
-// read in the entire JDK 
+// read in the entire JDK
 val project = ClassFiles(new java.io.File("/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/jre/lib"))
             	
 val theMethods = Set(
