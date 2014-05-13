@@ -1029,6 +1029,7 @@ trait AI[D <: Domain] {
                                     abruptMethodExecution(pc, exceptionValue)
 
                                 case IsReferenceValue(referenceValues) ⇒
+                                // TODO [issue or documentation lacking] Shouldn't it be a foreach loop in case of "throw (if(x) ExA else ExB)"
                                     val isHandled = referenceValues.forall(referenceValue ⇒
                                         // find the exception handler that matches the given 
                                         // exception
