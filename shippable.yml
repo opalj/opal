@@ -1,0 +1,8 @@
+language: scala
+scala:
+   - 2.11.0
+jdk:
+  - oraclejdk8
+notifications:
+  email:
+    - eichberg@informatik.tu-darmstadt.de
