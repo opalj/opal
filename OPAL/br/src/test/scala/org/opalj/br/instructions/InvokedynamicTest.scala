@@ -30,54 +30,23 @@ package org.opalj
 package br
 package instructions
 
-import analyses.{Project, SomeProject}
+import analyses.{ Project, SomeProject }
 
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 
 /**
  * Test resolution capabilities of the [[INVOKEDYNAMIC]] instruction.
- * 
+ *
  * @author Arne Lottmann
  */
 class InvokedynamicTest extends FunSpec with Matchers {
+
     val InvokedMethod = ObjectType("de/tud/cs/st/bat/test/invokedynamic/annotations/InvokedMethod")
-    val testResources = TestSupport.locateTestResources("classfiles/Lambdas.jar", "ext/ai")
+
+    val testResources = TestSupport.locateTestResources("classfiles/Lambdas.jar", "bi")
+
     val project: SomeProject = Project(testResources)
-
-    describe("An INVOKEDYNAMIC instruction") {
-        describe("when handling Java 8 lambda expressions") {
-            val Lambdas = project.classFile(ObjectType("lambdas/Lambdas")).get
-
-            it("should resolve a parameterless lambda") {
-                testMethod(Lambdas, "plainLambda")
-            }
-
-            it("should resolve a lambda with a reference to a local variable") {
-                testMethod(Lambdas, "localClosure")
-            }
-            
-            it("should resolve a lambda with a reference to an instance variable") {
-                testMethod(Lambdas, "instanceClosure")
-            }
-            
-            it("should resolve a lambda with references to both local and instance variables") {
-                testMethod(Lambdas, "localAndInstanceClosure")
-            }
-        }
-        
-        describe("when handling Java 8 method references") {
-            val MethodReferences = project.classFile(ObjectType("lambdas/MethodReferences")).get
-            
-            it("should resolve a reference to a static method") {
-                testMethod(MethodReferences, "compareValues")
-            }
-            
-            it("should resolve a reference to an instance method") {
-                testMethod(MethodReferences, "filterOutEmptyValues")
-            }
-        }
-    }
 
     private def testMethod(classFile: ClassFile, name: String) {
         for {
@@ -88,7 +57,8 @@ class InvokedynamicTest extends FunSpec with Matchers {
         } {
             val expectedTarget = getInvokedMethod(annotations)
             expectedTarget should be('defined)
-            val actualTarget = invokedynamic.resolve(project)
+
+            val actualTarget = invokedynamic.resolveJDK8(project)
             actualTarget should be('defined)
             actualTarget should be(expectedTarget)
         }
@@ -106,15 +76,51 @@ class InvokedynamicTest extends FunSpec with Matchers {
      * invokedynamic instruction, while all other times would refer to invocations of the
      * generated object's single method).
      */
-    private def getInvokedMethod(annotations: Annotations): Option[Method] = {
-        (for {
-            invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
-            pairs = invokedMethod.elementValuePairs
-            ElementValuePair("receiverType", ClassValue(receiverType)) ← pairs
-            ElementValuePair("name", StringValue(methodName)) ← pairs
-            classFile ← project.classFile(receiverType.asObjectType)
-        } yield {
-            classFile.findMethod(methodName)
-        }).head
+    private def getInvokedMethod(annotations: Annotations): Option[Method] =
+        (
+            for {
+                invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
+                pairs = invokedMethod.elementValuePairs
+                ElementValuePair("receiverType", ClassValue(receiverType)) ← pairs
+                ElementValuePair("name", StringValue(methodName)) ← pairs
+                classFile ← project.classFile(receiverType.asObjectType)
+            } yield {
+                classFile.findMethod(methodName)
+            }
+        ).head
+
+    describe("An INVOKEDYNAMIC instruction") {
+        describe("when handling Java 8 lambda expressions") {
+            val Lambdas = project.classFile(ObjectType("lambdas/Lambdas")).get
+
+            it("should resolve a parameterless lambda") {
+                testMethod(Lambdas, "plainLambda")
+            }
+
+            it("should resolve a lambda with a reference to a local variable") {
+                testMethod(Lambdas, "localClosure")
+            }
+
+            it("should resolve a lambda with a reference to an instance variable") {
+                testMethod(Lambdas, "instanceClosure")
+            }
+
+            it("should resolve a lambda with references to both local and instance variables") {
+                testMethod(Lambdas, "localAndInstanceClosure")
+            }
+        }
+
+        describe("when handling Java 8 method references") {
+            val MethodReferences = project.classFile(ObjectType("lambdas/MethodReferences")).get
+
+            it("should resolve a reference to a static method") {
+                testMethod(MethodReferences, "compareValues")
+            }
+
+            it("should resolve a reference to an instance method") {
+                testMethod(MethodReferences, "filterOutEmptyValues")
+            }
+        }
     }
+
 }

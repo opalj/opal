@@ -686,15 +686,6 @@ final object ObjectType {
 
     final val Object = ObjectType("java/lang/Object")
 
-    final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
-    final val MethodType = ObjectType("java/lang/invoke/MethodType")
-
-    final val Class = ObjectType("java/lang/Class")
-    final val Throwable = ObjectType("java/lang/Throwable")
-    final val Error = ObjectType("java/lang/Error")
-    final val Exception = ObjectType("java/lang/Exception")
-    final val RuntimeException = ObjectType("java/lang/RuntimeException")
-
     final val Boolean = ObjectType("java/lang/Boolean")
     final val Byte = ObjectType("java/lang/Byte")
     final val Char = ObjectType("java/lang/Char")
@@ -705,7 +696,17 @@ final object ObjectType {
     final val Double = ObjectType("java/lang/Double")
     assume(Double.id - Boolean.id == 7)
 
+    final val Class = ObjectType("java/lang/Class")
+    final val Throwable = ObjectType("java/lang/Throwable")
+    final val Error = ObjectType("java/lang/Error")
+    final val Exception = ObjectType("java/lang/Exception")
+    final val RuntimeException = ObjectType("java/lang/RuntimeException")
     final val String = ObjectType("java/lang/String")
+    
+    // Types related to the invokedynamic instruction
+    final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
+    final val MethodType = ObjectType("java/lang/invoke/MethodType")
+    final val LambdaMetafactory = ObjectType("java/lang/invoke/LambdaMetafactory")
 
     // Exceptions and errors that may be thrown by the JVM (i.e., instances of these 
     // exceptions may be created at runtime by the JVM)
@@ -727,9 +728,6 @@ final object ObjectType {
     // two reference types where the subtype is an array type 
     final val Serializable = ObjectType("java/io/Serializable")
     final val Cloneable = ObjectType("java/lang/Cloneable")
-    
-    // the following type is relevant to invokedynamic handling
-    final val LambdaMetafactory = ObjectType("java/lang/invoke/LambdaMetafactory")
 
     private final val javaLangBooleanId = Boolean.id
     private final val javaLangDoubleId = Double.id
