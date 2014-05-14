@@ -106,21 +106,29 @@ trait CHACallGraphDomain
     // handles method calls where the target method can statically be resolved
     @inline protected[this] def staticMethodCall(
         pc: PC,
-        declaringClass: ObjectType,
+        declaringClassType: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
         operands: List[DomainValue]): Unit = {
-        classHierarchy.lookupMethodDefinition(
-            declaringClass, name, descriptor, project
-        ) match {
-                case Some(callee) ⇒
-                    addCallEdge(pc, HashSet(callee))
-                case None ⇒
-                    addUnresolvedMethodCall(
-                        theClassFile.thisType, theMethod, pc,
-                        declaringClass, name, descriptor
-                    )
-            }
+
+        def handleUnresolvedMethodCall() =
+            addUnresolvedMethodCall(
+                theClassFile.thisType, theMethod, pc,
+                declaringClassType, name, descriptor
+            )
+
+        if (classHierarchy.isKnown(declaringClassType)) {
+            classHierarchy.lookupMethodDefinition(
+                declaringClassType, name, descriptor, project
+            ) match {
+                    case Some(callee) ⇒
+                        addCallEdge(pc, HashSet(callee))
+                    case None ⇒
+                        handleUnresolvedMethodCall()
+                }
+        } else {
+            handleUnresolvedMethodCall()
+        }
     }
 
     @inline protected[this] def virtualMethodCall(
@@ -130,13 +138,18 @@ trait CHACallGraphDomain
         descriptor: MethodDescriptor,
         operands: List[DomainValue]): Unit = {
 
-        val methodSignature = new MethodSignature(name, descriptor)
-        val callees =
-            cache.getOrElseUpdate(declaringClassType, methodSignature) {
-                classHierarchy.lookupImplementingMethods(
-                    declaringClassType, name, descriptor, project
-                )
+        val callees: Set[Method] = {
+            if (classHierarchy.isKnown(declaringClassType)) {
+                val methodSignature = new MethodSignature(name, descriptor)
+                cache.getOrElseUpdate(declaringClassType, methodSignature) {
+                    classHierarchy.lookupImplementingMethods(
+                        declaringClassType, name, descriptor, project
+                    )
+                }
+            } else {
+                Set.empty
             }
+        }
 
         if (callees.isEmpty)
             addUnresolvedMethodCall(
