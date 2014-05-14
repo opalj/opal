@@ -170,6 +170,15 @@ final class ClassFile private (
     def constructors: Seq[Method] = methods.view filter { _.name == "<init>" }
 
     /**
+     * The set of all instance methods. I.e., the set of methods that are not static,
+     * constructors, or static initializers.
+     */
+    def instanceMethods: Iterable[Method] =
+        methods.view filterNot { method ⇒
+            method.isStatic || method.isConstructor || method.isStaticInitializer
+        }
+
+    /**
      * The static initializer of this class.
      *
      * @note The way how the static initializer is identified has changed
