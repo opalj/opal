@@ -26,34 +26,20 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.test.invokedynamic.annotations;
+package org.opal.ai.test.invokedynamic.annotations;
 
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
 /**
- * Describes a method call. For types see the {@link TargetResolution} enum.
+ * Wrapper annotation that allows several InvokedMethod annotations on the same method.
  * 
  * @author Arne Lottmann
  */
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface InvokedMethod {
+public @interface InvokedMethods {
 
-    TargetResolution resolution() default TargetResolution.DEFAULT;
-
-    Class<?> receiverType();
-
-    String name();
-
-    Class<?> returnType() default Void.class;
-
-    Class<?>[] parameterTypes() default {};
-
-    int lineNumber() default -1;
-
-    boolean isStatic() default false;
-    
-    boolean isReflective() default false;
+    InvokedMethod[] value();
 }

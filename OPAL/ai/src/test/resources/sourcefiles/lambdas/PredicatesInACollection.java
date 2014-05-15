@@ -32,8 +32,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 
-import de.tud.cs.st.bat.test.invokedynamic.annotations.*;
-import static de.tud.cs.st.bat.test.invokedynamic.annotations.TargetResolution.*;
+import org.opal.ai.test.invokedynamic.annotations.*;
+import static org.opal.ai.test.invokedynamic.annotations.TargetResolution.*;
 
 /**
  * A few cases of lambda-predicates stored in collections.

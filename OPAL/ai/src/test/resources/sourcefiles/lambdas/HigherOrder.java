@@ -30,9 +30,9 @@ package lambdas;
 
 import java.util.function.Predicate;
 
-import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethod;
-import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethods;
-import static de.tud.cs.st.bat.test.invokedynamic.annotations.TargetResolution.*;
+import org.opal.ai.test.invokedynamic.annotations.InvokedMethod;
+import org.opal.ai.test.invokedynamic.annotations.InvokedMethods;
+import static org.opal.ai.test.invokedynamic.annotations.TargetResolution.*;
 
 /**
  * A few test cases exploring "higher order" and nested lambdas.

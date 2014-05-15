@@ -26,20 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.test.invokedynamic.annotations;
+package org.opal.ai.test.invokedynamic.annotations;
 
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
 /**
- * Wrapper annotation that allows several InvokedConstructor annotations on the same method.
+ * Describes a constructor call made by an invokedynamic instruction or through use of the Java
+ * reflection API.
  * 
  * @author Arne Lottmann
  */
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface InvokedConstructors {
+public @interface InvokedConstructor {
 
-    InvokedConstructor[] value();
+    Class<?> receiverType();
+
+    Class<?>[] parameterTypes() default {};
+
+    int lineNumber() default -1;
+    
+    boolean isReflective() default false;
 }
