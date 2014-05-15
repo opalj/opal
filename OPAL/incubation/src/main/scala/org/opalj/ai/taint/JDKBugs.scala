@@ -27,35 +27,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
 package ai
 package taint
 
-import instructions._
+import java.net.URL
+import org.opalj.graphs._
+import br._
+import org.opalj.br.instructions._
+import org.opalj.br.analyses.{ Project, Analysis, AnalysisExecutor, ReportableAnalysisResult }
+import project.{ AIProject, Report }
 import domain._
 import domain.l0._
 import domain.l1._
 import domain.tracing._
 import debug.XHTML._
 
-import analyses.{ Project, Analysis, AnalysisExecutor, ReportableAnalysisResult }
-import project.{ AIProject, Report }
-import de.tud.cs.st.util.graphs._
-import de.tud.cs.st.util.ControlAbstractions.process
-
-import java.net.URL
-
 /**
  * Searches for occurrences of the Class.forName bug in the JDK
- * 
+ *
  * @author Lars Schulte
  */
 object JDKTaintAnalysis
-  extends AIProject[URL, SomeDomain with Report]
+  extends AIProject[URL, Domain with Report]
   with Analysis[URL, ReportableAnalysisResult]
   with AnalysisExecutor {
 
-  def ai = new AI[SomeDomain with Report] {}
+  //  var startTime = System.currentTimeMillis()
+
+  def ai = new AI[Domain with Report] {}
 
   def description: String = "Finds unsafe Class.forName(...) calls."
 
@@ -116,33 +115,37 @@ object JDKTaintAnalysis
   def domain(
     project: analyses.Project[URL],
     classFile: ClassFile,
-    method: Method): Domain[CallStackEntry] with Report = {
+    method: Method): Domain with Report = {
+    //    var endTime = System.currentTimeMillis()
+    //    println((endTime - startTime).toString)
     new RootTaintAnalysisDomain[URL](project, List.empty, CallStackEntry(classFile, method), false)
   }
 }
 
 trait TaintAnalysisDomain[Source]
-  extends Domain[CallStackEntry]
+  extends Domain
   with IgnoreMethodResults
   with IgnoreSynchronization
-  with DefaultDomainValueBinding[CallStackEntry]
-  with DefaultTypeLevelLongValues[CallStackEntry]
-  with DefaultTypeLevelFloatValues[CallStackEntry]
-  with DefaultTypeLevelDoubleValues[CallStackEntry]
-  with DefaultTypeLevelIntegerValues[CallStackEntry]
-  with DefaultStringValuesBinding[CallStackEntry]
+  with DefaultDomainValueBinding
+  with DefaultTypeLevelLongValues
+  with DefaultTypeLevelFloatValues
+  with DefaultTypeLevelDoubleValues
+  with DefaultTypeLevelIntegerValues
+  with DefaultStringValuesBinding
+  with DefaultIntegerValuesComparison
   with Configuration
   with TypeLevelFieldAccessInstructions
   with TypeLevelInvokeInstructions
   with ProjectBasedClassHierarchy[Source]
   with Report { thisDomain ⇒
 
-  import de.tud.cs.st.util.Unknown
+  type Id = CallStackEntry
+
   import ObjectType._
 
-  protected def declaringClass = identifier.classFile.thisType
-  protected def methodName = identifier.method.name
-  protected def methodDescriptor = identifier.method.descriptor
+  protected def declaringClass = id.classFile.thisType
+  protected def methodName = id.method.name
+  protected def methodDescriptor = id.method.descriptor
 
   protected def contextIdentifier =
     declaringClass.fqn + "{ " + methodDescriptor.toJava(methodName) + " }"
@@ -204,17 +207,10 @@ trait TaintAnalysisDomain[Source]
   protected var callToClassForNameFound: Boolean = false;
 
   /**
-   * Stores all objects that are know to be instantiated.
-   * This helps to reduce the number of classes that have
-   * to be checked in case of invokeinterface
+   *
    */
-  var objectTypesWithCreatedInstance: List[ObjectType] = List.empty
+  case class CachedInterfaceCall(methodName: String, methodDescriptor: MethodDescriptor, operands: List[String], classForNameBugFound: Boolean)
 
-  case class CachedInterfaceCall(methodName: String, methodDescriptor: MethodDescriptor, operands: List[DomainValue], result: Boolean)
-  
-  protected var cachedInterfaceCalls: List[CachedInterfaceCall] = List.empty 
-  
-  
   /**
    * @note
    * Calling this method only makes sense when the analysis of this domain's method
@@ -242,7 +238,7 @@ trait TaintAnalysisDomain[Source]
    * This method must be called at most once otherwise the constructed analysis graph
    * may contain duplicate information.
    */
-  private def postAnalysis(): Boolean = {
+  def postAnalysis(): Boolean = {
     relevantValuesOrigins.foreach { relevantValueOrigin =>
       returnedValues.foreach { returnedValue =>
         if (origin(returnedValue._2).exists { returnedValueOrigin =>
@@ -305,17 +301,17 @@ trait TaintAnalysisDomain[Source]
     methodName: String,
     methodDescriptor: MethodDescriptor,
     operands: List[DomainValue]): MethodCallResult = {
-    
-//    println(pc)
-//    println(declaringClass)
-//    println(methodName)
-//    println(methodDescriptor)
-//    println(operands)
-//    println()
+
+    //    println(pc)
+    //    println(declaringClass)
+    //    println(methodName)
+    //    println(methodDescriptor)
+    //    println(operands)
+    //    println()
 
     def doTypeLevelInvoke =
       super.invokeinterface(pc, declaringClass, methodName, methodDescriptor, operands)
-    
+
     if (isIrrelevantInvoke(methodDescriptor, declaringClass))
       return doTypeLevelInvoke;
 
@@ -323,18 +319,18 @@ trait TaintAnalysisDomain[Source]
     if (relevantOperands.isEmpty)
       return doTypeLevelInvoke;
 
-    var temp = cachedInterfaceCalls.filter(x => 
-      x.methodDescriptor == methodDescriptor && 
-      x.methodName == methodName &&
-      x.operands == operands)
-      
-    if(temp != null){
-      if (temp.exists(x => x.result == true)){
-      } else {
-      }
+    // filters cachedInterfaceCalls to see if there has already been a call to the
+    // same implementing class with the same parameters
+    var matchingCachedInterfaceCalls = cachedInterfaceCalls.filter(x =>
+      x._1 == methodName &&
+        x._2 == methodDescriptor &&
+        x._3 == operands.toString)
+
+    // if that is the case the analysis stops  
+    if (matchingCachedInterfaceCalls.nonEmpty) {
       return doTypeLevelInvoke;
     }
-    
+
     // If we reach this point, we have an invocation of a relevant method 
     // with a relevant parameter that is not our final sink...
 
@@ -346,21 +342,24 @@ trait TaintAnalysisDomain[Source]
         project).getOrElse {
           return doTypeLevelInvoke
         }
-    
-        val filter : (ObjectType => Boolean) = operands.last match {
-    	case x : SObjectValue => 
-    	  if(x.isPrecise){
-    	    (x.upperTypeBound.contains(_))
-    	  } else {
-    	    (_ => true)
-    	  }
-    	case _ => {
-    	  //println("No SObjectValue: " + operands + " " + declaringClass+ " " + methodName) 
-    	  (_ => false )
-    	} 
+
+    cachedInterfaceCalls = (methodName, methodDescriptor, operands.toString) :: cachedInterfaceCalls
+
+    // define a filter for the call to lookupImplementing methods
+    // if the ObjectT>ype is precise it's upper bound is used.
+    // else every implementing method is analyzed
+    val filter: (ObjectType => Boolean) = operands.last match {
+      case x: SObjectValue =>
+        if (x.isPrecise) {
+          (x.upperTypeBound.contains(_))
+        } else {
+          (_ => true)
+        }
+      case _ => {
+        (_ => false)
+      }
     }
-    
-    
+
     // look up every class that implements the method and was previously
     // instanced
     val implementingMethods = classHierarchy.lookupImplementingMethods(
@@ -369,13 +368,11 @@ trait TaintAnalysisDomain[Source]
       methodDescriptor,
       project,
       filter)
-      
-      
+
     // analyze every found method implementation
     implementingMethods.foreach { (m: Method) =>
       {
-    	    val call = CachedInterfaceCall(methodName, methodDescriptor, operands, inspectMethod(pc, m, operands))
-    	    cachedInterfaceCalls = call :: cachedInterfaceCalls
+        inspectMethod(pc, m, operands)
       }
     }
     return doTypeLevelInvoke
@@ -435,14 +432,6 @@ trait TaintAnalysisDomain[Source]
 
     def doTypeLevelInvoke =
       super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
-
-    // check if its an instance creation - in this case we need to save
-    // the objectType so we can check for it in case of invokeInterface
-    if (methodName == "<init>") {
-      if (!objectTypesWithCreatedInstance.contains(declaringClass)) {
-        objectTypesWithCreatedInstance = declaringClass :: objectTypesWithCreatedInstance
-      }
-    }
 
     if (isIrrelevantInvoke(methodDescriptor, declaringClass))
       return doTypeLevelInvoke;
@@ -663,13 +652,11 @@ trait TaintAnalysisDomain[Source]
   def inspectMethod(
     pc: PC,
     method: Method,
-    operands: List[DomainValue]) : Boolean = {
-
+    operands: List[DomainValue]): Boolean = {
     val classFile = project.classFile(method)
 
-    if (!method.isNative) {
-
-      val callerNode = new SimpleNode(pc + ": method invocation; method id: " + method.id)
+    if (!method.isNative && !definedInRestrictedPackage(classFile.thisType.packageName) && method.body.nonEmpty) {
+      val callerNode = new SimpleNode(pc + ": method invocation; method id: " + method)
       val calleeDomain = new CalledTaintAnalysisDomain(
         this,
         CallStackEntry(classFile, method),
@@ -677,26 +664,30 @@ trait TaintAnalysisDomain[Source]
         List(-1, -2),
         checkForGlobalFields)
 
-      val calleeParameters = operands.reverse.zipWithIndex.map { operand_index ⇒
-        val (operand, index) = operand_index
-        operand.adapt(calleeDomain, -(index + 1))
-      }.toArray(calleeDomain.DomainValueTag)
+      val calleeParameters = calleeDomain.DomainValueTag.newArray(method.body.get.maxLocals)
+      var localVariableIndex = 0
+      for ((operand, index) ← operands.view.reverse.zipWithIndex) {
+        calleeParameters(localVariableIndex) =
+          operand.adapt(calleeDomain, -(index + 1))
+        localVariableIndex += operand.computationalType.operandSize
+      }
+
       val parameters = DomainValues(calleeDomain)(calleeParameters)
-
       if (isRecursiveCall(classFile, method, parameters)) {
-    	  false
+        false
       } else {
-
         // If we reach this point, we have an invocation of a relevant method 
         // with a relevant parameter that is not our final sink and which is
         // not native and which is not a recursive call
         val v = method.body.get
         // Analyze the method
+        //println("analyzing: " + method + " in " + classFile)
+
         val aiResult = BaseAI.perform(classFile, method, calleeDomain)(Some(calleeParameters))
         if (!aiResult.domain.isRelevantValueReturned) {
           false
         } else {
-        	aiResult.domain.postAnalysis
+          aiResult.domain.postAnalysis()
           if (aiResult.domain.callToClassForNameFound) {
             callToClassForNameFound = true;
           }
@@ -707,7 +698,6 @@ trait TaintAnalysisDomain[Source]
           contextNode.addChild(callerNode)
 
           relevantValuesOrigins = (pc, returnNode) :: relevantValuesOrigins
-          
           true
         }
       }
@@ -741,17 +731,15 @@ trait TaintAnalysisDomain[Source]
 class RootTaintAnalysisDomain[Source](
   val project: Project[Source],
   val taintedGloableFields: List[String],
-  val identifier: CallStackEntry,
+  val id: CallStackEntry,
   val checkForGlobalFields: Boolean)
   extends TaintAnalysisDomain[Source] {
   val callerNode = new SimpleNode("Some user of the API")
 
   val contextNode: SimpleNode[(RelevantParameters, String)] = {
 
-    objectTypesWithCreatedInstance = List.empty;
     taintedFields = taintedGloableFields
-
-    val firstIndex = if (identifier.method.isStatic) 1 else 2
+    val firstIndex = if (id.method.isStatic) 1 else 2
     val relevantParameters = {
       methodDescriptor.parameterTypes.zipWithIndex.filter { param_idx =>
         val (parameterType, _) = param_idx;
@@ -776,16 +764,15 @@ class RootTaintAnalysisDomain[Source](
 
 class CalledTaintAnalysisDomain[Source](
   val previousTaintAnalysisDomain: TaintAnalysisDomain[Source],
-  val identifier: CallStackEntry,
+  val id: CallStackEntry,
   val callerNode: SimpleNode[_],
   val relevantParameters: RelevantParameters,
   val checkForGlobalFields: Boolean)
 
   extends TaintAnalysisDomain[Source] {
-  
-  objectTypesWithCreatedInstance = previousTaintAnalysisDomain.objectTypesWithCreatedInstance
+
   taintedFields = previousTaintAnalysisDomain.taintedFields
-  objectTypesWithCreatedInstance = previousTaintAnalysisDomain.objectTypesWithCreatedInstance
+  //cachedInterfaceCalls = previousTaintAnalysisDomain.cachedInterfaceCalls
 
   val contextNode = new SimpleNode((relevantParameters, contextIdentifier))
 
