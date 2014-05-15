@@ -74,7 +74,7 @@ class Project[Source] private (
         val libraryClassFilesCount: Int,
         val libraryMethodsCount: Int,
         val libraryFieldsCount: Int,
-        val classHierarchy: ClassHierarchy) {
+        val classHierarchy: ClassHierarchy) extends ClassFileRepository {
 
     val classFilesCount: Int =
         projectClassFilesCount + libraryClassFilesCount
@@ -134,7 +134,7 @@ class Project[Source] private (
      *
      * @param objectType Some object type. (This method is defined for all `ObjectType`s.)
      */
-    def classFile(objectType: ObjectType): Option[ClassFile] =
+    override def classFile(objectType: ObjectType): Option[ClassFile] =
         objectTypeToClassFile.get(objectType)
 
     /**

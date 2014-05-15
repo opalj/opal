@@ -291,7 +291,7 @@ object PerformanceEvaluation {
                     runsSinceLastUpdate = 0
                 } else {
                     runsSinceLastUpdate += 1
-                    if (runsSinceLastUpdate > minimalNumberOfRelevantRuns * 10) {
+                    if (runsSinceLastUpdate > minimalNumberOfRelevantRuns * 2) {
                         // for whatever reason the current average seems to be "too" slow
                         // let's add the last run to rise the average 
                         times = t :: times
