@@ -26,27 +26,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.test.invokedynamic.annotations;
-
-import java.lang.annotation.*;
-import static java.lang.annotation.RetentionPolicy.*;
-import static java.lang.annotation.ElementType.*;
+package org.opal.ai.test.invokedynamic.annotations;
 
 /**
- * Describes a constructor call made by an invokedynamic instruction or through use of the Java
- * reflection API.
+ * Describes whether the method call instruction is a standard invoke instruction (invokevirtual,
+ * invokestatic, invokespecial, invokeinterface), an invokedynamic, or a call made through use of
+ * the Java reflection API.
  * 
  * @author Arne Lottmann
  */
-@Retention(RUNTIME)
-@Target(METHOD)
-public @interface InvokedConstructor {
-
-    Class<?> receiverType();
-
-    Class<?>[] parameterTypes() default {};
-
-    int lineNumber() default -1;
-    
-    boolean isReflective() default false;
+public enum TargetResolution {
+    /**
+     * Describes a method call made using one of the following instructions:
+     * <ul>
+     * <li>invokevirtual</li>
+     * <li>invokestatic</li>
+     * <li>invokespecial</li>
+     * <li>invokeinterface</li>
+     * </ul>
+     * .
+     */
+    DEFAULT,
+    /**
+     * Describes a method call based on an invokedynamic instruction.
+     */
+    DYNAMIC,
+    /**
+     * Describes a reflective method call.
+     */
+    REFLECTIVE
 }

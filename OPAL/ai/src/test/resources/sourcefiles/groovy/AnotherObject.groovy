@@ -28,7 +28,7 @@
  */
 package groovy;
 
-import de.tud.cs.st.bat.test.invokedynamic.annotations.*;
+import org.opal.ai.test.invokedynamic.annotations.*;
 
 /**
  * Test class for resolving invokedynamic calls to constructors, instance methods and instance field accesses on another object.
