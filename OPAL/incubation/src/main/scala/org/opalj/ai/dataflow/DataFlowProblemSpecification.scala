@@ -92,7 +92,12 @@ trait DataFlowProblemSpecification extends DataFlowProblem {
     }
 
     override def solve() = {
-        initialize()
+        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
+        time {
+            initialize()
+        } { t ⇒
+            println(f"[info] Locating the sources and sinks took ${ns2sec(t)}%.4f seconds.")
+        }
 
         super.solve()
     }

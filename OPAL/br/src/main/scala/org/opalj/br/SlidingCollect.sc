@@ -41,7 +41,7 @@ object SlidingCollect {
     def pcsBeforePullRequest =
         time(1, 3, 5, {
             for {
-                classFile ← project.view.map(_._1).par
+                classFile ← project.map(_._1)
                 method @ MethodWithBody(body) ← classFile.methods
                 Seq((_, INVOKESPECIAL(receiver1, _, MethodDescriptor(Seq(paramType), _))),
                     (pc, INVOKEVIRTUAL(receiver2, name, MethodDescriptor(Seq(), returnType)))) ← body.associateWithIndex.sliding(2)

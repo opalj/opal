@@ -26,29 +26,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.test.invokedynamic.annotations;
+package org.opal.ai.test.invokedynamic.annotations;
 
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
 /**
- * Describes a field access made by an invokedynamic instruction or through use of the Java
- * reflection API.
+ * Describes a method call. For types see the {@link TargetResolution} enum.
  * 
  * @author Arne Lottmann
  */
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface AccessedField {
+public @interface InvokedMethod {
 
-    Class<?> declaringType();
+    TargetResolution resolution() default TargetResolution.DEFAULT;
+
+    Class<?> receiverType();
 
     String name();
 
-    Class<?> fieldType();
+    Class<?> returnType() default Void.class;
 
-    boolean isStatic() default false;
+    Class<?>[] parameterTypes() default {};
 
     int lineNumber() default -1;
+
+    boolean isStatic() default false;
+    
+    boolean isReflective() default false;
 }

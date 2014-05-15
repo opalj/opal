@@ -28,7 +28,7 @@
  */
 package groovy;
 
-import de.tud.cs.st.bat.test.invokedynamic.annotations.*;
+import org.opal.ai.test.invokedynamic.annotations.*;
 
 /**
  * Test class for resolving invokedynamic calls to static methods and static field accesses to

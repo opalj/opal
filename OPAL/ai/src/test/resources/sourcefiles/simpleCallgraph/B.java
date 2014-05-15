@@ -28,9 +28,9 @@
  */
 package simpleCallgraph;
 
-import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedConstructor;
-import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethod;
-import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethods;
+import org.opal.ai.test.invokedynamic.annotations.InvokedConstructor;
+import org.opal.ai.test.invokedynamic.annotations.InvokedMethod;
+import org.opal.ai.test.invokedynamic.annotations.InvokedMethods;
 
 /**
  * This class was used to create a class file with some well defined properties. The

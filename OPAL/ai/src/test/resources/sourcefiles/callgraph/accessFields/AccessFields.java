@@ -30,7 +30,7 @@ package callgraph.accessFields;
 
 import callgraph.base.AlternateBase;
 import callgraph.base.ConcreteBase;
-import de.tud.cs.st.bat.test.invokedynamic.annotations.AccessedField;
+import org.opal.ai.test.invokedynamic.annotations.AccessedField;
 
 /**
  * This class was used to create a class file with some well defined attributes. The

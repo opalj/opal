@@ -42,7 +42,7 @@ import domain._
 import domain.l0._
 
 /**
- * Solve a data-flow problem. I.e., tries to find paths from the identified sources
+ * Solves a data-flow problem. I.e., tries to find paths from the identified sources
  * to the identified sinks.
  *
  * ==Usage==
@@ -52,7 +52,6 @@ import domain.l0._
  *     overridden by your subclass.)
  *  1. Call [[solve]]. After you have called [[solve]] you are no longer allowed
  *      to change the project or the sources and sinks.
- *
  *
  * @author Michael Eichberg and Ben Hermann
  */
@@ -64,7 +63,7 @@ trait DataFlowProblem {
     def project: SomeProject
 
     /**
-     * Identifies the values that we want to track (by means of the PC) per
+     * Identifies the values that we want to track (by means of the `PC`) per
      * relevant method.
      *
      * **The returned map must not change, after solve was called!**
@@ -90,7 +89,7 @@ trait DataFlowProblem {
     def sinkInstructions: Map[Method, Set[PC]]
 
     protected[this] def analyzeFeasability() {
-        val sourceValuesCount = sourceValues.values.map(pcs ⇒ pcs.size).sum
+        val sourceValuesCount = sourceValues.values.view.map(pcs ⇒ pcs.size).sum
         if (project.methodsCount / 10 < sourceValuesCount) {
             Console.out.println(
                 "[info] The analysis will take long; the number of source values to analyze is: "+
