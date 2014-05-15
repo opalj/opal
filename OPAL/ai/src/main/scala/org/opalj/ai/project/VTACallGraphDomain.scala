@@ -65,7 +65,7 @@ trait VTACallGraphDomain extends CHACallGraphDomain { domain ⇒
         //  - the value is precise and has a single type => static call
         //  - the value is not precise but has an upper type bound that is a subtype of the declaringClassType. 
         //  - the value is not precise and the upper type bound is a supertype 
-        //    of the declaringClassType => "strange" nevertheless, treated as a 
+        //    of the declaringClassType => "strange"; nevertheless, treated as a 
         //    standard virtual call with the upper type bound set to the declaring class.
         //  - the value is null => call to the constructor of NullPointerException
         //  - the value maybe null => additional call to the constructor of NullPointerException
