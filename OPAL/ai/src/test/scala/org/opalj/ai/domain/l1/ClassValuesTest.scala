@@ -59,6 +59,23 @@ class ClassValuesTest
 
     behavior of "ClassValues"
 
+    it should ("be able to create the right representation for Arrays of primitive values") in {
+        val domain = new RecordingDomain("Test static class values"); import domain._
+        domain.simpleClassForNameCall(-1, "[B") should be(
+            ComputedValue(Some(ClassValue(-1, ArrayType(ByteType))))
+        )
+        domain.simpleClassForNameCall(-1, "[[J") should be(
+            ComputedValue(Some(ClassValue(-1, ArrayType(ArrayType(LongType)))))
+        )
+    }
+
+    it should ("be able to create the right representation for Arrays of object values") in {
+        val domain = new RecordingDomain("Test static class values"); import domain._
+        domain.simpleClassForNameCall(-1, "[Ljava/lang/Object;") should be(
+            ComputedValue(Some(ClassValue(-1, ArrayType(ObjectType.Object ))))
+        )
+    }
+
     it should ("be able to trace static class values") in {
         val domain = new RecordingDomain("Test static class values"); import domain._
         val method = classFile.methods.find(m ⇒ m.name == "staticClassValue").get
@@ -108,8 +125,8 @@ class ClassValuesTest
     // the functionality to trace string values across method calls exists in principle,
     // but not in the domain set up for these tests.
     ignore should ("be able to trace literal strings in method parameters in Class.forName calls") in {
-        val domain = new RecordingDomain("Test literal strings in Class.forName class") 
-        import domain.ClassValue 
+        val domain = new RecordingDomain("Test literal strings in Class.forName class")
+        import domain.ClassValue
         val method = classFile.methods.find(m ⇒ m.name == "literalStringAsParameterInClassForName").get
         BaseAI(classFile, method, domain)
         domain.returnedValue.map(_.asInstanceOf[domain.DomainClassValue].value) should be(Some(ObjectType("java/lang/Integer")))

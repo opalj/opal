@@ -319,6 +319,11 @@ sealed abstract class ReferenceType extends FieldType {
  */
 object ReferenceType {
 
+    /**
+     * Creates a representation of the described [[ReferenceType]].
+     * 
+     * @param rt A string as passed to `java.lang.Class.forName(...)`.
+     */
     def apply(rt: String): ReferenceType = {
         if (rt.charAt(0) == '[')
             ArrayType(FieldType(rt.substring(1)))
