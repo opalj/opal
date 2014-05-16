@@ -1,0 +1,77 @@
+
+table {
+	width:100%;
+	min-width: 1000px;
+	font-size: 0.9em;
+	font-family: HelveticaNeue;
+	margin-top: 3em;
+	border: 1px solid gray;
+}
+thead {
+	font-weight: bold;
+	color: white;
+	background-color: gray;
+}
+caption{
+	font-weight: light;
+	font-size: 1.1em;
+	border: 1px solid gray;
+	padding: 0.2em;
+	margin: 0;
+	background-color: gray;
+	color : white;
+	text-align: left;
+}
+div.annotations{
+	font-size: 0.8em;	
+}
+th{
+	vertical-align: top;
+}
+td{
+	vertical-align: top;
+}
+tr.not_evaluated td {
+	background-color: #FFDBDB;
+}
+td + td { 
+	border-left: 1px solid #eee;
+}
+
+th.pc {
+	width:6em;
+}
+th.registers, th.stack {
+	width: 35%;
+}
+
+td.stack{
+	vertical-align: bottom;
+}
+
+ul.stack{
+	list-style:none;
+	margin-left:1em;
+	padding-left:0;
+}
+
+ul.stack li{
+	border-left:1px solid #888;
+	border-bottom:1px solid #888;
+	padding:1px;
+}
+
+ol.registers{
+	list-style-position : inside;
+	margin-left:1em;
+	padding-left:0;
+}
+ol.registers li{
+	padding:1px;
+}
+
+td.pc{
+	background-color: #ffc;
+}
+
+

@@ -4,20 +4,21 @@ advanced language features to provide a new and previously unseen level of custo
 OPAL was designed from the ground up with *extensibility*, *adaptability* and *scalability* in mind. 
 
 # Project Structure
-OPAL consists of several projects:
+OPAL consists of several projects which are found in the folder OPAL:
 
-* **Util**: Contains common helper classes.
+* **Common**(OPAL/common): Contains common helper classes.
 
-* **Bytecode Toolkit**: The core project provides functionality necessary for reading and traversing Java class files.  
+* **Bytecode Infrastructure**(OPAL/bi): The necessary infrastructure for parsing Java bytecode.  
 
-* **Abstract Interpretation Framework**: Implementation of an abstract interpretation framework that can be used to easily implement analyses at very different levels of precision. 
+* **Bytecode Representation**(OPAL/br): OPAL's primary representation of Java bytecode. Implements all functionality for creating a representation of Java class files.  
 
-* **Dependencies Extraction**: Provides support for extracting and analyzing a project's source code dependencies. This project is also used to check architectures and
-is in particular used to validate parts of OPAL's architecture.
+* **Abstract Interpretation Framework**(OPAL/ai): Implementation of an abstract interpretation framework that can be used to easily implement analyses at very different levels of precision. 
 
-* **OPAL Developer Tools**: Programs that can directly be executed and which are useful when analyzing Java bytecode.
+* **Dependencies Extraction**(OPAL/de): Provides support for extracting and analyzing a project's source code dependencies. This project is the foundation for projects to, e.g., check architectures.
 
-* **Demos**: Contains working code samples that demonstrate how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demo" (`project Demo`).
+* **Architecture Valiation**(OPAL/av): A small framework to check a project's implemented architecture against a specified one.
+
+* **Demos**(OPAL/demo): Contains working code samples that demonstrate how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demo" (`project Demo`).
 
 * **FindREALBugs**: (This project is in its very early stages!) FindBugs reloaded. For further information go to: [FindREALBugs](https://bitbucket.org/delors/opal/wiki/FindREALBugs)
 
