@@ -48,8 +48,6 @@ import domain.l0._
  */
 trait DataFlowProblemSpecification extends DataFlowProblem {
 
-    type AValueLocationMatcher = Function1[SomeProject, Map[Method, Set[PC]]]
-
     def parameterToValueIndex(method: Method, parameterIndex: Int): Int = {
         val methodParameterShift = if (method.isStatic) -1 else -2
         -parameterIndex + methodParameterShift
@@ -64,7 +62,7 @@ trait DataFlowProblemSpecification extends DataFlowProblem {
     private[this] var theSourceValues: Map[Method, Set[PC]] = _
     def sourceValues: Map[Method, Set[PC]] = theSourceValues
 
-    def origins(f: PartialFunction[Method, Seq[Int]]): Unit = {
+    def origins(f: PartialFunction[Method, Set[Int]]): Unit = {
         sourceMatchers = MethodsMatcher(f) :: sourceMatchers
     }
 
@@ -92,69 +90,31 @@ trait DataFlowProblemSpecification extends DataFlowProblem {
     }
 
     override def solve() = {
-        initialize()
+        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
+        time {
+            initialize()
+        } { t ⇒
+            println(f"[info] Locating the sources and sinks took ${ns2sec(t)}%.4f seconds.")
+        }
 
         super.solve()
     }
-
-}
-
-trait ValueLocationMatcher extends Function1[SomeProject, Map[Method, Set[PC]]] {
-
-    def apply(project: SomeProject): Map[Method, Set[PC]] // the PCs of the values that we want to track
-
 }
 
 case class MethodsMatcher(
-        matcher: PartialFunction[Method, Seq[Int]]) extends ValueLocationMatcher {
+        matcher: PartialFunction[Method, Set[Int]]) extends AValueLocationMatcher {
 
-    def apply(project: SomeProject): Map[Method, Set[PC]] = {
-        null
-    }
-}
-
-case class Methods(
-        properties: PartialFunction[Method, Boolean] = { case m: Method ⇒ true },
-        parameters: PartialFunction[(Int, FieldType), Boolean]) extends ValueLocationMatcher {
-
-    def apply(project: SomeProject): Map[Method, Set[PC]] = {
-        import scala.collection.mutable.{ HashMap, HashSet }
-
-        var result = HashMap.empty[Method, HashSet[PC]]
+    def apply(project: SomeProject): Map[Method, Set[Int]] = {
+        val map = scala.collection.mutable.AnyRefMap.empty[Method, Set[Int]]
         for {
             classFile ← project.classFiles
-            method @ MethodWithBody(body) ← classFile.methods
-            true ← properties.lift(method)
-            (parameterType, index) ← method.descriptor.parameterTypes.zipWithIndex
+            method @ MethodWithBody(_) ← classFile.methods
         } {
-            val methodParameterShift = if (method.isStatic) -1 else -2
-            val parameter = (index, parameterType)
-            if (parameters.isDefinedAt(parameter) && parameters(parameter)) {
-                result.getOrElseUpdate(method, HashSet.empty) += (-index + methodParameterShift)
-            }
+            if (matcher.isDefinedAt(method))
+                map.update(method, matcher(method))
         }
-        result
+        map
     }
 }
 
-case class Calls(
-        properties: PartialFunction[(ReferenceType, String, MethodDescriptor), Boolean]) extends ValueLocationMatcher {
-
-    def apply(project: SomeProject): Map[Method, Set[PC]] = {
-        import scala.collection.mutable.{ HashMap, HashSet }
-
-        var result = HashMap.empty[Method, HashSet[PC]]
-        for {
-            classFile ← project.classFiles
-            method @ MethodWithBody(body) ← classFile.methods
-            pc ← body collectWithIndex {
-                case (pc, MethodInvocationInstruction(receiver, name, descriptor)) if properties.isDefinedAt((receiver, name, descriptor)) &&
-                    properties((receiver, name, descriptor)) ⇒ pc
-            }
-        } {
-            result.getOrElseUpdate(method, HashSet.empty) += pc
-        }
-        result
-    }
-}
 

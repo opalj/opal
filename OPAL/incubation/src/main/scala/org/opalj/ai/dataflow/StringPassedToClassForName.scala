@@ -30,6 +30,8 @@ package org.opalj
 package ai
 package dataflow
 
+import scala.collection.{ Map, Set }
+
 import bi.AccessFlagsMatcher
 
 import br._
@@ -39,24 +41,61 @@ import br.analyses._
 import domain._
 import domain.l0._
 
-import scala.collection.{ Map, Set }
+import spec._
+
+import solver.NaiveSolver
 
 /**
  * Searches for strings that are passed to `Class.forName(_)` calls.
  *
  * @author Michael Eichberg and Ben Hermann
  */
-class StringPassedToClassForName(val project: SomeProject) extends DataFlowProblemSpecification {
+abstract class StringPassedToClassForName(val project: SomeProject)
+        extends DataFlowProblemSpecification {
 
     sources(Methods(
         properties = { case Method(AccessFlagsMatcher.NOT_PRIVATE(), _, md) ⇒ md.parametersCount >= 1 },
         parameters = { case (_ /*ID*/ , ObjectType.String) ⇒ true }
     ))
     //
-    //    origins {
-    //        case method @ Method(AccessFlagsMatcher.NOT_PRIVATE(), _, md) ⇒
-    //            md.selectParameter(_ == ObjectType.String).map(parameterToValueIndex(method, _))
-    //    }
+    origins {
+        case method @ Method(AccessFlagsMatcher.NOT_PRIVATE(), _, md) ⇒
+            md.selectParameter(_ == ObjectType.String).toSet.map(
+                parameterToValueIndex(method, _: Int)
+            )
+    }
+
+    // Scenario: ... s.subString(...)
+    call {
+        case Invoke(
+            ObjectType.String,
+            _, // methodName
+            MethodDescriptor(_, rt: ObjectType.String.type), // the called method returns a string
+            _, // calling context (Method,...)
+            _, // the caller
+            receiver @ Tainted(_ /*String*/ ), // receiver type
+            param @ _ // parameters,
+            ) ⇒
+            CallResult(
+                receiver, // our string remains tainted
+                param, // we don't care // example: r.addTo(Set s)
+                ValueIsTainted // the RESULT
+            )
+    }
+
+    // Scenario: assign a tainted string to a field of some class and mark the class as tainted
+    write {
+        case FieldWrite(
+            _,
+            _,
+            ObjectType.String,
+            _,
+            _, // the caller
+            Tainted(value: IsAReferenceValue), // receiver type
+            receiver
+            ) if value.isValueSubtypeOf(ObjectType.String).isYesOrUnknown ⇒
+            ValueIsTainted
+    }
 
     sinks(Calls(
         { case (ObjectType.Class, "forName", SingleArgumentMethodDescriptor((ObjectType.String, ObjectType.Object))) ⇒ true }
@@ -64,5 +103,6 @@ class StringPassedToClassForName(val project: SomeProject) extends DataFlowProbl
 }
 
 object StringPassedToClassForName extends DataFlowProblemRunner(
-    (project: SomeProject, parameters: Seq[String]) ⇒ new StringPassedToClassForName(project)
+    (project: SomeProject, parameters: Seq[String]) ⇒
+        new StringPassedToClassForName(project) with NaiveSolver
 )

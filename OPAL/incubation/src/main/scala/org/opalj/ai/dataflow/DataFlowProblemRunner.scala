@@ -53,7 +53,7 @@ import domain.l0._
  * @author Michael Eichberg and Ben Hermann
  */
 class DataFlowProblemRunner(
-    val dataFlowProblemFactory: (Project[URL], Seq[String]) ⇒ DataFlowProblem)
+    val dataFlowProblemFactory: (Project[URL], Seq[String]) ⇒ DataFlowProblemSolver)
         extends AnalysisExecutor {
 
     final override val analysis = new Analysis[URL, ReportableAnalysisResult] {

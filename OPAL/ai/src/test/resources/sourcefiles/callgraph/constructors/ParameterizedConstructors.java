@@ -32,7 +32,7 @@ package callgraph.constructors;
 import callgraph.base.AlternateBase;
 import callgraph.base.Base;
 import callgraph.base.ConcreteBase;
-import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedConstructor;
+import org.opal.ai.test.invokedynamic.annotations.InvokedConstructor;
 
 /**
  * This class was used to create a class file with some well defined attributes. The

@@ -26,51 +26,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package callgraph.staticCalls;
+package org.opal.ai.test.invokedynamic.annotations;
 
-import callgraph.base.AbstractBase;
-import callgraph.base.ConcreteBase;
-import callgraph.base.SimpleBase;
-import org.opal.ai.test.invokedynamic.annotations.InvokedMethod;
+import java.lang.annotation.*;
+import static java.lang.annotation.RetentionPolicy.*;
+import static java.lang.annotation.ElementType.*;
 
 /**
- * This class was used to create a class file with some well defined attributes. The
- * created class is subsequently used by several tests.
+ * Describes a field access made by an invokedynamic instruction or through use of the Java
+ * reflection API.
  * 
- * NOTE<br />
- * This class is not meant to be (automatically) recompiled; it just serves documentation
- * purposes.
- * 
- * <!--
- * 
- * 
- * 
- * 
- * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
- * SPECIFIED LINE NUMBERS ARE STABLE.
- * 
- * 
- * 
- * 
- * -->
- * 
- * @author Marco Jacobasch
+ * @author Arne Lottmann
  */
-public class CallStaticMethods {
+@Retention(RUNTIME)
+@Target(METHOD)
+public @interface AccessedField {
 
-    @InvokedMethod(receiverType = AbstractBase.class, name = "staticMethod", isStatic = true, lineNumber = 63)
-    void callStaticAbstract() {
-        AbstractBase.staticMethod();
-    }
+    Class<?> declaringType();
 
-    @InvokedMethod(receiverType = ConcreteBase.class, name = "staticMethod", isStatic = true, lineNumber = 68)
-    void callStaticConcrete() {
-        ConcreteBase.staticMethod();
-    }
+    String name();
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 73)
-    void callStaticSimple() {
-        SimpleBase.staticMethod();
-    }
+    Class<?> fieldType();
 
+    boolean isStatic() default false;
+
+    int lineNumber() default -1;
 }

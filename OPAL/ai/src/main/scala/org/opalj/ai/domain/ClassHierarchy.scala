@@ -37,7 +37,7 @@ import br._
 /**
  * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
  * the corresponding method defined in
- * `org.opalj.bat.resolved.analyses.ClassHierarchy`.
+ * [[org.opalj.br.analyses.ClassHierarchy]].
  *
  * @author Michael Eichberg
  */
@@ -50,8 +50,7 @@ trait ClassHierarchy { this: Domain ⇒
     def classHierarchy: analyses.ClassHierarchy
 
     /**
-     * @see `org.opalj.bat.resolved.analyses.ClassHierarchy.isSubtypeOf(ReferenceType,
-     * 		ReferenceType)`
+     * @see  [[org.opalj.br.analyses.ClassHierarchy]]'s `isSubtypeOf` method.
      */
     override def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
         classHierarchy.isSubtypeOf(subtype, supertype)

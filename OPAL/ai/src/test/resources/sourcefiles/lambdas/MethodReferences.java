@@ -28,8 +28,8 @@
  */
 package lambdas;
 
-import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethod;
-import static de.tud.cs.st.bat.test.invokedynamic.annotations.TargetResolution.*;
+import org.opal.ai.test.invokedynamic.annotations.InvokedMethod;
+import static org.opal.ai.test.invokedynamic.annotations.TargetResolution.*;
 
 /**
  * This class contains a few simple examples for method references introduced in Java 8.

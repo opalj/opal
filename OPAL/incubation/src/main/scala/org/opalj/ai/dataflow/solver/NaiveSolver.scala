@@ -26,29 +26,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.test.invokedynamic.annotations;
+package org.opalj
+package ai
+package dataflow
+package solver
 
-import java.lang.annotation.*;
-import static java.lang.annotation.RetentionPolicy.*;
-import static java.lang.annotation.ElementType.*;
+import br._
+import br.instructions._
+import br.analyses._
+
+import domain._
+import domain.l0._
 
 /**
- * Describes a field access made by an invokedynamic instruction or through use of the Java
- * reflection API.
- * 
- * @author Arne Lottmann
+ * Implements the infrastructure for solving a data-flow problem.
+ *
+ * @author Michael Eichberg and Ben Hermann
  */
-@Retention(RUNTIME)
-@Target(METHOD)
-public @interface AccessedField {
+trait NaiveSolver extends DataFlowProblemSolver {
 
-    Class<?> declaringType();
-
-    String name();
-
-    Class<?> fieldType();
-
-    boolean isStatic() default false;
-
-    int lineNumber() default -1;
+    val theDomain: Domain = new BaseDomain
 }
+
+

@@ -26,20 +26,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.test.invokedynamic.annotations;
+package org.opalj
+package ai
+package dataflow
 
-import java.lang.annotation.*;
-import static java.lang.annotation.RetentionPolicy.*;
-import static java.lang.annotation.ElementType.*;
+import scala.collection.{ Map, Set }
+
+import bi.AccessFlagsMatcher
+
+import br._
+import br.instructions._
+import br.analyses._
+
+import domain._
+import domain.l0._
 
 /**
- * Wrapper annotation that allows several InvokedConstructor annotations on the same method.
- * 
- * @author Arne Lottmann
+ * Implements the infrastructure for solving a data-flow problem.
+ *
+ * @author Michael Eichberg and Ben Hermann
  */
-@Retention(RUNTIME)
-@Target(METHOD)
-public @interface InvokedConstructors {
+trait DataFlowProblemSolver extends DataFlowProblem {
 
-    InvokedConstructor[] value();
+    /* ABSTRACT */ val theDomain: Domain
+
+    type DomainValue = theDomain.DomainValue
+
+    protected[this] class TaintedValue(
+            override val domainValue: DomainValue) extends super.TaintedValue with TaintInformation {
+
+        def typeInformation: TypesAnswer = theDomain.typeOfValue(domainValue)
+
+    }
+
+    def ValueIsTainted: (DomainValue) ⇒ TaintInformation =
+        (value: DomainValue) ⇒ new TaintedValue(value)
+
 }
+
+

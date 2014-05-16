@@ -104,6 +104,30 @@ trait ClassValues extends StringValues {
     // Needs to be implemented since the default implementation does not make sense here
     override def ClassValue(pc: Int, value: Type): DomainObjectValue
 
+    protected[l1] def simpleClassForNameCall(pc: PC, className: String): MethodCallResult = {
+        val classValue = ReferenceType(className.replace('.', '/'))
+        if (classValue.isObjectType) {
+            val objectType = classValue.asObjectType
+            if (classHierarchy.isKnown(objectType) ||
+                !throwClassNotFoundException) {
+                ComputedValue(Some(ClassValue(pc, classValue)))
+            } else {
+                ComputedValueAndException(Some(ClassValue(pc, classValue)),
+                    Iterable(InitializedObjectValue(pc, ObjectType.ClassNotFoundException)))
+            }
+        } else {
+            val elementType = classValue.asArrayType.elementType
+            if (elementType.isBaseType ||
+                classHierarchy.isKnown(elementType.asObjectType) ||
+                !throwClassNotFoundException) {
+                ComputedValue(Some(ClassValue(pc, classValue)))
+            } else {
+                ComputedValueAndException(Some(ClassValue(pc, classValue)),
+                    Iterable(InitializedObjectValue(pc, ObjectType.ClassNotFoundException)))
+            }
+        }
+    }
+
     abstract override def invokestatic(
         pc: PC,
         declaringClass: ObjectType,
@@ -113,30 +137,6 @@ trait ClassValues extends StringValues {
 
         import ClassValues._
 
-        def classForName(className: String): MethodCallResult = {
-            val classValue = ReferenceType(className.replace('.', '/'))
-            if (classValue.isObjectType) {
-                val objectType = classValue.asObjectType
-                if (classHierarchy.isKnown(objectType) ||
-                    !throwClassNotFoundException) {
-                    ComputedValue(Some(ClassValue(pc, classValue)))
-                } else {
-                    ComputedValueAndException(Some(ClassValue(pc, classValue)),
-                        Iterable(InitializedObjectValue(pc, ObjectType.ClassNotFoundException)))
-                }
-            } else {
-                val elementType = classValue.asArrayType
-                if (elementType.isBaseType ||
-                    classHierarchy.isKnown(elementType.asObjectType) ||
-                    !throwClassNotFoundException) {
-                    ComputedValue(Some(ClassValue(pc, classValue)))
-                } else {
-                    ComputedValueAndException(Some(ClassValue(pc, classValue)),
-                        Iterable(InitializedObjectValue(pc, ObjectType.ClassNotFoundException)))
-                }
-            }
-        }
-
         if ((declaringClass eq ObjectType.Class) &&
             (name == "forName") &&
             operands.nonEmpty) {
@@ -144,8 +144,10 @@ trait ClassValues extends StringValues {
             operands.last match {
                 case StringValue(value) ⇒
                     methodDescriptor match {
-                        case `forName_String`                     ⇒ classForName(value)
-                        case `forName_String_boolean_ClassLoader` ⇒ classForName(value)
+                        case `forName_String` ⇒
+                            simpleClassForNameCall(pc, value)
+                        case `forName_String_boolean_ClassLoader` ⇒
+                            simpleClassForNameCall(pc, value)
                         case _ ⇒
                             throw new DomainException(
                                 "unsupported Class { "+
@@ -191,10 +193,10 @@ trait ClassValues extends StringValues {
 
 private object ClassValues {
 
-    val forName_String =
+    final val forName_String =
         MethodDescriptor(ObjectType.String, ObjectType.Class)
 
-    val forName_String_boolean_ClassLoader =
+    final val forName_String_boolean_ClassLoader =
         MethodDescriptor(
             IndexedSeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
             ObjectType.Class)

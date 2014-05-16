@@ -26,20 +26,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.test.invokedynamic.annotations;
+package org.opal.ai.test.invokedynamic.annotations;
 
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
 /**
- * Wrapper annotation to allow several AccessedField annotations on the same method.
+ * Describes a method call. For types see the {@link TargetResolution} enum.
  * 
  * @author Arne Lottmann
  */
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface AccessedFields {
+public @interface InvokedMethod {
 
-    AccessedField[] value();
+    TargetResolution resolution() default TargetResolution.DEFAULT;
+
+    Class<?> receiverType();
+
+    String name();
+
+    Class<?> returnType() default Void.class;
+
+    Class<?>[] parameterTypes() default {};
+
+    int lineNumber() default -1;
+
+    boolean isStatic() default false;
+    
+    boolean isReflective() default false;
 }

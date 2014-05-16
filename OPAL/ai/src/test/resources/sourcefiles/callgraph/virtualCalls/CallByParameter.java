@@ -33,8 +33,8 @@ import callgraph.base.AlternateBase;
 import callgraph.base.Base;
 import callgraph.base.ConcreteBase;
 import callgraph.base.SimpleBase;
-import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethod;
-import de.tud.cs.st.bat.test.invokedynamic.annotations.InvokedMethods;
+import org.opal.ai.test.invokedynamic.annotations.InvokedMethod;
+import org.opal.ai.test.invokedynamic.annotations.InvokedMethods;
 
 /**
  * This class was used to create a class file with some well defined attributes. The

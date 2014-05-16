@@ -26,27 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package de.tud.cs.st.bat.test.invokedynamic.annotations;
+package org.opalj
+package ai
+package dataflow
 
-import java.lang.annotation.*;
-import static java.lang.annotation.RetentionPolicy.*;
-import static java.lang.annotation.ElementType.*;
+import scala.collection.{ Map, Set }
+
+import bi.AccessFlagsMatcher
+
+import br._
+import br.instructions._
+import br.analyses._
+
+import domain._
+import domain.l0._
 
 /**
- * Describes a constructor call made by an invokedynamic instruction or through use of the Java
- * reflection API.
  * 
- * @author Arne Lottmann
+ * @author Michael Eichberg and Ben Hermann
  */
-@Retention(RUNTIME)
-@Target(METHOD)
-public @interface InvokedConstructor {
 
-    Class<?> receiverType();
-
-    Class<?>[] parameterTypes() default {};
-
-    int lineNumber() default -1;
-    
-    boolean isReflective() default false;
-}
