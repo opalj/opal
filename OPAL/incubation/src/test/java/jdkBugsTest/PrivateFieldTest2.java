@@ -26,33 +26,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-package org.opalj
-package ai
-
-import br._
-import domain.DefaultDomainValueBinding
+package jdkBugsTest;
 
 /**
- * Contains definitions that are used by the elements specified in JDKBugs
- *
+ * Test the use of a private field. setterMethod can be used to get a tainted
+ * string into the system that is then used by the getterMethod
+ * 
  * @author Lars Schulte
  */
+public class PrivateFieldTest2 {
 
-package object taint {
+	private String taintField;
 
-  case class CallStackEntry(classFile: ClassFile, method: Method)
+	public void setterMethod(String s) {
+		taintField = s;
+		getterMethod();
+	}
 
-  /**
-   * Set of ids (integer values) associated with the relevant parameters passed
-   * to a method.
-   */
-  type RelevantParameters = Seq[Int]
-
-  // Initialized (exactly once) by the "analyze" method of the main analysis class.
-  protected[taint] var restrictedPackages: Set[String] = null
-
-  def definedInRestrictedPackage(packageName: String): Boolean =
-    //restrictedPackages.contains(packageName)
-    restrictedPackages.exists(packageName.startsWith(_))
+	private Object getterMethod() {
+		try {
+			return Class.forName(taintField);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 }

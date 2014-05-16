@@ -26,36 +26,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package jdkBugsTest;
+package org.opalj
+package taint
+
+import org.scalatest._
+import ai.taint._
+import br.TestSupport
 
 /**
- * Test the use of a global private field. setterMethod can be used 
- * to get a tainted string into the system that is then used by the getterMethod
- * 
+ * Simple scala test to run all test presentet in src/test/java.
+ * It checks if TaintAnalysisDomain creates the right amount of reports
+ *
  * @author Lars Schulte
  */
-public class GlobalPrivateFieldTest {
+class JDKBugsTest extends FlatSpec with Matchers {
 
-	private String taintField;
+  behavior of "JDKBugs"
 
-	public void setterMethod(String s) {
-		taintField = s;
-	}
+  val args = new Array[String](2)
+  args(0) = "-cp=" + TestSupport.locateTestResources("test.jar", "").getPath()
+  args(1) = "-java.security=" + TestSupport.locateTestResources("java.security", "").getPath()
 
-	// this tests if the analysis run into an endless loop; see example:
-	// setterMethod is analyzed -> analysis starts a new analysis for every method within the class
-	// analysis analyzes loopTest -> starts a new analysis for every methid within the clas 
-	// etc. etc.
-	public void loopTest(String s) {
-		taintField = s;
-	}
-
-	public Object getterMethod() {
-		try {
-			return Class.forName(taintField);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
+  it should "find all bugs presentet in the corresponding files in src/test/java" in {
+    JDKTaintAnalysis.main(args)
+    TaintAnalysisDomain.numberOfReports should be(14)
+  }
 }
