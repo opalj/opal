@@ -30,56 +30,38 @@ package org.opalj
 package ai
 package dataflow
 
-import java.net.URL
-
 import scala.collection.{ Map, Set }
 
 import bi.AccessFlagsMatcher
 
 import br._
-import br.analyses._
 import br.instructions._
+import br.analyses._
 
 import domain._
 import domain.l0._
 
 /**
- * Support methods to make it possible to solve a single [[DataFlowProblem]].
- *
- * ==Usage==
- * Mix in this trait in the object which specifies your data-flow problem. After
- * that you can run it.
+ * Implements the infrastructure for solving a data-flow problem.
  *
  * @author Michael Eichberg and Ben Hermann
  */
-class DataFlowProblemRunner(
-    val dataFlowProblemFactory: (Project[URL], Seq[String]) ⇒ DataFlowProblemSolver)
-        extends AnalysisExecutor {
+trait DataFlowProblemSolver extends DataFlowProblem {
 
-    final override val analysis = new Analysis[URL, ReportableAnalysisResult] {
+    /* ABSTRACT */ val theDomain: Domain
 
-        override def description: String =
-            "Finds instances of the specified dataflow problem (see documentation for details)."
+    type DomainValue = theDomain.DomainValue
 
-        override def analyze(
-            project: Project[URL],
-            parameters: Seq[String] = List.empty): ReportableAnalysisResult = {
-            import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
+    protected[this] class TaintedValue(
+            override val domainValue: DomainValue) extends super.TaintedValue with TaintInformation {
 
-            val dataFlowProblem = time {
-                dataFlowProblemFactory(project, parameters)
-            } { t ⇒
-                println(f"[info] Setup of the data-flow problem took ${ns2sec(t)}%.4f seconds.")
-            }
+        def typeInformation: TypesAnswer = theDomain.typeOfValue(domainValue)
 
-            val result = time {
-                dataFlowProblem.solve()
-            } { t ⇒
-                println(f"[info] Solving the data-flow problem took ${ns2sec(t)}%.4f seconds.")
-            }
-
-            BasicReport(result)
-        }
     }
+
+    def ValueIsTainted: (DomainValue) ⇒ TaintInformation =
+        (value: DomainValue) ⇒ new TaintedValue(value)
+
 }
+
 

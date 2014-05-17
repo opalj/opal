@@ -42,8 +42,10 @@ import domain._
 import domain.l0._
 
 /**
- * Solves a data-flow problem. I.e., tries to find paths from the identified sources
- * to the identified sinks.
+ * Characterizes a data-flow problem. The characterization consists of the specification
+ * of the problem as well as the selection of the solver.
+ * 
+ * I.e., tries to find paths from the identified sources to the identified sinks.
  *
  * ==Usage==
  *
@@ -56,6 +58,90 @@ import domain.l0._
  * @author Michael Eichberg and Ben Hermann
  */
 trait DataFlowProblem {
+
+    type DomainValue <: AnyRef
+
+    /**
+     * Encapsultates taint information about a(n implicit) value.
+     */
+    protected[this] trait TaintInformation {
+        def isTainted(): Boolean
+    }
+
+    /**
+     * The (implicitly referred to) value is not tainted.
+     */
+    case object NotTainted extends TaintInformation {
+        final override def isTainted(): Boolean = false
+    }
+
+    /**
+     * Factory method that – given a `DomainValue` – creates a [[TaintInformation]]
+     * object that encapsulates the information that the value is not tainted.
+     */
+    val ValueIsNotTainted: (DomainValue) ⇒ TaintInformation = (DomainValue) ⇒ NotTainted
+
+    /**
+     * Representation of a tainted value.
+     */
+    protected[this] trait TaintedValue extends TaintInformation {
+        final override def isTainted(): Boolean = true
+
+        def typeInformation: TypesAnswer
+        def domainValue: DomainValue
+    }
+
+    /**
+     * Returns a factory method that – given a `DomainValue` – creates a [[TaintedValue]]
+     * object that encapsulates the information that the value is tainted.
+     */
+    def ValueIsTainted: (DomainValue) ⇒ TaintInformation
+
+    /**
+     * Extractor to match tainted values.
+     */
+    object Tainted {
+        def unapply(value: TaintedValue): Some[TypesAnswer] = Some(value.typeInformation)
+    }
+
+    case class Invoke(
+        declaringClassType: ReferenceType,
+        name: String,
+        descriptor: MethodDescriptor,
+        context: Method,
+        caller: TaintInformation,
+        receiver: TaintInformation,
+        parameters: IndexedSeq[TaintInformation])
+
+    case class CallResult(
+        receiver: TaintInformation,
+        parameters: IndexedSeq[TaintInformation],
+        result: (DomainValue) ⇒ TaintInformation)
+
+    type OnCallTaintProcessor = PartialFunction[Invoke, CallResult]
+
+    protected[this] var onCallTaintProcessors: List[OnCallTaintProcessor] = List.empty
+
+    def call(f: OnCallTaintProcessor): Unit = {
+        onCallTaintProcessors = f :: onCallTaintProcessors
+    }
+
+    case class FieldWrite(
+        declaringClassType: ReferenceType,
+        name: String,
+        fieldType: Type,
+        context: Method,
+        caller: TaintInformation,
+        value: TaintInformation,
+        receiver: TaintInformation)
+
+    type OnWriteTaintProcessor = PartialFunction[FieldWrite, (DomainValue) ⇒ TaintInformation /*about the receiver*/ ]
+
+    protected[this] var onWriteTaintProcessors: List[OnWriteTaintProcessor] = List.empty
+
+    def write(f: OnWriteTaintProcessor): Unit = {
+        onWriteTaintProcessors = f :: onWriteTaintProcessors
+    }
 
     /**
      * The project that we are analyzing.

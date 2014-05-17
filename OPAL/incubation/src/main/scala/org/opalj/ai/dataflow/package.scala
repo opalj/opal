@@ -29,6 +29,11 @@
 package org.opalj
 package ai
 
+import br.analyses.SomeProject
+import br.Method
+
+import scala.collection.{ Map, Set }
+
 /**
  * Support for the specification and solving of data-flow problems.
  *
@@ -41,7 +46,7 @@ package ai
  *  backend without being sanitized.
  *  -  We want to specify that certain information is not allowed to flow from
  *  one module* to *another* module
- *  
+ *
  * =Concept=
  *
  *  1. Select sources
@@ -65,9 +70,15 @@ package ai
  *      - [SIDE CHANNELS?] What happens if the value is used during the computation, but does not (directly) influence the output.
  *          (e.g., if(x == 0) 1; else 2;
  *
+ * Furthermore, the framework will automatically handle taint propagation and aliasing.
+ * I.e., a tainted value that is stored in a field automatically marks the respective
+ * field as tainted.
+ *
  * @author Michael Eichberg and Ben Hermann
  */
 package object dataflow {
+
+    type AValueLocationMatcher = Function1[SomeProject, Map[Method, Set[PC]]]
 
 }
 
