@@ -26,7 +26,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.opalj
 package ai
 
@@ -38,7 +37,6 @@ import domain.DefaultDomainValueBinding
  *
  * @author Lars Schulte
  */
-
 package object taint {
 
   case class CallStackEntry(classFile: ClassFile, method: Method)
