@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -27,17 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bi
+
+import bi._
+import br._
 
 /**
  * Demonstrates how to select fields that have certain access flags (public, static,...)
  */
 object MatchingAccessFlags {
 
-    import resolved.{ ClassFile, Field, reader }
-
-    val resource = () ⇒ this.getClass.getResourceAsStream("ConstantPoolTags$.class")
-    val classFile = reader.Java8Framework.ClassFile(resource)
+    val resource = () ⇒ this.getClass.getResourceAsStream("br/analyses/Project.class")
+    val classFile = br.reader.Java8Framework.ClassFile(resource)
     val fields = classFile.fields
 
     val publicFinalStaticFields = fields.collectFirst(
@@ -46,6 +46,10 @@ object MatchingAccessFlags {
 
     val nonStaticFields = fields.collectFirst(
         { case f @ Field(AccessFlagsMatcher.NOT_STATIC(), _, _) ⇒ f }
+    )
+
+    val methods = classFile.methods.collect(
+        { case m @ Method(AccessFlagsMatcher.PUBLIC___OR___PROTECTED_AND_NOT_FINAL(), _, _) ⇒ m.name }
     )
 
     // create a new matcher
