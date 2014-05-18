@@ -53,27 +53,35 @@ import domain.l0._
  * @author Michael Eichberg and Ben Hermann
  */
 class DataFlowProblemRunner(
-    val dataFlowProblemFactory: (Project[URL], Seq[String]) ⇒ DataFlowProblemSolver)
+    val dataFlowProblem: DataFlowProblemSolver)
         extends AnalysisExecutor {
+
+    final override def analysisParametersDescription: String =
+        dataFlowProblem.analysisParametersDescription
+
+    final override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
+        dataFlowProblem.checkAnalysisParameters(parameters)
 
     final override val analysis = new Analysis[URL, ReportableAnalysisResult] {
 
         override def description: String =
-            "Finds instances of the specified dataflow problem (see documentation for details)."
+            dataFlowProblem.description
 
         override def analyze(
             project: Project[URL],
             parameters: Seq[String] = List.empty): ReportableAnalysisResult = {
             import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-            val dataFlowProblem = time {
-                dataFlowProblemFactory(project, parameters)
+            val initializedDataFlowProblem = time {
+                dataFlowProblem.processAnalysisParameters(parameters)
+                dataFlowProblem.project = project
+                dataFlowProblem
             } { t ⇒
                 println(f"[info] Setup of the data-flow problem took ${ns2sec(t)}%.4f seconds.")
             }
 
             val result = time {
-                dataFlowProblem.solve()
+                initializedDataFlowProblem.solve()
             } { t ⇒
                 println(f"[info] Solving the data-flow problem took ${ns2sec(t)}%.4f seconds.")
             }
