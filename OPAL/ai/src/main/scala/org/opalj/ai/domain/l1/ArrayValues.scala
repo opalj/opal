@@ -52,10 +52,10 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
     // DO NOT: type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
 
     protected class ArrayValue(
-        pc: PC,
+        vo: ValueOrigin,
         theType: ArrayType,
         val values: Vector[DomainValue])
-            extends super.ArrayValue(pc, No, true, theType) {
+            extends super.ArrayValue(vo, No, true, theType) {
         this: DomainArrayValue ⇒
 
         override protected def length: Some[Int] = Some(values.size)
@@ -97,7 +97,7 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
                     registerOnRegularControlFlowUpdater { someDomainValue ⇒
                         if (someDomainValue eq ArrayValue.this) {
                             if (newArrayValue == null) {
-                                newArrayValue = ArrayValue(pc, theType, values.updated(index, value))
+                                newArrayValue = ArrayValue(vo, theType, values.updated(index, value))
                             }
                             newArrayValue
                         } else {
@@ -141,7 +141,7 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
                             if (isOther) {
                                 update(other)
                             } else
-                                update(ArrayValue(pc, theType, newValues.toVector))
+                                update(ArrayValue(vo, theType, newValues.toVector))
                     }
 
                 case _ ⇒
@@ -150,24 +150,24 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
                         // => This array and the other array have a corresponding
                         //    abstract representation (w.r.t. the next abstraction level!)
                         //    but we still need to drop the concrete information
-                        StructuralUpdate(ArrayValue(pc, No, true, theUpperTypeBound))
+                        StructuralUpdate(ArrayValue(vo, No, true, theUpperTypeBound))
                     } else {
                         answer
                     }
             }
         }
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             target match {
 
                 case thatDomain: l1.ArrayValues ⇒
                     val adaptedValues =
-                        values.map(_.adapt(target, pc).asInstanceOf[thatDomain.DomainValue])
+                        values.map(_.adapt(target, vo).asInstanceOf[thatDomain.DomainValue])
                     thatDomain.ArrayValue(
-                        pc, theUpperTypeBound, adaptedValues).
+                        vo, theUpperTypeBound, adaptedValues).
                         asInstanceOf[target.DomainValue]
 
-                case _ ⇒ super.adapt(target, pc)
+                case _ ⇒ super.adapt(target, vo)
             }
 
         override def equals(other: Any): Boolean = {
@@ -176,7 +176,7 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
                     (that eq this) ||
                     (
                         (that canEqual this) &&
-                        this.pc == that.pc &&
+                        this.vo == that.vo &&
                         (this.upperTypeBound eq that.upperTypeBound) &&
                         this.values == that.values
                     )
@@ -188,10 +188,10 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
         protected def canEqual(other: ArrayValue): Boolean = true
 
         override def hashCode: Int =
-            ((pc) * 41 + values.hashCode) * 79 + upperTypeBound.hashCode
+            ((vo) * 41 + values.hashCode) * 79 + upperTypeBound.hashCode
 
         override def toString() = {
-            var description = theUpperTypeBound.toJava+"(pc="+pc+", values#"+values.size+"="
+            var description = theUpperTypeBound.toJava+"(origin="+vo+", values#"+values.size+"="
             description += values.mkString("(", ",", ")")
             description += ")"+"###"+System.identityHashCode(this)
             description

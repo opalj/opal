@@ -111,7 +111,7 @@ object Computation {
 final case class ComputedValue[+V](
     result: V)
         extends Computation[V, Nothing] {
-
+    
     def hasResult: Boolean = true
 
     def exceptions: Nothing =
@@ -132,6 +132,9 @@ final case class ComputedValueAndException[+V, +E](
     result: V,
     exceptions: E)
         extends Computation[V, E] {
+
+    assert(result != null)
+    assert(exceptions != null)
 
     def hasResult: Boolean = true
 

@@ -186,15 +186,23 @@ trait AI[D <: Domain] {
                 )
 
             val maxLocals = method.body.get.maxLocals
-            if (l.size >= maxLocals)
-                l.toArray
-            else {
+            if (l.size >= maxLocals) {
+                // l.toArray
+                throw new IllegalArgumentException(
+                    "the number of initial locals("+l.size+
+                    ") is larger than \"maxLocals("+maxLocals+")\""
+                )
+            } else {
                 // the number of given locals is smaller than the number of max locals
                 // (the former number still has to be larger or equal to the number of 
                 // parameter values (including "this"))
                 val locals = new Array[domain.DomainValue](maxLocals)
-                for (i ← (0 until l.size))
+                // for (i ← (0 until l.size)) locals(i) = l(i)
+                var i = l.size - 1
+                while (i >= 0) {
                     locals(i) = l(i)
+                    i -= 1
+                }
                 locals
             }
         }.getOrElse { // there are no locals at all...
@@ -1029,7 +1037,7 @@ trait AI[D <: Domain] {
                                     abruptMethodExecution(pc, exceptionValue)
 
                                 case IsReferenceValue(referenceValues) ⇒
-                                // TODO [issue or documentation lacking] Shouldn't it be a foreach loop in case of "throw (if(x) ExA else ExB)"
+                                    // TODO [issue or documentation lacking] Shouldn't it be a foreach loop in case of "throw (if(x) ExA else ExB)"
                                     val isHandled = referenceValues.forall(referenceValue ⇒
                                         // find the exception handler that matches the given 
                                         // exception

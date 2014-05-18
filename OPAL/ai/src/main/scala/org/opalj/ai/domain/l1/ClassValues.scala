@@ -59,9 +59,9 @@ trait ClassValues extends StringValues {
     type DomainClassValue <: ClassValue with DomainObjectValue
 
     protected class ClassValue(
-        pc: Int,
+        vo: ValueOrigin,
         val value: Type)
-            extends SObjectValue(pc, No, true, ObjectType.Class) {
+            extends SObjectValue(vo, No, true, ObjectType.Class) {
         this: DomainClassValue ⇒
 
         override def doJoinWithNonNullValueWithSameOrigin(
@@ -77,15 +77,15 @@ trait ClassValues extends StringValues {
                         // => This class value and the other value have a corresponding
                         //    abstract representation (w.r.t. the next abstraction level!)
                         //    but we still need to drop the concrete information...
-                        StructuralUpdate(ObjectValue(pc, No, true, ObjectType.Class))
+                        StructuralUpdate(ObjectValue(vo, No, true, ObjectType.Class))
                     } else {
                         answer
                     }
             }
         }
 
-        override def adapt(target: Domain, pc: Int): target.DomainValue =
-            target.ClassValue(pc, this.value)
+        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+            target.ClassValue(vo, this.value)
 
         override def equals(other: Any): Boolean =
             other match {
@@ -98,11 +98,11 @@ trait ClassValues extends StringValues {
 
         override def hashCode: Int = super.hashCode + 71 * value.hashCode
 
-        override def toString(): String = "Class(pc="+pc+", value=\""+value.toJava+"\")"
+        override def toString(): String = "Class(origin="+vo+", value=\""+value.toJava+"\")"
     }
 
     // Needs to be implemented since the default implementation does not make sense here
-    override def ClassValue(pc: Int, value: Type): DomainObjectValue
+    override def ClassValue(vo: ValueOrigin, value: Type): DomainObjectValue
 
     protected[l1] def simpleClassForNameCall(pc: PC, className: String): MethodCallResult = {
         val classValue = ReferenceType(className.replace('.', '/'))

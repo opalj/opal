@@ -36,11 +36,11 @@ package domain
 trait Origin { this: Domain ⇒
 
     trait SingleOriginValue {
-        def pc: PC
+        def vo: ValueOrigin
     }
 
     trait MultipleOriginsValue {
-        def pcs: Iterable[PC]
+        def vos: Iterable[ValueOrigin]
     }
 
     /**
@@ -49,14 +49,14 @@ trait Origin { this: Domain ⇒
      * @return The source(s) of the given value if the information is available.
      *      Whether the information is available depends on the concrete domains.
      *      This trait only defines a general contract how to get access to a
-     *      value's origin (I.e., the pc of the instruction which created the
+     *      value's origin (I.e., the origin of the instruction which created the
      *      respective value.)
      *      By default this method returns an empty `Iterable`.
      */
-    def origin(value: DomainValue): Iterable[PC] =
+    def origin(value: DomainValue): Iterable[ValueOrigin] =
         value match {
-            case sov: SingleOriginValue    ⇒ Iterable[PC](sov.pc)
-            case mov: MultipleOriginsValue ⇒ mov.pcs
+            case sov: SingleOriginValue    ⇒ Iterable[ValueOrigin](sov.vo)
+            case mov: MultipleOriginsValue ⇒ mov.vos
             case _                         ⇒ Iterable.empty
         }
 

@@ -311,7 +311,7 @@ trait Domain {
          * and you need to adapt this domain's values (the actual parameters of the method)
          * to the domain used for analyzing the called method.
          *
-         * Additionally, the `adapt` method is OPAL-AI's main mechanism to enable dynamic
+         * Additionally, the `adapt` method is OPAL's main mechanism to enable dynamic
          * domain-adaptation. I.e., to make it possible to change the abstract domain at
          * runtime if the analysis time takes too long using a (more) precise domain.
          *
@@ -321,7 +321,7 @@ trait Domain {
          *      analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
-        def adapt(target: Domain, pc: PC): target.DomainValue =
+        def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             throw new DomainException("This value "+this+" cannot be adapted for "+target)
     }
 
@@ -400,7 +400,7 @@ trait Domain {
         override def summarize(pc: PC): DomainValue =
             throw DomainException("creating a summary of an illegal value is meaningless")
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             target.TheIllegalValue
 
         override def toString: String = "IllegalValue"
@@ -471,7 +471,8 @@ trait Domain {
         override def summarize(pc: PC): DomainValue =
             throw DomainException("summarizing return address values is meaningless")
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        // Adaptation is supported to support on-the-fly domain up-/downcasts.
+        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             target.ReturnAddressValue(address)
 
         override def toString = "ReturnAddress("+address+")"
@@ -533,20 +534,17 @@ trait Domain {
      * The framework uses this method when a method is to be analyzed, but no parameter
      * values are given and initial values need to be generated. This method is not
      * used elsewhere by the framework.
-     *
-     * The framework assigns the `pc` "-1" to the first parameter and -2 for the second...
-     * This property is, however, not ensured by this method.
      */
-    def TypedValue(pc: PC, valueType: Type): DomainValue = valueType match {
-        case BooleanType       ⇒ BooleanValue(pc)
-        case ByteType          ⇒ ByteValue(pc)
-        case ShortType         ⇒ ShortValue(pc)
-        case CharType          ⇒ CharValue(pc)
-        case IntegerType       ⇒ IntegerValue(pc)
-        case FloatType         ⇒ FloatValue(pc)
-        case LongType          ⇒ LongValue(pc)
-        case DoubleType        ⇒ DoubleValue(pc)
-        case rt: ReferenceType ⇒ ReferenceValue(pc, rt)
+    def TypedValue(vo: ValueOrigin, valueType: Type): DomainValue = valueType match {
+        case BooleanType       ⇒ BooleanValue(vo)
+        case ByteType          ⇒ ByteValue(vo)
+        case ShortType         ⇒ ShortValue(vo)
+        case CharType          ⇒ CharValue(vo)
+        case IntegerType       ⇒ IntegerValue(vo)
+        case FloatType         ⇒ FloatValue(vo)
+        case LongType          ⇒ LongValue(vo)
+        case DoubleType        ⇒ DoubleValue(vo)
+        case rt: ReferenceType ⇒ ReferenceValue(vo, rt)
         case VoidType ⇒
             throw DomainException("a domain value cannot have the type void")
     }
@@ -555,42 +553,42 @@ trait Domain {
      * Factory method to create a representation of a boolean value if we know the
      * origin of the value.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def BooleanValue(pc: PC): DomainValue
+    def BooleanValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a representation of a boolean value with the given
      * initial value and origin.
      *
-     * The domain may ignore the information about the value and the origin (`pc`).
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def BooleanValue(pc: PC, value: Boolean): DomainValue
+    def BooleanValue(vo: ValueOrigin, value: Boolean): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def ByteValue(pc: PC): DomainValue
+    def ByteValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given byte value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (`pc`).
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def ByteValue(pc: PC, value: Byte): DomainValue
+    def ByteValue(vo: ValueOrigin, value: Byte): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def ShortValue(pc: PC): DomainValue
+    def ShortValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given short value
@@ -603,97 +601,97 @@ trait Domain {
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def CharValue(pc: PC): DomainValue
+    def CharValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given char value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      */
-    def CharValue(pc: PC, value: Char): DomainValue
+    def CharValue(vo: ValueOrigin, value: Char): DomainValue
 
     /**
      * Factory method to create a representation of the integer constant value 0.
      *
-     * (The program counter  (`pc`) that should be assigned with the value (if any)
-     * should be Int.MinValue to signify that this value was not created by the program.)
-     *
-     * OPAL-AI in particular uses this special value for performing subsequent
+     * OPAL in particular uses this special value for performing subsequent
      * computations against the fixed value 0 (e.g., for if_XX instructions).
+     *
+     * (The origin ([[ValueOrigin]]) that should be used should be the
+     * [[ConstantValueOrigin]] to signify that this value was not created by the program.)
      *
      * The domain may ignore the information about the value.
      */
-    def IntegerConstant0: DomainValue = IntegerValue(Int.MinValue, 0)
+    def IntegerConstant0: DomainValue = IntegerValue(ConstantValueOrigin, 0)
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def IntegerValue(pc: PC): DomainValue
+    def IntegerValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given integer value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (`pc`).
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def IntegerValue(pc: PC, value: Int): DomainValue
+    def IntegerValue(vo: ValueOrigin, value: Int): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def FloatValue(pc: PC): DomainValue
+    def FloatValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given float value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (`pc`).
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def FloatValue(pc: PC, value: Float): DomainValue
+    def FloatValue(vo: ValueOrigin, value: Float): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def LongValue(pc: PC): DomainValue
+    def LongValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given long value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (`pc`).
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def LongValue(pc: PC, value: Long): DomainValue
+    def LongValue(vo: ValueOrigin, value: Long): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def DoubleValue(pc: PC): DomainValue
+    def DoubleValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given double value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (`pc`).
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def DoubleValue(pc: PC, value: Double): DomainValue
+    def DoubleValue(vo: ValueOrigin, value: Double): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the `null` value and
@@ -709,7 +707,7 @@ trait Domain {
      *  - Type: '''Null'''
      *  - Null: '''Yes'''
      */
-    def NullValue(pc: PC): DomainValue
+    def NullValue(vo : ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''either a reference
@@ -717,7 +715,7 @@ trait Domain {
      * information whether the value is `null` or not is not available. Furthermore, the
      * type may also just be an upper bound.
      *
-     * The domain may ignore the information about the value and the origin (`pc`), but
+     * The domain may ignore the information about the value and the origin (`vo`), but
      * it has to remain possible for the domain to identify the component type of an
      * array.
      *
@@ -729,7 +727,7 @@ trait Domain {
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue
+    def ReferenceValue(vo : ValueOrigin, referenceType: ReferenceType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''an array''
@@ -745,21 +743,20 @@ trait Domain {
      *  - Null: '''No'''
      *  - Content: '''Unknown'''
      *
-     * @param pc The program counter of the instruction which initially created the
-     * 		array.
+     * @param vo Information about the origin of the value.
      * @param counts The size of each dimension if available. `counts` may be empty (`Nil`)
      * 		if no corresponding information is available; however, if available the
      *   	following condition always has to hold: `counts.length <= arrayType.dimensions`.
      */
     def InitializedArrayValue(
-        pc: PC,
+        vo : ValueOrigin,
         counts: List[Int],
         arrayType: ArrayType): DomainValue
 
     /**
      * Represents ''a non-null reference value with the given type as an upper type bound''.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`vo`).
      *
      * ==Summary==
      * The properties of the domain value are:
@@ -767,14 +764,14 @@ trait Domain {
      *  - Type: '''Upper Bound'''
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def NonNullObjectValue(pc: PC, objectType: ObjectType): DomainValue
+    def NonNullObjectValue(vo : ValueOrigin, objectType: ObjectType): DomainValue
 
     /**
      * Creates a new `DomainValue` that represents ''a new,
      * uninitialized instance of an object of the given type''. The object was
      * created by the (`NEW`) instruction with the specified program counter.
      *
-     * OPAL-AI calls this method when it evaluates `newobject` instructions.
+     * OPAL calls this method when it evaluates `newobject` instructions.
      * If the bytecode is valid a call of one of the object's constructors will
      * subsequently initialize the object.
      *
@@ -789,7 +786,7 @@ trait Domain {
      *      `multianewarray` instructions and in both cases an exception may be thrown
      *      (e.g., `NegativeArraySizeException`).
      */
-    def NewObject(pc: PC, objectType: ObjectType): DomainValue
+    def NewObject(vo : ValueOrigin, objectType: ObjectType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents an '''initialized'''
@@ -803,7 +800,7 @@ trait Domain {
      * class precisely represents the runtime type – even
      * so the class is abstract. However, such decisions need to be made by the domain.
      *
-     * This method is used by OPAL-AI to create reference values that are normally
+     * This method is used by the OPAL framework to create reference values that are normally
      * internally created by the JVM (in particular exceptions such as
      * `NullPointExeception` and `ClassCastException`). However, it can generally
      * be used to create initialized objects/arrays.
@@ -815,7 +812,7 @@ trait Domain {
      *      correctly models the runtime type.)
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainValue
+    def InitializedObjectValue(vo : ValueOrigin, objectType: ObjectType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value
@@ -824,7 +821,7 @@ trait Domain {
      * This function is called by OPAL-AI when a string constant (`LDC(_W)` instruction) is
      * put on the stack.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`vo`).
      *
      * ==Summary==
      * The properties of the domain value are:
@@ -835,17 +832,17 @@ trait Domain {
      *
      * @param value A non-null string. (The string may be empty, though.)
      */
-    def StringValue(pc: PC, value: String): DomainValue
+    def StringValue(vo : ValueOrigin, value: String): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a runtime value of
      * type "`Class&lt;T&gt;`" and that was created by the instruction with the
      * specified program counter.
      *
-     * This function is called by OPAL-AI when a class constant (`LDC(_W)` instruction) is
+     * This function is called by OPAL when a class constant (`LDC(_W)` instruction) is
      * put on the stack.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`vo`).
      *
      * ==Summary==
      * The properties of the domain value are:
@@ -853,7 +850,7 @@ trait Domain {
      *  - Type: '''java.lang.Class<t:Type>'''
      *  - Null: '''No'''
      */
-    def ClassValue(pc: PC, t: Type): DomainValue
+    def ClassValue(vo : ValueOrigin, t: Type): DomainValue
 
     // -----------------------------------------------------------------------------------
     //
@@ -863,6 +860,7 @@ trait Domain {
 
     /**
      * Returns the type(type bounds) of the given value.
+     * 
      * In general a single value can have multiple type bounds which depend on the
      * control flow.
      * However, all types that the value represents must belong to the same
@@ -1112,7 +1110,7 @@ trait Domain {
     //
     // W.r.t Reference Values
     /**
-     * Called by OPAL-AI when the value is known to be `null`/has to be `null`.
+     * Called by the framework when the value is known to be `null`/has to be `null`.
      * E.g., after a comparison with `null` (IFNULL/IFNONNULL) OPAL-AI knows that the
      * value has to be `null` on one branch and that the value is not `null` on the
      * other branch.
