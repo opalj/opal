@@ -35,7 +35,6 @@ import bi.AccessFlagsMatcher._
 import br._
 import br.instructions._
 import br.analyses._
-//import ai.IsAReferenceValue
 import domain._
 import domain.l0._
 
@@ -82,17 +81,17 @@ abstract class StringPassedToClassForName
         }
     }
 
-    def definedInRestrictedPackage(packageName: String): Boolean =
+    private[this] def definedInRestrictedPackage(packageName: String): Boolean =
         restrictedPackages.exists(packageName.startsWith(_))
 
     //
     // Specification of the sources and sinks
     //
 
-//    sources(Methods(
-//        properties = { case Method(PUBLIC___OR___PROTECTED_AND_NOT_FINAL(), _, md) ⇒ md.parametersCount >= 1 },
-//        parameters = { case (_ /*ID*/ , ObjectType.String) ⇒ true }
-//    ))
+    //    sources(Methods(
+    //        properties = { case Method(PUBLIC___OR___PROTECTED_AND_NOT_FINAL(), _, md) ⇒ md.parametersCount >= 1 },
+    //        parameters = { case (_ /*ID*/ , ObjectType.String) ⇒ true }
+    //    ))
 
     sources(
         classFile ⇒ !definedInRestrictedPackage(classFile.thisType.packageName),
@@ -103,6 +102,10 @@ abstract class StringPassedToClassForName
                 )
         }
     )
+
+    sinks(Calls(
+        { case (ObjectType.Class, "forName", SingleArgumentMethodDescriptor((ObjectType.String, ObjectType.Object))) ⇒ true }
+    ))
 
     // Scenario: ... s.subString(...)
     call {
@@ -136,9 +139,6 @@ abstract class StringPassedToClassForName
             ValueIsTainted
     }
 
-    sinks(Calls(
-        { case (ObjectType.Class, "forName", SingleArgumentMethodDescriptor((ObjectType.String, ObjectType.Object))) ⇒ true }
-    ))
 }
 
 object StringPassedToClassForName extends DataFlowProblemRunner(
