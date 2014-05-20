@@ -31,9 +31,9 @@ package jdkBugsTest;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * This is a test for the JDKBugs Class.forName() analysis. It contains
- * previously issues that were reported without containing a relevant
- * call to Class.forName
+ * This is a test for the JDKBugs Class.forName() analysis. It contains cases
+ * that are closely related to the analysis, but which should not be reported.
+ * (Each report would be a false positive.)
  * 
  * @author Lars Schulte
  */
