@@ -26,44 +26,35 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package jdkBugsTest;
+package notSupportedCases;
 
 /**
  * This is a test for the JDKBugs Class.forName() analysis. It has a call to
- * Class.forName() via a private method and returns it to the user.
+ * Class.forName() and returns it to the user.
+ * 
+ * This bug is is not reported by JDKTaintAnalysis as it is not able to track
+ * values in arrays
  * 
  * @author Lars Schulte
  */
-public class InvokeSpecialTest {
+public class TaintedValueStoredInArray {
 
-	static void doSomething() {
-
+	public static Class callerMethod(String s) {
+		return methodA(s);
 	}
 
-	public static Object method1(String s) throws ClassNotFoundException {
-		Object c = method2(s);
-		return c;
+	static Class methodA(String s) {
+		String[] stringArray = new String[5];
+		stringArray[0] = s;
+
+		return methodB(stringArray[0]);
 	}
 
-	static Object method2(String s) throws ClassNotFoundException {
-		doSomething();
-		return method3(s);
+	static Class methodB(String s) {
+		try {
+			return Class.forName(s);
+		} catch (ClassNotFoundException e) {
+			return null;
+		}
 	}
-
-	static Object method3(String s) throws ClassNotFoundException {
-		Class c = Class.forName(s);
-		Class d = new InvokeSpecialTest().method4(c);
-		return d;
-	}
-
-	private Class method4(Class c) throws ClassNotFoundException {
-		doSomething();
-		doSomething();
-		return method5(c);
-	}
-
-	static Class method5(Class c) throws ClassNotFoundException {
-		return c;
-	}
-
 }

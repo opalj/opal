@@ -647,7 +647,8 @@ trait TaintAnalysisDomain[Source]
   def isIrrelevantInvoke(methodDescriptor: MethodDescriptor, declaringClass: ReferenceType): Boolean = {
     (!declaringClass.isObjectType || (
       methodDescriptor.returnType != Class &&
-      methodDescriptor.returnType != Object))
+      methodDescriptor.returnType != Object &&
+      methodDescriptor.returnType != String))
   }
 
   /**

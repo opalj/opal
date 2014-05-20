@@ -26,44 +26,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package jdkBugsTest;
+package org.opalj.taint
+
+import collection.mutable.Stack
+import org.scalatest._
+import org.opalj.br.TestSupport
+import org.opalj.ai.taint.JDKTaintAnalysis
+import org.opalj.ai.taint.TaintAnalysisDomain
 
 /**
- * This is a test for the JDKBugs Class.forName() analysis. It has a call to
- * Class.forName() via a private method and returns it to the user.
- * 
+ * Simple scala test to run all test present in src/test/java.
+ * It checks if TaintAnalysisDomain creates the right amount of reports
+ *
  * @author Lars Schulte
  */
-public class InvokeSpecialTest {
+class StackSpec extends FlatSpec with Matchers {
 
-	static void doSomething() {
+  "JDKBugs" should "find all bugs presentet in the corresponding files in src/test/java" in {
 
-	}
+    val args = new Array[String](2)
+    args(0) = "-cp=" + TestSupport.locateTestResources("test.jar", "").getPath()
+    args(1) = "-java.security=" + TestSupport.locateTestResources("java.security", "").getPath()
 
-	public static Object method1(String s) throws ClassNotFoundException {
-		Object c = method2(s);
-		return c;
-	}
-
-	static Object method2(String s) throws ClassNotFoundException {
-		doSomething();
-		return method3(s);
-	}
-
-	static Object method3(String s) throws ClassNotFoundException {
-		Class c = Class.forName(s);
-		Class d = new InvokeSpecialTest().method4(c);
-		return d;
-	}
-
-	private Class method4(Class c) throws ClassNotFoundException {
-		doSomething();
-		doSomething();
-		return method5(c);
-	}
-
-	static Class method5(Class c) throws ClassNotFoundException {
-		return c;
-	}
-
+    JDKTaintAnalysis.main(args)
+    TaintAnalysisDomain.numberOfReports should be(18)
+  }
 }

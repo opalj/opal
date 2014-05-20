@@ -30,7 +30,7 @@ package jdkBugsTest;
 
 /**
  * This is a test for the JDKBugs Class.forName() analysis. It has a call to
- * Class.forName() forwards it and returns it back.
+ * Class.forName() forwards it and returns it to the user.
  * 
  * @author Lars Schulte
  */

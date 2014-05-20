@@ -26,29 +26,37 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package taint
+package notSupportedCases;
 
-import org.scalatest._
-import ai.taint._
-import br.TestSupport
+import java.util.LinkedList;
 
 /**
- * Simple scala test to run all test present in src/test/java.
- * It checks if TaintAnalysisDomain creates the right amount of reports
- *
+ * This is a test for the JDKBugs Class.forName() analysis. It has a call to
+ * Class.forName() and returns it to the user.
+ * 
+ * This bug is is not reported by JDKTaintAnalysis as it is not able to track
+ * values stored in collections
+ * 
  * @author Lars Schulte
  */
-class JDKBugsTest extends FlatSpec with Matchers {
+public class TaintedValueStoredInCollection {
 
-  behavior of "JDKBugs"
+	public static Class callerMethod(String s) {
+		return methodA(s);
+	}
 
-  val args = new Array[String](2)
-  args(0) = "-cp=" + TestSupport.locateTestResources("test.jar", "").getPath()
-  args(1) = "-java.security=" + TestSupport.locateTestResources("java.security", "").getPath()
+	static Class methodA(String s) {
+		LinkedList<String> stringList = new LinkedList<String>();
+		stringList.add(s);
 
-  it should "find all bugs presentet in the corresponding files in src/test/java" in {
-    JDKTaintAnalysis.main(args)
-    TaintAnalysisDomain.numberOfReports should be(14)
-  }
+		return methodB(stringList.getFirst());
+	}
+
+	static Class methodB(String s) {
+		try {
+			return Class.forName(s);
+		} catch (ClassNotFoundException e) {
+			return null;
+		}
+	}
 }
