@@ -403,7 +403,7 @@ trait TaintAnalysisDomain[Source]
     //    }
     //
     //    // look up every class that implements the method and was previously
-    //    // instanced
+    //    // instantiated
     //    val implementingMethods = classHierarchy.lookupImplementingMethods(
     //      declaringClass.asObjectType,
     //      methodName,
@@ -801,7 +801,7 @@ class RootTaintAnalysisDomain[Source](
 }
 
 /**
- * This class is instanced when a Root- or CalledTaintAnalysisDomain decide to further analyse
+ * This class is  instantiated when a Root- or CalledTaintAnalysisDomain decide to further analyse
  * a method resulting.
  */
 class CalledTaintAnalysisDomain[Source](
@@ -821,7 +821,7 @@ class CalledTaintAnalysisDomain[Source](
   def project = previousTaintAnalysisDomain.project
 
   /**
-   * Checks against all previous instanced AnalysisDomains in the respective call graph
+   * Checks against all previous instantiated AnalysisDomains in the respective call graph
    * up to the RootTaintAnalysisDomain
    */
   def isRecursiveCall(
