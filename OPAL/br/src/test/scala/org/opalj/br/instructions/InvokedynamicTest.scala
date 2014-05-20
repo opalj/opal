@@ -31,9 +31,10 @@ package br
 package instructions
 
 import analyses.{ Project, SomeProject }
-
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
+import java.io.File
+import org.opalj.br.reader.Java8Framework
 
 /**
  * Test resolution capabilities of the [[INVOKEDYNAMIC]] instruction.
@@ -121,7 +122,36 @@ class InvokedynamicTest extends FunSpec with Matchers {
                 testMethod(MethodReferences, "filterOutEmptyValues")
             }
         }
+
+		describe("when passed the jdk 8 rt.jar") {
+			it("should resolve all invokedynamic instructions found there") {
+        		val jrePath = TestSupport.locateJRELibraryFolder
+                if (!jrePath.isDefined) cancel("Cannot find JRE!")
+                val rtJar = jrePath.map(new File(_, "rt.jar")).get
+                val rtProject = Project(rtJar)
+                val failedInstructions = (for {
+                    classFile ← rtProject.classFiles
+                    method @ MethodWithBody(body) ← classFile.methods
+                    instruction ← body.instructions if instruction.isInstanceOf[INVOKEDYNAMIC]
+                    invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
+                } yield {
+                    (invokedynamic.resolveJDK8(rtProject).isDefined, 
+                            classFile, method, instruction)
+                }).filter(t => !t._1)
+                if (!failedInstructions.isEmpty) {
+                    val totalFailures = failedInstructions.size
+                    val numberOfFailuresToShow = 5
+        	        val msg = failedInstructions.take(numberOfFailuresToShow).map({ tuple =>
+        	            val (_, classFile, method, instruction) = tuple
+        	            instruction + "\n in method " +
+        	            method.toJava
+        	        }).mkString(
+        	                "Failed to resolve the following instructions:\n",
+        	                "\n",
+        	                "\nand " + (totalFailures - numberOfFailuresToShow) + " more.")
+        	        fail(msg)
+                }
+			}
+		}
     }
-
 }
-

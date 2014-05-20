@@ -100,7 +100,12 @@ case class INVOKEDYNAMIC(
         bootstrapMethod.methodHandle match {
             case InvokeStaticMethodHandle(
                 ObjectType.LambdaMetafactory,
-                "metafactory", _ /* TODO [issue] Don't we have to check for the expected method?*/
+                "metafactory",
+                INVOKEDYNAMIC.lambdaMetafactoryDescriptor
+                ) | InvokeStaticMethodHandle(
+                ObjectType.LambdaMetafactory,
+                "altMetafactory",
+                INVOKEDYNAMIC.lambdaAltMetafactoryDescriptor
                 ) if bootstrapMethod.bootstrapArguments.size >= 2 ⇒ {
                 bootstrapMethod.bootstrapArguments(1) match {
                     // Oracle's JDK 8 doesn't make use of invokedynamic
@@ -123,7 +128,24 @@ case class INVOKEDYNAMIC(
 object INVOKEDYNAMIC {
 
     val runtimeExceptions = List(ObjectType.BootstrapMethodError)
-
+    
+    private val lambdaMetafactoryDescriptor = MethodDescriptor(
+            IndexedSeq(ObjectType.MethodHandles$Lookup,
+                       ObjectType.String,
+                       ObjectType.MethodType,
+                       ObjectType.MethodType,
+                       ObjectType.MethodHandle,
+                       ObjectType.MethodType
+            ), 
+            ObjectType.CallSite)
+            
+    private val lambdaAltMetafactoryDescriptor = MethodDescriptor(
+            IndexedSeq(ObjectType.MethodHandles$Lookup,
+                       ObjectType.String,
+                       ObjectType.MethodType,
+                       ArrayType.ArrayOfObjects
+            ),
+            ObjectType.CallSite)
 }
 
 
