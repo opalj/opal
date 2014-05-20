@@ -653,7 +653,8 @@ trait TaintAnalysisDomain[Source]
   }
 
   /**
-   * Returns all parameters that could be tainted
+   * Compares the list of possibly tainted values with the operands
+   * and returns all parameters that could be tainted.
    */
   def computeRelevantOperands(operands: List[DomainValue]) = {
     operands.zipWithIndex.filter { operand_index =>
@@ -665,7 +666,8 @@ trait TaintAnalysisDomain[Source]
   }
 
   /**
-   * check if we found a relevant call to forName
+   * Check if the method call resembles a call to Class.forName. In this
+   * case the analysis has found a sink and this method returns true.
    */
   def checkForSink(declaringClass: ObjectType, methodDescriptor: MethodDescriptor, methodName: String): Boolean = {
     (declaringClass == ObjectType.Class &&
@@ -674,7 +676,7 @@ trait TaintAnalysisDomain[Source]
   }
 
   /**
-   * create a sinkNode into the call graph and add the PC to additionalRelevantParameters
+   * Creates a sinkNode into the call graph and add the PC to additionalRelevantParameters
    * and relevantValuesOrigins
    */
   def registerSink(pc: PC, operands: List[DomainValue]) = {
@@ -686,8 +688,10 @@ trait TaintAnalysisDomain[Source]
   }
 
   /**
-   * create a new taint analysis for the specified method
-   * returns true if the analysis was succesfull
+   * This method allows for the complete analysis of a given method. It
+   * creates a new unique CalledTaintAnalysisDomain and evaluates the
+   * returned result of that analysis. It returns true if a relevant
+   * Value was returned.
    */
   def inspectMethod(
     pc: PC,
@@ -744,11 +748,12 @@ trait TaintAnalysisDomain[Source]
   }
 
   /**
-   * finds new entry points that use a tainted field
+   * This method tries to find new entry points that use a tainted field.
+   * For each found entry point a new RootTaintAnalysisDomain is created.
+   * If the analyzed method found a bug (created a report) this report is printed.
    */
   def findAndInspectNewEntryPoint(classFile: ClassFile) {
     for (method <- classFile.methods) {
-      // val callerNode = new SimpleNode(":Some user of the API after global field set " + method.id)
       if (!isRecursiveCall(classFile, method, null)) {
         if (!method.body.isEmpty) {
           val domain = new RootTaintAnalysisDomain(project, taintedFields, CallStackEntry(classFile, method), true)
