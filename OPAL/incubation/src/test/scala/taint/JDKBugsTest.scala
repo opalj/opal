@@ -34,7 +34,7 @@ import ai.taint._
 import br.TestSupport
 
 /**
- * Simple scala test to run all test presentet in src/test/java.
+ * Simple scala test to run all test present in src/test/java.
  * It checks if TaintAnalysisDomain creates the right amount of reports
  *
  * @author Lars Schulte
