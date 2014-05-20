@@ -22,7 +22,7 @@ digraph OPAL {
 		evaluation -> post_processing [label="all branches processed",fontcolor="gray"];
 		post_processing -> preparation [style=dotted];
 		
-		evaluation [style=filled,fillcolor=rosybrown];
+		evaluation [label="instruction\nevaluation",style=filled,fillcolor=rosybrown];
 		propagation [label="per target\n post-\nprocessing",style=filled,fillcolor=mintcream];
 		preparation [style=filled,fillcolor=antiquewhite];
 		post_processing [style=filled,fillcolor=mintcream];

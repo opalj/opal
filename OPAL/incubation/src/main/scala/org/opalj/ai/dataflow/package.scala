@@ -29,23 +29,25 @@
 package org.opalj
 package ai
 
-import br.analyses.SomeProject
-import br.Method
-
 import scala.collection.{ Map, Set }
 
+import br.analyses.SomeProject
+import br.Method
+import br.MethodDescriptor
+
 /**
- * Support for the specification and solving of data-flow problems.
+ * Supports the specification and solving of data-flow problems.
  *
  * =Goal=
- * Express data-flow relations; i.e., that some information flows or not-flows
+ * To be able to express data-flow problems at a very high-level of abstraction.
+ * I.e., that some information flows or not-flows
  * from a well-identified source to a well-identified sink.
  *
  * =Usage Scenario=
  *  - We want to avoid that information is stored in the database/processed by the
  *  backend without being sanitized.
  *  -  We want to specify that certain information is not allowed to flow from
- *  one module* to *another* module
+ *  *one module* to *another* module
  *
  * =Concept=
  *
@@ -79,6 +81,28 @@ import scala.collection.{ Map, Set }
 package object dataflow {
 
     type AValueLocationMatcher = Function1[SomeProject, Map[Method, Set[PC]]]
+
+    // Calculates the initial "PC" associated with a method's parameter.
+    def parameterToValueIndex(
+        isStatic: Boolean,
+        descriptor: MethodDescriptor,
+        parameterIndex: Int): Int = {
+
+        def origin(localVariableIndex: Int) = -localVariableIndex - 1
+
+        var localVariableIndex = 0
+
+        if (!isStatic) {
+            localVariableIndex += 1 /*=="this".computationalType.operandSize*/
+        }
+        val parameterTypes = descriptor.parameterTypes
+        var currentIndex = 0
+        while (currentIndex < parameterIndex) {
+            localVariableIndex += parameterTypes(currentIndex).computationalType.operandSize
+            currentIndex += 1
+        }
+        origin(localVariableIndex)
+    }
 
 }
 

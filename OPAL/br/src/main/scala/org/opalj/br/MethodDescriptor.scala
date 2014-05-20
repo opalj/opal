@@ -63,6 +63,9 @@ sealed abstract class MethodDescriptor
 
     /**
      * Selects the indexes of the parameters that pass the filter function.
+     * 
+     * @note This index is not necessarily identical to the value used to identify
+     *      the origin of value (a parameter passed to a method.)  
      */
     def selectParameter(f: FieldType ⇒ Boolean): Seq[Int] = {
         var i = 0

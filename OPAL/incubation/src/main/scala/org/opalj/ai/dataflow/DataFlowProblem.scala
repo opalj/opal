@@ -44,12 +44,15 @@ import domain.l0._
 /**
  * Characterizes a data-flow problem. The characterization consists of the specification
  * of the problem as well as the selection of the solver.
- * 
+ *
  * I.e., tries to find paths from the identified sources to the identified sinks.
  *
- * ==Usage==
+ * ==Initialization==
+ * Initialization is done in multiple steps.
  *
- *  1. Set the project
+ *  1. The parameters are checked.
+ *  1. The parameters of the analysis are set.
+ *  1. The project is initialized by the framework and also set.
  *  1. Initialize [[sourceValues]] and [[sinkInstructions]] (These methods needs to be
  *     overridden by your subclass.)
  *  1. Call [[solve]]. After you have called [[solve]] you are no longer allowed
@@ -58,6 +61,44 @@ import domain.l0._
  * @author Michael Eichberg and Ben Hermann
  */
 trait DataFlowProblem {
+
+    def description: String =
+        "Finds instances of the specified dataflow problem (see documentation for details)."
+
+    // __________________________________________________________________________________
+    //
+    // Specify and access the analysis' configuration 
+    //
+    //
+
+    /**
+     * Describes the analysis specific parameters. An analysis specific parameter
+     * has to start with a dash ("-") and has to contain an equals sign ("=").
+     *
+     * @note The parameter `-cp=` is already predefined (see general documentation).
+     * @note The parameter `-library=` is already predefined (see general documentation).
+     */
+    def analysisParametersDescription: String = ""
+
+    /**
+     * Checks if the (additional) parameters are understood by
+     * the analysis.
+     *
+     * This method **must be** overridden if the analysis defines additional
+     * parameters. A method that overrides this method should return false if it can't
+     * validate all arguments.
+     * The default behavior is to check that there are no additional parameters.
+     */
+    def checkAnalysisParameters(parameters: Seq[String]): Boolean =
+        parameters.isEmpty
+
+    def processAnalysisParameters(parameters: Seq[String]): Unit
+
+    // __________________________________________________________________________________
+    //
+    // Functionality required to specify the taint-information flow 
+    //
+    //
 
     type DomainValue <: AnyRef
 
@@ -143,14 +184,28 @@ trait DataFlowProblem {
         onWriteTaintProcessors = f :: onWriteTaintProcessors
     }
 
-    /**
-     * The project that we are analyzing.
-     */
-    def project: SomeProject
+    // __________________________________________________________________________________
+    //
+    // Identifies the analysis' context
+    //
+    //
+
+    private[this] var theProject: SomeProject = null
+    def project = theProject
+    def project_=(project: SomeProject): Unit = {
+
+        if (this.project != null)
+            throw new IllegalStateException("the project is already set")
+        this.theProject = project
+
+        initializeSourcesAndSinks()
+    }
+
+    protected[this] def initializeSourcesAndSinks(): Unit
 
     /**
-     * Identifies the values that we want to track (by means of the `PC`) per
-     * relevant method.
+     * Identifies the values that we want to track (by means of the origin of the
+     * respective value) per relevant method.
      *
      * **The returned map must not change, after solve was called!**
      *
@@ -159,7 +214,7 @@ trait DataFlowProblem {
      * @see [[DataFlowProblemSpecification]] for the easy creation
      *      of the `sourcesValues` map.
      */
-    def sourceValues: Map[Method, Set[PC]]
+    def sourceValues(): Map[Method, Set[ValueOrigin]]
 
     /**
      * Identifies the program counters (PCs) of those instructions
@@ -172,7 +227,7 @@ trait DataFlowProblem {
      * @see [[DataFlowProblemSpecification]] for the easy creation
      *      of the `sinkInstructions` map.
      */
-    def sinkInstructions: Map[Method, Set[PC]]
+    def sinkInstructions(): Map[Method, Set[PC]]
 
     protected[this] def analyzeFeasability() {
         val sourceValuesCount = sourceValues.values.view.map(pcs ⇒ pcs.size).sum
@@ -188,6 +243,9 @@ trait DataFlowProblem {
      * Tries to find paths from the sources to the sinks.
      */
     def solve(): String = {
+        if (project == null)
+            throw new IllegalStateException("the project needs to be initialized first")
+
         analyzeFeasability()
 
         "Solved :-)"

@@ -30,14 +30,14 @@ package org.opalj
 package ai
 
 /**
- * Exception that is thrown by OPAL-AI's main loop when the abstract interpretation of a
- * method's implementation was not possible.
+ * Exception that is thrown by the abstract interpreter when the abstract 
+ * interpretation of a method's implementation failed.
  *
  * @author Michael Eichberg
  */
 case class InterpretationFailedException[D <: Domain with Singleton](
     cause: Throwable,
-    domain: D, // TODO Can we replace this with SomeDomain and a constructor with multiple arguements lists
+    domain: Domain,
     pc : PC,
     worklist: List[PC],
     evaluated: List[PC],
