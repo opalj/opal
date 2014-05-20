@@ -30,9 +30,9 @@ package jdkBugsTest;
 
 /**
  * This is a test for the JDKBugs Class.forName() analysis. It has a call to
- * Class.forName() but doesn't return it back
+ * Class.forName() but doesn't return it
  * 
- * @author Lars Schulte 
+ * @author Lars Schulte
  */
 public class NotReturned {
 
