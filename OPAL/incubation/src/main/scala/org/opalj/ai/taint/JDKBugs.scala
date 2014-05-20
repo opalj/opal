@@ -648,8 +648,6 @@ trait TaintAnalysisDomain[Source]
     (!declaringClass.isObjectType || (
       methodDescriptor.returnType != Class &&
       methodDescriptor.returnType != Object))
-    // currently disabled 
-    // methodDescriptor.returnType != String
   }
 
   /**
