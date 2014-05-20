@@ -39,23 +39,37 @@ object MaxLocalsEvaluation extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Evaluates the maxium register size."
+        def description: String =
+            "Collects information about the maxium number of registers required per method."
 
         def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
-            var map: Map[Int, Int] = Map.empty
+            import scala.collection.immutable.TreeMap// <= Sorted...
+            var methodParametersDistribution: Map[Int, Int] = TreeMap.empty
+            var maxLocalsDistrbution: Map[Int, Int] = TreeMap.empty
 
             for {
                 classFile ← project.classFiles;
-                MethodWithBody(body) ← classFile.methods
+                method @ MethodWithBody(body) ← classFile.methods
             } {
-                map = map.updated(
+                val parametersCount = method.descriptor.parametersCount + (if (method.isStatic) 0 else 1)
+                require(body.maxLocals >= parametersCount)
+                
+                methodParametersDistribution = methodParametersDistribution.updated(
+                    parametersCount,
+                    methodParametersDistribution.getOrElse(parametersCount, 0) + 1
+                )
+
+                maxLocalsDistrbution = maxLocalsDistrbution.updated(
                     body.maxLocals,
-                    map.getOrElse(body.maxLocals, 0) + 1
+                    maxLocalsDistrbution.getOrElse(body.maxLocals, 0) + 1
                 )
             }
 
-            BasicReport(
-                map.map(kv ⇒ { val (k, v) = kv; k+"\t"+v }).mkString("\n")
+            BasicReport("Results\n\n"+
+                "Method Parameters Distribution:\n"+
+                methodParametersDistribution.map(kv ⇒ { val (k, v) = kv; k+"\t"+v }).mkString("\n")+"\n"+
+                "MaxLocals Distribution:\n"+
+                maxLocalsDistrbution.map(kv ⇒ { val (k, v) = kv; k+"\t"+v }).mkString("\n")
             )
         }
     }
