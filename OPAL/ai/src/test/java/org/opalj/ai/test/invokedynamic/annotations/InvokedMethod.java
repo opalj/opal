@@ -26,27 +26,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opal.ai.test.invokedynamic.annotations;
+package org.opalj.ai.test.invokedynamic.annotations;
 
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
 /**
- * Describes a constructor call made by an invokedynamic instruction or through use of the Java
- * reflection API.
+ * Describes a method call. For types see the {@link TargetResolution} enum.
  * 
  * @author Arne Lottmann
  */
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface InvokedConstructor {
+public @interface InvokedMethod {
+
+    TargetResolution resolution() default TargetResolution.DEFAULT;
 
     Class<?> receiverType();
+
+    String name();
+
+    Class<?> returnType() default Void.class;
 
     Class<?>[] parameterTypes() default {};
 
     int lineNumber() default -1;
+
+    boolean isStatic() default false;
     
     boolean isReflective() default false;
 }
