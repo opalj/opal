@@ -49,7 +49,17 @@ sealed trait AccessFlagsMatcher { left ⇒
             override def unapply(accessFlags: Int): Boolean =
                 left.unapply(accessFlags) && right.unapply(accessFlags)
 
-            override def toString: String = left.toString+" && "+right.toString
+            override def toString: String = "("+left.toString+" && "+right.toString+")"
+        }
+    }
+
+    def ||(right: AccessFlagsMatcher): AccessFlagsMatcher = {
+        new AccessFlagsMatcher {
+
+            override def unapply(accessFlags: Int): Boolean =
+                left.unapply(accessFlags) || right.unapply(accessFlags)
+
+            override def toString: String = "("+left.toString+" || "+right.toString+")"
         }
     }
 
@@ -116,7 +126,7 @@ object AccessFlagsMatcher {
     val PUBLIC_FINAL = ACC_PUBLIC && ACC_FINAL
     val PRIVATE_FINAL = ACC_PRIVATE && ACC_FINAL
     val PUBLIC_STATIC = ACC_PUBLIC && ACC_STATIC
-    val PUBLIC_STATIC_FINAL = PUBLIC_FINAL && ACC_STATIC
+
     val NOT_INTERFACE = !ACC_INTERFACE
     val NOT_STATIC = !ACC_STATIC
     val NOT_PRIVATE = !ACC_PRIVATE
@@ -124,6 +134,10 @@ object AccessFlagsMatcher {
     val NOT_SYNCHRONIZED = !ACC_SYNCHRONIZED
     val NOT_NATIVE = !ACC_NATIVE
     val NOT_ABSTRACT = !ACC_ABSTRACT
+
+    val PUBLIC_STATIC_FINAL = PUBLIC_FINAL && ACC_STATIC
+
+    val PUBLIC___OR___PROTECTED_AND_NOT_FINAL = ACC_PUBLIC || (ACC_PROTECTED && NOT_FINAL)
 }
 
 

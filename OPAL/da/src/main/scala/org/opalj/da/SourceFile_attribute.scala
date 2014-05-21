@@ -27,22 +27,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package dataflow
-
-import scala.collection.{ Map, Set }
-
-import bi.AccessFlagsMatcher
-
-import br._
-import br.instructions._
-import br.analyses._
-
-import domain._
-import domain.l0._
+package da
 
 /**
- * 
- * @author Michael Eichberg and Ben Hermann
+ *
+ * @author Michael Eichberg
  */
+case class SourceFile_attribute(
+        attribute_name_index: Int,
+        sourceFile_index: Int) extends Attribute {
 
+    def attribute_length = 2
+
+    def attribute_name = SourceFile_attribute.name
+
+}
+
+object SourceFile_attribute {
+
+    val name = "SourceFile"
+
+}

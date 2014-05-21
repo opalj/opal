@@ -67,11 +67,46 @@ package object ai {
     type SomeAI[D <: Domain] = AI[_ >: D]
 
     /**
-     * Type alias that is used to identify a set of program counters.
+     * A value of type `ValueOrigin` identifies the origin of a value. In most cases the
+     * value is equal to the program counter of the instruction that created the value.
+     * However, for the values passed to a method, the index is conceptually:
+     *  `-1-(isStatic ? 0 : 1)-(the index of the parameter adjusted by the computational
+     * type)`.
      *
-     * @note This type alias serves comprehension purposes only.
+     * For example, in case of an instance method with the signature:
+     * {{{
+     * public void (double d/*parameter index:0*/, Object o/*parameter index:1*/){...}
+     * }}}
+     *
+     * The value `-1` is used to identify the implicit `this` reference.
+     *
+     * The value `-2` identifies the value of the parameter `d`.
+     *
+     * The value `-4` identifies the parameter `o`. (The parameter `d` is a value of
+     * computational-type category 2 and needs to stack/operands values.)
+     *
+     * The range of values is: [-257,65535]. Hence, whenever a value of type `ValueOrigin`
+     * is required/is expected it is possible to use a value with type `PC`. 
+     *
+     * Recall that the maximum size of the method
+     * parameters array is 255. If necessary, the first slot is required for the `this`
+     * reference. Furthermore, `long` and `double` values two slots are necessary; hence
+     * the smallest number used to encode that the value is an actual parameter is
+     * `-256`.
+     *
+     * The value `-257` is used to encode that the origin of the value is out
+     * of the scope of the analyzed program ([[ConstantValueOrigin]]).
      */
-    type PCs = collection.UShortSet
+    type ValueOrigin = Int
+
+    /**
+     * Used to identify that the origin of the value is outside of the program.
+     *
+     * For example, the VM sometimes performs comparisons against predetermined fixed
+     * values (specified in the JVM Spec.). The origin associated with such values is
+     * determined by this value.
+     */
+    final val ConstantValueOrigin: ValueOrigin = -257
 
     /**
      * An upper type bound represents the available type information about a reference value.

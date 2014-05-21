@@ -42,6 +42,7 @@ object ClassFileReader
         with bi.reader.FieldsReader
         with bi.reader.MethodsReader
         with bi.reader.AttributesReader
+        with bi.reader.SourceFile_attributeReader
         with bi.reader.SkipUnknown_attributeReader {
 
     type ClassFile = da.ClassFile
@@ -79,6 +80,12 @@ object ClassFileReader
             accessFlags, name_index, descriptor_index, attributes
         )
 
+    type SourceFile_attribute = da.SourceFile_attribute
+    def SourceFile_attribute(
+        cp: Constant_Pool,
+        attribute_name_index: Int, sourceFile_index: Int): SourceFile_attribute =
+        new SourceFile_attribute(attribute_name_index, sourceFile_index)
+
     /*
     type ElementValue = org.opalj.bat.native.ElementValue
 
@@ -96,18 +103,6 @@ object ClassFileReader
     */
 
     /*	
-	case class Unknown_attribute(
-		val attribute_name_index : Int,
-		val info : Array[Byte]
-	) extends org.opalj.bat.native.Unknown_attribute 
-
-	def Unknown_attribute(
-		attribute_name_index : Int,
-		info : Array[Byte]
-	)( implicit constant_pool : Constant_Pool) : Unknown_attribute = {
-		new Unknown_attribute(attribute_name_index , info	) 
-	}
-	
 
 	case class SourceFile_attribute(
 		val attribute_name_index : Int,

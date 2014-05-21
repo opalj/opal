@@ -35,7 +35,7 @@ import br.instructions._
 /**
  * Defines the interface between the abstract interpreter and a module for
  * tracing the interpreter's behavior. In general, a tracer is first registered with an
- * abstract interpreter. After that, when a method is analyzed, OPAL-AI calls the
+ * abstract interpreter. After that, when a method is analyzed, OPAL calls the
  * tracer's methods at the respective points in time.
  *
  * A tracer is registered with an abstract interpreter by creating a new subclass of
@@ -53,13 +53,13 @@ import br.instructions._
 trait AITracer {
 
     /**
-     * Called by OPAL-AI immediately before the (abstract) interpretation of the
+     * Called by OPAL immediately before the (abstract) interpretation of the
      * specified code is performed.
      *
      * The tracer is not expected to make any changes to the data structures
      * (`operandsArray` and `localsArray`). If the tracer makes such changes, it is
      * the responsibility of the tracer to ensure that the updates are meaningful.
-     * OPAL-AI will not perform any checks.
+     * OPAL will not perform any checks.
      */
     def continuingInterpretation(
         code: Code,

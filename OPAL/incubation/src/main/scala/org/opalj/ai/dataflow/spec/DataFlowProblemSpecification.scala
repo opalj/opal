@@ -29,6 +29,7 @@
 package org.opalj
 package ai
 package dataflow
+package spec
 
 import scala.collection.{ Map, Set }
 
@@ -48,11 +49,6 @@ import domain.l0._
  */
 trait DataFlowProblemSpecification extends DataFlowProblem {
 
-    def parameterToValueIndex(method: Method, parameterIndex: Int): Int = {
-        val methodParameterShift = if (method.isStatic) -1 else -2
-        -parameterIndex + methodParameterShift
-    }
-
     //
     // Storing/Managing Sources
     //
@@ -62,9 +58,30 @@ trait DataFlowProblemSpecification extends DataFlowProblem {
     private[this] var theSourceValues: Map[Method, Set[PC]] = _
     def sourceValues: Map[Method, Set[PC]] = theSourceValues
 
-    def origins(f: PartialFunction[Method, Set[Int]]): Unit = {
-        sourceMatchers = MethodsMatcher(f) :: sourceMatchers
+    def sources(
+        filter: Function[ClassFile, Boolean],
+        matcher: PartialFunction[Method, Set[Int]]): Unit = {
+
+        sourceMatchers =
+            new AValueLocationMatcher {
+
+                def apply(project: SomeProject) = {
+                    var map = scala.collection.mutable.AnyRefMap.empty[Method, Set[Int]]
+                    for {
+                        classFile ← project.classFiles
+                        if filter(classFile)
+                        method @ MethodWithBody(_) ← classFile.methods
+                    } {
+                        if (matcher.isDefinedAt(method)) {
+                            map.update(method, matcher(method))
+                        }
+                    }
+                    map.repack
+                    map
+                }
+            } :: sourceMatchers
     }
+
 
     //
     // Storing/Managing Sinks
@@ -79,7 +96,7 @@ trait DataFlowProblemSpecification extends DataFlowProblem {
     // Instantiating the problem
     //
 
-    def initialize(): Unit = {
+    override protected[this] def initializeSourcesAndSinks(): Unit = {
         import scala.collection.immutable.HashMap
 
         val sources = sourceMatchers map ((m: AValueLocationMatcher) ⇒ m(project))
@@ -89,16 +106,6 @@ trait DataFlowProblemSpecification extends DataFlowProblem {
         this.theSinkInstructions = sinks.foldLeft(HashMap.empty[Method, Set[PC]])(_ ++ _)
     }
 
-    override def solve() = {
-        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
-        time {
-            initialize()
-        } { t ⇒
-            println(f"[info] Locating the sources and sinks took ${ns2sec(t)}%.4f seconds.")
-        }
-
-        super.solve()
-    }
 }
 
 case class MethodsMatcher(
