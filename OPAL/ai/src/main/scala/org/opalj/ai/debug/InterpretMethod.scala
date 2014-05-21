@@ -140,7 +140,14 @@ object InterpretMethod {
                 else
                     classFile.methods.find(_.name == methodName)
             ) match {
-                    case Some(method) ⇒ method
+                    case Some(method) ⇒
+                        if (method.body.isDefined)
+                            method
+                        else {
+                            println(RED+
+                                "[error] The method: "+methodName+" does not have a body"+RESET)
+                            return ;
+                        }
                     case None ⇒
                         println(RED+
                             "[error] Cannot find the method: "+methodName+"."+RESET +
