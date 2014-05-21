@@ -75,13 +75,13 @@ case class ClassFile(
       <ul>  {for (method ← methods) yield method.toXHTML(cp)}</ul>
     }
     
-   protected def loadStyle() = {        
-         process(this.getClass().getResourceAsStream("style.css"))(
-            scala.io.Source.fromInputStream(_).mkString
-        )                  
+   protected def loadStyle : String = {    
+         Source.fromFile(this.getClass().getResource("css/style.css").getPath()) (scala.io.Codec.UTF8 ).mkString 
+                 
     }
     
-   protected def loadJavaScript(js:String) = {
+   protected def loadJavaScript(js:String): String = {
+     
          process(this.getClass().getResourceAsStream(js))(
             scala.io.Source.fromInputStream(_).mkString
         ) 
@@ -91,7 +91,7 @@ case class ClassFile(
         <html>
             <head>
     			<title>Opal ByteCode Disassembler</title>
-    			<style type="text/css" >{scala.xml.Unparsed( loadStyle())}</style>       		
+    			<style type="text/css" >{scala.xml.Unparsed(loadStyle)}</style>       		
             </head>
             <body>
     		<p class="Summary">
