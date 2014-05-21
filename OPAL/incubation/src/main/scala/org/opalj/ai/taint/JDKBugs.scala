@@ -312,8 +312,6 @@ trait TaintAnalysisDomain[Source]
    * object for which we have no further type information.
    */
   private def isRelevantCall(
-    pc: Int,
-    name: String,
     methodDescriptor: MethodDescriptor,
     operands: List[DomainValue]): Boolean = {
     operands.exists { op =>
@@ -325,7 +323,7 @@ trait TaintAnalysisDomain[Source]
 
   override def areturn(pc: Int, value: DomainValue) {
     // in case a relevant parameter is returned by the method
-    if (origin(value).exists(x => x == -1 || x == -2)) {
+    if (origin(value).exists(orig => contextNode.identifier._1.union(taintedPCs).contains(orig))) {
       relevantValuesOrigins = (-1, new SimpleNode("return of a relevant Parameter")) :: relevantValuesOrigins
     }
     returnedValues = (pc, value) :: returnedValues
@@ -432,7 +430,7 @@ trait TaintAnalysisDomain[Source]
 
     // check if we have a call to Class.newInstance...
     if (methodName == "newInstance") {
-      if (isRelevantCall(pc, methodName, methodDescriptor, operands)) {
+      if (isRelevantCall(methodDescriptor, operands)) {
         relevantValuesOrigins = (pc, new SimpleNode("newInstance")) :: relevantValuesOrigins
       }
     }
@@ -700,11 +698,21 @@ trait TaintAnalysisDomain[Source]
 
     if (!method.isNative && !definedInRestrictedPackage(classFile.thisType.packageName) && method.body.nonEmpty) {
       val callerNode = new SimpleNode(pc + ": method invocation; method id: " + method)
+
+      // compute the new pc of relevant parameters that the analysis
+      // wants to keep track of
+      var relevantParameters: List[Int] = List.empty
+      for ((operand, index) <- operands.view.reverse.zipWithIndex) {
+        if ((origin(operand)).exists(orig => contextNode.identifier._1.union(taintedPCs).contains(orig))) {
+          relevantParameters = -(index + 1) :: relevantParameters
+        }
+      }
+
       val calleeDomain = new CalledTaintAnalysisDomain(
         this,
         CallStackEntry(classFile, method),
         callerNode,
-        List(-1, -2),
+        relevantParameters,
         checkForFields)
 
       val calleeParameters = calleeDomain.DomainValueTag.newArray(method.body.get.maxLocals)

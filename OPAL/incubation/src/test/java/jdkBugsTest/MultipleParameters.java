@@ -32,23 +32,21 @@ package jdkBugsTest;
  * This is a test for the JDKBugs Class.forName() analysis. It has a call to
  * Class.forName() and returns it to the user.
  * 
- * JDKTaintAnalysis is able to detect if a String is passed as Object and later
- * on performs a toString call
+ * Test if the analysis can handle multiple parameters
  * 
  * @author Lars Schulte
  */
-public class ToStringCall {
+public class MultipleParameters {
 
-	public Class callerMethod(String s) {
-		return methodA(s);
+	public static Class callerMethod(String s) {
+		return methodA(5l, 6d, s, s);
 	}
 
-	public Class methodA(Object o) {
-		String s = o.toString();
+	static Class methodA(long l, double d, String s, String s2) {
 		return methodB(s);
 	}
 
-	Class methodB(String s) {
+	static Class methodB(String s) {
 		try {
 			return Class.forName(s);
 		} catch (ClassNotFoundException e) {

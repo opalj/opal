@@ -32,22 +32,23 @@ package notSupportedCases;
  * This is a test for the JDKBugs Class.forName() analysis. It has a call to
  * Class.forName() and returns it to the user.
  * 
- * This bug is is not reported by JDKTaintAnalysis as it only tracks the first 2
- * parameter slots.
+ * JDKTaintAnalysis is not able to detect if a String is passed as Object and
+ * later on performs a toString call
  * 
  * @author Lars Schulte
  */
-public class TaintedValueNot1or2inParameters {
+public class ToStringCall {
 
-	public static Class callerMethod(String s) {
-		return methodA(5, 6, s);
+	public Class callerMethod(String s) {
+		return methodA(s);
 	}
 
-	static Class methodA(long l, double d, String s) {
+	public Class methodA(Object o) {
+		String s = o.toString();
 		return methodB(s);
 	}
 
-	static Class methodB(String s) {
+	Class methodB(String s) {
 		try {
 			return Class.forName(s);
 		} catch (ClassNotFoundException e) {

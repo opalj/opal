@@ -40,7 +40,7 @@ import org.opalj.ai.taint.TaintAnalysisDomain
  *
  * @author Lars Schulte
  */
-class StackSpec extends FlatSpec with Matchers {
+class JDKBugsTest extends FlatSpec with Matchers {
 
   "JDKBugs" should "find all bugs presentet in the corresponding files in src/test/java" in {
 
