@@ -42,9 +42,9 @@ import org.scalatest.FunSpec
  */
 class InvokedynamicTest extends FunSpec with Matchers {
 
-    val InvokedMethod = ObjectType("de/tud/cs/st/bat/test/invokedynamic/annotations/InvokedMethod")
+    val InvokedMethod = ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethod")
 
-    val testResources = TestSupport.locateTestResources("classfiles/Lambdas.jar", "bi")
+    val testResources = TestSupport.locateTestResources("classfiles/Lambdas.jar", "br")
 
     val project: SomeProject = Project(testResources)
 
@@ -124,3 +124,4 @@ class InvokedynamicTest extends FunSpec with Matchers {
     }
 
 }
+

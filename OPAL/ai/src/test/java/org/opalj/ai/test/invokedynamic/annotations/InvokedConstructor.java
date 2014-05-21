@@ -26,20 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opal.ai.test.invokedynamic.annotations;
+package org.opalj.ai.test.invokedynamic.annotations;
 
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
 /**
- * Wrapper annotation to allow several AccessedField annotations on the same method.
+ * Describes a constructor call made by an invokedynamic instruction or through use of the Java
+ * reflection API.
  * 
  * @author Arne Lottmann
  */
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface AccessedFields {
+public @interface InvokedConstructor {
 
-    AccessedField[] value();
+    Class<?> receiverType();
+
+    Class<?>[] parameterTypes() default {};
+
+    int lineNumber() default -1;
+    
+    boolean isReflective() default false;
 }

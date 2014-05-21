@@ -30,9 +30,9 @@ package lambdas;
 
 import java.util.function.Predicate;
 
-import org.opal.ai.test.invokedynamic.annotations.InvokedMethod;
-import org.opal.ai.test.invokedynamic.annotations.InvokedMethods;
-import static org.opal.ai.test.invokedynamic.annotations.TargetResolution.*;
+import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
+import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
+import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
 
 /**
  * Simple predicate implementation to test resolution of method references / lambdas that have
