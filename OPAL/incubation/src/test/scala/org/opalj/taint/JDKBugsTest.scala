@@ -33,6 +33,8 @@ import org.scalatest._
 import org.opalj.br.TestSupport
 import org.opalj.ai.taint.JDKTaintAnalysis
 import org.opalj.ai.taint.TaintAnalysisDomain
+import org.opalj.ai.taint.RootTaintAnalysisDomain
+import java.net.URL
 
 /**
  * Simple scala test to run all test present in src/test/java.
@@ -51,4 +53,5 @@ class JDKBugsTest extends FlatSpec with Matchers {
     JDKTaintAnalysis.main(args)
     TaintAnalysisDomain.numberOfReports should be(18)
   }
+
 }

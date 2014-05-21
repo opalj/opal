@@ -38,11 +38,12 @@ package jdkBugsTest;
  */
 public class MultipleParameters {
 
-	public static Class callerMethod(String s) {
-		return methodA(5l, 6d, s, s);
+	public static Class callerMethod(long l, double d, int a, int b, String s,
+			String s2) {
+		return methodA(5l, 6d, 1, 1, s, s);
 	}
 
-	static Class methodA(long l, double d, String s, String s2) {
+	static Class methodA(long l, double d, int a, int b, String s, String s2) {
 		return methodB(s);
 	}
 

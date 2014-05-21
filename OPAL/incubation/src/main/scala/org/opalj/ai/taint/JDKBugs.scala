@@ -151,7 +151,7 @@ object JDKTaintAnalysis
 //}
 
 /**
- * this companion object exists is used for tests to verify the number of results.
+ * This companion object saves some values during the analysis. It can be used for testing purpose
  */
 object TaintAnalysisDomain {
   var numberOfReports: Int = 0
@@ -789,13 +789,20 @@ class RootTaintAnalysisDomain[Source](
   val contextNode: SimpleNode[(RelevantParameters, String)] = {
 
     taintedFields = taintedGloableFields
-    val firstIndex = if (id.method.isStatic) 1 else 2
-    val relevantParameters = {
-      methodDescriptor.parameterTypes.zipWithIndex.filter { param_idx =>
-        val (parameterType, _) = param_idx;
-        parameterType == ObjectType.String
-      }.map(param_idx => -(param_idx._2 + firstIndex))
-    }
+
+    var nextIndex = if (id.method.isStatic) 1 else 2
+    var relevantParameters =
+      //compute correct index (double, long take two slots) 
+      methodDescriptor.parameterTypes.zipWithIndex.map { param_idx =>
+        val (parameterType, index) = param_idx;
+        val currentIndex = nextIndex
+        nextIndex += parameterType.computationalType.operandSize
+        (parameterType, currentIndex)
+        // filter for Strings
+      }.filter { param_idx => param_idx._1 == ObjectType.String
+        // map on correct index
+      }.map(param_idx => -(param_idx._2))
+
     new SimpleNode((relevantParameters, contextIdentifier))
   }
 
