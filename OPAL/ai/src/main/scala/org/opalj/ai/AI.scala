@@ -186,14 +186,14 @@ trait AI[D <: Domain] {
                 )
 
             val maxLocals = method.body.get.maxLocals
-            if (l.size >= maxLocals) {
+            if (l.size > maxLocals) {
                 // l.toArray
                 throw new IllegalArgumentException(
                     "the number of initial locals("+l.size+
                     ") is larger than \"maxLocals("+maxLocals+")\""
                 )
             } else {
-                // the number of given locals is smaller than the number of max locals
+                // the number of given locals is smaller than or equal to the number of max locals
                 // (the former number still has to be larger or equal to the number of 
                 // parameter values (including "this"))
                 val locals = new Array[domain.DomainValue](maxLocals)

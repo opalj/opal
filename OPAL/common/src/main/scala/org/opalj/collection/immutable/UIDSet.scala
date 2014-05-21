@@ -33,7 +33,7 @@ package immutable
 import scala.annotation.tailrec
 
 /**
- * An immutable sorted set of elements of type `UID`.
+ * An immutable, sorted set of elements of type `UID`.
  * The decision whether the element is already contained in this set is solely based on
  * the element's unique id.
  *
