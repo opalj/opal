@@ -1,8 +1,0 @@
-diff a/da/src/main/scala/css/style.css b/da/src/main/scala/css/style.css	(rejected hunks)
-@@ -1,4 +0,5 @@
--
-+﻿
-+@charset "utf-8";
- body{
- 	font-family: Cambria, Palatino, "Palatino Linotype", "Palatino LT STD", Georgia, serif;
- 	background: #fff url(../images/bg.jpg) repeat top left;
