@@ -33,8 +33,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MethodHandles.Lookup;
 
-import org.opal.ai.test.invokedynamic.annotations.InvokedMethod;
-import org.opal.ai.test.invokedynamic.annotations.InvokedMethods;
+import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
+import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
 
 /**
  * Test cases for method handles.
