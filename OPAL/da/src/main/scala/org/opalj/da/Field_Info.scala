@@ -29,11 +29,9 @@
 package org.opalj
 package da
 
-import bi.AccessFlags
-import bi.AccessFlagsContext
-import bi.AccessFlagsContexts
-
 import scala.xml.Node
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 
 /**
  * @author Michael Eichberg
@@ -45,11 +43,19 @@ case class Field_Info(
         val attributes: Attributes) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>
-            { AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }
-            <span> { cp(name_index).asString } </span> 
-            <span class="cp_index"> { name_index } </span> 
-        </div>
+       <li>
+    		<strong>
+    			<div class="code">
+    				<span class="nx">{ AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }</span>
+            		<span> { cp(name_index).asString } </span> 
+            		<a href="#" class="tooltip">{ name_index }<span>{ cp(name_index) }</span></a>    
+            	</div>
+            </strong>
+       </li>
+    }
+    
+    def attributesToXHTML = {
+      <ul>  {for (attribute ← attributes) yield attribute.toXHTML()}</ul>
     }
 
 }
