@@ -29,7 +29,6 @@
 
 package org.opalj
 package frb
-package test
 package analysis
 
 import AnalysisTest._
