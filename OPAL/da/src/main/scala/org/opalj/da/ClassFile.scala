@@ -29,10 +29,12 @@
 package org.opalj
 package da
 
-import org.opalj.bi.{ AccessFlags, AccessFlagsContexts }
-
 import scala.xml.Node
-
+import java.io.File
+import scala.io.Source
+import java.util.ArrayList
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 /**
  * @author Michael Eichberg
  */
@@ -65,29 +67,73 @@ case class ClassFile(
         }
     }
 
-    def fieldsToXHTML = {
-        for (field ← fields) yield field.toXHTML(cp)
+    def fieldsToXHTML : Node = {   
+        <ul> {for (field ← fields) yield field.toXHTML(cp)}</ul>
     }
 
+    def methodsToXHTML : Node = {
+      <ul>  {for (method ← methods) yield method.toXHTML(cp)}</ul>
+    }
+    
+   protected def loadStyle() = {        
+         process(this.getClass().getResourceAsStream("style.css"))(
+            scala.io.Source.fromInputStream(_).mkString
+        )                  
+    }
+    
+   protected def loadJavaScript(js:String) = {
+         process(this.getClass().getResourceAsStream(js))(
+            scala.io.Source.fromInputStream(_).mkString
+        ) 
+    }
+    
     def toXHTML: Node =
         <html>
-            <head></head>
+            <head>
+    			<title>Opal ByteCode Disassembler</title>
+    			<style type="text/css" >{scala.xml.Unparsed( loadStyle())}</style>       		
+            </head>
             <body>
-                <h1>{ fqn }</h1>
-                <details>
-                    <summary>Constant Pool</summary>
-                    <ol>
-                    { cpToXHTML }
-                    </ol>
-                </details>
-                <dl>
-                    <dt>Version</dt><dd>{ minor_version + "." + major_version }</dd>
-                    <dt>Access Flags</dt><dd>{ AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }</dd>
-                </dl>
-                <details>
-                    <summary>Fields</summary>
-                    { fieldsToXHTML }
-                </details>
-           </body>
+    		<p class="Summary">
+    			<b>{ fqn }</b> Version { minor_version + "." + major_version } 
+    			<span class="nx">Access Flags { AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }</span><br/>
+    			<a href="#openModal">Open Modal</a>	
+    		</p>
+    			<div >
+    				<div id="class_">
+    					<div id="fields">
+    						<details>
+    						<summary>Fields</summary>
+    						<ol>
+    							{ fieldsToXHTML }
+    						</ol>
+    						</details>
+    					</div>
+    					<div id="methods">
+    						<details>
+    						<summary>Methods</summary>
+    							<ol>
+    								{ methodsToXHTML }
+    							</ol>
+    						</details>
+    					</div>
+    				</div>
+    			</div>
+    			<div id="ConstantPool">
+    						<details>
+    						<summary>Constant Pool</summary>
+    						<ol>
+    							{ cpToXHTML }
+    						</ol>
+    						</details>
+    		    </div>
+	<div id="openModal" class="modalDialog">
+			<div>
+				<a href="#close" title="Close" class="close">X</a>
+				<h1>Modal Box</h1>
+				<p>Methode Heirarchy.</p>
+			</div>
+	</div>
+    	   </body>
         </html>
 }

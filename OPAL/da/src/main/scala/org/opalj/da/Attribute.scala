@@ -28,7 +28,7 @@
  */
 package org.opalj
 package da
-
+import scala.xml.Node
 /**
  * The attribute class defines the common elements of all attributes; i.e., basically
  * the first two attribute_info elements.
@@ -50,4 +50,10 @@ trait Attribute {
      * The number of bytes to store the attribute.
      */
     def attribute_length: Int
+    
+    def toXHTML(): Node = {
+       <strong> <div>  ,                    
+            <span class="cp_index"> { attribute_name_index } </span> 
+        </div></strong>
+    }
 }
