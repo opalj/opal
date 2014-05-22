@@ -133,7 +133,7 @@ trait ClassValues extends StringValues {
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult = {
+        operands: Operands): MethodCallResult = {
 
         import ClassValues._
 

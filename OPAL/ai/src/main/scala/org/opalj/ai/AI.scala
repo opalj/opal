@@ -147,7 +147,7 @@ trait AI[D <: Domain] {
     protected def initialOperands(
         classFile: ClassFile,
         method: Method,
-        domain: D): List[domain.DomainValue] =
+        domain: D): domain.Operands =
         List.empty[domain.DomainValue]
 
     /**
@@ -175,7 +175,7 @@ trait AI[D <: Domain] {
         classFile: ClassFile,
         method: Method,
         domain: D)(
-            someLocals: Option[IndexedSeq[domain.DomainValue]] = None): Array[domain.DomainValue] = {
+            someLocals: Option[IndexedSeq[domain.DomainValue]] = None): domain.Locals = {
 
         import domain.DomainValueTag
 
@@ -190,7 +190,7 @@ trait AI[D <: Domain] {
                 // l.toArray
                 throw new IllegalArgumentException(
                     "the number of initial locals("+l.size+
-                    ") is larger than \"maxLocals("+maxLocals+")\""
+                        ") is larger than \"maxLocals("+maxLocals+")\""
                 )
             } else {
                 // the number of given locals is smaller than or equal to the number of max locals
@@ -280,17 +280,17 @@ trait AI[D <: Domain] {
     protected[ai] def perform(
         code: Code,
         theDomain: D)(
-            initialOperands: List[theDomain.DomainValue],
-            initialLocals: Array[theDomain.DomainValue]): AIResult { val domain: theDomain.type } = {
+            initialOperands: theDomain.Operands,
+            initialLocals: theDomain.Locals): AIResult { val domain: theDomain.type } = {
 
         import theDomain.DomainValueTag
 
         val codeLength = code.instructions.length
 
-        val operandsArray = new Array[List[theDomain.DomainValue]](codeLength)
+        val operandsArray = new Array[theDomain.Operands](codeLength)
         operandsArray(0) = initialOperands
 
-        val localsArray = new Array[Array[theDomain.DomainValue]](codeLength)
+        val localsArray = new Array[theDomain.Locals](codeLength)
         localsArray(0) = initialLocals
 
         continueInterpretation(
@@ -343,8 +343,8 @@ trait AI[D <: Domain] {
         theDomain: D)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: Array[List[theDomain.DomainValue]],
-            localsArray: Array[Array[theDomain.DomainValue]]): AIResult { val domain: theDomain.type } = {
+            operandsArray: TheOperandsArray[theDomain.Operands],
+            localsArray: TheLocalsArray[theDomain.Locals]): AIResult { val domain: theDomain.type } = {
 
         if (tracer.isDefined)
             tracer.get.continuingInterpretation(code, theDomain)(
@@ -1868,14 +1868,14 @@ trait AI[D <: Domain] {
                     throw ct
 
                 case cause @ DomainException(message) ⇒
-                    throw new InterpretationFailedException[theDomain.type](
-                        cause, theDomain, pc, worklist, evaluated, operandsArray, localsArray
-                    )
+                    throw InterpretationFailedException(
+                        cause, theDomain)(
+                            pc, worklist, evaluated, operandsArray, localsArray)
 
                 case cause: Throwable ⇒
-                    throw new InterpretationFailedException[theDomain.type](
-                        cause, theDomain, pc, worklist, evaluated, operandsArray, localsArray
-                    )
+                    throw InterpretationFailedException(
+                        cause, theDomain)(
+                            pc, worklist, evaluated, operandsArray, localsArray)
             }
         }
 

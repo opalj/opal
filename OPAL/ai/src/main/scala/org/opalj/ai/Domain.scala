@@ -337,12 +337,16 @@ trait Domain {
      * An instruction's operands are represented using a list where the first
      * element of the list represents the top level operand stack value.
      */
-    type Operands = List[DomainValue]
+    type Operands = org.opalj.ai.Operands[DomainValue] // the full package name is required by unidoc
+
+    type OperandsArray = org.opalj.ai.TheOperandsArray[Operands] // the full package name is required by unidoc
 
     /**
      * An instruction's current register values/locals are represented using an array.
      */
-    type Locals = Array[DomainValue]
+    type Locals = org.opalj.ai.Locals[DomainValue] // the full package name is required by unidoc
+
+    type LocalsArray = org.opalj.ai.TheLocalsArray[Locals] // the full package name is required by unidoc
 
     /**
      * A simple type alias of the type `DomainValue`.
@@ -707,7 +711,7 @@ trait Domain {
      *  - Type: '''Null'''
      *  - Null: '''Yes'''
      */
-    def NullValue(vo : ValueOrigin): DomainValue
+    def NullValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''either a reference
@@ -727,7 +731,7 @@ trait Domain {
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    def ReferenceValue(vo : ValueOrigin, referenceType: ReferenceType): DomainValue
+    def ReferenceValue(vo: ValueOrigin, referenceType: ReferenceType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''an array''
@@ -749,7 +753,7 @@ trait Domain {
      *   	following condition always has to hold: `counts.length <= arrayType.dimensions`.
      */
     def InitializedArrayValue(
-        vo : ValueOrigin,
+        vo: ValueOrigin,
         counts: List[Int],
         arrayType: ArrayType): DomainValue
 
@@ -764,7 +768,7 @@ trait Domain {
      *  - Type: '''Upper Bound'''
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def NonNullObjectValue(vo : ValueOrigin, objectType: ObjectType): DomainValue
+    def NonNullObjectValue(vo: ValueOrigin, objectType: ObjectType): DomainValue
 
     /**
      * Creates a new `DomainValue` that represents ''a new,
@@ -786,7 +790,7 @@ trait Domain {
      *      `multianewarray` instructions and in both cases an exception may be thrown
      *      (e.g., `NegativeArraySizeException`).
      */
-    def NewObject(vo : ValueOrigin, objectType: ObjectType): DomainValue
+    def NewObject(vo: ValueOrigin, objectType: ObjectType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents an '''initialized'''
@@ -812,7 +816,7 @@ trait Domain {
      *      correctly models the runtime type.)
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def InitializedObjectValue(vo : ValueOrigin, objectType: ObjectType): DomainValue
+    def InitializedObjectValue(vo: ValueOrigin, objectType: ObjectType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value
@@ -832,7 +836,7 @@ trait Domain {
      *
      * @param value A non-null string. (The string may be empty, though.)
      */
-    def StringValue(vo : ValueOrigin, value: String): DomainValue
+    def StringValue(vo: ValueOrigin, value: String): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a runtime value of
@@ -850,7 +854,7 @@ trait Domain {
      *  - Type: '''java.lang.Class<t:Type>'''
      *  - Null: '''No'''
      */
-    def ClassValue(vo : ValueOrigin, t: Type): DomainValue
+    def ClassValue(vo: ValueOrigin, t: Type): DomainValue
 
     // -----------------------------------------------------------------------------------
     //
@@ -860,7 +864,7 @@ trait Domain {
 
     /**
      * Returns the type(type bounds) of the given value.
-     * 
+     *
      * In general a single value can have multiple type bounds which depend on the
      * control flow.
      * However, all types that the value represents must belong to the same
@@ -1528,28 +1532,28 @@ trait Domain {
         declaringClass: ReferenceType, // e.g., Array[] x = ...; x.clone()
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult
+        operands: Operands): MethodCallResult
 
     def invokeinterface(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult
+        operands: Operands): MethodCallResult
 
     def invokespecial(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult
+        operands: Operands): MethodCallResult
 
     def invokestatic(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult
+        operands: Operands): MethodCallResult
 
     //
     // INVOKEDYNAMIC
@@ -1560,7 +1564,7 @@ trait Domain {
         bootstrapMethod: BootstrapMethod,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): Computation[DomainValue, ExceptionValues]
+        operands: Operands): Computation[DomainValue, ExceptionValues]
 
     //
     // RELATIONAL OPERATORS
@@ -1698,13 +1702,13 @@ trait Domain {
         //      "domain join - different register sizes: "+thisLocals+" <=> "+otherLocals)
 
         var operandsUpdated: UpdateType = NoUpdateType
-        val newOperands =
+        val newOperands: Operands =
             if (thisOperands eq otherOperands) {
                 thisOperands
             } else {
                 var thisRemainingOperands = thisOperands
                 var otherRemainingOperands = otherOperands
-                var newOperands: List[DomainValue] = List.empty // during the update we build the operands stack in reverse order
+                var newOperands: Operands = List.empty // during the update we build the operands stack in reverse order
 
                 while (thisRemainingOperands.nonEmpty /* && both stacks contain the same number of elements */ ) {
                     val thisOperand = thisRemainingOperands.head
@@ -1736,12 +1740,12 @@ trait Domain {
             }
 
         var localsUpdated: UpdateType = NoUpdateType
-        val newLocals: Array[DomainValue] =
+        val newLocals: Locals =
             if (thisLocals eq otherLocals) {
                 thisLocals
             } else {
                 val maxLocals = thisLocals.size
-                val newLocals = new Array[DomainValue](maxLocals)
+                val newLocals = new Locals(maxLocals)
                 var i = 0;
                 while (i < maxLocals) {
                     val thisLocal = thisLocals(i)
@@ -1873,8 +1877,8 @@ trait Domain {
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
         worklist: List[PC],
-        operandsArray: Array[List[DomainValue]],
-        localsArray: Array[Array[DomainValue]],
+        operandsArray: OperandsArray,
+        localsArray: LocalsArray,
         tracer: Option[AITracer]): List[PC] = worklist
 
     /**
@@ -1888,8 +1892,8 @@ trait Domain {
         pc: PC,
         worklist: List[PC],
         evaluated: List[PC],
-        operandsArray: Array[List[DomainValue]],
-        localsArray: Array[Array[DomainValue]],
+        operandsArray: OperandsArray,
+        localsArray: LocalsArray,
         tracer: Option[AITracer]): Unit = { /*Nothing*/ }
 
     /**

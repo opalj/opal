@@ -69,8 +69,8 @@ trait ConsoleEvaluationTracer extends AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]]) { /*EMPTY*/ }
+            operandsArray:  TheOperandsArray[domain.Operands],
+            localsArray:  TheLocalsArray[domain.Locals]) { /*EMPTY*/ }
 
     override def rescheduled(
         domain: Domain)(

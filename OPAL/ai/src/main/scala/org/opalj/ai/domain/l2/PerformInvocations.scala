@@ -45,8 +45,7 @@ trait PerformInvocations[Source]
         with l0.TypeLevelInvokeInstructions
         with ProjectBasedClassHierarchy[Source] { theDomain ⇒
 
-    def Operands(operands: Iterable[DomainValue]): DomainValues =
-        DomainValues(theDomain)(operands)
+
 
     // the function to identify recursive calls
     def isRecursive(
@@ -118,14 +117,14 @@ trait PerformInvocations[Source]
         pc: PC,
         definingClass: ClassFile,
         method: Method,
-        operands: List[DomainValue]): InvokeExecutionHandler
+        operands: Operands): InvokeExecutionHandler
 
     override def invokevirtual(
         pc: PC,
         declaringClass: ReferenceType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult =
+        operands: Operands): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokeinterface(
@@ -133,7 +132,7 @@ trait PerformInvocations[Source]
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult =
+        operands: Operands): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokespecial(
@@ -141,7 +140,7 @@ trait PerformInvocations[Source]
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult =
+        operands:Operands): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     final override def invokestatic(
@@ -149,7 +148,7 @@ trait PerformInvocations[Source]
         declaringClass: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult = {
+        operands: Operands): MethodCallResult = {
 
         def fallback() =
             baseInvokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
@@ -166,7 +165,7 @@ trait PerformInvocations[Source]
             project) match {
                 case Some(method) if !method.isNative ⇒
                     val classFile = project.classFile(method)
-                    if (isRecursive(classFile, method, Operands(operands)))
+                    if (isRecursive(classFile, method, DomainValues(theDomain)(operands)))
                         fallback()
                     else
                         invokestatic(pc, classFile, method, operands)
@@ -180,7 +179,7 @@ trait PerformInvocations[Source]
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult = {
+        operands: Operands): MethodCallResult = {
         super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
     }
 
@@ -188,7 +187,7 @@ trait PerformInvocations[Source]
         pc: PC,
         definingClass: ClassFile,
         method: Method,
-        operands: List[DomainValue]): MethodCallResult = {
+        operands: Operands): MethodCallResult = {
 
         val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
         val parameters = executionHandler.domain.DomainValueTag.newArray(method.body.get.maxLocals)

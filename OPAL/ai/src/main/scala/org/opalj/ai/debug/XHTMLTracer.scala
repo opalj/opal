@@ -245,8 +245,8 @@ trait XHTMLTracer extends AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]]) {
+            operandsArray:  TheOperandsArray[domain.Operands],
+            localsArray:  TheLocalsArray[domain.Locals]) {
         /*ignored*/
     }
 

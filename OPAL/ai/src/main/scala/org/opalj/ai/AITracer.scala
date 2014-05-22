@@ -66,8 +66,8 @@ trait AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]])
+            operandsArray: TheOperandsArray[domain.Operands],
+            localsArray: TheLocalsArray[domain.Locals])
 
     /**
      * Called by OPAL-AI always before an instruction is evaluated.
@@ -83,8 +83,8 @@ trait AITracer {
         domain: Domain)(
             pc: PC,
             instruction: Instruction,
-            operands: List[domain.DomainValue],
-            locals: Array[domain.DomainValue]): Unit
+            operands: domain.Operands,
+            locals: domain.Locals): Unit
 
     /**
      * Called by OPAL-AI after an instruction (`currentPC`) was evaluated and before the

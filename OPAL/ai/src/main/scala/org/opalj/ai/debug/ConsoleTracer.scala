@@ -71,8 +71,8 @@ trait ConsoleTracer extends AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]]) {
+            operandsArray:  TheOperandsArray[domain.Operands],
+            localsArray:  TheLocalsArray[domain.Locals]) {
 
         println(Console.BLACK_B + Console.WHITE+"Starting Code Analysis"+Console.RESET)
         println("Number of registers:      "+code.maxLocals)

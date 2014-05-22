@@ -160,31 +160,34 @@ object InterpretMethod {
         try {
             val result =
                 AI(classFile, method, createDomain(project, classFile, method))
+            val domain = result.domain
             writeAndOpenDump(dump(
+                Some("Result("+domainClass.getName()+"): "+(new java.util.Date).toString),
                 Some(classFile),
                 Some(method),
                 method.body.get,
-                result.domain,
-                result.operandsArray,
-                result.localsArray,
-                Some("Result("+domainClass.getName()+"): "+(new java.util.Date).toString)))
+                result.domain)(
+                    result.operandsArray,
+                    result.localsArray)
+            )
         } catch {
-            case ie @ InterpretationFailedException(cause, domain, pc, worklist, evaluated, operands, locals) ⇒
+            case ife : InterpretationFailedException ⇒
                 val header =
                     Some("<p><b>"+domainClass.getName()+"</b></p>"+
-                        cause.getMessage()+"<br>"+
-                        ie.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
-                        "Current instruction: "+pc+"<br>"+
-                        evaluated.mkString("Evaluated instructions:\n<br>", ", ", "<br>") +
-                        worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
+                        ife.cause.getMessage()+"<br>"+
+                        ife.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
+                        "Current instruction: "+ife.pc+"<br>"+
+                        ife.evaluated.mkString("Evaluated instructions:\n<br>", ", ", "<br>") +
+                        ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
                     )
                 val evaluationDump =
                     dump(
+                        header,
                         Some(classFile), Some(method), method.body.get,
-                        domain, operands, locals, header
-                    )
+                        ife.domain)(
+                            ife.operandsArray, ife.localsArray)
                 writeAndOpenDump(evaluationDump)
-                throw ie
+                throw ife
         }
     }
 }

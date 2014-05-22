@@ -30,19 +30,41 @@ package org.opalj
 package ai
 
 /**
- * Exception that is thrown by the abstract interpreter when the abstract 
+ * Exception that is thrown by the abstract interpreter when the abstract
  * interpretation of a method's implementation failed.
  *
  * @author Michael Eichberg
  */
-case class InterpretationFailedException[D <: Domain with Singleton](
-    cause: Throwable,
-    domain: Domain,
-    pc : PC,
-    worklist: List[PC],
-    evaluated: List[PC],
-    operandsArray: Array[List[D#DomainValue]],
-    localsArray: Array[Array[D#DomainValue]])
-        extends AIException("the interpretation failed",cause)
+trait InterpretationFailedException {
+    def cause: Throwable
+    val domain: Domain
+    val pc: PC
+    val worklist: List[PC]
+    val evaluated: List[PC]
+    val operandsArray: TheOperandsArray[domain.Operands]
+    val localsArray: TheLocalsArray[domain.Locals]
+}
+
+object InterpretationFailedException {
+
+    def apply(
+        theCause: Throwable,
+        theDomain: Domain)(
+            thePc: PC,
+            theWorklist: List[PC],
+            theEvaluated: List[PC],
+            theOperandsArray: TheOperandsArray[theDomain.Operands],
+            theLocalsArray: TheLocalsArray[theDomain.Locals]): AIException with InterpretationFailedException = {
+        new AIException("the interpretation failed", theCause) with InterpretationFailedException {
+            def cause = super.getCause
+            val domain: theDomain.type = theDomain
+            val pc: PC = thePc
+            val worklist: List[PC] = theWorklist
+            val evaluated: List[PC] = theEvaluated
+            val operandsArray: TheOperandsArray[theDomain.Operands] = theOperandsArray
+            val localsArray: TheLocalsArray[theDomain.Locals] = theLocalsArray
+        }
+    }
+}
 
 
