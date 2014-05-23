@@ -51,8 +51,8 @@ trait ConsoleTracer extends AITracer {
         domain: Domain)(
             pc: PC,
             instruction: Instruction,
-            operands: List[domain.DomainValue],
-            locals: Array[domain.DomainValue]): Unit = {
+            operands: domain.Operands,
+            locals: domain.Locals): Unit = {
 
         println(
             pc+":"+instruction.toString(pc)+" [\n"+
@@ -71,8 +71,8 @@ trait ConsoleTracer extends AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray:  TheOperandsArray[domain.Operands],
-            localsArray:  TheLocalsArray[domain.Locals]) {
+            operandsArray: domain.OperandsArray,
+            localsArray: domain.LocalsArray) {
 
         println(Console.BLACK_B + Console.WHITE+"Starting Code Analysis"+Console.RESET)
         println("Number of registers:      "+code.maxLocals)
@@ -123,7 +123,7 @@ trait ConsoleTracer extends AITracer {
                 println(
                     thisLocals.
                         zip(otherLocals).
-                        zip(updatedLocals).map(v ⇒ (v._1._1, v._1._2, v._2)).
+                        zip(updatedLocals.iterator).map(v ⇒ (v._1._1, v._1._2, v._2)).
                         zipWithIndex.map(v ⇒ (v._2, v._1._1, v._1._2, v._1._3)).
                         filterNot(v ⇒ (v._2 eq null) && (v._3 eq null)).
                         map(v ⇒

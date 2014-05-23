@@ -196,18 +196,18 @@ trait AI[D <: Domain] {
                 // the number of given locals is smaller than or equal to the number of max locals
                 // (the former number still has to be larger or equal to the number of 
                 // parameter values (including "this"))
-                val locals = new Array[domain.DomainValue](maxLocals)
+                var locals = org.opalj.ai.util.Locals[domain.DomainValue](maxLocals)
                 // for (i ← (0 until l.size)) locals(i) = l(i)
                 var i = l.size - 1
                 while (i >= 0) {
-                    locals(i) = l(i)
+                    locals = locals.updated(i, l(i))
                     i -= 1
                 }
                 locals
             }
         }.getOrElse { // there are no locals at all...
             val code = method.body.get
-            val locals = new Array[domain.DomainValue](code.maxLocals)
+            var locals = org.opalj.ai.util.Locals[domain.DomainValue](code.maxLocals)
             var localVariableIndex = 0
 
             // Calculates the initial "PC" associated with a method's parameter.
@@ -217,12 +217,12 @@ trait AI[D <: Domain] {
                 val thisType = classFile.thisType
                 val thisValue =
                     domain.NonNullObjectValue(origin(localVariableIndex), thisType)
-                locals.update(localVariableIndex, thisValue)
+                locals = locals.updated(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
             for (parameterType ← method.descriptor.parameterTypes) {
                 val ct = parameterType.computationalType
-                locals.update(
+                locals = locals.updated(
                     localVariableIndex,
                     domain.TypedValue(origin(localVariableIndex), parameterType))
                 localVariableIndex += ct.operandSize
@@ -532,8 +532,7 @@ trait AI[D <: Domain] {
                                 subroutine
                             )
                         }
-                        val updatedLocals = locals.clone
-                        updatedLocals(lvIndex) = theDomain.Null
+                        val updatedLocals = locals.updated(lvIndex, theDomain.Null)
 
                         gotoTarget(retPC, returnAddress, false, operands, updatedLocals)
                     }
@@ -787,9 +786,7 @@ trait AI[D <: Domain] {
                  * @return The updated locals variable array.
                  */
                 def updateLocals(lvIndex: Int, domainValue: DomainValue): Locals = {
-                    val newLocals = locals.clone
-                    newLocals.update(lvIndex, domainValue)
-                    newLocals
+                    locals.updated(lvIndex, domainValue)
                 }
 
                 @inline def as[I <: Instruction](i: Instruction): I = i.asInstanceOf[I]

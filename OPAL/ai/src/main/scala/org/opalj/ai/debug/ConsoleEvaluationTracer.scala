@@ -59,8 +59,8 @@ trait ConsoleEvaluationTracer extends AITracer {
         domain: Domain)(
             pc: PC,
             instruction: Instruction,
-            operands: List[domain.DomainValue],
-            locals: Array[domain.DomainValue]): Unit = {
+            operands: domain.Operands,
+            locals: domain.Locals): Unit = {
         print(pc+" ")
     }
 
@@ -69,8 +69,8 @@ trait ConsoleEvaluationTracer extends AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray:  TheOperandsArray[domain.Operands],
-            localsArray:  TheLocalsArray[domain.Locals]) { /*EMPTY*/ }
+            operandsArray: domain.OperandsArray,
+            localsArray: domain.LocalsArray) { /*EMPTY*/ }
 
     override def rescheduled(
         domain: Domain)(

@@ -1744,45 +1744,29 @@ trait Domain {
             if (thisLocals eq otherLocals) {
                 thisLocals
             } else {
-                val maxLocals = thisLocals.size
-                val newLocals = new Locals(maxLocals)
-                var i = 0;
-                while (i < maxLocals) {
-                    val thisLocal = thisLocals(i)
-                    val otherLocal = otherLocals(i)
-                    // The value calculated by "join" may be the value "IllegalValue" 
-                    // which means the values in the corresponding register were 
-                    // different – w.r.t. its type – on the different paths. 
-                    // Hence, the values are no longer useful.
-                    // If we would have a liveness analysis, we could avoid the use of 
-                    // "IllegalValue" and would avoid the useless merging of 
-                    // incompatible values.
-                    val newLocal =
-                        if ((thisLocal eq null) || (otherLocal eq null)) {
-                            if (thisLocal eq otherLocal /* <=> both are null*/ ) {
-                                thisLocal
-                            } else {
+                val newLocals =
+                    thisLocals.merge(
+                        otherLocals,
+                        (thisLocal, otherLocal) ⇒ {
+                            if ((thisLocal eq null) || (otherLocal eq null)) {
                                 localsUpdated = localsUpdated &: MetaInformationUpdateType
                                 TheIllegalValue
-                            }
-                        } else if (thisLocal eq otherLocal) {
-                            thisLocal
-                        } else {
-                            val updatedLocal = thisLocal.join(pc, otherLocal)
-                            if (updatedLocal eq NoUpdate) {
-                                thisLocal
                             } else {
-                                localsUpdated = localsUpdated &: updatedLocal
-                                updatedLocal.value
+                                val updatedLocal = thisLocal.join(pc, otherLocal)
+                                if (updatedLocal eq NoUpdate) {
+                                    thisLocal
+                                } else {
+                                    localsUpdated = localsUpdated &: updatedLocal
+                                    updatedLocal.value
+                                }
                             }
                         }
-                    newLocals(i) = newLocal
-                    i += 1
-                }
+                    )
                 if (localsUpdated.noUpdate)
                     thisLocals
                 else
                     newLocals
+
             }
 
         (operandsUpdated &: localsUpdated)((newOperands, newLocals))
