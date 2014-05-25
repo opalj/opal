@@ -224,7 +224,7 @@ trait DataFlowProblem {
      *
      * @note The methods have to belong to the [[project]].
      *
-     * @see [[DataFlowProblemSpecification]] for the easy creation
+     * @see [[org.opalj.ai.dataflow.spec.DataFlowProblemSpecification]] for the easy creation
      *      of the `sinkInstructions` map.
      */
     def sinkInstructions(): Map[Method, Set[PC]]
