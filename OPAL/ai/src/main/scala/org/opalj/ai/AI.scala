@@ -196,18 +196,18 @@ trait AI[D <: Domain] {
                 // the number of given locals is smaller than or equal to the number of max locals
                 // (the former number still has to be larger or equal to the number of 
                 // parameter values (including "this"))
-                var locals = org.opalj.ai.util.Locals[domain.DomainValue](maxLocals)
+                val locals = org.opalj.ai.util.Locals[domain.DomainValue](maxLocals)
                 // for (i ← (0 until l.size)) locals(i) = l(i)
                 var i = l.size - 1
                 while (i >= 0) {
-                    locals = locals.updated(i, l(i))
+                    locals.set(i, l(i))
                     i -= 1
                 }
                 locals
             }
         }.getOrElse { // there are no locals at all...
             val code = method.body.get
-            var locals = org.opalj.ai.util.Locals[domain.DomainValue](code.maxLocals)
+            val locals = org.opalj.ai.util.Locals[domain.DomainValue](code.maxLocals)
             var localVariableIndex = 0
 
             // Calculates the initial "PC" associated with a method's parameter.
@@ -217,12 +217,12 @@ trait AI[D <: Domain] {
                 val thisType = classFile.thisType
                 val thisValue =
                     domain.NonNullObjectValue(origin(localVariableIndex), thisType)
-                locals = locals.updated(localVariableIndex, thisValue)
+                locals.set(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
             for (parameterType ← method.descriptor.parameterTypes) {
                 val ct = parameterType.computationalType
-                locals = locals.updated(
+                locals.set(
                     localVariableIndex,
                     domain.TypedValue(origin(localVariableIndex), parameterType))
                 localVariableIndex += ct.operandSize
@@ -774,19 +774,6 @@ trait AI[D <: Domain] {
                     }
                     if (computation.throwsException)
                         handleExceptions(computation.exceptions)
-                }
-
-                /*
-                 * Copies the current locals variable array and updates the local variable
-                 * stored at the given `index` in the new locals variable array with
-                 * the given `domainValue`.
-                 *
-                 * @param lvIndex A valid index in the locals variable array.
-                 * @param domainValue A domain value.
-                 * @return The updated locals variable array.
-                 */
-                def updateLocals(lvIndex: Int, domainValue: DomainValue): Locals = {
-                    locals.updated(lvIndex, domainValue)
                 }
 
                 @inline def as[I <: Instruction](i: Instruction): I = i.asInstanceOf[I]
@@ -1427,35 +1414,35 @@ trait AI[D <: Domain] {
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
                         fallThrough(
                             operands.tail,
-                            updateLocals(lvIndex, operands.head))
+                            locals.updated(lvIndex, operands.head))
                     case 75 /*astore_0*/
                         | 71 /*dstore_0*/
                         | 67 /*fstore_0*/
                         | 63 /*lstore_0*/
                         | 59 /*istore_0*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(0, operands.head))
+                            operands.tail, locals.updated(0, operands.head))
                     case 76 /*astore_1*/
                         | 72 /*dstore_1*/
                         | 68 /*fstore_1*/
                         | 64 /*lstore_1*/
                         | 60 /*istore_1*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(1, operands.head))
+                            operands.tail, locals.updated(1, operands.head))
                     case 77 /*astore_2*/
                         | 73 /*dstore_2*/
                         | 69 /*fstore_2*/
                         | 65 /*lstore_2*/
                         | 61 /*istore_2*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(2, operands.head))
+                            operands.tail, locals.updated(2, operands.head))
                     case 78 /*astore_3*/
                         | 74 /*dstore_3*/
                         | 70 /*fstore_3*/
                         | 66 /*lstore_3*/
                         | 62 /*istore_3*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(3, operands.head))
+                            operands.tail, locals.updated(3, operands.head))
 
                     //
                     // PUSH CONSTANT VALUE
@@ -1843,7 +1830,7 @@ trait AI[D <: Domain] {
                     case 132 /*iinc*/ ⇒ {
                         val iinc = instruction.asInstanceOf[IINC]
                         val newValue = theDomain.iinc(pc, locals(iinc.lvIndex), iinc.constValue)
-                        fallThrough(operandsArray(pc), updateLocals(iinc.lvIndex, newValue))
+                        fallThrough(operandsArray(pc), locals.updated(iinc.lvIndex, newValue))
                     }
 
                     case 187 /*new*/ ⇒ {

@@ -109,7 +109,7 @@ object LocalsEval extends App {
         }
         println(data_a.mkString("Array(", " : ", ")"))
     }
-    /*
+
     println(Console.BLUE); evalUsingLocals(1); println(Console.RESET)
     evalUsingArray(1); println(Console.RESET)
 
@@ -124,7 +124,7 @@ object LocalsEval extends App {
 
     println(Console.BLUE); evalUsingLocals(5); println(Console.RESET)
     evalUsingArray(5); println(Console.RESET)
-*/
+
     println(Console.BLUE); evalUsingLocals(6); println(Console.RESET)
     evalUsingArray(6); println(Console.RESET)
 
