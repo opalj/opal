@@ -41,6 +41,11 @@ trait PerInstructionPostProcessing { this: Domain ⇒
 
     type DomainValueUpdater = (DomainValue) ⇒ DomainValue
 
+    def registerOnControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit = {
+        registerOnRegularControlFlowUpdater(f)
+        registerOnExceptionalControlFlowUpdater(f)
+    }
+
     def registerOnRegularControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit
 
     def registerOnExceptionalControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit
@@ -62,8 +67,8 @@ trait DefaultPerInstructionPostProcessing
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
         worklist: List[PC],
-        operandsArray: Array[List[DomainValue]],
-        localsArray: Array[Array[DomainValue]],
+        operandsArray: OperandsArray,
+        localsArray: LocalsArray,
         tracer: Option[AITracer]): List[PC] = {
 
         def doUpdate(updaters: List[DomainValueUpdater]): Unit = {
@@ -76,24 +81,14 @@ trait DefaultPerInstructionPostProcessing
                     updatedValue
                 }
 
-            val newLocals = localsArray(successorPC).clone
-            var i = newLocals.size - 1
-            var updated = false
-            while (i >= 0) {
-                val local = newLocals(i)
-                if (local != null) {
-                    updaters foreach { updater ⇒
-                        val newLocal = updater(local)
-                        if (newLocal ne local) {
-                            newLocals(i) = newLocal
-                            updated = true
-                        }
-                    }
-                }
-                i -= 1
+            val locals: Locals = localsArray(successorPC)
+            locals.update { l ⇒
+                if (l ne null)
+                    updaters.tail.foldLeft(updaters.head.apply(l))((c, u) ⇒ u.apply(c))
+                else
+                    null
             }
-            if (updated)
-                localsArray(successorPC) = newLocals
+
         }
 
         if (isExceptionalControlFlow) {
@@ -125,8 +120,8 @@ trait DefaultPerInstructionPostProcessing
         pc: PC,
         worklist: List[PC],
         evaluated: List[PC],
-        operandsArray: Array[List[DomainValue]],
-        localsArray: Array[Array[DomainValue]],
+        operandsArray: OperandsArray,
+        localsArray: LocalsArray,
         tracer: Option[AITracer]): Unit = {
         val l = Nil
         onExceptionalControlFlow = l

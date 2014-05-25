@@ -69,8 +69,8 @@ trait PropertyTracing extends Domain { domain ⇒
 
     def initProperties(
         code: Code,
-        operandsArray: List[this.type#DomainValue],
-        localsArray: Array[this.type#DomainValue]) = {
+        operandsArray: Operands,
+        localsArray: Locals) = {
 
         this.propertiesArray = new Array(code.instructions.size)
         this.propertiesArray(0) = initialPropertyValue()
@@ -93,8 +93,8 @@ trait PropertyTracing extends Domain { domain ⇒
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
         worklist: List[PC],
-        operandsArray: Array[List[DomainValue]],
-        localsArray: Array[Array[DomainValue]],
+        operandsArray: OperandsArray,
+        localsArray: LocalsArray,
         tracer: Option[AITracer]): List[PC] = {
 
         val forceScheduling: Boolean = {

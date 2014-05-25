@@ -84,7 +84,7 @@ object ObjectTypes {
 
     val e2 = new PerformanceEvaluation()
 
-    val matcher = ObjectType.primitiveWrapperMatcher[(Long), Int](
+    val matcher = ObjectType.primitiveTypeWrapperMatcher[(Long), Int](
         (v: Long) ⇒ (v % 10000).toInt,
         (v: Long) ⇒ (v % 20000).toInt,
         (v: Long) ⇒ (v % 30000).toInt,

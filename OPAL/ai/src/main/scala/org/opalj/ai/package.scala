@@ -130,11 +130,11 @@ package object ai {
      */
     type UpperTypeBound = UIDSet[ReferenceType]
 
-    type Operands[T <: Domain#DomainValue] = List[T]
-    type AnOperandsArray[T <: Domain#DomainValue] = Array[Operands[T]]
-    type TheOperandsArray[T <: (Domain with Singleton)#Operands] = Array[T]
-    
-    type Locals[T <: Domain#DomainValue] = Array[T]
-    type ALocalsArray[T <: Domain#DomainValue] = Array[Locals[T]]
-    type TheLocalsArray[T <: (Domain with Singleton)#Locals] = Array[T]
+    type Operands[T >: Null <: Domain#DomainValue] = List[T]
+    type AnOperandsArray[T >: Null <: Domain#DomainValue] = Array[Operands[T]]
+    type TheOperandsArray[T >: Null <: (Domain with Singleton)#Operands] = Array[T]
+
+    type Locals[T >: Null <: Domain#DomainValue] = org.opalj.ai.util.Locals[T]
+    type ALocalsArray[T >: Null <: Domain#DomainValue] = Array[Locals[T]]
+    type TheLocalsArray[T >: Null <: (Domain with Singleton)#Locals] = Array[T]
 }

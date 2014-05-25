@@ -63,7 +63,7 @@ class IincTracingDomain[I](override val id: I)
         with TypeLevelFieldAccessInstructions
         with TypeLevelInvokeInstructions
         with PredefinedClassHierarchy
-        with IgnoreMethodResults
+        with DefaultHandlingOfMethodResults
         with IgnoreSynchronization { thisDomain ⇒
 
     type Id = I

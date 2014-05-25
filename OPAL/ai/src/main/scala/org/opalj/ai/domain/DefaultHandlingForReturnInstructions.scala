@@ -30,65 +30,39 @@ package org.opalj
 package ai
 package domain
 
-import language.implicitConversions
-
-import collection.mutable.UShortSet
-
 /**
- * Records the program counters of all instructions that lead to a (ab)normal
- * return from the method. I.e., every instruction that may throw an exception or
- * causes a normal return from method may be recorded. Examples of instructions
- * that may be recorded: `(X)return`, `throw`, `invoke(XXX)`, `get|put(static|field)`,
- * `checkcast`, `(a)new(array)`,... . Instructions such as `swap` or `dup(XXX)`, however,
- * never directly lead to a method return and will not be recorded.
+ * Provides default implementations for a `Domain`'s return methods that do nothing.
  *
- * If you are interested in recording the values use: [[RecordReturnedValues]],
- * [[RecordThrownExceptions]].
- *
- * ==Usage==
- * A domain that mixes in this trait should only be used to analyze a single method.
- *
- * ==Thread Safety==
- * This class is not thread safe. I.e., this domain can only be used if
- * an instance of this domain is not used by multiple threads.
+ * You can mix in this trait if you are not interested in a method's return values or if
+ * you need some default implementations.
  *
  * @author Michael Eichberg
  */
-trait RecordReturnFromMethodInstructions extends Domain {
-
-    @volatile private[this] var returnFromMethodInstructions: UShortSet = UShortSet.empty
-
-    def allReturnFromMethodInstructions: PCs = returnFromMethodInstructions
+trait DefaultHandlingForReturnInstructions { this: Domain ⇒
 
     override def areturn(pc: PC, value: DomainValue): Unit = {
-        returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
+        /* Nothing to do. */
     }
 
     override def dreturn(pc: PC, value: DomainValue): Unit = {
-        returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
+        /* Nothing to do. */
     }
 
     override def freturn(pc: PC, value: DomainValue): Unit = {
-        returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
+        /* Nothing to do. */
     }
 
     override def ireturn(pc: PC, value: DomainValue): Unit = {
-        returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
+        /* Nothing to do. */
     }
 
     override def lreturn(pc: PC, value: DomainValue): Unit = {
-        returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
+        /* Nothing to do. */
     }
 
-    override def returnVoid(pc: PC): Unit = {
-        returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
-    }
-
-    // handles all kinds of abrupt method returns 
-    override def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
-        returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
-    }
 }
+
+
 
 
 

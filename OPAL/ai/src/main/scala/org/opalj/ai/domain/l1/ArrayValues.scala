@@ -54,7 +54,7 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
     protected class ArrayValue(
         vo: ValueOrigin,
         theType: ArrayType,
-        val values: Vector[DomainValue])
+        val values: Array[DomainValue])
             extends super.ArrayValue(vo, No, true, theType) {
         this: DomainArrayValue ⇒
 
@@ -64,15 +64,20 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
             loadPC: PC,
             index: DomainValue,
             potentialExceptions: ExceptionValues): ArrayLoadResult = {
-            if (potentialExceptions.nonEmpty)
+            if (potentialExceptions.nonEmpty) {
                 // - a "NullPointerException" is not possible
                 // - if an ArrayIndexOutOfBoundsException may be thrown then we certainly
                 //   do not have enough information about the index...
-                return ThrowsException(potentialExceptions)
+                return ComputedValueAndException(
+                    TypedValue(loadPC, theUpperTypeBound.componentType),
+                    potentialExceptions)
+            }
 
             intValue[ArrayLoadResult](index) { index ⇒
                 ComputedValue(values(index))
             } {
+                // This handles the case that we know that the index is not precise 
+                // but still known to be valid.
                 super.doLoad(loadPC, index, potentialExceptions)
             }
         }
@@ -82,17 +87,24 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
             value: DomainValue,
             index: DomainValue,
             potentialExceptions: ExceptionValues): ArrayStoreResult = {
-            if (potentialExceptions.nonEmpty)
-                // - a "NullPointerException" is not possible
+            // Here, a "NullPointerException" is not possible
+            if (potentialExceptions.nonEmpty) {
+                // In both of the following cases, we are no longer able to trace
+                // the contents of the array.
+
                 // - if an ArrayIndexOutOfBoundsException may be thrown then we certainly
                 //   do not have enough information about the index...
+                // - if an ArrayStoreException may be thrown, we are totally lost..
+// TODO [BUG] Mark array as dead
                 return ThrowsException(potentialExceptions)
+            }
 
             // If we reach this point none of the given exceptions is guaranteed to be thrown
             // However, we now have to provide the solution for the happy path
             intValue[ArrayStoreResult](index) { index ⇒
                 // let's check if we need to do anything
                 if (values(index) == value) {
+// TODO [BUG] Mark array as dead                    
                     var newArrayValue: DomainValue = null // <= we create the new array value only on demand and at most once!
                     registerOnRegularControlFlowUpdater { someDomainValue ⇒
                         if (someDomainValue eq ArrayValue.this) {
@@ -107,6 +119,11 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
                 }
                 ComputationWithSideEffectOnly
             } {
+                // This handles the case that the index is not precise, but still
+                // known to be valid. In this case we have to resort to the 
+                // abstract representation of the array.
+                
+               // TODO [BUG] Mark array as dead 
                 ComputationWithSideEffectOrException(potentialExceptions)
             }
         }
@@ -134,14 +151,14 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
                                     update = joinResult &: update
                                     newValue
                             }
-                        }).toVector // <= forces the evaluation - WHICH IS REQUIRED
+                        }).toArray // <= forces the evaluation - WHICH IS REQUIRED
                     update match {
                         case NoUpdateType ⇒ NoUpdate
                         case _ ⇒
                             if (isOther) {
                                 update(other)
                             } else
-                                update(ArrayValue(vo, theType, newValues.toVector))
+                                update(ArrayValue(vo, theType, newValues))
                     }
 
                 case _ ⇒
@@ -228,7 +245,7 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
                     case DoubleType       ⇒ DoubleValue(pc, 0.0d)
                     case _: ReferenceType ⇒ NullValue(pc)
                 }
-                return ArrayValue(pc, arrayType, Vector.fill(count)(defaultValue))
+                return ArrayValue(pc, arrayType, Array.fill(count)(defaultValue))
             }
         }
 
@@ -242,6 +259,6 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
     protected def ArrayValue( // for ArrayValue
         pc: PC,
         theUpperTypeBound: ArrayType,
-        values: Vector[DomainValue]): DomainArrayValue
+        values: Array[DomainValue]): DomainArrayValue
 
 }

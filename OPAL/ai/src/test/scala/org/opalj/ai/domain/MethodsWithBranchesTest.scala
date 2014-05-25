@@ -63,7 +63,7 @@ class MethodsWithBranchesTest
     class TestDomain(val name: String)
             extends TypeLevelDomain
             with IgnoreSynchronization
-            with IgnoreMethodResults
+            with DefaultHandlingOfMethodResults
             with RecordLastReturnedValues
             with RecordConstraints {
 

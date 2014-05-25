@@ -154,7 +154,7 @@ object PlainClassesTest {
     class RecordingDomain[I](id: I) extends DefaultConfigurableDomain[I](id)
             with DefaultClassValuesBinding
             with IgnoreSynchronization
-            with IgnoreThrownExceptions {
+            with DefaultHandlingForThrownExceptions {
 
         var returnedValue: Option[DomainValue] = _
         override def areturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }

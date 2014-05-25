@@ -331,7 +331,7 @@ object XHTML {
             <em>Information about the local variables is not available.</em>
         else {
             <ol start="0" class="registers">
-            { locals.map(l ⇒ if (l eq null) "UNUSED" else l.toString()).map(l ⇒ <li>{ l }</li>) }
+            { locals.map(l ⇒ if (l eq null) "UNUSED" else l.toString()).map(l ⇒ <li>{ l }</li>).iterator }
             </ol>
         }
 

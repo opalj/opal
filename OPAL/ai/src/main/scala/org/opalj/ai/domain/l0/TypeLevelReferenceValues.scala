@@ -501,6 +501,17 @@ trait TypeLevelReferenceValues
         }
     }
 
+    protected[this] def joinObjectTypesUntilSingleUpperBound(
+        upperTypeBound: UIDSet[ObjectType],
+        reflexive: Boolean): ObjectType = {
+        if (upperTypeBound.containsOneElement)
+            upperTypeBound.first
+        else
+            upperTypeBound reduce { (c, n) ⇒
+                joinObjectTypesUntilSingleUpperBound(c, n, reflexive)
+            }
+    }
+
     // ---------------------------------1-------------------------------------------------
     //
     // REPRESENTATION OF REFERENCE VALUES
@@ -611,7 +622,8 @@ trait TypeLevelReferenceValues
     protected trait NullValue extends ReferenceValue {
         this: DomainNullValue ⇒
 
-        final override def referenceValues: Iterator[IsAReferenceValue] = Iterator(this)
+        final override def referenceValues: Iterator[IsAReferenceValue] = 
+            Iterator.single(this)
 
         /**
          * Returns `Yes`.
@@ -667,7 +679,8 @@ trait TypeLevelReferenceValues
 
         val theUpperTypeBound: T
 
-        final override def referenceValues: Iterator[IsAReferenceValue] = Iterator(this)
+        final override def referenceValues: Iterator[IsAReferenceValue] = 
+            Iterator.single(this)
 
         final override def upperTypeBound: UpperTypeBound = UIDSet(theUpperTypeBound)
 
@@ -1037,8 +1050,7 @@ trait TypeLevelReferenceValues
         ObjectValue(pc, ObjectType.Class)
 
     override def InitializedArrayValue(
-        pc: PC, counts: 
-        List[Int], 
+        pc: PC, counts: List[Int],
         arrayType: ArrayType): DomainValue =
         ArrayValue(pc, arrayType)
 

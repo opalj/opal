@@ -35,7 +35,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait IgnoreVoidReturns { this: Domain ⇒
+trait DefaultHandlingOfVoidReturns { this: Domain ⇒
 
     override def returnVoid(pc: PC): Unit = {
         /* Nothing to do. */

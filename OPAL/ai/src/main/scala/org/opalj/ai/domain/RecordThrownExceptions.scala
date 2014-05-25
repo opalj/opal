@@ -64,10 +64,14 @@ trait RecordThrownExceptions extends Domain {
     /**
      * Wraps the given value into a `ThrownException`.
      *
+     * @param pc The program counter of the instruction that throws the exception. It
+     * 		is automatically stored in the map that associates instructions with
+     *   	the exceptions that are thrown.
+     *
      * @see For details study the documentation of the abstract type `ThrownException`
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
-    protected[this] def thrownException(pc: PC, value: ExceptionValue): ThrownException
+    protected[this] def recordThrownException(pc: PC, value: ExceptionValue): ThrownException
 
     /**
      * Joins the previously thrown exception and the newly thrown exception. Both
@@ -96,7 +100,7 @@ trait RecordThrownExceptions extends Domain {
                     case Some(previouslyThrownException) ⇒
                         joinThrownExceptions(pc, previouslyThrownException, exception)
                     case None ⇒
-                        thrownException(pc, exception)
+                        recordThrownException(pc, exception)
                 }
             )
         super.abruptMethodExecution(pc, exception)

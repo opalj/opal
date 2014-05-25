@@ -30,23 +30,35 @@ package org.opalj
 package ai
 package domain
 
+import language.implicitConversions
+
+import org.opalj.collection.mutable.UShortSet
+
+
 /**
- * A `Domain` that does nothing if a method returns ab-/normally.
+ * Records the program counters of all return (void) instructions that are reached.
  *
- * @note This trait's method is not intended to be overridden. If you need to do some
- * 		special processing just directly implement
- *   	the respective method and mixin the traits that ignore the rest.
+ * ==Usage==
+ * A domain that mixes in this trait should only be used to analyze a single method.
+ *
+ * ==Thread Safety==
+ * This class is not thread safe. I.e., this domain can only be used if
+ * an instance of this domain is not used by multiple threads.
  *
  * @author Michael Eichberg
  */
-trait IgnoreMethodResults
-        extends IgnoreVoidReturns
-        with IgnoreThrownExceptions
-        with IgnoreReturnedValues { this: Domain ⇒
+trait RecordVoidReturns extends Domain {
+
+    @volatile private[this] var returnVoidInstructions: UShortSet = UShortSet.empty
+
+    def allReturnVoidInstructions: PCs = returnVoidInstructions
+
+    abstract override def returnVoid(pc: PC): Unit = {
+        returnVoidInstructions = pc +≈: returnVoidInstructions
+        super.returnVoid(pc)
+    }
 
 }
-
-
 
 
 
