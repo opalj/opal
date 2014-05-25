@@ -78,4 +78,14 @@ object TestSupport {
         throw new IllegalArgumentException("Cannot locate resource: "+resourceName)
     }
 
+    /**
+     * This function tries to locate the runtime path of the jre library folder (aka the 
+     * location in which the rt.jar file and others can be found).
+     */
+    def locateJRELibraryFolder: Option[File] = {
+        val bootClasspath = System.getProperty("sun.boot.class.path")
+        val elements = bootClasspath.split(":")
+        val rtJar = elements.find(_.endsWith("rt.jar")).map(new File(_))
+        rtJar.map(_.getParentFile())
+    }
 }
