@@ -43,8 +43,12 @@ import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
  * <!--
  * 
  * 
+ * 
+ * 
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
+ * 
+ * 
  * 
  * 
  * -->
