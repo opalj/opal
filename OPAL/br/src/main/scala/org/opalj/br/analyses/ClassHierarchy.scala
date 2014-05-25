@@ -281,6 +281,33 @@ class ClassHierarchy private (
     }
 
     /**
+     * Executes the given function `f` for each subclass of the given `ObjectType`.
+     * In this case the subclass relation is '''not reflexive'''.
+     *
+     * Subtypes for which no `ClassFile` object is available are ignored.
+     */
+    def foreachSubclass(
+        objectType: ObjectType,
+        project: SomeProject)(f: ClassFile ⇒ Unit): Unit = {
+        foreachSubtype(objectType) { objectType ⇒
+            project.classFile(objectType).map(f)
+        }
+    }
+
+    /**
+     * Tests if a subclass of the given `ObjectType` exists that has the given property.
+     * In this case the subclass relation is '''not reflexive'''.
+     *
+     * Subtypes for which no `ClassFile` object is available are ignored.
+     */
+    def existsSubclass(objectType: ObjectType, project: SomeProject)(f: ClassFile ⇒ Boolean): Boolean = {
+        foreachSubtype(objectType) { objectType ⇒
+            project.classFile(objectType) map { cf ⇒ if (f(cf)) return true }
+        }
+        return false
+    }
+
+    /**
      * Calls the given function `f` for each of the given type's supertypes.
      * It is possible that the same super interface type `I` is passed multiple
      * times to `f` when `I` is implemented multiple times by the given type's supertypes.
