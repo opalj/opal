@@ -30,40 +30,28 @@ package org.opalj
 package ai
 package domain
 
-import language.implicitConversions
-
 /**
- * Records the exceptions thrown by a method. This trait can be used to record
- * the thrown exceptions independently of the precision of the domain.
+ * Basic implementation of a `Domain`'s `abruptMethodExecution` method that does
+ * nothing.
  *
- * ==Usage==
- * A domain that mixes in this trait should only be used to analyze a single method.
- *
- * ==Thread Safety==
- * This class is not thread safe. I.e., this domain can only be used if
- * an instance of this domain is not used by multiple threads.
+ * @note Mix-in this trait if the analysis does not need to do anything special in case
+ *      of an exception or if you have multiple stackable traits and you need a base
+ *      implementation.
+ *      Example:
+ *      {{{
+ *      MySpecialDomain extends ... with IgnoreThrownExceptions with RecordThrownExceptions with ...
+ *      }}}
  *
  * @author Michael Eichberg
  */
-trait DefaultRecordThrownExceptions extends RecordThrownExceptions {
+trait DefaultHandlingForThrownExceptions { this: Domain ⇒
 
-    type ThrownException = ExceptionValue
-
-    override protected[this] def thrownException(pc: PC, value: ExceptionValue): ThrownException =
-        value
-
-    override protected[this] def joinThrownExceptions(
-        pc: PC,
-        previouslyThrownException: ThrownException,
-        thrownException: ExceptionValue): ThrownException = {
-
-        previouslyThrownException.join(pc, thrownException) match {
-            case NoUpdate                              ⇒ previouslyThrownException
-            case StructuralUpdate(exceptionValue)      ⇒ exceptionValue
-            case MetaInformationUpdate(exceptionValue) ⇒ exceptionValue
-        }
+    override def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
+        /* Nothing to do. */
     }
 }
+
+
 
 
 

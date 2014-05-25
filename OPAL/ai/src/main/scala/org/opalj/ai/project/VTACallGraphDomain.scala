@@ -127,7 +127,7 @@ class DefaultVTACallGraphDomain[Source](
         with DefaultDomainValueBinding
         with GeneralizedArrayHandling
         with Configuration
-        with IgnoreMethodResults
+        with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultIntegerValuesComparison

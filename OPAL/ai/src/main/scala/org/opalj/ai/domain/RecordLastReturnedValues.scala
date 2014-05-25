@@ -33,7 +33,7 @@ package domain
 /**
  * Records the last value that is returned by a specific return instruction.
  *
- * Recording just the last value that is returned by a return instruction is often
+ * Recording just the last value that is returned by a `(a|i|l|f|d)return` instruction is often
  * sufficient (e.g., in case of a domain that performs all computations at the type
  * level) as the "last" value encodes all necessary information.
  *
@@ -43,9 +43,12 @@ trait RecordLastReturnedValues extends RecordReturnedValues {
 
     type ReturnedValue = DomainValue
 
-    def returnedValue(value: DomainValue): ReturnedValue = value
+    protected[this] def recordReturnedValue(
+        pc: PC,
+        value: DomainValue): ReturnedValue = value
 
-    def joinReturnedValues(
+    protected[this] def joinReturnedValues(
+        pc: PC,
         previouslyReturnedValue: ReturnedValue,
         value: DomainValue): ReturnedValue = value
 

@@ -43,9 +43,7 @@ import br.analyses.{ Project, ClassHierarchy }
 trait PerformInvocations[Source]
         extends Domain
         with l0.TypeLevelInvokeInstructions
-        with ProjectBasedClassHierarchy[Source] { theDomain ⇒
-
-
+        with ProjectBasedClassHierarchy[Source] { callingDomain ⇒
 
     // the function to identify recursive calls
     def isRecursive(
@@ -55,17 +53,22 @@ trait PerformInvocations[Source]
 
     trait InvokeExecutionHandler {
 
-        // the domain to use
-        val domain: Domain with RecordReturnFromMethodInstructions with RecordReturnVoidInstructions with DefaultRecordThrownExceptions
+        /**
+         * The domain that will be used to perform the abstract interpretation.
+         */
+        val domain: Domain with MethodCallResults
 
-        // the abstract interpreter
-        val ai: AI[_ >: domain.type]
+        /**
+         *  The abstract interpreter that will be used for the abstract interpretation.
+         */
+        def ai: AI[_ >: domain.type]
 
         def perform(
             pc: PC,
             definingClass: ClassFile,
             method: Method,
             parameters: Array[domain.DomainValue]): MethodCallResult = {
+            // MethodCallResult = Computation[Option[DomainValue], ExceptionValues]
 
             val aiResult = ai.perform(definingClass, method, domain)(Some(parameters))
             transformResult(pc, method, aiResult)
@@ -77,42 +80,33 @@ trait PerformInvocations[Source]
             calledMethod: Method,
             result: AIResult { val domain: InvokeExecutionHandler.this.domain.type }): MethodCallResult = {
             val domain = result.domain
-            val operandsArray = result.operandsArray
-            val thrownExceptions = domain.allThrownExceptions.values map { _.adapt(theDomain, callerPC) }
-
-            if (calledMethod.descriptor.returnType eq VoidType) {
-                if (domain.allReturnVoidInstructions.isEmpty) {
-                    // The method must have returned with an exception.
-                    ThrowsException(thrownExceptions)
-                } else if (thrownExceptions.nonEmpty) {
-                    ComputationWithSideEffectOrException(thrownExceptions)
-                } else {
-                    ComputationWithSideEffectOnly
-                }
+            val thrownExceptions = domain.thrownExceptions(callingDomain, callerPC)
+            if (!domain.returnedNormally) {
+                // The method must have returned with an exception.
+                ThrowsException(thrownExceptions)
             } else {
-                // The method potentially returns some value...
-                val returnInstructions = domain.allReturnInstructions
-                if (returnInstructions.nonEmpty) {
-                    val returnedValue =
-                        Some(
-                            result.domain.summarize(
-                                callerPC,
-                                domain.allReturnInstructions mapToList { pc ⇒ operandsArray(pc).head }
-                            ).adapt(theDomain, callerPC)
-                        )
+                if (calledMethod.descriptor.returnType eq VoidType) {
+                    if (thrownExceptions.nonEmpty) {
+                        ComputationWithSideEffectOrException(thrownExceptions)
+                    } else {
+                        ComputationWithSideEffectOnly
+                    }
+                } else {
+                    val returnedValue = domain.returnedValue(callingDomain, callerPC)
                     if (thrownExceptions.nonEmpty) {
                         ComputedValueAndException(returnedValue, thrownExceptions)
                     } else {
                         ComputedValue(returnedValue)
                     }
-                } else {
-                    // The method must have returned with an exception.
-                    ThrowsException(thrownExceptions)
                 }
             }
         }
     }
 
+    /**
+     * Returns (most often creates) the [[InvokeExecutionHandler]] that will be
+     * used to perform the abstract interpretation of the called method.
+     */
     def invokeExecutionHandler(
         pc: PC,
         definingClass: ClassFile,
@@ -140,9 +134,12 @@ trait PerformInvocations[Source]
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands:Operands): MethodCallResult =
+        operands: Operands): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
+    /**
+     * Implements the general strategy for handling "invokestatic" calls.
+     */
     final override def invokestatic(
         pc: PC,
         declaringClass: ObjectType,
@@ -153,19 +150,15 @@ trait PerformInvocations[Source]
         def fallback() =
             baseInvokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
 
-        if (declaringClass.isArrayType)
-            // given that arrays (up until Java 7) do not have any static methods, we 
-            // should not encounter this situation...
-            return fallback()
-
         classHierarchy.resolveMethodReference(
+            // the cast is safe since arrays do not have any static methods
             declaringClass.asObjectType,
             methodName,
             methodDescriptor,
             project) match {
                 case Some(method) if !method.isNative ⇒
                     val classFile = project.classFile(method)
-                    if (isRecursive(classFile, method, DomainValues(theDomain)(operands)))
+                    if (isRecursive(classFile, method, DomainValues(callingDomain)(operands)))
                         fallback()
                     else
                         invokestatic(pc, classFile, method, operands)
@@ -174,7 +167,12 @@ trait PerformInvocations[Source]
             }
     }
 
-    def baseInvokestatic(
+    /**
+     * Handle those `invokestatic` calls for which we have no concrete method (e.g.,
+     * the respective class file was never loaded or the method is native) or
+     * if have a recursive invocation.
+     */
+    protected[this] def baseInvokestatic(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
@@ -183,7 +181,7 @@ trait PerformInvocations[Source]
         super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
     }
 
-    def invokestatic(
+    protected[this] def invokestatic(
         pc: PC,
         definingClass: ClassFile,
         method: Method,
@@ -197,7 +195,9 @@ trait PerformInvocations[Source]
                 operand.adapt(executionHandler.domain, -(index + 1))
             localVariableIndex += operand.computationalType.operandSize
         }
-        executionHandler.perform(pc, definingClass, method, parameters)
+        val callResult = executionHandler.perform(pc, definingClass, method, parameters)
+        // TODO [Improvement] Add support to map a value back to a parameter if a parameter is returned. (E.g. Math.min(a,b) will either return a or b.) 
+        callResult
     }
 }
 

@@ -54,7 +54,7 @@ trait DefaultDomain
 class DefaultConfigurableDomain[I](
     val id: I)
         extends DefaultDomain
-        with IgnoreMethodResults
+        with DefaultHandlingOfMethodResults
         with IgnoreSynchronization {
         type Id = I
     }
@@ -62,10 +62,10 @@ class DefaultConfigurableDomain[I](
 class DefaultRecordingDomain[I](
     val id: I)
         extends DefaultDomain
-        with IgnoreMethodResults
+        with DefaultHandlingOfMethodResults
         with RecordLastReturnedValues
         with RecordAllThrownExceptions
-        with RecordReturnVoidInstructions
+        with RecordVoidReturns
         with IgnoreSynchronization{
         type Id = I
     }

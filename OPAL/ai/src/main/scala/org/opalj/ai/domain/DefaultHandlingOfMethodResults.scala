@@ -31,24 +31,19 @@ package ai
 package domain
 
 /**
- * Basic implementation of a `Domain`'s `abruptMethodExecution` method that does
- * nothing.
+ * A `Domain` that does nothing if a method returns ab-/normally.
  *
- * @note Mix-in this trait if the analysis does not need to do anything special in case
- *      of an exception or if you have multiple stackable traits and you need a base
- *      implementation.
- *      Example:
- *      {{{
- *      MySpecialDomain extends ... with IgnoreThrownExceptions with RecordThrownExceptions with ...
- *      }}}
+ * @note This trait's methods are generally not intended to be overridden.
+ * 		If you need to do some special processing just directly implement
+ *   	the respective method and mixin the traits that ignore the rest.
  *
  * @author Michael Eichberg
  */
-trait IgnoreThrownExceptions { this: Domain ⇒
+trait DefaultHandlingOfMethodResults
+        extends DefaultHandlingOfVoidReturns
+        with DefaultHandlingForThrownExceptions
+        with DefaultHandlingForReturnInstructions { this: Domain ⇒
 
-    override def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
-        /* Nothing to do. */
-    }
 }
 
 

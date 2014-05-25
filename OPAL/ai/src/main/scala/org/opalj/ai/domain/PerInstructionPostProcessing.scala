@@ -41,6 +41,11 @@ trait PerInstructionPostProcessing { this: Domain ⇒
 
     type DomainValueUpdater = (DomainValue) ⇒ DomainValue
 
+    def registerOnControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit = {
+        registerOnRegularControlFlowUpdater(f)
+        registerOnExceptionalControlFlowUpdater(f)
+    }
+
     def registerOnRegularControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit
 
     def registerOnExceptionalControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit
@@ -76,25 +81,14 @@ trait DefaultPerInstructionPostProcessing
                     updatedValue
                 }
 
-            // TODO Use specialized update loop
-            var newLocals = localsArray(successorPC)
-            var i = newLocals.size - 1
-            var updated = false
-            while (i >= 0) {
-                val local = newLocals(i)
-                if (local != null) {
-                    updaters foreach { updater ⇒
-                        val newLocal = updater(local)
-                        if (newLocal ne local) {
-                            newLocals = newLocals.updated(i, newLocal)
-                            updated = true
-                        }
-                    }
-                }
-                i -= 1
+            val locals: Locals = localsArray(successorPC)
+            locals.update { l ⇒
+                if (l ne null)
+                    updaters.tail.foldLeft(updaters.head.apply(l))((c, u) ⇒ u.apply(c))
+                else
+                    null
             }
-            if (updated)
-                localsArray(successorPC) = newLocals
+
         }
 
         if (isExceptionalControlFlow) {

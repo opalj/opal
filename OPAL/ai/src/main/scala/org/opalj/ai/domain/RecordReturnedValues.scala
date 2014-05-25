@@ -68,62 +68,71 @@ trait RecordReturnedValues extends Domain {
     /**
      * Wraps the given value into a `ReturnedValue`.
      *
+     * @param pc The program counter of the return instruction. The returned
+     * 		values are automatically associated with the pc of the instruction. Hence,
+     *   	it is not strictly required to store it in the `ReturnedValue`.
+     *
      * @see For details study the documentation of the abstract type `ReturnedValue`
      *      and study the subclass(es) of `RecordReturnedValues`.
      */
-    def returnedValue(value: DomainValue): ReturnedValue
+    protected[this] def recordReturnedValue(pc: PC, value: DomainValue): ReturnedValue
 
     /**
      * Joins the previously returned value and the newly given `value`. Both values
      * are returned by the same return instruction (same `pc`).
      *
+     * @param pc The program counter of the return instruction. The returned
+     * 		values are automatically associated with the pc of the instruction. Hence,
+     *   	it is not strictly required to store it in the `ReturnedValue`.
+     *
      * @see For details study the documentation of the abstract type `ReturnedValue`
      *      and study the subclass(es) of `RecordReturnedValues`.
      */
-    def joinReturnedValues(
+    protected[this] def joinReturnedValues(
+        pc: PC,
         previouslyReturnedValue: ReturnedValue,
         value: DomainValue): ReturnedValue
 
-    @volatile private[this] var returnedValues: Map[PC, ReturnedValue] = Map.empty
+    private[this] var returnedValues: Map[PC, ReturnedValue] = Map.empty
 
     def allReturnedValues: Map[PC, ReturnedValue] = returnedValues
 
-    protected[this] def recordReturnedValue(pc: PC, value: DomainValue) {
+    protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue) {
         returnedValues =
             returnedValues.updated(
                 pc,
                 returnedValues.get(pc) match {
                     case Some(returnedValue) ⇒
-                        joinReturnedValues(returnedValue, value)
+                        joinReturnedValues(pc, returnedValue, value)
                     case None ⇒
-                        returnedValue(value)
+                        recordReturnedValue(pc, value)
                 }
             )
     }
 
     abstract override def areturn(pc: PC, value: DomainValue) {
-        recordReturnedValue(pc, value)
-        super.areturn(pc,value)
+        doRecordReturnedValue(pc, value)
+        super.areturn(pc, value)
     }
 
     abstract override def dreturn(pc: PC, value: DomainValue) {
-        recordReturnedValue(pc, value)
-        super.dreturn(pc,value)
+        doRecordReturnedValue(pc, value)
+        super.dreturn(pc, value)
     }
 
     abstract override def freturn(pc: PC, value: DomainValue) {
-        recordReturnedValue(pc, value)
-        super.freturn(pc,value)
+        doRecordReturnedValue(pc, value)
+        super.freturn(pc, value)
     }
 
     abstract override def ireturn(pc: PC, value: DomainValue) {
-        recordReturnedValue(pc, value)
-        super.ireturn(pc,value)
+        doRecordReturnedValue(pc, value)
+        super.ireturn(pc, value)
     }
 
     abstract override def lreturn(pc: PC, value: DomainValue) {
-        recordReturnedValue(pc, value)
-        super.lreturn(pc,value)
+        doRecordReturnedValue(pc, value)
+        super.lreturn(pc, value)
     }
 
 }
