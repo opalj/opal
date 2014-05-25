@@ -49,8 +49,8 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
     val rtJar = new File(TestSupport.locateJRELibraryFolder.get, "rt.jar")
 
     val project: SomeProject = Project(
-            Java8Framework.ClassFiles(testResources),
-            Java8LibraryFramework.ClassFiles(rtJar))
+        Java8Framework.ClassFiles(testResources),
+        Java8LibraryFramework.ClassFiles(rtJar))
 
     private def testMethod(classFile: ClassFile, name: String) {
         for {
@@ -59,22 +59,22 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
             invokevirtual = instruction.asInstanceOf[INVOKEVIRTUAL]
             annotations = method.runtimeVisibleAnnotations
         } {
-        	val invokedMethod = getInvokedMethod(annotations)
-	        invokedMethod should be ('defined)
+            val invokedMethod = getInvokedMethod(annotations)
+            invokedMethod should be('defined)
 
-	        val methodIdentifier = invokedMethod.get.toJava
-        	it("«" + methodIdentifier + "» should resolve to Object's method") {
-	        	val declaringClass = invokevirtual.declaringClass
-	        	declaringClass should be ('ObjectType)
-	        	val declaringClassFile = project.classFile(declaringClass.asObjectType)
-	        	declaringClassFile should be ('defined)
-	        	val actualName = invokevirtual.name
-	        	val actualDescriptor = invokevirtual.methodDescriptor
-	        	val actualMethod = declaringClassFile.flatMap(
-	        	        _.findMethod(actualName, actualDescriptor))
-	        	actualMethod should be ('defined)
-	        	actualMethod should be (invokedMethod)
-        	}
+            val methodIdentifier = invokedMethod.get.toJava
+            it("«"+methodIdentifier+"» should resolve to Object's method") {
+                val declaringClass = invokevirtual.declaringClass
+                declaringClass should be('ObjectType)
+                val declaringClassFile = project.classFile(declaringClass.asObjectType)
+                declaringClassFile should be('defined)
+                val actualName = invokevirtual.name
+                val actualDescriptor = invokevirtual.methodDescriptor
+                val actualMethod = declaringClassFile.flatMap(
+                    _.findMethod(actualName, actualDescriptor))
+                actualMethod should be('defined)
+                actualMethod should be(invokedMethod)
+            }
         }
     }
 
@@ -92,41 +92,41 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
      */
     private def getInvokedMethod(annotations: Annotations): Option[Method] = {
         val candidates: IndexedSeq[Option[Method]] = for {
-                invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
-                pairs = invokedMethod.elementValuePairs
-                ElementValuePair("receiverType", ClassValue(receiverType)) ← pairs
-                ElementValuePair("name", StringValue(methodName)) ← pairs
-                classFile ← project.classFile(receiverType.asObjectType)
-            } yield {
-                val parameterTypes = getParameterTypes(pairs)
-                val returnType = getReturnType(pairs)
-                val descriptor = MethodDescriptor(parameterTypes, returnType)
-            	classFile.findMethod(methodName, descriptor)
-            }
+            invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
+            pairs = invokedMethod.elementValuePairs
+            ElementValuePair("receiverType", ClassValue(receiverType)) ← pairs
+            ElementValuePair("name", StringValue(methodName)) ← pairs
+            classFile ← project.classFile(receiverType.asObjectType)
+        } yield {
+            val parameterTypes = getParameterTypes(pairs)
+            val returnType = getReturnType(pairs)
+            val descriptor = MethodDescriptor(parameterTypes, returnType)
+            classFile.findMethod(methodName, descriptor)
+        }
         if (candidates.nonEmpty) candidates.head else None
     }
-    
+
     private def getParameterTypes(pairs: ElementValuePairs): IndexedSeq[FieldType] = {
-        pairs.find(_.name  == "parameterTypes").map({ p => 
+        pairs.find(_.name == "parameterTypes").map { p ⇒
             p.value.asInstanceOf[ArrayValue].values.map(_ match {
-                case ClassValue(x: ObjectType) => x
-                case ClassValue(x: BaseType) => x
-                case x: ElementValue => x.valueType
+                case ClassValue(x: ObjectType) ⇒ x
+                case ClassValue(x: BaseType)   ⇒ x
+                case x: ElementValue           ⇒ x.valueType
             })
-        }).getOrElse(IndexedSeq())
+        }.getOrElse(IndexedSeq())
     }
-    
+
     private def getReturnType(pairs: ElementValuePairs): Type = {
-        pairs.find(_.name == "returnType").map({ p =>
+        pairs.find(_.name == "returnType").map { p ⇒
             p.value.asInstanceOf[ClassValue].value
-        }).getOrElse(VoidType)
+        }.getOrElse(VoidType)
     }
 
     describe("Invocations of inherited methods on instances of functional interfaces") {
         val testClass = project.classFile(
-                ObjectType("lambdas/ObjectMethodsOnFunctionalInterfaces")).get
+            ObjectType("lambdas/ObjectMethodsOnFunctionalInterfaces")).get
         val annotatedMethods = testClass.methods.filter(
-                _.runtimeVisibleAnnotations.nonEmpty)
-        annotatedMethods.foreach(m => testMethod(testClass, m.name))
+            _.runtimeVisibleAnnotations.nonEmpty)
+        annotatedMethods.foreach(m ⇒ testMethod(testClass, m.name))
     }
 }

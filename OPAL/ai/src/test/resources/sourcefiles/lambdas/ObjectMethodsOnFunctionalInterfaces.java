@@ -34,7 +34,7 @@ import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
 /**
  * Test cases to show that calls to inherited methods on lambda instances go to Object.
  *
- * DO NOT RECOMPILE SINCE LAMBDA METHODS ARE COMPILER GENERATED, SO THE GIVEN NAMES MIGHT CHANGE!
+ * 
  *
  * <!--
  * 

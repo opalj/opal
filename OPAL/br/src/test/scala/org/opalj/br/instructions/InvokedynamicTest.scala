@@ -123,35 +123,34 @@ class InvokedynamicTest extends FunSpec with Matchers {
             }
         }
 
-		describe("when passed the jdk 8 rt.jar") {
-			it("should resolve all invokedynamic instructions found there") {
-        		val jrePath = TestSupport.locateJRELibraryFolder
+        describe("when passed the jre 8 jars") {
+            it("should resolve all invokedynamic instructions found there") {
+                val jrePath = TestSupport.locateJRELibraryFolder
                 if (!jrePath.isDefined) cancel("Cannot find JRE!")
-                val rtJar = jrePath.map(new File(_, "rt.jar")).get
-                val rtProject = Project(rtJar)
+                val jreProject = Project(jrePath.get)
                 val failedInstructions = (for {
-                    classFile ← rtProject.classFiles
+                    classFile ← jreProject.classFiles
                     method @ MethodWithBody(body) ← classFile.methods
                     instruction ← body.instructions if instruction.isInstanceOf[INVOKEDYNAMIC]
                     invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
                 } yield {
-                    (invokedynamic.resolveJDK8(rtProject).isDefined, 
-                            classFile, method, instruction)
-                }).filter(t => !t._1)
+                    (invokedynamic.resolveJDK8(jreProject).isDefined,
+                        classFile, method, instruction)
+                }).filter(t ⇒ !t._1)
                 if (!failedInstructions.isEmpty) {
                     val totalFailures = failedInstructions.size
                     val numberOfFailuresToShow = 5
-        	        val msg = failedInstructions.take(numberOfFailuresToShow).map({ tuple =>
-        	            val (_, classFile, method, instruction) = tuple
-        	            instruction + "\n in method " +
-        	            method.toJava
-        	        }).mkString(
-        	                "Failed to resolve the following instructions:\n",
-        	                "\n",
-        	                "\nand " + (totalFailures - numberOfFailuresToShow) + " more.")
-        	        fail(msg)
+                    val msg = failedInstructions.take(numberOfFailuresToShow).map({ tuple ⇒
+                        val (_, classFile, method, instruction) = tuple
+                        instruction+"\n in method "+
+                            method.toJava
+                    }).mkString(
+                        "Failed to resolve the following instructions:\n",
+                        "\n",
+                        "\nand "+(totalFailures - numberOfFailuresToShow)+" more.")
+                    fail(msg)
                 }
-			}
-		}
+            }
+        }
     }
 }
