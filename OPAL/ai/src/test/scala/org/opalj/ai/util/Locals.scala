@@ -77,7 +77,7 @@ class LocalsTest
         }
     }
 
-    it should ("be able to return the value stored stored at an index") in {
+    it should ("be able to return the value stored at an index") in {
         for {
             i ← 1 to 100
             v = Locals[Integer](i)
@@ -140,8 +140,38 @@ class LocalsTest
             val vm = v1.merge(v3, (a, b) ⇒ { a should not equal (b); -1 })
             vm.foreach { v ⇒
                 if (v == null || v != -1)
-                    fail("null is not -1 (size="+size+"; va="+v1.toString++"; vb="+v3.toString+"; vm="+vm.toString+")")
+                    fail("null is not -1 (size="+size+"; va="+v1.toString ++ "; vb="+v3.toString+"; vm="+vm.toString+")")
             }
         }
     }
+
+    it should ("be able to set a locals' value") in {
+        for {
+            size ← 10 to 50
+        } {
+            var v = Locals[Integer](size)
+            for {
+                i ← 0 until size
+            } {
+                v.set(i, i)
+                v(i) should be(i)
+            }
+        }
+    }
+
+    it should ("be able to update the locals in-place") in {
+        for {
+            size ← 10 to 50
+        } {
+            var v = Locals[Integer](size)
+            for { i ← 0 until size } { v.set(i, i) }
+            
+            v.update(_ + 100)
+
+            for { i ← 0 until size } {
+                v(i) should be(i + 100)
+            }
+        }
+    }
+
 }
