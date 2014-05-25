@@ -65,14 +65,14 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     //
     // ANNOTATIONTYPES
     // 
-    val invokedMethodAnnotation = ObjectType("de/tud/cs/st/bat/test/invokedynamic/annotations/InvokedMethod")
-    val invokedMethodsAnnotation = ObjectType("de/tud/cs/st/bat/test/invokedynamic/annotations/InvokedMethods")
+    val invokedMethodAnnotation = ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethod")
+    val invokedMethodsAnnotation = ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethods")
 
-    val invokedConstructorAnnotation = ObjectType("de/tud/cs/st/bat/test/invokedynamic/annotations/InvokedConstructor")
-    val invokedConstructorsAnnotation = ObjectType("de/tud/cs/st/bat/test/invokedynamic/annotations/InvokedConstructors")
+    val invokedConstructorAnnotation = ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedConstructor")
+    val invokedConstructorsAnnotation = ObjectType("org/opalj/ai/invokedynamic/annotations/InvokedConstructors")
 
-    val accessedFieldAnnotation = ObjectType("de/tud/cs/st/bat/test/invokedynamic/annotations/AccessedField")
-    val accessedFieldsAnnotation = ObjectType("de/tud/cs/st/bat/test/invokedynamic/annotations/AccessedFields")
+    val accessedFieldAnnotation = ObjectType("org/opalj/ai/test/invokedynamic/annotations/AccessedField")
+    val accessedFieldsAnnotation = ObjectType("org/opalj/ai/test/invokedynamic/annotations/AccessedFields")
 
     //
     // PROJECT SETUP
