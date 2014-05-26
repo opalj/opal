@@ -36,7 +36,7 @@ package jdkBugsTest;
  * 
  * @author Lars Schulte
  */
-public class MultipleParameters {
+public class MultipleParameters2 {
 
 	public static Class callerMethod(long l, double d, int a, int b, String s1,
 			String s2) {
@@ -44,21 +44,11 @@ public class MultipleParameters {
 	}
 
 	static Class methodA(long l, double d, int a, int b, String s1, String s2) {
-		if (l == d)
-			return sinkS1(s1);
-		else
-			return sinkS2(s2);
+		String s = (l == d ? s1 : s2);
+		return sink(s);
 	}
 
-	static Class sinkS1(String s) {
-		try {
-			return Class.forName(s);
-		} catch (ClassNotFoundException e) {
-			return null;
-		}
-	}
-
-	static Class sinkS2(String s) {
+	static Class sink(String s) {
 		try {
 			return Class.forName(s);
 		} catch (ClassNotFoundException e) {

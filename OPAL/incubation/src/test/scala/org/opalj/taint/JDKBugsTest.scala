@@ -51,7 +51,7 @@ class JDKBugsTest extends FlatSpec with Matchers {
     args(1) = "-java.security=" + TestSupport.locateTestResources("java.security", "").getPath()
 
     JDKTaintAnalysis.main(args)
-    TaintAnalysisDomain.numberOfReports should be(18)
+    TaintAnalysisDomain.numberOfReports should be(19)
   }
 
 }
