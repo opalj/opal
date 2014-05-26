@@ -119,7 +119,8 @@ trait PropertyTracing extends Domain { domain ⇒
                 }
             }
         }
-        if (forceScheduling && worklist.head != successorPC) {
+
+        if (forceScheduling && (worklist.isEmpty || worklist.head != successorPC)) {
             val filteredList = util.removeFirst(worklist, successorPC)
             if (tracer.isDefined) {
                 if (filteredList eq worklist)
