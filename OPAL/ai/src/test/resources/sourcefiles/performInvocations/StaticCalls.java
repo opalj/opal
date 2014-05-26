@@ -30,89 +30,116 @@ package performInvocations;
 
 public class StaticCalls {
 
-	static void doNothing() {
-		// empty
-	}
+    static void doNothing() {
+        // empty
+    }
 
-	static int returnConstantIntValue() {
-		return 1;
-	}
+    static int returnConstantIntValue() {
+        return 1;
+    }
 
-	static Object returnObject() {
-		return new Object();
-	}
+    static Object returnObject() {
+        return new Object();
+    }
 
-	static void throwException() {
-		throw new UnsupportedOperationException();
-	}
+    static void throwException() {
+        throw new UnsupportedOperationException();
+    }
 
-	static long returnObjectOrthrowException() {
-		long t = System.currentTimeMillis();
-		if (t % 100 == 0)
-			throw new UnsupportedOperationException();
-		else
-			return t;
-	}
+    static long returnObjectOrthrowException() {
+        long t = System.currentTimeMillis();
+        if (t % 100 == 0)
+            throw new UnsupportedOperationException();
+        else
+            return t;
+    }
 
-	static double div(int a, int b) {
-		if (b == 0)
-			return Double.NaN;
-		else
-			return a / b;
-	}
+    static double div(int a, int b) {
+        if (b == 0)
+            return Double.NaN;
+        else
+            return a / b;
+    }
 
-	static int divBy4(int a) {
-		return a / 4;
-	}
+    static int divBy4(int a) {
+        return a / 4;
+    }
 
-	static int complexMult(int a, int b) {
-		return (a + b) * (a / b);
-	}
+    static int complexMult(int a, int b) {
+        return (a + b) * (a / b);
+    }
 
-	static long performCalculation() {
-		return (long) div(1212, 23423);
-	}
+    static long performCalculation() {
+        return (long) div(1212, 23423);
+    }
 
-	static long doStuff() {
-		returnObject();
-		div(returnConstantIntValue(), 0);
-		return performCalculation();
-	}
+    static long doStuff() {
+        returnObject();
+        div(returnConstantIntValue(), 0);
+        return performCalculation();
+    }
 
-	static Double alwaysFail() {
-		throwException();
-		return Double.NaN;
-	}
+    static Double alwaysFail() {
+        throwException();
+        return new Double(Double.NaN);
+    }
 
-	static int callDivBy4() {
-		return divBy4(100);
-	}
+    static int callDivBy4() {
+        return divBy4(100);
+    }
 
-	static int callComplexMult() {
-		return complexMult(10, returnConstantIntValue());
-	}
+    static int aCallChain(int i) {
+        return i * callDivBy4();
+    }
 
-	static void mayFail() {
-		returnObjectOrthrowException();
-	}
+    static int aLongerCallChain() {
+        return aCallChain(returnConstantIntValue() * 7);
+    }
 
-	static void throwMultipleExceptions(int i) throws java.lang.Throwable {
-		switch (i) {
-		case 0:
-		case 1:
-			throw new IllegalArgumentException();
-		case 2:
-			throw new NullPointerException();
-		default:
-			System.out.println("Ok");
-		}
+    static int callComplexMult() {
+        return complexMult(10, returnConstantIntValue());
+    }
 
-		Throwable e = null;
-		if (System.currentTimeMillis() % 100 == 0)
-			e = new UnsupportedOperationException();
-		else
-			e = new UnknownError();
+    static void mayFail() {
+        returnObjectOrthrowException();
+    }
 
-		throw e;
-	}
+    static void throwMultipleExceptions(int i) throws java.lang.Throwable {
+        switch (i) {
+        case 0:
+        case 1:
+            throw new IllegalArgumentException();
+        case 2:
+            throw new NullPointerException();
+        default:
+            System.out.println("Ok");
+        }
+
+        Throwable e = null;
+        if (System.currentTimeMillis() % 100 == 0)
+            e = new UnsupportedOperationException();
+        else
+            e = new UnknownError();
+
+        throw e;
+    }
+
+    static void simpleRecursion(boolean b) {
+        if (b)
+            simpleRecursion(false);
+        else
+            System.out.println("done");
+    }
+
+    static void endless() {
+        System.out.println(System.currentTimeMillis());
+        endless();
+    }
+
+    static int fak(int i) {
+        if (i > 1)
+            return i * fak(i - 1);
+        else
+            return 1;
+    }
 }

@@ -38,6 +38,9 @@ import br.instructions._
 import br.analyses.{ Project, ClassHierarchy }
 
 /**
+ * Mix in this trait if methods that are called by `invokeXXX` instruction should
+ * actually be interpreted using a custom domain.
+ *
  * @author Michael Eichberg
  */
 trait PerformInvocations[Source]
@@ -45,16 +48,32 @@ trait PerformInvocations[Source]
         with l0.TypeLevelInvokeInstructions
         with ProjectBasedClassHierarchy[Source] { callingDomain ⇒
 
-    // the function to identify recursive calls
+    /**
+     * Identifies recursive calls.
+     *
+     * @note This function can simply always return `false`, if the domain that is used
+     *      for analyzing the called method does not follow method invocations (does
+     *      not perform invocations.) I.e., the domain used for analyzing a called method
+     *      can be ''any'' domain; in particular a domain that does not perform
+     *      invocations.
+     */
     def isRecursive(
         definingClass: ClassFile,
         method: Method,
-        operands: DomainValues): Boolean
+        operands: Operands): Boolean
 
+    /**
+     * Encapsulates the information required to perform the invocation of the target
+     * method.
+     */
     trait InvokeExecutionHandler {
 
         /**
-         * The domain that will be used to perform the abstract interpretation.
+         * The domain that will be used to perform the abstract interpretation of the
+         * called method.
+         *
+         * In general, explicit support is required to identify recursive calls
+         * if the domain also follows method invocations,
          */
         val domain: Domain with MethodCallResults
 
@@ -67,14 +86,16 @@ trait PerformInvocations[Source]
             pc: PC,
             definingClass: ClassFile,
             method: Method,
-            parameters: Array[domain.DomainValue]): MethodCallResult = {
+            parameters: IndexedSeq[domain.DomainValue]): MethodCallResult = {
             // MethodCallResult = Computation[Option[DomainValue], ExceptionValues]
 
             val aiResult = ai.perform(definingClass, method, domain)(Some(parameters))
             transformResult(pc, method, aiResult)
         }
 
-        // the function to transform the result
+        /**
+         * Converts the results of the evaluation of the called method into this domain.
+         */
         protected[this] def transformResult(
             callerPC: PC,
             calledMethod: Method,
@@ -140,7 +161,7 @@ trait PerformInvocations[Source]
     /**
      * Implements the general strategy for handling "invokestatic" calls.
      */
-    final override def invokestatic(
+    override def invokestatic(
         pc: PC,
         declaringClass: ObjectType,
         methodName: String,
@@ -158,7 +179,7 @@ trait PerformInvocations[Source]
             project) match {
                 case Some(method) if !method.isNative ⇒
                     val classFile = project.classFile(method)
-                    if (isRecursive(classFile, method, DomainValues(callingDomain)(operands)))
+                    if (isRecursive(classFile, method, operands))
                         fallback()
                     else
                         invokestatic(pc, classFile, method, operands)
@@ -181,6 +202,9 @@ trait PerformInvocations[Source]
         super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
     }
 
+    /**
+     * Performs the invocation of the given method using the given operands.
+     */
     protected[this] def invokestatic(
         pc: PC,
         definingClass: ClassFile,
@@ -196,9 +220,7 @@ trait PerformInvocations[Source]
             localVariableIndex += operand.computationalType.operandSize
         }
         val callResult = executionHandler.perform(pc, definingClass, method, parameters)
-        // TODO [Improvement] Add support to map a value back to a parameter if a parameter is returned. (E.g. Math.min(a,b) will either return a or b.) 
+        // TODO [Improvement] Add support to map a value back to a parameter if a passed parameter is returned. (E.g. Math.min(a,b) will either return a or b.) 
         callResult
     }
 }
-
-
