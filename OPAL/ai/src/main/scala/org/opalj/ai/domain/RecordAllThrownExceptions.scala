@@ -35,7 +35,8 @@ package domain
  * throws an exception (or multiple exceptions) all exceptions are recorded.
  *
  * @note This domain requires that `DomainValue`s that represent thrown exceptions
- *      have meaningful `equals` and `hashCode` methods.
+ *      have meaningful `equals` and `hashCode` methods. (Depending on the purpose 
+ *      of the abstract interpretation, reference equality may be sufficient.)
  *
  * @author Michael Eichberg
  */

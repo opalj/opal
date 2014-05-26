@@ -40,13 +40,15 @@ import collection.mutable.UShortSet
  * causes a normal return from method may be recorded. Examples of instructions
  * that may be recorded: `(X)return`, `throw`, `invoke(XXX)`, `get|put(static|field)`,
  * `checkcast`, `(a)new(array)`,... . Instructions such as `swap` or `dup(XXX)`, however,
- * never directly lead to a method return and will not be recorded.
+ * never directly lead to a method return (they will never result in an exception)
+ * and will not be recorded.
  *
  * If you are interested in recording the values use: [[RecordReturnedValues]],
  * [[RecordThrownExceptions]].
  *
  * ==Usage==
- * A domain that mixes in this trait should only be used to analyze a single method.
+ * This domain can be stacked on top of other traits that handle
+ * return instructions and abrupt method executions.
  *
  * ==Thread Safety==
  * This class is not thread safe. I.e., this domain can only be used if

@@ -59,7 +59,8 @@ import br._
  * between the stack and the locals (e.g., `Xload_Y`) or that determine the control
  * flow is, however, completely embedded into OPAL-AI.
  *
- * OPAL-AI uses the following three methods to inform a domain about the progress:
+ * OPAL uses the following three methods to inform a domain about the progress of the
+ * abstract interpretation:
  *  - [[org.opalj.ai.Domain.flow]]
  *  - [[org.opalj.ai.Domain.evaluationCompleted]]
  *  - [[org.opalj.ai.Domain.abstractInterpretationEnded]]
@@ -143,15 +144,16 @@ trait Domain {
      * supported and is the primary mechanism to model an abstract domain's lattice
      * w.r.t. some special type of value. In general, the implementation should try
      * to avoid creating new instances of values unless strictly required to model the
-     * domain's semantics. This will greatly improve
-     * the overall performance as this framework heavily uses reference-based equality checks
-     * to speed up the evaluation.
+     * domain's semantics. This will greatly improve the overall performance as this
+     * framework heavily uses reference-based equality checks to speed up the evaluation.
      *
      * @note OPAL does not rely on any special equality semantics w.r.t. values and
      *      never directly or indirectly calls a `Value`'s `equals` or `eq` method. Hence,
      *      a domain can encode equality such that it best fits its need.
-     *      However, the provided domains rely on the following semantics for equals:
-     *      '''Two domain values have to be equal (`==`) iff they represent the same abstract value.'''
+     *      However, some of the provided domains rely on the following semantics for equals:
+     *      '''Two domain values have to be equal (`==`) iff they represent the same
+     *      information. This includes additional information, such as, the value of
+     *      the origin.'''
      *      E.g., a value (`AnIntegerValue`) that represents an arbitrary `Integer` value
      *      has to return `true` if the domain value with which it is compared also
      *      represents an arbitrary `Integer` value (`AnIntegerValue`). However,
@@ -166,13 +168,17 @@ trait Domain {
      *      {{{
      *      public void foo(int a,int b) {
      *          if(a < 4) {
-     *              z = a - 2 // here a is constrained (< 4), and b is still unconstrained
+     *              z = a - 2 // here a is constrained (< 4), b and z are unconstrained
      *          }
      *          else {
-     *              z = a + 2 // here a is constrained (>= 4), and b is still unconstrained
+     *              z = a + 2 // here a is constrained (>= 4), b and z are unconstrained
      *          }
      *      }
      *      }}}
+     *
+     *      In general, `equals` is only defined for values belonging to the same
+     *      domain. If values need to be compared across domains, they need to be adapted
+     *      to a target domain first.
      */
     trait Value { this: DomainValue ⇒
 
@@ -248,7 +254,7 @@ trait Domain {
          * @param value The "new" domain value with which this domain value should be
          *      joined.
          *      '''The given `value` and this value are guaranteed to have
-         *      the same computational type, but that they are two different objects.'''
+         *      the same computational type, but are not reference equal.'''
          */
         protected def doJoin(pc: PC, value: DomainValue): Update[DomainValue]
 
@@ -258,12 +264,13 @@ trait Domain {
          *
          * See `doJoin(PC,DomainValue)` for details.
          *
-         * @note It is generally not recommended/needed to override this method.
+         * @note It is in general not recommended/needed to override this method.
          *
          * @param pc The program counter of the instruction where the paths converge.
          * @param value The "new" domain value with which this domain value should be
-         *      joined. The given value and `this` value are guaranteed to be two different
-         *      objects.
+         *      joined. The caller has to ensure that the given value and `this` value
+         *      are guaranteed to be two different objects.
+         * @return [[MetaInformationUpdateIllegalValue]]
          */
         def join(pc: PC, that: DomainValue): Update[DomainValue] = {
             if ((that eq TheIllegalValue) ||
@@ -293,11 +300,10 @@ trait Domain {
          * method and, hence, keeping all information would just waste memory and
          * a summary may be sufficient.
          *
-         * @note __The precise semantics and usage of `summarize(...)` is determined
-         *      by the domain__.
-         *      The framework does not use/call this method.This method
-         *      is solely predefined to facilitate the development of project-wide
-         *      analyses.
+         * @note The framework (the classes directly in org.opalj.ai) does not
+         *      use/call this method.
+         *      This method is solely predefined to facilitate the development of
+         *      project-wide analyses.
          */
         def summarize(pc: PC): DomainValue
 
@@ -315,14 +321,35 @@ trait Domain {
          * domain-adaptation. I.e., to make it possible to change the abstract domain at
          * runtime if the analysis time takes too long using a (more) precise domain.
          *
-         * @note __The precise semantics of `adapt` can be determined by the domain__.
-         *      The framework does not use/call this method.This method
+         * @note The framework does not use/call this method. This method
          *      is solely predefined to facilitate the development of project-wide
          *      analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
         def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
-            throw new DomainException("This value "+this+" cannot be adapted for "+target)
+            throw new DomainException("adaptation of "+this+" to "+target+" is unsupported")
+
+        /**
+         * Returns `true` iff the abstract state represented by this value
+         * is at least as abstract as the abstract state of the given value. I.e.,
+         * this method is '''not reflexive'''.
+         *
+         * The abstract state generally encompasses every information that would
+         * be considered during a [[join]] of `this` value and the `other` value and that
+         * could lead to a [[StructuralUpdate]].
+         *
+         * ==Implementation==
+         * The default implementation relies on this domain value's [[join]] method.
+         *
+         * Overriding this method is, hence, primarily meaningful for performance reasons.
+         */
+        def abstractsOver(other: DomainValue): Boolean = {
+            if (this eq other)
+                return true;
+
+            val result = this.join(Int.MinValue, other)
+            (result eq MetaInformationUpdateIllegalValue) || (result.isStructuralUpdate)
+        }
     }
 
     /**
@@ -425,7 +452,7 @@ trait Domain {
 
     /**
      * The result of the merge of two incompatible values has
-     * to be reported as a `MetaInformationUpdate`.
+     * to be reported as a `MetaInformationUpdate[DomainIllegalValue]`.
      */
     def MetaInformationUpdateIllegalValue: MetaInformationUpdate[DomainIllegalValue]
 
@@ -1773,7 +1800,7 @@ trait Domain {
     }
 
     /**
-     * '''Called by the framework after performing a computation'''; that is, after
+     * ''Called by the framework after performing a computation''. That is, after
      * evaluating the effect of the instruction with `currentPC` on the current stack and
      * register and joining the updated stack and registers with the stack and registers
      * associated with the instruction `successorPC`.
@@ -1785,7 +1812,7 @@ trait Domain {
      * In some cases it will even be the case that `flow` is called multiple times with
      * the same pair of program counters: (`currentPC`, `successorPC`). This may happen,
      * e.g., in case of a switch instruction where multiple values have the same
-     * body/target instruction.
+     * body/target instruction and we do not have precise information about the switch value.
      * E.g., as in the following snippet:
      * {{{
      * switch (i) {  // pc: X => Y (for "1"), Y (for "2"), Y (for "3")
@@ -1801,7 +1828,7 @@ trait Domain {
      * This enables the domain to precisely follow the evaluation
      * progress and in particular to perform control-flow dependent analyses.
      *
-     * @param currentPC The program counter of the instruction that is currently evaluated.
+     * @param currentPC The program counter of the instruction that is currently evaluated
      *      by the abstract interpreter.
      *
      * @param successorPC The program counter of an instruction that is a potential
@@ -1814,7 +1841,7 @@ trait Domain {
      *
      * @param isExceptionalControlFlow `True` if an and only if the evaluation of
      *      the instruction with the program counter `currentPC` threw an exception;
-     *      `false` otherwise. Hence, the instruction with `successorPC` is the
+     *      `false` otherwise. Hence, if `true` the instruction with `successorPC` is the
      *      first instruction of the handler.
      *
      * @param operandsArray The array that associates '''every instruction''' with its
@@ -1831,16 +1858,18 @@ trait Domain {
      *      If you want to force the evaluation of the instruction
      *      with the program counter `successorPC` it is sufficient to test whether
      *      the list already contains `successorPC` and – if not – to prepend it.
-     *      If the worklist already contains `successorPC`, the domain is allowed to move
+     *      If the worklist already contains `successorPC` then the domain is allowed to move
      *      the PC to the beginning of the worklist. However, if the PC does not belong
-     *      to the same (sub)routine, it is not allowed to be moved to the beginning
+     *      to the same (current) (sub)routine, it is not allowed to be moved to the beginning
      *      of the worklist. (Subroutines can only be found in code generated by old
      *      Java compilers; before Java 6. Subroutines are identified by jsr/ret
-     *      instructions.)
-     *      Note that the worklist may contain negative values or positive values between
-     *      two negative values. These values are used for handling subroutine calls
-     *      (jsr/ret) and should not be changed. Furthermore, no value (PC) should be moved
-     *      between two (sub-)routines.
+     *      instructions. A subroutine can be identified by going back in the worklist
+     *      and by looking for negative "program counters".
+     *      These negative program counters mark the beginning of a subroutine. In other
+     *      words, an instruction can be freely moved around unless a negative value is
+     *      found.) Additionally, neither the negative values nor the positive values between
+     *      two negative values should be changed. Furthermore, no value (PC) should be put
+     *      between negative values that capture subroutine information.
      *      If the domain updates the worklist, it is the responsibility of the domain
      *      to call the tracer and to inform it about the changes.
      *      Note that the worklist is not allowed to contain duplicates related to the
@@ -1851,9 +1880,9 @@ trait Domain {
      *
      * @note The domain is allowed to modify the `worklist`, `operandsArray` and
      *      `localsArray`. However, the AI will not perform any checks. In case of
-     *      updates of the `localsArray` it is necessary to first create a shallow
-     *      copy of the locals array associated with a specific function before
-     *      updating it. If this is not done, it may happen that the locals associated
+     *      updates of the `operandsArray` or `localsArray` it is necessary to first
+     *      create a shallow copy before  updating it.
+     *      If this is not done, it may happen that the locals associated
      *      with other instructions are also updated.
      */
     def flow(

@@ -33,13 +33,15 @@ package domain
 import language.implicitConversions
 
 /**
- * Records the values returned by the method. (Note that the computational type
+ * Generic infrastructure to record the values returned by the method. 
+ * (Note that the computational type
  * of the value(s) is not recorded. It is directly determined by
- * the signature of method that is analyzed or can be extracted using the respective
+ * the signature of the method that is analyzed or can be extracted using the respective
  * method.)
  *
- * This trait can be used to record the return values independently of
- * the precision of the domain.
+ * ==Usage==
+ * This domain can be stacked on top of other traits that handle
+ * return instructions that return some value.
  *
  * ==Usage==
  * A domain that mixes in this trait should only be used to analyze a single method.

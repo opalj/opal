@@ -35,13 +35,10 @@ import language.implicitConversions
 /**
  * Records the exception that is thrown by an instruction. If an instruction throws
  * multiple exceptions. The exceptions are `join`ed using the [[Domain#DomainValue]]'s
- * `join` method. 
+ * `join` method.
  *
  * This trait can be used to record the thrown exceptions independently of the
  * precision of the domain.
- *
- * ==Usage==
- * A domain that mixes in this trait should only be used to analyze a single method.
  *
  * ==Thread Safety==
  * This class is not thread safe. I.e., this domain can only be used if
@@ -53,7 +50,9 @@ trait RecordJoinedThrownExceptions extends RecordThrownExceptions {
 
     type ThrownException = ExceptionValue
 
-    override protected[this] def recordThrownException(pc: PC, value: ExceptionValue): ThrownException =
+    override protected[this] def recordThrownException(
+        pc: PC,
+        value: ExceptionValue): ThrownException =
         value
 
     override protected[this] def joinThrownExceptions(

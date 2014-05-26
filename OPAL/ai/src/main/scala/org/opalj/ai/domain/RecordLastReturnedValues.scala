@@ -35,7 +35,7 @@ package domain
  *
  * Recording just the last value that is returned by a `(a|i|l|f|d)return` instruction is often
  * sufficient (e.g., in case of a domain that performs all computations at the type
- * level) as the "last" value encodes all necessary information.
+ * level). The "last" value encodes all necessary information.
  *
  * @author Michael Eichberg
  */

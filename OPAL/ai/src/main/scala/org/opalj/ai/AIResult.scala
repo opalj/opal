@@ -32,7 +32,7 @@ package ai
 import br._
 
 /**
- * Factory to create `AIResult` objects. Primarily used by OPAL-AI to return the
+ * Factory to create `AIResult` objects. Primarily used to return the
  * result of an abstract interpretation of a method.
  *
  * @author Michael Eichberg

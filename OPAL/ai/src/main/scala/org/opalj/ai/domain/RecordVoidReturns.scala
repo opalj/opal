@@ -30,16 +30,17 @@ package org.opalj
 package ai
 package domain
 
-import language.implicitConversions
-
 import org.opalj.collection.mutable.UShortSet
-
 
 /**
  * Records the program counters of all return (void) instructions that are reached.
  *
  * ==Usage==
- * A domain that mixes in this trait should only be used to analyze a single method.
+ * This domain can be stacked on top of other domains that process `return` `void` instructions.
+ * {{{
+ * class MyDomain extends ...DefaultHandlingOfVoidReturns with RecordVoidReturns
+ * }}}
+ * It forwards all instruction evaluation calls to the super trait.
  *
  * ==Thread Safety==
  * This class is not thread safe. I.e., this domain can only be used if

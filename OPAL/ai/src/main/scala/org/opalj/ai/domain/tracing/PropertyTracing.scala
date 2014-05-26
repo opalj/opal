@@ -80,7 +80,7 @@ trait PropertyTracing extends Domain { domain ⇒
 
     /**
      * Returns a string representation of the property associated with the given
-     * instruction. This string representation is used by OPAL-AI's tools to enable
+     * instruction. This string representation is used by OPAL's tools to enable
      * a meaningful representation of the property.
      *
      * (Run `de...ai.util.InterpretMethod` with a domain that traces properties.)

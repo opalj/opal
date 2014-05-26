@@ -70,7 +70,7 @@ trait AITracer {
             localsArray: TheLocalsArray[domain.Locals])
 
     /**
-     * Called by OPAL-AI always before an instruction is evaluated.
+     * Always called by OPAL before an instruction is evaluated.
      *
      * This enables the tracer to precisely log the behavior of the abstract
      * interpreter, but also enables the tracer to interrupt the evaluation

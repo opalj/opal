@@ -40,7 +40,7 @@ trait ProjectBasedClassHierarchy[Source] extends ClassHierarchy { this: Domain â
     import br.analyses.{ ClassHierarchy, Project }
 
     /**
-     * Returns project that is currently analyzed.
+     * Returns the project that is currently analyzed.
      */
     def project: Project[Source]
 

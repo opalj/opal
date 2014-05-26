@@ -30,14 +30,14 @@ package org.opalj
 package ai
 package domain
 
-import language.implicitConversions
-
 /**
- * Records the exceptions thrown by a method. This trait can be used to record
- * the thrown exceptions independently of the precision of the domain.
+ * Generic infrastructure to record the exceptions thrown by a method.
+ * This trait can be used to record the thrown exceptions independently of the
+ * precision of the domain.
  *
  * ==Usage==
- * A domain that mixes in this trait should only be used to analyze a single method.
+ * This domain can be stacked on top of other traits that handle
+ * [[abruptMethodExecution]]s.
  *
  * ==Thread Safety==
  * This class is not thread safe. I.e., this domain can only be used if
