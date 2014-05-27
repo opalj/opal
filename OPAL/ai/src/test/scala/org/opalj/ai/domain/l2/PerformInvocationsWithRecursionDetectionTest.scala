@@ -74,6 +74,14 @@ class PerformInvocationsWithRecursionDetectionTest
         if (domain.returnedNormally) fail("the method never returns")
     }
 
+    it should ("be able to analyze some methods with mutual recursion") in {
+        val theCalledMethodsStore = createCalledMethodsStore()
+        val domain = new InvocationDomain(project) { val calledMethodsStore = theCalledMethodsStore }
+        BaseAI(StaticCalls, StaticCalls.findMethod("mutualRecursionA").get, domain)
+
+        domain.returnedNormally should be(true) // because we work at the type level at some point..
+    }
+
     it should ("be able to analyze a static method that uses recursion to calculate the factorial of a small concrete number") in {
         val domain = new InvocationDomain(project) { val calledMethodsStore = createCalledMethodsStore() }
         BaseAI.perform(StaticCalls, StaticCalls.findMethod("fak").get, domain)(

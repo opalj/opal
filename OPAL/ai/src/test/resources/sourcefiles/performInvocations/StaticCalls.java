@@ -135,11 +135,32 @@ public class StaticCalls {
         System.out.println(System.currentTimeMillis());
         endless();
     }
-
+ 
     static int fak(int i) {
         if (i > 1)
             return i * fak(i - 1);
         else
             return 1;
+    }
+
+    static boolean mutualRecursionA(boolean b) {
+        if (b)
+            return mutualRecursionB(!b);
+        else
+            return mutualRecursionC(b);
+    }
+
+    static boolean mutualRecursionB(boolean b) {
+        if (!b)
+            return mutualRecursionA(b);
+        else
+            return mutualRecursionC(!b);
+    }
+
+    static boolean mutualRecursionC(boolean b) {
+        if (!b)
+            return mutualRecursionA(b);
+        else
+            return mutualRecursionB(!b);
     }
 }
