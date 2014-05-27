@@ -26,17 +26,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-package SuperclassUsesSubclassDuringInitialization;
+package UninitializedFieldAccessDuringStaticInitialization;
 
 /**
- * This is a superclass which uses its subclass Subclass during initialization
+ * Subsubclass in the A->B->C class hierarchy.
  * 
- * @author Florian Brandherm
+ * @author Daniel Klauer
  */
-public class Superclass {
+public class C extends B {
 
-    // v won't be 42 after this line. v will be 0 because foo is 0 because
-    // it was not initialized yet. The Superclass will always be initialized first.
-    static int v = Subclass.foo;
+    static int C2 = 42;
+    static int C4 = 42;
+    static int C22 = 42;
+    static int C25 = 42;
+
+    static int C_getA26() {
+        return A26;
+    }
+
+    static int C_getB27() {
+        return B27;
+    }
+
+    static int C28 = 42;
+
+    static int C_getC28() {
+        return C28;
+    }
+
+    static int C50 = 42;
 }

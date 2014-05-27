@@ -22,23 +22,24 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package SuperclassUsesSubclassDuringInitialization;
+
+package UninitializedFieldAccessDuringStaticInitialization;
 
 /**
- * The subclass of the subclass: the static field here is accessed by the superclass,
- * through the static method.
+ * Invokes System.runFinalizersOnExit, an extremely dangerous method.
  * 
- * @author Daniel Klauer
+ * @author Roberts Kolosovs
  */
-public class Test4Subsubclass extends Test4Subclass {
+public class UnrelatedControlClassA {
 
-    private static int foo = 42;
-
-    public static int getFoo() {
-        return foo;
+    @SuppressWarnings("deprecation")
+    public void doStuff() {
+        System.runFinalizersOnExit(true);
     }
+
+    static int bla = UnrelatedControlClassB.blubb;
 }

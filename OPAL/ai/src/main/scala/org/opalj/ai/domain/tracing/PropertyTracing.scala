@@ -65,7 +65,7 @@ trait PropertyTracing extends Domain { domain ⇒
      * The array which stores the value the property has when the respective.
      * instruction is executed.
      */
-    protected var propertiesArray: Array[DomainProperty] = _
+    private var propertiesArray: Array[DomainProperty] = _
 
     def initProperties(
         code: Code,
@@ -76,7 +76,13 @@ trait PropertyTracing extends Domain { domain ⇒
         this.propertiesArray(0) = initialPropertyValue()
     }
 
-    def getProperty(pc: Int): DomainProperty = propertiesArray(pc)
+    def getProperty(pc: PC): DomainProperty = {
+        propertiesArray(pc)
+    }
+
+    def setProperty(pc: PC, property: DomainProperty) {
+        propertiesArray(pc) = property
+    }
 
     /**
      * Returns a string representation of the property associated with the given
@@ -113,7 +119,8 @@ trait PropertyTracing extends Domain { domain ⇒
                 }
             }
         }
-        if (forceScheduling && worklist.head != successorPC) {
+
+        if (forceScheduling && (worklist.isEmpty || worklist.head != successorPC)) {
             val filteredList = util.removeFirst(worklist, successorPC)
             if (tracer.isDefined) {
                 if (filteredList eq worklist)

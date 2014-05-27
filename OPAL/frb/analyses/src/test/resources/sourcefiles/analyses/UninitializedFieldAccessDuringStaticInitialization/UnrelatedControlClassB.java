@@ -26,24 +26,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package SuperclassUsesSubclassDuringInitialization;
+package UninitializedFieldAccessDuringStaticInitialization;
 
 /**
- * An enum that references itself during <clinit> (due to the implicit code generated
- * by Java, such as the values field), and should not trigger reports.
+ * This class deliberately contains "useless" code to test checkers that search for it.
  * 
- * @author Daniel Klauer
+ * It contains: - a finalize method that just calls super.finalize();
+ * 
+ * @author Michael Eichberg
  */
-public enum EnumUsesItself {
-    A("a"), B("b"), C("c");
+@SuppressWarnings("all")
+public class UnrelatedControlClassB {
 
-    private String text;
-
-    private EnumUsesItself(String text) {
-        this.text = text;
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
     }
 
-    public String getText() {
-        return text;
-    }
+    static int blubb = 5;
 }

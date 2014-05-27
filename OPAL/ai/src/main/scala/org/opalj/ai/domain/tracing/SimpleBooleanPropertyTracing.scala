@@ -67,7 +67,7 @@ trait SimpleBooleanPropertyTracing
     }
 
     def updateProperty(pc: Int, newState: Boolean) {
-        propertiesArray(pc) = new BooleanProperty(newState)
+        setProperty(pc, new BooleanProperty(newState))
     }
 
     final type DomainProperty = BooleanProperty
@@ -86,6 +86,3 @@ trait SimpleBooleanPropertyTracing
         }
     }
 }
-
-
-
