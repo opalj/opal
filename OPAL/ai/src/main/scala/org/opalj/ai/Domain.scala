@@ -347,8 +347,11 @@ trait Domain {
             if (this eq other)
                 return true;
 
-            val result = this.join(Int.MinValue, other)
-            (result eq MetaInformationUpdateIllegalValue) || (result.isStructuralUpdate)
+            val result = this.join(Int.MinValue /*Irrelevant*/ , other)
+            result.isNoUpdate ||
+                (result.isMetaInformationUpdate &&
+                    (result ne MetaInformationUpdateIllegalValue)
+                )
         }
     }
 
