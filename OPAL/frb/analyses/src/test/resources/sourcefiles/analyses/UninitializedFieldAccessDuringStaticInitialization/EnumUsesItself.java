@@ -26,15 +26,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package SuperclassUsesSubclassDuringInitialization;
+package UninitializedFieldAccessDuringStaticInitialization;
 
 /**
- * The subclass of the subclass: the static field here is accessed by the superclass, but
- * not by the subclass.
+ * An enum that references itself during <clinit> (due to the implicit code generated
+ * by Java, such as the values field), and should not trigger reports.
  * 
  * @author Daniel Klauer
  */
-public class Test2Subsubclass extends Test2Subclass {
+public enum EnumUsesItself {
+    A("a"), B("b"), C("c");
 
-    public static int foo = 42;
+    private String text;
+
+    private EnumUsesItself(String text) {
+        this.text = text;
+    }
+
+    public String getText() {
+        return text;
+    }
 }
