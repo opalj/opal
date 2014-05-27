@@ -84,7 +84,7 @@ trait DefaultPreciseIntegerValues
                             StructuralUpdate(AnIntegerValue())
                         else if (otherInitial == newInitial && otherValue == newValue)
                             StructuralUpdate(other)
-                        else if (newValue != this.value)
+                        else if (newValue != this.value || newInitial != this.initial)
                             StructuralUpdate(IntegerRange(newInitial, newValue))
                         else // if (newInitial != this.initial)
                             MetaInformationUpdate(IntegerRange(newInitial, newValue))
@@ -112,6 +112,21 @@ trait DefaultPreciseIntegerValues
             } else {
                 super.adapt(targetDomain, pc)
             }
+
+        override def abstractsOver(other: DomainValue): Boolean = {
+            if (this eq other)
+                return true;
+
+            other match {
+                case IntegerRange(otherInitial, otherValue) ⇒
+                    if (this.initial < this.value) {
+                        this.initial <= otherInitial && this.value >= otherValue
+                    } else {
+                        this.initial >= otherInitial && this.value <= otherValue
+                    }
+                case _ ⇒ false
+            }
+        }
 
         override def toString: String = "IntegerRange(initial="+initial+", value="+value+")"
     }

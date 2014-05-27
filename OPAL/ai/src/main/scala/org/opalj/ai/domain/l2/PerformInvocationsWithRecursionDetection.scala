@@ -81,7 +81,7 @@ class CalledMethodsStore(val domain: Domain) {
                     breakable {
                         while (previousOperandsIterator.hasNext) {
                             val previousOperand = previousOperandsIterator.next
-                            var operand = operandsIterator.next
+                            val operand = operandsIterator.next
                             if (!previousOperand.abstractsOver(operand))
                                 break
                         }
