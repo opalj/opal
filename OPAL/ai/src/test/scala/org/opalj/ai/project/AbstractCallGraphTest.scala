@@ -108,13 +108,11 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                 { case ElementValuePair("isReflective", BooleanValue(isReflective)) ⇒ isReflective })
             ).getOrElse(false)
 
-        // If the receiver class is not analyzed, forget about it
-        if (!project.classFile(receiver.asObjectType).isDefined)
-            return
+        val receiverClassIsUnknown = !project.classFile(receiver.asObjectType).isDefined
 
         // If we are not able to handle reflective calls and we have one, forget about it
         if (isReflective && ignoreReflectiveCalls)
-            return
+            cancel("ignoring reflection based test")
 
         val callees = callGraph.calls(method).map { f ⇒
             val (pc, callees) = f
@@ -133,10 +131,20 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                 project.classFile(f._2).thisType.equals(receiver) &&
                 line == lineNumber
         }
+        
+        val unresolvedReceiverCalleesWithMatchingAnnotation = unresolvedMethodCalls filter { call =>
+            val Some(line) = method.body.get.lineNumber(call.pc)
+            receiverClassIsUnknown && // Just for performance
+            call.caller.equals(method) &&
+            call.calleeName.equals(methodName) &&
+            call.calleeClass.equals(receiver) &&
+            line == lineNumber
+        }
 
-        if (calleeMatchingAnnotation.size < 1) {
+        if (calleeMatchingAnnotation.size < 1 && (!receiverClassIsUnknown || unresolvedReceiverCalleesWithMatchingAnnotation.size < 1)) {
             val className = project.classFile(method).fqn
-            val message = className+" { "+method+" } has none of the specified callees; expected: "+annotation.toJava
+            val message = className+" { "+method+" } has none of the specified callees; expected: "+annotation.toJava+
+                "\n actual: "+callees.map(f ⇒ (method.body.get.lineNumber(f._1), f._2, project.classFile(f._2).thisType))
             fail(message)
         }
 
@@ -155,10 +163,6 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
         val Some(receiver) =
             evps collectFirst (
                 { case ElementValuePair("receiverType", ClassValue(receiver)) ⇒ receiver })
-        // If the receiver class is not analyzed, forget about it
-        if (!project.classFile(receiver.asObjectType).isDefined)
-            return
-
         val Some(lineNumber) =
             evps collectFirst (
                 { case ElementValuePair("lineNumber", IntValue(lineNumber)) ⇒ lineNumber })
@@ -167,9 +171,13 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
             (evps collectFirst (
                 { case ElementValuePair("isReflective", BooleanValue(isReflective)) ⇒ isReflective })
             ).getOrElse(false)
+
+        val receiverClassIsUnknown = !project.classFile(receiver.asObjectType).isDefined
+
         // If we are not able to handle reflective calls and we have one, forget about it
         if (isReflective && ignoreReflectiveCalls)
-            return
+            cancel("ignoring reflection based test")
+            
 
         val callees = callGraph.calls(method).map { f ⇒
             val (pc, callees) = f
@@ -189,9 +197,19 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                 line == lineNumber
         }
 
-        if (calleeMatchingAnnotation.size < 1) {
+        val unresolvedReceiverCalleesWithMatchingAnnotation = unresolvedMethodCalls filter { call ⇒
+            val Some(line) = method.body.get.lineNumber(call.pc)
+            receiverClassIsUnknown && // Just for performance
+                call.caller.equals(method) &&
+                call.calleeName.equals("<init>") &&
+                call.calleeClass.equals(receiver) &&
+                line == lineNumber
+        }
+
+        if (calleeMatchingAnnotation.size < 1 && (!receiverClassIsUnknown || unresolvedReceiverCalleesWithMatchingAnnotation.size < 1)) {
             val className = project.classFile(method).fqn
-            val message = className+" { "+method+" } has none of the specified constructor calls; expected: "+annotation.toJava
+            val message = className+" { "+method+" } has none of the specified constructor calls; expected: "+annotation.toJava +
+                "\n actual: "+callees.map(f ⇒ (method.body.get.lineNumber(f._1), f._2, project.classFile(f._2).thisType))
             fail(message)
         }
 
