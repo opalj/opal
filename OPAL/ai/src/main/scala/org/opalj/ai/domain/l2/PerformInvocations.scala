@@ -37,8 +37,10 @@ import br._
 import br.instructions._
 import br.analyses.{ Project, ClassHierarchy }
 
+import org.opalj.ai.util.Locals
+
 /**
- * Mix in this trait if methods that are called by `invokeXXX` instruction should
+ * Mix in this trait if methods that are called by `invokeXXX` instructions should
  * actually be interpreted using a custom domain.
  *
  * @author Michael Eichberg
@@ -86,10 +88,10 @@ trait PerformInvocations[Source]
             pc: PC,
             definingClass: ClassFile,
             method: Method,
-            parameters: IndexedSeq[domain.DomainValue]): MethodCallResult = {
-            // MethodCallResult = Computation[Option[DomainValue], ExceptionValues]
+            parameters: org.opalj.ai.util.Locals[domain.DomainValue]): MethodCallResult = {
 
-            val aiResult = ai.perform(definingClass, method, domain)(Some(parameters))
+            val aiResult =
+                ai.perform(method.body.get, domain)(List.empty[domain.DomainValue], parameters)
             transformResult(pc, method, aiResult)
         }
 
@@ -184,6 +186,10 @@ trait PerformInvocations[Source]
                     else
                         invokestatic(pc, classFile, method, operands)
                 case _ ⇒
+                    println(
+                        "[info] method reference cannot be resolved: "+
+                            declaringClass.toJava+
+                            "{ static "+methodDescriptor.toJava(methodName)+"}")
                     fallback()
             }
     }
@@ -212,11 +218,11 @@ trait PerformInvocations[Source]
         operands: Operands): MethodCallResult = {
 
         val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
-        val parameters = executionHandler.domain.DomainValueTag.newArray(method.body.get.maxLocals)
+        val parameters = util.Locals[executionHandler.domain.DomainValue](method.body.get.maxLocals)(executionHandler.domain.DomainValueTag)
         var localVariableIndex = 0
         for ((operand, index) ← operands.view.reverse.zipWithIndex) {
-            parameters(localVariableIndex) =
-                operand.adapt(executionHandler.domain, -(index + 1))
+            parameters.set(localVariableIndex,
+                operand.adapt(executionHandler.domain, -(index + 1)))
             localVariableIndex += operand.computationalType.operandSize
         }
         val callResult = executionHandler.perform(pc, definingClass, method, parameters)

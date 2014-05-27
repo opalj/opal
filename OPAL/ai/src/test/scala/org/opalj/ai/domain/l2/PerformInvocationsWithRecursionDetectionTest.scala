@@ -129,8 +129,6 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
 
         override def maxSpreadInteger: Int = Int.MaxValue
 
-        //val calledMethodsStore: PerformInvocationsWithRecursionDetectionTestFixture.calledMethodsStore.type = PerformInvocationsWithRecursionDetectionTestFixture.calledMethodsStore
-
         def invokeExecutionHandler(
             pc: PC,
             definingClass: ClassFile,
