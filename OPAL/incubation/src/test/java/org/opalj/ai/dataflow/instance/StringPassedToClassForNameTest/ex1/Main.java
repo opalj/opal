@@ -26,33 +26,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package dataflow
-package spec
-
-import scala.collection.{ Map, Set }
-
-import bi.AccessFlagsMatcher
-
-import br._
-import br.analyses._
-import br.instructions._
-
-import domain._
-import domain.l0._
+package org.opalj.ai.dataflow.instance.StringPassedToClassForNameTest.ex1;
 
 /**
- * Support methods to facilitate the definition of data-flow constraints.
- *
+ * The most simple basic test class.
+ * 
  * @author Michael Eichberg and Ben Hermann
  */
-trait DataFlowProblemSpecification extends DataFlowProblem with SourcesAndSinks {
-    
-    override protected[this] def initializeSourcesAndSinks(): Unit = {
-        initializeSourcesAndSinks(project)
+public class Main {
+
+    public Class<?> violation(String s) throws ClassNotFoundException {
+        return Class.forName(s);
     }
-    
+
 }
-
-

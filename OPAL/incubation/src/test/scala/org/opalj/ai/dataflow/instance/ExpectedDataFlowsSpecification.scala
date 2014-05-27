@@ -29,30 +29,24 @@
 package org.opalj
 package ai
 package dataflow
-package spec
+package instance
 
-import scala.collection.{ Map, Set }
-
-import bi.AccessFlagsMatcher
-
-import br._
-import br.analyses._
-import br.instructions._
-
-import domain._
-import domain.l0._
+import org.opalj.ai.dataflow.spec.SourcesAndSinks
 
 /**
- * Support methods to facilitate the definition of data-flow constraints.
+ * Enables the specification of `Sources` and `Sinks` between some tainted data flows.
  *
  * @author Michael Eichberg and Ben Hermann
  */
-trait DataFlowProblemSpecification extends DataFlowProblem with SourcesAndSinks {
-    
-    override protected[this] def initializeSourcesAndSinks(): Unit = {
-        initializeSourcesAndSinks(project)
+trait ExpectedDataFlowsSpecification {
+
+    private[this] var thePaths: List[SourcesAndSinks] = Nil
+
+    def paths(sourcesAndSinks: SourcesAndSinks): Unit = {
+        thePaths = sourcesAndSinks :: thePaths
     }
-    
+
+    def paths: List[SourcesAndSinks] = thePaths
 }
 
 

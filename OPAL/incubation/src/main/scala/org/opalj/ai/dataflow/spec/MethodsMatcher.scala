@@ -42,17 +42,20 @@ import br.instructions._
 import domain._
 import domain.l0._
 
-/**
- * Support methods to facilitate the definition of data-flow constraints.
- *
- * @author Michael Eichberg and Ben Hermann
- */
-trait DataFlowProblemSpecification extends DataFlowProblem with SourcesAndSinks {
-    
-    override protected[this] def initializeSourcesAndSinks(): Unit = {
-        initializeSourcesAndSinks(project)
+case class MethodsMatcher(
+        matcher: PartialFunction[Method, Set[Int]]) extends AValueLocationMatcher {
+
+    def apply(project: SomeProject): Map[Method, Set[Int]] = {
+        val map = scala.collection.mutable.AnyRefMap.empty[Method, Set[Int]]
+        for {
+            classFile ← project.classFiles
+            method @ MethodWithBody(_) ← classFile.methods
+        } {
+            if (matcher.isDefinedAt(method))
+                map.update(method, matcher(method))
+        }
+        map
     }
-    
 }
 
 

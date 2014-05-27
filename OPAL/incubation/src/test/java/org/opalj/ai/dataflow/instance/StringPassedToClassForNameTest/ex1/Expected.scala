@@ -29,30 +29,31 @@
 package org.opalj
 package ai
 package dataflow
-package spec
+package instance
+package StringPassedToClassForNameTest.ex1
 
 import scala.collection.{ Map, Set }
 
-import bi.AccessFlagsMatcher
+import spec._
 
 import br._
 import br.analyses._
 import br.instructions._
 
-import domain._
-import domain.l0._
+object Expected extends ExpectedDataFlowsSpecification {
 
-/**
- * Support methods to facilitate the definition of data-flow constraints.
- *
- * @author Michael Eichberg and Ben Hermann
- */
-trait DataFlowProblemSpecification extends DataFlowProblem with SourcesAndSinks {
-    
-    override protected[this] def initializeSourcesAndSinks(): Unit = {
-        initializeSourcesAndSinks(project)
-    }
-    
+    paths(new SourcesAndSinks {
+        sources(
+            classFile ⇒ classFile.thisType.packageName == "org/opalj/ai.dataflow/instance/StringPassedToClassForNameTest/ex1",
+            {
+                case method @ Method(_, "violation", _) ⇒ Set( /*-1 == "this"*/ -2)
+            }
+        )
+
+        sinks(Calls(
+            { case (ObjectType.Class, "forName", SingleArgumentMethodDescriptor((ObjectType.String, ObjectType.Object))) ⇒ true }
+        ))
+    })
+
+    // We can have multiple "paths" specifications.
 }
-
-
