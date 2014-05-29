@@ -40,8 +40,14 @@ case class DLOAD(
         extends LoadLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
-    def opcode: Int = 24
+    def opcode: Opcode = DLOAD.opcode
 
     def mnemonic: String = "dload"
+
+}
+
+object DLOAD {
+
+    final val opcode = 24
 
 }

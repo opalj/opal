@@ -37,7 +37,7 @@ package instructions
   */
 case object IDIV extends IntegerDivideInstruction {
 
-    def opcode: Int = 108
+    override final val opcode = 108
 
     def mnemonic: String = "idiv"
 

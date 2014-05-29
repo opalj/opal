@@ -38,9 +38,14 @@ package instructions
 case class IFNONNULL(
     branchoffset: Int)
         extends ConditionalBranchInstruction {
-
-    def opcode: Int = 199
-
+	
+    override def opcode: Opcode = IFNONNULL.opcode
+	
     def mnemonic: String = "ifnonnull"
+
+}
+object IFNONNULL {
+
+    final val opcode = 199
 
 }

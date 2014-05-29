@@ -39,8 +39,14 @@ case class IFEQ(
     branchoffset: Int)
         extends ConditionalBranchInstruction {
 
-    def opcode: Int = 153
+    def opcode: Opcode = IFEQ.opcode
 
     def mnemonic: String = "ifeq"
+
+}
+
+object IFEQ {
+
+    final val opcode = 153
 
 }

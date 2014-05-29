@@ -37,7 +37,7 @@ package instructions
  */
 case object NOP extends Instruction {
 
-    def opcode: Int = 0
+    override final val opcode = 0
 
     def mnemonic: String = "nop"
 

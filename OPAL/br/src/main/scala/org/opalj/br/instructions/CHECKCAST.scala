@@ -39,7 +39,7 @@ case class CHECKCAST(
     referenceType: ReferenceType)
         extends Instruction {
 
-    def opcode: Int = 192
+    def opcode: Opcode = CHECKCAST.opcode
 
     def mnemonic: String = "checkcast"
 
@@ -58,6 +58,8 @@ case class CHECKCAST(
 }
 
 object CHECKCAST {
+
+    final val opcode = 192
 
     val runtimeExceptions = List(ObjectType.ClassCastException)
 

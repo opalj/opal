@@ -38,7 +38,7 @@ package instructions
  */
 case object LCMP extends ComparisonInstruction {
 
-    def opcode: Int = 148
+    override final val opcode = 148
 
     def mnemonic: String = "lcmp"
 

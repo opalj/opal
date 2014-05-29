@@ -37,7 +37,7 @@ package instructions
  */
 case object DSUB extends SubtractInstruction {
 
-    def opcode: Int = 103
+    override final val opcode = 103
 
     def mnemonic: String = "dsub"
 
