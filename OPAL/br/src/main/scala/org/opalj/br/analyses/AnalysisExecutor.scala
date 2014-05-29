@@ -100,8 +100,8 @@ trait AnalysisExecutor {
     protected def printUsage() {
         println("Usage: java "+
             this.getClass().getName()+"\n"+
-            " -cp=<Directories or JAR files containing class files> (If no class path is specified the current folder is used.)\n"+
-            " -libcp=<Directories or JAR files containing class files>\n"+
+            "[-cp=<Directories or JAR files containing class files> (If no class path is specified the current folder is used.)]\n"+
+            "[-libcp=<Directories or JAR files containing class files>]\n"+
             analysisParametersDescription)
         println(analysis.description)
         println(analysis.copyright)
@@ -152,6 +152,9 @@ trait AnalysisExecutor {
         val libcpFiles = checkIfFilesAreReadableAndReturnThem(libcp)
 
         if (!checkAnalysisSpecificParameters(parameters)) {
+            println(Console.RED+
+                "[error] Unknown parameters: "+parameters.mkString("\"", " ", "\"")+
+                Console.RESET)
             printUsage()
             sys.exit(-3)
         }
