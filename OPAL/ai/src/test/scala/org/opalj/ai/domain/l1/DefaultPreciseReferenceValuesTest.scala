@@ -152,14 +152,14 @@ class DefaultPreciseReferenceValuesTest
 
     it should ("be able to handle the case where we throw a \"null\" value or some other value") in {
         import language.existentials
-        
+
         val classFiles = reader.Java8Framework.ClassFiles(
             TestSupport.locateTestResources("classfiles/cornercases.jar", "ai"))
         val classFile = classFiles.find(_._1.thisType.fqn == "cornercases/ThrowsNullValue").get._1
         val method = classFile.methods.find(_.name == "main").get
-       
+
         val exception = BaseAI(classFile, method, domain).operandsArray(20)
-        domain.refIsNull(exception.head) should be (No)
+        domain.refIsNull(exception.head) should be(No)
     }
 
 }

@@ -43,7 +43,7 @@ import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
 
-import reader.Java8Framework
+import br.reader.Java8Framework
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library
@@ -53,7 +53,7 @@ import reader.Java8Framework
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class LoadClassFilesTest extends FlatSpec with Matchers {
+class LoadClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARALLELIZED*/ {
 
     def simpleValidator(classFile: ClassFile) {
         assert(!(classFile.thisType.fqn eq null))
@@ -61,24 +61,33 @@ class LoadClassFilesTest extends FlatSpec with Matchers {
 
     behavior of "OPAL"
 
-    for {
-        file ← TestSupport.locateTestResources("classfiles", "bi").listFiles
-        if file.isFile
-        if file.canRead
-        if file.getName.endsWith(".jar")
-        if file.length() > 0
-    } {
-        val jarFile = new ZipFile(file)
-        val jarEntries = (jarFile).entries
-        while (jarEntries.hasMoreElements) {
-            val jarEntry = jarEntries.nextElement
-            if (!jarEntry.isDirectory && jarEntry.getName.endsWith(".class")) {
-                val data = new Array[Byte](jarEntry.getSize().toInt)
-                process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
-                it should ("be able to parse the class file "+jarEntry.getName+" in "+jarFile.getName) in {
-                    simpleValidator(Java8Framework.ClassFile(new DataInputStream(new ByteArrayInputStream(data))))
+    val jreLibFolder: Option[File] = TestSupport.JRELibraryFolder
+    if (jreLibFolder.isDefined) {
+        var count = 0
+        for {
+            file ← jreLibFolder.get.listFiles
+            if file.isFile
+            if file.canRead
+            if file.getName.endsWith(".jar")
+            if file.length() > 0
+        } {
+            count += 1
+            it should ("be able to parse the class files in "+file) in {
+                val jarFile = new ZipFile(file)
+                val jarEntries = (jarFile).entries
+                while (jarEntries.hasMoreElements) {
+                    val jarEntry = jarEntries.nextElement
+                    if (!jarEntry.isDirectory && jarEntry.getName.endsWith(".class")) {
+                        val data = new Array[Byte](jarEntry.getSize().toInt)
+                        process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
+                        simpleValidator(Java8Framework.ClassFile(new DataInputStream(new ByteArrayInputStream(data))))
+                    }
                 }
             }
         }
+        assert(count > 0)
+    } else {
+        fail("cannot find JRE/lib folder")
     }
+
 }

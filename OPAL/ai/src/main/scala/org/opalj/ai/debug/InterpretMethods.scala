@@ -76,6 +76,12 @@ object InterpretMethods extends AnalysisExecutor {
 
 }
 
+/**
+ * An analysis that analyzes all methods of all class files of a project using a
+ * custom domain.
+ *
+ * @author Michael Eichberg
+ */
 class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
     override def title = "Interpret Methods"
@@ -88,12 +94,12 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
                 (parameters.size == 2 && parameters.tail.head == "-verbose=true"))
         val (message, detailedErrorInformationFile) =
             if (parameters.size > 0 && parameters(0).startsWith("-domain")) {
-                interpret(
+                InterpretMethodsAnalysis.interpret(
                     project,
                     Class.forName(parameters.head.substring(8)).asInstanceOf[Class[_ <: Domain]],
                     verbose)
             } else {
-                interpret(
+                InterpretMethodsAnalysis.interpret(
                     project,
                     classOf[domain.l0.BaseConfigurableDomain[_]],
                     verbose)
@@ -103,8 +109,11 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
             message +
                 detailedErrorInformationFile.map(" (See "+_+" for details.)").getOrElse(""))
     }
+}
 
-    protected def interpret(
+object InterpretMethodsAnalysis {
+
+    def interpret[Source](
         project: Project[Source],
         domainClass: Class[_ <: Domain],
         beVerbose: Boolean): (String, Option[File]) = {
@@ -189,7 +198,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
                 "During the interpretation of "+
                 project.methodsCount+" methods in "+
                 project.classFilesCount+" classes (overall: "+ns2sec(getTime('OVERALL))+
-                "secs., ai (∑CPU Time): "+ns2sec(getTime('AI))+
+                "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
                 "secs.)"+collectedExceptions.size+" exceptions occured.",
                 file
             )
@@ -204,6 +213,4 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
             )
         }
     }
-
-  
 }

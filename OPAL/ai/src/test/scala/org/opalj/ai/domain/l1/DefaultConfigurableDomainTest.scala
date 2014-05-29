@@ -38,7 +38,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
 import br._
-import br.reader.Java8Framework.ClassFile
+import br.analyses.Project
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
@@ -50,21 +50,21 @@ import br.reader.Java8Framework.ClassFile
 @RunWith(classOf[JUnitRunner])
 class DefaultConfigurableDomainTest extends FlatSpec with Matchers {
 
-    import debug.InterpretMethods.interpret
-
     behavior of "the abstract interpretation framework's l1.DefaultConfigurableDomain"
 
-    // The jars of the "Bytecode Infrastructure" project
-    val directoryWithJARs = "classfiles"
-    val files =
-        TestSupport.locateTestResources(directoryWithJARs, "bi").listFiles.
-            filter(file ⇒ file.isFile && file.canRead() && file.getName.endsWith(".jar"))
-    val jarNames = files.map(_.getName).mkString("[", ", ", "]")
+    val project = TestSupport.JRELibraryFolder.map(Project(_))
 
-    it should ("be able to interpret all methods found in "+jarNames) in {
-        interpret(classOf[DefaultConfigurableDomain[_]], files) map { error ⇒
-            val (message, source) = error
-            fail(message+" (details: "+source.getOrElse("not available")+")")
+    if (project.isDefined) {
+        it should ("be able to perform an abstract interpretation of all methods of the JRE") in {
+            val (message, source) = debug.InterpretMethodsAnalysis.interpret(
+                project.get,
+                classOf[DefaultConfigurableDomain[_]],
+                false)
+
+            if (source.nonEmpty)
+                fail(message+" (details: "+source+")")
         }
+    } else {
+        fail("cannot find the JRE/lib folder")
     }
 }

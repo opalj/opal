@@ -79,10 +79,11 @@ object TestSupport {
     }
 
     /**
-     * This function tries to locate the runtime path of the jre library folder (aka the 
-     * location in which the rt.jar file and others can be found).
+     * Tries to locate the JRE's library folder. (I.e., the 
+     * location in which the rt.jar file and the other jar files belonging to the 
+     * Java runtime environment can be found).
      */
-    def locateJRELibraryFolder: Option[File] = {
+    lazy val JRELibraryFolder: Option[File] = {
         val bootClasspath = System.getProperty("sun.boot.class.path")
         val elements = bootClasspath.split(":")
         val rtJar = elements.find(_.endsWith("rt.jar")).map(new File(_))
