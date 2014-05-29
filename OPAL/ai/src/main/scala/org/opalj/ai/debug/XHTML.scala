@@ -326,7 +326,7 @@ object XHTML {
             </ul>
         }
 
-    def dumpLocals(locals: Locals[_ <: AnyRef/**/]): Node =
+    def dumpLocals(locals: Locals[_ <: AnyRef /**/ ]): Node =
         if (locals eq null)
             <em>Information about the local variables is not available.</em>
         else {
@@ -334,6 +334,36 @@ object XHTML {
             { locals.map(l ⇒ if (l eq null) "UNUSED" else l.toString()).map(l ⇒ <li>{ l }</li>).iterator }
             </ol>
         }
+
+    def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
+        val node =
+            if (throwable.getStackTrace() == null ||
+                throwable.getStackTrace().size == 0) {
+                <div>{ throwable.getClass().getSimpleName() + " " + throwable.getMessage() }</div>
+            } else {
+                val stackElements =
+                    for { stackElement ← throwable.getStackTrace() } yield {
+                        <tr>
+                        	<td>{ stackElement.getClassName() }</td>
+                        	<td>{ stackElement.getMethodName() }</td>
+                        	<td>{ stackElement.getLineNumber() }</td>
+                        </tr>
+                    }
+                val summary = throwable.getClass().getSimpleName()+" "+throwable.getMessage()
+
+                <details>
+                    <summary>{ summary }</summary>
+                    <table>{ stackElements }</table>
+                </details>
+            }
+
+        if (throwable.getCause() ne null) {
+            val causedBy = throwableToXHTML(throwable.getCause())
+            <div style="background-color:yellow">{ node } <p>caused by:</p>{ causedBy }</div>
+        } else {
+            node
+        }
+    }
 
 }
 
