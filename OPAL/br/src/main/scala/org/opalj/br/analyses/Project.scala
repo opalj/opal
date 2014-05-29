@@ -88,6 +88,11 @@ class Project[Source] private (
     val classFiles: Iterable[ClassFile] =
         projectClassFiles.toIterable ++ libraryClassFiles.toIterable
 
+    def classFilesWithSources: Iterable[(Source, ClassFile)] = {
+        projectClassFiles.view.map(cf ⇒ (sources(cf.thisType), cf)) ++
+            libraryClassFiles.view.map(cf ⇒ (sources(cf.thisType), cf))
+    }
+
     def methods: Iterable[Method] = methodToClassFile.keys
 
     def fields: Iterable[Field] = fieldToClassFile.keys
