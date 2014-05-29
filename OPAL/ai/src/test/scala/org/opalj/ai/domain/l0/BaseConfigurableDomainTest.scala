@@ -66,7 +66,7 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
 
     class BasicDomain1[I](val id: I)
             extends Domain
-            with IgnoreMethodResults
+            with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
             with DefaultDomainValueBinding
             with Configuration
@@ -85,7 +85,7 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
     class BasicDomain2[I](val id: I)
             extends Domain
             with Configuration
-            with IgnoreMethodResults
+            with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
             with l0.TypeLevelInvokeInstructions
             with l0.TypeLevelFieldAccessInstructions
@@ -112,7 +112,7 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
             with l0.TypeLevelFieldAccessInstructions
             with PredefinedClassHierarchy
             with IgnoreSynchronization
-            with IgnoreMethodResults
+            with DefaultHandlingOfMethodResults
             with Configuration {
         type Id = I
     }

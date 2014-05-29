@@ -59,7 +59,8 @@ import br._
  * between the stack and the locals (e.g., `Xload_Y`) or that determine the control
  * flow is, however, completely embedded into OPAL-AI.
  *
- * OPAL-AI uses the following three methods to inform a domain about the progress:
+ * OPAL uses the following three methods to inform a domain about the progress of the
+ * abstract interpretation:
  *  - [[org.opalj.ai.Domain.flow]]
  *  - [[org.opalj.ai.Domain.evaluationCompleted]]
  *  - [[org.opalj.ai.Domain.abstractInterpretationEnded]]
@@ -143,15 +144,16 @@ trait Domain {
      * supported and is the primary mechanism to model an abstract domain's lattice
      * w.r.t. some special type of value. In general, the implementation should try
      * to avoid creating new instances of values unless strictly required to model the
-     * domain's semantics. This will greatly improve
-     * the overall performance as this framework heavily uses reference-based equality checks
-     * to speed up the evaluation.
+     * domain's semantics. This will greatly improve the overall performance as this
+     * framework heavily uses reference-based equality checks to speed up the evaluation.
      *
      * @note OPAL does not rely on any special equality semantics w.r.t. values and
      *      never directly or indirectly calls a `Value`'s `equals` or `eq` method. Hence,
      *      a domain can encode equality such that it best fits its need.
-     *      However, the provided domains rely on the following semantics for equals:
-     *      '''Two domain values have to be equal (`==`) iff they represent the same abstract value.'''
+     *      However, some of the provided domains rely on the following semantics for equals:
+     *      '''Two domain values have to be equal (`==`) iff they represent the same
+     *      information. This includes additional information, such as, the value of
+     *      the origin.'''
      *      E.g., a value (`AnIntegerValue`) that represents an arbitrary `Integer` value
      *      has to return `true` if the domain value with which it is compared also
      *      represents an arbitrary `Integer` value (`AnIntegerValue`). However,
@@ -166,13 +168,17 @@ trait Domain {
      *      {{{
      *      public void foo(int a,int b) {
      *          if(a < 4) {
-     *              z = a - 2 // here a is constrained (< 4), and b is still unconstrained
+     *              z = a - 2 // here a is constrained (< 4), b and z are unconstrained
      *          }
      *          else {
-     *              z = a + 2 // here a is constrained (>= 4), and b is still unconstrained
+     *              z = a + 2 // here a is constrained (>= 4), b and z are unconstrained
      *          }
      *      }
      *      }}}
+     *
+     *      In general, `equals` is only defined for values belonging to the same
+     *      domain. If values need to be compared across domains, they need to be adapted
+     *      to a target domain first.
      */
     trait Value { this: DomainValue ⇒
 
@@ -248,7 +254,7 @@ trait Domain {
          * @param value The "new" domain value with which this domain value should be
          *      joined.
          *      '''The given `value` and this value are guaranteed to have
-         *      the same computational type, but that they are two different objects.'''
+         *      the same computational type, but are not reference equal.'''
          */
         protected def doJoin(pc: PC, value: DomainValue): Update[DomainValue]
 
@@ -258,12 +264,13 @@ trait Domain {
          *
          * See `doJoin(PC,DomainValue)` for details.
          *
-         * @note It is generally not recommended/needed to override this method.
+         * @note It is in general not recommended/needed to override this method.
          *
          * @param pc The program counter of the instruction where the paths converge.
          * @param value The "new" domain value with which this domain value should be
-         *      joined. The given value and `this` value are guaranteed to be two different
-         *      objects.
+         *      joined. The caller has to ensure that the given value and `this` value
+         *      are guaranteed to be two different objects.
+         * @return [[MetaInformationUpdateIllegalValue]]
          */
         def join(pc: PC, that: DomainValue): Update[DomainValue] = {
             if ((that eq TheIllegalValue) ||
@@ -293,11 +300,10 @@ trait Domain {
          * method and, hence, keeping all information would just waste memory and
          * a summary may be sufficient.
          *
-         * @note __The precise semantics and usage of `summarize(...)` is determined
-         *      by the domain__.
-         *      The framework does not use/call this method.This method
-         *      is solely predefined to facilitate the development of project-wide
-         *      analyses.
+         * @note The framework (the classes directly in org.opalj.ai) does not
+         *      use/call this method.
+         *      This method is solely predefined to facilitate the development of
+         *      project-wide analyses.
          */
         def summarize(pc: PC): DomainValue
 
@@ -311,18 +317,42 @@ trait Domain {
          * and you need to adapt this domain's values (the actual parameters of the method)
          * to the domain used for analyzing the called method.
          *
-         * Additionally, the `adapt` method is OPAL-AI's main mechanism to enable dynamic
+         * Additionally, the `adapt` method is OPAL's main mechanism to enable dynamic
          * domain-adaptation. I.e., to make it possible to change the abstract domain at
          * runtime if the analysis time takes too long using a (more) precise domain.
          *
-         * @note __The precise semantics of `adapt` can be determined by the domain__.
-         *      The framework does not use/call this method.This method
+         * @note The framework does not use/call this method. This method
          *      is solely predefined to facilitate the development of project-wide
          *      analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
-        def adapt(target: Domain, pc: PC): target.DomainValue =
-            throw new DomainException("This value "+this+" cannot be adapted for "+target)
+        def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+            throw new DomainException("adaptation of "+this+" to "+target+" is unsupported")
+
+        /**
+         * Returns `true` iff the abstract state represented by this value
+         * is at least as abstract as the abstract state of the given value. I.e.,
+         * this method is '''not reflexive'''.
+         *
+         * The abstract state generally encompasses every information that would
+         * be considered during a [[join]] of `this` value and the `other` value and that
+         * could lead to a [[StructuralUpdate]].
+         *
+         * ==Implementation==
+         * The default implementation relies on this domain value's [[join]] method.
+         *
+         * Overriding this method is, hence, primarily meaningful for performance reasons.
+         */
+        def abstractsOver(other: DomainValue): Boolean = {
+            if (this eq other)
+                return true;
+
+            val result = this.join(Int.MinValue /*Irrelevant*/ , other)
+            result.isNoUpdate ||
+                (result.isMetaInformationUpdate &&
+                    (result ne MetaInformationUpdateIllegalValue)
+                )
+        }
     }
 
     /**
@@ -337,12 +367,16 @@ trait Domain {
      * An instruction's operands are represented using a list where the first
      * element of the list represents the top level operand stack value.
      */
-    type Operands = List[DomainValue]
+    type Operands = org.opalj.ai.Operands[DomainValue] // the full package name is required by unidoc
+
+    type OperandsArray = org.opalj.ai.TheOperandsArray[Operands] // the full package name is required by unidoc
 
     /**
      * An instruction's current register values/locals are represented using an array.
      */
-    type Locals = Array[DomainValue]
+    type Locals = org.opalj.ai.Locals[DomainValue] // the full package name is required by unidoc
+
+    type LocalsArray = org.opalj.ai.TheLocalsArray[Locals] // the full package name is required by unidoc
 
     /**
      * A simple type alias of the type `DomainValue`.
@@ -400,7 +434,7 @@ trait Domain {
         override def summarize(pc: PC): DomainValue =
             throw DomainException("creating a summary of an illegal value is meaningless")
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             target.TheIllegalValue
 
         override def toString: String = "IllegalValue"
@@ -421,7 +455,7 @@ trait Domain {
 
     /**
      * The result of the merge of two incompatible values has
-     * to be reported as a `MetaInformationUpdate`.
+     * to be reported as a `MetaInformationUpdate[DomainIllegalValue]`.
      */
     def MetaInformationUpdateIllegalValue: MetaInformationUpdate[DomainIllegalValue]
 
@@ -471,7 +505,8 @@ trait Domain {
         override def summarize(pc: PC): DomainValue =
             throw DomainException("summarizing return address values is meaningless")
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        // Adaptation is supported to support on-the-fly domain up-/downcasts.
+        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             target.ReturnAddressValue(address)
 
         override def toString = "ReturnAddress("+address+")"
@@ -533,20 +568,17 @@ trait Domain {
      * The framework uses this method when a method is to be analyzed, but no parameter
      * values are given and initial values need to be generated. This method is not
      * used elsewhere by the framework.
-     *
-     * The framework assigns the `pc` "-1" to the first parameter and -2 for the second...
-     * This property is, however, not ensured by this method.
      */
-    def TypedValue(pc: PC, valueType: Type): DomainValue = valueType match {
-        case BooleanType       ⇒ BooleanValue(pc)
-        case ByteType          ⇒ ByteValue(pc)
-        case ShortType         ⇒ ShortValue(pc)
-        case CharType          ⇒ CharValue(pc)
-        case IntegerType       ⇒ IntegerValue(pc)
-        case FloatType         ⇒ FloatValue(pc)
-        case LongType          ⇒ LongValue(pc)
-        case DoubleType        ⇒ DoubleValue(pc)
-        case rt: ReferenceType ⇒ ReferenceValue(pc, rt)
+    def TypedValue(vo: ValueOrigin, valueType: Type): DomainValue = valueType match {
+        case BooleanType       ⇒ BooleanValue(vo)
+        case ByteType          ⇒ ByteValue(vo)
+        case ShortType         ⇒ ShortValue(vo)
+        case CharType          ⇒ CharValue(vo)
+        case IntegerType       ⇒ IntegerValue(vo)
+        case FloatType         ⇒ FloatValue(vo)
+        case LongType          ⇒ LongValue(vo)
+        case DoubleType        ⇒ DoubleValue(vo)
+        case rt: ReferenceType ⇒ ReferenceValue(vo, rt)
         case VoidType ⇒
             throw DomainException("a domain value cannot have the type void")
     }
@@ -555,42 +587,42 @@ trait Domain {
      * Factory method to create a representation of a boolean value if we know the
      * origin of the value.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def BooleanValue(pc: PC): DomainValue
+    def BooleanValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a representation of a boolean value with the given
      * initial value and origin.
      *
-     * The domain may ignore the information about the value and the origin (`pc`).
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def BooleanValue(pc: PC, value: Boolean): DomainValue
+    def BooleanValue(vo: ValueOrigin, value: Boolean): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def ByteValue(pc: PC): DomainValue
+    def ByteValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given byte value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (`pc`).
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def ByteValue(pc: PC, value: Byte): DomainValue
+    def ByteValue(vo: ValueOrigin, value: Byte): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def ShortValue(pc: PC): DomainValue
+    def ShortValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given short value
@@ -603,97 +635,97 @@ trait Domain {
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def CharValue(pc: PC): DomainValue
+    def CharValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given char value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      */
-    def CharValue(pc: PC, value: Char): DomainValue
+    def CharValue(vo: ValueOrigin, value: Char): DomainValue
 
     /**
      * Factory method to create a representation of the integer constant value 0.
      *
-     * (The program counter  (`pc`) that should be assigned with the value (if any)
-     * should be Int.MinValue to signify that this value was not created by the program.)
-     *
-     * OPAL-AI in particular uses this special value for performing subsequent
+     * OPAL in particular uses this special value for performing subsequent
      * computations against the fixed value 0 (e.g., for if_XX instructions).
+     *
+     * (The origin ([[ValueOrigin]]) that should be used should be the
+     * [[ConstantValueOrigin]] to signify that this value was not created by the program.)
      *
      * The domain may ignore the information about the value.
      */
-    def IntegerConstant0: DomainValue = IntegerValue(Int.MinValue, 0)
+    def IntegerConstant0: DomainValue = IntegerValue(ConstantValueOrigin, 0)
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def IntegerValue(pc: PC): DomainValue
+    def IntegerValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given integer value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (`pc`).
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def IntegerValue(pc: PC, value: Int): DomainValue
+    def IntegerValue(vo: ValueOrigin, value: Int): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def FloatValue(pc: PC): DomainValue
+    def FloatValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given float value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (`pc`).
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def FloatValue(pc: PC, value: Float): DomainValue
+    def FloatValue(vo: ValueOrigin, value: Float): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def LongValue(pc: PC): DomainValue
+    def LongValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given long value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (`pc`).
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def LongValue(pc: PC, value: Long): DomainValue
+    def LongValue(vo: ValueOrigin, value: Long): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`pc`).
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def DoubleValue(pc: PC): DomainValue
+    def DoubleValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given double value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (`pc`).
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def DoubleValue(pc: PC, value: Double): DomainValue
+    def DoubleValue(vo: ValueOrigin, value: Double): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the `null` value and
@@ -709,7 +741,7 @@ trait Domain {
      *  - Type: '''Null'''
      *  - Null: '''Yes'''
      */
-    def NullValue(pc: PC): DomainValue
+    def NullValue(vo: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''either a reference
@@ -717,7 +749,7 @@ trait Domain {
      * information whether the value is `null` or not is not available. Furthermore, the
      * type may also just be an upper bound.
      *
-     * The domain may ignore the information about the value and the origin (`pc`), but
+     * The domain may ignore the information about the value and the origin (`vo`), but
      * it has to remain possible for the domain to identify the component type of an
      * array.
      *
@@ -729,7 +761,7 @@ trait Domain {
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    def ReferenceValue(pc: PC, referenceType: ReferenceType): DomainValue
+    def ReferenceValue(vo: ValueOrigin, referenceType: ReferenceType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''an array''
@@ -745,21 +777,20 @@ trait Domain {
      *  - Null: '''No'''
      *  - Content: '''Unknown'''
      *
-     * @param pc The program counter of the instruction which initially created the
-     * 		array.
+     * @param vo Information about the origin of the value.
      * @param counts The size of each dimension if available. `counts` may be empty (`Nil`)
      * 		if no corresponding information is available; however, if available the
      *   	following condition always has to hold: `counts.length <= arrayType.dimensions`.
      */
     def InitializedArrayValue(
-        pc: PC,
+        vo: ValueOrigin,
         counts: List[Int],
         arrayType: ArrayType): DomainValue
 
     /**
      * Represents ''a non-null reference value with the given type as an upper type bound''.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`vo`).
      *
      * ==Summary==
      * The properties of the domain value are:
@@ -767,14 +798,14 @@ trait Domain {
      *  - Type: '''Upper Bound'''
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def NonNullObjectValue(pc: PC, objectType: ObjectType): DomainValue
+    def NonNullObjectValue(vo: ValueOrigin, objectType: ObjectType): DomainValue
 
     /**
      * Creates a new `DomainValue` that represents ''a new,
      * uninitialized instance of an object of the given type''. The object was
      * created by the (`NEW`) instruction with the specified program counter.
      *
-     * OPAL-AI calls this method when it evaluates `newobject` instructions.
+     * OPAL calls this method when it evaluates `newobject` instructions.
      * If the bytecode is valid a call of one of the object's constructors will
      * subsequently initialize the object.
      *
@@ -789,7 +820,7 @@ trait Domain {
      *      `multianewarray` instructions and in both cases an exception may be thrown
      *      (e.g., `NegativeArraySizeException`).
      */
-    def NewObject(pc: PC, objectType: ObjectType): DomainValue
+    def NewObject(vo: ValueOrigin, objectType: ObjectType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents an '''initialized'''
@@ -803,7 +834,7 @@ trait Domain {
      * class precisely represents the runtime type – even
      * so the class is abstract. However, such decisions need to be made by the domain.
      *
-     * This method is used by OPAL-AI to create reference values that are normally
+     * This method is used by the OPAL framework to create reference values that are normally
      * internally created by the JVM (in particular exceptions such as
      * `NullPointExeception` and `ClassCastException`). However, it can generally
      * be used to create initialized objects/arrays.
@@ -815,7 +846,7 @@ trait Domain {
      *      correctly models the runtime type.)
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def InitializedObjectValue(pc: PC, objectType: ObjectType): DomainValue
+    def InitializedObjectValue(vo: ValueOrigin, objectType: ObjectType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value
@@ -824,7 +855,7 @@ trait Domain {
      * This function is called by OPAL-AI when a string constant (`LDC(_W)` instruction) is
      * put on the stack.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`vo`).
      *
      * ==Summary==
      * The properties of the domain value are:
@@ -835,17 +866,17 @@ trait Domain {
      *
      * @param value A non-null string. (The string may be empty, though.)
      */
-    def StringValue(pc: PC, value: String): DomainValue
+    def StringValue(vo: ValueOrigin, value: String): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents a runtime value of
      * type "`Class&lt;T&gt;`" and that was created by the instruction with the
      * specified program counter.
      *
-     * This function is called by OPAL-AI when a class constant (`LDC(_W)` instruction) is
+     * This function is called by OPAL when a class constant (`LDC(_W)` instruction) is
      * put on the stack.
      *
-     * The domain may ignore the information about the value and the origin (pc).
+     * The domain may ignore the information about the value and the origin (`vo`).
      *
      * ==Summary==
      * The properties of the domain value are:
@@ -853,7 +884,7 @@ trait Domain {
      *  - Type: '''java.lang.Class<t:Type>'''
      *  - Null: '''No'''
      */
-    def ClassValue(pc: PC, t: Type): DomainValue
+    def ClassValue(vo: ValueOrigin, t: Type): DomainValue
 
     // -----------------------------------------------------------------------------------
     //
@@ -863,6 +894,7 @@ trait Domain {
 
     /**
      * Returns the type(type bounds) of the given value.
+     *
      * In general a single value can have multiple type bounds which depend on the
      * control flow.
      * However, all types that the value represents must belong to the same
@@ -1112,7 +1144,7 @@ trait Domain {
     //
     // W.r.t Reference Values
     /**
-     * Called by OPAL-AI when the value is known to be `null`/has to be `null`.
+     * Called by the framework when the value is known to be `null`/has to be `null`.
      * E.g., after a comparison with `null` (IFNULL/IFNONNULL) OPAL-AI knows that the
      * value has to be `null` on one branch and that the value is not `null` on the
      * other branch.
@@ -1530,28 +1562,28 @@ trait Domain {
         declaringClass: ReferenceType, // e.g., Array[] x = ...; x.clone()
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult
+        operands: Operands): MethodCallResult
 
     def invokeinterface(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult
+        operands: Operands): MethodCallResult
 
     def invokespecial(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult
+        operands: Operands): MethodCallResult
 
     def invokestatic(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult
+        operands: Operands): MethodCallResult
 
     //
     // INVOKEDYNAMIC
@@ -1562,7 +1594,7 @@ trait Domain {
         bootstrapMethod: BootstrapMethod,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): Computation[DomainValue, ExceptionValues]
+        operands: Operands): Computation[DomainValue, ExceptionValues]
 
     //
     // RELATIONAL OPERATORS
@@ -1700,13 +1732,13 @@ trait Domain {
         //      "domain join - different register sizes: "+thisLocals+" <=> "+otherLocals)
 
         var operandsUpdated: UpdateType = NoUpdateType
-        val newOperands =
+        val newOperands: Operands =
             if (thisOperands eq otherOperands) {
                 thisOperands
             } else {
                 var thisRemainingOperands = thisOperands
                 var otherRemainingOperands = otherOperands
-                var newOperands: List[DomainValue] = List.empty // during the update we build the operands stack in reverse order
+                var newOperands: Operands = List.empty // during the update we build the operands stack in reverse order
 
                 while (thisRemainingOperands.nonEmpty /* && both stacks contain the same number of elements */ ) {
                     val thisOperand = thisRemainingOperands.head
@@ -1738,56 +1770,40 @@ trait Domain {
             }
 
         var localsUpdated: UpdateType = NoUpdateType
-        val newLocals: Array[DomainValue] =
+        val newLocals: Locals =
             if (thisLocals eq otherLocals) {
                 thisLocals
             } else {
-                val maxLocals = thisLocals.size
-                val newLocals = new Array[DomainValue](maxLocals)
-                var i = 0;
-                while (i < maxLocals) {
-                    val thisLocal = thisLocals(i)
-                    val otherLocal = otherLocals(i)
-                    // The value calculated by "join" may be the value "IllegalValue" 
-                    // which means the values in the corresponding register were 
-                    // different – w.r.t. its type – on the different paths. 
-                    // Hence, the values are no longer useful.
-                    // If we would have a liveness analysis, we could avoid the use of 
-                    // "IllegalValue" and would avoid the useless merging of 
-                    // incompatible values.
-                    val newLocal =
-                        if ((thisLocal eq null) || (otherLocal eq null)) {
-                            if (thisLocal eq otherLocal /* <=> both are null*/ ) {
-                                thisLocal
-                            } else {
+                val newLocals =
+                    thisLocals.merge(
+                        otherLocals,
+                        (thisLocal, otherLocal) ⇒ {
+                            if ((thisLocal eq null) || (otherLocal eq null)) {
                                 localsUpdated = localsUpdated &: MetaInformationUpdateType
                                 TheIllegalValue
-                            }
-                        } else if (thisLocal eq otherLocal) {
-                            thisLocal
-                        } else {
-                            val updatedLocal = thisLocal.join(pc, otherLocal)
-                            if (updatedLocal eq NoUpdate) {
-                                thisLocal
                             } else {
-                                localsUpdated = localsUpdated &: updatedLocal
-                                updatedLocal.value
+                                val updatedLocal = thisLocal.join(pc, otherLocal)
+                                if (updatedLocal eq NoUpdate) {
+                                    thisLocal
+                                } else {
+                                    localsUpdated = localsUpdated &: updatedLocal
+                                    updatedLocal.value
+                                }
                             }
                         }
-                    newLocals(i) = newLocal
-                    i += 1
-                }
+                    )
                 if (localsUpdated.noUpdate)
                     thisLocals
                 else
                     newLocals
+
             }
 
         (operandsUpdated &: localsUpdated)((newOperands, newLocals))
     }
 
     /**
-     * '''Called by the framework after performing a computation'''; that is, after
+     * ''Called by the framework after performing a computation''. That is, after
      * evaluating the effect of the instruction with `currentPC` on the current stack and
      * register and joining the updated stack and registers with the stack and registers
      * associated with the instruction `successorPC`.
@@ -1799,7 +1815,7 @@ trait Domain {
      * In some cases it will even be the case that `flow` is called multiple times with
      * the same pair of program counters: (`currentPC`, `successorPC`). This may happen,
      * e.g., in case of a switch instruction where multiple values have the same
-     * body/target instruction.
+     * body/target instruction and we do not have precise information about the switch value.
      * E.g., as in the following snippet:
      * {{{
      * switch (i) {  // pc: X => Y (for "1"), Y (for "2"), Y (for "3")
@@ -1815,7 +1831,7 @@ trait Domain {
      * This enables the domain to precisely follow the evaluation
      * progress and in particular to perform control-flow dependent analyses.
      *
-     * @param currentPC The program counter of the instruction that is currently evaluated.
+     * @param currentPC The program counter of the instruction that is currently evaluated
      *      by the abstract interpreter.
      *
      * @param successorPC The program counter of an instruction that is a potential
@@ -1828,7 +1844,7 @@ trait Domain {
      *
      * @param isExceptionalControlFlow `True` if an and only if the evaluation of
      *      the instruction with the program counter `currentPC` threw an exception;
-     *      `false` otherwise. Hence, the instruction with `successorPC` is the
+     *      `false` otherwise. Hence, if `true` the instruction with `successorPC` is the
      *      first instruction of the handler.
      *
      * @param operandsArray The array that associates '''every instruction''' with its
@@ -1845,16 +1861,18 @@ trait Domain {
      *      If you want to force the evaluation of the instruction
      *      with the program counter `successorPC` it is sufficient to test whether
      *      the list already contains `successorPC` and – if not – to prepend it.
-     *      If the worklist already contains `successorPC`, the domain is allowed to move
+     *      If the worklist already contains `successorPC` then the domain is allowed to move
      *      the PC to the beginning of the worklist. However, if the PC does not belong
-     *      to the same (sub)routine, it is not allowed to be moved to the beginning
+     *      to the same (current) (sub)routine, it is not allowed to be moved to the beginning
      *      of the worklist. (Subroutines can only be found in code generated by old
      *      Java compilers; before Java 6. Subroutines are identified by jsr/ret
-     *      instructions.)
-     *      Note that the worklist may contain negative values or positive values between
-     *      two negative values. These values are used for handling subroutine calls
-     *      (jsr/ret) and should not be changed. Furthermore, no value (PC) should be moved
-     *      between two (sub-)routines.
+     *      instructions. A subroutine can be identified by going back in the worklist
+     *      and by looking for negative "program counters".
+     *      These negative program counters mark the beginning of a subroutine. In other
+     *      words, an instruction can be freely moved around unless a negative value is
+     *      found.) Additionally, neither the negative values nor the positive values between
+     *      two negative values should be changed. Furthermore, no value (PC) should be put
+     *      between negative values that capture subroutine information.
      *      If the domain updates the worklist, it is the responsibility of the domain
      *      to call the tracer and to inform it about the changes.
      *      Note that the worklist is not allowed to contain duplicates related to the
@@ -1865,9 +1883,9 @@ trait Domain {
      *
      * @note The domain is allowed to modify the `worklist`, `operandsArray` and
      *      `localsArray`. However, the AI will not perform any checks. In case of
-     *      updates of the `localsArray` it is necessary to first create a shallow
-     *      copy of the locals array associated with a specific function before
-     *      updating it. If this is not done, it may happen that the locals associated
+     *      updates of the `operandsArray` or `localsArray` it is necessary to first
+     *      create a shallow copy before  updating it.
+     *      If this is not done, it may happen that the locals associated
      *      with other instructions are also updated.
      */
     def flow(
@@ -1875,8 +1893,8 @@ trait Domain {
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
         worklist: List[PC],
-        operandsArray: Array[List[DomainValue]],
-        localsArray: Array[Array[DomainValue]],
+        operandsArray: OperandsArray,
+        localsArray: LocalsArray,
         tracer: Option[AITracer]): List[PC] = worklist
 
     /**
@@ -1890,8 +1908,8 @@ trait Domain {
         pc: PC,
         worklist: List[PC],
         evaluated: List[PC],
-        operandsArray: Array[List[DomainValue]],
-        localsArray: Array[Array[DomainValue]],
+        operandsArray: OperandsArray,
+        localsArray: LocalsArray,
         tracer: Option[AITracer]): Unit = { /*Nothing*/ }
 
     /**

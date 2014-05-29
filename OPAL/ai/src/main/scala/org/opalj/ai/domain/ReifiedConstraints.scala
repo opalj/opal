@@ -34,7 +34,7 @@ import br._
 
 /**
  * Mixin this trait if you want to reify the stated constraints. This trait
- * need to mixed in after all traits that actually handle constraints.
+ * need to be mixed in after all traits that actually handle constraints.
  *
  * This is particularly useful for testing and debugging purposes.
  *

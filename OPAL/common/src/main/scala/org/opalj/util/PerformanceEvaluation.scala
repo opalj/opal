@@ -318,6 +318,6 @@ object PerformanceEvaluation {
         val startTime: Long = System.nanoTime
         val result = f
         val endTime: Long = System.nanoTime
-        r(endTime - startTime, f)
+        r(endTime - startTime, result)
     }
 }

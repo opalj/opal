@@ -44,8 +44,8 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]]): Unit = {
+            operandsArray: TheOperandsArray[domain.Operands],
+            localsArray: TheLocalsArray[domain.Locals]): Unit = {
         tracers foreach { tracer ⇒
             tracer.continuingInterpretation(code, domain)(
                 initialWorkList, alreadyEvaluated, operandsArray, localsArray
@@ -57,8 +57,8 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         domain: Domain)(
             pc: PC,
             instruction: Instruction,
-            operands: List[domain.DomainValue],
-            locals: Array[domain.DomainValue]): Unit = {
+            operands: domain.Operands,
+            locals: domain.Locals): Unit = {
         tracers foreach { tracer ⇒
             tracer.instructionEvalution(domain)(pc, instruction, operands, locals)
         }

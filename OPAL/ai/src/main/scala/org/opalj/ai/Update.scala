@@ -29,6 +29,8 @@
 package org.opalj
 package ai
 
+import scala.language.higherKinds
+
 /**
  * Encapsulates an updated value and qualifies the type of the update.
  *
@@ -41,6 +43,8 @@ package ai
  */
 sealed trait Update[+V] {
 
+    type ThisType[V] <: Update[V]
+
     /**
      * Merges a given `updateType` value with the type of this update and returns a
      * new `UpdateType` value.
@@ -48,6 +52,12 @@ sealed trait Update[+V] {
      * @see [[org.opalj.ai.UpdateType]] for further details.
      */
     def &:(updateType: UpdateType): UpdateType
+
+    def isStructuralUpdate: Boolean = false
+
+    def isNoUpdate: Boolean = false
+
+    def isMetaInformationUpdate: Boolean = false
 
     /**
      * The type of this update.
@@ -62,7 +72,7 @@ sealed trait Update[+V] {
     /**
      * Creates a new `Update` object of the same type with the given value.
      */
-    def updateValue[NewV](newValue: NewV): Update[NewV]
+    def updateValue[NewV](newValue: NewV): ThisType[NewV]
 }
 
 /**
@@ -81,60 +91,80 @@ object SomeUpdate {
 }
 
 /**
- * Some part of the structure was updated such that it is required to
+ * The abstract state was updated such that it is required to
  * continue the abstract interpretation.
  */
 final case class StructuralUpdate[V](
     value: V)
         extends SomeUpdate[V] {
 
-    def updateType = StructuralUpdateType
+    type ThisType[V] = StructuralUpdate[V]
 
-    def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
+    override def isStructuralUpdate: Boolean = true
 
-    def updateValue[NewV](newValue: NewV): Update[NewV] = StructuralUpdate(newValue)
+    override def updateType = StructuralUpdateType
+
+    override def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
+
+    override def updateValue[NewV](newValue: NewV): StructuralUpdate[NewV] =
+        StructuralUpdate(newValue)
 }
 /**
- * Used to indicate that a new value is returned, but only meta-information
- * was changed that is not directly relevant to the abstract interpreter.
+ * Characterizes an update that did not affect the abstract state but instead just
+ * updated some meta information.
+ *
+ * In general, the abstract interpretation framework handles `NoUpdate`s and
+ * `MetaInformationUpdate`s in the same way.
  *
  * ==Example==
  * If two values are merged that are seen on two different paths, but which represent the
  * same abstract value, we may want to update the meta-information about
- * the origin of the current value, but this information is not relevant
- * for the abstract interpreter itself and it will not reschedule the abstract
- * interpretation of subsequent instructions.
+ * the origin of the current value, but this information may not be part of the abstract
+ * state and hence, is not relevant for the abstract interpreter. In this case the
+ * interpreter will not reschedule subsequent instructions.
  */
 final case class MetaInformationUpdate[V](
     value: V)
         extends SomeUpdate[V] {
 
-    def updateType = MetaInformationUpdateType
+    type ThisType[V] = MetaInformationUpdate[V]
 
-    def &:(updateType: UpdateType): UpdateType = {
+    override def isMetaInformationUpdate: Boolean = true
+
+    override def updateType = MetaInformationUpdateType
+
+    override def &:(updateType: UpdateType): UpdateType = {
         if (updateType == StructuralUpdateType)
             updateType
         else
             MetaInformationUpdateType
     }
 
-    def updateValue[NewV](newValue: NewV): Update[NewV] = MetaInformationUpdate(newValue)
+    override def updateValue[NewV](newValue: NewV): MetaInformationUpdate[NewV] =
+        MetaInformationUpdate(newValue)
 }
 
 /**
- * Indicates that the (given) structure was not updated. W.r.t. the interpretation
- * OPAL-AI does not distinguish between a `NoUpdate` and a `MetaInformationUpdate`.
+ * Indicates that the (given) structure was not updated.
+ *
+ * @note The abstract interpretation framework itself does not distinguish between a
+ *      `NoUpdate` and a `MetaInformationUpdate`; the abstract interpretation will not
+ *      be continued in both cases.
  */
 case object NoUpdate extends Update[Nothing] {
 
-    def updateType = NoUpdateType
+    type ThisType[V] = NoUpdate.type
 
-    def &:(updateType: UpdateType): UpdateType = updateType
+    override def isNoUpdate: Boolean = true
 
-    def value =
+    override def updateType = NoUpdateType
+
+    override def &:(updateType: UpdateType): UpdateType = updateType
+
+    override def value =
         throw new IllegalStateException("a NoUpdate contains no value")
 
-    def updateValue[NewV](newValue: NewV): Update[NewV] =
+    override def updateValue[NewV](newValue: NewV): NoUpdate.type =
         throw new IllegalStateException("updating the value of a NoUpdate is not supported")
 }
 
@@ -170,44 +200,48 @@ sealed abstract class UpdateType {
      */
     def &:(updateType: UpdateType): UpdateType
 
+    /**
+     * Merges this `UpdateType` with the given `Update` object and returns an `UpdateType`
+     * object that characterizes the update.
+     */
     def &:(update: Update[_]): UpdateType
 
 }
 
 case object NoUpdateType extends UpdateType {
 
-    def apply[V](value: ⇒ V): Update[V] = NoUpdate
+    override def apply[V](value: ⇒ V): Update[V] = NoUpdate
 
-    def noUpdate: Boolean = true
+    override def noUpdate: Boolean = true
 
-    def &:(updateType: UpdateType): UpdateType = updateType
+    override def &:(updateType: UpdateType): UpdateType = updateType
 
-    def &:(update: Update[_]): UpdateType = update.updateType
+    override def &:(update: Update[_]): UpdateType = update.updateType
 
 }
 
 case object MetaInformationUpdateType extends UpdateType {
 
-    def apply[V](value: ⇒ V): Update[V] = MetaInformationUpdate(value)
+    override def apply[V](value: ⇒ V): Update[V] = MetaInformationUpdate(value)
 
-    def noUpdate: Boolean = false
+    override def noUpdate: Boolean = false
 
-    def &:(updateType: UpdateType): UpdateType =
+    override def &:(updateType: UpdateType): UpdateType =
         if (updateType == StructuralUpdateType)
             StructuralUpdateType
         else
             this
 
-    def &:(update: Update[_]): UpdateType = update.updateType &: this
+    override def &:(update: Update[_]): UpdateType = update.updateType &: this
 }
 
 case object StructuralUpdateType extends UpdateType {
 
-    def apply[V](value: ⇒ V): Update[V] = StructuralUpdate(value)
+    override def apply[V](value: ⇒ V): Update[V] = StructuralUpdate(value)
 
-    def noUpdate: Boolean = false
+    override def noUpdate: Boolean = false
 
-    def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
+    override def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
 
-    def &:(update: Update[_]): UpdateType = StructuralUpdateType
+    override def &:(update: Update[_]): UpdateType = StructuralUpdateType
 }

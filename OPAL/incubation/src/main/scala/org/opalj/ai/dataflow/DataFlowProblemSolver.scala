@@ -46,7 +46,7 @@ import domain.l0._
  *
  * @author Michael Eichberg and Ben Hermann
  */
-trait DataFlowProblemSolver extends DataFlowProblem {
+trait DataFlowProblemSolver extends DataFlowProblem { solver ⇒
 
     /* ABSTRACT */ val theDomain: Domain
 

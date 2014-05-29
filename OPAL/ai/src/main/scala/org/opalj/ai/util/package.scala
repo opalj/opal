@@ -42,8 +42,8 @@ package object util {
 
     /**
      * Removes the first occurrence of the specified program counter from the given list
-     * unless the given `test` has failed. If the test fails, the '''original'''
-     * list is returned.
+     * unless the given `test` has failed. ''If the test fails, the '''original'''
+     * list is returned.''
      * The given test is executed before the test is made whether we have to remove
      * the element from the list.
      * If the original list is returned it is

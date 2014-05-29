@@ -65,22 +65,28 @@ trait PropertyTracing extends Domain { domain ⇒
      * The array which stores the value the property has when the respective.
      * instruction is executed.
      */
-    protected var propertiesArray: Array[DomainProperty] = _
+    private var propertiesArray: Array[DomainProperty] = _
 
     def initProperties(
         code: Code,
-        operandsArray: List[this.type#DomainValue],
-        localsArray: Array[this.type#DomainValue]) = {
+        operandsArray: Operands,
+        localsArray: Locals) = {
 
         this.propertiesArray = new Array(code.instructions.size)
         this.propertiesArray(0) = initialPropertyValue()
     }
 
-    def getProperty(pc: Int): DomainProperty = propertiesArray(pc)
+    def getProperty(pc: PC): DomainProperty = {
+        propertiesArray(pc)
+    }
+
+    def setProperty(pc: PC, property: DomainProperty) {
+        propertiesArray(pc) = property
+    }
 
     /**
      * Returns a string representation of the property associated with the given
-     * instruction. This string representation is used by OPAL-AI's tools to enable
+     * instruction. This string representation is used by OPAL's tools to enable
      * a meaningful representation of the property.
      *
      * (Run `de...ai.util.InterpretMethod` with a domain that traces properties.)
@@ -93,8 +99,8 @@ trait PropertyTracing extends Domain { domain ⇒
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
         worklist: List[PC],
-        operandsArray: Array[List[DomainValue]],
-        localsArray: Array[Array[DomainValue]],
+        operandsArray: OperandsArray,
+        localsArray: LocalsArray,
         tracer: Option[AITracer]): List[PC] = {
 
         val forceScheduling: Boolean = {
@@ -113,7 +119,8 @@ trait PropertyTracing extends Domain { domain ⇒
                 }
             }
         }
-        if (forceScheduling && worklist.head != successorPC) {
+
+        if (forceScheduling && (worklist.isEmpty || worklist.head != successorPC)) {
             val filteredList = util.removeFirst(worklist, successorPC)
             if (tracer.isDefined) {
                 if (filteredList eq worklist)

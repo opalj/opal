@@ -710,8 +710,10 @@ final object ObjectType {
     
     // Types related to the invokedynamic instruction
     final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
+    final val MethodHandles$Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")
     final val MethodType = ObjectType("java/lang/invoke/MethodType")
     final val LambdaMetafactory = ObjectType("java/lang/invoke/LambdaMetafactory")
+    final val CallSite = ObjectType("java/lang/invoke/CallSite")
 
     // Exceptions and errors that may be thrown by the JVM (i.e., instances of these 
     // exceptions may be created at runtime by the JVM)

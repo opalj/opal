@@ -56,7 +56,7 @@ trait VTACallGraphDomain extends CHACallGraphDomain { domain ⇒
         declaringClassType: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): Unit = {
+        operands: Operands): Unit = {
         // MODIFIED CHA - we used the type information that is readily available
         val receiver = operands.last
         val IsAReferenceValue(value) = typeOfValue(receiver)
@@ -127,7 +127,7 @@ class DefaultVTACallGraphDomain[Source](
         with DefaultDomainValueBinding
         with GeneralizedArrayHandling
         with Configuration
-        with IgnoreMethodResults
+        with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultIntegerValuesComparison

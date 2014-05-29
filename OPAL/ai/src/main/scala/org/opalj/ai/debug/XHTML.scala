@@ -65,9 +65,6 @@ object XHTML {
      *
      * We generate dumps on errors only if the specified time has passed by to avoid that
      * we are drowned in dumps. Often, a single bug causes many dumps to be created.
-     *
-     * If you want to generate more dumps set this value to a small(er) value or to -1l if
-     * do never want to miss a dump. The default is 2500 (milliseconds).
      */
     private[this] var _lastDump = new java.util.concurrent.atomic.AtomicLong(0l)
 
@@ -81,10 +78,10 @@ object XHTML {
         classFile: ClassFile,
         method: Method,
         ai: AI[_ >: D],
-        domain: D,
-        minimumDumpInterval: Long = 1000l)(
-            f: AIResult ⇒ T): T = {
-        val result = ai(classFile, method, domain)
+        theDomain: D,
+        minimumDumpInterval: Long = 500l)(
+            f: AIResult { val domain: theDomain.type } ⇒ T): T = {
+        val result = ai(classFile, method, theDomain)
         val operandsArray = result.operandsArray
         val localsArray = result.localsArray
         try {
@@ -98,10 +95,12 @@ object XHTML {
                 if ((currentTime - lastDump) > minimumDumpInterval) {
                     lastDump = currentTime
                     val title = Some("Generated due to exception: "+e.getMessage())
-                    val dump = XHTML.dump(
-                        Some(classFile), Some(method), method.body.get,
-                        domain, operandsArray, localsArray,
-                        title)
+                    val dump =
+                        XHTML.dump(
+                            title,
+                            Some(classFile), Some(method), method.body.get,
+                            theDomain
+                        )(operandsArray, localsArray)
                     XHTML.writeAndOpenDump(dump) //.map(_.deleteOnExit)
                 } else {
                     Console.err.println("[info] dump suppressed: "+e.getMessage())
@@ -116,13 +115,15 @@ object XHTML {
      * browser; the number of dumps that are generated is controlled by
      * `timeInMillisBetweenDumps`. If a dump is suppressed a short message is
      * printed on the console.
+     *
+     * @param f The funcation that performs the validation of the results.
      */
     def dumpOnFailureDuringValidation[T](
         classFile: Option[ClassFile],
         method: Option[Method],
         code: Code,
         result: AIResult,
-        minimumDumpInterval: Long = 1000l)(
+        minimumDumpInterval: Long = 500l)(
             f: ⇒ T): T = {
         val operandsArray = result.operandsArray
         val localsArray = result.localsArray
@@ -136,10 +137,10 @@ object XHTML {
                 if ((currentTime - lastDump) > minimumDumpInterval) {
                     lastDump = currentTime
                     writeAndOpenDump(
-                        dump(classFile.get,
+                        dump("Dump generated due to exception: "+e.getMessage(),
+                            classFile.get,
                             method.get,
-                            result,
-                            "Dump generated due to exception: "+e.getMessage())
+                            result)
                     )
                 } else {
                     Console.err.println("dump suppressed: "+e.getMessage())
@@ -167,28 +168,30 @@ object XHTML {
     }
 
     def dump(
+        header: String,
         classFile: ClassFile,
         method: Method,
-        result: AIResult,
-        header: String): Node = {
+        result: AIResult): Node = {
         import result._
         htmlTemplate(
             Some(header),
             dumpTable(
-                Some(classFile), Some(method), code, domain, operandsArray, localsArray))
+                Some(classFile), Some(method), code, domain)(
+                    operandsArray, localsArray))
     }
 
     def dump(
+        header: Option[String],
         classFile: Option[ClassFile],
         method: Option[Method],
         code: Code,
-        domain: Domain,
-        operandsArray: Array[_ <: List[_ <: AnyRef]],
-        localsArray: Array[_ <: Array[_ <: AnyRef]],
-        header: Option[String] = None): Node = {
+        domain: Domain)(
+            operandsArray: TheOperandsArray[domain.Operands],
+            localsArray: TheLocalsArray[domain.Locals]): Node = {
         htmlTemplate(
             header,
-            dumpTable(classFile, method, code, domain, operandsArray, localsArray))
+            dumpTable(classFile, method, code, domain)(
+                operandsArray, localsArray))
     }
 
     def writeAndOpenDump(node: Node): Option[File] = {
@@ -224,9 +227,9 @@ object XHTML {
         classFile: Option[ClassFile],
         method: Option[Method],
         code: Code,
-        domain: Domain,
-        operandsArray: Array[_ <: List[_ <: AnyRef]],
-        localsArray: Array[_ <: Array[_ <: AnyRef]]): Node = {
+        domain: Domain)(
+            operandsArray: TheOperandsArray[domain.Operands],
+            localsArray: TheLocalsArray[domain.Locals]): Node = {
 
         val indexedExceptionHandlers = indexExceptionHandlers(code)
         val exceptionHandlers =
@@ -260,7 +263,7 @@ object XHTML {
                 <th class="properties">Properties</th></tr>
             </thead>
             <tbody>
-            { dumpInstructions(code, domain, operandsArray, localsArray) }
+            { dumpInstructions(code, domain)(operandsArray, localsArray) }
             </tbody>
         </table>
         { exceptionHandlers }
@@ -285,25 +288,26 @@ object XHTML {
 
     private def dumpInstructions(
         code: Code,
-        domain: Domain,
-        operandsArray: Array[_ <: List[_ <: AnyRef]],
-        localsArray: Array[_ <: Array[_ <: AnyRef]]): Array[Node] = {
+        domain: Domain)(
+            operandsArray: TheOperandsArray[domain.Operands],
+            localsArray: TheLocalsArray[domain.Locals]): Array[Node] = {
         val indexedExceptionHandlers = indexExceptionHandlers(code)
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
             var exceptionHandlers = code.exceptionHandlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
             if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
-            dumpInstruction(pc, instruction, domain, operands, locals, Some(exceptionHandlers))
+            dumpInstruction(pc, instruction, Some(exceptionHandlers), domain)(
+                operands, locals)
         }
     }
 
     def dumpInstruction(
         pc: Int,
         instruction: Instruction,
-        domain: Domain,
-        operands: List[_ <: AnyRef],
-        locals: Array[_ <: AnyRef],
-        exceptionHandlers: Option[String]): Node = {
+        exceptionHandlers: Option[String],
+        domain: Domain)(
+            operands: domain.Operands,
+            locals: domain.Locals): Node = {
         <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
             <td class="pc">{ Unparsed(pc.toString + "<br>" + exceptionHandlers.getOrElse("")) }</td>
             <td class="instruction">{ Unparsed(instruction.toString(pc).replace("\n", "<br>")) }</td>
@@ -313,7 +317,7 @@ object XHTML {
         </tr >
     }
 
-    def dumpStack(operands: List[_ <: AnyRef]): Node =
+    def dumpStack(operands: Operands[_]): Node =
         if (operands eq null)
             <em>Information about operands is not available.</em>
         else {
@@ -322,12 +326,12 @@ object XHTML {
             </ul>
         }
 
-    def dumpLocals(locals: Array[_ <: AnyRef]): Node =
+    def dumpLocals(locals: Locals[_ <: AnyRef/**/]): Node =
         if (locals eq null)
             <em>Information about the local variables is not available.</em>
         else {
             <ol start="0" class="registers">
-            { locals.map(l ⇒ if (l eq null) "UNUSED" else l.toString()).map(l ⇒ <li>{ l }</li>) }
+            { locals.map(l ⇒ if (l eq null) "UNUSED" else l.toString()).map(l ⇒ <li>{ l }</li>).iterator }
             </ol>
         }
 
