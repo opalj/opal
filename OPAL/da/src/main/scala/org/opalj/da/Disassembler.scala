@@ -48,10 +48,6 @@ object Disassembler {
 
         for (classFileName ← args.drop(1) /* drop the name of the jar file */ ) {
 
-            // Load class file (the class file name has to correspond to the name of 
-            // the file inside the archive.)
-            // The Java7Framework defines multiple other methods that make it convenient
-            // to load class files stored in folders or in jars within jars.
             val classFile = ClassFileReader.ClassFile(args(0), classFileName)
 
             org.opalj.util.writeAndOpenDesktopApplication(

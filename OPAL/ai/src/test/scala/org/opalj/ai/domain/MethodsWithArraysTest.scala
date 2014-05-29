@@ -60,7 +60,7 @@ class MethodsWithArraysTest
     class TestDomain
             extends TypeLevelDomain
             with IgnoreSynchronization
-            with IgnoreMethodResults
+            with DefaultHandlingOfMethodResults
             with RecordLastReturnedValues {
 
         type Id = String

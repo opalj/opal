@@ -86,7 +86,7 @@ package object ai {
      * computational-type category 2 and needs to stack/operands values.)
      *
      * The range of values is: [-257,65535]. Hence, whenever a value of type `ValueOrigin`
-     * is required/is expected it is possible to use a value with type `PC`. 
+     * is required/is expected it is possible to use a value with type `PC`.
      *
      * Recall that the maximum size of the method
      * parameters array is 255. If necessary, the first slot is required for the `this`
@@ -129,4 +129,12 @@ package object ai {
      *      the sole discretion of the domain.
      */
     type UpperTypeBound = UIDSet[ReferenceType]
+
+    type Operands[T >: Null <: Domain#DomainValue] = List[T]
+    type AnOperandsArray[T >: Null <: Domain#DomainValue] = Array[Operands[T]]
+    type TheOperandsArray[T >: Null <: (Domain with Singleton)#Operands] = Array[T]
+
+    type Locals[T >: Null <: Domain#DomainValue] = org.opalj.ai.util.Locals[T]
+    type ALocalsArray[T >: Null <: Domain#DomainValue] = Array[Locals[T]]
+    type TheLocalsArray[T >: Null <: (Domain with Singleton)#Locals] = Array[T]
 }

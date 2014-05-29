@@ -30,8 +30,8 @@ package callgraph.misc;
 
 import callgraph.base.Base;
 import callgraph.base.SimpleBase;
-import org.opal.ai.test.invokedynamic.annotations.InvokedConstructor;
-import org.opal.ai.test.invokedynamic.annotations.InvokedMethod;
+import org.opalj.ai.test.invokedynamic.annotations.InvokedConstructor;
+import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
 
 /**
  * This class was used to create a class file with some well defined attributes. The

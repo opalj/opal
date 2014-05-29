@@ -33,7 +33,7 @@ package ai
  * Encapsulates the result of a computation in a domain. In general, the
  * result is either some value `V` or some exception(s) `E`. In some cases, however,
  * when the domain cannot '''precisely''' determine the result, it may be both: some
- * exceptional value(s) and a value. In the latter case OPAL-AI will generally follow all
+ * exceptional value(s) and a value. In the latter case OPAL will generally follow all
  * possible paths. Please note, that a computation that declares to return a result
  * (i.e., `V` is not `Nothing`) must either return a result and/or throw an exception, but
  * is not allowed to return no result and no exceptions!

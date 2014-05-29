@@ -109,7 +109,7 @@ trait CHACallGraphDomain
         declaringClassType: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): Unit = {
+        operands: Operands): Unit = {
 
         def handleUnresolvedMethodCall() =
             addUnresolvedMethodCall(
@@ -136,7 +136,7 @@ trait CHACallGraphDomain
         declaringClassType: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): Unit = {
+        operands: Operands): Unit = {
 
         val callees: Set[Method] = {
             if (classHierarchy.isKnown(declaringClassType)) {
@@ -165,7 +165,7 @@ trait CHACallGraphDomain
         declaringClass: ReferenceType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult = {
+        operands: Operands): MethodCallResult = {
         val result = super.invokevirtual(pc, declaringClass, name, descriptor, operands)
         if (declaringClass.isArrayType) {
             staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
@@ -180,7 +180,7 @@ trait CHACallGraphDomain
         declaringClass: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult = {
+        operands: Operands): MethodCallResult = {
         val result = super.invokeinterface(pc, declaringClass, name, descriptor, operands)
         virtualMethodCall(pc, declaringClass, name, descriptor, operands)
         result
@@ -194,7 +194,7 @@ trait CHACallGraphDomain
         declaringClass: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult = {
+        operands: Operands): MethodCallResult = {
         val result = super.invokespecial(pc, declaringClass, name, descriptor, operands)
         // for invokespecial the dynamic type is not "relevant" (even for Java 8) 
         staticMethodCall(pc, declaringClass, name, descriptor, operands)
@@ -209,7 +209,7 @@ trait CHACallGraphDomain
         declaringClass: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult = {
+        operands: Operands): MethodCallResult = {
         val result = super.invokestatic(pc, declaringClass, name, descriptor, operands)
         staticMethodCall(pc, declaringClass, name, descriptor, operands)
         result
@@ -230,7 +230,7 @@ class DefaultCHACallGraphDomain[Source](
         with DefaultDomainValueBinding
         with GeneralizedArrayHandling
         with Configuration
-        with IgnoreMethodResults
+        with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultIntegerValuesComparison

@@ -127,7 +127,7 @@ object DomainRegistry {
 
     // initialize the registry with the known default domains 
     register(
-        "The most basic domain; it does all computations at the type level.",
+        "[l0.BaseConfigurableDomain] The most basic domain; it does all computations at the type level.",
         classOf[domain.l0.BaseConfigurableDomain[(ClassFile, Method)]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.l0.BaseConfigurableDomain((ClassFile, Method))
@@ -135,10 +135,10 @@ object DomainRegistry {
     )
 
     register(
-        "The most precise domain readily available; this is primarily meant as a showcase!",
+        "[l1.DefaultConfigurableDomain] The most precise domain readily available; this is primarily meant as a showcase!",
         classOf[domain.l1.DefaultConfigurableDomain[(ClassFile, Method)]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l0.BaseConfigurableDomain((ClassFile, Method))
+            new domain.l1.DefaultConfigurableDomain((ClassFile, Method))
         }
     )
 }

@@ -32,7 +32,7 @@ package ai
 import br._
 
 /**
- * Factory to create `AIResult` objects. Primarily used by OPAL-AI to return the
+ * Factory to create `AIResult` objects. Primarily used to return the
  * result of an abstract interpretation of a method.
  *
  * @author Michael Eichberg
@@ -51,22 +51,24 @@ object AIResultBuilder {
         theDomain: Domain)(
             theWorklist: List[PC],
             theEvaluated: List[PC],
-            theOperandsArray: Array[List[theDomain.DomainValue]],
-            theLocalsArray: Array[Array[theDomain.DomainValue]]): AIAborted { val domain: theDomain.type } = {
+            theOperandsArray: theDomain.OperandsArray,
+            theLocalsArray: theDomain.LocalsArray,
+            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIAborted { val domain: theDomain.type } = {
 
         new AIAborted {
             val code: Code = theCode
             val domain: theDomain.type = theDomain
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
-            val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
-            val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
+            val operandsArray: theDomain.OperandsArray = theOperandsArray
+            val localsArray: theDomain.LocalsArray = theLocalsArray
+            val memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
             def continueInterpretation(
                 ai: AI[_ >: domain.type]): AIResult =
                 ai.continueInterpretation(
                     code, domain)(
-                        worklist, evaluated, operandsArray, localsArray)
+                        worklist, evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
 
         }
     }
@@ -79,21 +81,22 @@ object AIResultBuilder {
         theCode: Code,
         theDomain: Domain)(
             theEvaluated: List[PC],
-            theOperandsArray: Array[List[theDomain.DomainValue]],
-            theLocalsArray: Array[Array[theDomain.DomainValue]]): AICompleted { val domain: theDomain.type } = {
+            theOperandsArray: theDomain.OperandsArray,
+            theLocalsArray: theDomain.LocalsArray): AICompleted { val domain: theDomain.type } = {
 
         new AICompleted {
             val code: Code = theCode
             val domain: theDomain.type = theDomain
             val evaluated: List[PC] = theEvaluated
-            val operandsArray: Array[List[theDomain.DomainValue]] = theOperandsArray
-            val localsArray: Array[Array[theDomain.DomainValue]] = theLocalsArray
+            val operandsArray: theDomain.OperandsArray = theOperandsArray
+            val localsArray: theDomain.LocalsArray = theLocalsArray
+            val memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
 
             def restartInterpretation(
                 ai: AI[_ >: theDomain.type]): AIResult =
                 ai.continueInterpretation(
                     code, domain)(
-                        List(0), evaluated, operandsArray, localsArray)
+                        List(0), evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
 
         }
     }
@@ -107,8 +110,9 @@ sealed abstract class AIResult {
     val domain: Domain
     val worklist: List[PC]
     val evaluated: List[PC]
-    val operandsArray: Array[List[domain.DomainValue]]
-    val localsArray: Array[Array[domain.DomainValue]]
+    val operandsArray: domain.OperandsArray
+    val localsArray: domain.LocalsArray
+    val memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]
 
     /**
      * Returns `true` if the abstract interpretation was aborted.
@@ -152,7 +156,7 @@ sealed abstract class AIAborted extends AIResult {
 
     def continueInterpretation(ai: AI[_ >: domain.type]): AIResult
 
-    override def stateToString: String = 
+    override def stateToString: String =
         "The abstract interpretation was aborted; "+super.stateToString
 }
 
@@ -167,6 +171,6 @@ sealed abstract class AICompleted extends AIResult {
 
     def restartInterpretation(ai: AI[_ >: domain.type]): AIResult
 
-    override def stateToString: String = 
+    override def stateToString: String =
         "The abstract interpretation succeeded; "+super.stateToString
 }

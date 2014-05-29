@@ -38,7 +38,7 @@ import br.instructions.Instruction
  * console. This tracer is particularly useful to understand the handling of JSR/RET
  * instructions.
  *
- * If you wan to reuse this tracer to trace evaluations of different methods
+ * If you want to reuse this tracer to trace evaluations of different methods
  * you should call the `reset` method between two calls.
  *
  * ==Thread Safety==
@@ -59,8 +59,8 @@ trait ConsoleEvaluationTracer extends AITracer {
         domain: Domain)(
             pc: PC,
             instruction: Instruction,
-            operands: List[domain.DomainValue],
-            locals: Array[domain.DomainValue]): Unit = {
+            operands: domain.Operands,
+            locals: domain.Locals): Unit = {
         print(pc+" ")
     }
 
@@ -69,8 +69,8 @@ trait ConsoleEvaluationTracer extends AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]]) { /*EMPTY*/ }
+            operandsArray: domain.OperandsArray,
+            localsArray: domain.LocalsArray) { /*EMPTY*/ }
 
     override def rescheduled(
         domain: Domain)(

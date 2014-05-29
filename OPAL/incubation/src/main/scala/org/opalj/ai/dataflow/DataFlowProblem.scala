@@ -207,11 +207,11 @@ trait DataFlowProblem {
      * Identifies the values that we want to track (by means of the origin of the
      * respective value) per relevant method.
      *
-     * **The returned map must not change, after solve was called!**
+     * ''The returned map must not change, after solve was called!''
      *
      * @note The methods have to belong to the [[project]].
      *
-     * @see [[DataFlowProblemSpecification]] for the easy creation
+     * @see [[org.opalj.ai.dataflow.spec.DataFlowProblemSpecification]] for the easy creation
      *      of the `sourcesValues` map.
      */
     def sourceValues(): Map[Method, Set[ValueOrigin]]
@@ -220,11 +220,11 @@ trait DataFlowProblem {
      * Identifies the program counters (PCs) of those instructions
      * that are sinks.
      *
-     * **The returned map must not change, after solve was called!**
+     * ''The returned map must not change, after solve was called!''
      *
      * @note The methods have to belong to the [[project]].
      *
-     * @see [[DataFlowProblemSpecification]] for the easy creation
+     * @see [[org.opalj.ai.dataflow.spec.DataFlowProblemSpecification]] for the easy creation
      *      of the `sinkInstructions` map.
      */
     def sinkInstructions(): Map[Method, Set[PC]]

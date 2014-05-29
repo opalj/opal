@@ -47,81 +47,12 @@ import domain.l0._
  *
  * @author Michael Eichberg and Ben Hermann
  */
-trait DataFlowProblemSpecification extends DataFlowProblem {
-
-    //
-    // Storing/Managing Sources
-    //
-    private[this] var sourceMatchers: List[AValueLocationMatcher] = Nil
-    def sources(vlm: AValueLocationMatcher): Unit = sourceMatchers = vlm :: sourceMatchers
-
-    private[this] var theSourceValues: Map[Method, Set[PC]] = _
-    def sourceValues: Map[Method, Set[PC]] = theSourceValues
-
-    def sources(
-        filter: Function[ClassFile, Boolean],
-        matcher: PartialFunction[Method, Set[Int]]): Unit = {
-
-        sourceMatchers =
-            new AValueLocationMatcher {
-
-                def apply(project: SomeProject) = {
-                    var map = scala.collection.mutable.AnyRefMap.empty[Method, Set[Int]]
-                    for {
-                        classFile ← project.classFiles
-                        if filter(classFile)
-                        method @ MethodWithBody(_) ← classFile.methods
-                    } {
-                        if (matcher.isDefinedAt(method)) {
-                            map.update(method, matcher(method))
-                        }
-                    }
-                    map.repack
-                    map
-                }
-            } :: sourceMatchers
-    }
-
-
-    //
-    // Storing/Managing Sinks
-    //
-    private[this] var sinkMatchers: List[AValueLocationMatcher] = Nil
-    def sinks(vlm: AValueLocationMatcher): Unit = sinkMatchers = vlm :: sinkMatchers
-
-    private[this] var theSinkInstructions: Map[Method, Set[PC]] = _
-    def sinkInstructions: Map[Method, Set[PC]] = theSinkInstructions
-
-    //
-    // Instantiating the problem
-    //
-
+trait DataFlowProblemSpecification extends DataFlowProblem with SourcesAndSinks {
+    
     override protected[this] def initializeSourcesAndSinks(): Unit = {
-        import scala.collection.immutable.HashMap
-
-        val sources = sourceMatchers map ((m: AValueLocationMatcher) ⇒ m(project))
-        this.theSourceValues = sources.foldLeft(HashMap.empty[Method, Set[PC]])(_ ++ _)
-
-        val sinks = sinkMatchers map ((m: AValueLocationMatcher) ⇒ m(project))
-        this.theSinkInstructions = sinks.foldLeft(HashMap.empty[Method, Set[PC]])(_ ++ _)
+        initializeSourcesAndSinks(project)
     }
-
-}
-
-case class MethodsMatcher(
-        matcher: PartialFunction[Method, Set[Int]]) extends AValueLocationMatcher {
-
-    def apply(project: SomeProject): Map[Method, Set[Int]] = {
-        val map = scala.collection.mutable.AnyRefMap.empty[Method, Set[Int]]
-        for {
-            classFile ← project.classFiles
-            method @ MethodWithBody(_) ← classFile.methods
-        } {
-            if (matcher.isDefinedAt(method))
-                map.update(method, matcher(method))
-        }
-        map
-    }
+    
 }
 
 

@@ -32,8 +32,6 @@
  */
 package org.opalj
 package frb
-package test
-package analysis
 
 import java.io.IOException
 import java.io.File

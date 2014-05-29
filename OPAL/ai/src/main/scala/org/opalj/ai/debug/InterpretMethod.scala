@@ -50,10 +50,8 @@ object InterpretMethod {
         override val tracer =
             //Some(new ConsoleTracer {})
             Some(
-                new MultiTracer(
-                    new ConsoleTracer {},
-                    //new ConsoleEvaluationTracer {},
-                    new XHTMLTracer {})
+                new ConsoleEvaluationTracer {}
+            //new MultiTracer(new ConsoleTracer {}, new XHTMLTracer {})
             )
     }
 
@@ -140,7 +138,14 @@ object InterpretMethod {
                 else
                     classFile.methods.find(_.name == methodName)
             ) match {
-                    case Some(method) ⇒ method
+                    case Some(method) ⇒
+                        if (method.body.isDefined)
+                            method
+                        else {
+                            println(RED+
+                                "[error] The method: "+methodName+" does not have a body"+RESET)
+                            return ;
+                        }
                     case None ⇒
                         println(RED+
                             "[error] Cannot find the method: "+methodName+"."+RESET +
@@ -150,34 +155,41 @@ object InterpretMethod {
 
         import debug.XHTML.{ dump, writeAndOpenDump }
 
+      
+
         try {
             val result =
                 AI(classFile, method, createDomain(project, classFile, method))
+            val domain = result.domain
             writeAndOpenDump(dump(
+                Some(
+                    "Result("+domainClass.getName()+"): "+(new java.util.Date).toString+"<br />"+
+                        XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
                 Some(classFile),
                 Some(method),
                 method.body.get,
-                result.domain,
-                result.operandsArray,
-                result.localsArray,
-                Some("Result("+domainClass.getName()+"): "+(new java.util.Date).toString)))
+                result.domain)(
+                    result.operandsArray,
+                    result.localsArray)
+            )
         } catch {
-            case ie @ InterpretationFailedException(cause, domain, pc, worklist, evaluated, operands, locals) ⇒
+            case ife: InterpretationFailedException ⇒
                 val header =
                     Some("<p><b>"+domainClass.getName()+"</b></p>"+
-                        cause.getMessage()+"<br>"+
-                        ie.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
-                        "Current instruction: "+pc+"<br>"+
-                        evaluated.mkString("Evaluated instructions:\n<br>", ", ", "<br>") +
-                        worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
+                        ife.cause.getMessage()+"<br>"+
+                        ife.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
+                        "Current instruction: "+ife.pc+"<br>"+
+                        XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
+                        ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
                     )
                 val evaluationDump =
                     dump(
+                        header,
                         Some(classFile), Some(method), method.body.get,
-                        domain, operands, locals, header
-                    )
+                        ife.domain)(
+                            ife.operandsArray, ife.localsArray)
                 writeAndOpenDump(evaluationDump)
-                throw ie
+                throw ife
         }
     }
 }

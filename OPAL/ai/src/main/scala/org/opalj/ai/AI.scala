@@ -147,7 +147,7 @@ trait AI[D <: Domain] {
     protected def initialOperands(
         classFile: ClassFile,
         method: Method,
-        domain: D): List[domain.DomainValue] =
+        domain: D): domain.Operands =
         List.empty[domain.DomainValue]
 
     /**
@@ -175,7 +175,7 @@ trait AI[D <: Domain] {
         classFile: ClassFile,
         method: Method,
         domain: D)(
-            someLocals: Option[IndexedSeq[domain.DomainValue]] = None): Array[domain.DomainValue] = {
+            someLocals: Option[IndexedSeq[domain.DomainValue]] = None): domain.Locals = {
 
         import domain.DomainValueTag
 
@@ -186,28 +186,28 @@ trait AI[D <: Domain] {
                 )
 
             val maxLocals = method.body.get.maxLocals
-            if (l.size >= maxLocals) {
+            if (l.size > maxLocals) {
                 // l.toArray
                 throw new IllegalArgumentException(
                     "the number of initial locals("+l.size+
-                    ") is larger than \"maxLocals("+maxLocals+")\""
+                        ") is larger than \"maxLocals("+maxLocals+")\""
                 )
             } else {
-                // the number of given locals is smaller than the number of max locals
+                // the number of given locals is smaller than or equal to the number of max locals
                 // (the former number still has to be larger or equal to the number of 
                 // parameter values (including "this"))
-                val locals = new Array[domain.DomainValue](maxLocals)
+                val locals = org.opalj.ai.util.Locals[domain.DomainValue](maxLocals)
                 // for (i ← (0 until l.size)) locals(i) = l(i)
                 var i = l.size - 1
                 while (i >= 0) {
-                    locals(i) = l(i)
+                    locals.set(i, l(i))
                     i -= 1
                 }
                 locals
             }
         }.getOrElse { // there are no locals at all...
             val code = method.body.get
-            val locals = new Array[domain.DomainValue](code.maxLocals)
+            val locals = org.opalj.ai.util.Locals[domain.DomainValue](code.maxLocals)
             var localVariableIndex = 0
 
             // Calculates the initial "PC" associated with a method's parameter.
@@ -217,12 +217,12 @@ trait AI[D <: Domain] {
                 val thisType = classFile.thisType
                 val thisValue =
                     domain.NonNullObjectValue(origin(localVariableIndex), thisType)
-                locals.update(localVariableIndex, thisValue)
+                locals.set(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
             for (parameterType ← method.descriptor.parameterTypes) {
                 val ct = parameterType.computationalType
-                locals.update(
+                locals.set(
                     localVariableIndex,
                     domain.TypedValue(origin(localVariableIndex), parameterType))
                 localVariableIndex += ct.operandSize
@@ -280,22 +280,22 @@ trait AI[D <: Domain] {
     protected[ai] def perform(
         code: Code,
         theDomain: D)(
-            initialOperands: List[theDomain.DomainValue],
-            initialLocals: Array[theDomain.DomainValue]): AIResult { val domain: theDomain.type } = {
+            initialOperands: theDomain.Operands,
+            initialLocals: theDomain.Locals): AIResult { val domain: theDomain.type } = {
 
         import theDomain.DomainValueTag
 
         val codeLength = code.instructions.length
 
-        val operandsArray = new Array[List[theDomain.DomainValue]](codeLength)
+        val operandsArray = new Array[theDomain.Operands](codeLength)
         operandsArray(0) = initialOperands
 
-        val localsArray = new Array[Array[theDomain.DomainValue]](codeLength)
+        val localsArray = new Array[theDomain.Locals](codeLength)
         localsArray(0) = initialLocals
 
         continueInterpretation(
             code, theDomain)(
-                initialWorkList, List.empty[PC], operandsArray, localsArray)
+                initialWorkList, List.empty[PC], operandsArray, localsArray, Nil)
     }
 
     /**
@@ -343,12 +343,13 @@ trait AI[D <: Domain] {
         theDomain: D)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: Array[List[theDomain.DomainValue]],
-            localsArray: Array[Array[theDomain.DomainValue]]): AIResult { val domain: theDomain.type } = {
+            theOperandsArray: theDomain.OperandsArray,
+            theLocalsArray: theDomain.LocalsArray,
+            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
 
         if (tracer.isDefined)
             tracer.get.continuingInterpretation(code, theDomain)(
-                initialWorkList, alreadyEvaluated, operandsArray, localsArray
+                initialWorkList, alreadyEvaluated, theOperandsArray, theLocalsArray
             )
 
         import theDomain.{ DomainValue, ExceptionValue, ExceptionValues, Operands, Locals }
@@ -378,10 +379,11 @@ trait AI[D <: Domain] {
 
         // The entire state of the computation is (from the perspective of the AI)
         // encapsulated by the following data-structures:
-        /* 1 */ // operandsArray
-        /* 2 */ // localsArray
+        /* 1 */ var operandsArray = theOperandsArray
+        /* 2 */ var localsArray = theLocalsArray
         /* 3 */ var worklist = initialWorkList
         /* 4 */ var evaluated = alreadyEvaluated
+        /* 5 */ var memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
         // -------------------------------------------------------------------------------
         //
@@ -446,11 +448,11 @@ trait AI[D <: Domain] {
                                 // evaluation
                                 tracer.get.flow(theDomain)(
                                     sourcePC, targetPC, isExceptionalControlFlow)
-                            else
+                            else {
                                 // the instruction was just moved to the beginning
                                 tracer.get.rescheduled(theDomain)(
                                     sourcePC, targetPC, isExceptionalControlFlow)
-
+                            }
                         }
                         worklist = targetPC :: filteredList
 
@@ -489,7 +491,8 @@ trait AI[D <: Domain] {
                         worklist,
                         evaluated,
                         operandsArray,
-                        localsArray)
+                        localsArray,
+                        memoryLayoutBeforeSubroutineCall)
                 if (tracer.isDefined)
                     tracer.get.result(result)
 
@@ -507,6 +510,7 @@ trait AI[D <: Domain] {
                 // exit points; we will now schedule the jump to the return
                 // address and reset the subroutine's computation context
                 while (worklist.head < 0) {
+                    evaluated = SUBROUTINE_END :: evaluated
                     // the structure is:
                     // -lvIndex (:: RET_PC)* :: RETURN_ADDRESS :: SUBROUTINE
                     val lvIndex = -worklist.head
@@ -520,34 +524,31 @@ trait AI[D <: Domain] {
                     }
                     val returnAddress = worklist.head
                     worklist = worklist.tail.tail // let's remove the subroutine marker
-                    retPCs.foreach { retPC ⇒
+                    val targets = retPCs.map { retPC ⇒
                         // reset the local variable that stores the return address
-                        val operands = operandsArray(retPC)
-                        val locals = localsArray(retPC)
                         if (tracer.isDefined) {
-                            val subroutine = evaluated.takeWhile(_ != SUBROUTINE_START)
+                            val subroutine = evaluated.tail.takeWhile(_ != SUBROUTINE_START)
                             tracer.get.returnFromSubroutine(theDomain)(
                                 retPC,
                                 returnAddress,
                                 subroutine
                             )
                         }
-                        val updatedLocals = locals.clone
-                        updatedLocals(lvIndex) = theDomain.Null
 
+                        val operands = operandsArray(retPC)
+                        val locals = localsArray(retPC)
+                        val updatedLocals = locals.updated(lvIndex, theDomain.Null)
+                        (retPC, operands, updatedLocals)
+                    }
+                    // clear all computations to make this subroutine callable again
+                    val (oldOperandsArray, oldLocalsArray) = memoryLayoutBeforeSubroutineCall.head
+                    operandsArray = oldOperandsArray
+                    localsArray = oldLocalsArray
+                    memoryLayoutBeforeSubroutineCall = memoryLayoutBeforeSubroutineCall.tail
+                    targets.foreach { target ⇒
+                        val (retPC, operands, updatedLocals) = target
                         gotoTarget(retPC, returnAddress, false, operands, updatedLocals)
                     }
-                    // clear all computations that were done
-                    // to make this subroutine callable again
-                    var previousInstruction = evaluated.head
-                    evaluated = evaluated.tail
-                    var previousInstructionOpcode: Int = -1 // instructions(previousInstruction).opcode
-                    do {
-                        operandsArray(previousInstruction) = null
-                        localsArray(previousInstruction) = null
-                        previousInstruction = evaluated.head
-                        evaluated = evaluated.tail
-                    } while (previousInstruction != SUBROUTINE_START)
 
                     // it may be possible that – after the return from a 
                     // call to a subroutine – we have nothing further to do and
@@ -777,21 +778,6 @@ trait AI[D <: Domain] {
                         handleExceptions(computation.exceptions)
                 }
 
-                /*
-                 * Copies the current locals variable array and updates the local variable
-                 * stored at the given `index` in the new locals variable array with
-                 * the given `domainValue`.
-                 *
-                 * @param lvIndex A valid index in the locals variable array.
-                 * @param domainValue A domain value.
-                 * @return The updated locals variable array.
-                 */
-                def updateLocals(lvIndex: Int, domainValue: DomainValue): Locals = {
-                    val newLocals = locals.clone
-                    newLocals.update(lvIndex, domainValue)
-                    newLocals
-                }
-
                 @inline def as[I <: Instruction](i: Instruction): I = i.asInstanceOf[I]
 
                 (instruction.opcode: @annotation.switch) match {
@@ -827,6 +813,9 @@ trait AI[D <: Domain] {
                         val returnTarget = pcOfNextInstruction
                         worklist = SUBROUTINE_START :: returnTarget :: SUBROUTINE :: worklist
                         evaluated = SUBROUTINE_START :: evaluated
+                        memoryLayoutBeforeSubroutineCall =
+                            (operandsArray.clone, localsArray.clone) :: memoryLayoutBeforeSubroutineCall
+
                         val branchtarget = pc + as[JSRInstruction](instruction).branchoffset
                         val newOperands = theDomain.ReturnAddressValue(returnTarget) :: operands
                         gotoTarget(
@@ -1430,35 +1419,35 @@ trait AI[D <: Domain] {
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
                         fallThrough(
                             operands.tail,
-                            updateLocals(lvIndex, operands.head))
+                            locals.updated(lvIndex, operands.head))
                     case 75 /*astore_0*/
                         | 71 /*dstore_0*/
                         | 67 /*fstore_0*/
                         | 63 /*lstore_0*/
                         | 59 /*istore_0*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(0, operands.head))
+                            operands.tail, locals.updated(0, operands.head))
                     case 76 /*astore_1*/
                         | 72 /*dstore_1*/
                         | 68 /*fstore_1*/
                         | 64 /*lstore_1*/
                         | 60 /*istore_1*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(1, operands.head))
+                            operands.tail, locals.updated(1, operands.head))
                     case 77 /*astore_2*/
                         | 73 /*dstore_2*/
                         | 69 /*fstore_2*/
                         | 65 /*lstore_2*/
                         | 61 /*istore_2*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(2, operands.head))
+                            operands.tail, locals.updated(2, operands.head))
                     case 78 /*astore_3*/
                         | 74 /*dstore_3*/
                         | 70 /*fstore_3*/
                         | 66 /*lstore_3*/
                         | 62 /*istore_3*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(3, operands.head))
+                            operands.tail, locals.updated(3, operands.head))
 
                     //
                     // PUSH CONSTANT VALUE
@@ -1512,6 +1501,11 @@ trait AI[D <: Domain] {
                             fallThrough(theDomain.StringValue(pc, v) :: operands)
                         case LoadClass(v) ⇒
                             fallThrough(theDomain.ClassValue(pc, v) :: operands)
+                        case LoadMethodHandle(v) ⇒
+                            fallThrough(theDomain.MethodHandle(pc, v) :: operands)
+                        case LoadMethodType(v) ⇒
+                            fallThrough(theDomain.MethodType(pc, v) :: operands)
+
                     }
                     case 19 /*ldc_w*/ ⇒ instruction match {
                         case LoadInt_W(v) ⇒
@@ -1522,6 +1516,10 @@ trait AI[D <: Domain] {
                             fallThrough(theDomain.StringValue(pc, v) :: operands)
                         case LoadClass_W(v) ⇒
                             fallThrough(theDomain.ClassValue(pc, v) :: operands)
+                        case LoadMethodHandle_W(v) ⇒
+                            fallThrough(theDomain.MethodHandle(pc, v) :: operands)
+                        case LoadMethodType_W(v) ⇒
+                            fallThrough(theDomain.MethodType(pc, v) :: operands)
                     }
                     case 20 /*ldc2_w*/ ⇒ instruction match {
                         case LoadLong(v) ⇒
@@ -1846,7 +1844,7 @@ trait AI[D <: Domain] {
                     case 132 /*iinc*/ ⇒ {
                         val iinc = instruction.asInstanceOf[IINC]
                         val newValue = theDomain.iinc(pc, locals(iinc.lvIndex), iinc.constValue)
-                        fallThrough(operandsArray(pc), updateLocals(iinc.lvIndex, newValue))
+                        fallThrough(operandsArray(pc), locals.updated(iinc.lvIndex, newValue))
                     }
 
                     case 187 /*new*/ ⇒ {
@@ -1868,19 +1866,21 @@ trait AI[D <: Domain] {
                     throw ct
 
                 case cause @ DomainException(message) ⇒
-                    throw new InterpretationFailedException[theDomain.type](
-                        cause, theDomain, pc, worklist, evaluated, operandsArray, localsArray
-                    )
+                    throw InterpretationFailedException(
+                        cause, theDomain)(
+                            pc, worklist, evaluated, operandsArray, localsArray)
 
                 case cause: Throwable ⇒
-                    throw new InterpretationFailedException[theDomain.type](
-                        cause, theDomain, pc, worklist, evaluated, operandsArray, localsArray
-                    )
+                    throw InterpretationFailedException(
+                        cause, theDomain)(
+                            pc, worklist, evaluated, operandsArray, localsArray)
             }
         }
 
         val result =
-            AIResultBuilder.completed(code, theDomain)(evaluated, operandsArray, localsArray)
+            AIResultBuilder.completed(
+                code, theDomain)(
+                    evaluated, operandsArray, localsArray)
         theDomain.abstractInterpretationEnded(result)
         if (tracer.isDefined) tracer.get.result(result)
         result
@@ -1901,18 +1901,25 @@ private object AI {
     private final val initialWorkList: List[PC] = List(0)
 
     /**
-     * Special value that is added to the work list before the program counter of the first
-     * instruction of a subroutine; it is replaced by the local variable index
-     * once we encounter a ret insruction.
+     * Special value that is added to the work list/list of evaluated instructions
+     * before the program counter of the first
+     * instruction of a subroutine.
      */
     // some value smaller than -65536 to avoid confusion with local variable indexes
-    private final val SUBROUTINE_START: PC = -80000008
+    // in the worklist this value is replaced by the local variable index
+    // once we encounter a ret insruction.
+    final val SUBROUTINE_START = -80000008
+    /**
+     * Special value that is added to the list of evaluated instructions
+     * to mark the end of the evaluation of a subroutine.
+     */
+    final val SUBROUTINE_END = -88888888
 
     /**
      * Special value that is added to the work list to mark the beginning of a
      * subroutine call.
      */
-    private final val SUBROUTINE: PC = -90000009 // some value smaller than -2^16
+    private final val SUBROUTINE = -90000009 // some value smaller than -2^16
 }
 
 /**

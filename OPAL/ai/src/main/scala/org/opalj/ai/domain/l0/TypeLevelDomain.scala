@@ -65,7 +65,7 @@ trait TypeLevelDomain
  */
 class BaseDomain
         extends TypeLevelDomain
-        with IgnoreMethodResults
+        with DefaultHandlingOfMethodResults
         with IgnoreSynchronization {
 
     type Id = String
@@ -82,7 +82,7 @@ class BaseDomain
 class BaseConfigurableDomain[I](
     val id: I)
         extends TypeLevelDomain
-        with IgnoreMethodResults
+        with DefaultHandlingOfMethodResults
         with IgnoreSynchronization {
 
     type Id = I
@@ -91,11 +91,11 @@ class BaseConfigurableDomain[I](
 class BaseRecordingDomain[I](
     val id: I)
         extends TypeLevelDomain
-        with IgnoreMethodResults
+        with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with RecordReturnFromMethodInstructions
         with RecordAllThrownExceptions
-        with RecordReturnVoidInstructions {
+        with RecordVoidReturns {
     
     type Id = I
 }

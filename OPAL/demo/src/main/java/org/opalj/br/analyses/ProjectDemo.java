@@ -82,8 +82,8 @@ public class ProjectDemo {
                             classFile, method);
 
                     AIResult result = ai.apply(classFile, method, domain);
-                    System.out.println(XHTML.dump(classFile, method, result,
-                            "Abstract Interpretation Succeeded"));
+                    System.out.println(XHTML.dump("Abstract Interpretation Succeeded",
+                            classFile, method, result));
 
                 }
             }

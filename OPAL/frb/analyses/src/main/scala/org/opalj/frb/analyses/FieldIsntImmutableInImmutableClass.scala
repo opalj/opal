@@ -62,7 +62,7 @@ private class ImmutabilityAnalysisDomain[I](val id: I)
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with PredefinedClassHierarchy
-        with IgnoreMethodResults
+        with DefaultHandlingOfMethodResults
         with IgnoreSynchronization {
 
     type Id = I

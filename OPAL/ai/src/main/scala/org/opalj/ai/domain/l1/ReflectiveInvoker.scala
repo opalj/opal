@@ -61,7 +61,7 @@ trait ReflectiveInvoker extends JavaObjectConversion { this: Domain ⇒
         declaringClass: ReferenceType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: List[DomainValue]): Option[MethodCallResult] = {
+        operands: Operands): Option[MethodCallResult] = {
 
         val (method, jReceiver, jOperands) =
             try {

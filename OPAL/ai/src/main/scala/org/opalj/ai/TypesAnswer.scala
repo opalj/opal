@@ -100,34 +100,6 @@ trait IsDoubleValue extends IsPrimitiveValue {
 }
 
 /**
- * The value is a reference value.
- *
- * @author Michael Eichberg
- */
-trait IsReferenceValue extends TypesAnswer with IsAReferenceValue {
-
-    /**
-     * In general a domain value can represent several distinct values (depending
-     * on the control flow). Each of these values can have a different upper bound and
-     * an upper bound can in turn consist of several interfaces and a class.
-     */
-    def referenceValues: Iterator[IsAReferenceValue] 
-
-}
-
-/**
- * Defines an extractor method for instances of `IsReferenceValue` objects.
- *
- * @author Michael Eichberg
- */
-object IsReferenceValue {
-
-    def unapply(value: IsReferenceValue): Option[Iterator[IsAReferenceValue]] = {
-        Some(value.referenceValues)
-    }
-}
-
-/**
  * Characterizes a single reference value. Captures the information about one of the values
  * a domain value may refer to. For example, in the following:
  * {{{
@@ -202,6 +174,34 @@ trait IsAReferenceValue {
 
 object IsAReferenceValue {
     def unapply(value: IsAReferenceValue): Option[IsAReferenceValue] = Some(value)
+}
+
+/**
+ * The value is a reference value.
+ *
+ * @author Michael Eichberg
+ */
+trait IsReferenceValue extends TypesAnswer with IsAReferenceValue {
+
+    /**
+     * In general a domain value can represent several distinct values (depending
+     * on the control flow). Each of these values can have a different upper bound and
+     * an upper bound can in turn consist of several interfaces and a class.
+     */
+    def referenceValues: Iterator[IsAReferenceValue]
+
+}
+
+/**
+ * Defines an extractor method for instances of `IsReferenceValue` objects.
+ *
+ * @author Michael Eichberg
+ */
+object IsReferenceValue {
+
+    def unapply(value: IsReferenceValue): Option[Iterator[IsAReferenceValue]] = {
+        Some(value.referenceValues)
+    }
 }
 
 /**

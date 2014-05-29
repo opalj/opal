@@ -295,6 +295,7 @@ object FieldType {
             case 'Z' ⇒ BooleanType
             case 'L' ⇒ ObjectType(ft.substring(1, ft.length - 1))
             case '[' ⇒ ArrayType(FieldType(ft.substring(1)))
+            case _   ⇒ throw new IllegalArgumentException(ft+" is not a valid field type descriptor")
         }
     }
 }
@@ -321,7 +322,7 @@ object ReferenceType {
 
     /**
      * Creates a representation of the described [[ReferenceType]].
-     * 
+     *
      * @param rt A string as passed to `java.lang.Class.forName(...)`.
      */
     def apply(rt: String): ReferenceType = {
@@ -707,11 +708,13 @@ final object ObjectType {
     final val Exception = ObjectType("java/lang/Exception")
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
     final val String = ObjectType("java/lang/String")
-    
+
     // Types related to the invokedynamic instruction
     final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
+    final val MethodHandles$Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")
     final val MethodType = ObjectType("java/lang/invoke/MethodType")
     final val LambdaMetafactory = ObjectType("java/lang/invoke/LambdaMetafactory")
+    final val CallSite = ObjectType("java/lang/invoke/CallSite")
 
     // Exceptions and errors that may be thrown by the JVM (i.e., instances of these 
     // exceptions may be created at runtime by the JVM)

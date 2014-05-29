@@ -40,8 +40,8 @@ import XHTML._
 case class FlowEntity(
         val pc: PC,
         val instruction: Instruction,
-        val operands: List[_ <: Domain#Value],
-        val locals: Array[_ <: Domain#Value],
+        val operands: Operands[_ >: Null <: Domain#DomainValue],
+        val locals: Locals[_ >: Null <: Domain#DomainValue],
         val properties: Option[String]) {
     val flowId = FlowEntity.nextFlowId
 }
@@ -245,8 +245,8 @@ trait XHTMLTracer extends AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: Array[List[domain.DomainValue]],
-            localsArray: Array[Array[domain.DomainValue]]) {
+            operandsArray: TheOperandsArray[domain.Operands],
+            localsArray: TheLocalsArray[domain.Locals]) {
         /*ignored*/
     }
 
@@ -272,8 +272,8 @@ trait XHTMLTracer extends AITracer {
         domain: Domain)(
             pc: PC,
             instruction: Instruction,
-            operands: List[domain.DomainValue],
-            locals: Array[domain.DomainValue]): Unit = {
+            operands: domain.Operands,
+            locals: domain.Locals): Unit = {
         if (!continuingWithBranch)
             newBranch()
 

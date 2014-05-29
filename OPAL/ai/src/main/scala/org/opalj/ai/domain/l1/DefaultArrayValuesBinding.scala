@@ -56,7 +56,7 @@ trait DefaultArrayValuesBinding
     override protected def ArrayValue( // for ArrayValue
         vo: ValueOrigin,
         theType: ArrayType,
-        values: Vector[DomainValue]): DomainArrayValue =
+        values: Array[DomainValue]): DomainArrayValue =
         new ArrayValue(vo, theType, values)
 
 }

@@ -28,7 +28,6 @@
  */
 package org.opalj
 package frb
-package test
 
 import br._
 import br.reader._

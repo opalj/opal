@@ -67,7 +67,7 @@ trait SimpleBooleanPropertyTracing
     }
 
     def updateProperty(pc: Int, newState: Boolean) {
-        propertiesArray(pc) = new BooleanProperty(newState)
+        setProperty(pc, new BooleanProperty(newState))
     }
 
     final type DomainProperty = BooleanProperty
@@ -77,15 +77,12 @@ trait SimpleBooleanPropertyTracing
     def initialPropertyValue: DomainProperty = new BooleanProperty(false)
 
     def hasPropertyOnExit: Boolean = {
-        allReturnInstructions forall { pc ⇒ getProperty(pc).state }
+        allReturnFromMethodInstructions forall { pc ⇒ getProperty(pc).state }
     }
 
     def hasPropertyOnNormalReturn: Boolean = {
-        allReturnInstructions forall { pc ⇒
+        allReturnFromMethodInstructions forall { pc ⇒
             !code.instructions(pc).isInstanceOf[ReturnInstruction] || getProperty(pc).state
         }
     }
 }
-
-
-
