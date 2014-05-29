@@ -1496,6 +1496,11 @@ trait AI[D <: Domain] {
                             fallThrough(theDomain.StringValue(pc, v) :: operands)
                         case LoadClass(v) ⇒
                             fallThrough(theDomain.ClassValue(pc, v) :: operands)
+                        case LoadMethodHandle(v) ⇒
+                            fallThrough(theDomain.MethodHandle(pc, v) :: operands)
+                        case LoadMethodType(v) ⇒
+                            fallThrough(theDomain.MethodType(pc, v) :: operands)
+
                     }
                     case 19 /*ldc_w*/ ⇒ instruction match {
                         case LoadInt_W(v) ⇒
@@ -1506,6 +1511,10 @@ trait AI[D <: Domain] {
                             fallThrough(theDomain.StringValue(pc, v) :: operands)
                         case LoadClass_W(v) ⇒
                             fallThrough(theDomain.ClassValue(pc, v) :: operands)
+                        case LoadMethodHandle_W(v) ⇒
+                            fallThrough(theDomain.MethodHandle(pc, v) :: operands)
+                        case LoadMethodType_W(v) ⇒
+                            fallThrough(theDomain.MethodType(pc, v) :: operands)
                     }
                     case 20 /*ldc2_w*/ ⇒ instruction match {
                         case LoadLong(v) ⇒

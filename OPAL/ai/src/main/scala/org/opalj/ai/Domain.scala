@@ -536,6 +536,30 @@ trait Domain {
     //
     // -----------------------------------------------------------------------------------
 
+    /**
+     * Called by the AI framework for each load constant method handle instruction to
+     * get a representation of/a DomainValue that represents the handle.
+     *
+     * @param handle A valid method handle.
+     * @return An `InitializedObjectValue(ObjectType.MethodHandle)`.
+     * 		Hence, this method needs to be overridden
+     * 		if resolution of MethodHandle based method calls should be performed.
+     */
+    def MethodHandle(pc: PC, handle: MethodHandle): DomainValue =
+        InitializedObjectValue(pc, ObjectType.MethodHandle)
+
+    /**
+     * Called by the AI framework for each load constant method type instruction to
+     * get a domain-specific representation of the method descriptor as a `MethodType`.
+     *
+     * @param handle A valid method descriptor.
+     * @return An `InitializedObjectValue(ObjectType.MethodType)`.
+     * 		Hence, this method needs to be overridden
+     * 		if resolution of MethodType based method calls should be performed.
+     */
+    def MethodType(pc: PC, descriptor: MethodDescriptor): DomainValue =
+        InitializedObjectValue(pc, ObjectType.MethodType)
+
     final def justThrows(value: ExceptionValue): ThrowsException[ExceptionValues] =
         ThrowsException(Seq(value))
 
