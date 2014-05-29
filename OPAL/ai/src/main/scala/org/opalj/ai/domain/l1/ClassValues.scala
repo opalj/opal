@@ -105,7 +105,15 @@ trait ClassValues extends StringValues {
     override def ClassValue(vo: ValueOrigin, value: Type): DomainObjectValue
 
     protected[l1] def simpleClassForNameCall(pc: PC, className: String): MethodCallResult = {
-        val classValue = ReferenceType(className.replace('.', '/'))
+        val classValue =
+            try {
+                ReferenceType(className.replace('.', '/'))
+            } catch {
+                case iae: IllegalArgumentException ⇒
+                    return justThrows(
+                        InitializedObjectValue(pc, ObjectType.ClassNotFoundException)
+                    )
+            }
         if (classValue.isObjectType) {
             val objectType = classValue.asObjectType
             if (classHierarchy.isKnown(objectType) ||
