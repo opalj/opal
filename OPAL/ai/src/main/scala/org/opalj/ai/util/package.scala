@@ -52,17 +52,15 @@ package object util {
      */
     @inline def removeFirstUnless(worklist: List[PC], pc: PC)(test: PC ⇒ Boolean): List[PC] = {
         var newWorklist: List[PC] = List.empty
-        var removedPC: Boolean = false
         var remainingWorklist = worklist
         while (remainingWorklist.nonEmpty) {
             val thePC = remainingWorklist.head
             if (test(thePC))
                 return worklist
-            if (thePC == pc) {
+            if (thePC == pc)
                 return newWorklist.reverse ::: remainingWorklist.tail
-            } else {
-                newWorklist = thePC :: newWorklist
-            }
+
+            newWorklist = thePC :: newWorklist
             remainingWorklist = remainingWorklist.tail
         }
         worklist
@@ -76,7 +74,6 @@ package object util {
      */
     @inline def removeFirst(worklist: List[PC], pc: PC): List[PC] = {
         var newWorklist: List[PC] = List.empty
-        var removedPC: Boolean = false
         var remainingWorklist = worklist
         while (remainingWorklist.nonEmpty) {
             val thePC = remainingWorklist.head

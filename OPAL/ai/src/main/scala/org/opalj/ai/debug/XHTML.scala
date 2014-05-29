@@ -365,5 +365,16 @@ object XHTML {
         }
     }
 
+    def evaluatedInstructionsToXHTML(evaluated: List[PC]) = {
+        evaluated.reverse.map { instruction ⇒
+            instruction match {
+                case org.opalj.ai.AI.SUBROUTINE_START ⇒
+                    "<details><summary>Subroutine</summary><div style=\"margin-left:2em;\">"
+                case org.opalj.ai.AI.SUBROUTINE_END ⇒
+                    "</div></details>"
+                case _ ⇒ instruction.toString+" "
+            }
+        }.mkString("Evaluated instructions:<div style=\"margin-left:2em;\">","","</div>")
+    }
 }
 

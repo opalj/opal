@@ -50,10 +50,8 @@ object InterpretMethod {
         override val tracer =
             //Some(new ConsoleTracer {})
             Some(
-                new MultiTracer(
-                    new ConsoleTracer {},
-                    //new ConsoleEvaluationTracer {},
-                    new XHTMLTracer {})
+                new ConsoleEvaluationTracer {}
+            //new MultiTracer(new ConsoleTracer {}, new XHTMLTracer {})
             )
     }
 
@@ -157,12 +155,16 @@ object InterpretMethod {
 
         import debug.XHTML.{ dump, writeAndOpenDump }
 
+      
+
         try {
             val result =
                 AI(classFile, method, createDomain(project, classFile, method))
             val domain = result.domain
             writeAndOpenDump(dump(
-                Some("Result("+domainClass.getName()+"): "+(new java.util.Date).toString),
+                Some(
+                    "Result("+domainClass.getName()+"): "+(new java.util.Date).toString+"<br />"+
+                        XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
                 Some(classFile),
                 Some(method),
                 method.body.get,
@@ -171,13 +173,13 @@ object InterpretMethod {
                     result.localsArray)
             )
         } catch {
-            case ife : InterpretationFailedException ⇒
+            case ife: InterpretationFailedException ⇒
                 val header =
                     Some("<p><b>"+domainClass.getName()+"</b></p>"+
                         ife.cause.getMessage()+"<br>"+
                         ife.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                         "Current instruction: "+ife.pc+"<br>"+
-                        ife.evaluated.mkString("Evaluated instructions:\n<br>", ", ", "<br>") +
+                        XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
                         ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
                     )
                 val evaluationDump =
