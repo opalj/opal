@@ -75,7 +75,7 @@ case class INVOKEDYNAMIC(
     override val methodDescriptor: MethodDescriptor)
         extends InvocationInstruction {
 
-    override def opcode: Int = 186
+    override def opcode: Opcode = INVOKEDYNAMIC.opcode
 
     override def mnemonic: String = "invokedynamic"
 
@@ -124,6 +124,7 @@ object INVOKEDYNAMIC {
 
     val runtimeExceptions = List(ObjectType.BootstrapMethodError)
 
-}
+    final val opcode = 186
 
+}
 

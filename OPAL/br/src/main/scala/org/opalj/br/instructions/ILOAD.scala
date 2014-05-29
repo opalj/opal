@@ -40,8 +40,13 @@ case class ILOAD(
         extends LoadLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
-    def opcode: Int = 21
+    override def opcode: Opcode = ILOAD.opcode
 
     def mnemonic: String = "iload"
+
+}
+object ILOAD {
+
+    final val opcode = 21
 
 }

@@ -39,8 +39,13 @@ case class LSTORE(
     lvIndex: Int)
         extends StoreLocalVariableInstruction with ExplicitLocalVariableIndex {
 
-    def opcode: Int = 55
+    override def opcode: Opcode = LSTORE.opcode
 
     def mnemonic: String = "lstore"
+
+}
+object LSTORE {
+
+    final val opcode = 55
 
 }
