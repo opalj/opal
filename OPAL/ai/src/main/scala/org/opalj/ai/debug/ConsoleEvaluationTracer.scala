@@ -38,7 +38,7 @@ import br.instructions.Instruction
  * console. This tracer is particularly useful to understand the handling of JSR/RET
  * instructions.
  *
- * If you wan to reuse this tracer to trace evaluations of different methods
+ * If you want to reuse this tracer to trace evaluations of different methods
  * you should call the `reset` method between two calls.
  *
  * ==Thread Safety==
