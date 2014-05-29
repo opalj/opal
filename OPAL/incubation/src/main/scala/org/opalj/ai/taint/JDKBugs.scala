@@ -262,7 +262,7 @@ package taint {
     //            pc: Int,
     //            name: String,
     //            methodDescriptor: MethodDescriptor,
-    //            operands: List[DomainValue]): Boolean = {
+    //            operands: Operands): Boolean = {
     //            operands.exists { op ⇒
     //                // test if one of the relevant parameters was passed to the method
     //                origin(op).exists(pc ⇒ contextNode.identifier._1.contains(pc))
@@ -279,7 +279,7 @@ package taint {
     //                                     declaringClass: ReferenceType,
     //                                     name: String,
     //                                     methodDescriptor: MethodDescriptor,
-    //                                     operands: List[DomainValue]) = {
+    //                                     operands: Operands) = {
     //            isRelevantCall(pc, name, methodDescriptor, operands)
     //            // TODO ...
     //            super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
@@ -289,7 +289,7 @@ package taint {
     //                                   declaringClass: ReferenceType,
     //                                   name: String,
     //                                   methodDescriptor: MethodDescriptor,
-    //                                   operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+    //                                   operands: Operands): OptionalReturnValueOrExceptions = {
     //            isRelevantCall(pc, name, methodDescriptor, operands)
     //            // TODO ...
     //            // check if we have a call to Class.newInstance...
@@ -300,7 +300,7 @@ package taint {
     //                                   declaringClass: ReferenceType,
     //                                   methodName: String,
     //                                   methodDescriptor: MethodDescriptor,
-    //                                   operands: List[DomainValue]) = {
+    //                                   operands: Operands) = {
     //            isRelevantCall(pc, methodName, methodDescriptor, operands)
     //            // TODO ...
     //            super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
@@ -311,7 +311,7 @@ package taint {
     //            declaringClass: ReferenceType,
     //            methodName: String,
     //            methodDescriptor: MethodDescriptor,
-    //            operands: List[DomainValue]): OptionalReturnValueOrExceptions = {
+    //            operands: Operands): OptionalReturnValueOrExceptions = {
     //
     //            def doTypeLevelInvoke =
     //                super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)

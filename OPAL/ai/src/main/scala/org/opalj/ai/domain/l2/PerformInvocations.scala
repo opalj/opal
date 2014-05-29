@@ -37,95 +37,111 @@ import br._
 import br.instructions._
 import br.analyses.{ Project, ClassHierarchy }
 
+import org.opalj.ai.util.Locals
+
 /**
+ * Mix in this trait if methods that are called by `invokeXXX` instructions should
+ * actually be interpreted using a custom domain.
+ *
  * @author Michael Eichberg
  */
 trait PerformInvocations[Source]
         extends Domain
         with l0.TypeLevelInvokeInstructions
-        with ProjectBasedClassHierarchy[Source] { theDomain ⇒
+        with ProjectBasedClassHierarchy[Source] { callingDomain ⇒
 
-    def Operands(operands: Iterable[DomainValue]): DomainValues =
-        DomainValues(theDomain)(operands)
-
-    // the function to identify recursive calls
+    /**
+     * Identifies recursive calls.
+     *
+     * @note This function can simply always return `false`, if the domain that is used
+     *      for analyzing the called method does not follow method invocations (does
+     *      not perform invocations.) I.e., the domain used for analyzing a called method
+     *      can be ''any'' domain; in particular a domain that does not perform
+     *      invocations.
+     */
     def isRecursive(
         definingClass: ClassFile,
         method: Method,
-        operands: DomainValues): Boolean
+        operands: Operands): Boolean
 
+    /**
+     * Encapsulates the information required to perform the invocation of the target
+     * method.
+     */
     trait InvokeExecutionHandler {
 
-        // the domain to use
-        val domain: Domain with RecordReturnFromMethodInstructions with RecordReturnVoidInstructions with DefaultRecordThrownExceptions
+        /**
+         * The domain that will be used to perform the abstract interpretation of the
+         * called method.
+         *
+         * In general, explicit support is required to identify recursive calls
+         * if the domain also follows method invocations,
+         */
+        val domain: Domain with MethodCallResults
 
-        // the abstract interpreter
-        val ai: AI[_ >: domain.type]
+        /**
+         *  The abstract interpreter that will be used for the abstract interpretation.
+         */
+        def ai: AI[_ >: domain.type]
 
         def perform(
             pc: PC,
             definingClass: ClassFile,
             method: Method,
-            parameters: Array[domain.DomainValue]): MethodCallResult = {
+            parameters: org.opalj.ai.util.Locals[domain.DomainValue]): MethodCallResult = {
 
-            val aiResult = ai.perform(definingClass, method, domain)(Some(parameters))
+            val aiResult =
+                ai.perform(method.body.get, domain)(List.empty[domain.DomainValue], parameters)
             transformResult(pc, method, aiResult)
         }
 
-        // the function to transform the result
+        /**
+         * Converts the results of the evaluation of the called method into this domain.
+         */
         protected[this] def transformResult(
             callerPC: PC,
             calledMethod: Method,
             result: AIResult { val domain: InvokeExecutionHandler.this.domain.type }): MethodCallResult = {
             val domain = result.domain
-            val operandsArray = result.operandsArray
-            val thrownExceptions = domain.allThrownExceptions.values map { _.adapt(theDomain, callerPC) }
-
-            if (calledMethod.descriptor.returnType eq VoidType) {
-                if (domain.allReturnVoidInstructions.isEmpty) {
-                    // The method must have returned with an exception.
-                    ThrowsException(thrownExceptions)
-                } else if (thrownExceptions.nonEmpty) {
-                    ComputationWithSideEffectOrException(thrownExceptions)
-                } else {
-                    ComputationWithSideEffectOnly
-                }
+            val thrownExceptions = domain.thrownExceptions(callingDomain, callerPC)
+            if (!domain.returnedNormally) {
+                // The method must have returned with an exception.
+                ThrowsException(thrownExceptions)
             } else {
-                // The method potentially returns some value...
-                val returnInstructions = domain.allReturnInstructions
-                if (returnInstructions.nonEmpty) {
-                    val returnedValue =
-                        Some(
-                            result.domain.summarize(
-                                callerPC,
-                                domain.allReturnInstructions mapToList { pc ⇒ operandsArray(pc).head }
-                            ).adapt(theDomain, callerPC)
-                        )
+                if (calledMethod.descriptor.returnType eq VoidType) {
+                    if (thrownExceptions.nonEmpty) {
+                        ComputationWithSideEffectOrException(thrownExceptions)
+                    } else {
+                        ComputationWithSideEffectOnly
+                    }
+                } else {
+                    val returnedValue = domain.returnedValue(callingDomain, callerPC)
                     if (thrownExceptions.nonEmpty) {
                         ComputedValueAndException(returnedValue, thrownExceptions)
                     } else {
                         ComputedValue(returnedValue)
                     }
-                } else {
-                    // The method must have returned with an exception.
-                    ThrowsException(thrownExceptions)
                 }
             }
         }
     }
 
+    /**
+     * Returns (most often creates) the [[InvokeExecutionHandler]] that will be
+     * used to perform the abstract interpretation of the called method.
+     */
     def invokeExecutionHandler(
         pc: PC,
         definingClass: ClassFile,
         method: Method,
-        operands: List[DomainValue]): InvokeExecutionHandler
+        operands: Operands): InvokeExecutionHandler
 
     override def invokevirtual(
         pc: PC,
         declaringClass: ReferenceType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult =
+        operands: Operands): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokeinterface(
@@ -133,7 +149,7 @@ trait PerformInvocations[Source]
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult =
+        operands: Operands): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokespecial(
@@ -141,65 +157,76 @@ trait PerformInvocations[Source]
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult =
+        operands: Operands): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
-    final override def invokestatic(
+    /**
+     * Implements the general strategy for handling "invokestatic" calls.
+     */
+    override def invokestatic(
         pc: PC,
         declaringClass: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult = {
+        operands: Operands): MethodCallResult = {
 
         def fallback() =
             baseInvokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
 
-        if (declaringClass.isArrayType)
-            // given that arrays (up until Java 7) do not have any static methods, we 
-            // should not encounter this situation...
-            return fallback()
-
         classHierarchy.resolveMethodReference(
+            // the cast is safe since arrays do not have any static methods
             declaringClass.asObjectType,
             methodName,
             methodDescriptor,
             project) match {
                 case Some(method) if !method.isNative ⇒
                     val classFile = project.classFile(method)
-                    if (isRecursive(classFile, method, Operands(operands)))
+                    if (isRecursive(classFile, method, operands))
                         fallback()
                     else
                         invokestatic(pc, classFile, method, operands)
                 case _ ⇒
+                    println(
+                        "[info] method reference cannot be resolved: "+
+                            declaringClass.toJava+
+                            "{ static "+methodDescriptor.toJava(methodName)+"}")
                     fallback()
             }
     }
 
-    def baseInvokestatic(
+    /**
+     * Handle those `invokestatic` calls for which we have no concrete method (e.g.,
+     * the respective class file was never loaded or the method is native) or
+     * if have a recursive invocation.
+     */
+    protected[this] def baseInvokestatic(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult = {
+        operands: Operands): MethodCallResult = {
         super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
     }
 
-    def invokestatic(
+    /**
+     * Performs the invocation of the given method using the given operands.
+     */
+    protected[this] def invokestatic(
         pc: PC,
         definingClass: ClassFile,
         method: Method,
-        operands: List[DomainValue]): MethodCallResult = {
+        operands: Operands): MethodCallResult = {
 
         val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
-        val parameters = executionHandler.domain.DomainValueTag.newArray(method.body.get.maxLocals)
+        val parameters = util.Locals[executionHandler.domain.DomainValue](method.body.get.maxLocals)(executionHandler.domain.DomainValueTag)
         var localVariableIndex = 0
         for ((operand, index) ← operands.view.reverse.zipWithIndex) {
-            parameters(localVariableIndex) =
-                operand.adapt(executionHandler.domain, -(index + 1))
+            parameters.set(localVariableIndex,
+                operand.adapt(executionHandler.domain, -(index + 1)))
             localVariableIndex += operand.computationalType.operandSize
         }
-        executionHandler.perform(pc, definingClass, method, parameters)
+        val callResult = executionHandler.perform(pc, definingClass, method, parameters)
+        // TODO [Improvement] Add support to map a value back to a parameter if a passed parameter is returned. (E.g. Math.min(a,b) will either return a or b.) 
+        callResult
     }
 }
-
-

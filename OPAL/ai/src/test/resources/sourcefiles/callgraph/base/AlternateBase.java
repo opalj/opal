@@ -28,7 +28,7 @@
  */
 package callgraph.base;
 
-import org.opal.ai.test.invokedynamic.annotations.InvokedMethod;
+import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
 
 /**
  * This class was used to create a class file with some well defined attributes. The

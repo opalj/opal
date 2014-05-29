@@ -41,7 +41,7 @@ import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
 /**
- * Tests some of the core methods of the Code attribute.
+ * Tests that type annotations can be read.
  *
  * @author Michael Eichberg
  */

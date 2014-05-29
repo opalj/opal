@@ -77,7 +77,7 @@ class PropertyTracingTest
             declaringClass: ObjectType,
             name: String,
             methodDescriptor: MethodDescriptor,
-            operands: List[DomainValue]): MethodCallResult = {
+            operands: Operands): MethodCallResult = {
 
             // let's check if the first parameter (_ == -2) passed to a method is 
             // passed to a method called sanitize...

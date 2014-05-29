@@ -30,14 +30,14 @@ package org.opalj
 package ai
 package domain
 
-import language.implicitConversions
-
 /**
- * Records the exceptions thrown by a method. This trait can be used to record
- * the thrown exceptions independently of the precision of the domain.
+ * Generic infrastructure to record the exceptions thrown by a method.
+ * This trait can be used to record the thrown exceptions independently of the
+ * precision of the domain.
  *
  * ==Usage==
- * A domain that mixes in this trait should only be used to analyze a single method.
+ * This domain can be stacked on top of other traits that handle
+ * [[abruptMethodExecution]]s.
  *
  * ==Thread Safety==
  * This class is not thread safe. I.e., this domain can only be used if
@@ -64,10 +64,14 @@ trait RecordThrownExceptions extends Domain {
     /**
      * Wraps the given value into a `ThrownException`.
      *
+     * @param pc The program counter of the instruction that throws the exception. It
+     * 		is automatically stored in the map that associates instructions with
+     *   	the exceptions that are thrown.
+     *
      * @see For details study the documentation of the abstract type `ThrownException`
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
-    protected[this] def thrownException(pc: PC, value: ExceptionValue): ThrownException
+    protected[this] def recordThrownException(pc: PC, value: ExceptionValue): ThrownException
 
     /**
      * Joins the previously thrown exception and the newly thrown exception. Both
@@ -96,7 +100,7 @@ trait RecordThrownExceptions extends Domain {
                     case Some(previouslyThrownException) ⇒
                         joinThrownExceptions(pc, previouslyThrownException, exception)
                     case None ⇒
-                        thrownException(pc, exception)
+                        recordThrownException(pc, exception)
                 }
             )
         super.abruptMethodExecution(pc, exception)

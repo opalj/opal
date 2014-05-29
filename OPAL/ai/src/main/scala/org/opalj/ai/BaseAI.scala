@@ -43,7 +43,7 @@ class BaseAI extends AI[Domain] {
 
 }
 
-object BaseAI extends BaseAI {
-
-}
-
+/**
+ * Instance of the base abstract interpreter. 
+ */
+object BaseAI extends BaseAI 

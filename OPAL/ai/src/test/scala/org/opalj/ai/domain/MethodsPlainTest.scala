@@ -1002,7 +1002,7 @@ private object MethodsPlainTest {
     class RecordingDomain
             extends domain.l0.TypeLevelDomain
             with IgnoreSynchronization
-            with IgnoreThrownExceptions {
+            with DefaultHandlingForThrownExceptions {
 
         type Id = String
         def id = "SimpleRecordingDomain"

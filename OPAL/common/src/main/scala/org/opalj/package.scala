@@ -82,6 +82,8 @@ package object opalj {
 
     /**
      * A program counter identifies an instruction in the code array.
+     *
+     * A program counter is a value in the range `[0/*UShort.min*/, 65535/*UShort.max*/]`
      */
     type PC = UShort
 
@@ -89,6 +91,8 @@ package object opalj {
      * A collection of program counters using a UShortSet as its backing collection.
      *
      * Using PCs is in particular well suited for small(er) collections.
+     *
+     * @note This type alias serves comprehension purposes only.
      */
     type PCs = collection.UShortSet
 

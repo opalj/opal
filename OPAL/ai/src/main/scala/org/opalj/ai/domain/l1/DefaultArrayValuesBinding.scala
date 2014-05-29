@@ -54,10 +54,10 @@ trait DefaultArrayValuesBinding
     //
 
     override protected def ArrayValue( // for ArrayValue
-        pc: PC,
+        vo: ValueOrigin,
         theType: ArrayType,
-        values: Vector[DomainValue]): DomainArrayValue =
-        new ArrayValue(pc, theType, values)
+        values: Array[DomainValue]): DomainArrayValue =
+        new ArrayValue(vo, theType, values)
 
 }
 

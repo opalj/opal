@@ -10,7 +10,7 @@ homepage in ThisBuild := Some(url("http://www.opal-project.de"))
 
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion in ThisBuild := "2.11.0"
+scalaVersion in ThisBuild := "2.11.1"
 
 scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature", "-unchecked", "-Xlint")
 
@@ -33,7 +33,7 @@ javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
 libraryDependencies in ThisBuild += "junit" % "junit" % "4.11" % "test"
 
-libraryDependencies in ThisBuild += "org.scalatest" %% "scalatest" % "2.1.5" % "test"
+libraryDependencies in ThisBuild += "org.scalatest" %% "scalatest" % "2.1.6" % "test"
 
 testOptions in ThisBuild <<= 
   baseDirectory map { 

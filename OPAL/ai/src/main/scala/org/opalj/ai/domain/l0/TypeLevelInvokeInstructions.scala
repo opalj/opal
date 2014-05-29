@@ -66,7 +66,7 @@ trait TypeLevelInvokeInstructions { this: Domain ⇒
         declaringClass: ReferenceType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult =
+        operands: Operands): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokeinterface(
@@ -74,7 +74,7 @@ trait TypeLevelInvokeInstructions { this: Domain ⇒
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult =
+        operands: Operands): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokespecial(
@@ -82,7 +82,7 @@ trait TypeLevelInvokeInstructions { this: Domain ⇒
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult =
+        operands: Operands): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokestatic(
@@ -90,7 +90,7 @@ trait TypeLevelInvokeInstructions { this: Domain ⇒
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): MethodCallResult =
+        operands: Operands): MethodCallResult =
         ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
 
     override def invokedynamic(
@@ -98,7 +98,7 @@ trait TypeLevelInvokeInstructions { this: Domain ⇒
         bootstrapMethod: BootstrapMethod,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: List[DomainValue]): Computation[DomainValue, ExceptionValues] =
+        operands: Operands): Computation[DomainValue, ExceptionValues] =
         // TODO [Clarify] This works for Groovy 2.1.5' use of invokedynamice, but does it work in general?
         //ComputedValue(TypedValue(pc, ObjectType.Object))
         ComputedValue(TypedValue(pc, methodDescriptor.returnType))

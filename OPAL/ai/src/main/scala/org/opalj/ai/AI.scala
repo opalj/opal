@@ -147,7 +147,7 @@ trait AI[D <: Domain] {
     protected def initialOperands(
         classFile: ClassFile,
         method: Method,
-        domain: D): List[domain.DomainValue] =
+        domain: D): domain.Operands =
         List.empty[domain.DomainValue]
 
     /**
@@ -175,7 +175,7 @@ trait AI[D <: Domain] {
         classFile: ClassFile,
         method: Method,
         domain: D)(
-            someLocals: Option[IndexedSeq[domain.DomainValue]] = None): Array[domain.DomainValue] = {
+            someLocals: Option[IndexedSeq[domain.DomainValue]] = None): domain.Locals = {
 
         import domain.DomainValueTag
 
@@ -186,20 +186,28 @@ trait AI[D <: Domain] {
                 )
 
             val maxLocals = method.body.get.maxLocals
-            if (l.size >= maxLocals)
-                l.toArray
-            else {
-                // the number of given locals is smaller than the number of max locals
+            if (l.size > maxLocals) {
+                // l.toArray
+                throw new IllegalArgumentException(
+                    "the number of initial locals("+l.size+
+                        ") is larger than \"maxLocals("+maxLocals+")\""
+                )
+            } else {
+                // the number of given locals is smaller than or equal to the number of max locals
                 // (the former number still has to be larger or equal to the number of 
                 // parameter values (including "this"))
-                val locals = new Array[domain.DomainValue](maxLocals)
-                for (i ← (0 until l.size))
-                    locals(i) = l(i)
+                val locals = org.opalj.ai.util.Locals[domain.DomainValue](maxLocals)
+                // for (i ← (0 until l.size)) locals(i) = l(i)
+                var i = l.size - 1
+                while (i >= 0) {
+                    locals.set(i, l(i))
+                    i -= 1
+                }
                 locals
             }
         }.getOrElse { // there are no locals at all...
             val code = method.body.get
-            val locals = new Array[domain.DomainValue](code.maxLocals)
+            val locals = org.opalj.ai.util.Locals[domain.DomainValue](code.maxLocals)
             var localVariableIndex = 0
 
             // Calculates the initial "PC" associated with a method's parameter.
@@ -209,12 +217,12 @@ trait AI[D <: Domain] {
                 val thisType = classFile.thisType
                 val thisValue =
                     domain.NonNullObjectValue(origin(localVariableIndex), thisType)
-                locals.update(localVariableIndex, thisValue)
+                locals.set(localVariableIndex, thisValue)
                 localVariableIndex += 1 /*==thisType.computationalType.operandSize*/
             }
             for (parameterType ← method.descriptor.parameterTypes) {
                 val ct = parameterType.computationalType
-                locals.update(
+                locals.set(
                     localVariableIndex,
                     domain.TypedValue(origin(localVariableIndex), parameterType))
                 localVariableIndex += ct.operandSize
@@ -272,17 +280,17 @@ trait AI[D <: Domain] {
     protected[ai] def perform(
         code: Code,
         theDomain: D)(
-            initialOperands: List[theDomain.DomainValue],
-            initialLocals: Array[theDomain.DomainValue]): AIResult { val domain: theDomain.type } = {
+            initialOperands: theDomain.Operands,
+            initialLocals: theDomain.Locals): AIResult { val domain: theDomain.type } = {
 
         import theDomain.DomainValueTag
 
         val codeLength = code.instructions.length
 
-        val operandsArray = new Array[List[theDomain.DomainValue]](codeLength)
+        val operandsArray = new Array[theDomain.Operands](codeLength)
         operandsArray(0) = initialOperands
 
-        val localsArray = new Array[Array[theDomain.DomainValue]](codeLength)
+        val localsArray = new Array[theDomain.Locals](codeLength)
         localsArray(0) = initialLocals
 
         continueInterpretation(
@@ -335,8 +343,8 @@ trait AI[D <: Domain] {
         theDomain: D)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: Array[List[theDomain.DomainValue]],
-            localsArray: Array[Array[theDomain.DomainValue]]): AIResult { val domain: theDomain.type } = {
+            operandsArray: TheOperandsArray[theDomain.Operands],
+            localsArray: TheLocalsArray[theDomain.Locals]): AIResult { val domain: theDomain.type } = {
 
         if (tracer.isDefined)
             tracer.get.continuingInterpretation(code, theDomain)(
@@ -524,8 +532,7 @@ trait AI[D <: Domain] {
                                 subroutine
                             )
                         }
-                        val updatedLocals = locals.clone
-                        updatedLocals(lvIndex) = theDomain.Null
+                        val updatedLocals = locals.updated(lvIndex, theDomain.Null)
 
                         gotoTarget(retPC, returnAddress, false, operands, updatedLocals)
                     }
@@ -767,21 +774,6 @@ trait AI[D <: Domain] {
                     }
                     if (computation.throwsException)
                         handleExceptions(computation.exceptions)
-                }
-
-                /*
-                 * Copies the current locals variable array and updates the local variable
-                 * stored at the given `index` in the new locals variable array with
-                 * the given `domainValue`.
-                 *
-                 * @param lvIndex A valid index in the locals variable array.
-                 * @param domainValue A domain value.
-                 * @return The updated locals variable array.
-                 */
-                def updateLocals(lvIndex: Int, domainValue: DomainValue): Locals = {
-                    val newLocals = locals.clone
-                    newLocals.update(lvIndex, domainValue)
-                    newLocals
                 }
 
                 @inline def as[I <: Instruction](i: Instruction): I = i.asInstanceOf[I]
@@ -1029,7 +1021,7 @@ trait AI[D <: Domain] {
                                     abruptMethodExecution(pc, exceptionValue)
 
                                 case IsReferenceValue(referenceValues) ⇒
-                                // TODO [issue or documentation lacking] Shouldn't it be a foreach loop in case of "throw (if(x) ExA else ExB)"
+                                    // TODO [issue or documentation lacking] Shouldn't it be a foreach loop in case of "throw (if(x) ExA else ExB)"
                                     val isHandled = referenceValues.forall(referenceValue ⇒
                                         // find the exception handler that matches the given 
                                         // exception
@@ -1422,35 +1414,35 @@ trait AI[D <: Domain] {
                         val lvIndex = as[StoreLocalVariableInstruction](instruction).lvIndex
                         fallThrough(
                             operands.tail,
-                            updateLocals(lvIndex, operands.head))
+                            locals.updated(lvIndex, operands.head))
                     case 75 /*astore_0*/
                         | 71 /*dstore_0*/
                         | 67 /*fstore_0*/
                         | 63 /*lstore_0*/
                         | 59 /*istore_0*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(0, operands.head))
+                            operands.tail, locals.updated(0, operands.head))
                     case 76 /*astore_1*/
                         | 72 /*dstore_1*/
                         | 68 /*fstore_1*/
                         | 64 /*lstore_1*/
                         | 60 /*istore_1*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(1, operands.head))
+                            operands.tail, locals.updated(1, operands.head))
                     case 77 /*astore_2*/
                         | 73 /*dstore_2*/
                         | 69 /*fstore_2*/
                         | 65 /*lstore_2*/
                         | 61 /*istore_2*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(2, operands.head))
+                            operands.tail, locals.updated(2, operands.head))
                     case 78 /*astore_3*/
                         | 74 /*dstore_3*/
                         | 70 /*fstore_3*/
                         | 66 /*lstore_3*/
                         | 62 /*istore_3*/ ⇒
                         fallThrough(
-                            operands.tail, updateLocals(3, operands.head))
+                            operands.tail, locals.updated(3, operands.head))
 
                     //
                     // PUSH CONSTANT VALUE
@@ -1838,7 +1830,7 @@ trait AI[D <: Domain] {
                     case 132 /*iinc*/ ⇒ {
                         val iinc = instruction.asInstanceOf[IINC]
                         val newValue = theDomain.iinc(pc, locals(iinc.lvIndex), iinc.constValue)
-                        fallThrough(operandsArray(pc), updateLocals(iinc.lvIndex, newValue))
+                        fallThrough(operandsArray(pc), locals.updated(iinc.lvIndex, newValue))
                     }
 
                     case 187 /*new*/ ⇒ {
@@ -1860,14 +1852,14 @@ trait AI[D <: Domain] {
                     throw ct
 
                 case cause @ DomainException(message) ⇒
-                    throw new InterpretationFailedException[theDomain.type](
-                        cause, theDomain, pc, worklist, evaluated, operandsArray, localsArray
-                    )
+                    throw InterpretationFailedException(
+                        cause, theDomain)(
+                            pc, worklist, evaluated, operandsArray, localsArray)
 
                 case cause: Throwable ⇒
-                    throw new InterpretationFailedException[theDomain.type](
-                        cause, theDomain, pc, worklist, evaluated, operandsArray, localsArray
-                    )
+                    throw InterpretationFailedException(
+                        cause, theDomain)(
+                            pc, worklist, evaluated, operandsArray, localsArray)
             }
         }
 

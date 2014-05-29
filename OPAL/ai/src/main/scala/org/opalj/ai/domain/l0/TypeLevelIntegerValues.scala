@@ -60,24 +60,48 @@ trait TypeLevelIntegerValues extends Domain {
     }
 
     trait BooleanValue
-        extends ComputationalTypeIntegerValue
-        with IsBooleanValue { this: DomainValue ⇒ }
+            extends ComputationalTypeIntegerValue
+            with IsBooleanValue { this: DomainValue ⇒
+
+        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+            target.BooleanValue(vo)
+    }
 
     trait ByteValue
-        extends ComputationalTypeIntegerValue
-        with IsByteValue { this: DomainValue ⇒ }
+            extends ComputationalTypeIntegerValue
+            with IsByteValue { this: DomainValue ⇒
+
+        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+            target.ByteValue(vo)
+
+    }
 
     trait CharValue
-        extends ComputationalTypeIntegerValue
-        with IsCharValue { this: DomainValue ⇒ }
+            extends ComputationalTypeIntegerValue
+            with IsCharValue { this: DomainValue ⇒
+
+        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+            target.CharValue(vo)
+
+    }
 
     trait ShortValue
-        extends ComputationalTypeIntegerValue
-        with IsShortValue { this: DomainValue ⇒ }
+            extends ComputationalTypeIntegerValue
+            with IsShortValue { this: DomainValue ⇒
+
+        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+            target.ShortValue(vo)
+
+    }
 
     trait IntegerValue
-        extends ComputationalTypeIntegerValue
-        with IsIntegerValue { this: DomainValue ⇒ }
+            extends ComputationalTypeIntegerValue
+            with IsIntegerValue { this: DomainValue ⇒
+
+        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+            target.IntegerValue(vo)
+
+    }
 
     //
     // QUESTION'S ABOUT VALUES

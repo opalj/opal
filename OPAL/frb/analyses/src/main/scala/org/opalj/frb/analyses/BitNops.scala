@@ -46,6 +46,7 @@ import org.opalj.ai.domain._
 private class BitNopsDomain[I](override val id: I)
         extends Domain
         with DefaultDomainValueBinding
+        with DefaultHandlingOfMethodResults
         with Configuration
         with PredefinedClassHierarchy
         with l1.DefaultPreciseIntegerValues
@@ -55,7 +56,6 @@ private class BitNopsDomain[I](override val id: I)
         with l0.TypeLevelInvokeInstructions
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultReferenceValuesBinding
-        with IgnoreMethodResults
         with IgnoreSynchronization {
 
     type Id = I

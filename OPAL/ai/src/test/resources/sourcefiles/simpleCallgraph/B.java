@@ -28,9 +28,9 @@
  */
 package simpleCallgraph;
 
-import org.opal.ai.test.invokedynamic.annotations.InvokedConstructor;
-import org.opal.ai.test.invokedynamic.annotations.InvokedMethod;
-import org.opal.ai.test.invokedynamic.annotations.InvokedMethods;
+import org.opalj.ai.test.invokedynamic.annotations.InvokedConstructor;
+import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
+import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
 
 /**
  * This class was used to create a class file with some well defined properties. The
@@ -43,8 +43,12 @@ import org.opal.ai.test.invokedynamic.annotations.InvokedMethods;
  * <!--
  * 
  * 
+ * 
+ * 
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
+ * 
+ * 
  * 
  * 
  * -->
