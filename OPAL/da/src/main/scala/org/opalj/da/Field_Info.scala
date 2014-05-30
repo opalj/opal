@@ -52,10 +52,13 @@ case class Field_Info(
             	</div>
             </strong>
        </li>
+            		
     }
     
     def attributesToXHTML = {
-      <ul>  {for (attribute ← attributes) yield attribute.toXHTML()}</ul>
+      <ul>
+    		{for (attribute ← attributes) yield attribute.toXHTML()}
+      </ul>
     }
 
 }

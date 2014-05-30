@@ -63,16 +63,20 @@ case class ClassFile(
      */
     def cpToXHTML = {
         for { cpIndex ← (0 until constant_pool.length) if cp(cpIndex) != null } yield {
-            <li value={ cpIndex.toString }>{ cp(cpIndex).toString() }</li>
+            <li value={ cpIndex.toString }> { cp(cpIndex).toString() }</li>
         }
     }
 
     def fieldsToXHTML : Node = {   
-        <ul> {for (field ← fields) yield field.toXHTML(cp)}</ul>
+        <ul>
+    		{for (field ← fields) yield field.toXHTML(cp)}
+    	</ul>
     }
 
     def methodsToXHTML : Node = {
-      <ul>  {for (method ← methods) yield method.toXHTML(cp)}</ul>
+      <ul>
+    		{for (method ← methods) yield method.toXHTML(cp)}
+      </ul>
     }
     
    protected def loadStyle : String = {    
@@ -91,49 +95,51 @@ case class ClassFile(
         <html>
             <head>
     			<title>Opal ByteCode Disassembler</title>
-    			<style type="text/css" >{scala.xml.Unparsed(loadStyle)}</style>       		
+    			<style type="text/css" >
+    				{scala.xml.Unparsed(loadStyle)}
+         		</style>       		
             </head>
             <body>
-    		<p class="Summary">
-    			<b>{ fqn }</b> Version { minor_version + "." + major_version } 
-    			<span class="nx">Access Flags { AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }</span><br/>
-    			<a href="#openModal">Open Modal</a>	
-    		</p>
+    			<p class="Summary">
+    				<b>{ fqn }</b> Version { minor_version + "." + major_version } 
+    				<span class="nx">Access Flags { AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }</span><br/>
+    				<a href="#openModal">Open Modal</a>	
+    			</p>
     			<div >
     				<div id="class_">
     					<div id="fields">
     						<details>
     						<summary>Fields</summary>
-    						<ol>
-    							{ fieldsToXHTML }
-    						</ol>
-    						</details>
-    					</div>
-    					<div id="methods">
-    						<details>
-    						<summary>Methods</summary>
-    							<ol>
-    								{ methodsToXHTML }
-    							</ol>
-    						</details>
-    					</div>
+   							<ol>
+   								{ fieldsToXHTML }
+   							</ol>
+   							</details>
+   						</div>
+   						<div id="methods">
+   							<details>
+   							<summary>Methods</summary>
+   							<ol>
+   								{ methodsToXHTML }
+   							</ol>
+   							</details>
+   						</div>
+   					</div>
+   				</div>
+   				<div id="ConstantPool">
+    					<details>
+   						<summary>Constant Pool</summary>
+    					<ol>
+    						{ cpToXHTML }
+    					</ol>
+    					</details>
+    			</div>
+    			<div id="openModal" class="modalDialog">
+    				<div>
+    					<a href="#close" title="Close" class="close">X</a>
+    					<h1>Modal Box</h1>
+    					<p>Methode Heirarchy.</p>
     				</div>
     			</div>
-    			<div id="ConstantPool">
-    						<details>
-    						<summary>Constant Pool</summary>
-    						<ol>
-    							{ cpToXHTML }
-    						</ol>
-    						</details>
-    		    </div>
-	<div id="openModal" class="modalDialog">
-			<div>
-				<a href="#close" title="Close" class="close">X</a>
-				<h1>Modal Box</h1>
-				<p>Methode Heirarchy.</p>
-			</div>
-	</div>
     	   </body>
         </html>
 }
