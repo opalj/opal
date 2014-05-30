@@ -41,11 +41,15 @@ case class Method_Info(
     val attributes: Attributes){
     
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <li><strong>  <div>
-            <span class="nx">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.FIELD) }</span>
-            <span> { cp(name_index).asString } </span> {attributesToXHTML}
-            <a href="#" class="tooltip">{ name_index }<span>{ cp(name_index) }</span></a> 
-        </div></strong></li>
+        <li>
+    		<strong> 
+    			<div>
+            		<span class="nx">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.FIELD) }</span>
+            		<span> { cp(name_index).asString } </span> {attributesToXHTML}
+            		<a href="#" class="tooltip">{ name_index }<span>{ cp(name_index) }</span></a> 
+            	</div>
+            </strong>
+        </li>
     }
     
     def attributesToXHTML = {   
