@@ -26,32 +26,34 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.taint
+package org.opalj
+package ai
 
-import collection.mutable.Stack
-import org.scalatest._
-import org.opalj.br.TestSupport
-import org.opalj.ai.taint.JDKTaintAnalysis
-import org.opalj.ai.taint.TaintAnalysisDomain
-import org.opalj.ai.taint.RootTaintAnalysisDomain
-import java.net.URL
+import br._
+import domain.DefaultDomainValueBinding
 
 /**
- * Simple scala test to run all test present in src/test/java.
- * It checks if TaintAnalysisDomain creates the right amount of reports
+ * Contains definitions that are used by the elements specified in JDKBugs
  *
  * @author Lars Schulte
  */
-class JDKBugsTest extends FlatSpec with Matchers {
+package object jdkbug {
 
-  "JDKBugs" should "find all bugs presentet in the corresponding files in src/test/java" in {
+    /**
+     * Set of ids (integer values) associated with the relevant parameters passed
+     * to a method.
+     */
+    type RelevantParameters = Seq[Int]
 
-    val args = new Array[String](2)
-    args(0) = "-cp=" + TestSupport.locateTestResources("test.jar", "").getPath()
-    args(1) = "-java.security=" + TestSupport.locateTestResources("java.security", "").getPath()
+    // Initialized (exactly once) by the "analyze" method of the main analysis class.
+    protected[jdkbug] var restrictedPackages: Set[String] = null
 
-    JDKTaintAnalysis.main(args)
-    TaintAnalysisDomain.numberOfReports should be(19)
-  }
+    def definedInRestrictedPackage(packageName: String): Boolean =
+        restrictedPackages.exists((packageName+"/").startsWith(_))
+}
+
+package jdkbug {
+
+    case class CallStackEntry(classFile: ClassFile, method: Method)
 
 }
