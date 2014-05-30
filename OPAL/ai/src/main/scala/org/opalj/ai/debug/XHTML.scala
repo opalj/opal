@@ -326,7 +326,7 @@ object XHTML {
             </ul>
         }
 
-    def dumpLocals(locals: Locals[_ <: AnyRef/**/]): Node =
+    def dumpLocals(locals: Locals[_ <: AnyRef /**/ ]): Node =
         if (locals eq null)
             <em>Information about the local variables is not available.</em>
         else {
@@ -335,5 +335,70 @@ object XHTML {
             </ol>
         }
 
+    def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
+        val node =
+            if (throwable.getStackTrace() == null ||
+                throwable.getStackTrace().size == 0) {
+                <div>{ throwable.getClass().getSimpleName() + " " + throwable.getMessage() }</div>
+            } else {
+                val stackElements =
+                    for { stackElement ← throwable.getStackTrace() } yield {
+                        <tr>
+                        	<td>{ stackElement.getClassName() }</td>
+                        	<td>{ stackElement.getMethodName() }</td>
+                        	<td>{ stackElement.getLineNumber() }</td>
+                        </tr>
+                    }
+                val summary = throwable.getClass().getSimpleName()+" "+throwable.getMessage()
+
+                <details>
+                    <summary>{ summary }</summary>
+                    <table>{ stackElements }</table>
+                </details>
+            }
+
+        if (throwable.getCause() ne null) {
+            val causedBy = throwableToXHTML(throwable.getCause())
+            <div style="background-color:yellow">{ node } <p>caused by:</p>{ causedBy }</div>
+        } else {
+            node
+        }
+    }
+
+    def evaluatedInstructionsToXHTML(evaluated: List[PC]) = {
+        val header = "Evaluated instructions:<div style=\"margin-left:2em;\">"
+        val footer = "</div>"
+        val subroutineStart = "<details><summary>Subroutine</summary><div style=\"margin-left:2em;\">"
+        val subroutineEnd = "</div></details>"
+
+        var openSubroutines = 0
+        val asStrings = evaluated.reverse.map { instruction ⇒
+            instruction match {
+                case org.opalj.ai.AI.SUBROUTINE_START ⇒
+                    openSubroutines += 1
+                    subroutineStart
+                case org.opalj.ai.AI.SUBROUTINE_END ⇒
+                    openSubroutines -= 1
+                    subroutineEnd
+                case _ ⇒ instruction.toString+" "
+            }
+        }
+
+        header +
+            asStrings.mkString("") +
+            (
+                if (openSubroutines > 0) {
+                    var missingSubroutineEnds = subroutineEnd
+                    openSubroutines -= 1
+                    while (openSubroutines > 0) {
+                        missingSubroutineEnds += subroutineEnd
+                        openSubroutines -= 1
+                    }
+                    missingSubroutineEnds
+                } else
+                    ""
+            ) +
+                footer
+    }
 }
 

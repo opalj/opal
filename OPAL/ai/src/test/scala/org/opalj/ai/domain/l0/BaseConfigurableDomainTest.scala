@@ -41,7 +41,6 @@ import br._
 import bi.reader.ClassFileReader
 import br.reader.Java8Framework.ClassFiles
 
-
 /**
  * This system test(suite) just loads a very large number of class files and performs
  * an abstract interpretation of all methods.
@@ -58,8 +57,6 @@ import br.reader.Java8Framework.ClassFiles
  */
 @RunWith(classOf[JUnitRunner])
 class BaseConfigurableDomainTest extends FlatSpec with Matchers {
-
-    import debug.InterpretMethods.interpret
 
     // The following three domains are very basic domains that – given that the
     // same domains are used – should compute the same results.
@@ -117,7 +114,7 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
         type Id = I
     }
 
-    behavior of "OPAL-AI when changing the mixin composition order of \"independent\" domains"
+    behavior of "a final Domain when changing the mixin composition order of \"independent\" domains"
 
     // The jars of the "OPAL core" project
     val directoryWithJARs = "../../../../bi/src/test/resources/classfiles"

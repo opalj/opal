@@ -497,8 +497,14 @@ trait Domain {
             // Note that "Value" already handles the case where this 
             // value is joined with itself. Furthermore, a join of this value with a 
             // different return address value either indicates a serious bug
-            // in OPAL-AI/the analysis or that the byte code is invalid!
-            throw DomainException("return address values cannot be joined")
+            // in the framework/the analysis or that the byte code is invalid!
+            throw DomainException(
+                "return address values (this="+this.toString+"#"+System.identityHashCode(this)+") "+
+                    "cannot be joined (other="+other.toString+"#"+System.identityHashCode(other)+") "+
+                    "(If this exception occurs make sure that the analyzed bytecode is valid; "+
+                    "in particular check that a subroutine never invokes itself "+
+                    "(recursive subroutine calls are not allowed).)"
+            )
         }
 
         @throws[DomainException]("Summarizing return address values is meaningless.")
@@ -535,6 +541,30 @@ trait Domain {
     // FACTORY METHODS TO CREATE GENERAL VALUES
     //
     // -----------------------------------------------------------------------------------
+
+    /**
+     * Called by the AI framework for each load constant method handle instruction to
+     * get a representation of/a DomainValue that represents the handle.
+     *
+     * @param handle A valid method handle.
+     * @return An `InitializedObjectValue(ObjectType.MethodHandle)`.
+     * 		Hence, this method needs to be overridden
+     * 		if resolution of MethodHandle based method calls should be performed.
+     */
+    def MethodHandle(pc: PC, handle: MethodHandle): DomainValue =
+        InitializedObjectValue(pc, ObjectType.MethodHandle)
+
+    /**
+     * Called by the AI framework for each load constant method type instruction to
+     * get a domain-specific representation of the method descriptor as a `MethodType`.
+     *
+     * @param handle A valid method descriptor.
+     * @return An `InitializedObjectValue(ObjectType.MethodType)`.
+     * 		Hence, this method needs to be overridden
+     * 		if resolution of MethodType based method calls should be performed.
+     */
+    def MethodType(pc: PC, descriptor: MethodDescriptor): DomainValue =
+        InitializedObjectValue(pc, ObjectType.MethodType)
 
     final def justThrows(value: ExceptionValue): ThrowsException[ExceptionValues] =
         ThrowsException(Seq(value))

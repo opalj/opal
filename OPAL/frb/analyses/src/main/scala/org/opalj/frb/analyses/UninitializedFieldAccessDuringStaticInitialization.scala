@@ -30,12 +30,12 @@ package org.opalj
 package frb
 package analyses
 
-import br._
-import br.analyses._
-import br.instructions._
-import ai._
-import ai.domain._
-import ai.domain.tracing._
+import org.opalj.br._
+import org.opalj.br.analyses._
+import org.opalj.br.instructions._
+import org.opalj.ai._
+import org.opalj.ai.domain._
+import org.opalj.ai.domain.tracing._
 
 /**
  * This analysis checks the static initializers (`<clinit>`) of all classes for accesses

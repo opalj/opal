@@ -46,7 +46,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
     val InvokedMethod = ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethod")
 
     val testResources = TestSupport.locateTestResources("classfiles/Lambdas.jar", "br")
-    val rtJar = new File(TestSupport.locateJRELibraryFolder.get, "rt.jar")
+    val rtJar = new File(TestSupport.JRELibraryFolder.get, "rt.jar")
 
     val project: SomeProject = Project(
         Java8Framework.ClassFiles(testResources),

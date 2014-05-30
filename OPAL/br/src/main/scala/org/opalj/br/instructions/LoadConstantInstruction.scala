@@ -31,7 +31,7 @@ package br
 package instructions
 
 /**
- * Loads a constant value on the stack.
+ * Puts a constant value on the stack.
  *
  * @author Michael Eichberg
  */

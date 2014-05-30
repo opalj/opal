@@ -51,22 +51,24 @@ object AIResultBuilder {
         theDomain: Domain)(
             theWorklist: List[PC],
             theEvaluated: List[PC],
-            theOperandsArray: TheOperandsArray[theDomain.Operands],
-            theLocalsArray: TheLocalsArray[theDomain.Locals]): AIAborted { val domain: theDomain.type } = {
+            theOperandsArray: theDomain.OperandsArray,
+            theLocalsArray: theDomain.LocalsArray,
+            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIAborted { val domain: theDomain.type } = {
 
         new AIAborted {
             val code: Code = theCode
             val domain: theDomain.type = theDomain
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
-            val operandsArray: TheOperandsArray[theDomain.Operands] = theOperandsArray
-            val localsArray: TheLocalsArray[theDomain.Locals] = theLocalsArray
+            val operandsArray: theDomain.OperandsArray = theOperandsArray
+            val localsArray: theDomain.LocalsArray = theLocalsArray
+            val memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
             def continueInterpretation(
                 ai: AI[_ >: domain.type]): AIResult =
                 ai.continueInterpretation(
                     code, domain)(
-                        worklist, evaluated, operandsArray, localsArray)
+                        worklist, evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
 
         }
     }
@@ -79,21 +81,22 @@ object AIResultBuilder {
         theCode: Code,
         theDomain: Domain)(
             theEvaluated: List[PC],
-            theOperandsArray: TheOperandsArray[theDomain.Operands],
-            theLocalsArray: TheLocalsArray[theDomain.Locals]): AICompleted { val domain: theDomain.type } = {
+            theOperandsArray: theDomain.OperandsArray,
+            theLocalsArray: theDomain.LocalsArray): AICompleted { val domain: theDomain.type } = {
 
         new AICompleted {
             val code: Code = theCode
             val domain: theDomain.type = theDomain
             val evaluated: List[PC] = theEvaluated
-            val operandsArray: TheOperandsArray[theDomain.Operands] = theOperandsArray
-            val localsArray: TheLocalsArray[theDomain.Locals] = theLocalsArray
+            val operandsArray: theDomain.OperandsArray = theOperandsArray
+            val localsArray: theDomain.LocalsArray = theLocalsArray
+            val memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
 
             def restartInterpretation(
                 ai: AI[_ >: theDomain.type]): AIResult =
                 ai.continueInterpretation(
                     code, domain)(
-                        List(0), evaluated, operandsArray, localsArray)
+                        List(0), evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
 
         }
     }
@@ -107,8 +110,9 @@ sealed abstract class AIResult {
     val domain: Domain
     val worklist: List[PC]
     val evaluated: List[PC]
-    val operandsArray: TheOperandsArray[domain.Operands]
-    val localsArray: TheLocalsArray[domain.Locals]
+    val operandsArray: domain.OperandsArray
+    val localsArray: domain.LocalsArray
+    val memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]
 
     /**
      * Returns `true` if the abstract interpretation was aborted.

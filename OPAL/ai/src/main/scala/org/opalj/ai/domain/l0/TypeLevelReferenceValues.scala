@@ -34,7 +34,7 @@ package l0
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.collection.immutable.UIDSet
 
-import br._
+import org.opalj.br._
 
 /**
  * Implements the foundations for performing computations related to reference values.
@@ -71,8 +71,7 @@ trait TypeLevelReferenceValues
         value: DomainValue,
         refinementGoal: String)
             extends Exception(
-                "refining "+value+" failed: "+refinementGoal,
-                null, true, false)
+                "refining "+value+" failed: "+refinementGoal) //,null, true, false)
 
     /**
      * Merges those exceptions that have the same upper type bound. This ensures
@@ -99,6 +98,10 @@ trait TypeLevelReferenceValues
         v ++ remainingv2s
     }
 
+    /**
+     * Merges two computations that both return some `DomainValue` and some
+     * `ExceptionValues`.
+     */
     protected[this] def mergeDEsComputations(
         pc: PC,
         c1: Computation[DomainValue, ExceptionValues],
@@ -108,7 +111,9 @@ trait TypeLevelReferenceValues
             case ComputationWithResultAndException(r1, e1) ⇒
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) ⇒
-                        ComputedValueAndException(mergeDomainValues(pc, r1, r2), mergeMultipleExceptionValues(pc, e1, e2))
+                        ComputedValueAndException(
+                            mergeDomainValues(pc, r1, r2),
+                            mergeMultipleExceptionValues(pc, e1, e2))
                     case ComputationWithResult(r2) ⇒
                         ComputedValueAndException(mergeDomainValues(pc, r1, r2), e1)
                     case ComputationWithException(e2) ⇒
@@ -190,326 +195,6 @@ trait TypeLevelReferenceValues
                         ThrowsException(mergeDomainValues(pc, e1, e2))
                 }
         }
-    }
-
-    // -----------------------------------------------------------------------------------
-    //
-    // COMMON FUNCTIONALITY TO CALCULATE THE MOST SPECIFIC COMMON SUPERTYPE OF TWO 
-    // TYPES / TWO UPPER TYPE BOUNDS
-    //
-    // -----------------------------------------------------------------------------------
-
-    // TODO [Next Step] Think about how to calculate common super types if the class hierarchy is not complete
-
-    /**
-     * Calculates the set of all supertypes of the given `types`.
-     */
-    protected def allSupertypesOf(
-        types: UIDSet[ObjectType],
-        reflexive: Boolean): scala.collection.Set[ObjectType] = {
-        val allSupertypesOf = scala.collection.mutable.HashSet.empty[ObjectType]
-        types foreach { (t: ObjectType) ⇒
-            if (!allSupertypesOf.contains(t) && classHierarchy.isKnown(t))
-                allSupertypesOf ++= classHierarchy.allSupertypes(t, reflexive)
-        }
-        allSupertypesOf
-    }
-
-    // TODO [Performance] we could implement a function "intersectWithAllSupertypesOf(baseType: ObjectType,types : Set[ObjectType], reflexive : Boolean) to avoid that we first calculate two sets of supertypes and then need to calculate the intersection
-
-    /**
-     * Selects all types of the given set of types that do not have any subtype
-     * in the given set.
-     *
-     * @param types A set of types that contains for each value (type) stored in the
-     *      set all direct and indirect supertypes or none. For example, the intersection
-     *      of the sets of all supertypes (as returned, e.g., by
-     *      `ClassHiearchy.allSupertypes`) of two (independent) types satisfies this
-     *      condition. If `types` is empty, the returned leaf type is `ObjectType.Object`.
-     *      which should always be a safe fallback.
-     */
-    protected def leafTypes(
-        types: scala.collection.Set[ObjectType]): Either[ObjectType, UIDSet[ObjectType]] = {
-        if (types.isEmpty)
-            return Left(ObjectType.Object)
-
-        if (types.size == 1)
-            return Left(types.head)
-
-        val lts = types filter { aType ⇒
-            classHierarchy.isUnknown(aType) ||
-                !(classHierarchy.directSubtypesOf(aType) exists { t ⇒ types.contains(t) })
-        }
-        if (lts.size == 1)
-            Left(lts.head)
-        else {
-            Right(UIDSet(lts))
-        }
-    }
-
-    /**
-     * Tries to calculate the most specific common supertype of the given types.
-     * If `reflexive` is `false`, no two types across both sets have to be in
-     * an inheritance relation; if in doubt use `true`.
-     *
-     * @param upperTypeBoundB A list (set) of `ObjectType`s that are not in an
-     *      inheritance relation.
-     */
-    protected def joinUpperTypeBounds(
-        upperTypeBoundsA: UIDSet[ObjectType],
-        upperTypeBoundsB: UIDSet[ObjectType],
-        reflexive: Boolean): Either[ObjectType, UIDSet[ObjectType]] = {
-
-        if (upperTypeBoundsA == upperTypeBoundsB)
-            return Right(upperTypeBoundsA)
-
-        val allSupertypesOfA = allSupertypesOf(upperTypeBoundsA, reflexive)
-        val allSupertypesOfB = allSupertypesOf(upperTypeBoundsB, reflexive)
-        val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
-        leafTypes(commonSupertypes)
-    }
-
-    /**
-     * Tries to calculate the most specific common supertype of the given types.
-     * If `reflexive` is `false`, the given types do not have to be in an
-     * inheritance relation.
-     *
-     * @param upperTypeBoundB A list (set) of `ObjectType`s that are not in an
-     *      inheritance relation.
-     * @return Returns (if reflexive is `true`)
-     * 		`upperTypeBoundA` if it is a supertype of at least one type
-     * 		of `upperTypeBoundB`. Returns `upperTypeBoundB` if `upperTypeBoundA` is
-     *   	a subtype of all types of `upperTypeBoundB`. Otherwise a new upper type
-     *    	bound is calculated and returned.
-     */
-    protected def joinObjectTypes(
-        upperTypeBoundA: ObjectType,
-        upperTypeBoundB: UIDSet[ObjectType],
-        reflexive: Boolean): Either[ObjectType, UIDSet[ObjectType]] = {
-
-        if (reflexive) {
-            var aIsSubtypeOfAllOfb = true
-            val newUpperTypeBound = upperTypeBoundB filter { (b: ObjectType) ⇒
-                if (domain.isSubtypeOf(b, upperTypeBoundA).isYes)
-                    return Left(upperTypeBoundA)
-
-                if (domain.isSubtypeOf(upperTypeBoundA, b).isYes) {
-                    true // => in newUpperTypeBound
-                } else {
-                    aIsSubtypeOfAllOfb = false
-                    false // => no in newUpperTypeBound
-                }
-            }
-            if (aIsSubtypeOfAllOfb)
-                return Right(upperTypeBoundB)
-            if (newUpperTypeBound.nonEmpty) {
-                if (newUpperTypeBound.containsOneElement)
-                    Left(newUpperTypeBound.first)
-                else
-                    return Right(newUpperTypeBound)
-            }
-        }
-        // if we reach this point the types are in no inheritance relationship
-
-        if (classHierarchy.isUnknown(upperTypeBoundA)) {
-            // there is nothing that we can do...
-            return Left(ObjectType.Object)
-        }
-
-        val allSupertypesOfA = classHierarchy.allSupertypes(upperTypeBoundA, false)
-        val allSupertypesOfB = allSupertypesOf(upperTypeBoundB, false)
-        val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
-        leafTypes(commonSupertypes)
-    }
-
-    /**
-     * Tries to calculate the most specific common supertype of the two given types.
-     * If `reflexive` is `false`, the two types do not have to be in an inheritance
-     * relation.
-     *
-     * If the class hierarchy is not complete, a best guess is made.
-     */
-    protected def joinObjectTypes(
-        upperTypeBoundA: ObjectType,
-        upperTypeBoundB: ObjectType,
-        reflexive: Boolean): Either[ObjectType, UIDSet[ObjectType]] = {
-
-        if (reflexive) {
-            if (upperTypeBoundA eq upperTypeBoundB)
-                return Left(upperTypeBoundA)
-            if (domain.isSubtypeOf(upperTypeBoundB, upperTypeBoundA).isYes)
-                return Left(upperTypeBoundA)
-            if (domain.isSubtypeOf(upperTypeBoundA, upperTypeBoundB).isYes)
-                return Left(upperTypeBoundB)
-        }
-
-        if (classHierarchy.isUnknown(upperTypeBoundA) ||
-            classHierarchy.isUnknown(upperTypeBoundB)) {
-            // there is not too much that we can do...
-            return Left(ObjectType.Object)
-        }
-
-        val allSupertypesOfA = classHierarchy.allSupertypes(upperTypeBoundA, false)
-        val allSupertypesOfB = classHierarchy.allSupertypes(upperTypeBoundB, false)
-        val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
-        leafTypes(commonSupertypes)
-    }
-
-    /**
-     * Calculates the most specific common supertype of any array type and some
-     * class-/interface type.
-     *
-     * Recall that (Java) arrays implement `Cloneable` and `Serializable`.
-     */
-    protected def joinAnyArrayTypeWithMultipleTypesBound(
-        thatUpperTypeBound: UIDSet[ObjectType]): Either[ObjectType, UIDSet[ObjectType]] = {
-        import ObjectType._
-        import TypeLevelReferenceValues.SerializableAndCloneable
-        if (thatUpperTypeBound == SerializableAndCloneable)
-            Right(thatUpperTypeBound)
-        else {
-            val isSerializable =
-                thatUpperTypeBound exists { thatType ⇒
-                    domain.isSubtypeOf(thatType, Serializable).isYes
-                }
-            val isCloneable =
-                thatUpperTypeBound exists { thatType ⇒
-                    domain.isSubtypeOf(thatType, Cloneable).isYes
-                }
-            if (isSerializable && isCloneable)
-                Right(SerializableAndCloneable)
-            else if (isSerializable)
-                Left(Serializable)
-            else if (isCloneable)
-                Left(Cloneable)
-            else
-                Left(Object)
-        }
-    }
-
-    /**
-     * Calculates the most specific common supertype of any array type and some
-     * class-/interface type.
-     *
-     * Recall that (Java) arrays implement `Cloneable` and `Serializable`.
-     */
-    protected def joinAnyArrayTypeWithObjectType(
-        thatUpperTypeBound: ObjectType): Either[ObjectType, UIDSet[ObjectType]] = {
-        import ObjectType._
-        if ((thatUpperTypeBound eq Object) ||
-            (thatUpperTypeBound eq Serializable) ||
-            (thatUpperTypeBound eq Cloneable))
-            Left(thatUpperTypeBound)
-        else {
-            var newUpperTypeBound: UIDSet[ObjectType] = UIDSet.empty
-            if (domain.isSubtypeOf(thatUpperTypeBound, Serializable).isYes)
-                newUpperTypeBound += Serializable
-            if (domain.isSubtypeOf(thatUpperTypeBound, Cloneable).isYes)
-                newUpperTypeBound += Cloneable
-            if (newUpperTypeBound.isEmpty)
-                Left(Object)
-            else if (newUpperTypeBound.containsOneElement)
-                Left(newUpperTypeBound.first)
-            else
-                Right(newUpperTypeBound)
-        }
-    }
-
-    /**
-     * Calculates the most specific common supertype of two array types.
-     *
-     * @return `Left(<SOME_ARRAYTYPE>)` if the calculated type can be represented using
-     *      an `ArrayType` and `Right(UIDList(ObjectType.Serializable, ObjectType.Cloneable))`
-     *      if the two arrays do not have an `ArrayType` as a most specific common supertype.
-     */
-    protected def joinArrayTypes(
-        thisUpperTypeBound: ArrayType,
-        thatUpperTypeBound: ArrayType): Either[ArrayType, UIDSet[ObjectType]] = {
-        // We have ALSO to consider the following corner cases:
-        // Foo[][] and Bar[][] => Object[][] (Object is the common super class)
-        // Object[] and int[][] => Object[] (which may contain arrays of int values...)
-        // Foo[] and int[][] => Object[]
-        // int[] and Object[][] => SerializableAndCloneable
-
-        if (thisUpperTypeBound eq thatUpperTypeBound)
-            return Left(thisUpperTypeBound)
-
-        val thisUTBDim = thisUpperTypeBound.dimensions
-        val thatUTBDim = thatUpperTypeBound.dimensions
-
-        if (thisUTBDim < thatUTBDim) {
-            if (thisUpperTypeBound.elementType.isBaseType) {
-                if (thisUTBDim == 1)
-                    Right(TypeLevelReferenceValues.SerializableAndCloneable)
-                else
-                    Left(ArrayType(thisUTBDim - 1, ObjectType.Object))
-            } else {
-                Left(ArrayType(thisUTBDim, ObjectType.Object))
-            }
-        } else if (thisUTBDim > thatUTBDim) {
-            if (thatUpperTypeBound.elementType.isBaseType) {
-                if (thisUTBDim == 1)
-                    Right(TypeLevelReferenceValues.SerializableAndCloneable)
-                else
-                    Left(ArrayType(thatUTBDim - 1, ObjectType.Object))
-            } else {
-                Left(ArrayType(thatUTBDim, ObjectType.Object))
-            }
-        } else if (thisUpperTypeBound.elementType.isBaseType ||
-            thatUpperTypeBound.elementType.isBaseType) {
-            // => the number of dimensions is the same, but the elementType isn't
-            //    (if the element type would be the same, both object reference would 
-            //    refer to the same object and this would have been handled the very 
-            //    first test)            
-            // Scenario:
-            // E.g., imagine that we have a method that "just" wants to 
-            // serialize some data. In such a case the method may be passed 
-            // different arrays with different primitive values.
-            if (thisUTBDim == 1 /* && thatUTBDim == 1*/ )
-                Right(TypeLevelReferenceValues.SerializableAndCloneable)
-            else {
-                Left(ArrayType(thisUTBDim - 1, ObjectType.Object))
-            }
-        } else {
-            // When we reach this point, the dimensions are identical and both 
-            // elementTypes are reference types
-            val thatElementType = thatUpperTypeBound.elementType.asObjectType
-            val thisElementType = thisUpperTypeBound.elementType.asObjectType
-            Left(
-                ArrayType(
-                    thisUTBDim,
-                    joinObjectTypesUntilSingleUpperBound(
-                        thisElementType,
-                        thatElementType,
-                        true)
-                )
-            )
-        }
-    }
-
-    protected[this] def joinObjectTypesUntilSingleUpperBound(
-        upperTypeBoundA: ObjectType,
-        upperTypeBoundB: ObjectType,
-        reflexive: Boolean): ObjectType = {
-        joinObjectTypes(upperTypeBoundA, upperTypeBoundB, reflexive) match {
-            case Left(newUpperTypeBound) ⇒
-                newUpperTypeBound
-            case Right(newUpperTypeBounds) ⇒
-                newUpperTypeBounds reduce { (c, n) ⇒
-                    joinObjectTypesUntilSingleUpperBound(c, n, false)
-                }
-        }
-    }
-
-    protected[this] def joinObjectTypesUntilSingleUpperBound(
-        upperTypeBound: UIDSet[ObjectType],
-        reflexive: Boolean): ObjectType = {
-        if (upperTypeBound.containsOneElement)
-            upperTypeBound.first
-        else
-            upperTypeBound reduce { (c, n) ⇒
-                joinObjectTypesUntilSingleUpperBound(c, n, reflexive)
-            }
     }
 
     // ---------------------------------1-------------------------------------------------
@@ -622,7 +307,7 @@ trait TypeLevelReferenceValues
     protected trait NullValue extends ReferenceValue {
         this: DomainNullValue ⇒
 
-        final override def referenceValues: Iterator[IsAReferenceValue] = 
+        final override def referenceValues: Iterator[IsAReferenceValue] =
             Iterator.single(this)
 
         /**
@@ -679,7 +364,7 @@ trait TypeLevelReferenceValues
 
         val theUpperTypeBound: T
 
-        final override def referenceValues: Iterator[IsAReferenceValue] = 
+        final override def referenceValues: Iterator[IsAReferenceValue] =
             Iterator.single(this)
 
         final override def upperTypeBound: UpperTypeBound = UIDSet(theUpperTypeBound)
@@ -816,22 +501,6 @@ trait TypeLevelReferenceValues
     // QUESTION'S ABOUT VALUES
     //
     // -----------------------------------------------------------------------------------
-
-    /**
-     * Determines if the type described by the first set of upper type bounds is
-     * a subtype of the second type. I.e., it checks if for all types of the
-     * subtypes upper type bound a type in the supertypes type exists that is a
-     * supertype of the respective subtype.
-     */
-    protected def isSubtypeOf(
-        subtypes: UpperTypeBound,
-        supertypes: UpperTypeBound): Boolean = {
-        subtypes forall { subtype ⇒
-            supertypes exists { supertype ⇒
-                domain.isSubtypeOf(subtype, supertype).isYes
-            }
-        }
-    }
 
     /**
      * Tests if both values refer to the same object instance.
@@ -1231,18 +900,4 @@ trait TypeLevelReferenceValues
         refineIsNull(pc, value, Yes, operands, locals)
 
 }
-/**
- * Defines domain-independent, commonly used upper type bounds.
- *
- * @author Michael Eichberg
- */
-object TypeLevelReferenceValues {
 
-    /**
-     * Least upper type bound of Java arrays. That is, every Java array
-     * is always `Serializable` and `Cloneable`.
-     */
-    val SerializableAndCloneable: UIDSet[ObjectType] =
-        UIDSet(ObjectType.Serializable, ObjectType.Cloneable)
-
-}
