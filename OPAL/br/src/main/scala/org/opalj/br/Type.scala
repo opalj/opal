@@ -30,6 +30,7 @@ package org.opalj
 package br
 
 import org.opalj.collection.UID
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * The computational type category of a value on the operand stack.
@@ -736,6 +737,13 @@ final object ObjectType {
     // two reference types where the subtype is an array type 
     final val Serializable = ObjectType("java/io/Serializable")
     final val Cloneable = ObjectType("java/lang/Cloneable")
+
+    /**
+     * Least upper type bound of Java arrays. That is, every Java array
+     * is always `Serializable` and `Cloneable`.
+     */
+    final val SerializableAndCloneable: UIDSet[ObjectType] =
+        UIDSet(ObjectType.Serializable, ObjectType.Cloneable)
 
     private final val javaLangBooleanId = Boolean.id
     private final val javaLangDoubleId = Double.id
