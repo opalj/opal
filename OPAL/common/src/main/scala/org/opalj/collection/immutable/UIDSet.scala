@@ -259,7 +259,7 @@ private[collection] trait NonEmptyUIDSet[+T <: UID] extends UIDSet[T] {
  * A [[UIDSet]] that contains a single element.
  */
 final class UIDSet1[T <: UID](
-    val e: T)
+    final val e: T)
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override final def size = 1
@@ -311,12 +311,8 @@ final class UIDSet1[T <: UID](
  */
 object UIDSet1 {
 
-    def unapply[T <: UID](set: UIDSet[T]): Option[T] = {
-        if (set != null && set.size == 1)
-            Some(set.first())
-        else
-            None
-    }
+    def unapply[T <: UID](set: UIDSet1[T]): Some[T] = Some(set.e)
+
 }
 
 /**
@@ -326,7 +322,7 @@ object UIDSet1 {
  * @author Michael Eichberg
  */
 final class UIDSet2[T <: UID] private[collection] (
-    val e1: T, val e2: T)
+    final val e1: T, final val e2: T)
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override def size = 2
@@ -405,7 +401,7 @@ final class UIDSet2[T <: UID] private[collection] (
 
 }
 object UIDSet2 {
-    def unapply[T <: UID](uidSet: UIDSet[T]): Option[UIDSet2[T]] = {
+    def unapply[T <: UID](uidSet: UIDSet2[T]): Option[UIDSet2[T]] = {
         if (uidSet.isInstanceOf[UIDSet2[T]])
             Some(uidSet.asInstanceOf[UIDSet2[T]])
         else
@@ -416,7 +412,7 @@ object UIDSet2 {
  * A set of three elements with different unique ids.
  */
 final class UIDSet3[T <: UID] private[collection] (
-    val e1: T, val e2: T, val e3: T)
+    final val e1: T, final val e2: T, final val e3: T)
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override def size = 3
@@ -491,7 +487,7 @@ final class UIDSet3[T <: UID] private[collection] (
  * A set of three elements with different unique ids.
  */
 final class UIDSet4[T <: UID] private[collection] (
-    val e1: T, val e2: T, val e3: T, val e4: T)
+    final val e1: T, final val e2: T, final val e3: T, final val e4: T)
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override def size = 4
@@ -528,6 +524,8 @@ final class UIDSet4[T <: UID] private[collection] (
 
     override def foreach(f: T ⇒ Unit): Unit = { f(e1); f(e2); f(e3); f(e4) }
 
+    override def reduce[X >: T](op: (X, X) ⇒ X): X = op(op(op(e1, e2), e3), e4)
+
     override def forall[X >: T](f: X ⇒ Boolean): Boolean = f(e1) && f(e2) && f(e3) && f(e4)
 
     override def exists[X >: T](f: X ⇒ Boolean): Boolean = f(e1) || f(e2) || f(e3) || f(e4)
@@ -551,8 +549,6 @@ final class UIDSet4[T <: UID] private[collection] (
 
     override def map[X](f: T ⇒ X): Set[X] = Set.empty + f(e1) + f(e2) + f(e3) + f(e4)
 
-    override def reduce[X >: T](op: (X, X) ⇒ X): X = op(op(op(e1, e2), e3), e4)
-
     override def toSeq = Seq(e1, e2, e3, e4)
 
     override def equals(other: Any): Boolean = {
@@ -571,7 +567,7 @@ final class UIDSet4[T <: UID] private[collection] (
 
 }
 private final class UIDArraySet[T <: UID](
-    private val es: Array[UID])
+    private final val es: Array[UID])
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
     def this(e1: T, e2: T, e3: T, e4: T, e5: T) {
