@@ -28,6 +28,8 @@
  */
 package org.opalj
 
+import org.opalj.collection.immutable.UIDSet
+
 /**
  * In this representation of Java bytecode references to a Java class file's constant
  * pool and to attributes are replaced by direct references to the corresponding constant
@@ -97,5 +99,24 @@ package object br {
             ""
         }
     }
+
+    /**
+     * An upper type bound represents the available type information about a
+     * reference value. It is always "just" an upper bound for a concrete type;
+     * i.e., we know that the runtime type has to be a subtype (reflexive) of the
+     * type identified by the upper bound.
+     * Furthermore, an upper bound can identify multiple '''independent''' types. E.g.,
+     * a type bound for array objects could be: `java.io.Serializable` and
+     * `java.lang.Cloneable`. Here, independent means that no two types of the bound
+     * are in a subtype relationship. Hence, an upper bound is always a special set where
+     * the values are not equal and are not in an inheritance relation. However,
+     * identifying independent types is a class hierarchy's responsibility.
+     *
+     * In general, an upper bound identifies a single class type and a set of independent
+     * interface types that are known to be implemented by the current object. '''Even if
+     * the type contains a class type''' it may just be a super class of the concrete type
+     * and, hence, just represent an abstraction.
+     */
+    type UpperTypeBound = UIDSet[ReferenceType]
 
 }
