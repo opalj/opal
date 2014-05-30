@@ -112,7 +112,7 @@ trait AIProject[Source, D <: Domain with Report] {
 
         val reports =
             if (analyzeInParallel)
-                entryPoints(project).par map { analyze(_) }
+                (entryPoints(project).par map { analyze(_) }).seq
             else
                 entryPoints(project) map { analyze(_) }
 
