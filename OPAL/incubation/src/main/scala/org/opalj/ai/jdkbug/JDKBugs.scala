@@ -154,7 +154,7 @@ object JDKTaintAnalysis
  * This companion object saves some values during the analysis. It can be used for testing purpose
  */
 object TaintAnalysisDomain {
-    var numberOfReports: Int = 0
+    var numberOfReports = new java.util.concurrent.atomic.AtomicInteger(0)
 }
 
 /**
@@ -300,7 +300,7 @@ trait TaintAnalysisDomain[Source]
         postAnalysis();
         if (isRelevantValueReturned && callToClassForNameFound) {
             val createdDot = toDot.generateDot(Set(callerNode))
-            TaintAnalysisDomain.numberOfReports = TaintAnalysisDomain.numberOfReports + 1
+            TaintAnalysisDomain.numberOfReports.incrementAndGet()
             Some(createdDot)
         } else
             None
