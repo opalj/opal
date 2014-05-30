@@ -501,8 +501,8 @@ trait Domain {
             throw DomainException(
                 "return address values (this="+this.toString+"#"+System.identityHashCode(this)+") "+
                     "cannot be joined (other="+other.toString+"#"+System.identityHashCode(other)+") "+
-                    "(If this exception occurs make sure that the analyzed bytecode is valid;"+
-                    "in particular that a subroutine may never invokes itself "+
+                    "(If this exception occurs make sure that the analyzed bytecode is valid; "+
+                    "in particular check that a subroutine never invokes itself "+
                     "(recursive subroutine calls are not allowed).)"
             )
         }
