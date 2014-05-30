@@ -26,30 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
+package org.opalj.jdkbug
 
-import br._
-import domain.DefaultDomainValueBinding
+import collection.mutable.Stack
+import org.scalatest._
+import org.opalj.br.TestSupport
+import org.opalj.ai.jdkbug.JDKTaintAnalysis
+import org.opalj.ai.jdkbug.TaintAnalysisDomain
+import org.opalj.ai.jdkbug.RootTaintAnalysisDomain
+import java.net.URL
 
 /**
- * Contains definitions that are used by the elements specified in JDKBugs
+ * Simple test that checks if the analysis finds the right number of issues.
  *
  * @author Lars Schulte
  */
-package object taint {
+class JDKBugsTest extends FlatSpec with Matchers {
 
-  case class CallStackEntry(classFile: ClassFile, method: Method)
+    "JDKBugs" should "find all known bugs in the corresponding files in src/test/java" in {
 
-  /**
-   * Set of ids (integer values) associated with the relevant parameters passed
-   * to a method.
-   */
-  type RelevantParameters = Seq[Int]
+        val args = new Array[String](2)
+        args(0) = "-cp="+TestSupport.locateTestResources("jdkbug/test.jar", "incubation").getPath()
+        args(1) = "-java.security="+TestSupport.locateTestResources("jdkbug/java.security", "incubation").getPath()
 
-  // Initialized (exactly once) by the "analyze" method of the main analysis class.
-  protected[taint] var restrictedPackages: Set[String] = null
+        JDKTaintAnalysis.main(args)
+        TaintAnalysisDomain.numberOfReports should be(19)
+    }
 
-  def definedInRestrictedPackage(packageName: String): Boolean =
-    restrictedPackages.exists((packageName + "/").startsWith(_))
 }
