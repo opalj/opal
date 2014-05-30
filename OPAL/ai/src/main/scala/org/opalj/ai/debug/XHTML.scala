@@ -366,15 +366,39 @@ object XHTML {
     }
 
     def evaluatedInstructionsToXHTML(evaluated: List[PC]) = {
-        evaluated.reverse.map { instruction ⇒
+        val header = "Evaluated instructions:<div style=\"margin-left:2em;\">"
+        val footer = "</div>"
+        val subroutineStart = "<details><summary>Subroutine</summary><div style=\"margin-left:2em;\">"
+        val subroutineEnd = "</div></details>"
+
+        var openSubroutines = 0
+        val asStrings = evaluated.reverse.map { instruction ⇒
             instruction match {
                 case org.opalj.ai.AI.SUBROUTINE_START ⇒
-                    "<details><summary>Subroutine</summary><div style=\"margin-left:2em;\">"
+                    openSubroutines += 1
+                    subroutineStart
                 case org.opalj.ai.AI.SUBROUTINE_END ⇒
-                    "</div></details>"
+                    openSubroutines -= 1
+                    subroutineEnd
                 case _ ⇒ instruction.toString+" "
             }
-        }.mkString("Evaluated instructions:<div style=\"margin-left:2em;\">","","</div>")
+        }
+
+        header +
+            asStrings.mkString("") +
+            (
+                if (openSubroutines > 0) {
+                    var missingSubroutineEnds = subroutineEnd
+                    openSubroutines -= 1
+                    while (openSubroutines > 0) {
+                        missingSubroutineEnds += subroutineEnd
+                        openSubroutines -= 1
+                    }
+                    missingSubroutineEnds
+                } else
+                    ""
+            ) +
+                footer
     }
 }
 

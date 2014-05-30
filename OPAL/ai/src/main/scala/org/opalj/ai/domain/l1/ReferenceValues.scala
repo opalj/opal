@@ -210,7 +210,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 case that: ArrayValue ⇒
                     val thisUpperTypeBound = this.theUpperTypeBound
                     val thatUpperTypeBound = that.theUpperTypeBound
-                    joinArrayTypes(thisUpperTypeBound, thatUpperTypeBound) match {
+                    classHierarchy.joinArrayTypes(thisUpperTypeBound, thatUpperTypeBound) match {
 
                         case Left(`thisUpperTypeBound`) if (
                             this.isNull == that.isNull &&
@@ -244,19 +244,19 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
                 case that: SObjectValue ⇒
                     val thatUpperTypeBound = that.theUpperTypeBound
-                    joinAnyArrayTypeWithObjectType(thatUpperTypeBound) match {
+                    classHierarchy.joinAnyArrayTypeWithObjectType(thatUpperTypeBound) match {
 
-                        case Left(`thatUpperTypeBound`) if (
+                        case UIDSet1(`thatUpperTypeBound`) if (
                             this.isNull == that.isNull && !that.isPrecise
                         ) ⇒
                             StructuralUpdate(other)
 
-                        case Left(newUpperTypeBound) ⇒
+                        case UIDSet1(newUpperTypeBound) ⇒
                             val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, false, newUpperTypeBound))
 
-                        case Right(newUpperTypeBound) ⇒
+                        case newUpperTypeBound ⇒
                             val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, newUpperTypeBound))
@@ -264,21 +264,20 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
                 case that: MObjectValue ⇒
                     val thatUpperTypeBound = that.upperTypeBound
-                    joinAnyArrayTypeWithMultipleTypesBound(thatUpperTypeBound) match {
-                        case Right(`thatUpperTypeBound`) if this.isNull == that.isNull ⇒
+                    classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(thatUpperTypeBound) match {
+                        case `thatUpperTypeBound` if this.isNull == that.isNull ⇒
                             StructuralUpdate(other)
 
-                        case Right(newUpperTypeBound) ⇒
-                            val newIsNull = this.isNull & that.isNull
-                            StructuralUpdate(
-                                ObjectValue(this.vo, newIsNull, newUpperTypeBound))
-
-                        case Left(newUpperTypeBound) ⇒
+                        case UIDSet1(newUpperTypeBound) ⇒
                             val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, false, newUpperTypeBound))
-                    }
 
+                        case newUpperTypeBound ⇒
+                            val newIsNull = this.isNull & that.isNull
+                            StructuralUpdate(
+                                ObjectValue(this.vo, newIsNull, newUpperTypeBound))
+                    }
             }
         }
 
@@ -392,20 +391,20 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             other match {
                 case that: SObjectValue ⇒
                     val thatUpperTypeBound = that.theUpperTypeBound
-                    joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true) match {
-                        case Left(`thisUpperTypeBound`) if (
+                    classHierarchy.joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true) match {
+                        case UIDSet1(`thisUpperTypeBound`) if (
                             this.isNull == that.isNull &&
                             (!this.isPrecise ||
                                 ((thisUpperTypeBound eq thatUpperTypeBound) && that.isPrecise))
                         ) ⇒
                             NoUpdate
 
-                        case Left(`thatUpperTypeBound`) if (
+                        case UIDSet1(`thatUpperTypeBound`) if (
                             this.isNull == that.isNull && !that.isPrecise
                         ) ⇒
                             StructuralUpdate(other)
 
-                        case Left(newUpperTypeBound) ⇒
+                        case UIDSet1(newUpperTypeBound) ⇒
                             // Though the upper type bound of this value may 
                             // also be an upper type bound for the other value
                             // it does not precisely capture the other value's type!
@@ -413,7 +412,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, false, newUpperTypeBound))
 
-                        case Right(newUpperTypeBound) ⇒
+                        case newUpperTypeBound ⇒
                             val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, newUpperTypeBound))
@@ -422,21 +421,21 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 case that: MObjectValue ⇒
                     val thatUpperTypeBound = that.upperTypeBound
 
-                    joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true) match {
-                        case Left(`thisUpperTypeBound`) if (
+                    classHierarchy.joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true) match {
+                        case UIDSet1(`thisUpperTypeBound`) if (
                             this.isNull == that.isNull && !this.isPrecise
                         ) ⇒
                             NoUpdate
 
-                        case Left(newUpperTypeBound) ⇒
+                        case UIDSet1(newUpperTypeBound) ⇒
                             val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, false, newUpperTypeBound))
 
-                        case Right(`thatUpperTypeBound`) if this.isNull == that.isNull ⇒
+                        case `thatUpperTypeBound` if this.isNull == that.isNull ⇒
                             StructuralUpdate(other)
 
-                        case Right(newUpperTypeBound) ⇒
+                        case newUpperTypeBound ⇒
                             val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, newUpperTypeBound))
@@ -444,19 +443,19 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
                 case that: ArrayValue ⇒
                     val thatUpperTypeBound = that.theUpperTypeBound
-                    joinAnyArrayTypeWithObjectType(thisUpperTypeBound) match {
+                    classHierarchy.joinAnyArrayTypeWithObjectType(thisUpperTypeBound) match {
 
-                        case Left(`thisUpperTypeBound`) if (
+                        case UIDSet1(`thisUpperTypeBound`) if (
                             this.isNull == that.isNull && !this.isPrecise
                         ) ⇒
                             NoUpdate
 
-                        case Left(newUpperTypeBound) ⇒
+                        case UIDSet1(newUpperTypeBound) ⇒
                             val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, false, newUpperTypeBound))
 
-                        case Right(newUpperTypeBound) ⇒
+                        case newUpperTypeBound ⇒
                             val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, newUpperTypeBound))
@@ -559,19 +558,19 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             other match {
                 case that: MObjectValue ⇒
                     val thatUpperTypeBound = that.upperTypeBound
-                    joinUpperTypeBounds(thisUpperTypeBound, thatUpperTypeBound, true) match {
-                        case Left(newUpperTypeBound) ⇒
+                    classHierarchy.joinUpperTypeBounds(thisUpperTypeBound, thatUpperTypeBound, true) match {
+                        case UIDSet1(newUpperTypeBound) ⇒
                             val newIsNull = (this.isNull & that.isNull)
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, false, newUpperTypeBound))
 
-                        case Right(`thisUpperTypeBound`) if this.isNull.isUnknown || this.isNull == that.isNull ⇒
+                        case `thisUpperTypeBound` if this.isNull.isUnknown || this.isNull == that.isNull ⇒
                             NoUpdate
 
-                        case Right(`thatUpperTypeBound`) if that.isNull.isUnknown || this.isNull == that.isNull ⇒
+                        case `thatUpperTypeBound` if that.isNull.isUnknown || this.isNull == that.isNull ⇒
                             StructuralUpdate(other)
 
-                        case Right(newUpperTypeBound) ⇒
+                        case newUpperTypeBound ⇒
                             val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, newUpperTypeBound))
@@ -579,11 +578,11 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
                 case that: SObjectValue ⇒
                     val thatUpperTypeBound = that.theUpperTypeBound
-                    joinObjectTypes(thatUpperTypeBound, thisUpperTypeBound, true) match {
-                        case Left(`thatUpperTypeBound`) if that.isNull.isUnknown || this.isNull == that.isNull ⇒
+                    classHierarchy.joinObjectTypes(thatUpperTypeBound, thisUpperTypeBound, true) match {
+                        case UIDSet1(`thatUpperTypeBound`) if that.isNull.isUnknown || this.isNull == that.isNull ⇒
                             StructuralUpdate(other)
 
-                        case Left(newUpperTypeBound) ⇒
+                        case UIDSet1(newUpperTypeBound) ⇒
                             // Though the upper type bound of this value may 
                             // also be an upper type bound for the other value
                             // it does not precisely capture the other value's type!
@@ -591,27 +590,27 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, false, newUpperTypeBound))
 
-                        case Right(`thisUpperTypeBound`) if this.isNull.isUnknown || this.isNull == that.isNull ⇒
+                        case `thisUpperTypeBound` if this.isNull.isUnknown || this.isNull == that.isNull ⇒
                             NoUpdate
 
-                        case Right(newUpperTypeBound) ⇒
+                        case newUpperTypeBound ⇒
                             val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, newUpperTypeBound))
                     }
 
                 case that: ArrayValue ⇒
-                    joinAnyArrayTypeWithMultipleTypesBound(thisUpperTypeBound) match {
+                    classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(thisUpperTypeBound) match {
 
-                        case Left(newUpperTypeBound) ⇒
+                        case UIDSet1(newUpperTypeBound) ⇒
                             val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, false, newUpperTypeBound))
 
-                        case Right(`thisUpperTypeBound`) if this.isNull.isUnknown || this.isNull == that.isNull ⇒
+                        case `thisUpperTypeBound` if this.isNull.isUnknown || this.isNull == that.isNull ⇒
                             NoUpdate
 
-                        case Right(newUpperTypeBound) ⇒
+                        case newUpperTypeBound ⇒
                             val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.vo, newIsNull, newUpperTypeBound))
@@ -699,29 +698,28 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     overallUTB.asInstanceOf[UIDSet[ObjectType]]
 
                 values.tail foreach { value ⇒
-                    val newUpperTypeBound: Either[ReferenceType, UIDSet[ReferenceType]] = value match {
-                        case _: NullValue ⇒ /*"Do Nothing"*/ Right(overallUTB)
+                    overallUTB = value match {
+                        case _: NullValue ⇒ /*"Do Nothing"*/ overallUTB
                         case SObjectValue(upperTypeBound) ⇒
                             if (currentUTBisUTBForArrays)
-                                joinAnyArrayTypeWithObjectType(upperTypeBound)
+                                classHierarchy.joinAnyArrayTypeWithObjectType(upperTypeBound)
                             else
-                                joinObjectTypes(upperTypeBound, asUTBForObjects, true)
+                                classHierarchy.joinObjectTypes(upperTypeBound, asUTBForObjects, true)
                         case MObjectValue(upperTypeBound) ⇒
                             if (currentUTBisUTBForArrays)
-                                joinAnyArrayTypeWithMultipleTypesBound(upperTypeBound)
+                                classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(upperTypeBound)
                             else
-                                joinUpperTypeBounds(asUTBForObjects, upperTypeBound, true)
+                                classHierarchy.joinUpperTypeBounds(asUTBForObjects, upperTypeBound, true)
 
                         case ArrayValue(upperTypeBound) ⇒
                             if (currentUTBisUTBForArrays)
-                                joinArrayTypes(asUTBForArrays, upperTypeBound)
+                                classHierarchy.joinArrayTypes(asUTBForArrays, upperTypeBound) match {
+                                    case Left(arrayType)       ⇒ UIDSet(arrayType)
+                                    case Right(upperTypeBound) ⇒ upperTypeBound
+                                }
                             else
-                                joinAnyArrayTypeWithMultipleTypesBound(asUTBForObjects)
+                                classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(asUTBForObjects)
 
-                    }
-                    newUpperTypeBound match {
-                        case Left(referenceType)   ⇒ overallUTB = UIDSet(referenceType)
-                        case Right(referenceTypes) ⇒ overallUTB = referenceTypes
                     }
                 }
                 overallUTB

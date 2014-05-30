@@ -497,8 +497,14 @@ trait Domain {
             // Note that "Value" already handles the case where this 
             // value is joined with itself. Furthermore, a join of this value with a 
             // different return address value either indicates a serious bug
-            // in OPAL-AI/the analysis or that the byte code is invalid!
-            throw DomainException("return address values cannot be joined")
+            // in the framework/the analysis or that the byte code is invalid!
+            throw DomainException(
+                "return address values (this="+this.toString+"#"+System.identityHashCode(this)+") "+
+                    "cannot be joined (other="+other.toString+"#"+System.identityHashCode(other)+") "+
+                    "(If this exception occurs make sure that the analyzed bytecode is valid;"+
+                    "in particular that a subroutine may never invokes itself "+
+                    "(recursive subroutine calls are not allowed).)"
+            )
         }
 
         @throws[DomainException]("Summarizing return address values is meaningless.")
