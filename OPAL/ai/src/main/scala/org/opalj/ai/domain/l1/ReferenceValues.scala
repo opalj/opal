@@ -661,9 +661,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     }
 
     /**
-     * A `MultipleReferenceValues` tracks multiple reference values (`NullValue`,
+     * A `MultipleReferenceValues` tracks multiple reference values (of type `NullValue`,
      * `ArrayValue`, `SObjectValue` and `MObjectValue`) that have different
-     * origins. I.e., per origin (by default per program counter) one domain value is used
+     * origins. I.e., per value origin one domain value is used
      * to abstract over the properties of that respective value.
      */
     protected class MultipleReferenceValues(
@@ -679,7 +679,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          * all values.
          */
         override lazy val upperTypeBound: UpperTypeBound = {
-            val values = this.values.dropWhile(_.isNull.isYes)
+            val values = this.values.filterNot(_.isNull.isYes)
             if (values.isEmpty)
                 // <=> all values are null values!
                 UIDSet.empty[ObjectType]
@@ -759,12 +759,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (firstAnswer.isUnknown)
                 return Unknown
 
-            (firstAnswer /: values.tail) { (currentAnswer, n) ⇒
-                val nextAnswer = n.isNull
-                if (nextAnswer.isUnknown)
+            (firstAnswer /: values.tail) { (currentAnswer, nextValue) ⇒
+                val nextAnswer = nextValue.isNull
+                val newAnswer = currentAnswer & nextAnswer
+                if (newAnswer.isUnknown)
                     return Unknown
 
-                currentAnswer & nextAnswer
+                newAnswer
             }
         }
 
@@ -799,7 +800,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // Recall that the client has to make an "isNull" check before calling
             // isValueSubtypeOf. Hence, at least one of the possible reference values 
             // has to be non null.
-            val values = this.values.dropWhile(_.isNull.isYes)
+            val values = this.values.filterNot(_.isNull.isYes)
             var answer: Answer = values.head.isValueSubtypeOf(supertype)
             values.tail foreach { value ⇒
                 if (answer == Unknown)
