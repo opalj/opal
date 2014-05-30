@@ -33,8 +33,8 @@ import scala.util.control.ControlThrowable
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
-import br.instructions._
+import org.opalj.br._
+import org.opalj.br.instructions._
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode
