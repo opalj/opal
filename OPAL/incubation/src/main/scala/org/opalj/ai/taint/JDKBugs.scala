@@ -27,480 +27,838 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
 package ai
+package taint
 
-import instructions._
+import java.net.URL
+import org.opalj.graphs._
+import br._
+import org.opalj.br.instructions._
+import org.opalj.br.analyses.{ Project, Analysis, AnalysisExecutor, ReportableAnalysisResult }
+import project.{ AIProject, Report }
+import domain._
+import domain.l0._
+import domain.l1._
+import domain.tracing._
+import debug.XHTML._
 
-package object taint {
+/**
+ * Searches for occurrences of the Class.forName bug in the JDK
+ *
+ * @author Lars Schulte
+ */
+object JDKTaintAnalysis
+  extends AIProject[URL, Domain with Report]
+  with Analysis[URL, ReportableAnalysisResult]
+  with AnalysisExecutor {
 
-    type CallStackEntry = (ClassFile, Method)
+  def ai = new AI[Domain with Report] {}
 
-    /**
-     * Set of ids (integer values) associated with the relevant parameters passed
-     * to a method.
-     */
-    type RelevantParameters = Seq[Int]
+  def description: String = "Finds unsafe Class.forName(...) calls."
 
-    // Initialized (exactly once) by the "analyze" method of the main analysis class.
-    protected[taint] var restrictedPackages: Seq[String] = null
+  println(System.getProperty("java.version"));
 
-    def definedInRestrictedPackage(packageName: String): Boolean =
-        restrictedPackages.exists(packageName.startsWith(_))
+  val analysis = this
+
+  val javaSecurityParameter = "-java.security="
+
+  var javaSecurityFile: String = _
+
+  override def analysisParametersDescription: String =
+    javaSecurityParameter + "<JRE/JDK Security Policy File>"
+
+  override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
+    parameters.size == 1 && {
+      javaSecurityFile = parameters.head.substring(javaSecurityParameter.length())
+      new java.io.File(javaSecurityFile).exists()
+    }
+
+  override def analyze(
+    project: analyses.Project[URL],
+    parameters: Seq[String]): ReportableAnalysisResult = {
+    restrictedPackages = process(new java.io.FileInputStream(javaSecurityFile)) { in ⇒
+      val properties = new java.util.Properties()
+      properties.load(in)
+      properties.getProperty("package.access", "").
+        split(",").
+        map(_.trim.replace('.', '/')).toSet
+    }
+    println(restrictedPackages.mkString("Restricted packages:\n\t", "\n\t", "\n"))
+
+    super.analyze(project, parameters)
+  }
+
+  /**
+   * This method finds all possible entry points.
+   * An entry point has to be public or protected and not final.
+   * Also it needs to take a String as argument and return an Object or Class
+   */
+  def entryPoints(project: Project[URL]): Iterable[(ClassFile, Method)] = {
+    import ObjectType._
+    for {
+      classFile ← project.classFiles
+      if !definedInRestrictedPackage(classFile.thisType.packageName)
+      method ← classFile.methods
+      if method.body.isDefined
+      if method.isPublic || (method.isProtected && !classFile.isFinal)
+      descriptor = method.descriptor
+      if (descriptor.parameterTypes.contains(String))
+    } yield (classFile, method)
+  }
+
+  /**
+   * Basically, each entry point is analyzed on its own and is associated with
+   * a unique domain instance.
+   */
+  def domain(
+    project: analyses.Project[URL],
+    classFile: ClassFile,
+    method: Method): Domain with Report = {
+    new RootTaintAnalysisDomain[URL](project, List.empty, CallStackEntry(classFile, method), false)
+  }
 }
 
-package taint {
+// used to cache interface calls - currently disabled
 
-    //    import java.net.URL
-    //    import analyses.{ Project, Analysis, AnalysisExecutor, ReportableAnalysisResult }
-    //    import org.opalj.bat.resolved.ai.project.{ AIProject, Report }
-    //    import org.opalj.bat.resolved.ai.domain._
-    //    import org.opalj.util.graphs._
-    //    import org.opalj.util.ControlAbstractions.process
-    //
-    //    object JDKTaintAnalysis
-    //            extends AIProject[URL,SomeDomain with Report]
-    //            with Analysis[URL, ReportableAnalysisResult]
-    //            with AnalysisExecutor {
-    //
-    //        def ai = BaseAI
-    //        
-    //        def description: String = "Finds unsafe Class.forName(...) calls."
-    //
-    //        val analysis = this
-    //
-    //        val javaSecurityParameter = "-java.security="
-    //
-    //        var javaSecurityFile: String = _
-    //
-    //        override def analysisParametersDescription: String =
-    //            javaSecurityParameter+"<JRE/JDK Security Policy File>"
-    //
-    //        override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
-    //            parameters.size == 1 && {
-    //                javaSecurityFile = parameters.head.substring(javaSecurityParameter.length())
-    //                new java.io.File(javaSecurityFile).exists()
-    //            }
-    //
-    //        override def analyze(
-    //            project: analyses.Project[URL],
-    //            parameters: Seq[String]): ReportableAnalysisResult = {
-    //            restrictedPackages = process(new java.io.FileInputStream(javaSecurityFile)) { in ⇒
-    //                val properties = new java.util.Properties()
-    //                properties.load(in)
-    //                properties.getProperty("package.access", "").
-    //                    split(",").
-    //                    map(_.trim.replace('.', '/'))
-    //            }
-    //            println(restrictedPackages.mkString("Restricted packages:\n\t", "\n\t", "\n"))
-    //
-    //            super.analyze(project, parameters)
-    //        }
-    //
-    //        def entryPoints(project: Project[URL]): Iterable[(ClassFile, Method)] = {
-    //            import ObjectType._
-    //            for {
-    //                classFile ← project.classFiles
-    //                if !definedInRestrictedPackage(classFile.thisType.packageName)
-    //                method ← classFile.methods
-    //                if method.isPublic || (method.isProtected && !classFile.isFinal)
-    //                descriptor = method.descriptor
-    //                if (descriptor.returnType == Object) || (descriptor.returnType == Class)
-    //                if (descriptor.parameterTypes.contains(String))
-    //                if method.body.isDefined // let's filter native methods...
-    //                // Select some specific method for debugging purposes...
-    //                //                if classFile.thisType.className == "com/sun/org/apache/xalan/internal/utils/ObjectFactory"
-    //                //                if method.name == "lookUpFactoryClass"
-    //                //                if classFile.thisType.className == "ai/taint/PermissionCheckNotOnAllPaths"
-    //                //                if method.name == "foo"
-    //                //                if classFile.thisType.className == "com/sun/beans/finder/ClassFinder"
-    //                //                if method.name == "findClass"
-    //            } yield (classFile, method)
-    //        }
-    //
-    //        /**
-    //         * Basically, each entry point is analyzed on its own and is associated with
-    //         * a unique domain instance.
-    //         */
-    //        def domain(
-    //            project: analyses.Project[URL],
-    //            classFile: ClassFile,
-    //            method: Method): Domain[CallStackEntry] with Report = {
-    //            new RootTaintAnalysisDomain[URL](project, (classFile, method))
-    //        }
-    //    }
-    //
-    //    trait TaintAnalysisDomain[Source]
-    //            extends Domain[CallStackEntry]
-    //            with DefaultValueBinding[CallStackEntry]
-    //            with DefaultTypeLevelLongValues[CallStackEntry]
-    //            with DefaultTypeLevelFloatValues[CallStackEntry]
-    //            with DefaultTypeLevelDoubleValues[CallStackEntry]
-    //            with DefaultReturnAddressValues[CallStackEntry]
-    //            //with DefaultPreciseIntegerValues[CallStackEntry]
-    //            with DefaultTypeLevelIntegerValues[CallStackEntry]
-    //            with DefaultPreciseReferenceValuesWithClosedHierarchy[CallStackEntry]
-    //            with StringValues[CallStackEntry]
-    //            with TypeLevelArrayInstructions
-    //            with TypeLevelFieldAccessInstructions
-    //            with TypeLevelInvokeInstructions
-    //            //with PerformInvocations[CallStackEntry, Source]
-    //            with DoNothingOnReturnFromMethod
-    //            with ProjectBasedTypeHierarchy[Source]
-    //            with Report { thisDomain ⇒
-    //
-    //        import org.opalj.util.Unknown
-    //        import ObjectType._
-    //
-    //        protected def declaringClass = identifier._1.thisClass
-    //        protected def methodName = identifier._2.name
-    //        protected def methodDescriptor = identifier._2.descriptor
-    //
-    //        protected def contextIdentifier =
-    //            declaringClass.className+"{ "+methodDescriptor.toJava(methodName)+" }"
-    //
-    //        /**
-    //         * Identifies the node in the analysis graph that represents the call
-    //         * of this domain's method.
-    //         *
-    //         * ==Control Flow==
-    //         * We only attach a child node (the `contextNode`) to the caller node if
-    //         * the analysis of this domain's method returns a relevant result.
-    //         * This is determined when the `postAnalysis` method is called.
-    //         */
-    //        protected val callerNode: SimpleNode[_]
-    //
-    //        /**
-    //         * Represents the node in the analysis graph that models the entry point
-    //         * to this method.
-    //         */
-    //        protected val contextNode: SimpleNode[(RelevantParameters, String)]
-    //
-    //        /**
-    //         * Stores the program counters of those invoke instructions that return either
-    //         * a class object or an object with the greatest lower bound `java.lang.Object`
-    //         * and which were originally passed a relevant value (in particular a relevant
-    //         * parameter).
-    //         */
-    //        protected var relevantValuesOrigins: List[(PC, SimpleNode[String])] = List.empty
-    //
-    //        /**
-    //         * Stores the values that are returned by this method. When the analysis
-    //         * of this method has completed the '''caller''' can then ask whether a
-    //         * a relevant value was returned.
-    //         */
-    //        protected var returnedValues: List[(PC, DomainValue)] = List.empty
-    //
-    //        //        /**
-    //        //         * @note
-    //        //         * Calling this method only makes sense when the analysis of this domain's method
-    //        //         * has completed.
-    //        //         */
-    //        //        def isRelevantValueReturned(): Boolean = {
-    //        //            relevantValuesOrigins.exists { relevantValueOrigin ⇒
-    //        //                returnedValues.exists { returnedValue ⇒
-    //        //                    origin(returnedValue._2).exists { returnedValueOrigin ⇒
-    //        //                        returnedValueOrigin == relevantValueOrigin._1
-    //        //                    }
-    //        //                }
-    //        //            }
-    //        //        }
-    //
-    //        /**
-    //         * @note Initialized by a call to `postAnalysis()`!
-    //         */
-    //        private var isRelevantValueReturned = false
-    //
-    //        /**
-    //         * When the analysis of this domain's method has completed a post analysis
-    //         * can be performed to construct the analysis graph.
-    //         *
-    //         * @note
-    //         * Calling this method only makes sense when the analysis of this domain's method
-    //         * has completed.
-    //         *
-    //         * @note
-    //         * This method must be called at most once otherwise the constructed analysis graph
-    //         * may contain duplicate information.
-    //         */
-    //        protected def postAnalysis(): Boolean = {
-    //            relevantValuesOrigins.foreach { relevantValueOrigin ⇒
-    //                returnedValues.foreach { returnedValue ⇒
-    //                    if (origin(returnedValue._2).exists { returnedValueOrigin ⇒
-    //                        returnedValueOrigin == relevantValueOrigin._1
-    //                    }) {
-    //                        isRelevantValueReturned = true
-    //                        relevantValueOrigin._2.addChild(callerNode)
-    //                    }
-    //                }
-    //            }
-    //            if (isRelevantValueReturned)
-    //                callerNode.addChild(contextNode)
-    //
-    //            isRelevantValueReturned
-    //        }
-    //
-    //        /**
-    //         * @note
-    //         * Calling this method only makes sense when the analysis of this domain's method
-    //         * has completed.
-    //         */
-    //        lazy val report = {
-    //            postAnalysis();
-    //            if (isRelevantValueReturned)
-    //                Some(toDot.generateDot(Set(callerNode)))
-    //            else
-    //                None
-    //        }
-    //
-    //        /**
-    //         * Checks if we want to trace the respective method call because a string
-    //         * value is passed on and the method returns either a class object or some
-    //         * object for which we have no further type information.
-    //         */
-    //        private def isRelevantCall(
-    //            pc: Int,
-    //            name: String,
-    //            methodDescriptor: MethodDescriptor,
-    //            operands: Operands): Boolean = {
-    //            operands.exists { op ⇒
-    //                // test if one of the relevant parameters was passed to the method
-    //                origin(op).exists(pc ⇒ contextNode.identifier._1.contains(pc))
-    //            } && (
-    //                methodDescriptor.returnType == Object ||
-    //                methodDescriptor.returnType == Class)
-    //        }
-    //
-    //        override def areturn(pc: Int, value: DomainValue) {
-    //            returnedValues = (pc, value) :: returnedValues
-    //        }
-    //
-    //        override def invokeinterface(pc: Int,
-    //                                     declaringClass: ReferenceType,
-    //                                     name: String,
-    //                                     methodDescriptor: MethodDescriptor,
-    //                                     operands: Operands) = {
-    //            isRelevantCall(pc, name, methodDescriptor, operands)
-    //            // TODO ...
-    //            super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
-    //        }
-    //
-    //        override def invokevirtual(pc: Int,
-    //                                   declaringClass: ReferenceType,
-    //                                   name: String,
-    //                                   methodDescriptor: MethodDescriptor,
-    //                                   operands: Operands): OptionalReturnValueOrExceptions = {
-    //            isRelevantCall(pc, name, methodDescriptor, operands)
-    //            // TODO ...
-    //            // check if we have a call to Class.newInstance...
-    //            super.invokevirtual(pc, declaringClass, name, methodDescriptor, operands)
-    //        }
-    //
-    //        override def invokespecial(pc: Int,
-    //                                   declaringClass: ReferenceType,
-    //                                   methodName: String,
-    //                                   methodDescriptor: MethodDescriptor,
-    //                                   operands: Operands) = {
-    //            isRelevantCall(pc, methodName, methodDescriptor, operands)
-    //            // TODO ...
-    //            super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
-    //        }
-    //
-    //        override def invokestatic(
-    //            pc: Int,
-    //            declaringClass: ReferenceType,
-    //            methodName: String,
-    //            methodDescriptor: MethodDescriptor,
-    //            operands: Operands): OptionalReturnValueOrExceptions = {
-    //
-    //            def doTypeLevelInvoke =
-    //                super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
-    //
-    //            if (!declaringClass.isObjectType || (
-    //                methodDescriptor.returnType != Class &&
-    //                methodDescriptor.returnType != Object))
-    //                return doTypeLevelInvoke;
-    //
-    //            val relevantOperands = operands.zipWithIndex.filter { operand_index ⇒
-    //                val (operand, index) = operand_index
-    //                origin(operand).exists { operandOrigin ⇒
-    //                    contextNode.identifier._1.exists(_ == operandOrigin)
-    //                }
-    //            }
-    //            if (relevantOperands.isEmpty)
-    //                return doTypeLevelInvoke;
-    //
-    //            // If we reach this point, we have an invocation of a relevant method 
-    //            // with a relevant parameter...
-    //            if (declaringClass == ObjectType.Class &&
-    //                methodName == "forName" &&
-    //                methodDescriptor.parameterTypes == Seq(String)) {
-    //                // found final  sink ...
-    //                val sinkNode = new SimpleNode(pc+": Class.forName("+operands.head+")")
-    //                contextNode.addChild(sinkNode)
-    //                relevantValuesOrigins = (pc, sinkNode) :: relevantValuesOrigins
-    //                println("Call to class for name found...")
-    //                return doTypeLevelInvoke;
-    //            }
-    //
-    //            // If we reach this point, we have an invocation of a relevant method 
-    //            // with a relevant parameter that is not our final sink...
-    //            val (classFile: ClassFile, method: Method) =
-    //                classHierarchy.resolveMethodReference(
-    //                    declaringClass.asObjectType,
-    //                    methodName,
-    //                    methodDescriptor,
-    //                    project).getOrElse {
-    //                        return doTypeLevelInvoke
-    //                    }
-    //
-    //            if (method.isNative)
-    //                return doTypeLevelInvoke;
-    //
-    //            val callerNode = new SimpleNode(pc+": method invocation")
-    //            val calleeDomain = new CalledTaintAnalysisDomain(
-    //                this,
-    //                (classFile, method),
-    //                callerNode,
-    //                relevantOperands.map(_._2)
-    //            )
-    //            val calleeParameters = operands.reverse.zipWithIndex.map { operand_index ⇒
-    //                val (operand, index) = operand_index
-    //                operand.adapt(calleeDomain, -(index + 1))
-    //            }.toArray(calleeDomain.DomainValueTag)
-    //            val parameters = DomainValues(calleeDomain)(calleeParameters)
-    //            if (isRecursiveCall(classFile, method, parameters))
-    //                return doTypeLevelInvoke;
-    //
-    //            println("Relevant call found: "+method.toJava)
-    //
-    //            // If we reach this point, we have an invocation of a relevant method 
-    //            // with a relevant parameter that is not our final sink and which is
-    //            // not native and which is not a recursive call
-    //            val aiResult = BaseAI.perform(classFile, method, calleeDomain)(Some(calleeParameters))
-    //            aiResult.domain.postAnalysis()
-    //            if (!aiResult.domain.isRelevantValueReturned)
-    //                return doTypeLevelInvoke;
-    //
-    //            val returnNode = new SimpleNode(pc+": returned value from : "+aiResult.domain.contextIdentifier)
-    //            contextNode.addChild(callerNode)
-    //            relevantValuesOrigins = (pc, returnNode) :: relevantValuesOrigins
-    //            val headValue = aiResult.domain.returnedValues.head._2
-    //            val mergedValue = ComputedValue(Some(
-    //                (headValue /: aiResult.domain.returnedValues.tail) { (c, n) ⇒
-    //                    c.join(pc, n._2) match {
-    //                        case NoUpdate          ⇒ c
-    //                        case SomeUpdate(value) ⇒ value
-    //                    }
-    //                }.adapt(this, pc)
-    //            ))
-    //            mergedValue
-    //        }
-    //
-    //        /**
-    //         * Checks if the call to the specified method represents a (mutually) recursive
-    //         * call.
-    //         */
-    //        def isRecursiveCall(
-    //            declaringClass: ReferenceType,
-    //            methodName: String,
-    //            methodDescriptor: MethodDescriptor,
-    //            parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean
-    //
-    //        final def isRecursiveCall(
-    //            classFile: ClassFile,
-    //            method: Method,
-    //            parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean = {
-    //            isRecursiveCall(
-    //                classFile.thisType,
-    //                method.name,
-    //                method.descriptor,
-    //                parameters)
-    //        }
-    //
-    //        //        override def putfield(
-    //        //            pc: Int,
-    //        //            objectref: DomainValue,
-    //        //            value: DomainValue,
-    //        //            declaringClass: ObjectType,
-    //        //            name: String,
-    //        //            fieldType: FieldType) = {
-    //        //            if (origin and type fit)
-    //        //                valuePasses = declaringClass.className+"."+name :: valuePasses
-    //        //            super.putfield(pc, objectref, value, declaringClass, name, fieldType)
-    //        //        }
-    //        //
-    //        //        override def putstatic(
-    //        //            pc: Int,
-    //        //            value: DomainValue,
-    //        //            declaringClass: ObjectType,
-    //        //            name: String,
-    //        //            fieldType: FieldType) = {
-    //        //            if (origin and type fit)
-    //        //                valuePasses = declaringClass.className+"."+name :: valuePasses
-    //        //
-    //        //            super.putstatic(pc, value, declaringClass, name, fieldType)
-    //        //        }
-    //
-    //    }
-    //
-    //    class RootTaintAnalysisDomain[Source](
-    //        val project: Project[Source],
-    //        val identifier: (ClassFile, Method))
-    //            extends TaintAnalysisDomain[Source] {
-    //
-    //        val callerNode = new SimpleNode("Some user of the API")
-    //
-    //        val contextNode = {
-    //            val firstIndex = if (identifier._2.isStatic) 1 else 2
-    //            val relevantParameters =
-    //                methodDescriptor.parameterTypes.zipWithIndex.filter { param_idx ⇒
-    //                    val (parameterType, _) = param_idx;
-    //                    parameterType == ObjectType.String
-    //                }.map(param_idx ⇒ -(param_idx._2 + firstIndex))
-    //            new SimpleNode((relevantParameters, contextIdentifier))
-    //        }
-    //
-    //        def isRecursiveCall(
-    //            declaringClass: ReferenceType,
-    //            methodName: String,
-    //            methodDescriptor: MethodDescriptor,
-    //            parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean = {
-    //            this.declaringClass == declaringClass &&
-    //                this.methodName == methodName &&
-    //                this.methodDescriptor == methodDescriptor // &&
-    //            // TODO check that the analysis would be made under the same assumption (same parameters!)
-    //        }
-    //    }
-    //
-    //    class CalledTaintAnalysisDomain[Source](
-    //        val previousTaintAnalysisDomain: TaintAnalysisDomain[Source],
-    //        val identifier: CallStackEntry,
-    //        val callerNode: SimpleNode[_],
-    //        val relevantParameters: RelevantParameters)
-    //            extends TaintAnalysisDomain[Source] {
-    //
-    //        val contextNode = new SimpleNode((relevantParameters, contextIdentifier))
-    //
-    //        def project = previousTaintAnalysisDomain.project
-    //
-    //        def isRecursiveCall(
-    //            declaringClass: ReferenceType,
-    //            methodName: String,
-    //            methodDescriptor: MethodDescriptor,
-    //            parameters: DomainValues[_ <: Domain[CallStackEntry]]): Boolean = {
-    //            (this.declaringClass == declaringClass &&
-    //                this.methodName == methodName &&
-    //                this.methodDescriptor == methodDescriptor
-    //            // && // TODO check that the analysis would be made under the same assumption (same parameters!)    
-    //            ) || (
-    //                    declaringClass.isObjectType &&
-    //                    previousTaintAnalysisDomain.isRecursiveCall(
-    //                        declaringClass.asObjectType,
-    //                        methodName,
-    //                        methodDescriptor,
-    //                        parameters))
-    //
-    //        }
-    //    }
+//object TaintAnalysisDomain
+//  extends TypeLevelDomain
+//  with IgnoreMethodResults
+//  with IgnoreSynchronization {
+//
+//  type Id = String
+//
+//  def id = "CachedInterfaceCallsDomain"
+//
+//  /**
+//   * contains all cached interface calls
+//   */
+//  var cachedInterfaceCalls: List[CachedInterfaceCall] = List.empty
+//
+//  case class CachedInterfaceCall(methodName: String, methodDescriptor: MethodDescriptor, operands: List[DomainValue]) {
+//    override def equals(obj: Any) = {
+//      obj match {
+//        case that: CachedInterfaceCall => {
+//
+//          methodName == that.methodName &&
+//            methodDescriptor == that.methodDescriptor &&
+//            operands.forall(p => that.operands.contains(p))
+//        }
+//        case _ => false
+//      }
+//
+//    }
+//  }
+//}
+
+/**
+ * This companion object saves some values during the analysis. It can be used for testing purpose
+ */
+object TaintAnalysisDomain {
+  var numberOfReports: Int = 0
 }
+
+/**
+ * This is the analysis domain it provides all need functionality to find Class.forName bugs.
+ */
+trait TaintAnalysisDomain[Source]
+  extends Domain
+  with DefaultHandlingOfMethodResults
+  with IgnoreSynchronization
+  with DefaultDomainValueBinding
+  with DefaultTypeLevelLongValues
+  with DefaultTypeLevelFloatValues
+  with DefaultTypeLevelDoubleValues
+  with DefaultTypeLevelIntegerValues
+  with DefaultStringValuesBinding
+  with DefaultIntegerValuesComparison
+  with Configuration
+  with TypeLevelFieldAccessInstructions
+  with TypeLevelInvokeInstructions
+  with TypeLevelReferenceValues
+  with ProjectBasedClassHierarchy[Source]
+  with Report { thisDomain ⇒
+
+  type Id = CallStackEntry
+
+  import ObjectType._
+
+  protected def declaringClass = id.classFile.thisType
+  protected def methodName = id.method.name
+  protected def methodDescriptor = id.method.descriptor
+
+  protected def contextIdentifier =
+    declaringClass.fqn + "{ " + methodDescriptor.toJava(methodName) + " }"
+
+  /**
+   * Identifies the node in the analysis graph that represents the call
+   * of this domain's method.
+   *
+   * ==Control Flow==
+   * We only attach a child node (the `contextNode`) to the caller node if
+   * the analysis of this domain's method returns a relevant result.
+   * This is determined when the `postAnalysis` method is called.
+   */
+  protected val callerNode: SimpleNode[_]
+
+  /**
+   * Represents the node in the analysis graph that models the entry point
+   * to this method.
+   */
+  protected val contextNode: SimpleNode[(RelevantParameters, String)]
+
+  /**
+   * Stores the program counters of those invoke instructions that return either
+   * a class object or an object with the greatest lower bound `java.lang.Object`
+   * and which were originally passed a relevant value (in particular a relevant
+   * parameter).
+   */
+  protected var relevantValuesOrigins: List[(PC, SimpleNode[String])] = List.empty
+
+  /**
+   * Stores the values that are returned by this method. When the analysis
+   * of this method has completed the '''caller''' can then ask whether a
+   * a relevant value was returned.
+   */
+  protected var returnedValues: List[(PC, DomainValue)] = List.empty
+
+  /**
+   * Stores relevant PCs that occur during the analysis of a method.
+   * For examples calls to getstatic or Class.forName
+   */
+  protected var taintedPCs: List[PC] = List.empty
+
+  /**
+   * Stores a list of all global fields that contain a tainted value
+   */
+  var taintedFields: List[String] = List.empty
+
+  /**
+   * Predicates if the analysis is currently in the process of looking
+   * for the use of a previously tainted field. If this is true then this
+   * boolean prevents the analysis from analyzing "putfield" instructions that
+   * could lead the analysis to run into an endless loop
+   */
+  val checkForFields: Boolean
+
+  /**
+   * Stores if a call to Class.forName has occurred. No report is created if this is not true
+   */
+  protected var callToClassForNameFound: Boolean = false;
+
+  /**
+   * @note
+   * Calling this method only makes sense when the analysis of this domain's method
+   * has completed.
+   */
+  def isRelevantValueReturned(): Boolean = {
+    relevantValuesOrigins.exists { relevantValueOrigin =>
+      returnedValues.exists { returnedValue =>
+        origin(returnedValue._2).exists { returnedValueOrigin =>
+          returnedValueOrigin == relevantValueOrigin._1
+        }
+      }
+    }
+  }
+
+  /**
+   * When the analysis of this domain's method has completed a post analysis
+   * can be performed to construct the analysis graph.
+   *
+   * @note
+   * Calling this method only makes sense when the analysis of this domain's method
+   * has completed.
+   *
+   * @note
+   * This method must be called at most once otherwise the constructed analysis graph
+   * may contain duplicate information.
+   */
+  def postAnalysis(): Boolean = {
+    relevantValuesOrigins.foreach { relevantValueOrigin =>
+      returnedValues.foreach { returnedValue =>
+        if (origin(returnedValue._2).exists { returnedValueOrigin =>
+          returnedValueOrigin == relevantValueOrigin._1
+        }) {
+          // adds a return path to every relevant value that is returned to the caller
+          relevantValueOrigin._2.addChild(callerNode)
+        }
+      }
+    }
+    if (isRelevantValueReturned) {
+      // a relevant value is returned so we add this node into the analysis graph
+      callerNode.addChild(contextNode)
+      true
+    } else
+      false
+  }
+
+  /**
+   * @note
+   * Calling this method only makes sense when the analysis of this domain's method
+   * has completed.
+   */
+  lazy val report = {
+    postAnalysis();
+    if (isRelevantValueReturned && callToClassForNameFound) {
+      val createdDot = toDot.generateDot(Set(callerNode))
+      TaintAnalysisDomain.numberOfReports = TaintAnalysisDomain.numberOfReports + 1
+      Some(createdDot)
+    } else
+      None
+  }
+
+  /**
+   * Checks if we want to trace the respective method call because a relevant string or a class
+   * value is passed on and the method returns either a class object or some
+   * object for which we have no further type information.
+   */
+  private def isRelevantCall(
+    methodDescriptor: MethodDescriptor,
+    operands: List[DomainValue]): Boolean = {
+    operands.exists { op =>
+      origin(op).exists(pc => contextNode.identifier._1.union(taintedPCs).contains(pc))
+    } && (
+      methodDescriptor.returnType == Object ||
+      methodDescriptor.returnType == Class)
+  }
+
+  override def areturn(pc: Int, value: DomainValue) {
+    // in case a relevant parameter is returned by the method
+    if (origin(value).exists(orig => contextNode.identifier._1.union(taintedPCs).contains(orig))) {
+      relevantValuesOrigins = (-1, new SimpleNode("return of a relevant Parameter")) :: relevantValuesOrigins
+    }
+    returnedValues = (pc, value) :: returnedValues
+  }
+
+  //TODO check compatibility with Java8 Extension Methods
+  override def invokeinterface(pc: Int,
+    declaringClass: ObjectType,
+    methodName: String,
+    methodDescriptor: MethodDescriptor,
+    operands: List[DomainValue]): MethodCallResult = {
+
+    def doTypeLevelInvoke =
+      super.invokeinterface(pc, declaringClass, methodName, methodDescriptor, operands)
+
+    /*
+       *invokeinterface is currently disabled due to the following reasons
+       *  1) caching interfaces does not work properly:
+       *  	- problem with adapting some values the cached domain
+       *   	- similar operands are not matched as equal due to different instance of RefValue
+       *  2) invokeinterface does not find and Class.forName bugs only more pathes to it.
+       */
+
+    // invokeinterface is currently due to the following reasons
+    //  - caching interfaces does not work properly:
+    //problem with adepting some values the cached domain
+
+    //    if (isIrrelevantInvoke(methodDescriptor, declaringClass))
+    //      return doTypeLevelInvoke;
+    //
+    //    val relevantOperands = computeRelevantOperands(operands)
+    //    if (relevantOperands.isEmpty)
+    //      return doTypeLevelInvoke;
+    //
+    //    // If we reach this point, we have an invocation of a relevant method 
+    //    // with a relevant parameter that is not our final sink...
+    //
+    //    val method: Method =
+    //      classHierarchy.resolveInterfaceMethodReference(
+    //        declaringClass.asObjectType,
+    //        methodName,
+    //        methodDescriptor,
+    //        project).getOrElse {
+    //          return doTypeLevelInvoke
+    //        }
+    //
+    //    var cachedInterfaceCall = TaintAnalysisDomain.CachedInterfaceCall(
+    //      methodName,
+    //      methodDescriptor,
+    //      operands.reverse.tail.map(operand => operand.adapt(TaintAnalysisDomain, 0)))
+    //
+    //
+    //    // filters cachedInterfaceCalls to see if there has already been a call to the
+    //    // same implementing class with the same parameters
+    //    // if that is the case the analysis stops  
+    //    if (TaintAnalysisDomain.cachedInterfaceCalls.contains(cachedInterfaceCall)) {
+    //      return doTypeLevelInvoke
+    //    }
+    //
+    //    TaintAnalysisDomain.cachedInterfaceCalls = cachedInterfaceCall :: TaintAnalysisDomain.cachedInterfaceCalls
+    //
+    //    // define a filter for the call to lookupImplementing methods
+    //    // if the ObjectType is precise it's upper bound is used.
+    //    // else every implementing method is analyzed
+    //    val filter: (ObjectType => Boolean) = operands.last match {
+    //      case x: SObjectValue =>
+    //        if (x.isPrecise) {
+    //          (x.upperTypeBound.contains(_))
+    //        } else {
+    //          (_ => true)
+    //        }
+    //      case _ => {
+    //        (_ => false)
+    //      }
+    //    }
+    //
+    //    // look up every class that implements the method and was previously
+    //    // instantiated
+    //    val implementingMethods = classHierarchy.lookupImplementingMethods(
+    //      declaringClass.asObjectType,
+    //      methodName,
+    //      methodDescriptor,
+    //      project,
+    //      filter)
+    //
+    //    // analyze every found method implementation
+    //    implementingMethods.foreach { (m: Method) =>
+    //      {
+    //        inspectMethod(pc, m, operands)
+    //      }
+    //    }
+    return doTypeLevelInvoke
+  }
+
+  override def invokevirtual(
+    pc: Int,
+    declaringClass: ReferenceType,
+    methodName: String,
+    methodDescriptor: MethodDescriptor,
+    operands: List[DomainValue]): MethodCallResult = {
+
+    def doTypeLevelInvoke =
+      super.invokevirtual(pc, declaringClass, methodName, methodDescriptor, operands)
+
+    // check if we have a call to Class.newInstance...
+    if (methodName == "newInstance") {
+      if (isRelevantCall(methodDescriptor, operands)) {
+        relevantValuesOrigins = (pc, new SimpleNode("newInstance")) :: relevantValuesOrigins
+      }
+    }
+
+    if (isIrrelevantInvoke(methodDescriptor, declaringClass))
+      return doTypeLevelInvoke;
+
+    val relevantOperands = computeRelevantOperands(operands)
+    if (relevantOperands.isEmpty)
+      return doTypeLevelInvoke;
+
+    // If we reach this point, we have an invocation of a relevant method 
+    // with a relevant parameter that is not our final sink...
+
+    val method: Method =
+      classHierarchy.lookupMethodDefinition(
+        declaringClass.asObjectType,
+        methodName,
+        methodDescriptor,
+        project).getOrElse {
+          return doTypeLevelInvoke
+        }
+
+    if (method.body.isEmpty) {
+      return doTypeLevelInvoke;
+    }
+
+    inspectMethod(pc, method, operands)
+
+    return doTypeLevelInvoke
+  }
+
+  override def invokespecial(
+    pc: Int,
+    declaringClass: ObjectType,
+    methodName: String,
+    methodDescriptor: MethodDescriptor,
+    operands: List[DomainValue]): MethodCallResult = {
+
+    def doTypeLevelInvoke =
+      super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
+
+    if (isIrrelevantInvoke(methodDescriptor, declaringClass))
+      return doTypeLevelInvoke;
+
+    val relevantOperands = computeRelevantOperands(operands)
+    if (relevantOperands.isEmpty)
+      return doTypeLevelInvoke;
+
+    // If we reach this point, we have an invocation of a relevant method 
+    // with a relevant parameter that is not our final sink...
+    val method: Method =
+      classHierarchy.resolveMethodReference(
+        declaringClass.asObjectType,
+        methodName,
+        methodDescriptor,
+        project).getOrElse {
+          return doTypeLevelInvoke
+        }
+
+    inspectMethod(pc, method, operands)
+
+    return doTypeLevelInvoke
+  }
+
+  override def invokestatic(
+    pc: Int,
+    declaringClass: ObjectType,
+    methodName: String,
+    methodDescriptor: MethodDescriptor,
+    operands: List[DomainValue]): MethodCallResult = {
+
+    def doTypeLevelInvoke =
+      super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
+
+    if (isIrrelevantInvoke(methodDescriptor, declaringClass))
+      return doTypeLevelInvoke;
+
+    val relevantOperands = computeRelevantOperands(operands)
+    if (taintedFields.isEmpty)
+      if (relevantOperands.isEmpty)
+        return doTypeLevelInvoke;
+
+    // If we reach this point, we have an invocation of a relevant method 
+    // with a relevant parameter...
+    if (checkForSink(declaringClass, methodDescriptor, methodName)) {
+      registerSink(pc, operands)
+      return doTypeLevelInvoke;
+    }
+
+    // If we reach this point, we have an invocation of a relevant method 
+    // with a relevant parameter that is not our final sink...
+    val method: Method =
+      classHierarchy.resolveMethodReference(
+        declaringClass.asObjectType,
+        methodName,
+        methodDescriptor,
+        project).getOrElse {
+          return doTypeLevelInvoke
+        }
+
+    inspectMethod(pc, method, operands)
+
+    return doTypeLevelInvoke
+  }
+
+  /**
+   * Checks if the call to the specified method represents a (mutually) recursive
+   * call.
+   */
+  def isRecursiveCall(
+    declaringClass: ReferenceType,
+    methodName: String,
+    methodDescriptor: MethodDescriptor,
+    parameters: DomainValues): Boolean
+
+  final def isRecursiveCall(
+    classFile: ClassFile,
+    method: Method,
+    parameters: DomainValues): Boolean = {
+    isRecursiveCall(
+      classFile.thisType,
+      method.name,
+      method.descriptor,
+      parameters)
+  }
+
+  override def putfield(
+    pc: PC,
+    objectref: DomainValue,
+    value: DomainValue,
+    declaringClass: ObjectType,
+    name: String,
+    fieldType: FieldType) = {
+
+    // skip if we already check for fields so we don't run into a loop
+    if (!checkForFields) {
+      // check if the field is set with a relevant value
+      if (contextNode.identifier._1.union(taintedPCs).intersect(origin(value).toSeq).nonEmpty) {
+
+        taintedFields = name :: taintedFields
+
+        val thisField: Field = classHierarchy.resolveFieldReference(
+          declaringClass,
+          name,
+          fieldType,
+          project).get
+
+        val classFile: ClassFile = project.classFile(thisField)
+
+        findAndInspectNewEntryPoint(classFile)
+      }
+    }
+
+    super.putfield(pc, objectref, value, declaringClass, name, fieldType)
+  }
+
+  override def getfield(
+    pc: PC,
+    objectref: DomainValue,
+    declaringClass: ObjectType,
+    name: String,
+    fieldType: FieldType) = {
+
+    // check if a tainted field is read
+    if (taintedFields.contains(name)) {
+      // set the value at this pc as tainted
+      taintedPCs = pc :: taintedPCs
+    }
+
+    super.getfield(pc, objectref, declaringClass, name, fieldType)
+  }
+
+  override def putstatic(
+    pc: PC,
+    value: DomainValue,
+    declaringClass: ObjectType,
+    name: String,
+    fieldType: FieldType) = {
+
+    // check if a tainted value is put in the field
+    if (contextNode.identifier._1.union(taintedPCs).intersect(origin(value).toSeq).nonEmpty) {
+      taintedFields = name :: taintedFields
+      // else if it doesn't get a tainted value:
+      // check if it was marked as tainted and remove it from the list
+    } else if (taintedFields.contains(name)) {
+      taintedFields = taintedFields.filter(_ != name)
+    }
+
+    super.putstatic(pc, value, declaringClass, name, fieldType)
+  }
+
+  override def getstatic(
+    pc: PC,
+    declaringClass: ObjectType,
+    name: String,
+    fieldType: FieldType) = {
+
+    // check if a tainted field is read
+    if (taintedFields.contains(name)) {
+      // store the PC of this instruction
+      taintedPCs = pc :: taintedPCs
+    }
+    super.getstatic(pc, declaringClass, name, fieldType)
+  }
+
+  /**
+   * checks if the invoke is irrelevant
+   * A relevant call needs to return a Class or an Object
+   * and its declaring Class must be an ObjectType
+   */
+  def isIrrelevantInvoke(methodDescriptor: MethodDescriptor, declaringClass: ReferenceType): Boolean = {
+    (!declaringClass.isObjectType || (
+      methodDescriptor.returnType != Class &&
+      methodDescriptor.returnType != Object &&
+      methodDescriptor.returnType != String))
+  }
+
+  /**
+   * Compares the list of possibly tainted values with the operands
+   * and returns all parameters that could be tainted.
+   */
+  def computeRelevantOperands(operands: List[DomainValue]) = {
+    operands.zipWithIndex.filter { operand_index =>
+      val (operand, index) = operand_index
+      origin(operand).exists { operandOrigin =>
+        contextNode.identifier._1.union(taintedPCs).exists(_ == operandOrigin)
+      }
+    }
+  }
+
+  /**
+   * Check if the method call resembles a call to Class.forName. In this
+   * case the analysis has found a sink and this method returns true.
+   */
+  def checkForSink(declaringClass: ObjectType, methodDescriptor: MethodDescriptor, methodName: String): Boolean = {
+    (declaringClass == ObjectType.Class &&
+      methodName == "forName" &&
+      methodDescriptor.parameterTypes == Seq(String))
+  }
+
+  /**
+   * Creates a sinkNode into the call graph and add the PC to additionalRelevantParameters
+   * and relevantValuesOrigins
+   */
+  def registerSink(pc: PC, operands: List[DomainValue]) = {
+    val sinkNode = new SimpleNode(pc + ": Class.forName(" + operands.head + ")")
+    contextNode.addChild(sinkNode)
+    callToClassForNameFound = true;
+    taintedPCs = pc :: taintedPCs
+    relevantValuesOrigins = (pc, sinkNode) :: relevantValuesOrigins
+  }
+
+  /**
+   * This method allows for the complete analysis of a given method. It
+   * creates a new unique CalledTaintAnalysisDomain and evaluates the
+   * returned result of that analysis. It returns true if a relevant
+   * Value was returned.
+   */
+  def inspectMethod(
+    pc: PC,
+    method: Method,
+    operands: List[DomainValue]): Boolean = {
+    val classFile = project.classFile(method)
+
+    if (!method.isNative && !definedInRestrictedPackage(classFile.thisType.packageName) && method.body.nonEmpty) {
+      val callerNode = new SimpleNode(pc + ": method invocation; method id: " + method)
+
+      // compute the new pc of relevant parameters that the analysis
+      // wants to keep track of
+      var relevantParameters: List[Int] = List.empty
+      for ((operand, index) <- operands.view.reverse.zipWithIndex) {
+        if ((origin(operand)).exists(orig => contextNode.identifier._1.union(taintedPCs).contains(orig))) {
+          relevantParameters = -(index + 1) :: relevantParameters
+        }
+      }
+
+      val calleeDomain = new CalledTaintAnalysisDomain(
+        this,
+        CallStackEntry(classFile, method),
+        callerNode,
+        relevantParameters,
+        checkForFields)
+
+      val calleeParameters = calleeDomain.DomainValueTag.newArray(method.body.get.maxLocals)
+      var localVariableIndex = 0
+      for ((operand, index) ← operands.view.reverse.zipWithIndex) {
+        calleeParameters(localVariableIndex) =
+          operand.adapt(calleeDomain, -(index + 1))
+        localVariableIndex += operand.computationalType.operandSize
+      }
+
+      val parameters = DomainValues(calleeDomain)(calleeParameters)
+      if (isRecursiveCall(classFile, method, parameters)) {
+        false
+      } else {
+        // If we reach this point, we have an invocation of a relevant method 
+        // with a relevant parameter that is not our final sink and which is
+        // not native and which is not a recursive call
+        val v = method.body.get
+        // Analyze the method
+        val aiResult = BaseAI.perform(classFile, method, calleeDomain)(Some(calleeParameters))
+        if (!aiResult.domain.isRelevantValueReturned) {
+          false
+        } else {
+          aiResult.domain.postAnalysis()
+          if (aiResult.domain.callToClassForNameFound) {
+            callToClassForNameFound = true;
+          }
+          // set return nodes
+          val returnNode = new SimpleNode(pc + ": returned value from : " + aiResult.domain.contextIdentifier)
+          contextNode.addChild(returnNode)
+          taintedPCs = pc :: taintedPCs
+          contextNode.addChild(callerNode)
+
+          relevantValuesOrigins = (pc, returnNode) :: relevantValuesOrigins
+          true
+        }
+      }
+    }
+    false
+  }
+
+  /**
+   * This method tries to find new entry points that use a tainted field.
+   * For each found entry point a new RootTaintAnalysisDomain is created.
+   * If the analyzed method found a bug (created a report) this report is printed.
+   */
+  def findAndInspectNewEntryPoint(classFile: ClassFile) {
+    for (method <- classFile.methods) {
+      if (!isRecursiveCall(classFile, method, null)) {
+        if (!method.body.isEmpty) {
+          val domain = new RootTaintAnalysisDomain(project, taintedFields, CallStackEntry(classFile, method), true)
+          val aiResult = BaseAI.perform(classFile, method, domain)()
+          val log: String = aiResult.domain.report.getOrElse(null)
+          if (log != null)
+            println(log)
+        }
+      }
+    }
+  }
+}
+
+/**
+ * The root domain that one is instanciated for every entry point found
+ * as well as when searching for the use of a field
+ */
+class RootTaintAnalysisDomain[Source](
+  val project: Project[Source],
+  val taintedGloableFields: List[String],
+  val id: CallStackEntry,
+  val checkForFields: Boolean)
+  extends TaintAnalysisDomain[Source] {
+  val callerNode = new SimpleNode("Some user of the API")
+
+  val contextNode: SimpleNode[(RelevantParameters, String)] = {
+
+    taintedFields = taintedGloableFields
+
+    var nextIndex = if (id.method.isStatic) 1 else 2
+    var relevantParameters =
+      //compute correct index (double, long take two slots) 
+      methodDescriptor.parameterTypes.zipWithIndex.map { param_idx =>
+        val (parameterType, index) = param_idx;
+        val currentIndex = nextIndex
+        nextIndex += parameterType.computationalType.operandSize
+        (parameterType, currentIndex)
+        // filter for Strings
+      }.filter { param_idx => param_idx._1 == ObjectType.String
+        // map on correct index
+      }.map(param_idx => -(param_idx._2))
+
+    new SimpleNode((relevantParameters, contextIdentifier))
+  }
+
+  def isRecursiveCall(
+    declaringClass: ReferenceType,
+    methodName: String,
+    methodDescriptor: MethodDescriptor,
+    parameters: DomainValues): Boolean = {
+    this.declaringClass == declaringClass &&
+      this.methodName == methodName &&
+      this.methodDescriptor == methodDescriptor // &&
+    // TODO check that the analysis would be made under the same assumption (same parameters!)
+  }
+
+}
+
+/**
+ * This class is  instantiated when a Root- or CalledTaintAnalysisDomain decide to further analyse
+ * a method resulting.
+ */
+class CalledTaintAnalysisDomain[Source](
+  val previousTaintAnalysisDomain: TaintAnalysisDomain[Source],
+  val id: CallStackEntry,
+  val callerNode: SimpleNode[_],
+  val relevantParameters: RelevantParameters,
+  val checkForFields: Boolean)
+
+  extends TaintAnalysisDomain[Source] {
+
+  taintedFields = previousTaintAnalysisDomain.taintedFields
+  //cachedInterfaceCalls = previousTaintAnalysisDomain.cachedInterfaceCalls
+
+  val contextNode = new SimpleNode((relevantParameters, contextIdentifier))
+
+  def project = previousTaintAnalysisDomain.project
+
+  /**
+   * Checks against all previous instantiated AnalysisDomains in the respective call graph
+   * up to the RootTaintAnalysisDomain
+   */
+  def isRecursiveCall(
+    declaringClass: ReferenceType,
+    methodName: String,
+    methodDescriptor: MethodDescriptor,
+    parameters: DomainValues): Boolean = {
+    (this.declaringClass == declaringClass &&
+      this.methodName == methodName &&
+      this.methodDescriptor == methodDescriptor // && // TODO check that the analysis would be made under the same assumption (same parameters!)    
+      ) || (
+        declaringClass.isObjectType &&
+        previousTaintAnalysisDomain.isRecursiveCall(
+          declaringClass.asObjectType,
+          methodName,
+          methodDescriptor,
+          parameters))
+
+  }
+}
+
