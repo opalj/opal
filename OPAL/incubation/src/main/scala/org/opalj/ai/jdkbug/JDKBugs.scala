@@ -154,7 +154,9 @@ object JDKTaintAnalysis
  * This companion object saves some values during the analysis. It can be used for testing purpose
  */
 object TaintAnalysisDomain {
+
     var numberOfReports = new java.util.concurrent.atomic.AtomicInteger(0)
+
 }
 
 /**
