@@ -75,28 +75,53 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             joinPC: PC,
             other: DomainMultipleReferenceValues): Update[DomainReferenceValue] = {
 
-            other.values foreach { that ⇒
-                if (this.vo == that.vo)
-                    // Invariant:
-                    // At most one value represented by MultipleReferenceValues
-                    // has the same pc as this value.
+            //            other.values foreach { that ⇒
+            //                 // Invariant:
+            //                    // At most one value represented by MultipleReferenceValues
+            //                    // has the same pc as this value.
+            //                if (this.vo == that.vo)
+            //                    this.join(joinPC, that) match {
+            //                        case NoUpdate ⇒
+            //                            // This value is more general than the value
+            //                            // in MultipleReferenceValues.
+            //                            return StructuralUpdate(
+            //                                MultipleReferenceValues(other.values - that + this))
+            //                        case SomeUpdate(right) if right eq that ⇒
+            //                            return StructuralUpdate(other)
+            //                        case SomeUpdate(newValue: DomainSingleOriginReferenceValue) ⇒
+            //                            return StructuralUpdate(
+            //                                MultipleReferenceValues(other.values - that + newValue))
+            //                        case _ ⇒
+            //                            throw DomainException("internal implementation error; two values with the same origin resulted in a value with multiple origins")
+            //                    }
+            //            }
+            //            StructuralUpdate(MultipleReferenceValues(other.values + this))
+
+            // Invariant:
+            // At most one value represented by MultipleReferenceValues
+            // has the same pc as this value.
+            other.values find { that ⇒ this.vo == that.vo } match {
+                case None ⇒
+                    StructuralUpdate(MultipleReferenceValues(other.values + this))
+                case Some(that) ⇒
                     this.join(joinPC, that) match {
                         case NoUpdate ⇒
                             // This value is more general than the value
                             // in MultipleReferenceValues.
-                            return StructuralUpdate(
+                            StructuralUpdate(
                                 MultipleReferenceValues(other.values - that + this))
-                        case SomeUpdate(right) if right eq that ⇒
-                            return StructuralUpdate(other)
-                        case SomeUpdate(newValue: DomainSingleOriginReferenceValue) ⇒
-                            return StructuralUpdate(
-                                MultipleReferenceValues(other.values - that + newValue))
-                        case _ ⇒
-                            throw DomainException("internal implementation error; two values with the same origin resulted in a value with multiple origins")
+                        case SomeUpdate(newValue) ⇒
+                            if (newValue eq that)
+                                StructuralUpdate(other)
+                            else {
+                                StructuralUpdate(
+                                    MultipleReferenceValues(
+                                        other.values - that +
+                                            newValue.asInstanceOf[DomainSingleOriginReferenceValue]
+                                    ))
+                            }
                     }
             }
-
-            StructuralUpdate(MultipleReferenceValues(other.values + this))
         }
 
         protected def doJoinWithNullValueWithSameOrigin(
