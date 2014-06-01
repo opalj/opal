@@ -1807,10 +1807,14 @@ trait AI[D <: Domain] {
                                     // if objectref is a subtype => UNCHANGED
                                     fallThrough()
                                 case No ⇒
-                                    val ex = theDomain.InitializedObjectValue(pc, ClassCastException)
+                                    val ex =
+                                        theDomain.InitializedObjectValue(
+                                            pc, ClassCastException)
                                     handleException(ex)
                                 case Unknown ⇒
-                                    val ex = theDomain.InitializedObjectValue(pc, ClassCastException)
+                                    val ex =
+                                        theDomain.InitializedObjectValue(
+                                            pc, ClassCastException)
                                     handleException(ex)
                                     val (newOperands, newLocals) =
                                         theDomain.refEstablishUpperBound(
@@ -1860,7 +1864,8 @@ trait AI[D <: Domain] {
                             "unsupported opcode: "+opcode)
                 }
 
-                theDomain.evaluationCompleted(pc, worklist, evaluated, operandsArray, localsArray, tracer)
+                theDomain.evaluationCompleted(
+                    pc, worklist, evaluated, operandsArray, localsArray, tracer)
             } catch {
                 case ct: ControlThrowable ⇒
                     throw ct
