@@ -79,14 +79,26 @@ object TestSupport {
     }
 
     /**
-     * Tries to locate the JRE's library folder. (I.e., the 
-     * location in which the rt.jar file and the other jar files belonging to the 
+     * Tries to locate the JRE's library folder. (I.e., the
+     * location in which the rt.jar file and the other jar files belonging to the
      * Java runtime environment can be found).
      */
-    lazy val JRELibraryFolder: Option[File] = {
-        val bootClasspath = System.getProperty("sun.boot.class.path")
-        val elements = bootClasspath.split(":")
-        val rtJar = elements.find(_.endsWith("rt.jar")).map(new File(_))
-        rtJar.map(_.getParentFile())
+    lazy val JRELibraryFolder: File = {
+        val libPath = System.getProperty("sun.boot.library.path")
+        if (libPath == null)
+            throw new RuntimeException("cannot locate the JRE")
+
+        new File(libPath)
     }
+
+    /**
+     * Loads class files from JRE .jars found in the boot classpath.
+     *
+     * @return List of class files ready to be passed to a `IndexBasedProject`.
+     */
+    lazy val JREClassFiles: Seq[(ClassFile, java.net.URL)] = {
+        val paths = System.getProperties().getProperty("sun.boot.class.path").split(":")
+        org.opalj.br.reader.Java8LibraryFramework.ClassFiles(JRELibraryFolder)
+    }
+
 }

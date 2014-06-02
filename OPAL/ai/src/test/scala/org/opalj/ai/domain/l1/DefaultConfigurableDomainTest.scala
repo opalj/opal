@@ -52,19 +52,16 @@ class DefaultConfigurableDomainTest extends FlatSpec with Matchers {
 
     behavior of "the abstract interpretation framework's l1.DefaultConfigurableDomain"
 
-    val project = TestSupport.JRELibraryFolder.map(Project(_))
+    val project = Project(TestSupport.JREClassFiles)
 
-    if (project.isDefined) {
-        it should ("be able to perform an abstract interpretation of all methods of the JRE") in {
-            val (message, source) = debug.InterpretMethodsAnalysis.interpret(
-                project.get,
-                classOf[DefaultConfigurableDomain[_]],
-                false)
+    it should ("be able to perform an abstract interpretation of all methods of the JRE") in {
+        val (message, source) = debug.InterpretMethodsAnalysis.interpret(
+            project,
+            classOf[DefaultConfigurableDomain[_]],
+            false)
 
-            if (source.nonEmpty)
-                fail(message+" (details: "+source+")")
-        }
-    } else {
-        fail("cannot find the JRE/lib folder")
+        if (source.nonEmpty)
+            fail(message+" (details: "+source+")")
     }
+
 }
