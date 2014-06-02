@@ -126,8 +126,7 @@ class InvokedynamicTest extends FunSpec with Matchers {
         describe("when passed the jre 8 jars") {
             it("should resolve all invokedynamic instructions found there") {
                 val jrePath = TestSupport.JRELibraryFolder
-                if (!jrePath.isDefined) cancel("Cannot find JRE!")
-                val jreProject = Project(jrePath.get)
+                val jreProject = Project(jrePath)
                 val failedInstructions = (for {
                     classFile ← jreProject.classFiles
                     method @ MethodWithBody(body) ← classFile.methods
