@@ -53,7 +53,7 @@ case object UNRESOLVED_INVOKEDYNAMIC extends InvocationInstruction {
 
     override def methodDescriptor: MethodDescriptor = error
 
-    override final val opcode = 186
+    override final val opcode = INVOKEDYNAMIC.opcode
 
     override def mnemonic: String = "invokedynamic"
 
