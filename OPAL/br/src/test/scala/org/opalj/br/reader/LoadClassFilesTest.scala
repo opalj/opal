@@ -61,33 +61,30 @@ class LoadClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
 
     behavior of "OPAL"
 
-    val jreLibFolder: Option[File] = TestSupport.JRELibraryFolder
-    if (jreLibFolder.isDefined) {
-        var count = 0
-        for {
-            file ← jreLibFolder.get.listFiles
-            if file.isFile
-            if file.canRead
-            if file.getName.endsWith(".jar")
-            if file.length() > 0
-        } {
-            count += 1
-            it should ("be able to parse the class files in "+file) in {
-                val jarFile = new ZipFile(file)
-                val jarEntries = (jarFile).entries
-                while (jarEntries.hasMoreElements) {
-                    val jarEntry = jarEntries.nextElement
-                    if (!jarEntry.isDirectory && jarEntry.getName.endsWith(".class")) {
-                        val data = new Array[Byte](jarEntry.getSize().toInt)
-                        process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
-                        simpleValidator(Java8Framework.ClassFile(new DataInputStream(new ByteArrayInputStream(data))))
-                    }
+    val jreLibFolder: File = TestSupport.JRELibraryFolder
+
+    var count = 0
+    for {
+        file ← jreLibFolder.listFiles
+        if file.isFile
+        if file.canRead
+        if file.getName.endsWith(".jar")
+        if file.length() > 0
+    } {
+        count += 1
+        it should ("be able to parse the class files in "+file) in {
+            val jarFile = new ZipFile(file)
+            val jarEntries = (jarFile).entries
+            while (jarEntries.hasMoreElements) {
+                val jarEntry = jarEntries.nextElement
+                if (!jarEntry.isDirectory && jarEntry.getName.endsWith(".class")) {
+                    val data = new Array[Byte](jarEntry.getSize().toInt)
+                    process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
+                    simpleValidator(Java8Framework.ClassFile(new DataInputStream(new ByteArrayInputStream(data))))
                 }
             }
         }
-        assert(count > 0)
-    } else {
-        fail("cannot find JRE/lib folder")
     }
+    assert(count > 0)
 
 }
