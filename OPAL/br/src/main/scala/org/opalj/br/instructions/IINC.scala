@@ -40,7 +40,7 @@ case class IINC(
     constValue: Int)
         extends ArithmeticInstruction {
 
-    def opcode: Int = 132
+    override def opcode: Opcode = IINC.opcode
 
     def mnemonic: String = "iinc"
 
@@ -57,5 +57,10 @@ case class IINC(
     override def nextInstructions(currentPC: PC, code: Code): PCs = {
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
     }
+
+}
+object IINC {
+
+    final val opcode = 132
 
 }

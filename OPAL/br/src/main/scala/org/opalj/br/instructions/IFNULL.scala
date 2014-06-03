@@ -39,8 +39,13 @@ case class IFNULL(
     branchoffset: Int)
         extends ConditionalBranchInstruction {
 
-    def opcode: Int = 198
+    override def opcode: Opcode = IFNULL.opcode
 
     def mnemonic: String = "ifnull"
+
+}
+object IFNULL {
+
+    final val opcode = 198
 
 }

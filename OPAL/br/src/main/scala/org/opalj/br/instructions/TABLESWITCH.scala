@@ -42,7 +42,7 @@ case class TABLESWITCH(
     jumpOffsets: IndexedSeq[Int])
         extends CompoundConditionalBranchInstruction {
 
-    def opcode: Int = 170
+    override def opcode: Opcode = TABLESWITCH.opcode
 
     def mnemonic: String = "tableswitch"
 
@@ -63,5 +63,11 @@ case class TABLESWITCH(
                 key+"="+(pc + offset) + (if (offset >= 0) "↓" else "↑")
             }.mkString(", ")+
             "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+")"
+
+}
+
+object TABLESWITCH {
+
+    final val opcode = 170
 
 }

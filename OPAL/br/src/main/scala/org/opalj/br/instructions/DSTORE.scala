@@ -40,8 +40,14 @@ case class DSTORE(
         extends StoreLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
-    def opcode: Int = 57
+    def opcode: Opcode = DSTORE.opcode
 
     def mnemonic: String = "dstore"
+
+}
+
+object DSTORE {
+
+    final val opcode = 57
 
 }

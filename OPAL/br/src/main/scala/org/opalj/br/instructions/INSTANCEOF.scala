@@ -39,7 +39,7 @@ case class INSTANCEOF(
     referenceType: ReferenceType)
         extends Instruction {
 
-    def opcode: Int = 193
+    override def opcode: Opcode = INSTANCEOF.opcode
 
     def mnemonic: String = "instanceof"
 
@@ -54,3 +54,8 @@ case class INSTANCEOF(
     override def toString: String = "INSTANCEOF("+referenceType.toJava+")"
 }
 
+object INSTANCEOF {
+
+    final val opcode = 193
+
+}

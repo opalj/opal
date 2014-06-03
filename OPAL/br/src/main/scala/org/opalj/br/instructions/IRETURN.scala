@@ -37,7 +37,7 @@ package instructions
  */
 case object IRETURN extends ReturnInstruction {
 
-    def opcode: Int = 172
+    override final val opcode = 172
 
     def mnemonic: String = "ireturn"
 

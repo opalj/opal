@@ -52,7 +52,7 @@ case class GETFIELD(
     fieldType: FieldType)
         extends FieldReadAccess {
 
-    def opcode: Int = 180
+    def opcode: Opcode = GETFIELD.opcode
 
     def mnemonic: String = "getfield"
 
@@ -65,5 +65,11 @@ case class GETFIELD(
         )
 
     override def toString = "get "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+
+}
+
+object GETFIELD {
+
+    final val opcode = 180
 
 }

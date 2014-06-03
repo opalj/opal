@@ -37,7 +37,7 @@ package instructions
  */
 case object IALOAD extends ArrayLoadInstruction with PrimitiveArrayAccess {
 
-    def opcode: Int = 46
+    override final val opcode = 46
 
     def mnemonic: String = "iaload"
 

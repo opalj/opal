@@ -39,7 +39,7 @@ case object DCONST_0 extends LoadConstantInstruction[Double] with ImplicitValue 
 
     override def value: Double = 0.0d
 
-    override def opcode: Int = 14
+    override final val opcode = 14
 
     override def mnemonic: String = "dconst_0"
 

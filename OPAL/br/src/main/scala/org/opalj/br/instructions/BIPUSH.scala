@@ -39,10 +39,16 @@ case class BIPUSH(
     override val value: Int)
         extends LoadConstantInstruction[Int] {
 
-    override def opcode: Int = 16
+    override def opcode: Opcode = BIPUSH.opcode
 
     override def mnemonic: String = "bipush"
 
     override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
+
+}
+
+object BIPUSH {
+
+    final val opcode = 16
 
 }

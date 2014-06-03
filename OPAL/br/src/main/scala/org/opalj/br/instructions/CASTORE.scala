@@ -37,7 +37,7 @@ package instructions
  */
 case object CASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAccess {
 
-    def opcode: Int = 85
+    override final val opcode = 85
 
     def mnemonic: String = "castore"
 

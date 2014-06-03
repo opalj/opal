@@ -39,7 +39,7 @@ case class NEWARRAY(
     atype: Int)
         extends CreateNewArrayInstruction {
 
-    def opcode: Int = 188
+    override def opcode: Opcode = NEWARRAY.opcode
 
     def mnemonic: String = "newarray"
 
@@ -51,6 +51,8 @@ case class NEWARRAY(
 }
 
 object NEWARRAY {
+
+    final val opcode = 188
 
     def getType(atype: Int): BaseType = {
         (atype: @annotation.switch) match {

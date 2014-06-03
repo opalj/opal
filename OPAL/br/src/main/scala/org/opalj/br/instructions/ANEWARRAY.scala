@@ -38,12 +38,18 @@ package instructions
 case class ANEWARRAY(
     componentType: ReferenceType)
         extends CreateNewArrayInstruction {
-
-    def opcode: Int = 189
+		
+    override def opcode: Opcode = ANEWARRAY.opcode
 
     def mnemonic: String = "anewarray"
 
     final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = 
         currentPC + 3
+
+}
+
+object ANEWARRAY {
+
+    final val opcode = 189
 
 }

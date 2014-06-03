@@ -38,7 +38,7 @@ package instructions
  */
 case object SWAP extends StackManagementInstruction {
 
-    def opcode: Int = 95
+    override final val opcode = 95
 
     def mnemonic: String = "swap"
 

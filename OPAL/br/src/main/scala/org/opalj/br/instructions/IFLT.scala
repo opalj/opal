@@ -39,8 +39,13 @@ case class IFLT(
     branchoffset: Int)
         extends ConditionalBranchInstruction {
 
-    def opcode: Int = 155
+    def opcode: Opcode = IFLT.opcode
 
     def mnemonic: String = "iflt"
+
+}
+object IFLT {
+
+    final val opcode = 155
 
 }

@@ -39,10 +39,15 @@ case class JSR(
     branchoffset: Int)
         extends JSRInstruction {
 
-    def opcode: Int = 168
+    override def opcode: Opcode = JSR.opcode
 
     def mnemonic: String = "jsr"
 
     def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
     
+}
+object JSR {
+
+    final val opcode = 168
+
 }

@@ -41,7 +41,7 @@ case object LLOAD_3
 
     def lvIndex: Int = 3
 
-    def opcode: Int = 33
+    override final val opcode = 33
 
     def mnemonic: String = "lload_3"
 

@@ -41,7 +41,7 @@ case object ASTORE_1
 
     override def lvIndex = 1
 
-    override def opcode: Int = 76
+    override final val opcode = 76
 
     override def mnemonic: String = "astore_1"
 

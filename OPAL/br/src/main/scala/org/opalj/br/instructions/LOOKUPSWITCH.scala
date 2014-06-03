@@ -42,7 +42,7 @@ case class LOOKUPSWITCH(
     npairs: IndexedSeq[(Int, PC)])
         extends CompoundConditionalBranchInstruction {
 
-    def opcode: Int = 171
+    override def opcode: Opcode = LOOKUPSWITCH.opcode
 
     def mnemonic: String = "lookupswitch"
 
@@ -61,4 +61,9 @@ case class LOOKUPSWITCH(
             npairs.map(p ⇒ p._1+"="+(pc + p._2) + (if (p._2 >= 0) "↓" else "↑")).mkString(",")+
             "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+")"
     }
+}
+object LOOKUPSWITCH {
+
+    final val opcode = 171
+
 }
