@@ -1,5 +1,5 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+/* License (BSD Style License):
+ * Copyright (c) 2009 - 2013
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,7 +13,11 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
+ *    prior written permission.
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,34 +34,28 @@ package org.opalj
 package ai
 package domain
 
-import reflect.ClassTag
+import org.opalj.util.Answer
 
 /**
- * Final binding of a `Domain`'s type `DomainValue` as well as all subtypes of it that are
- * also defined by `Domain`.
- *
- * The type `DomainValue` is set to the type [[org.opalj.ai.Domain.Value]].
+ * Optional functionality related to extracting a concrete integer value from some
+ * domain value with computational type integer that is not required by the OPAL core.
  *
  * @author Michael Eichberg
  */
-trait DefaultDomainValueBinding extends Domain {
+trait ConcreteIntegerValues { this: Domain ⇒
 
-    final type DomainValue = Value
+    /**
+     * If the given value encapsulates a precise integer value then the function
+     * `ifThen` is called with the respective value otherwise `orElse` is called.
+     */
+    def intValue[T](value: DomainValue)(ifThen: Int ⇒ T)(orElse: ⇒ T): T
 
-    final override val DomainValueTag: ClassTag[DomainValue] = implicitly
+    /**
+     * Returns the current `Int` value represented by the domain value if it exists.
+     *
+     * @note This method returns `None` if the DomainValue does not represent an
+     *      Integer value or the precise value is not known. I.e., this method never fails.
+     */
+    def intValueOption(value: DomainValue): Option[Int]
 
-    final type DomainIllegalValue = IllegalValue
-
-    final override val TheIllegalValue: DomainIllegalValue = new IllegalValue
-
-    final override val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
-
-    final type DomainReturnAddressValue = ReturnAddressValue
-
-    final override def ReturnAddressValue(address: Int) = new ReturnAddressValue(address)
 }
-
-
-
-
-

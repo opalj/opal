@@ -40,7 +40,7 @@ import br._
  *
  * @author Michael Eichberg
  */
-trait TypeLevelIntegerValues extends Domain {
+trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -51,52 +51,47 @@ trait TypeLevelIntegerValues extends Domain {
     /**
      * Abstracts over values with computational type `integer`.
      */
-    trait ComputationalTypeIntegerValue extends Value { this: DomainValue ⇒
+    protected[this] trait ComputationalTypeIntegerValue extends Value { this: DomainValue ⇒
 
-        override final def computationalType: ComputationalType = ComputationalTypeInt
+        final override def computationalType: ComputationalType = ComputationalTypeInt
 
         override def summarize(pc: PC): DomainValue = this
 
     }
 
-    trait BooleanValue
-            extends ComputationalTypeIntegerValue
-            with IsBooleanValue { this: DomainValue ⇒
+    trait BooleanValue extends ComputationalTypeIntegerValue with IsBooleanValue {
+        this: DomainValue ⇒
 
         override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             target.BooleanValue(vo)
     }
 
-    trait ByteValue
-            extends ComputationalTypeIntegerValue
-            with IsByteValue { this: DomainValue ⇒
+    trait ByteValue extends ComputationalTypeIntegerValue with IsByteValue {
+        this: DomainValue ⇒
 
         override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             target.ByteValue(vo)
 
     }
 
-    trait CharValue
-            extends ComputationalTypeIntegerValue
-            with IsCharValue { this: DomainValue ⇒
+    trait CharValue extends ComputationalTypeIntegerValue with IsCharValue {
+        this: DomainValue ⇒
 
         override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             target.CharValue(vo)
 
     }
 
-    trait ShortValue
-            extends ComputationalTypeIntegerValue
-            with IsShortValue { this: DomainValue ⇒
+    trait ShortValue extends ComputationalTypeIntegerValue with IsShortValue {
+        this: DomainValue ⇒
 
         override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             target.ShortValue(vo)
 
     }
 
-    trait IntegerValue
-            extends ComputationalTypeIntegerValue
-            with IsIntegerValue { this: DomainValue ⇒
+    trait IntegerValue extends ComputationalTypeIntegerValue with IsIntegerValue {
+        this: DomainValue ⇒
 
         override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             target.IntegerValue(vo)
@@ -107,7 +102,8 @@ trait TypeLevelIntegerValues extends Domain {
     // QUESTION'S ABOUT VALUES
     //
 
-    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer = Unknown
+    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer =
+        Unknown
 
     override def intIsSomeValueInRange(
         value: DomainValue,
@@ -140,7 +136,7 @@ trait TypeLevelIntegerValues extends Domain {
     //
     // UNARY EXPRESSIONS
     //
-    override def ineg(pc: PC, value: DomainValue) = IntegerValue(pc)
+    override def ineg(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
 
     //
     // BINARY EXPRESSIONS
@@ -155,8 +151,12 @@ trait TypeLevelIntegerValues extends Domain {
     override def idiv(
         pc: PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException =
-        ComputedValue(IntegerValue(pc))
+        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        if (throwArithmeticExceptions)
+            ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
+        else
+            ComputedValue(IntegerValue(pc))
+    }
 
     override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
@@ -167,8 +167,12 @@ trait TypeLevelIntegerValues extends Domain {
     override def irem(
         pc: PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException =
-        ComputedValue(IntegerValue(pc))
+        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        if (throwArithmeticExceptions)
+            ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
+        else
+            ComputedValue(IntegerValue(pc))
+    }
 
     override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
@@ -185,17 +189,22 @@ trait TypeLevelIntegerValues extends Domain {
     override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
 
-    override def iinc(pc: PC, value: DomainValue, increment: Int) = IntegerValue(pc)
+    override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue =
+        IntegerValue(pc)
 
     //
     // TYPE CONVERSION INSTRUCTIONS
     //
-
     override def i2b(pc: PC, value: DomainValue): DomainValue = ByteValue(pc)
+
     override def i2c(pc: PC, value: DomainValue): DomainValue = CharValue(pc)
+
     override def i2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
+
     override def i2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
+
     override def i2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
+
     override def i2s(pc: PC, value: DomainValue): DomainValue = ShortValue(pc)
 
 }

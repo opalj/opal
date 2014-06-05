@@ -294,7 +294,7 @@ object XHTML {
         val indexedExceptionHandlers = indexExceptionHandlers(code)
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
-            var exceptionHandlers = code.exceptionHandlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
+            var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
             if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
             dumpInstruction(pc, instruction, Some(exceptionHandlers), domain)(
                 operands, locals)
@@ -374,10 +374,10 @@ object XHTML {
         var openSubroutines = 0
         val asStrings = evaluated.reverse.map { instruction ⇒
             instruction match {
-                case org.opalj.ai.AI.SUBROUTINE_START ⇒
+                case SUBROUTINE_START ⇒
                     openSubroutines += 1
                     subroutineStart
-                case org.opalj.ai.AI.SUBROUTINE_END ⇒
+                case SUBROUTINE_END ⇒
                     openSubroutines -= 1
                     subroutineEnd
                 case _ ⇒ instruction.toString+" "

@@ -227,20 +227,20 @@ class DefaultCHACallGraphDomain[Source](
     val theClassFile: ClassFile,
     val theMethod: Method)
         extends Domain
+        with TheProject[Source]
         with DefaultDomainValueBinding
         with GeneralizedArrayHandling
-        with Configuration
         with DefaultHandlingOfMethodResults
+        with ThrowAllPotentialExceptionsConfiguration
         with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultIntegerValuesComparison
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with ProjectBasedClassHierarchy[Source]
+        with ProjectBasedClassHierarchy
         with CHACallGraphDomain {
 
     type Id = Method

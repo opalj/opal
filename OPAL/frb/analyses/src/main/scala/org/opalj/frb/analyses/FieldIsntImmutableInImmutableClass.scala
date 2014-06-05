@@ -67,7 +67,7 @@ private class ImmutabilityAnalysisDomain[I](val id: I)
 
     type Id = I
     
-    override def maxSpreadInteger: Int = 1
+    override def maxUpdateCountForIntegerValues: Int = 1
 }
 
 /**

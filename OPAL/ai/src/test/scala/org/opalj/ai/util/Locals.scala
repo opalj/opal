@@ -124,7 +124,7 @@ class LocalsTest
 
     it should ("be able to merge two locals") in {
         for {
-            size ← 10 to 50
+            size ← 1 to 25
         } {
             var v1 = Locals[Integer](size)
             var v2 = Locals[Integer](size)
@@ -147,7 +147,7 @@ class LocalsTest
 
     it should ("be able to set a locals' value") in {
         for {
-            size ← 10 to 50
+            size ← 1 to 25
         } {
             var v = Locals[Integer](size)
             for {
@@ -161,15 +161,42 @@ class LocalsTest
 
     it should ("be able to update the locals in-place") in {
         for {
-            size ← 10 to 50
+            size ← 1 to 25
         } {
             var v = Locals[Integer](size)
             for { i ← 0 until size } { v.set(i, i) }
-            
+
             v.update(_ + 100)
 
             for { i ← 0 until size } {
                 v(i) should be(i + 100)
+            }
+        }
+    }
+
+    it should ("return the same locals f the tranformation does not update a value") in {
+        for {
+            size ← 1 to 25
+        } {
+            var v = Locals[Integer](size)
+            for { i ← 0 until size } { v.set(i, i) }
+
+            (v eq v.transform(id ⇒ id)) should be(true)
+
+        }
+    }
+
+    it should ("be able to transform the locals in-place") in {
+        for {
+            size ← 1 to 25
+        } {
+            var v = Locals[Integer](size)
+            for { i ← 0 until size } { v.set(i, i) }
+
+            val newV = v.transform(_ + 100)
+
+            for { i ← 0 until size } {
+                newV(i) should be(i + 100)
             }
         }
     }

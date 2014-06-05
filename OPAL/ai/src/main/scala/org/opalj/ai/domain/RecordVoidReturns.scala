@@ -42,10 +42,6 @@ import org.opalj.collection.mutable.UShortSet
  * }}}
  * It forwards all instruction evaluation calls to the super trait.
  *
- * ==Thread Safety==
- * This class is not thread safe. I.e., this domain can only be used if
- * an instance of this domain is not used by multiple threads.
- *
  * @author Michael Eichberg
  */
 trait RecordVoidReturns extends Domain {
@@ -58,7 +54,6 @@ trait RecordVoidReturns extends Domain {
         returnVoidInstructions = pc +≈: returnVoidInstructions
         super.returnVoid(pc)
     }
-
 }
 
 

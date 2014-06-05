@@ -59,7 +59,7 @@ trait VTACallGraphDomain extends CHACallGraphDomain { domain ⇒
         operands: Operands): Unit = {
         // MODIFIED CHA - we used the type information that is readily available
         val receiver = operands.last
-        val IsAReferenceValue(value) = typeOfValue(receiver)
+        val value = typeOfValue(receiver).asInstanceOf[IsAReferenceValue]
 
         // Possible Cases:
         //  - the value is precise and has a single type => static call
@@ -122,31 +122,25 @@ class DefaultVTACallGraphDomain[Source](
     val project: Project[Source],
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val theClassFile: ClassFile,
-    val theMethod: Method)
+    val theMethod: Method,
+    override val maxUpdateCountForIntegerValues: Int)
         extends Domain
+        with TheProject[Source]
         with DefaultDomainValueBinding
         with GeneralizedArrayHandling
-        with Configuration
+        with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         //with l0.DefaultTypeLevelIntegerValues
         with l1.DefaultPreciseIntegerValues
-        with l0.DefaultIntegerValuesComparison
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l1.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with ProjectBasedClassHierarchy[Source]
+        with ProjectBasedClassHierarchy
         with VTACallGraphDomain {
-
-    // Some performance data to justify the use of DefaultTypeLevelIntegerValues 
-    // l0.DefaultIntegerValues - 9 seconds - Call Edges: 602061
-    // l1.DefaultPreciseIntegerValues - max. Spread 1 - 9,1 seconds - Call Edges: 600772 
-    // l1.DefaultPreciseIntegerValues - max. Spread 5 - 10,1 seconds - Call Edges: 600592
-    // l1.DefaultPreciseIntegerValues - max. Spread 50 - 18,8 seconds - Call Edges: 600506
-    override def maxSpreadInteger: Int = 50
 
     type Id = Method
 

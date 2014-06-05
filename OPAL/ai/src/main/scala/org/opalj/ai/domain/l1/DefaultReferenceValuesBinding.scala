@@ -42,7 +42,7 @@ import br._
  * @author Michael Eichberg
  */
 trait DefaultReferenceValuesBinding extends l1.ReferenceValues {
-    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
+    domain: Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
 

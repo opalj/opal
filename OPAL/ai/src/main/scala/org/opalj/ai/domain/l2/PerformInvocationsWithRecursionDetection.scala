@@ -34,7 +34,8 @@ package l2
 import br.Method
 import br.ClassFile
 
-trait PerformInvocationsWithRecursionDetection[Source] extends PerformInvocations[Source] { rootDomain ⇒
+trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
+    rootDomain: TheProject[_] with Configuration ⇒
 
     val calledMethodsStore: CalledMethodsStore
 
@@ -46,7 +47,7 @@ trait PerformInvocationsWithRecursionDetection[Source] extends PerformInvocation
 
     trait InvokeExecutionHandler extends super.InvokeExecutionHandler {
 
-        override val domain: Domain with MethodCallResults with PerformInvocationsWithRecursionDetection[Source] {
+        override val domain: Domain with MethodCallResults with PerformInvocationsWithRecursionDetection {
             // we want to make sure that all instances use the same CalledMethodsStore
             val calledMethodsStore: rootDomain.calledMethodsStore.type
         }

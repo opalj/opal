@@ -45,7 +45,7 @@ import br._
  * @author Michael Eichberg
  */
 trait ArrayValues extends l1.ReferenceValues with Origin {
-    domain: Configuration with IntegerValuesProvider with IntegerValuesComparison with ClassHierarchy with PerInstructionPostProcessing ⇒
+    domain: Configuration with ConcreteIntegerValues with ClassHierarchy with PerInstructionPostProcessing ⇒
 
     // We do not refine the type DomainArrayValue any further since we also want
     // to use the super level ArrayValue class.
@@ -58,9 +58,9 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
             extends super.ArrayValue(vo, No, true, theType) {
         this: DomainArrayValue ⇒
 
-        override protected def length: Some[Int] = Some(values.size)
+        override def length: Some[Int] = Some(values.size)
 
-        override protected def doLoad(
+        override def doLoad(
             loadPC: PC,
             index: DomainValue,
             potentialExceptions: ExceptionValues): ArrayLoadResult = {
@@ -68,7 +68,7 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
                 // - a "NullPointerException" is not possible
                 // - if an ArrayIndexOutOfBoundsException may be thrown then we certainly
                 //   do not have enough information about the index...
-                return ComputedValueAndException(
+                return ComputedValueOrException(
                     TypedValue(loadPC, theUpperTypeBound.componentType),
                     potentialExceptions)
             }
@@ -82,7 +82,7 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
             }
         }
 
-        override protected def doStore(
+        override def doStore(
             storePC: PC,
             value: DomainValue,
             index: DomainValue,
@@ -95,7 +95,7 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
                 // - if an ArrayIndexOutOfBoundsException may be thrown then we certainly
                 //   do not have enough information about the index...
                 // - if an ArrayStoreException may be thrown, we are totally lost..
-// TODO [BUG] Mark array as dead
+                // TODO [BUG] Mark array as dead
                 return ThrowsException(potentialExceptions)
             }
 
@@ -104,7 +104,7 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
             intValue[ArrayStoreResult](index) { index ⇒
                 // let's check if we need to do anything
                 if (values(index) == value) {
-// TODO [BUG] Mark array as dead                    
+                    // TODO [BUG] Mark array as dead                    
                     var newArrayValue: DomainValue = null // <= we create the new array value only on demand and at most once!
                     registerOnRegularControlFlowUpdater { someDomainValue ⇒
                         if (someDomainValue eq ArrayValue.this) {
@@ -122,8 +122,8 @@ trait ArrayValues extends l1.ReferenceValues with Origin {
                 // This handles the case that the index is not precise, but still
                 // known to be valid. In this case we have to resort to the 
                 // abstract representation of the array.
-                
-               // TODO [BUG] Mark array as dead 
+
+                // TODO [BUG] Mark array as dead 
                 ComputationWithSideEffectOrException(potentialExceptions)
             }
         }

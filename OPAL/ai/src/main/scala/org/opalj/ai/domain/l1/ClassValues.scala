@@ -54,7 +54,7 @@ import br._
  * @author Arne Lottmann
  */
 trait ClassValues extends StringValues {
-    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
+    domain: Configuration with ClassHierarchy ⇒
 
     type DomainClassValue <: ClassValue with DomainObjectValue
 
@@ -118,9 +118,9 @@ trait ClassValues extends StringValues {
             val objectType = classValue.asObjectType
             if (classHierarchy.isKnown(objectType) ||
                 !throwClassNotFoundException) {
-                ComputedValue(Some(ClassValue(pc, classValue)))
+                ComputedValue(ClassValue(pc, classValue))
             } else {
-                ComputedValueAndException(Some(ClassValue(pc, classValue)),
+                ComputedValueOrException(ClassValue(pc, classValue),
                     Iterable(InitializedObjectValue(pc, ObjectType.ClassNotFoundException)))
             }
         } else {
@@ -128,9 +128,9 @@ trait ClassValues extends StringValues {
             if (elementType.isBaseType ||
                 classHierarchy.isKnown(elementType.asObjectType) ||
                 !throwClassNotFoundException) {
-                ComputedValue(Some(ClassValue(pc, classValue)))
+                ComputedValue(ClassValue(pc, classValue))
             } else {
-                ComputedValueAndException(Some(ClassValue(pc, classValue)),
+                ComputedValueOrException(ClassValue(pc, classValue),
                     Iterable(InitializedObjectValue(pc, ObjectType.ClassNotFoundException)))
             }
         }

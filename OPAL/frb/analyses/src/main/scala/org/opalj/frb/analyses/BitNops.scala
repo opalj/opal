@@ -64,7 +64,7 @@ private class BitNopsDomain[I](override val id: I)
      * We're only interested in certain specific values (0 and -1). Thus, we don't need
      * to track values that are known to be within some range a..b at all.
      */
-    override def maxSpreadInteger: Int = 0
+    override def maxUpdateCountForIntegerValues: Int = 1
 
     /**
      * DomainValue matcher to allow matching IntegerValues.

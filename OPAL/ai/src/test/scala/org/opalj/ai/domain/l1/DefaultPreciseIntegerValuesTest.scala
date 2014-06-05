@@ -54,47 +54,78 @@ class DefaultPreciseIntegerValuesTest
         with ParallelTestExecution {
 
     val domain = new DefaultConfigurableDomain("DefaultPreciseIntegerValuesTest") {
-        override def maxSpreadInteger: Int = 25
+        override def maxUpdateCountForIntegerValues: Int = 25
     }
     import domain._
 
-    
-    
     //
     // TESTS
     //
 
-    behavior of "IntegerRange values"
-
-    it should ("be able to join two identical values") in {
-        val v = IntegerRange(0, 0)
-        v.join(-1, v) should be(NoUpdate)
-    }
-
-    it should ("be able to join two overlapping values") in {
-        val v1 = IntegerRange(0, 1)
-        val v2 = IntegerRange(0, 2)
-
-        v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 2)))
-        v2.join(-1, v1) should be(NoUpdate)
-
-        val v3 = IntegerRange(-10, 10)
-        //v3.join(-1, v1) should be(NoUpdate)
-        v1.join(-1, v3) should be(StructuralUpdate(v3))
-
-        val v4 = IntegerRange(1, 0)
-        val v5 = IntegerRange(-3, -10)
-        v4.join(-1, v5) should be(StructuralUpdate(IntegerRange(1, -10)))
-
-        val v6 = IntegerRange(-3, -102)
-        v4.join(-1, v6) should be(StructuralUpdate(AnIntegerValue())) // > SPREAD!
-    }
-
-    it should ("be able to join with AnIntegerValue") in {
-        val v1 = IntegerRange(0, 1)
-
-        v1.join(-1, AnIntegerValue()) should be(StructuralUpdate(AnIntegerValue()))
-    }
+//    behavior of "IntegerRange values"
+//
+//    it should ("be able to join two identical values") in {
+//        val v = IntegerRange(0, 0)
+//        v.join(-1, v) should be(NoUpdate)
+//    }
+//
+//    it should ("be able to join two values growing in the same direction with the same initial value") in {
+//        val v1 = IntegerRange(0, 1)
+//        val v2 = IntegerRange(0, 2)
+//
+//        v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 2)))
+//        v2.join(-1, v1) should be(NoUpdate)
+//    }
+//
+//    it should ("be able to join two values growing in the same direction where one value represents a subrange of the other") in {
+//        val v1 = IntegerRange(0, 1)
+//        val v3 = IntegerRange(-10, 10)
+//        //v3.join(-1, v1) should be(NoUpdate)
+//        v1.join(-1, v3) should be(StructuralUpdate(v3))
+//    }
+//
+//    it should ("be able to join two values growing in same (negative) direction") in {
+//        val v4 = IntegerRange(1, 0)
+//        val v5 = IntegerRange(-3, -10)
+//        v4.join(-1, v5) should be(StructuralUpdate(IntegerRange(1, -10)))
+//    }
+//
+//    it should ("be able to join two values that grow in the same direction, but which exceed the spread") in {
+//        val v4 = IntegerRange(1, 0)
+//        val v6 = IntegerRange(-3, -102)
+//        v4.join(-1, v6) should be(StructuralUpdate(AnIntegerValue())) // > SPREAD!
+//    }
+//
+//    it should ("be able to join two overlapping values growing in the same direction with different initial values") in {
+//        val v1 = IntegerRange(-1, 1)
+//        val v2 = IntegerRange(0, 2)
+//
+//        v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(-1, 2)))
+//        v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-1, 2)))
+//    }
+//
+//    it should ("be able to join an initial value with another value") in {
+//        val vi = IntegerRange(0, 0)
+//        val v1 = IntegerRange(0, 1)
+//        val v2 = IntegerRange(-1, 1)
+//        val v3 = IntegerRange(1, 0)
+//        val v4 = IntegerRange(50, 0)
+//        val v5 = IntegerRange(10, 11)
+//
+//        vi.join(-1, v1) should be(StructuralUpdate(IntegerRange(0, 1)))
+//        vi.join(-1, v2) should be(StructuralUpdate(IntegerRange(-1, 1)))
+//        vi.join(-1, v3) should be(StructuralUpdate(IntegerRange(1, 0)))
+//        vi.join(-1, v4) should be(StructuralUpdate(AnIntegerValue()))
+//        vi.join(-1, v5) should be(StructuralUpdate(IntegerRange(0, 11)))
+//        
+//        v2.join(-1, vi) should be(NoUpdate)
+//    }
+//
+//    it should ("be able to join with AnIntegerValue") in {
+//        val v1 = IntegerRange(0, 1)
+//
+//        v1.join(-1, AnIntegerValue()) should be(StructuralUpdate(AnIntegerValue()))
+//    }
 
     behavior of "AnIntegerValue"
 

@@ -1001,6 +1001,7 @@ private object MethodsPlainTest {
 
     class RecordingDomain
             extends domain.l0.TypeLevelDomain
+            with ThrowAllPotentialExceptionsConfiguration
             with IgnoreSynchronization
             with DefaultHandlingForThrownExceptions {
 

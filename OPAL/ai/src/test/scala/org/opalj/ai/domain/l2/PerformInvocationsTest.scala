@@ -37,6 +37,7 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
+
 import org.opalj.util._
 import br._
 import br.analyses.{ SomeProject, Project }
@@ -178,9 +179,32 @@ class PerformInvocationsTest
 
 object PerformInvocationsTestFixture {
 
-    class InvocationDomain(val project: Project[java.net.URL]) extends l1.DefaultConfigurableDomain("Root Domain")
-            with PerformInvocations[java.net.URL]
+    class InvocationDomain(val project: Project[java.net.URL])
+            extends Domain
+            with TheProject[java.net.URL]
+            with DefaultDomainValueBinding
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            //    with DefaultReferenceValuesBinding
+            //    with DefaultStringValuesBinding
+            with DefaultClassValuesBinding
+            with DefaultArrayValuesBinding
+            with DefaultPreciseIntegerValues
+            with DefaultPreciseLongValues
+            with DefaultPerInstructionPostProcessing
+            with ProjectBasedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with PerformInvocations
             with RecordMethodCallResults {
+
+        type Id = Project[java.net.URL]
+
+        override def id = project
+
+        override def maxUpdateCountForIntegerValues: Int = 1
 
         def isRecursive(
             definingClass: ClassFile,

@@ -32,20 +32,25 @@ package ai
 /**
  * Encapsulates the result of a computation in a domain. In general, the
  * result is either some value `V` or some exception(s) `E`. In some cases, however,
- * when the domain cannot '''precisely''' determine the result, it may be both: some
- * exceptional value(s) and a value. In the latter case OPAL will generally follow all
+ * when the domain cannot ''precisely'' determine the result, it may be both: some
+ * exceptional value(s) and a value.
+ *
+ * In the latter case the abstract interpreter will generally follow all
  * possible paths. Please note, that a computation that declares to return a result
  * (i.e., `V` is not `Nothing`) must either return a result and/or throw an exception, but
  * is not allowed to return no result and no exceptions!
  *
- * @tparam V The result of the computation. Typically a `DomainValue`.
- *      If the computation is executed for its side
+ * @tparam V The result of the computation. Typically a `DomainValue`;
+ *      if the computation is executed for its side
  *      effect (e.g., as in case of a `monitorenter` or `monitorexit` instruction)
  *      the type of `V` maybe `Nothing`.
  * @tparam E The exception(s) that maybe thrown by the computation. Typically,
  *      a `DomainValue` which represents a reference value with type
  *      `java.lang.Throwable` or a subtype thereof. If multiple exceptions may be
  *      thrown it may also be a set of `DomainValue`s.
+ *
+ * @note The precise requirements on the result of a computation are determined
+ *      by the [[Domain]] object's methods that perform computations.
  *
  * @author Michael Eichberg
  */
@@ -58,9 +63,20 @@ sealed trait Computation[+V, +E] {
     def result: V
 
     /**
-     * Returns `true` if this computation may have a return value, `false` otherwise.
+     * Returns `true` if this computation has a result value, `false` otherwise.
+     *
+     * @note A method with return type `void` may return normally ([[returnsNormally]]),
+     *      but will never have a result. I.e., for such method, `hasResult` will always
+     *      be false.
      */
     def hasResult: Boolean
+
+    /**
+     * Returns `true` if this computation ''may have returned normally'' without
+     * throwing an exception. Given that some computations are performed for their
+     * side effect only, the computation may not have a result.
+     */
+    def returnsNormally: Boolean
 
     /**
      * The exception or exceptions when the computation raised an exception;
@@ -75,33 +91,6 @@ sealed trait Computation[+V, +E] {
      */
     def throwsException: Boolean
 
-    /**
-     * Returns `true` if this computation ''may have returned normally'' without
-     * throwing an exception.
-     */
-    def returnsNormally: Boolean
-}
-
-/**
- * Factory for `Computation` objects.
- *
- * @author Michael Eichberg
- */
-object Computation {
-
-    def apply[E](es: Seq[E]): Computation[Nothing, Seq[E]] = {
-        if (es.isEmpty)
-            ComputationWithSideEffectOnly
-        else
-            ComputationWithSideEffectOrException(es)
-    }
-
-    def apply[V, E](v: V, es: Seq[E]): Computation[V, Seq[E]] = {
-        if (es.isEmpty)
-            ComputedValue(v)
-        else
-            ComputedValueAndException(v, es)
-    }
 }
 
 /**
@@ -111,7 +100,7 @@ object Computation {
 final case class ComputedValue[+V](
     result: V)
         extends Computation[V, Nothing] {
-    
+
     def hasResult: Boolean = true
 
     def exceptions: Nothing =
@@ -119,29 +108,25 @@ final case class ComputedValue[+V](
             "the computation succeeded without an exception"
         )
 
-    def throwsException: Boolean = false
-
     def returnsNormally: Boolean = true
+
+    def throwsException: Boolean = false
 }
 
 /**
  * Encapsulates the result of a computation that either returned normally
  * or threw an exception.
  */
-final case class ComputedValueAndException[+V, +E](
+final case class ComputedValueOrException[+V, +E](
     result: V,
     exceptions: E)
         extends Computation[V, E] {
 
-    assert(result != null)
-    assert(exceptions != null)
-
     def hasResult: Boolean = true
-
-    def throwsException: Boolean = true
 
     def returnsNormally: Boolean = true
 
+    def throwsException: Boolean = true
 }
 
 /**
@@ -151,17 +136,16 @@ final case class ThrowsException[+E](
     exceptions: E)
         extends Computation[Nothing, E] {
 
-    def returnsNormally: Boolean = false
-
-    def hasResult: Boolean = false
-
     def result: Nothing =
         throw new UnsupportedOperationException(
             "the computation resulted in an exception"
         )
 
-    def throwsException: Boolean = true
+    def hasResult: Boolean = false
 
+    def returnsNormally: Boolean = false
+
+    def throwsException: Boolean = true
 }
 
 /**
@@ -172,14 +156,14 @@ final case class ComputationWithSideEffectOrException[+E](
     exceptions: E)
         extends Computation[Nothing, E] {
 
-    def returnsNormally: Boolean = true
-
-    def hasResult: Boolean = false
-
     def result: Nothing =
         throw new UnsupportedOperationException(
             "the computation was executed for its side effect only"
         )
+
+    def hasResult: Boolean = false
+
+    def returnsNormally: Boolean = true
 
     def throwsException: Boolean = true
 }
@@ -189,21 +173,21 @@ final case class ComputationWithSideEffectOrException[+E](
  */
 case object ComputationWithSideEffectOnly extends Computation[Nothing, Nothing] {
 
-    def returnsNormally: Boolean = true
-
-    def hasResult: Boolean = false
-
     def result: Nothing =
         throw new UnsupportedOperationException(
             "the computation was executed for its side effect only"
         )
 
-    def throwsException: Boolean = false
+    def hasResult: Boolean = false
+
+    def returnsNormally: Boolean = true
 
     def exceptions: Nothing =
         throw new UnsupportedOperationException(
             "the computation succeeded without an exception"
         )
+
+    def throwsException: Boolean = false
 }
 
 object ComputationWithResultAndException {

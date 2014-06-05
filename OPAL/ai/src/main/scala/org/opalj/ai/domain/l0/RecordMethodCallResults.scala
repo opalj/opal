@@ -52,7 +52,10 @@ trait RecordMethodCallResults
 
     private[this] var hasReturnedNormally: Boolean = false
 
-    abstract override def returnVoid(pc: PC): Unit = hasReturnedNormally = true
+    abstract override def returnVoid(pc: PC): Unit = {
+        hasReturnedNormally = true
+        super.returnVoid(pc)
+    }
 
     def returnedNormally: Boolean = hasReturnedNormally || allReturnedValues.nonEmpty
 
@@ -123,7 +126,7 @@ trait RecordMethodCallResults
                                 anExceptionValue)
                         }
 
-                    case IsAReferenceValue(exceptionValueProperties) ⇒
+                    case exceptionValueProperties: IsAReferenceValue ⇒
                         handleIsAReferenceValue(exceptionValue, exceptionValueProperties)
 
                     // case _ => ... should never occur

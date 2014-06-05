@@ -32,12 +32,12 @@ package domain
 package l0
 
 /**
- * This domain performs all computations basically at the type level and does
+ * This domain performs all computations at the type level and does
  * not track the flow of concrete values. Given the very high level of abstraction,
  * an abstract interpretation using this domain typically terminates quickly.
  *
- * This domain can be used as a foundation/as an inspiration for building your
- * own `Domain`. For example, it is useful to, e.g., track which types of values
+ * This domain can be used as a foundation/as an inspiration for building specialized
+ * [[Domain]]s. For example, it is useful to, e.g., track which types of values
  * are actually created to calculate a more precise call graph.
  *
  * @author Michael Eichberg
@@ -45,57 +45,11 @@ package l0
 trait TypeLevelDomain
     extends Domain
     with DefaultDomainValueBinding
-    with Configuration
     with DefaultReferenceValuesBinding
     with DefaultTypeLevelIntegerValues
     with DefaultTypeLevelLongValues
     with DefaultTypeLevelFloatValues
     with DefaultTypeLevelDoubleValues
-    with DefaultIntegerValuesComparison
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions
-    with PredefinedClassHierarchy
-
-/**
- * This is a ready to use domain which sets the domain identifier to "BaseTypeLevelDomain".
- *
- * This domain is primarily useful for testing and debugging purposes.
- *
- * @author Michael Eichberg
- */
-class BaseDomain
-        extends TypeLevelDomain
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization {
-
-    type Id = String
-
-    def id = "BaseTypeLevelDomain"
-
-}
-
-/**
- * A domain with a configurable identifier.
- *
- * @author Michael Eichberg
- */
-class BaseConfigurableDomain[I](
-    val id: I)
-        extends TypeLevelDomain
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization {
-
-    type Id = I
-}
-
-class BaseRecordingDomain[I](
-    val id: I)
-        extends TypeLevelDomain
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with RecordReturnFromMethodInstructions
-        with RecordAllThrownExceptions
-        with RecordVoidReturns {
-    
-    type Id = I
-}
+    with PredefinedClassHierarchy { this: Configuration ⇒ }

@@ -33,108 +33,98 @@ package domain
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 /**
- * This (partial-)domain abstracts over the concrete methods for performing 
+ * This (partial-)domain abstracts over the concrete methods for performing
  * array operations and provides an interface at a higher abstraction level.
  *
  * @author Michael Eichberg
  */
 trait GeneralizedArrayHandling { this: Domain ⇒
 
-    //      typeOfValue(arrayref) match {
-    //            case IsNullValue()    ⇒ justThrowsNullPointerException(pc)
-    //            case av: IsArrayValue ⇒ arrayload(pc, index, av)
-    //            case _                ⇒ domainException(this, "cannot load a value from "+arrayref)
-    //        }
-    def arrayload(
+    /*abstract*/ def arrayload(
         pc: PC,
         index: DomainValue,
         arrayRef: DomainValue): ArrayLoadResult
 
-    //         typeOfValue(arrayref) match {
-    //            case IsNullValue()    ⇒ justThrowsNullPointerException(pc)
-    //            case av: IsArrayValue ⇒ arraystore(pc, value, index, av)
-    //            case _                ⇒ domainException(this, "cannot store a value in "+arrayref)
-    //        }
-    def arraystore(
+    /*abstract*/ def arraystore(
         pc: PC,
         value: DomainValue,
         index: DomainValue,
         arrayRef: DomainValue): ArrayStoreResult
 
-    override def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    /*override*/ def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         arrayload(pc, index, arrayref)
 
-    override def aastore(
+    /*override*/ def aastore(
         pc: PC,
         value: DomainValue,
         index: DomainValue,
         arrayref: DomainValue): ArrayStoreResult =
         arraystore(pc, value, index, arrayref)
 
-    override def baload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    /*override*/ def baload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         arrayload(pc, index, arrayref)
 
-    override def bastore(
+    /*override*/ def bastore(
         pc: PC,
         value: DomainValue,
         index: DomainValue,
         arrayref: DomainValue): ArrayStoreResult =
         arraystore(pc, value, index, arrayref)
 
-    override def caload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    /*override*/ def caload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         arrayload(pc, index, arrayref)
 
-    override def castore(
+    /*override*/ def castore(
         pc: PC,
         value: DomainValue,
         index: DomainValue,
         arrayref: DomainValue): ArrayStoreResult =
         arraystore(pc, value, index, arrayref)
 
-    override def daload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    /*override*/ def daload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         arrayload(pc, index, arrayref)
 
-    override def dastore(
+    /*override*/ def dastore(
         pc: PC,
         value: DomainValue,
         index: DomainValue,
         arrayref: DomainValue): ArrayStoreResult =
         arraystore(pc, value, index, arrayref)
 
-    override def faload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    /*override*/ def faload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         arrayload(pc, index, arrayref)
 
-    override def fastore(
+    /*override*/ def fastore(
         pc: PC,
         value: DomainValue,
         index: DomainValue,
         arrayref: DomainValue): ArrayStoreResult =
         arraystore(pc, value, index, arrayref)
 
-    override def iaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    /*override*/ def iaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         arrayload(pc, index, arrayref)
 
-    override def iastore(
+    /*override*/ def iastore(
         pc: PC,
         value: DomainValue,
         index: DomainValue,
         arrayref: DomainValue): ArrayStoreResult =
         arraystore(pc, value, index, arrayref)
 
-    override def laload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    /*override*/ def laload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         arrayload(pc, index, arrayref)
 
-    override def lastore(
+    /*override*/ def lastore(
         pc: PC,
         value: DomainValue,
         index: DomainValue,
         arrayref: DomainValue): ArrayStoreResult =
         arraystore(pc, value, index, arrayref)
 
-    override def saload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
+    /*override*/ def saload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         arrayload(pc, index, arrayref)
 
-    override def sastore(
+    /*override*/ def sastore(
         pc: PC,
         value: DomainValue,
         index: DomainValue,

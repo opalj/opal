@@ -33,9 +33,11 @@ package ai
  * Exception that is thrown by the abstract interpreter when the abstract
  * interpretation of a method's implementation failed.
  *
+ * To create an instance use the companion object [[InterpretationFailedException$]].
+ *
  * @author Michael Eichberg
  */
-trait InterpretationFailedException {
+sealed trait InterpretationFailedException {
     def cause: Throwable
     val domain: Domain
     val pc: PC
@@ -44,7 +46,11 @@ trait InterpretationFailedException {
     val operandsArray: TheOperandsArray[domain.Operands]
     val localsArray: TheLocalsArray[domain.Locals]
 }
-
+/**
+ * Factory for [[InterpretationFailedException]]s.
+ *
+ * @author Michael Eichberg
+ */
 object InterpretationFailedException {
 
     def apply(

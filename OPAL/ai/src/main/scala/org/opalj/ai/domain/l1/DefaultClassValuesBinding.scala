@@ -43,7 +43,7 @@ import br._
 trait DefaultClassValuesBinding
         extends l1.DefaultStringValuesBinding
         with ClassValues {
-    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
+    domain: Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
     type DomainClassValue = ClassValue

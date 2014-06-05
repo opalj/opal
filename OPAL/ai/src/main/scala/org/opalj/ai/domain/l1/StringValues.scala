@@ -43,7 +43,7 @@ import br._
  */
 trait StringValues extends ReferenceValues with JavaObjectConversion {
 
-    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
+    domain: Configuration with ClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
 

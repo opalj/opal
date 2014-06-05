@@ -36,11 +36,11 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 import br._
 
 /**
- * Domain to track integer values at a configurable level of precision.
+ * Domain to track ranges of integer values.
  *
  * @author Michael Eichberg
  */
-trait PreciseIntegerValues
+trait IntegerRangeValues
         extends Domain
         with ConcreteIntegerValues {
     this: Configuration ⇒
@@ -52,10 +52,9 @@ trait PreciseIntegerValues
     // -----------------------------------------------------------------------------------
 
     /**
-     * Determines how often a value can be update before we assume the value to be
-     * AnIntegerValue
+     * Determines the maximum size of the integer value range.
      */
-    protected def maxUpdateCountForIntegerValues: Int
+    protected def maxSpreadIntegerValueRanges: Int
 
     /**
      * Abstracts over all values with computational type `integer`.
@@ -78,22 +77,25 @@ trait PreciseIntegerValues
     /**
      * Represents a concrete integer value.
      */
-    trait IntegerValue extends IntegerLikeValue { this: DomainValue ⇒
+    abstract class IntegerRange extends IntegerLikeValue { this: DomainValue ⇒
 
-        val updateCount: Int
+        val lowerBound: Int // inclusive
 
-        val value: Int
+        val upperBound: Int // inclusive
 
         /**
-         * Creates a new `IntegerValue` with the given value as the current value,
-         * and an increased updateCount.
+         * Creates a new `IntegerRange` that contains the given value.
          */
         def update(newValue: Int): DomainValue
 
     }
 
-    object IntegerValue {
-        def unapply(v: IntegerValue): Option[Int] = Some(v.value)
+    def IntegerRange(value: Int): DomainValue = IntegerRange(value, value)
+
+    def IntegerRange(lb: Int, ub: Int): DomainValue
+
+    object IntegerRange {
+        def unapply(v: IntegerRange): Option[(Int, Int)] = Some((v.lowerBound, v.upperBound))
     }
 
     protected[this] def updateValue(
@@ -115,14 +117,14 @@ trait PreciseIntegerValues
             f: Int ⇒ T)(
                 orElse: ⇒ T): T =
         value match {
-            case v: IntegerValue ⇒ f(v.value)
-            case _               ⇒ orElse
+            case v: IntegerRange if v.lowerBound == v.upperBound ⇒ f(v.lowerBound)
+            case _ ⇒ orElse
         }
 
     @inline final override def intValueOption(value: DomainValue): Option[Int] =
         value match {
-            case v: IntegerValue ⇒ Some(v.value)
-            case _               ⇒ None
+            case v: IntegerRange if v.lowerBound == v.upperBound ⇒ Some(v.lowerBound)
+            case _ ⇒ None
         }
 
     @inline protected final def intValues[T](
@@ -149,11 +151,13 @@ trait PreciseIntegerValues
         upperBound: Int): Answer = {
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             return Yes
-
-        intValue(value) { v ⇒
-            Answer(lowerBound <= v && v <= upperBound)
-        } {
-            Unknown
+        value match {
+            case IntegerRange(lb, ub) ⇒
+                if (ub >= lowerBound && lb <= upperBound)
+                    Yes
+                else
+                    No
+            case _ ⇒ Unknown
         }
     }
 
@@ -164,26 +168,45 @@ trait PreciseIntegerValues
         if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
             return No
 
-        intValue(value) { v ⇒
-            Answer(v < lowerBound || v > upperBound)
-        } {
-            Unknown
+        value match {
+            case IntegerRange(lb, ub) ⇒
+                if (lb <= lowerBound || ub >= upperBound)
+                    Yes
+                else
+                    No
+            case _ ⇒ Unknown
         }
     }
 
     override def intIsLessThan(
         smallerValue: DomainValue,
-        largerValue: DomainValue): Answer =
-        intValues(smallerValue, largerValue) { (v1, v2) ⇒
-            Answer(v1 < v2)
-        } { Unknown }
+        largerValue: DomainValue): Answer = {
+
+        (smallerValue, largerValue) match {
+            case (IntegerRange(s_lb, s_ub), IntegerRange(l_lb, l_ub)) ⇒
+                if (s_ub < l_lb)
+                    Yes
+                else if (s_lb > l_ub)
+                    No
+                else
+                    Unknown
+            case _ ⇒ Unknown
+        }
+    }
 
     override def intIsLessThanOrEqualTo(
         smallerOrEqualValue: DomainValue,
         equalOrLargerValue: DomainValue): Answer =
-        intValues(smallerOrEqualValue, equalOrLargerValue) { (v1, v2) ⇒
-            Answer(v1 <= v2)
-        } { Unknown }
+        (smallerOrEqualValue, equalOrLargerValue) match {
+            case (IntegerRange(s_lb, s_ub), IntegerRange(l_lb, l_ub)) ⇒
+                if (s_ub <= l_lb)
+                    Yes
+                else if (s_lb >= l_ub)
+                    No
+                else
+                    Unknown
+            case _ ⇒ Unknown
+        }
 
     override def intEstablishValue(
         pc: PC,
@@ -191,7 +214,7 @@ trait PreciseIntegerValues
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) =
-        updateValue(value, IntegerValue(pc, theValue), operands, locals)
+        updateValue(value, IntegerRange(theValue), operands, locals)
 
     override def intEstablishAreEqual(
         pc: PC,
@@ -199,15 +222,9 @@ trait PreciseIntegerValues
         value2: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        intValue(value1) { v1 ⇒
-            updateValue(value2, IntegerValue(pc, v1), operands, locals)
-        } {
-            intValue(value2) { v2 ⇒
-                updateValue(value1, IntegerValue(pc, v2), operands, locals)
-            } {
-                (operands, locals)
-            }
-        }
+        // TODO
+        (operands, locals)
+
     }
 
     // -----------------------------------------------------------------------------------
@@ -220,8 +237,12 @@ trait PreciseIntegerValues
     // UNARY EXPRESSIONS
     //
     override def ineg(pc: PC, value: DomainValue) = value match {
-        case v: IntegerValue ⇒ IntegerValue(pc, -v.value)
-        case _               ⇒ value
+        case IntegerRange(lb, ub) ⇒
+            if (lb == Int.MinValue) // -Int.MinValue === Int.MinValue
+                IntegerRange(Int.MinValue, -lb)
+            else
+                IntegerRange(-ub, -lb)
+        case _ ⇒ value
     }
 
     //
@@ -229,133 +250,119 @@ trait PreciseIntegerValues
     //
 
     override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 + v2)
-        } {
-            IntegerValue(pc)
-        }
-
-    override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 & v2)
-        } {
-            IntegerValue(pc)
+        (value1, value2) match {
+            case (IntegerRange(lb1, ub1), IntegerRange(lb2, ub2)) ⇒
+                // we have to deal with overflows
+                IntegerValue(pc)
+            case _ ⇒
+                IntegerValue(pc)
         }
 
     override def idiv(
         pc: PC,
         value1: DomainValue,
         value2: DomainValue): IntegerLikeValueOrArithmeticException = {
-        intValues(value1, value2) { (v1, v2) ⇒
-            if (v2 == 0)
-                ThrowsException(ArithmeticException(pc))
-            else
-                ComputedValue(IntegerValue(pc, v1 / v2))
-        } {
-            if (throwArithmeticExceptions)
-                ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
-            else
-                ComputedValue(IntegerValue(pc))
-        }
+        if (throwArithmeticExceptions)
+            ComputedValueOrException(
+                IntegerValue(pc), ArithmeticException(pc))
+        else
+            ComputedValue(IntegerValue(pc))
     }
 
     override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 * v2)
-        } {
-            IntegerValue(pc)
-        }
+        IntegerValue(pc)
 
-    override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 | v2)
-        } {
-            IntegerValue(pc)
-        }
+    override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue =
+        IntegerValue(pc)
 
     override def irem(
         pc: PC,
         value1: DomainValue,
         value2: DomainValue): IntegerLikeValueOrArithmeticException = {
-        intValues(value1, value2) { (v1, v2) ⇒
-            if (v2 == 0)
-                ThrowsException(ArithmeticException(pc))
-            else
-                ComputedValue(IntegerValue(pc, v1 % v2))
-        } {
-            if (throwArithmeticExceptions)
-                ComputedValueOrException(
-                    IntegerValue(pc), ArithmeticException(pc))
-            else
-                ComputedValue(IntegerValue(pc))
-        }
+        if (throwArithmeticExceptions)
+            ComputedValueOrException(
+                IntegerValue(pc), ArithmeticException(pc))
+        else
+            ComputedValue(IntegerValue(pc))
     }
 
+    override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        IntegerValue(pc)
+
+    override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        IntegerValue(pc)
+
     override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 << v2)
-        } {
-            IntegerValue(pc)
-        }
+        IntegerValue(pc)
 
     override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 >> v2)
-        } {
-            IntegerValue(pc)
-        }
+        IntegerValue(pc)
 
     override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 - v2)
-        } {
-            IntegerValue(pc)
-        }
+        IntegerValue(pc)
 
     override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 >>> v2)
-        } {
-            IntegerValue(pc)
-        }
+        IntegerValue(pc)
 
     override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 ^ v2)
-        } {
-            IntegerValue(pc)
-        }
-
-    override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue =
-        value match {
-            case v: IntegerValue ⇒
-                IntegerValue(v.value + increment)
-            case _ ⇒
-                // The given value is "some (unknown) integer value"
-                // hence, we can directly return it.
-                value
-        }
+        IntegerValue(pc)
 
     //
     // TYPE CONVERSION INSTRUCTIONS
     //
 
     override def i2b(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ ByteValue(pc, v.toByte))(ByteValue(pc))
+        value match {
+            case IntegerRange(lb, ub) ⇒
+                val newLB = if (lb < Byte.MinValue) Byte.MinValue else if (lb > Byte.MaxValue) Byte.MaxValue else lb
+                val newUB = if (ub > Byte.MaxValue) Byte.MaxValue else if (ub < Byte.MinValue) Byte.MinValue else ub
+                IntegerRange(newLB, newUB)
+            case _ ⇒
+                IntegerRange(Byte.MinValue, Byte.MaxValue)
+        }
 
     override def i2c(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ CharValue(pc, v.toChar))(CharValue(pc))
+        value match {
+            case IntegerRange(lb, ub) ⇒
+                val newLB = if (lb < Char.MinValue) Char.MinValue else if (lb > Char.MaxValue) Char.MaxValue else lb
+                val newUB = if (ub > Char.MaxValue) Char.MaxValue else if (ub < Char.MinValue) Char.MinValue else ub
+                IntegerRange(newLB, newUB)
+            case _ ⇒
+                IntegerRange(Char.MinValue, Char.MaxValue)
+        }
 
     override def i2s(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ ShortValue(pc, v.toShort))(ShortValue(pc))
+        value match {
+            case IntegerRange(lb, ub) ⇒
+                val newLB = if (lb < Short.MinValue) Short.MinValue else if (lb > Short.MaxValue) Short.MaxValue else lb
+                val newUB = if (ub > Short.MaxValue) Short.MaxValue else if (ub < Short.MinValue) Short.MinValue else ub
+                IntegerRange(newLB, newUB)
+            case _ ⇒
+                IntegerRange(Short.MinValue, Short.MaxValue)
+        }
 
     override def i2d(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
+        value match {
+            case IntegerRange(lb, ub) if lb == ub ⇒
+                DoubleValue(pc, lb)
+            case _ ⇒
+                DoubleValue(pc)
+        }
 
     override def i2f(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
+        value match {
+            case IntegerRange(lb, ub) if lb == ub ⇒
+                FloatValue(pc, lb)
+            case _ ⇒
+                FloatValue(pc)
+        }
 
     override def i2l(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ LongValue(pc, v.toLong))(LongValue(pc))
+        value match {
+            case IntegerRange(lb, ub) if lb == ub ⇒
+                LongValue(pc, lb)
+            case _ ⇒
+                LongValue(pc)
+        }
 }
 

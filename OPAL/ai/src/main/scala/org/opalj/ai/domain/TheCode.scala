@@ -30,34 +30,18 @@ package org.opalj
 package ai
 package domain
 
-import reflect.ClassTag
+import org.opalj.br.Code
 
 /**
- * Final binding of a `Domain`'s type `DomainValue` as well as all subtypes of it that are
- * also defined by `Domain`.
- *
- * The type `DomainValue` is set to the type [[org.opalj.ai.Domain.Value]].
+ * Provides information about the code block that is currently analyzed.
  *
  * @author Michael Eichberg
  */
-trait DefaultDomainValueBinding extends Domain {
+trait TheCode { this: Domain ⇒
 
-    final type DomainValue = Value
+    /**
+     * Returns the code block that is currently analyzed.
+     */
+    def code: Code
 
-    final override val DomainValueTag: ClassTag[DomainValue] = implicitly
-
-    final type DomainIllegalValue = IllegalValue
-
-    final override val TheIllegalValue: DomainIllegalValue = new IllegalValue
-
-    final override val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
-
-    final type DomainReturnAddressValue = ReturnAddressValue
-
-    final override def ReturnAddressValue(address: Int) = new ReturnAddressValue(address)
 }
-
-
-
-
-

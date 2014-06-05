@@ -33,7 +33,7 @@ package domain
 import language.implicitConversions
 
 /**
- * Generic infrastructure to record the values returned by the method. 
+ * Generic infrastructure to record the values returned by the method.
  * (Note that the computational type
  * of the value(s) is not recorded. It is directly determined by
  * the signature of the method that is analyzed or can be extracted using the respective
@@ -45,10 +45,6 @@ import language.implicitConversions
  *
  * ==Usage==
  * A domain that mixes in this trait should only be used to analyze a single method.
- *
- * ==Thread Safety==
- * This class is not thread safe. I.e., this domain can only be used if
- * an instance of this domain is not used by multiple threads.
  *
  * @author Michael Eichberg
  */

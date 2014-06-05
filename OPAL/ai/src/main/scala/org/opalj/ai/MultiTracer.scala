@@ -120,9 +120,6 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         }
     }
 
-    /**
-     * Called when the evaluation of a subroutine (JSR/RET) is completed.
-     */
     override def returnFromSubroutine(
         domain: Domain)(
             pc: Int,

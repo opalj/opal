@@ -120,47 +120,47 @@ trait ReflectiveInvoker extends JavaObjectConversion { this: Domain ⇒
                 case VoidType.id ⇒
                     Some(ComputationWithSideEffectOnly)
                 case BooleanType.id ⇒
-                    Some(ComputedValue(Some(BooleanValue(
+                    Some(ComputedValue(BooleanValue(
                         pc,
                         result.asInstanceOf[java.lang.Boolean].booleanValue()
-                    ))))
+                    )))
                 case ByteType.id ⇒
-                    Some(ComputedValue(Some(ByteValue(
+                    Some(ComputedValue(ByteValue(
                         pc,
                         result.asInstanceOf[java.lang.Byte].byteValue()
-                    ))))
+                    )))
                 case ShortType.id ⇒
-                    Some(ComputedValue(Some(ShortValue(
+                    Some(ComputedValue(ShortValue(
                         pc,
                         result.asInstanceOf[java.lang.Short].shortValue()
-                    ))))
+                    )))
                 case CharType.id ⇒
-                    Some(ComputedValue(Some(CharValue(
+                    Some(ComputedValue(CharValue(
                         pc,
                         result.asInstanceOf[java.lang.Character].charValue()
-                    ))))
+                    )))
                 case IntegerType.id ⇒
-                    Some(ComputedValue(Some(IntegerValue(
+                    Some(ComputedValue(IntegerValue(
                         pc,
                         result.asInstanceOf[java.lang.Integer].intValue()
-                    ))))
+                    )))
                 case LongType.id ⇒
-                    Some(ComputedValue(Some(LongValue(
+                    Some(ComputedValue(LongValue(
                         pc,
                         result.asInstanceOf[java.lang.Long].longValue()
-                    ))))
+                    )))
                 case FloatType.id ⇒
-                    Some(ComputedValue(Some(FloatValue(
+                    Some(ComputedValue(FloatValue(
                         pc,
                         result.asInstanceOf[java.lang.Float].floatValue()
-                    ))))
+                    )))
                 case DoubleType.id ⇒
-                    Some(ComputedValue(Some(DoubleValue(
+                    Some(ComputedValue(DoubleValue(
                         pc,
                         result.asInstanceOf[java.lang.Double].doubleValue()
-                    ))))
+                    )))
                 case _ ⇒
-                    Some(ComputedValue(Some(toDomainValue(pc, result))))
+                    Some(ComputedValue(toDomainValue(pc, result)))
             }
         } catch {
             // The exception happens as part of the execution of the underlying method;

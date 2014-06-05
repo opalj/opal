@@ -666,7 +666,7 @@ trait AI[D <: Domain] {
                  *      an object that is a subtype of `java.lang.Throwable`.
                  */
                 def handleException(exceptionValue: DomainValue) {
-                    val isHandled = code.exceptionHandlersFor(pc) exists { eh ⇒
+                    val isHandled = code.handlersFor(pc) exists { eh ⇒
                         // find the exception handler that matches the given exception
                         val branchTarget = eh.handlerPC
                         val catchType = eh.catchType
@@ -765,14 +765,14 @@ trait AI[D <: Domain] {
                 }
 
                 def computationWithOptionalReturnValueAndExceptions(
-                    computation: Computation[Option[DomainValue], ExceptionValues],
+                    computation: Computation[DomainValue, ExceptionValues],
                     rest: Operands) {
 
-                    if (computation.hasResult) {
-                        computation.result match {
-                            case Some(value) ⇒ fallThrough(value :: rest)
-                            case None        ⇒ fallThrough(rest)
-                        }
+                    if (computation.returnsNormally) {
+                        if (computation.hasResult)
+                            fallThrough(computation.result :: rest)
+                        else
+                            fallThrough(rest)
                     }
                     if (computation.throwsException)
                         handleExceptions(computation.exceptions)
@@ -1000,7 +1000,7 @@ trait AI[D <: Domain] {
 
                             theDomain.typeOfValue(exceptionValue) match {
                                 case TypeUnknown ⇒
-                                    code.exceptionHandlersFor(pc).foreach { eh ⇒
+                                    code.handlersFor(pc).foreach { eh ⇒
                                         val branchTarget = eh.handlerPC
                                         // unless we have a "finally" handler, we can state
                                         // a constraint
@@ -1030,7 +1030,7 @@ trait AI[D <: Domain] {
                                     val isHandled = referenceValues.forall(referenceValue ⇒
                                         // find the exception handler that matches the given 
                                         // exception
-                                        code.exceptionHandlersFor(pc).exists { eh ⇒
+                                        code.handlersFor(pc).exists { eh ⇒
                                             val branchTarget = eh.handlerPC
                                             val catchType = eh.catchType
                                             if (catchType.isEmpty) {
@@ -1905,26 +1905,6 @@ private object AI {
      */
     private final val initialWorkList: List[PC] = List(0)
 
-    /**
-     * Special value that is added to the work list/list of evaluated instructions
-     * before the program counter of the first
-     * instruction of a subroutine.
-     */
-    // some value smaller than -65536 to avoid confusion with local variable indexes
-    // in the worklist this value is replaced by the local variable index
-    // once we encounter a ret insruction.
-    final val SUBROUTINE_START = -80000008
-    /**
-     * Special value that is added to the list of evaluated instructions
-     * to mark the end of the evaluation of a subroutine.
-     */
-    final val SUBROUTINE_END = -88888888
-
-    /**
-     * Special value that is added to the work list to mark the beginning of a
-     * subroutine call.
-     */
-    private final val SUBROUTINE = -90000009 // some value smaller than -2^16
 }
 
 /**

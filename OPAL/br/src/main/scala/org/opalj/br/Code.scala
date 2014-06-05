@@ -82,14 +82,28 @@ case class Code(
     }
 
     /**
-     * Returns a view of all potential exception handlers (if any) for the
+     * Returns a view of all handlers (exception and finally handlers) (if any) for the
      * instruction with the given program counter (`pc`).
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def exceptionHandlersFor(pc: PC): Iterable[ExceptionHandler] =
-        exceptionHandlers.view.filter { handler ⇒
+    def handlersFor(pc: PC): Iterator[ExceptionHandler] =
+        exceptionHandlers.iterator.filter { handler ⇒
             handler.startPC <= pc && handler.endPC > pc
+        }
+
+    /**
+     * Returns a view of all potential exception handlers (if any) for the
+     * instruction with the given program counter (`pc`). `Finally` handlers are
+     * ignored.
+     *
+     * @param pc The program counter of an instruction of this `Code` array.
+     */
+    def exceptionHandlersFor(pc: PC): Iterator[ExceptionHandler] =
+        exceptionHandlers.iterator.filter { handler ⇒
+            handler.catchType.isDefined &&
+                handler.startPC <= pc &&
+                handler.endPC > pc
         }
 
     def handlerInstructionsFor(pc: PC): PCs = {
@@ -445,39 +459,6 @@ case class Code(
             val instrs = (firstInstruction, secondInstruction)
             if (f.isDefinedAt(instrs)) {
                 result = (first_pc, f(instrs)) :: result
-            }
-
-            firstInstruction = secondInstruction
-            first_pc = second_pc
-            second_pc = pcOfNextInstruction(second_pc)
-        }
-        result
-    }
-
-    def collectPairWithPreFilter[B](
-        preFilter: (Opcode, Opcode))(
-            f: PartialFunction[(Instruction, Instruction), B]): List[(PC, B)] = {
-        val max_pc = instructions.size
-
-        val firstInstructionFilter = preFilter._1
-        val secondInstructionFilter = preFilter._2
-
-        var first_pc = 0
-        var firstInstruction = instructions(first_pc)
-        var second_pc = pcOfNextInstruction(0)
-        var secondInstruction: Instruction = null
-
-        var result: List[(PC, B)] = List.empty
-        while (second_pc < max_pc) {
-            secondInstruction = instructions(second_pc)
-            if (firstInstruction.opcode == firstInstructionFilter) {
-                if (secondInstruction.opcode == secondInstructionFilter) {
-
-                    val instrs = (firstInstruction, secondInstruction)
-                    if (f.isDefinedAt(instrs)) {
-                        result = (first_pc, f(instrs)) :: result
-                    }
-                }
             }
 
             firstInstruction = secondInstruction

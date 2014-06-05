@@ -38,16 +38,16 @@ package l1
 trait DefaultDomain
     extends Domain
     with DefaultDomainValueBinding
-    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-    with TypeLevelInvokeInstructionsWithNullPointerHandling
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.TypeLevelInvokeInstructions
     //    with DefaultReferenceValuesBinding
     //    with DefaultStringValuesBinding
     with DefaultClassValuesBinding
     with DefaultArrayValuesBinding
     with DefaultPreciseIntegerValues
     with DefaultPreciseLongValues
-    with l0.DefaultTypeLevelFloatValues
-    with l0.DefaultTypeLevelDoubleValues
     with DefaultPerInstructionPostProcessing
     with PredefinedClassHierarchy
 
@@ -58,7 +58,7 @@ class DefaultConfigurableDomain[I](
         with IgnoreSynchronization {
     type Id = I
 
-    override def maxSpreadInteger: Int = 5
+    override def maxUpdateCountForIntegerValues: Int = 5
 }
 
 class DefaultRecordingDomain[I](
@@ -71,7 +71,7 @@ class DefaultRecordingDomain[I](
         with IgnoreSynchronization {
     type Id = I
 
-    override def maxSpreadInteger: Int = 5
+    override def maxUpdateCountForIntegerValues: Int = 5
 }
         
 

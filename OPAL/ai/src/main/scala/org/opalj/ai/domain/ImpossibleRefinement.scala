@@ -30,24 +30,13 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.util.Answer
-
 /**
- * Optional functionality related to extracting a concrete integer value from some
- * domain value with computational type integer that is not required by the OPAL-AI core.
+ * Thrown to indicate that a refinement of some value was not possible.
  *
  * @author Michael Eichberg
  */
-trait IntegerValuesComparison { this: Domain ⇒
-
-    /**
-     * Tests if the given value, which has to have computational type integer,
-     * is in the range `[lowerBound, upperBound]`. I.e., both
-     * bounds are inclusive.
-     */
-    def intIsSomeValueInRange(
-        value: DomainValue,
-        lowerBound: DomainValue,
-        upperBound: DomainValue): Answer
-
-}
+case class ImpossibleRefinement(
+    value: Domain#DomainValue,
+    refinementGoal: String)
+        extends Exception(
+            "refining "+value+" failed: "+refinementGoal) //,null, true, false)

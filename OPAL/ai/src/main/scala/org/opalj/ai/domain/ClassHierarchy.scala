@@ -32,7 +32,8 @@ package domain
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.{ ClassHierarchy ⇒ DefaultClassHierarchy }
 
 /**
  * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
@@ -44,13 +45,17 @@ import br._
 trait ClassHierarchy { this: Domain ⇒
 
     /**
-     * This project's class hierarchy. Usually, just a redirect to the `Project`'s
-     * class hierarchy or the default class hierarchy.
+     * This project's class hierarchy.
+     *
+     * Usually, just a redirect to the `Project`'s class hierarchy or the
+     * default class hierarchy.
      */
-    def classHierarchy: analyses.ClassHierarchy
+    def classHierarchy: DefaultClassHierarchy
 
     /**
-     * @see  [[org.opalj.br.analyses.ClassHierarchy]]'s `isSubtypeOf` method.
+     * @inheritdoc
+     *
+     * @see Delegates to [[org.opalj.br.analyses.ClassHierarchy]]'s `isSubtypeOf` method.
      */
     override def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
         classHierarchy.isSubtypeOf(subtype, supertype)

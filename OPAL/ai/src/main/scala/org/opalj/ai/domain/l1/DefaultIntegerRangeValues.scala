@@ -34,14 +34,12 @@ package l1
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 /**
- * Basic implementation of the `PreciseIntegerValues` trait that requires that
- * `Domain`'s  `Value` trait is not extended.
  *
  * @author Michael Eichberg
  */
-trait DefaultPreciseIntegerValues
+trait DefaultIntegerRangeValues
         extends DefaultDomainValueBinding
-        with PreciseIntegerValues {
+        with IntegerRangeValues {
     this: Configuration ⇒
 
     /**
@@ -61,29 +59,34 @@ trait DefaultPreciseIntegerValues
             target.IntegerValue(pc)
     }
 
-    case class TheIntegerValue(
-        val value: Int,
-        val updateCount: Int = 0)
-            extends super.IntegerValue {
+    class IntegerRange(
+        val lowerBound: Int,
+        val upperBound: Int)
+            extends super.IntegerRange {
 
-        def update(newValue: Int): DomainValue = TheIntegerValue(newValue, updateCount + 1)
+        def update(newValue: Int): DomainValue = {
+            val newLowerBound = if (lowerBound > newValue) newValue else lowerBound
+            val newUpperBound = if (upperBound < newValue) newValue else upperBound
+
+            new IntegerRange(newLowerBound, newUpperBound)
+        }
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
             other match {
                 case AnIntegerValue() ⇒ StructuralUpdate(other)
-                case TheIntegerValue(otherValue, otherUpdateCount) ⇒
-                    if (this.value == otherValue) {
-                        if (this.updateCount == otherUpdateCount)
-                            NoUpdate
-                        else
-                            MetaInformationUpdate(TheIntegerValue(otherValue, Math.max(this.updateCount, otherUpdateCount)))
-                    } else {
-                        val newUpdateCount = Math.max(this.updateCount, otherUpdateCount)+1
-                        if (newUpdateCount < maxUpdateCountForIntegerValues)
-                            StructuralUpdate(TheIntegerValue(otherValue, newUpdateCount))
-                        else
-                            StructuralUpdate(AnIntegerValue())
-                    }
+                case IntegerRange(otherLB, otherUB) ⇒
+                    val newLowerBound = Math.min(this.lowerBound, otherLB)
+                    val newUpperBound = Math.max(this.upperBound, otherUB)
+
+                    if (newUpperBound - newLowerBound > maxSpreadIntegerValueRanges)
+                        StructuralUpdate(AnIntegerValue())
+
+                    else if (newLowerBound == lowerBound && newUpperBound == upperBound)
+                        NoUpdate
+                    else if (newLowerBound == otherLB && newUpperBound == otherUB)
+                        StructuralUpdate(other)
+                    else
+                        StructuralUpdate(IntegerRange(newLowerBound, newUpperBound))
             }
 
         override def summarize(pc: PC): DomainValue = this
@@ -91,9 +94,9 @@ trait DefaultPreciseIntegerValues
         override def adapt(
             targetDomain: Domain,
             pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues]
-                thatDomain.TheIntegerValue(this.value, this.updateCount).
+            if (targetDomain.isInstanceOf[DefaultIntegerRangeValues]) {
+                val thatDomain = targetDomain.asInstanceOf[DefaultIntegerRangeValues]
+                thatDomain.IntegerRange(this.lowerBound, this.upperBound).
                     asInstanceOf[targetDomain.DomainValue]
             } else {
                 super.adapt(targetDomain, pc)
@@ -102,31 +105,32 @@ trait DefaultPreciseIntegerValues
         override def abstractsOver(other: DomainValue): Boolean = {
             if (this eq other)
                 return true;
-            val thisValue = this.value
+
             other match {
-                case TheIntegerValue(`thisValue`, _) ⇒ true
-                case _                               ⇒ false
+                case IntegerRange(otherLB, otherUB) ⇒
+                    this.lowerBound <= otherLB && this.upperBound >= otherUB
+                case _ ⇒ false
             }
         }
 
-        override def toString: String = "IntegerValue(value="+value+", updates="+updateCount+")"
+        override def toString: String = "IntegerRange(lb="+lowerBound+", ub="+upperBound+")"
     }
 
     override def BooleanValue(pc: PC): DomainValue = AnIntegerValue()
     override def BooleanValue(pc: PC, value: Boolean): DomainValue =
-        if (value) new TheIntegerValue(1) else new TheIntegerValue(0)
+        if (value) IntegerValue(pc, 1) else IntegerValue(pc, 0)
 
     override def ByteValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ByteValue(pc: PC, value: Byte) = TheIntegerValue(value)
+    override def ByteValue(pc: PC, value: Byte) = new IntegerRange(value, value)
 
     override def ShortValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ShortValue(pc: PC, value: Short) = TheIntegerValue(value)
+    override def ShortValue(pc: PC, value: Short) = new IntegerRange(value, value)
 
     override def CharValue(pc: PC): DomainValue = AnIntegerValue()
-    override def CharValue(pc: PC, value: Char) = TheIntegerValue(value)
+    override def CharValue(pc: PC, value: Char) = new IntegerRange(value, value)
 
     override def IntegerValue(pc: PC): DomainValue = AnIntegerValue()
-    override def IntegerValue(pc: PC, value: Int) = TheIntegerValue(value)
+    override def IntegerValue(pc: PC, value: Int) = new IntegerRange(value, value)
 
 }
 

@@ -39,14 +39,18 @@ package domain
  *      implementation.
  *      Example:
  *      {{{
- *      MySpecialDomain extends ... with IgnoreThrownExceptions with RecordThrownExceptions with ...
+ *      MySpecialDomain
+ *          extends ...
+ *          with DefaultHandlingForThrownExceptions
+ *          with RecordThrownExceptions
+ *          with ...
  *      }}}
  *
  * @author Michael Eichberg
  */
 trait DefaultHandlingForThrownExceptions { this: Domain ⇒
 
-    override def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
+    /*override*/ def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
         /* Nothing to do. */
     }
 }

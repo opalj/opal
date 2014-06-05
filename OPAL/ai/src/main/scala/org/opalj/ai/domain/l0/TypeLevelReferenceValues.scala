@@ -34,7 +34,8 @@ package l0
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.collection.immutable.UIDSet
 
-import org.opalj.br._
+import org.opalj.br.{ Type, ObjectType, ReferenceType, ArrayType, FieldType, UpperTypeBound }
+import org.opalj.br.{ ComputationalType, ComputationalTypeReference }
 
 /**
  * Implements the foundations for performing computations related to reference values.
@@ -49,7 +50,7 @@ import org.opalj.br._
  *  - Instances of `DomainValue`s are always immutable or are at least considered and
  *    treated as immutable. Every
  *    update of a value's properties creates a new value. This is a general design
- *    decision underlying OPAL-AI and should not be changed.
+ *    decision underlying OPAL and should not be changed.
  *  - A new instance of a `DomainValue` is always exclusively created by one of the
  *    factory methods. (The factory methods generally start with a capital letter
  *    and are correspondingly documented.) This greatly facilitates domain adaptability
@@ -57,32 +58,19 @@ import org.opalj.br._
  *
  * @author Michael Eichberg
  */
-trait TypeLevelReferenceValues
-        extends Domain
-        with GeneralizedArrayHandling {
-    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
-
-    /**
-     * Thrown to indicate that some refinement was not possible.
-     *
-     * @author Michael Eichberg
-     */
-    case class ImpossibleRefinement(
-        value: DomainValue,
-        refinementGoal: String)
-            extends Exception(
-                "refining "+value+" failed: "+refinementGoal) //,null, true, false)
+trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
+    domain: Configuration with ClassHierarchy ⇒
 
     /**
      * Merges those exceptions that have the same upper type bound. This ensures
-     * that per exception type only one DomainValue (which may be a
-     * `MultipleReferenceValues`) is used. The standard join/merge operation does
-     * the merge based on the origin of a value.
+     * that per upper type bound only one [[DomainValue]] (which may be a
+     * `MultipleReferenceValues`) is used.
      */
     def mergeMultipleExceptionValues(
         pc: PC,
         v1s: ExceptionValues,
         v2s: ExceptionValues): ExceptionValues = {
+
         var v: List[ExceptionValue] = Nil
         var remainingv2s = v2s
         v1s foreach { v1 ⇒
@@ -111,31 +99,31 @@ trait TypeLevelReferenceValues
             case ComputationWithResultAndException(r1, e1) ⇒
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) ⇒
-                        ComputedValueAndException(
+                        ComputedValueOrException(
                             mergeDomainValues(pc, r1, r2),
                             mergeMultipleExceptionValues(pc, e1, e2))
                     case ComputationWithResult(r2) ⇒
-                        ComputedValueAndException(mergeDomainValues(pc, r1, r2), e1)
+                        ComputedValueOrException(mergeDomainValues(pc, r1, r2), e1)
                     case ComputationWithException(e2) ⇒
-                        ComputedValueAndException(r1, mergeMultipleExceptionValues(pc, e1, e2))
+                        ComputedValueOrException(r1, mergeMultipleExceptionValues(pc, e1, e2))
                 }
 
             case ComputationWithResult(r1) ⇒
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) ⇒
-                        ComputedValueAndException(mergeDomainValues(pc, r1, r2), e2)
+                        ComputedValueOrException(mergeDomainValues(pc, r1, r2), e2)
                     case ComputationWithResult(r2) ⇒
                         ComputedValue(mergeDomainValues(pc, r1, r2))
                     case ComputationWithException(e2) ⇒
-                        ComputedValueAndException(r1, e2)
+                        ComputedValueOrException(r1, e2)
                 }
 
             case ComputationWithException(e1) ⇒
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) ⇒
-                        ComputedValueAndException(r2, mergeMultipleExceptionValues(pc, e1, e2))
+                        ComputedValueOrException(r2, mergeMultipleExceptionValues(pc, e1, e2))
                     case ComputationWithResult(r2) ⇒
-                        ComputedValueAndException(r2, e1)
+                        ComputedValueOrException(r2, e1)
                     case ComputationWithException(e2) ⇒
                         ThrowsException(mergeMultipleExceptionValues(pc, e1, e2))
                 }
@@ -168,29 +156,29 @@ trait TypeLevelReferenceValues
             case ComputationWithResultAndException(r1, e1) ⇒
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) ⇒
-                        ComputedValueAndException(mergeDomainValues(pc, r1, r2), mergeDomainValues(pc, e1, e2))
+                        ComputedValueOrException(mergeDomainValues(pc, r1, r2), mergeDomainValues(pc, e1, e2))
                     case ComputationWithResult(r2) ⇒
-                        ComputedValueAndException(mergeDomainValues(pc, r1, r2), e1)
+                        ComputedValueOrException(mergeDomainValues(pc, r1, r2), e1)
                     case ComputationWithException(e2) ⇒
-                        ComputedValueAndException(r1, mergeDomainValues(pc, e1, e2))
+                        ComputedValueOrException(r1, mergeDomainValues(pc, e1, e2))
                 }
 
             case ComputationWithResult(r1) ⇒
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) ⇒
-                        ComputedValueAndException(mergeDomainValues(pc, r1, r2), e2)
+                        ComputedValueOrException(mergeDomainValues(pc, r1, r2), e2)
                     case ComputationWithResult(r2) ⇒
                         ComputedValue(mergeDomainValues(pc, r1, r2))
                     case ComputationWithException(e2) ⇒
-                        ComputedValueAndException(r1, e2)
+                        ComputedValueOrException(r1, e2)
                 }
 
             case ComputationWithException(e1) ⇒
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) ⇒
-                        ComputedValueAndException(r2, mergeDomainValues(pc, e1, e2))
+                        ComputedValueOrException(r2, mergeDomainValues(pc, e1, e2))
                     case ComputationWithResult(r2) ⇒
-                        ComputedValueAndException(r2, e1)
+                        ComputedValueOrException(r2, e1)
                     case ComputationWithException(e2) ⇒
                         ThrowsException(mergeDomainValues(pc, e1, e2))
                 }
@@ -204,13 +192,19 @@ trait TypeLevelReferenceValues
     // -----------------------------------------------------------------------------------
 
     type DomainReferenceValue <: ReferenceValue with DomainValue
-    type DomainNullValue <: NullValue with DomainReferenceValue
+
     type DomainObjectValue <: ObjectValue with DomainReferenceValue
+
     type DomainArrayValue <: ArrayValue with DomainReferenceValue
 
+    type DomainNullValue <: NullValue with DomainReferenceValue
+
     trait ArrayAbstraction {
+
         def load(pc: PC, index: DomainValue): ArrayLoadResult
+
         def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult
+
         def length(pc: PC): Computation[DomainValue, ExceptionValue]
     }
 
@@ -218,10 +212,7 @@ trait TypeLevelReferenceValues
      * Abstracts over all values with computational type `reference`. I.e.,
      * abstracts over class and array values and also the `null` value.
      */
-    protected trait ReferenceValue
-            extends Value
-            with IsReferenceValue
-            with ArrayAbstraction {
+    trait ReferenceValue extends Value with IsReferenceValue with ArrayAbstraction {
         this: DomainReferenceValue ⇒
 
         /**
@@ -240,7 +231,7 @@ trait TypeLevelReferenceValues
         override def isNull: Answer = Unknown
 
         /**
-         * Refines this value's `isNull` property if meaningful.
+         * Refines this value's `isNull` property, if meaningful.
          *
          * @param pc The program counter of the instruction that was the reason
          * 		for the refinement.
@@ -260,7 +251,8 @@ trait TypeLevelReferenceValues
          * generally be assumed to represent a class type (not an interface type) or
          * an array type. However, this domain also supports the case that `isPrecise`
          * returns `true` even though the associated type identifies an interface type
-         * or an abstract class type. The later case may be interesting
+         * or an abstract class type. The later case may be interesting in the context
+         * of classes that are generated at run time.
          *
          * This default implementation always returns `false`.
          */
@@ -268,10 +260,10 @@ trait TypeLevelReferenceValues
 
         /**
          * Tests if this value's type is potentially a subtype of the given type.
-         * This test should take the precision of the type information into account.
+         * This test takes the precision of the type information into account.
          * That is, if the currently available type information is not precise and
          * the given type has a subtype that is always a subtype of the current
-         * upper type bound, then `Unknown` should to be returned. Given that it may be
+         * upper type bound, then `Unknown` should be returned. Given that it may be
          * computationally intensive to determine whether two types have a common subtype
          * it may be better to just return `Unknown` in case that this type and the
          * given type are not in a direct inheritance relationship.
@@ -284,12 +276,11 @@ trait TypeLevelReferenceValues
         override def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
         /**
-         * Refines the upper bound to this value's type.
+         * Refines the upper bound of this value's type to the given supertype.
          *
-         * This call can be ignored if the type
-         * information related to this value is precise, i.e., if we know that we
-         * precisely capture the runtime type of this value. However, refining
-         * the upper type bound for a `null` value is not supported.
+         * This call can be ignored if the type information related to this value is
+         * precise, i.e., if we know that we precisely capture the runtime type of
+         * this value.
          */
         @throws[ImpossibleRefinement]("If the refinement is not meaningful.")
         def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainReferenceValue
@@ -327,19 +318,27 @@ trait TypeLevelReferenceValues
          */
         final override def upperTypeBound: UpperTypeBound = UIDSet.empty
 
-        final override def load(pc: PC, index: DomainValue): ArrayLoadResult =
+        final override def load(
+            pc: PC,
+            index: DomainValue): ArrayLoadResult =
             justThrows(NullPointerException(pc))
 
-        final override def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult =
+        final override def store(
+            pc: PC,
+            value: DomainValue,
+            index: DomainValue): ArrayStoreResult =
             justThrows(NullPointerException(pc))
 
         final override def length(pc: PC): Computation[DomainValue, ExceptionValue] =
             throws(NullPointerException(pc))
 
         /**
-         * Throws a new `DomainException` that states that this method is not supported.
+         * Always throws a [[DomainException]] since it is not possible to give a generic
+         * answer. The answer depends on the context (instanceof/classcast/...)).
+         *
+         * @return Throws a `DomainException` that states that this method is not supported.
          */
-        @throws[DomainException]("Always thrown (it is not possible to give a generic answer, as the answer depends on the context (instanceof/classcast/...)).")
+        @throws[DomainException]("always thrown since it is context-dependent.")
         final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing =
             throw DomainException("isSubtypeOf is not defined for \"null\" values")
 
@@ -355,11 +354,9 @@ trait TypeLevelReferenceValues
     }
 
     /**
-     * A reference value that is associated with a single (upper) type (bound).
-     *
-     * @note This class was introduced for performance reasons.
+     * A reference value that has a single (upper) type (bound).
      */
-    protected trait SReferenceValue[T <: ReferenceType] {
+    protected[this] trait SReferenceValue[T <: ReferenceType] {
         this: DomainReferenceValue ⇒
 
         val theUpperTypeBound: T
@@ -379,15 +376,12 @@ trait TypeLevelReferenceValues
      * Represents a class/interface value which may have a single class and/or
      * multiple interfaces as its upper type bound.
      */
-    protected trait ObjectValue extends ReferenceValue {
-        this: DomainObjectValue ⇒
-
-    }
+    protected[this] trait ObjectValue extends ReferenceValue { this: DomainObjectValue ⇒ }
 
     /**
      * Represents an array value.
      */
-    protected trait ArrayValue extends ReferenceValue {
+    protected[this] trait ArrayValue extends ReferenceValue {
         this: DomainArrayValue ⇒
 
         /**
@@ -401,20 +395,24 @@ trait TypeLevelReferenceValues
             index: DomainValue,
             potentialExceptions: ExceptionValues): ArrayLoadResult
 
+        /**
+         * @note It is in general not necessary to override this method. If you need some
+         *      special handling if a value is loaded from an array, override the method
+         *      [[doLoad]].
+         */
+
         override def load(pc: PC, index: DomainValue): ArrayLoadResult = {
-            // @note
             // The case "this.isNull == Yes" will not occur as the value "null" is always
             // represented by an instance of the respective class and this situation
             // is checked for by the domain-level method.
 
             val isIndexValid =
-                length.
-                    map((l: Int) ⇒ intIsSomeValueInRange(index, 0, l - 1)).
+                length.map((l: Int) ⇒ intIsSomeValueInRange(index, 0, l - 1)).
                     getOrElse(intIsLessThan0(index).negate)
             if (isIndexValid.isNo)
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
 
-            var thrownExceptions = List.empty[ExceptionValue]
+            var thrownExceptions: List[ExceptionValue] = Nil
             if (isNull.isYesOrUnknown && throwNullPointerException)
                 thrownExceptions = NullPointerException(pc) :: thrownExceptions
             if (isIndexValid.isNoOrUnknown && throwArrayIndexOutOfBoundsException)
@@ -432,8 +430,7 @@ trait TypeLevelReferenceValues
         /**
          * @note It is in general not necessary to override this method. If you need some
          *      special handling if a value is stored in an array, override the method
-         *      `doArraystore`.
-         * @see `doArraystore` for further information.
+         *      [[doStore]].
          */
         override def store(
             pc: PC,
@@ -444,8 +441,7 @@ trait TypeLevelReferenceValues
             // represented by an instance of the respective class
 
             val isIndexValid =
-                length.
-                    map((l: Int) ⇒ intIsSomeValueInRange(index, 0, l - 1)).
+                length.map((l: Int) ⇒ intIsSomeValueInRange(index, 0, l - 1)).
                     getOrElse(intIsLessThan0(index).negate)
             if (isIndexValid.isNo)
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
@@ -454,7 +450,7 @@ trait TypeLevelReferenceValues
             if (isAssignable.isNo)
                 return justThrows(ArrayStoreException(pc))
 
-            var thrownExceptions = List.empty[ExceptionValue]
+            var thrownExceptions: List[ExceptionValue] = Nil
             if (isIndexValid.isUnknown && throwArrayIndexOutOfBoundsException)
                 thrownExceptions = ArrayIndexOutOfBoundsException(pc) :: thrownExceptions
             if (isAssignable.isUnknown && throwArrayStoreException)
@@ -465,23 +461,26 @@ trait TypeLevelReferenceValues
             doStore(pc, value, index, thrownExceptions)
         }
 
-        protected def length: Option[Int] = None
+        /**
+         * Returns the length of this array, if this information is available.
+         */
+        def length: Option[Int] = None
 
-        protected final def doGetLength(pc: PC): DomainValue =
+        final def doGetLength(pc: PC): DomainValue =
             length.map(IntegerValue(pc, _)).getOrElse(IntegerValue(pc))
 
         override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
             if (isNull == Unknown && throwNullPointerException)
-                ComputedValueAndException(doGetLength(pc), NullPointerException(pc))
+                ComputedValueOrException(doGetLength(pc), NullPointerException(pc))
             else
                 ComputedValue(doGetLength(pc))
         }
     }
 
     /**
-     * Returns the given value as a DomainValue. Basically just performs a type cast
-     * and is intended to be used to communicate that the value has to be a reference
-     * value (if the underlying byte code is valid.)
+     * Returns the given value as a [[DomainReferenceValue]]. Basically just performs
+     * a type cast and is intended to be used to communicate that the value has
+     * to be a reference value (if the underlying byte code is valid.)
      */
     def asReferenceValue(value: DomainValue): DomainReferenceValue =
         value.asInstanceOf[DomainReferenceValue]
@@ -489,12 +488,8 @@ trait TypeLevelReferenceValues
     def asObjectValue(value: DomainValue): DomainObjectValue =
         value.asInstanceOf[DomainObjectValue]
 
-    def asArrayAbstraction(value: DomainValue): ArrayAbstraction = {
-        value match {
-            case aa: ArrayAbstraction ⇒ aa
-            case _                    ⇒ throw new ClassCastException("no array value: "+value)
-        }
-    }
+    def asArrayAbstraction(value: DomainValue): ArrayAbstraction =
+        value.asInstanceOf[ArrayAbstraction]
 
     // -----------------------------------------------------------------------------------
     //
@@ -510,14 +505,14 @@ trait TypeLevelReferenceValues
      *
      * This implementation completely handles the case where at least one value
      * definitively represents the `null` value.
-     * If both values represent non-null values (or just maybe `null` values) `Unknown`
-     * is returned.
+     * Additionally, if we have precise type information and the types are different,
+     * `No` is returned. Otherwise, `Unknown` is returned.
      *
      * @note This method is intended to be overridden by subclasses and may be the first
-     *      one this is called (super call) by the overriding method to handle checks
+     *      one that is called (by means of `super`) by the overriding method to handle checks
      *      related to null. E.g.
      *      {{{
-     *      super.areEqualReferences(value1,value2).orElse {
+     *      super.areEqualReferences(value1,value2).ifUnknown {
      *          ...
      *      }
      *      }}}
@@ -533,9 +528,9 @@ trait TypeLevelReferenceValues
         if (value1IsNull.isYes && value2IsNull.isYesOrNo)
             // both are null or the second one is definitively not null
             Answer(value2IsNull.isYes)
-        else if (value2IsNull.isYes && value1IsNull.isYesOrNo)
+        else if (value2IsNull.isYes && value1IsNull.isNo)
             // both are null or the first one is definitively not null
-            Answer(value1IsNull.isYes)
+            No
         else if (v1.isPrecise && v2.isPrecise && v1.upperTypeBound != v2.upperTypeBound)
             No
         else
@@ -577,8 +572,10 @@ trait TypeLevelReferenceValues
     //
 
     /**
+     * Creates a new array.
      *
-     * @note It is generally not necessary to override this method.
+     * @note It is generally not necessary to override this method as it handles all
+     *      cases in a generic manner.
      */
     override def newarray(
         pc: PC,
@@ -590,14 +587,17 @@ trait TypeLevelReferenceValues
 
         val newarray = NewArray(pc, count, ArrayType(componentType))
         if (validCount.isUnknown && throwNegativeArraySizeException)
-            ComputedValueAndException(newarray, NegativeArraySizeException(pc))
+            ComputedValueOrException(newarray, NegativeArraySizeException(pc))
         else
             ComputedValue(newarray)
     }
 
     /**
+     * Creates a multi-dimensional array.
+     *
      * @note The componentType may be (again) an array type.
-     * @note It is generally not necessary to override this method.
+     * @note It is generally not necessary to override this method as it handles all
+     *      cases in a generic manner.
      */
     override def multianewarray(
         pc: PC,
@@ -618,7 +618,7 @@ trait TypeLevelReferenceValues
             else
                 NewArray(pc, counts, arrayType)
         if (validCounts.isUnknown && throwNegativeArraySizeException)
-            ComputedValueAndException(newarray, NegativeArraySizeException(pc))
+            ComputedValueOrException(newarray, NegativeArraySizeException(pc))
         else
             ComputedValue(newarray)
     }
@@ -742,7 +742,7 @@ trait TypeLevelReferenceValues
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    protected[domain] def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue
+    def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''either an class-/interface
@@ -759,14 +759,14 @@ trait TypeLevelReferenceValues
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    protected[domain] def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue
+    def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue
 
     /**
      * Factory method to create a new domain value that represents a newly created
      * array (non-null) with the size determined by count that is empty.
      *
      * ==Typical Usage==
-     * This factory method is (implicitly) used, e.g., by OPAL-AI when a new array
+     * This factory method is (implicitly) used, e.g., by OPAL when a `newarray
      * instruction is found.
      *
      * ==Summary==
@@ -785,7 +785,7 @@ trait TypeLevelReferenceValues
      * array (non-null) with the size determined by count that is empty.
      *
      * ==Typical Usage==
-     * This factory method is (implicitly) used, e.g., by OPAL-AI when a new array
+     * This factory method is (implicitly) used, e.g., by OPAL when a `newarray`
      * instruction is found.
      *
      * ==Summary==
@@ -818,7 +818,7 @@ trait TypeLevelReferenceValues
      * @note Java Arrays are covariant. I.e., `Object[] a = new Serializable[100];`
      *      is valid.
      */
-    protected[domain] def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue
+    protected def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue
 
     // -----------------------------------------------------------------------------------
     //
@@ -831,7 +831,7 @@ trait TypeLevelReferenceValues
         newValue: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        if (oldValue == newValue) // FIXME Should be eq, shouldn't it?
+        if (oldValue eq newValue)
             (
                 operands,
                 locals
@@ -839,7 +839,7 @@ trait TypeLevelReferenceValues
         else
             (
                 operands.map(op ⇒ if (op eq oldValue) newValue else op),
-                locals.map(l ⇒ if (l eq oldValue) newValue else l)
+                locals.transform(l ⇒ if (l eq oldValue) newValue else l)
             )
     }
 
@@ -856,7 +856,7 @@ trait TypeLevelReferenceValues
             locals)
     }
 
-    protected def refineIsNull(
+    protected[this] def refineIsNull(
         pc: PC,
         value: DomainValue,
         isNull: Answer,

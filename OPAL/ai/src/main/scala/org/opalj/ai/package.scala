@@ -33,21 +33,22 @@ import org.opalj.collection.immutable.UIDSet
 import br._
 
 /**
- * Implementation of an abstract interpretation framework – called OPAL-AI in the following.
+ * Implementation of an abstract interpretation framework – also referred to as OPAL.
  *
- * Please note, that OPAL-AI just refers to the classes and traits defined in this package
- * (`ai`). The classes and traits defined in the sub-packages (in particular in `domain`)
- * are not considered to be part of the core of OPAL-AI.
+ * Please note, that OPAL/the abstract interpreter just refers to the classes and traits
+ * defined in this package (`ai`). The classes and traits defined in the sub-packages
+ * (in particular in `domain`) are not considered to be part of the core of OPAL/the
+ * abstract interpreter.
  *
  * @note This framework assumes that the analyzed bytecode is valid; i.e., the JVM's
  *      bytecode verifier would be able to verify the code. Furthermore, load-time errors
  *      (e.g., `LinkageErrors`) are – by default – completely ignored to facilitate the
  *      analysis of parts of a project. In general, if the presented bytecode is not valid,
- *      the result is undefined (i.e., OPAL-AI may report meaningless results, crash or run
+ *      the result is undefined (i.e., OPAL may report meaningless results, crash or run
  *      indefinitely).
  *
  * @see [[org.opalj.ai.AI]] - Implements the abstract interpreter that
- *      process a methods code and uses a analysis-specific domain to perform the
+ *      processes a methods code and uses an analysis-specific domain to perform the
  *      abstract computations.
  * @see [[org.opalj.ai.Domain]] - The core interface between the abstract
  *      interpretation framework and the abstract domain that is responsible for
@@ -60,7 +61,7 @@ package object ai {
     import language.existentials
 
     /**
-     * Type alias that can be used if the AI can process all kinds of domains.
+     * Type alias that can be used if the AI can use all kinds of domains.
      *
      * @note This type alias serves comprehension purposes only.
      */
@@ -71,33 +72,57 @@ package object ai {
      * value is equal to the program counter of the instruction that created the value.
      * However, for the values passed to a method, the index is conceptually:
      *  `-1-(isStatic ? 0 : 1)-(the index of the parameter adjusted by the computational
-     * type)`.
+     * type of the previous parameters)`.
      *
      * For example, in case of an instance method with the signature:
      * {{{
      * public void (double d/*parameter index:0*/, Object o/*parameter index:1*/){...}
      * }}}
      *
-     * The value `-1` is used to identify the implicit `this` reference.
+     *  - The value `-1` is used to identify the implicit `this` reference.
      *
-     * The value `-2` identifies the value of the parameter `d`.
+     *  - The value `-2` identifies the value of the parameter `d`.
      *
-     * The value `-4` identifies the parameter `o`. (The parameter `d` is a value of
-     * computational-type category 2 and needs to stack/operands values.)
+     *  - The value `-4` identifies the parameter `o`. (The parameter `d` is a value of
+     * computational-type category 2 and needs two stack/operands values.)
      *
      * The range of values is: [-257,65535]. Hence, whenever a value of type `ValueOrigin`
-     * is required/is expected it is possible to use a value with type `PC`.
+     * is required/is expected it is possible to use a value with type `PC` unless
+     * the program counters identifies the start of a subroutine ([[SUBROUTINE_START]],
+     * [[SUBROUTINE_END]], [[SUBROUTINE]]).
      *
      * Recall that the maximum size of the method
      * parameters array is 255. If necessary, the first slot is required for the `this`
-     * reference. Furthermore, `long` and `double` values two slots are necessary; hence
+     * reference. Furthermore, for `long` and `double` values two slots are necessary; hence
      * the smallest number used to encode that the value is an actual parameter is
      * `-256`.
      *
      * The value `-257` is used to encode that the origin of the value is out
-     * of the scope of the analyzed program ([[ConstantValueOrigin]]).
+     * of the scope of the analyzed program ([[ConstantValueOrigin]]). This value is
+     * currently only used for the implicit value of `IF_XXX` instructions.
      */
     type ValueOrigin = Int
+
+    /**
+     * Special value that is added to the work list/list of evaluated instructions
+     * before the program counter of the first
+     * instruction of a subroutine.
+     */
+    // some value smaller than -65536 to avoid confusion with local variable indexes
+    // in the worklist this value is replaced by the local variable index
+    // once we encounter a ret insruction.
+    final val SUBROUTINE_START = -80000008
+    /**
+     * Special value that is added to the list of evaluated instructions
+     * to mark the end of the evaluation of a subroutine.
+     */
+    final val SUBROUTINE_END = -88888888
+
+    /**
+     * Special value that is added to the work list to mark the beginning of a
+     * subroutine call.
+     */
+    final val SUBROUTINE = -90000009 // some value smaller than -2^16
 
     /**
      * Used to identify that the origin of the value is outside of the program.

@@ -30,7 +30,8 @@ package org.opalj
 package ai
 
 /**
- * A base abstract interpreter that can be used with any domain. The base
+ * A base abstract interpreter that can be used with any domain that has
+ * no special requirements on the abstract interpreter. The base
  * interpreter can be interrupted by calling the `interrupt` method of the
  * AI's thread.
  *

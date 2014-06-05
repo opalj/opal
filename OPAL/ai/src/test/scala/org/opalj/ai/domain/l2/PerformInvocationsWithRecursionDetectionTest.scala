@@ -109,7 +109,7 @@ class PerformInvocationsWithRecursionDetectionTest
 object PerformInvocationsWithRecursionDetectionTestFixture {
 
     def createCalledMethodsStore(): CalledMethodsStore { def warningIssued: Boolean } =
-        new CalledMethodsStore(new l1.DefaultConfigurableDomain("Called Methods Store Domain") { override def maxSpreadInteger: Int = Int.MaxValue }) {
+        new CalledMethodsStore(new l1.DefaultConfigurableDomain("Called Methods Store Domain") { override def maxUpdateCountForIntegerValues: Int = Int.MaxValue }) {
             var warningIssued = false
             override def frequentEvalution(
                 definingClass: ClassFile,
@@ -120,14 +120,34 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             }
         }
 
-    abstract class InvocationDomain(
-        val project: Project[java.net.URL]) extends l1.DefaultConfigurableDomain("Root Domain")
-            with PerformInvocationsWithRecursionDetection[java.net.URL]
+    abstract class InvocationDomain(val project: Project[java.net.URL])
+            extends Domain
+            with TheProject[java.net.URL]
+            with DefaultDomainValueBinding
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            //    with DefaultReferenceValuesBinding
+            //    with DefaultStringValuesBinding
+            with DefaultClassValuesBinding
+            with DefaultArrayValuesBinding
+            with DefaultPreciseIntegerValues
+            with DefaultPreciseLongValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with DefaultPerInstructionPostProcessing
+            with ProjectBasedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with PerformInvocationsWithRecursionDetection
             with RecordMethodCallResults {
+
+        type Id = Project[java.net.URL]
+
+        override def id = project
 
         /*ABSTRACT*/ val calledMethodsStore: CalledMethodsStore
 
-        override def maxSpreadInteger: Int = Int.MaxValue
+        override def maxUpdateCountForIntegerValues: Int = Int.MaxValue
 
         def invokeExecutionHandler(
             pc: PC,

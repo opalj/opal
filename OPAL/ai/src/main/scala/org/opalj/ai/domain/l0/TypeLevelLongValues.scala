@@ -33,14 +33,14 @@ package l0
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
+import org.opalj.br.{ ComputationalType, ComputationalTypeLong }
 
 /**
  * Support the computation with long values at the type level.
  *
  * @author Michael Eichberg
  */
-trait TypeLevelLongValues extends Domain {
+trait TypeLevelLongValues extends Domain { this: Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -48,11 +48,9 @@ trait TypeLevelLongValues extends Domain {
     //
     // -----------------------------------------------------------------------------------
 
-    trait LongValue
-            extends Value
-            with IsLongValue { this: DomainValue ⇒
+    trait LongValue extends Value with IsLongValue { this: DomainValue ⇒
 
-        override final def computationalType: ComputationalType = ComputationalTypeLong
+        final override def computationalType: ComputationalType = ComputationalTypeLong
 
     }
 
@@ -63,20 +61,19 @@ trait TypeLevelLongValues extends Domain {
     // -----------------------------------------------------------------------------------
 
     //
+    // UNARY EXPRESSIONS
+    //
+    override def lneg(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
+
+    //
     // RELATIONAL OPERATORS
     //
     override def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
 
     //
-    // UNARY EXPRESSIONS
-    //
-    override def lneg(pc: PC, value: DomainValue) = LongValue(pc)
-
-    //
     // BINARY EXPRESSIONS
     //
-
     override def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
@@ -86,8 +83,12 @@ trait TypeLevelLongValues extends Domain {
     override def ldiv(
         pc: PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException =
-        ComputedValue(LongValue(pc))
+        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        if (throwArithmeticExceptions)
+            ComputedValueOrException(LongValue(pc), ArithmeticException(pc))
+        else
+            ComputedValue(LongValue(pc))
+    }
 
     override def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
@@ -98,8 +99,12 @@ trait TypeLevelLongValues extends Domain {
     override def lrem(
         pc: PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException =
-        ComputedValue(LongValue(pc))
+        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        if (throwArithmeticExceptions)
+            ComputedValueOrException(LongValue(pc), ArithmeticException(pc))
+        else
+            ComputedValue(LongValue(pc))
+    }
 
     override def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
@@ -119,15 +124,11 @@ trait TypeLevelLongValues extends Domain {
     //
     // CONVERSION INSTRUCTIONS
     //
+    override def l2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
 
-    override def l2d(pc: PC, value: DomainValue): DomainValue =
-        DoubleValue(pc)
+    override def l2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
 
-    override def l2f(pc: PC, value: DomainValue): DomainValue =
-        FloatValue(pc)
-
-    override def l2i(pc: PC, value: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def l2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
 }
 
 

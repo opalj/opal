@@ -37,7 +37,7 @@ import org.opalj.util.{ Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait IgnoreSynchronization { this: Domain ⇒
+trait IgnoreSynchronization { this: Domain with Configuration ⇒
 
     protected[this] def sideEffectOnlyOrNullPointerException(
         pc: PC,
@@ -48,7 +48,10 @@ trait IgnoreSynchronization { this: Domain ⇒
             case No ⇒
                 ComputationWithSideEffectOnly
             case Unknown ⇒
-                ComputationWithSideEffectOrException(NullPointerException(pc))
+                if (throwNullPointerException)
+                    ComputationWithSideEffectOrException(NullPointerException(pc))
+                else
+                    ComputationWithSideEffectOnly
         }
     }
 

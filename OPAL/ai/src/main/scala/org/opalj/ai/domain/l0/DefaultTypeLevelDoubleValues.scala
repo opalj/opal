@@ -36,7 +36,7 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 /**
  * Base implementation of the `TypeLevelDoubleValues` trait that requires that
  * the domain`s `Value` trait is not extended. This implementation just satisfies
- * the basic requirements of OPAL-AI w.r.t. the domain's computational type.
+ * the basic requirements of OPAL w.r.t. the domain's computational type.
  *
  * @author Michael Eichberg
  */
@@ -47,7 +47,7 @@ trait DefaultTypeLevelDoubleValues
     /**
      * Represents a specific, but unknown double value.
      */
-    class ADoubleValue extends super.DoubleValue {
+    case object ADoubleValue extends super.DoubleValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             // Since `value` is guaranteed to have computational type double and we 
@@ -63,11 +63,9 @@ trait DefaultTypeLevelDoubleValues
 
     }
 
-    private[this] val TheADoubleValue = new ADoubleValue()
-    
-    override def DoubleValue(pc: PC): DomainValue = TheADoubleValue
+    final override def DoubleValue(pc: PC): DoubleValue = ADoubleValue
 
-    override def DoubleValue(pc: PC, value: Double): DoubleValue = TheADoubleValue
+    final override def DoubleValue(pc: PC, value: Double): DoubleValue = ADoubleValue
 }
 
 

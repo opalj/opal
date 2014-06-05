@@ -42,7 +42,7 @@ import br._
  * @author Michael Eichberg
  */
 trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
-    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
+    domain: Configuration with ClassHierarchy ⇒
 
     type DomainSingleOriginReferenceValue <: SingleOriginReferenceValue with DomainReferenceValue
     type DomainNullValue <: NullValue with DomainSingleOriginReferenceValue
@@ -1013,10 +1013,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     override def ClassValue(pc: PC, t: Type): DomainObjectValue =
         ObjectValue(pc, No, true, ObjectType.Class)
 
-    override protected[domain] def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue =
+    override def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue =
         ObjectValue(pc, Unknown, false, objectType)
 
-    override protected[domain] def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue =
+    override def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue =
         ObjectValue(pc, Unknown, upperTypeBound)
 
     override def InitializedArrayValue(pc: PC, counts: List[Int], arrayType: ArrayType): DomainValue =

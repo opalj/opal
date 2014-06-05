@@ -587,6 +587,9 @@ trait Domain {
     def ArrayStoreException(pc: PC): ExceptionValue =
         InitializedObjectValue(pc, ObjectType.ArrayStoreException)
 
+    def ArithmeticException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.ArithmeticException)
+
     /**
      * Factory method to create domain values with a specific type. I.e., values for
      * which we have some type information but no value or source information.
@@ -1183,8 +1186,7 @@ trait Domain {
         pc: PC,
         value: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def RefIsNull = refEstablishIsNull _
 
     /**
@@ -1197,8 +1199,7 @@ trait Domain {
         pc: PC,
         value: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def RefIsNonNull = refEstablishIsNonNull _
 
     /**
@@ -1210,8 +1211,7 @@ trait Domain {
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def RefAreEqual = refEstablishAreEqual _
 
     def refEstablishAreNotEqual(
@@ -1219,8 +1219,7 @@ trait Domain {
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def RefAreNotEqual = refEstablishAreNotEqual _
 
     /**
@@ -1235,8 +1234,7 @@ trait Domain {
         bound: ReferenceType,
         value: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
 
     //
     // W.r.t. Integer values
@@ -1246,16 +1244,14 @@ trait Domain {
         theValue: Int,
         value: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
 
     def intEstablishAreEqual(
         pc: PC,
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def IntAreEqual = intEstablishAreEqual _
 
     def intEstablishAreNotEqual(
@@ -1263,8 +1259,7 @@ trait Domain {
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def IntAreNotEqual = intEstablishAreNotEqual _
 
     def intEstablishIsLessThan(
@@ -1272,8 +1267,7 @@ trait Domain {
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def IntIsLessThan = intEstablishIsLessThan _
 
     def intEstablishIsLessThanOrEqualTo(
@@ -1281,8 +1275,7 @@ trait Domain {
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def IntIsLessThanOrEqualTo = intEstablishIsLessThanOrEqualTo _
 
     /**
@@ -1585,7 +1578,7 @@ trait Domain {
     // METHOD INVOCATIONS
     //
 
-    protected type MethodCallResult = Computation[Option[DomainValue], ExceptionValues]
+    type MethodCallResult = Computation[DomainValue, ExceptionValues]
 
     def invokevirtual(
         pc: PC,

@@ -32,77 +32,6 @@ package ai
 import br._
 
 /**
- * Factory to create `AIResult` objects. Primarily used to return the
- * result of an abstract interpretation of a method.
- *
- * @author Michael Eichberg
- */
-/* Design - We need to use a kind of builder to construct a Result object in two steps. 
- * This is necessary to correctly type the data structures that store the memory 
- * layout and which depend on the given domain. */
-object AIResultBuilder {
-
-    /**
-     * Creates a domain dependent `AIAborted` object which stores the results of the
-     * computation.
-     */
-    def aborted(
-        theCode: Code,
-        theDomain: Domain)(
-            theWorklist: List[PC],
-            theEvaluated: List[PC],
-            theOperandsArray: theDomain.OperandsArray,
-            theLocalsArray: theDomain.LocalsArray,
-            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIAborted { val domain: theDomain.type } = {
-
-        new AIAborted {
-            val code: Code = theCode
-            val domain: theDomain.type = theDomain
-            val worklist: List[PC] = theWorklist
-            val evaluated: List[PC] = theEvaluated
-            val operandsArray: theDomain.OperandsArray = theOperandsArray
-            val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
-
-            def continueInterpretation(
-                ai: AI[_ >: domain.type]): AIResult =
-                ai.continueInterpretation(
-                    code, domain)(
-                        worklist, evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
-
-        }
-    }
-
-    /**
-     * Creates a domain dependent `AICompleted` object which stores the results of the
-     * computation.
-     */
-    def completed(
-        theCode: Code,
-        theDomain: Domain)(
-            theEvaluated: List[PC],
-            theOperandsArray: theDomain.OperandsArray,
-            theLocalsArray: theDomain.LocalsArray): AICompleted { val domain: theDomain.type } = {
-
-        new AICompleted {
-            val code: Code = theCode
-            val domain: theDomain.type = theDomain
-            val evaluated: List[PC] = theEvaluated
-            val operandsArray: theDomain.OperandsArray = theOperandsArray
-            val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
-
-            def restartInterpretation(
-                ai: AI[_ >: theDomain.type]): AIResult =
-                ai.continueInterpretation(
-                    code, domain)(
-                        List(0), evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
-
-        }
-    }
-}
-
-/**
  * Encapsulates the result of the abstract interpretation of a method.
  */
 sealed abstract class AIResult {
@@ -140,7 +69,8 @@ sealed abstract class AIResult {
                             "("+index+":"+local+")"
                         }
 
-                    "PC: "+pc + operands.mkString("\n\tOperands: ", " <- ", "") + localsWithIndex.mkString("\n\tLocals: [", ",", "]")
+                    "PC: "+pc + operands.mkString("\n\tOperands: ", " <- ", "") +
+                        localsWithIndex.mkString("\n\tLocals: [", ",", "]")
                 }
             ).mkString("Operands and Locals: \n", "\n", "\n")
         result
@@ -173,4 +103,76 @@ sealed abstract class AICompleted extends AIResult {
 
     override def stateToString: String =
         "The abstract interpretation succeeded; "+super.stateToString
+}
+
+/**
+ * Factory to create `AIResult` objects. Primarily used to return the
+ * result of an abstract interpretation of a method.
+ *
+ * @author Michael Eichberg
+ */
+/* Design - We need to use a builder to construct a Result object in two steps. 
+ * This is necessary to correctly type the data structures that store the memory 
+ * layout and which depend on the given domain. */
+object AIResultBuilder {
+
+    /**
+     * Creates a domain dependent [[AIAborted]] object which stores the results of the
+     * computation.
+     */
+    def aborted(
+        theCode: Code,
+        theDomain: Domain)(
+            theWorklist: List[PC],
+            theEvaluated: List[PC],
+            theOperandsArray: theDomain.OperandsArray,
+            theLocalsArray: theDomain.LocalsArray,
+            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIAborted { val domain: theDomain.type } = {
+
+        new AIAborted {
+            val code: Code = theCode
+            val domain: theDomain.type = theDomain
+            val worklist: List[PC] = theWorklist
+            val evaluated: List[PC] = theEvaluated
+            val operandsArray: theDomain.OperandsArray = theOperandsArray
+            val localsArray: theDomain.LocalsArray = theLocalsArray
+            val memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+
+            def continueInterpretation(
+                ai: AI[_ >: domain.type]): AIResult =
+                ai.continueInterpretation(
+                    code, domain)(
+                        worklist, evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
+
+        }
+    }
+
+    /**
+     * Creates a domain dependent [[AICompleted]] object which stores the results of the
+     * completed abstract interpretation of the given code. The precise meaning of
+     * ''completed'' is depending on the used domain.
+     */
+    def completed(
+        theCode: Code,
+        theDomain: Domain)(
+            theEvaluated: List[PC],
+            theOperandsArray: theDomain.OperandsArray,
+            theLocalsArray: theDomain.LocalsArray): AICompleted { val domain: theDomain.type } = {
+
+        new AICompleted {
+            val code: Code = theCode
+            val domain: theDomain.type = theDomain
+            val evaluated: List[PC] = theEvaluated
+            val operandsArray: theDomain.OperandsArray = theOperandsArray
+            val localsArray: theDomain.LocalsArray = theLocalsArray
+            val memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
+
+            def restartInterpretation(
+                ai: AI[_ >: theDomain.type]): AIResult =
+                ai.continueInterpretation(
+                    code, domain)(
+                        List(0), evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
+
+        }
+    }
 }

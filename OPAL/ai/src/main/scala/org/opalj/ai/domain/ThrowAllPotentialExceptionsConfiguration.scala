@@ -44,81 +44,71 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
  * ==Usage==
  * If you need to adapt a setting just override the respective method in your domain.
  *
- * In general, the [[ThrowAllPotentialExceptionsConfiguration]] should be used as it
- * generates all exceptions that may be thrown.
- *
  * @author Michael Eichberg
  */
-trait Configuration {
+trait ThrowAllPotentialExceptionsConfiguration extends Configuration {
 
     /**
-     * @return `true`
-     */
-    def methodThrowsAllCheckedExceptions: Boolean = true
-
-    /**
-     * If `true`, all instructions that may raise an arithmetic exception (e.g., ''idiv'',
-     * ''ldiv'') should do so if it is impossible to statically determine that no
-     * exception will occur. But, if we can statically determine that the operation will
-     * raise an exception then the exception will be thrown – independently of this
-     * setting. Furthermore, if we can statically determine that no exception will be
-     * raised, no exception will be thrown. Hence, this setting only affects computations
-     * with values with ''incomplete'' information.
+     * @inheritdoc
      *
      * @return `true`
      */
-    def throwArithmeticExceptions: Boolean = false
+    override def methodThrowsAllCheckedExceptions: Boolean = true
 
     /**
-     * Returns `true` if potential `NullPointerExceptions` should be thrown and `false`
-     * if such `NullPointerExceptions` should be ignored. However, if the interpreter
-     * identifies a situation in which a `NullPointerException` is guaranteed to be
-     * thrown, it will be thrown. Example:
-     * {{{
-     * def demo(o : Object) {
-     *      o.toString  // - If "true", a NullPointerException will ALSO be thrown;
-     *                  //   the operation also succeeds.
-     *                  // - If "false" the operation will "just" succeed
-     * }
-     * }}}
+     * @inheritdoc
      *
      * @return `true`
      */
-    def throwNullPointerException: Boolean = false
+    override def throwArithmeticExceptions: Boolean = true
 
     /**
-     * @return `false` since it is extremely unlikely that this exception will ever
-     *      be thrown. Basically, this exception can only be thrown if a compiler creates
-     *      invalid bytecode.
-     */
-    def throwIllegalMonitorStateException: Boolean = false
-
-    /**
-     * @return `false`
-     */
-    def throwArrayIndexOutOfBoundsException: Boolean = false
-
-    /**
-     * @return `false`
-     */
-    def throwArrayStoreException: Boolean = false
-
-    /**
-     * @return `false`
-     */
-    def throwNegativeArraySizeException: Boolean = false
-
-    /**
-     * @return `false`
-     */
-    def throwClassCastException: Boolean = false
-
-    /**
-     * Throw a `ClassNotFoundException` if the a specific reference type is not
-     * known in the current context. The context is typically a specific `Project`.
+     * @inheritdoc
      *
      * @return `true`
      */
-    def throwClassNotFoundException: Boolean = true
+    override def throwNullPointerException: Boolean = true
+
+    /**
+     * @inheritdoc
+     *
+     * @return `true`
+     */
+    override def throwIllegalMonitorStateException: Boolean = true
+
+    /**
+     * @inheritdoc
+     *
+     * @return `true`
+     */
+    override def throwArrayIndexOutOfBoundsException: Boolean = true
+
+    /**
+     * @inheritdoc
+     *
+     * @return `true`
+     */
+    override def throwArrayStoreException: Boolean = true
+
+    /**
+     * @inheritdoc
+     *
+     * @return `true`
+     */
+    override def throwNegativeArraySizeException: Boolean = true
+
+    /**
+     * @inheritdoc
+     *
+     * @return `true`
+     */
+    override def throwClassCastException: Boolean = true
+
+    /**
+     * @inheritdoc
+     *
+     * @return `true`
+     */
+    override def throwClassNotFoundException: Boolean = true
 
 }

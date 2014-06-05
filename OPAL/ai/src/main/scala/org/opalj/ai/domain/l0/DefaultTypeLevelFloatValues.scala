@@ -36,7 +36,7 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 /**
  * Base implementation of the `TypeLevelFloatValues` trait that requires that
  * the domain`s `Value` trait is not extended. This implementation just satisfies
- * the basic requirements of OPAL-AI w.r.t. the domain's computational type.
+ * the basic requirements of OPAL w.r.t. the domain's computational type.
  *
  * @author Michael Eichberg
  */
@@ -44,7 +44,7 @@ trait DefaultTypeLevelFloatValues
         extends DefaultDomainValueBinding
         with TypeLevelFloatValues {
 
-    class AFloatValue() extends super.FloatValue {
+    case object AFloatValue extends super.FloatValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
@@ -54,11 +54,9 @@ trait DefaultTypeLevelFloatValues
             target.FloatValue(pc)
     }
 
-    private[this] val TheAFloatValue = new AFloatValue()
+    override def FloatValue(pc: PC): FloatValue = AFloatValue
 
-    override def FloatValue(pc: PC): DomainValue = TheAFloatValue
-
-    override def FloatValue(pc: PC, value: Float): FloatValue = TheAFloatValue
+    override def FloatValue(pc: PC, value: Float): FloatValue = AFloatValue
 }
 
 

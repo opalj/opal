@@ -37,7 +37,7 @@ import br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy }
  * This class uses OPAL's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
  * for class hierarchy related queries.
  *
- * '''Hence, you should only ever use this trait if you just want to do some testing.'''
+ * '''Hence, you should only use this trait if you just want to do some testing.'''
  *
  * @author Michael Eichberg
  */
@@ -49,9 +49,10 @@ trait PredefinedClassHierarchy extends ClassHierarchy { this: Domain ⇒
      * most basic types – in particular between the exceptions potentially thrown
      * by JVM instructions.
      *
-     * @note '''This method is intended to be overridden.'''
+     * @note '''This method is not intended to be overridden.''' Use a different domain
+     *      as a foundation.
      */
-    override def classHierarchy: TheClassHierarchy = Code.preDefinedClassHierarchy
+    final def classHierarchy: TheClassHierarchy = Code.preDefinedClassHierarchy
 
 }
 

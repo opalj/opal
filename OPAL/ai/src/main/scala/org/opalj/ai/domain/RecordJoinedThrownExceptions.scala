@@ -39,11 +39,7 @@ import language.implicitConversions
  *
  * This trait can be used to record the thrown exceptions independently of the
  * precision of the domain.
- *
- * ==Thread Safety==
- * This class is not thread safe. I.e., this domain can only be used if
- * an instance of this domain is not used by multiple threads.
- *
+
  * @author Michael Eichberg
  */
 trait RecordJoinedThrownExceptions extends RecordThrownExceptions {

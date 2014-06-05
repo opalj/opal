@@ -221,7 +221,7 @@ trait PreciseLongValues extends Domain with Configuration {
                 ComputedValue(LongValue(pc, v1 / v2))
         } {
             if (throwArithmeticExceptions)
-                ComputedValueAndException(
+                ComputedValueOrException(
                     LongValue(pc),
                     InitializedObjectValue(pc, ObjectType.ArithmeticException))
             else
@@ -268,7 +268,7 @@ trait PreciseLongValues extends Domain with Configuration {
                 ComputedValue(LongValue(pc, v1 % v2))
         } {
             if (throwArithmeticExceptions)
-                ComputedValueAndException(
+                ComputedValueOrException(
                     LongValue(pc),
                     InitializedObjectValue(pc, ObjectType.ArithmeticException))
             else

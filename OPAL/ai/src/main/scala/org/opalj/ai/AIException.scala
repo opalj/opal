@@ -38,7 +38,7 @@ package ai
  * @author Michael Eichberg
  */
 class AIException(
-    message: String,
+    message: String = null,
     cause: Throwable = null,
     enableSuppression: Boolean = false,
     writableStackTrace: Boolean = true)

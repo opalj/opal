@@ -1,5 +1,5 @@
-/* License (BSD Style License):
- * Copyright (c) 2009 - 2013
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,11 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische
- *    Universität Darmstadt nor the names of its contributors may be used to
- *    endorse or promote products derived from this software without specific
- *    prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,25 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
 package domain
-package l0
-
-import org.opalj.util.{ Answer, Unknown }
-import org.opalj.ai.Domain
 
 /**
- * Component interface that defines methods related to the comparison of domain-level
- * integer values.
+ * Definition of common domains that can be used for the implementation of analyses.
+ *
+ *  ==Thread Safety==
+ * Unless explicitly documented, a domain is never thred-safe. The general programming
+ * model is to use one Domain object per code block/method and therefore, thread-safety
+ * is not a general goal.
  *
  * @author Michael Eichberg
  */
-trait DefaultIntegerValuesComparison extends IntegerValuesComparison {
-    this: Domain ⇒
+package object domain {
 
-    override def intIsSomeValueInRange(
-        value: DomainValue,
-        lowerBound: DomainValue,
-        upperBound: DomainValue): Answer =
-        Unknown
+    // currently empty
+
 }
