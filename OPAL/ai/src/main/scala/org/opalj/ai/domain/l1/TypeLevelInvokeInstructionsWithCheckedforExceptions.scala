@@ -29,14 +29,12 @@
 package org.opalj
 package ai
 package domain
-package l0
+package l1
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import org.opalj.br.{ Type, ObjectType, ReferenceType }
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.BootstrapMethod
-import org.opalj.br.analyses.{ Project, ClassHierarchy }
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.Configuration
+import org.opalj.ai.domain.TheCode
+import org.opalj.ai.domain.l0.TypeLevelInvokeInstructions
 
 /**
  *
