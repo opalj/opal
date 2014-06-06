@@ -246,11 +246,16 @@ trait PreciseIntegerValues
         pc: PC,
         value1: DomainValue,
         value2: DomainValue): IntegerLikeValueOrArithmeticException = {
-        intValues(value1, value2) { (v1, v2) ⇒
+        intValue(value2) { v2 ⇒
             if (v2 == 0)
                 ThrowsException(ArithmeticException(pc))
-            else
-                ComputedValue(IntegerValue(pc, v1 / v2))
+            else {
+                intValue(value1) { v1 ⇒
+                    ComputedValue(IntegerValue(pc, v1 / v2))
+                } {
+                    ComputedValue(IntegerValue(pc))
+                }
+            }
         } {
             if (throwArithmeticExceptions)
                 ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
@@ -277,11 +282,16 @@ trait PreciseIntegerValues
         pc: PC,
         value1: DomainValue,
         value2: DomainValue): IntegerLikeValueOrArithmeticException = {
-        intValues(value1, value2) { (v1, v2) ⇒
+        intValue(value2) { v2 ⇒
             if (v2 == 0)
                 ThrowsException(ArithmeticException(pc))
-            else
-                ComputedValue(IntegerValue(pc, v1 % v2))
+            else {
+                intValue(value1) { v1 ⇒
+                    ComputedValue(IntegerValue(pc, v1 % v2))
+                } {
+                    ComputedValue(IntegerValue(pc))
+                }
+            }
         } {
             if (throwArithmeticExceptions)
                 ComputedValueOrException(
