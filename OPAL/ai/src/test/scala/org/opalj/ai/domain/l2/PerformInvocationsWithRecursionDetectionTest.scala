@@ -67,11 +67,28 @@ class PerformInvocationsWithRecursionDetectionTest
         result.domain.returnedNormally should be(true)
     }
 
-    it should ("be able to analyze a method that calls itself unconditionally") in {
+    it should ("be able to analyze a method that is self-recursive and which will never abort") in {
         val theCalledMethodsStore = createCalledMethodsStore()
         val domain = new InvocationDomain(project) { val calledMethodsStore = theCalledMethodsStore }
         BaseAI(StaticCalls, StaticCalls.findMethod("endless").get, domain)
-        if (domain.returnedNormally) fail("the method never returns")
+        if (domain.allReturnedValues.nonEmpty)
+            fail("the method never returns, but the following result was produced: "+
+                domain.allReturnedValues)
+        if (domain.allThrownExceptions.nonEmpty)
+            fail("the method never returns, but the following result was produced: "+
+                domain.allReturnedValues)
+    }
+
+    it should ("be able to analyze a method that is self-recursive and which will never abort due to exception handling") in {
+        val theCalledMethodsStore = createCalledMethodsStore()
+        val domain = new InvocationDomain(project) { val calledMethodsStore = theCalledMethodsStore }
+        BaseAI(StaticCalls, StaticCalls.findMethod("endlessDueToExceptionHandling").get, domain)
+        if (domain.allReturnedValues.nonEmpty)
+            fail("the method never returns, but the following result was produced: "+
+                domain.allReturnedValues)
+        if (domain.allThrownExceptions.nonEmpty)
+            fail("the method never returns, but the following result was produced: "+
+                domain.allReturnedValues)
     }
 
     it should ("be able to analyze some methods with mutual recursion") in {
@@ -124,17 +141,14 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             extends Domain
             with TheProject[java.net.URL]
             with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions
-            //    with DefaultReferenceValuesBinding
-            //    with DefaultStringValuesBinding
-            with DefaultClassValuesBinding
-            with DefaultArrayValuesBinding
-            with DefaultPreciseIntegerValues
-            with DefaultPreciseLongValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
-            with DefaultPerInstructionPostProcessing
+            with DefaultReferenceValuesBinding
+            with DefaultPreciseIntegerValues
+            with DefaultPreciseLongValues
             with ProjectBasedClassHierarchy
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization

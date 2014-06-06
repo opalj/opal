@@ -117,7 +117,7 @@ class DefaultPerInstructionPostProcessingTest
         }
     }
 
-    it should "be able to analyze a method that may return normally or throw an exception" in {
+    it should "be able to analyze a method that always throws an exception but also swallows several exceptions" in {
         evaluateMethod("withFinallyAndThrows") { domain ⇒
             import domain._
             allThrownExceptions should be(
@@ -133,6 +133,5 @@ class DefaultPerInstructionPostProcessingTest
             )
         }
     }
-
 }
 

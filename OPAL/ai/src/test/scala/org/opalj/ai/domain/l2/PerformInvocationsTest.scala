@@ -135,12 +135,12 @@ class PerformInvocationsTest
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(false)
         val exs = domain.thrownExceptions(result.domain, -1)
-        exs.size should be(4)
+        if (exs.size != 4) fail("too many exceptions: "+exs)
         var foundUnknownError = false
         var foundUnsupportedOperationException = false
         var foundNullPointerException = false
         var foundIllegalArgumentException = false
-
+ 
         exs forall { ex ⇒
             ex match {
                 case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒
@@ -155,14 +155,14 @@ class PerformInvocationsTest
                 case domain.SObjectValue(ObjectType("java/lang/IllegalArgumentException")) ⇒
                     foundIllegalArgumentException = true
                     true
-                case _ ⇒
+                 case _ ⇒
                     fail("unexpected exception: "+ex)
             }
         } should be(true)
         if (!(foundUnknownError &&
             foundUnsupportedOperationException &&
-            foundNullPointerException &&
-            foundIllegalArgumentException)) fail("Not all expected exceptions were thrown")
+            foundIllegalArgumentException &&
+            foundNullPointerException)) fail("Not all expected exceptions were thrown")
     }
 
     it should ("be able to analyze a static method that calls another static method that calls ...") in {
@@ -183,6 +183,7 @@ object PerformInvocationsTestFixture {
             extends Domain
             with TheProject[java.net.URL]
             with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l0.TypeLevelFieldAccessInstructions
