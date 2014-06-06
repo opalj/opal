@@ -132,10 +132,26 @@ public class StaticCalls {
     }
 
     static void endless() {
-        System.out.println(System.currentTimeMillis());
+
         endless();
     }
- 
+
+    static void endlessWhile() {
+        while (true) {
+            // do nothing..
+        }
+    }
+
+    static void endlessDueToExceptionHandling() {
+        try {
+            System.out.println(System.currentTimeMillis());
+        } catch (Throwable t) {
+            // t is NEVER null
+            t.printStackTrace(System.out);
+        }
+        endlessDueToExceptionHandling();
+    }
+
     static int fak(int i) {
         if (i > 1)
             return i * fak(i - 1);
