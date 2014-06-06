@@ -51,23 +51,21 @@ import org.opalj.ai.domain.l1._
 private class ImmutabilityAnalysisDomain[I](val id: I)
         extends Domain
         with DefaultDomainValueBinding
-        with Configuration
+        with ThrowAllPotentialExceptionsConfiguration
         with DefaultPerInstructionPostProcessing
-        with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-        with TypeLevelInvokeInstructionsWithNullPointerHandling
-        with DefaultClassValuesBinding
-        with DefaultArrayValuesBinding
-        with DefaultPreciseIntegerValues
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        with PredefinedClassHierarchy
+        with l0.DefaultTypeLevelIntegerValues
+        with DefaultReferenceValuesBinding
+        with PredefinedClassHierarchy // FIXME This should not give sufficient information.
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization {
 
     type Id = I
-    
-    override def maxUpdateCountForIntegerValues: Int = 1
+
 }
 
 /**
