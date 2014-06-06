@@ -29,8 +29,8 @@
 package org.opalj
 package da
 import scala.xml.Node
-import org.opalj.bi.AccessFlags
-import org.opalj.bi.AccessFlagsContexts
+import bi.AccessFlags
+import bi.AccessFlagsContexts
 /**
  * @author Michael Eichberg
  */

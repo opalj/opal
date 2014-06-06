@@ -32,9 +32,8 @@ package da
 import scala.xml.Node
 import java.io.File
 import scala.io.Source
-import java.util.ArrayList
-import org.opalj.bi.AccessFlags
-import org.opalj.bi.AccessFlagsContexts
+import bi.AccessFlags
+import bi.AccessFlagsContexts
 /**
  * @author Michael Eichberg
  */
@@ -80,8 +79,7 @@ case class ClassFile(
     }
     
    protected def loadStyle : String = {    
-         Source.fromFile(this.getClass().getResource("css/style.css").getPath()) (scala.io.Codec.UTF8 ).mkString 
-                 
+         Source.fromFile(this.getClass().getResource("css/style.css").getPath()) (scala.io.Codec.UTF8 ).mkString                 
     }
     
    protected def loadJavaScript(js:String): String = {
@@ -91,6 +89,10 @@ case class ClassFile(
         ) 
     }
     
+   protected def accessFlags : String = {    
+         AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS)                
+    }
+   
     def toXHTML: Node =
         <html>
             <head>
@@ -102,11 +104,10 @@ case class ClassFile(
             <body>
     			<p class="Summary">
     				<b>{ fqn }</b> Version { minor_version + "." + major_version } 
-    				<span class="nx">Access Flags { AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }</span><br/>
-    				<a href="#openModal">Open Modal</a>	
+    				<span class="nx">Access Flags {accessFlags}</span><br/>
     			</p>
     			<div >
-    				<div id="class_">
+    				<div id="classFile">
     					<div id="fields">
     						<details>
     						<summary>Fields</summary>
@@ -125,20 +126,13 @@ case class ClassFile(
    						</div>
    					</div>
    				</div>
-   				<div id="ConstantPool">
+   				<div id="constantPool">
     					<details>
    						<summary>Constant Pool</summary>
     					<ol>
     						{ cpToXHTML }
     					</ol>
     					</details>
-    			</div>
-    			<div id="openModal" class="modalDialog">
-    				<div>
-    					<a href="#close" title="Close" class="close">X</a>
-    					<h1>Modal Box</h1>
-    					<p>Methode Heirarchy.</p>
-    				</div>
     			</div>
     	   </body>
         </html>
