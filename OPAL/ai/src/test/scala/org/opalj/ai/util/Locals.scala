@@ -174,7 +174,7 @@ class LocalsTest
         }
     }
 
-    it should ("return the same locals f the tranformation does not update a value") in {
+    it should ("return the same locals if the tranformation does not update a value") in {
         for {
             size ← 1 to 25
         } {
@@ -186,7 +186,7 @@ class LocalsTest
         }
     }
 
-    it should ("be able to transform the locals in-place") in {
+    it should ("be able to transform the locals") in {
         for {
             size ← 1 to 25
         } {

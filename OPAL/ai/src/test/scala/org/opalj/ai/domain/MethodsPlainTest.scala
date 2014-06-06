@@ -40,9 +40,9 @@ import org.scalatest.matchers.MatchResult
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
-import br.reader.Java8Framework.ClassFiles
-import l0._
+import org.opalj.br._
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.ai.domain.l0._
 
 /**
  * Basic tests of the abstract interpreter.
