@@ -67,14 +67,19 @@ trait StackMapTable_attributeReader extends AttributeReader {
     registerAttributeReader(
         StackMapTable_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                StackMapTable_attribute(
-                    cp,
-                    attribute_name_index,
-                    in.readInt, // attribute_length
-                    repeat(in.readUnsignedShort) {
-                        StackMapFrame(cp, in)
-                    }
-                )
+                val length = in.readInt()
+                val entries = in.readUnsignedShort()
+                if (entries > 0)
+                    StackMapTable_attribute(
+                        cp,
+                        attribute_name_index,
+                        length, // attribute_length
+                        repeat(entries) {
+                            StackMapFrame(cp, in)
+                        }
+                    )
+                else
+                    null
             }
         )
     )

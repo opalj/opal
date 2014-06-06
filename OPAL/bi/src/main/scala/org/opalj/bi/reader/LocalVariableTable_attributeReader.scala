@@ -90,24 +90,28 @@ trait LocalVariableTable_attributeReader extends AttributeReader {
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
 
                 val attribute_length = in.readInt()
-                LocalVariableTable_attribute(
-                    cp,
-                    attribute_name_index,
-                    attribute_length,
-                    {
-                        val entriesCount = in.readUnsignedShort
-                        repeat(entriesCount) {
-                            LocalVariableTableEntry(
-                                cp,
-                                in.readUnsignedShort,
-                                in.readUnsignedShort,
-                                in.readUnsignedShort,
-                                in.readUnsignedShort,
-                                in.readUnsignedShort
-                            )
+                val entriesCount = in.readUnsignedShort()
+                if (entriesCount > 0)
+                    LocalVariableTable_attribute(
+                        cp,
+                        attribute_name_index,
+                        attribute_length,
+                        {
+                            repeat(entriesCount) {
+                                LocalVariableTableEntry(
+                                    cp,
+                                    in.readUnsignedShort,
+                                    in.readUnsignedShort,
+                                    in.readUnsignedShort,
+                                    in.readUnsignedShort,
+                                    in.readUnsignedShort
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                else {
+                    null
+                }
             }
         )
     )
