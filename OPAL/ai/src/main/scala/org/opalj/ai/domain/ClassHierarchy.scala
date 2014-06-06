@@ -53,7 +53,7 @@ trait ClassHierarchy { this: Domain ⇒
     def classHierarchy: DefaultClassHierarchy
 
     /**
-     * @inheritdoc
+     * @see [[Domain.isSubtypeOf]]
      *
      * @see Delegates to [[org.opalj.br.analyses.ClassHierarchy]]'s `isSubtypeOf` method.
      */
