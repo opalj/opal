@@ -37,7 +37,7 @@ package instructions
  */
 case object IXOR extends BitwiseInstruction {
 
-    def opcode: Int = 130
+    override final val opcode = 130
 
     def mnemonic: String = "ixor"
 

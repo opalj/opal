@@ -66,6 +66,8 @@ private class ImmutabilityAnalysisDomain[I](val id: I)
         with IgnoreSynchronization {
 
     type Id = I
+    
+    override def maxSpreadInteger: Int = 1
 }
 
 /**

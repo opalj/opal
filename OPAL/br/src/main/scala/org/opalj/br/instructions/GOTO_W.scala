@@ -39,11 +39,17 @@ case class GOTO_W(
     branchoffset: Int)
         extends UnconditionalBranchInstruction {
 
-    def opcode: Int = 200
+    def opcode: Opcode = GOTO_W.opcode
 
     def mnemonic: String = "goto_w"
 
     final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = 
         currentPC + 5
+
+}
+
+object GOTO_W {
+
+    final val opcode = 200
 
 }

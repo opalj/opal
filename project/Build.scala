@@ -118,6 +118,7 @@ object OPALBuild extends Build {
 	lazy val incubation = Project(
 		id = "Incubation",
 		base = file("OPAL/incubation")
-	) dependsOn(av)
+	) dependsOn(
+		av % "test->test;compile->compile")
 
 }

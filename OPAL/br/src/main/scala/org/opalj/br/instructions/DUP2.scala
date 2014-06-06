@@ -37,7 +37,7 @@ package instructions
  */
 case object DUP2 extends StackManagementInstruction {
 
-    def opcode: Int = 92
+    override final val opcode = 92
 
     def mnemonic: String = "dup2"
 

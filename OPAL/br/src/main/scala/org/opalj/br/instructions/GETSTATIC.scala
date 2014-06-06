@@ -44,7 +44,7 @@ case class GETSTATIC(
     fieldType: FieldType)
         extends FieldReadAccess {
 
-    def opcode: Int = GETSTATIC.OPCODE
+    def opcode: Opcode = GETSTATIC.OPCODE
 
     def mnemonic: String = GETSTATIC.MNEMONIC
 

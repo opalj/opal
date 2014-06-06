@@ -41,7 +41,7 @@ case object LSTORE_1
 
     def lvIndex = 1
 
-    def opcode: Int = 64
+    override final val opcode = 64
 
     def mnemonic: String = "lstore_1"
 

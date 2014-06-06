@@ -37,7 +37,7 @@ package instructions
  */
 case object INEG extends NegateInstruction {
 
-    def opcode: Int = 116
+    override final val opcode = 116
 
     def mnemonic: String = "ineg"
 

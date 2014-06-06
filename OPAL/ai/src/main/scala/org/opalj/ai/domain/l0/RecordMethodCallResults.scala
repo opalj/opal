@@ -47,7 +47,8 @@ import org.opalj.collection.immutable.{ UIDSet0, UIDSet1, UIDSet }
 trait RecordMethodCallResults
         extends MethodCallResults
         with RecordLastReturnedValues
-        with RecordAllThrownExceptions { this: TypeLevelReferenceValues ⇒
+        with RecordAllThrownExceptions {
+    this: TypeLevelReferenceValues with ClassHierarchy ⇒
 
     private[this] var hasReturnedNormally: Boolean = false
 
@@ -95,9 +96,10 @@ trait RecordMethodCallResults
                             ) + exceptionValue
                         )
                     case utb ⇒ {
-                        val exceptionType = joinObjectTypesUntilSingleUpperBound(
-                            utb.asInstanceOf[UIDSet[ObjectType]],
-                            true)
+                        val exceptionType =
+                            classHierarchy.joinObjectTypesUntilSingleUpperBound(
+                                utb.asInstanceOf[UIDSet[ObjectType]],
+                                true)
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,
                             exceptionValuesPerType.getOrElse(

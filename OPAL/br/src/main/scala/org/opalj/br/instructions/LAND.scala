@@ -38,7 +38,7 @@ package instructions
  */
 case object LAND extends BitwiseInstruction {
 
-    def opcode: Int = 127
+    override final val opcode = 127
 
     def mnemonic: String = "land"
 

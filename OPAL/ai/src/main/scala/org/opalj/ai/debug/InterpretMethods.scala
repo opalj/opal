@@ -122,6 +122,7 @@ object InterpretMethodsAnalysis {
         import performanceEvaluationContext.{ time, getTime }
 
         val domainConstructor = domainClass.getConstructor(classOf[Object])
+        var methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
         def analyzeClassFile(
             source: String,
@@ -141,6 +142,7 @@ object InterpretMethodsAnalysis {
                             if (result.wasAborted)
                                 throw new InterruptedException();
                         }
+                        methodsCount.incrementAndGet()
                         None
                     } catch {
                         case ct: ControlThrowable ⇒ throw ct
@@ -196,7 +198,7 @@ object InterpretMethodsAnalysis {
 
             (
                 "During the interpretation of "+
-                project.methodsCount+" methods in "+
+                methodsCount.get+" methods (of "+project.methodsCount+") in "+
                 project.classFilesCount+" classes (overall: "+ns2sec(getTime('OVERALL))+
                 "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
                 "secs.)"+collectedExceptions.size+" exceptions occured.",
@@ -205,7 +207,7 @@ object InterpretMethodsAnalysis {
         } else {
             (
                 "No exceptions occured during the interpretation of "+
-                project.methodsCount+" methods in "+
+                methodsCount.get+" methods (of "+project.methodsCount+") in "+
                 project.classFilesCount+" classes (overall: "+ns2sec(getTime('OVERALL))+
                 "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
                 "secs.)",

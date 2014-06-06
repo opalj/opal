@@ -31,7 +31,10 @@ package ai
 
 import org.opalj.util.{ Answer, Yes }
 
-import br._
+import org.opalj.br.UpperTypeBound
+import org.opalj.br.{ BaseType, ReferenceType }
+import org.opalj.br.{ BooleanType, ByteType, CharType, ShortType, IntegerType, LongType }
+import org.opalj.br.{ FloatType, DoubleType }
 
 /**
  * The answer of a domain to a query about a value's specific type.

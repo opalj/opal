@@ -33,8 +33,8 @@ import scala.util.control.ControlThrowable
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
-import br.instructions._
+import org.opalj.br._
+import org.opalj.br.instructions._
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode
@@ -1807,10 +1807,14 @@ trait AI[D <: Domain] {
                                     // if objectref is a subtype => UNCHANGED
                                     fallThrough()
                                 case No ⇒
-                                    val ex = theDomain.InitializedObjectValue(pc, ClassCastException)
+                                    val ex =
+                                        theDomain.InitializedObjectValue(
+                                            pc, ClassCastException)
                                     handleException(ex)
                                 case Unknown ⇒
-                                    val ex = theDomain.InitializedObjectValue(pc, ClassCastException)
+                                    val ex =
+                                        theDomain.InitializedObjectValue(
+                                            pc, ClassCastException)
                                     handleException(ex)
                                     val (newOperands, newLocals) =
                                         theDomain.refEstablishUpperBound(
@@ -1860,7 +1864,8 @@ trait AI[D <: Domain] {
                             "unsupported opcode: "+opcode)
                 }
 
-                theDomain.evaluationCompleted(pc, worklist, evaluated, operandsArray, localsArray, tracer)
+                theDomain.evaluationCompleted(
+                    pc, worklist, evaluated, operandsArray, localsArray, tracer)
             } catch {
                 case ct: ControlThrowable ⇒
                     throw ct

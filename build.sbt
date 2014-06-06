@@ -33,7 +33,7 @@ javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
 libraryDependencies in ThisBuild += "junit" % "junit" % "4.11" % "test"
 
-libraryDependencies in ThisBuild += "org.scalatest" %% "scalatest" % "2.1.6" % "test"
+libraryDependencies in ThisBuild += "org.scalatest" %% "scalatest" % "2.1.7" % "test"
 
 testOptions in ThisBuild <<= 
   baseDirectory map { 

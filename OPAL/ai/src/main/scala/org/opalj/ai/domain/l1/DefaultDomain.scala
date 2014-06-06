@@ -56,8 +56,10 @@ class DefaultConfigurableDomain[I](
         extends DefaultDomain
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization {
-        type Id = I
-    }
+    type Id = I
+
+    override def maxSpreadInteger: Int = 5
+}
 
 class DefaultRecordingDomain[I](
     val id: I)
@@ -66,8 +68,10 @@ class DefaultRecordingDomain[I](
         with RecordLastReturnedValues
         with RecordAllThrownExceptions
         with RecordVoidReturns
-        with IgnoreSynchronization{
-        type Id = I
-    }
+        with IgnoreSynchronization {
+    type Id = I
+
+    override def maxSpreadInteger: Int = 5
+}
         
 

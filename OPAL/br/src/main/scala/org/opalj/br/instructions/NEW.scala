@@ -39,7 +39,7 @@ case class NEW(
     objectType: ObjectType)
         extends Instruction {
 
-    def opcode: Int = 187
+    override def opcode: Opcode = NEW.opcode
 
     def mnemonic: String = "new"
 
@@ -53,4 +53,9 @@ case class NEW(
             this, currentPC, code, ObjectType.OutOfMemoryError)
 
     override def toString: String = "NEW "+objectType.toJava
+}
+object NEW {
+
+    final val opcode = 187
+
 }

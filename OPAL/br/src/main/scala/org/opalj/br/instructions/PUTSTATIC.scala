@@ -44,7 +44,7 @@ case class PUTSTATIC(
     fieldType: FieldType)
         extends FieldWriteAccess {
 
-    def opcode: Int = 179
+    override def opcode: Opcode = PUTSTATIC.opcode
 
     def mnemonic: String = "putstatic"
 
@@ -54,4 +54,9 @@ case class PUTSTATIC(
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
 
     override def toString = "put static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+}
+object PUTSTATIC {
+
+    final val opcode = 179
+
 }

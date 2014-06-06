@@ -39,7 +39,7 @@ case class RET(
     val lvIndex: Int)
         extends ControlTransferInstruction {
 
-    override def opcode: Int = 169
+    override def opcode: Opcode = RET.opcode
 
     override def mnemonic: String = "ret"
 
@@ -51,5 +51,10 @@ case class RET(
             "to determine the next instruction that will be executed "+
                 "a data-/control-flow analysis needs to be executed; "+
                 "without such an analysis this information is not directly available")
+
+}
+object RET {
+
+    final val opcode = 169
 
 }

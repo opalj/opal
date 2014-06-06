@@ -53,9 +53,13 @@ class DefaultPreciseIntegerValuesTest
         with Matchers
         with ParallelTestExecution {
 
-    val domain = new DefaultConfigurableDomain("DefaultPreciseIntegerValuesTest")
+    val domain = new DefaultConfigurableDomain("DefaultPreciseIntegerValuesTest") {
+        override def maxSpreadInteger: Int = 25
+    }
     import domain._
 
+    
+    
     //
     // TESTS
     //

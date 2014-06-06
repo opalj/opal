@@ -37,7 +37,7 @@ package instructions
  */
 case object I2S extends NumericConversionInstruction {
 
-    def opcode: Int = 147
+    override final val opcode = 147
 
     def mnemonic: String = "i2s"
 

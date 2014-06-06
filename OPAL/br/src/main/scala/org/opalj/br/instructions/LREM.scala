@@ -37,7 +37,7 @@ package instructions
  */
 case object LREM extends IntegerRemainderInstruction {
 
-    def opcode: Int = 113
+    override final val opcode = 113
 
     def mnemonic: String = "lrem"
 

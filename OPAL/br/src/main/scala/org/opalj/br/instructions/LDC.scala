@@ -40,7 +40,7 @@ import language.existentials
 sealed abstract class LDC[@specialized(Int, Float) T]
         extends LoadConstantInstruction[T] {
 
-    override def opcode: Int = 18
+    override def opcode: Opcode = LDC.opcode
 
     override def mnemonic: String = "ldc"
 
@@ -84,4 +84,7 @@ object LDC {
     }
 
     def unapply[T](ldc: LDC[T]): Option[T] = Some(ldc.value)
+
+    final val opcode = 18
+
 }

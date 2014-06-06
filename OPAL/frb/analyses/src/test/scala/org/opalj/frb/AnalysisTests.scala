@@ -84,41 +84,12 @@ object AnalysisTest {
             )
         ).flatten
 
-        if (useJDK && jreClassFiles.nonEmpty) {
-            println("Creating Project: "+classFiles.size+
-                " class files from "+filenames.mkString(", ")+" and "+jreClassFiles.size+
-                " JRE class files")
-            Project(classFiles, jreClassFiles)
+        if (useJDK) {
+            println("Creating Project: "+filenames.mkString(", ")+" and "+" the JRE.")
+            Project(classFiles, TestSupport.JREClassFiles)
         } else {
-            println("Creating Project: "+classFiles.size+
-                " class files from "+filenames.mkString(", "))
+            println("Creating Project: "+filenames.mkString(", "))
             Project(classFiles)
         }
     }
-
-    /**
-     * Loads class files from JRE .jars found in the boot classpath.
-     *
-     * @return List of class files ready to be passed to a `IndexBasedProject`.
-     */
-    private def loadJREClassFiles: Seq[(ClassFile, URL)] = {
-        val paths = System.getProperties().getProperty("sun.boot.class.path").split(":")
-
-        val classFiles = (for (path ← paths) yield {
-            val jarfile = new java.io.File(path)
-            if (jarfile.exists()) {
-                println("Loading JRE .jar (found in sun.boot.class.path): "+path)
-                Java8LibraryFramework.ClassFiles(jarfile)
-            } else {
-                Seq.empty
-            }
-        }).toSeq
-
-        classFiles.flatten
-    }
-
-    /**
-     * val holding the list of JRE class files, such that they're only loaded once.
-     */
-    private val jreClassFiles = loadJREClassFiles
 }

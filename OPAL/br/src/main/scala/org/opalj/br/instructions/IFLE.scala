@@ -39,8 +39,13 @@ case class IFLE(
     branchoffset: Int)
         extends ConditionalBranchInstruction {
 
-    def opcode: Int = 158
+    def opcode: Opcode = IFLE.opcode
 
     def mnemonic: String = "ifle"
+
+}
+object IFLE {
+
+    final val opcode = 158
 
 }

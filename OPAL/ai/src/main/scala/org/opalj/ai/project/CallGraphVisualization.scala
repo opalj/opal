@@ -202,37 +202,39 @@ object CallGraphVisualization {
         // The unresolved methods________________________________________________________:
         if (unresolvedMethodCalls.size > 0) {
             println("Unresolved method calls: "+unresolvedMethodCalls.size)
-            val (umc, end) =
-                if (unresolvedMethodCalls.size > 10)
-                    (unresolvedMethodCalls.take(10), "\n\t...\n")
-                else
-                    (unresolvedMethodCalls, "\n")
-            println(umc.mkString("Unresolved method calls:\n\t", "\n\t", end))
+            //            val (umc, end) =
+            //                if (unresolvedMethodCalls.size > 10)
+            //                    (unresolvedMethodCalls.take(10), "\n\t...\n")
+            //                else
+            //                    (unresolvedMethodCalls, "\n")
+            //            println(umc.mkString("Unresolved method calls:\n\t", "\n\t", end))
         }
 
         // The graph_____________________________________________________________________:
-        //        val consoleOutput = callGraph.calls flatMap { caller ⇒
-        //            for {
-        //                (pc, callees) ← caller._2
-        //                callee ← callees
-        //            } yield caller._1.toJava+" => ["+pc+"] "+callee.toJava
-        //        }
-        //        println(consoleOutput.mkString("\n"))
+//        val classFiles = project.classFiles.filter(_.thisType.fqn.startsWith(fqnFilter))
+//        val methods = classFiles.flatMap(_.methods)
+//        val consoleOutput = methods flatMap (m ⇒ callGraph.calls(m) flatMap { allCallees ⇒
+//            val (pc, callees) = allCallees
+//            for {
+//                callee ← callees
+//            } yield m.toJava+" => ["+pc+"] "+project.classFile(callee).thisType.toJava+"{ "+callee.toJava+" }"
+//        })
+//        println(consoleOutput.mkString("\n"))
 
         // The exceptions________________________________________________________________:
         if (exceptions.size > 0) {
             println("Exceptions: "+exceptions.size)
-            println(exceptions.mkString("Exceptions that occured while analyzing...:\n\t", "\n\t", "\t"))
-            writeAndOpenDesktopApplication(
-                exceptions.map(_.toFullString).mkString("Exceptions that occured while creating the call graph...:\n", "\n\n", ""),
-                "Logged exceptions", ".txt"
-            )
+            //            println(exceptions.mkString("Exceptions that occured while analyzing...:\n\t", "\n\t", "\t"))
+            //            writeAndOpenDesktopApplication(
+            //                exceptions.map(_.toFullString).mkString("Exceptions that occured while creating the call graph...:\n", "\n\n", ""),
+            //                "Logged exceptions", ".txt"
+            //            )
         }
 
         // Generate and show the graph
-        writeAndOpenDesktopApplication(
-            toDot.generateDot(nodes),
-            callGraphAlgorithm+"CallGraph", ".dot")
+        //        writeAndOpenDesktopApplication(
+        //            toDot.generateDot(nodes),
+        //            callGraphAlgorithm+"CallGraph", ".dot")
         println("Callgraph:")
         println("Number of nodes: "+nodes.size)
         val edges = nodes.foldLeft(0) { (l, r) ⇒

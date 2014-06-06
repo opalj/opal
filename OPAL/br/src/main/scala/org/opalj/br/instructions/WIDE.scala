@@ -38,7 +38,7 @@ package instructions
  */
 case object WIDE extends Instruction {
 
-    def opcode: Int = 196
+    override final val opcode = 196
 
     def mnemonic: String = "wide"
 

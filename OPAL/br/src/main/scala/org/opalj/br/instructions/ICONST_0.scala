@@ -39,7 +39,7 @@ case object ICONST_0 extends LoadConstantInstruction[Int] with ImplicitValue {
 
     override def value: Int = 0
 
-    override def opcode: Int = 3
+    override final val opcode = 3
 
     override def mnemonic: String = "iconst_0"
 
