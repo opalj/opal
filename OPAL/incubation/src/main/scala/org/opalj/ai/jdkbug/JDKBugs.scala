@@ -172,12 +172,12 @@ trait TaintAnalysisDomain[Source]
         with DefaultTypeLevelDoubleValues
         with DefaultTypeLevelIntegerValues
         with DefaultStringValuesBinding
-        with DefaultIntegerValuesComparison
         with Configuration
         with TypeLevelFieldAccessInstructions
         with TypeLevelInvokeInstructions
         with TypeLevelReferenceValues
-        with ProjectBasedClassHierarchy[Source]
+        with TheProject[Source]
+        with ProjectBasedClassHierarchy
         with Report { thisDomain ⇒
 
     type Id = CallStackEntry
