@@ -38,6 +38,7 @@ package l1
 trait DefaultDomain
     extends Domain
     with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
     with l0.DefaultTypeLevelFloatValues
     with l0.DefaultTypeLevelDoubleValues
     with l0.TypeLevelFieldAccessInstructions
@@ -56,6 +57,7 @@ class DefaultConfigurableDomain[I](
         extends DefaultDomain
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization {
+    
     type Id = I
 
     override def maxUpdateCountForIntegerValues: Int = 5
@@ -69,6 +71,7 @@ class DefaultRecordingDomain[I](
         with RecordAllThrownExceptions
         with RecordVoidReturns
         with IgnoreSynchronization {
+    
     type Id = I
 
     override def maxUpdateCountForIntegerValues: Int = 5
