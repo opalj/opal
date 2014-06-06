@@ -434,6 +434,9 @@ trait AI[D <: Domain] {
                 )
                 mergeResult match {
                     case NoUpdate ⇒ /* nothing to do*/
+                        if (tracer.isDefined) {
+                            tracer.get.noFlow(theDomain)(sourcePC, targetPC)
+                        }
 
                     case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
                         operandsArray(targetPC) = updatedOperands
@@ -471,6 +474,10 @@ trait AI[D <: Domain] {
                             if (tracer.isDefined)
                                 tracer.get.rescheduled(theDomain)(
                                     sourcePC, targetPC, isExceptionalControlFlow)
+                        } else {
+                            if (tracer.isDefined) {
+                                tracer.get.noFlow(theDomain)(sourcePC, targetPC)
+                            }
                         }
                 }
             }

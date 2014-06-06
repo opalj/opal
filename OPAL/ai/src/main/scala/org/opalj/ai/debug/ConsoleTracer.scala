@@ -98,6 +98,13 @@ trait ConsoleTracer extends AITracer {
             targetPC: PC,
             isExceptionalControlFlow: Boolean) { /* ignored */ }
 
+    override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC) {
+        println(Console.RED_B + Console.YELLOW+
+            "did not schedule the interpretation of instruction "+
+            targetPC+
+            " the abstract state didn't change"+Console.RESET)
+    }
+
     override def join(
         domain: Domain)(
             pc: PC,

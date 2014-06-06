@@ -72,6 +72,13 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         tracers foreach { _.flow(domain)(currentPC, targetPC, isExceptionalControlFlow) }
     }
 
+    override def noFlow(
+        domain: Domain)(
+            currentPC: PC,
+            targetPC: PC): Unit = {
+        tracers foreach { _.noFlow(domain)(currentPC, targetPC) }
+    }
+
     override def rescheduled(
         domain: Domain)(
             sourcePC: PC,

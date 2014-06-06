@@ -108,6 +108,15 @@ trait AITracer {
             isExceptionalControlFlow: Boolean): Unit
 
     /**
+     * Called by the interpreter if a successor instruction is NOT scheduled, because
+     * the abstract state didn't change.        
+     */        
+    def noFlow(
+        domain: Domain)(
+            currentPC: PC,
+            targetPC: PC) : Unit
+
+    /**
      * Called if the instruction with the `targetPC` was rescheduled. I.e., the
      * instruction was already scheduled for evaluation in the future, but was now
      * rescheduled for a more immediate evaluation. I.e., it was moved to the first

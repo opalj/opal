@@ -84,6 +84,8 @@ trait ConsoleEvaluationTracer extends AITracer {
             targetPC: PC,
             isExceptionalControlFlow: Boolean): Unit = { /*EMPTY*/ }
 
+    override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = { /*EMPTY*/ }
+
     override def join(
         domain: Domain)(
             pc: PC,

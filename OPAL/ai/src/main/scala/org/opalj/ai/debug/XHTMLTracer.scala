@@ -240,7 +240,7 @@ trait XHTMLTracer extends AITracer {
         </html>
     }
 
-    def continuingInterpretation(
+    override def continuingInterpretation(
         code: Code,
         domain: Domain)(
             initialWorkList: List[PC],
@@ -252,7 +252,7 @@ trait XHTMLTracer extends AITracer {
 
     private[this] var continuingWithBranch = true
 
-    def flow(
+    override def flow(
         domain: Domain)(
             currentPC: PC,
             successorPC: PC,
@@ -260,7 +260,9 @@ trait XHTMLTracer extends AITracer {
         continuingWithBranch = currentPC < successorPC
     }
 
-    def rescheduled(
+    override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = { /*EMPTY*/ }
+
+    override def rescheduled(
         domain: Domain)(
             sourcePC: PC,
             targetPC: PC,
@@ -268,7 +270,7 @@ trait XHTMLTracer extends AITracer {
         /*ignored for now*/
     }
 
-    def instructionEvalution(
+    override def instructionEvalution(
         domain: Domain)(
             pc: PC,
             instruction: Instruction,
