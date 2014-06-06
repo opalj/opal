@@ -190,6 +190,24 @@ case object ComputationWithSideEffectOnly extends Computation[Nothing, Nothing] 
     def throwsException: Boolean = false
 }
 
+/**
+ * Indicates that the computation did not succeed. This is typically the case
+ * for methods that contain a {{{ while(true){...} }}} loop.
+ */
+case object ComputationFailed extends Computation[Nothing, Nothing] {
+
+    def returnsNormally: Boolean = false
+
+    def hasResult: Boolean = false
+
+    def result = throw new UnsupportedOperationException("the computation failed")
+
+    def throwsException: Boolean = false
+
+    def exceptions = throw new UnsupportedOperationException("the computation failed")
+
+}
+
 object ComputationWithResultAndException {
 
     def unapply[V, E](c: Computation[V, E]): Option[(V, E)] =
