@@ -35,13 +35,13 @@ import java.net.URL
 import java.util.zip.ZipFile
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
+
 import scala.Console._
 import scala.util.control.ControlThrowable
 import scala.collection.JavaConversions.enumerationAsScalaIterator
-import org.opalj.util.PerformanceEvaluation.ns2sec
-import br._
-import br.analyses._
-import org.opalj.br.analyses.AnalysisExecutor
+
+import org.opalj.br._
+import org.opalj.br.analyses._
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using
@@ -118,18 +118,20 @@ object InterpretMethodsAnalysis {
         domainClass: Class[_ <: Domain],
         beVerbose: Boolean): (String, Option[File]) = {
 
+        import org.opalj.util.PerformanceEvaluation.ns2sec
         val performanceEvaluationContext = new org.opalj.util.PerformanceEvaluation
         import performanceEvaluationContext.{ time, getTime }
+        val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
         val domainConstructor = domainClass.getConstructor(classOf[Object])
-        var methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
         def analyzeClassFile(
             source: String,
             classFile: ClassFile): Seq[(String, ClassFile, Method, Throwable)] = {
 
-            if (beVerbose) println(classFile.fqn)
-            val collectedExceptions = (
+            if (beVerbose) println(classFile.thisType.toJava)
+
+            val collectedExceptions =
                 for (method @ MethodWithBody(_) ← classFile.methods) yield {
                     if (beVerbose) println("  =>  "+method.toJava)
                     try {
@@ -157,17 +159,20 @@ object InterpretMethodsAnalysis {
                         }
                     }
                 }
-            )
-            collectedExceptions.filter(_.isDefined).map(_.get).seq
+
+            collectedExceptions.view.filter(_.isDefined).map(_.get)
         }
 
-        val collectedExceptions =
-            time('OVERALL) {
-                (for { (source, classFile) ← project.classFilesWithSources.par } yield {
-                    if (beVerbose) println(Console.BOLD + source.toString + Console.RESET)
+        val collectedExceptions = time('OVERALL) {
+            (
+                for { (source, classFile) ← project.classFilesWithSources.par } yield {
+
+                    if (beVerbose) print(BOLD + source.toString + RESET+" – ")
+
                     analyzeClassFile(source.toString, classFile)
-                }).flatten.seq.toSeq
-            }
+                }
+            ).flatten.seq.toSeq
+        }
 
         if (collectedExceptions.nonEmpty) {
             val body =

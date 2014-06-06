@@ -53,86 +53,78 @@ class DefaultPreciseIntegerValuesTest
         with Matchers
         with ParallelTestExecution {
 
-    val domain = new DefaultConfigurableDomain("DefaultPreciseIntegerValuesTest") {
-        override def maxUpdateCountForIntegerValues: Int = 25
+    object TestDomain
+            extends Domain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with l0.DefaultTypeLevelLongValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultReferenceValuesBinding
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            with DefaultPreciseIntegerValues
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with PredefinedClassHierarchy {
+
+        type Id = String
+        
+        def id = "TestDomain"
+        
+        override def maxUpdateCountForIntegerValues: Int = 2
     }
-    import domain._
+    import TestDomain._
 
     //
     // TESTS
     //
 
-//    behavior of "IntegerRange values"
-//
-//    it should ("be able to join two identical values") in {
-//        val v = IntegerRange(0, 0)
-//        v.join(-1, v) should be(NoUpdate)
-//    }
-//
-//    it should ("be able to join two values growing in the same direction with the same initial value") in {
-//        val v1 = IntegerRange(0, 1)
-//        val v2 = IntegerRange(0, 2)
-//
-//        v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 2)))
-//        v2.join(-1, v1) should be(NoUpdate)
-//    }
-//
-//    it should ("be able to join two values growing in the same direction where one value represents a subrange of the other") in {
-//        val v1 = IntegerRange(0, 1)
-//        val v3 = IntegerRange(-10, 10)
-//        //v3.join(-1, v1) should be(NoUpdate)
-//        v1.join(-1, v3) should be(StructuralUpdate(v3))
-//    }
-//
-//    it should ("be able to join two values growing in same (negative) direction") in {
-//        val v4 = IntegerRange(1, 0)
-//        val v5 = IntegerRange(-3, -10)
-//        v4.join(-1, v5) should be(StructuralUpdate(IntegerRange(1, -10)))
-//    }
-//
-//    it should ("be able to join two values that grow in the same direction, but which exceed the spread") in {
-//        val v4 = IntegerRange(1, 0)
-//        val v6 = IntegerRange(-3, -102)
-//        v4.join(-1, v6) should be(StructuralUpdate(AnIntegerValue())) // > SPREAD!
-//    }
-//
-//    it should ("be able to join two overlapping values growing in the same direction with different initial values") in {
-//        val v1 = IntegerRange(-1, 1)
-//        val v2 = IntegerRange(0, 2)
-//
-//        v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(-1, 2)))
-//        v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-1, 2)))
-//    }
-//
-//    it should ("be able to join an initial value with another value") in {
-//        val vi = IntegerRange(0, 0)
-//        val v1 = IntegerRange(0, 1)
-//        val v2 = IntegerRange(-1, 1)
-//        val v3 = IntegerRange(1, 0)
-//        val v4 = IntegerRange(50, 0)
-//        val v5 = IntegerRange(10, 11)
-//
-//        vi.join(-1, v1) should be(StructuralUpdate(IntegerRange(0, 1)))
-//        vi.join(-1, v2) should be(StructuralUpdate(IntegerRange(-1, 1)))
-//        vi.join(-1, v3) should be(StructuralUpdate(IntegerRange(1, 0)))
-//        vi.join(-1, v4) should be(StructuralUpdate(AnIntegerValue()))
-//        vi.join(-1, v5) should be(StructuralUpdate(IntegerRange(0, 11)))
-//        
-//        v2.join(-1, vi) should be(NoUpdate)
-//    }
-//
-//    it should ("be able to join with AnIntegerValue") in {
-//        val v1 = IntegerRange(0, 1)
-//
-//        v1.join(-1, AnIntegerValue()) should be(StructuralUpdate(AnIntegerValue()))
-//    }
+    final val SomePC = Int.MinValue
 
-    behavior of "AnIntegerValue"
+    behavior of "the Precise Integer Values domain"
 
-    it should ("be able to adapt to the same domain") in {
-        val v1 = AnIntegerValue()
-
-        v1.adapt(domain, -1) should be(AnIntegerValue())
+    it should ("be able to join a value with itself") in {
+        val v = IntegerValue(SomePC, 0)
+        v.join(-1, v) should be(NoUpdate)
     }
 
+    it should ("be able to join two new values") in {
+        val v1 = IntegerValue(SomePC, 1)
+        val v2 = IntegerValue(SomePC, 2)
+
+        v1.join(SomePC, v2) should be(StructuralUpdate(TheIntegerValue(2, 1)))
+        v2.join(SomePC, v1) should be(StructuralUpdate(TheIntegerValue(1, 1)))
+    }
+
+    it should ("be able to join two identical values without updating the update count") in {
+        val v1 = TheIntegerValue(5, 1 /*updates*/ )
+        val v2 = TheIntegerValue(5, 1 /*updates*/ )
+
+        v1.join(SomePC, v2) should be(NoUpdate)
+        v2.join(SomePC, v1) should be(NoUpdate)
+    }
+
+    it should ("be able to join two identical values even if the update count is exceed") in {
+        val v1 = TheIntegerValue(5, 5 /*updates*/ )
+        val v2 = TheIntegerValue(5, 5 /*updates*/ )
+
+        v1.join(SomePC, v2) should be(NoUpdate)
+        v2.join(SomePC, v1) should be(NoUpdate)
+    }
+
+    it should ("be able to join two values where one value was already updated the maximum number of times") in {
+        val v1 = TheIntegerValue(5, 2 /*updates*/ )
+        val v2 = IntegerValue(SomePC, 10)
+
+        v1.join(SomePC, v2) should be(StructuralUpdate(AnIntegerValue()))
+        v2.join(SomePC, v1) should be(StructuralUpdate(AnIntegerValue()))
+    }
+
+    it should ("be able to join with AnIntegerValue") in {
+        val v1 = IntegerValue(0, 1)
+
+        v1.join(-1, AnIntegerValue()) should be(StructuralUpdate(AnIntegerValue()))
+        AnIntegerValue().join(-1, v1) should be(NoUpdate)
+    }
 }

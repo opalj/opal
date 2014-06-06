@@ -72,7 +72,6 @@ trait DefaultReferenceValuesBinding extends DefaultTypeLevelReferenceValues {
         pc: PC,
         upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
 
-        assume(upperTypeBound.nonEmpty)
         if (upperTypeBound.containsOneElement)
             ObjectValue(pc, upperTypeBound.first)
         else
