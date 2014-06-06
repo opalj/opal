@@ -109,7 +109,7 @@ trait PerformInvocations
                 if (thrownExceptions.nonEmpty)
                     ThrowsException(thrownExceptions)
                 else
-                    ComputationWithSideEffectOnly
+                    ComputationFailed
             } else {
                 if (calledMethod.descriptor.returnType eq VoidType) {
                     if (thrownExceptions.nonEmpty) {
