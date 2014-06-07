@@ -62,7 +62,7 @@ case class ClassFile(
      */
     def cpToXHTML = {
         for { cpIndex ← (0 until constant_pool.length) if cp(cpIndex) != null } yield {
-            <li value={ cpIndex.toString }> { cp(cpIndex).toString() }</li>
+            <li value={ cpIndex.toString }>{ cp(cpIndex).toString() }</li>
         }
     }
 
@@ -102,38 +102,38 @@ case class ClassFile(
          		</style>       		
             </head>
             <body>
-    			<p class="Summary">
-    				<b>{ fqn }</b> Version { minor_version + "." + major_version } 
-    				<span class="nx">Access Flags {accessFlags}</span><br/>
-    			</p>
-    			<div >
-    				<div id="classFile">
-    					<div id="fields">
-    						<details>
-    						<summary>Fields</summary>
-   							<ol>
-   								{ fieldsToXHTML }
-   							</ol>
-   							</details>
-   						</div>
-   						<div id="methods">
-   							<details>
-   							<summary>Methods</summary>
-   							<ol>
-   								{ methodsToXHTML }
-   							</ol>
-   							</details>
-   						</div>
-   					</div>
-   				</div>
-   				<div id="constantPool">
-    					<details>
-   						<summary>Constant Pool</summary>
-    					<ol>
-    						{ cpToXHTML }
-    					</ol>
-    					</details>
-    			</div>
+             <p class="Summary">
+                 <b>{ fqn }</b> Version { minor_version + "." + major_version } 
+                 <span class="nx">Access Flags {accessFlags}</span><br/>
+            </p>
+                 <div >
+                     <div id="classFile">
+                         <div id="fields">
+                             <details>
+                             <summary>Fields</summary>
+                             <ol>
+                                 { fieldsToXHTML }
+                             </ol>
+                             </details>
+                         </div>
+                         <div id="methods">
+                            <details>
+                            <summary>Methods</summary>
+                            <ol>
+                                 { methodsToXHTML }
+                            </ol>
+                            </details>
+                         </div>
+                    </div>
+                </div>
+                <div id="constantPool">
+                    <details>
+                    <summary>Constant Pool</summary>
+                    <ol>
+                       { cpToXHTML }
+                    </ol>
+                    </details>
+                </div>
     	   </body>
         </html>
 }

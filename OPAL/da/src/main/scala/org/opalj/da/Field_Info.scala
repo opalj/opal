@@ -45,7 +45,7 @@ case class Field_Info(
     def toXHTML(implicit cp: Constant_Pool): Node = {
        <li>
     	<div class="code">
-    		<span class="AccessFlags">{ AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }</span>
+            <span class="AccessFlags">{ AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }</span>
             <span> { cp(name_index).asString } </span> 
             <a href="#" class="tooltip">{ name_index }<span>{ cp(name_index) }</span></a>    
         </div>
