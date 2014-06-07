@@ -1,0 +1,112 @@
+﻿
+@charset "utf-8";
+body{
+	font-family: "Times New Roman", Times, serif;
+	background: #fff url(../images/bg.jpg) repeat top left;
+	font-weight: 400;
+	font-size: 15px;
+	color: #1d3c41;
+	width: 90%;
+	margin:40px auto;
+	padding:20px;
+	overflow-y: scroll;
+}
+ 
+#classFile {
+	border: 1px solid rgba(147, 184, 189, 0.8);
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(105, 108, 109, 0.7), 0 0 8px 5px rgba(208, 223, 226, 0.4) inset;
+	width: 60%;
+	padding:20px;
+	float:left;
+	border-radius: 10px;
+	background: none repeat scroll 0 0 #F7F7F7;
+	background: -moz-linear-gradient(0 ,#F7F7F7);
+	background: -webkit-linear-gradient(0   ,#F7F7F7);
+	background: -o-linear-gradient(0   ,#F7F7F7);
+}
+
+#constantPool {
+	border: 1px solid rgba(100, 170, 0, 0.8);
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(100,105, 0, 0.7), 0 0 8px 5px rgba(100, 208, 0, 0.4) inset;	
+	width: 31%;
+	float:left;
+	padding:20px;
+	 margin-left:20px;	
+	border-radius: 10px;
+	background: none repeat scroll 0 0 #F7F7F7;
+	background: -moz-linear-gradient(0 ,#F7F7F7);
+	background: -webkit-linear-gradient(0   ,#F7F7F7);
+	background: -o-linear-gradient(0   ,#F7F7F7);
+}
+
+#methods,#fields {
+	font-weight:bold;
+	border: 1px solid rgba(147, 184, 189, 0.8);
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(105, 108, 109, 0.7), 0 0 8px 5px rgba(208, 223, 226, 0.4) inset;
+	margin-top: 10px;
+	padding: 5px 20px 13px 20px;
+	border-radius: 10px;
+	background: none repeat scroll 0 0 #F7F7F7;
+	background: -moz-linear-gradient(0 ,#F7F7F7);
+	background: -webkit-linear-gradient(0   ,#F7F7F7);
+	background: -o-linear-gradient(0   ,#F7F7F7);
+}
+
+h2, p, ol, ul, li {
+    margin:20px;
+    padding:0px;
+    font-size:13px;
+    font-family:Arial, Helvetica, sans-serif;
+}
+ 			
+p.Summary {
+    position:relative; /*see the support section below for more info*/
+    padding:20px 40px;
+    margin:20px 10px 20px 10px;
+    /**give the bubble's background a gradient**/
+    background:#f7a944; /*fallback colour for non-supporting browsers*/
+    background:-webkit-gradient(linear, 0 0, 0 100%, from(#fac868), to(#f3961c));
+    background:-moz-linear-gradient(#fac868, #f3961c);
+    background:-o-linear-gradient(#fac868, #f3961c);
+    background:linear-gradient(#fac868, #f3961c);
+    /**give the corners a large curve**/
+    -webkit-border-radius:180px;
+    -moz-border-radius:180px;
+    border-radius:180px;
+    /**add a drop shadow to the bubble**/
+    -webkit-box-shadow: -3px 4px 8px #989898;
+    -moz-box-shadow: -3px 4px 8px #989898;
+    box-shadow: -3px 4px 8px #989898;
+    /**style the text**/
+    color:#575544;
+    font-size:1em;
+    letter-spacing:.06em;
+    }
+	
+
+.code {
+	font-family:Consolas;
+}
+
+.AccessFlags {
+    color: rgba(0, 0, 100, 0.6);
+}
+
+a.tooltip{
+	color:gray;
+}
+
+a.tooltip span { z-index:10;display:none; padding:14px 20px; margin-top:-30px; margin-left:28px;  line-height:16px; }
+a.tooltip:hover span{ display:inline; position:absolute; color:#111; border:1px solid #DCA; background:#fffAF0;}
+.callout {z-index:20;position:absolute;top:30px;border:0;left:-12px;}
+   /*CSS3 extras*/ 
+a.tooltip span { border-radius:4px;
+ -moz-border-radius: 4px;
+ -webkit-border-radius: 4px;
+ -moz-box-shadow: 5px 5px 8px #CCC;
+ -webkit-box-shadow: 5px 5px 8px #CCC;
+ box-shadow: 5px 5px 8px #CCC;
+}

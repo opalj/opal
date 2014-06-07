@@ -28,29 +28,34 @@
  */
 package org.opalj
 package da
-import scala.xml.Node
-import bi.AccessFlags
-import bi.AccessFlagsContexts
+
 /**
+ * <pre>
+ * Signature_attribute { 
+ * 	u2 attribute_name_index; 
+ * 	u4 attribute_length; 
+ * 	u2 signature_index; 
+ * } 
+ * </pre> 
+ *
  * @author Michael Eichberg
  */
-case class Method_Info(
-    val accessFlags: Int,
-    val name_index: Constant_Pool_Index,
-    val descriptor_index: Constant_Pool_Index,
-    val attributes: Attributes){
-    
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <li>
-            <div>
-                <span class="AccessFlags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.FIELD) }</span>
-                <span> { cp(name_index).asString } </span> 
-                <a href="#" class="tooltip">{ name_index }<span>{ cp(name_index) }</span></a> 
-            </div>
-       </li>
-    }
-    
-    def attributesToXHTML(implicit cp: Constant_Pool) = {   
-        {for (attribute ← attributes) yield attribute.toXHTML(cp)}
-    }
+case class Signature_attribute (
+        attribute_name_index: Int,
+        sourceFile_index: Int)extends Attribute {
+
+	/**
+	 * The value of the attribute_length item is fixed; it is always 4.
+	 */
+	def attribute_length = 2
+	
+	def attribute_name = Signature_attribute.name
+
+}
+
+
+object Signature_attribute {
+	
+	val name = "Signature"
+	
 }
