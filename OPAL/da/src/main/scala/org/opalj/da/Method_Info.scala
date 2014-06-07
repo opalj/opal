@@ -42,17 +42,15 @@ case class Method_Info(
     
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <li>
-    		<strong> 
-    			<div>
-            		<span class="nx">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.FIELD) }</span>
-            		<span> { cp(name_index).asString } </span> {attributesToXHTML}
-            		<a href="#" class="tooltip">{ name_index }<span>{ cp(name_index) }</span></a> 
-            	</div>
-            </strong>
-        </li>
+    		<div>
+            	<span class="nx">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.FIELD) }</span>
+            	<span> { cp(name_index).asString } </span> 
+           		<a href="#" class="tooltip">{ name_index }<span>{ cp(name_index) }</span></a> 
+           	</div>
+       </li>
     }
     
-    def attributesToXHTML = {   
-        {for (attribute ← attributes) yield attribute.toXHTML()}
+    def attributesToXHTML(implicit cp: Constant_Pool) = {   
+        {for (attribute ← attributes) yield attribute.toXHTML(cp)}
     }
 }

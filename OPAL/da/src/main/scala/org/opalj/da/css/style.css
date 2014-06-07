@@ -42,6 +42,7 @@ body{
 }
 
 #methods,#fields {
+	font-weight:bold;
 	border: 1px solid rgba(147, 184, 189, 0.8);
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(105, 108, 109, 0.7), 0 0 8px 5px rgba(208, 223, 226, 0.4) inset;

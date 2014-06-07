@@ -51,9 +51,7 @@ trait Attribute {
      */
     def attribute_length: Int
     
-    def toXHTML(): Node = {
-       <strong> <div>  ,                    
-            <span class="cp_index"> { attribute_name_index } </span> 
-        </div></strong>
+    def toXHTML(implicit cp: Constant_Pool): Node = {
+       <div>,{ cp(attribute_name_index).asString }</div>
     }
 }

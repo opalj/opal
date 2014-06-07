@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import reflect.ClassTag
+import org.opalj.bi.AttributeParent
 
 /**
  * Represents a .class file as is.
@@ -43,7 +44,8 @@ object ClassFileReader
         with bi.reader.MethodsReader
         with bi.reader.AttributesReader
         with bi.reader.SourceFile_attributeReader
-        with bi.reader.SkipUnknown_attributeReader {
+        with bi.reader.SkipUnknown_attributeReader
+        with bi.reader.Signature_attributeReader{
 
     type ClassFile = da.ClassFile
 
@@ -85,7 +87,12 @@ object ClassFileReader
         cp: Constant_Pool,
         attribute_name_index: Int, sourceFile_index: Int): SourceFile_attribute =
         new SourceFile_attribute(attribute_name_index, sourceFile_index)
-
+    
+	type Signature_attribute = da.Signature_attribute    
+	def Signature_attribute (
+			cp: Constant_Pool,ap: AttributeParent,attribute_name_index : Int,signature_index : Int
+		):Signature_attribute = 
+			new Signature_attribute (attribute_name_index, signature_index)
     /*
     type ElementValue = org.opalj.bat.native.ElementValue
 
