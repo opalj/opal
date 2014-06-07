@@ -29,11 +29,14 @@
 package org.opalj
 package da
 
-import scala.xml.Node
 import java.io.File
+
 import scala.io.Source
-import bi.AccessFlags
-import bi.AccessFlagsContexts
+import scala.xml.Node
+
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
+
 /**
  * @author Michael Eichberg
  */
@@ -66,45 +69,45 @@ case class ClassFile(
         }
     }
 
-    def fieldsToXHTML : Node = {   
-        <ul>
-    		{for (field ← fields) yield field.toXHTML(cp)}
-    	</ul>
+    def fieldsToXHTML: Node = {
+        <ul>{ for (field ← fields) yield field.toXHTML(cp) }</ul>
     }
 
-    def methodsToXHTML : Node = {
-      <ul>
-    		{for (method ← methods) yield method.toXHTML(cp)}
-      </ul>
+    def methodsToXHTML: Node = {
+        <ul>{ for (method ← methods) yield method.toXHTML(cp) }</ul>
     }
-    
-   protected def loadStyle : String = {    
-         Source.fromFile(this.getClass().getResource("css/style.css").getPath()) (scala.io.Codec.UTF8 ).mkString                 
+
+    protected def loadStyle: String = {
+        processSource(
+            Source.fromFile(this.getClass().getResource("css/style.css").getPath())(scala.io.Codec.UTF8)
+        ) { _.mkString }
     }
-    
-   protected def loadJavaScript(js:String): String = {
-     
-         process(this.getClass().getResourceAsStream(js))(
+
+    protected def loadJavaScript(js: String): String = {
+
+        process(this.getClass().getResourceAsStream(js))(
             scala.io.Source.fromInputStream(_).mkString
-        ) 
+        )
     }
-    
-   protected def accessFlags : String = {    
-         AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS)                
+
+    protected def accessFlags: Node = {
+        <span class="AccessFlags">
+        Access Flags { AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }
+        </span>
     }
-   
+
     def toXHTML: Node =
         <html>
             <head>
-    			<title>Opal ByteCode Disassembler</title>
-    			<style type="text/css" >
-    				{scala.xml.Unparsed(loadStyle)}
-         		</style>       		
+                <title>Opal ByteCode Disassembler</title>
+                <style type="text/css" >
+                    { /*STYLE FILE IS MISSING scala.xml.Unparsed(loadStyle)*/ }
+                </style>
             </head>
             <body>
-             <p class="Summary">
+            <p class="Summary">
                  <b>{ fqn }</b> Version { minor_version + "." + major_version } 
-                 <span class="nx">Access Flags {accessFlags}</span><br/>
+                 { accessFlags } <br/>
             </p>
                  <div >
                      <div id="classFile">
