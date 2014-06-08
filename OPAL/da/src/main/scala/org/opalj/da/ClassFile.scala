@@ -78,9 +78,10 @@ case class ClassFile(
     }
 
     protected def loadStyle: String = {
-        processSource(
-            Source.fromFile(this.getClass().getResource("css/style.css").getPath())(scala.io.Codec.UTF8)
-        ) { _.mkString }
+        processSource {
+            val resource = getClass().getClassLoader().getResource("style.css").getPath()
+            Source.fromFile(resource)(scala.io.Codec.UTF8)
+        } { _.mkString }
     }
 
     protected def loadJavaScript(js: String): String = {
@@ -101,7 +102,7 @@ case class ClassFile(
             <head>
                 <title>Opal ByteCode Disassembler</title>
                 <style type="text/css" >
-                    { /*STYLE FILE IS MISSING scala.xml.Unparsed(loadStyle)*/ }
+                    { scala.xml.Unparsed(loadStyle) }
                 </style>
             </head>
             <body>
