@@ -129,7 +129,8 @@ class DefaultVTACallGraphDomain[Source](
         with Configuration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        with l0.DefaultTypeLevelIntegerValues
+        //with l0.DefaultTypeLevelIntegerValues
+        with l1.DefaultPreciseIntegerValues
         with l0.DefaultIntegerValuesComparison
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
@@ -140,12 +141,18 @@ class DefaultVTACallGraphDomain[Source](
         with ProjectBasedClassHierarchy[Source]
         with VTACallGraphDomain {
 
+    // Some performance data to justify the use of DefaultTypeLevelIntegerValues 
+    // l0.DefaultIntegerValues - 9 seconds - Call Edges: 602061
+    // l1.DefaultPreciseIntegerValues - max. Spread 1 - 9,1 seconds - Call Edges: 600772 
+    // l1.DefaultPreciseIntegerValues - max. Spread 5 - 10,1 seconds - Call Edges: 600592
+    // l1.DefaultPreciseIntegerValues - max. Spread 50 - 18,8 seconds - Call Edges: 600506
+    override def maxSpreadInteger: Int = 50
+
     type Id = Method
 
     def id = theMethod
 
 }
-
 
 
 

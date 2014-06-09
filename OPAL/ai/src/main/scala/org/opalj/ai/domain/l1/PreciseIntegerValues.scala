@@ -66,7 +66,7 @@ trait PreciseIntegerValues
      * This is a runtime configurable setting that may affect the overall precision of
      * subsequent analyses that require knowledge about integers.
      */
-    def maxSpreadInteger: Int = 25
+    def maxSpreadInteger: Int
 
     /**
      * Calculates the distance between the two given values. The value is always equal or

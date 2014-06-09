@@ -72,9 +72,45 @@ trait DefaultPreciseIntegerValues
             other match {
                 case AnIntegerValue() ⇒ StructuralUpdate(other)
                 case IntegerRange(otherInitial, otherValue) ⇒
+                    if (this.value - this.initial == 0) {
+                        if (spread(this.value, otherValue) > maxSpreadInteger)
+                            return StructuralUpdate(AnIntegerValue())
+
+                        def valueWithMaxSpread(a: Int, b: Int, v: Int): Int = {
+                            if (Math.abs(a - v) > Math.abs(b - v))
+                                a
+                            else
+                                b
+                        }
+
+                        val diff = otherValue - this.value
+                        if ( /*increasing*/ diff > 0) {
+                            val newInitial = valueWithMaxSpread(this.initial, otherInitial, otherValue)
+                            if (newInitial == otherInitial)
+                                return StructuralUpdate(other)
+                            else if (spread(newInitial, otherValue) > maxSpreadInteger)
+                                return StructuralUpdate(AnIntegerValue())
+                            else
+                                return StructuralUpdate(IntegerRange(newInitial, otherValue))
+                        } else if (diff == 0) {
+                            if (this.initial == otherInitial)
+                                NoUpdate
+                            else
+                                MetaInformationUpdate(other)
+                        } else { /*decreasing*/
+                            val newInitial = valueWithMaxSpread(this.initial, otherInitial, otherValue)
+                            if (newInitial == otherInitial)
+                                return StructuralUpdate(other)
+                            else if (spread(newInitial, otherValue) > maxSpreadInteger)
+                                return StructuralUpdate(AnIntegerValue())
+                            else
+                                return StructuralUpdate(IntegerRange(newInitial, otherValue))
+                        }
+                    }
+
                     // First check if they are growing in the same direction...
-                    var increasing = (this.value - this.initial >= 0)
-                    if (increasing != ((otherValue - otherInitial) >= 0))
+                    var increasing = (this.value - this.initial > 0)
+                    if (increasing != ((otherValue - otherInitial) > 0))
                         return StructuralUpdate(AnIntegerValue())
 
                     def result(newInitial: Int, newValue: Int): Update[DomainValue] = {

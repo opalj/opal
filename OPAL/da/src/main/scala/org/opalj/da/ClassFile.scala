@@ -29,9 +29,13 @@
 package org.opalj
 package da
 
-import org.opalj.bi.{ AccessFlags, AccessFlagsContexts }
+import java.io.File
 
+import scala.io.Source
 import scala.xml.Node
+
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 
 /**
  * @author Michael Eichberg
@@ -65,29 +69,75 @@ case class ClassFile(
         }
     }
 
-    def fieldsToXHTML = {
-        for (field ← fields) yield field.toXHTML(cp)
+    def fieldsToXHTML: Node = {
+        <ul>{ for (field ← fields) yield field.toXHTML(cp) }</ul>
+    }
+
+    def methodsToXHTML: Node = {
+        <ul>{ for (method ← methods) yield method.toXHTML(cp) }</ul>
+    }
+
+    protected def loadStyle: String = {
+        processSource {
+            val resource = getClass().getClassLoader().getResource("style.css").getPath()
+            Source.fromFile(resource)(scala.io.Codec.UTF8)
+        } { _.mkString }
+    }
+
+    protected def loadJavaScript(js: String): String = {
+
+        process(this.getClass().getResourceAsStream(js))(
+            scala.io.Source.fromInputStream(_).mkString
+        )
+    }
+
+    protected def accessFlags: Node = {
+        <span class="AccessFlags">
+        Access Flags { AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }
+        </span>
     }
 
     def toXHTML: Node =
         <html>
-            <head></head>
+            <head>
+                <title>Opal ByteCode Disassembler</title>
+                <style type="text/css" >
+                    { scala.xml.Unparsed(loadStyle) }
+                </style>
+            </head>
             <body>
-                <h1>{ fqn }</h1>
-                <details>
+            <p class="Summary">
+                 <b>{ fqn }</b> Version { minor_version + "." + major_version } 
+                 { accessFlags } <br/>
+            </p>
+                 <div >
+                     <div id="classFile">
+                         <div id="fields">
+                             <details>
+                             <summary>Fields</summary>
+                             <ol>
+                                 { fieldsToXHTML }
+                             </ol>
+                             </details>
+                         </div>
+                         <div id="methods">
+                            <details>
+                            <summary>Methods</summary>
+                            <ol>
+                                 { methodsToXHTML }
+                            </ol>
+                            </details>
+                         </div>
+                    </div>
+                </div>
+                <div id="constantPool">
+                    <details>
                     <summary>Constant Pool</summary>
                     <ol>
-                    { cpToXHTML }
+                       { cpToXHTML }
                     </ol>
-                </details>
-                <dl>
-                    <dt>Version</dt><dd>{ minor_version + "." + major_version }</dd>
-                    <dt>Access Flags</dt><dd>{ AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }</dd>
-                </dl>
-                <details>
-                    <summary>Fields</summary>
-                    { fieldsToXHTML }
-                </details>
-           </body>
+                    </details>
+                </div>
+    	   </body>
         </html>
 }
