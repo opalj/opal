@@ -32,6 +32,8 @@ package analyses
 
 import scala.collection.{ Set, Map }
 import scala.collection.mutable.{ AnyRefMap, OpenHashMap }
+import java.net.URL
+import java.io.File
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -124,6 +126,13 @@ class Project[Source] private (
      */
     def isLibraryType(objectType: ObjectType): Boolean =
         !projectTypes.contains(objectType)
+
+    /**
+     * Returns true if the given type has been introduced to the project through a virtual
+     * type declaration.
+     */
+    def isVirtualType(objectType: ObjectType): Boolean =
+        classFile(objectType).map(_.attributes.contains(VirtualTypeFlag)).getOrElse(false)
 
     /**
      * Returns the source (for example, a `File` object or `URL` object) from which
@@ -318,9 +327,6 @@ class Project[Source] private (
     }
 }
 
-import java.net.URL
-import java.io.File
-
 /**
  * Factory for `Project`s.
  *
@@ -365,6 +371,9 @@ object Project {
      * @param libraryClassFiles The list of class files of this project that make up
      *    the libraries used by the project that will be analyzed.
      *    [Thread Safety] The underlying data structure has to support concurrent access.
+     * @param virtualClassFiles A list of `TypeDeclaration`s with optional call targets
+     * 	  that are a result of searching class files for, e.g., `invokedynamic`
+     *    instructions (@see [[reader.BytecodeReaderAndBindingWithLambdaSupport]])
      * @param handleInconsistentProject A function that is called back if the project
      *      is not consistent. The default behavior
      *      ([[defaultHandlerForInconsistentProject]]) is to write a warning
@@ -375,6 +384,7 @@ object Project {
     def apply[Source: reflect.ClassTag](
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
         libraryClassFilesWithSources: Traversable[(ClassFile, Source)] = Iterable.empty,
+        virtualClassFiles: Traversable[(TypeDeclaration, Option[VirtualMethod])] = Traversable.empty,
         handleInconsistentProject: (InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
 
         import scala.collection.mutable.{ Set, Map }
@@ -385,7 +395,8 @@ object Project {
         val classHierarchyFuture: Future[ClassHierarchy] = Future {
             ClassHierarchy(
                 projectClassFilesWithSources.view.map(_._1) ++
-                    libraryClassFilesWithSources.view.map(_._1)
+                    libraryClassFilesWithSources.view.map(_._1),
+                predefinedTypeDeclarations = virtualClassFiles.map(_._1)
             )
         }
 
@@ -449,6 +460,35 @@ object Project {
             sources.put(objectType, source)
         }
 
+        for ((typeDeclaration, virtualMethod) ← virtualClassFiles) {
+            val method: Option[Method] = virtualMethod match {
+                // in this case, the method is already fully resolved
+                case Some(VirtualMethod(_, _, _, some: Some[Method])) ⇒ some
+                // here, it is not, for example because it originated from a method
+                // reference that pointed to another class, which wasn't available during
+                // bytecode parsing
+                // hence, we need to try to resolve this here
+                case Some(VirtualMethod(declaringType: ObjectType, name, descriptor, None)) ⇒ {
+                    objectTypeToClassFile.get(declaringType).flatMap { classFile ⇒
+                        classFile.findMethod(name, descriptor)
+                    }
+                }
+                case _ ⇒ None
+            }
+            val syntheticClassFile = ClassFile(0, 52,
+                bi.ACC_SYNTHETIC.mask,
+                typeDeclaration.objectType,
+                typeDeclaration.theSuperclassType,
+                typeDeclaration.theSuperinterfaceTypes.toSeq,
+                IndexedSeq(),
+                method.map(IndexedSeq(_)).getOrElse(IndexedSeq()),
+                IndexedSeq(VirtualTypeFlag))
+            if (method.isDefined) {
+                methodToClassFile.put(method.get, syntheticClassFile)
+            }
+            objectTypeToClassFile.put(typeDeclaration.objectType, syntheticClassFile)
+        }
+
         fieldToClassFile.repack()
         methodToClassFile.repack()
 
@@ -469,4 +509,14 @@ object Project {
             Await.result(classHierarchyFuture, Duration.Inf)
         )
     }
+}
+
+/**
+ * Internal [[ClassFile]] attribute that is used as a special marker for `ClassFile`s that
+ * have been generated from virtual type declarations.
+ *
+ * @author Arne Lottmann
+ */
+object VirtualTypeFlag extends Attribute {
+    override val kindId: Int = 0x10001
 }
