@@ -54,3 +54,14 @@ class Java8FrameworkWithCaching(cache: BytecodeInstructionsCache)
     with CachedBytecodeReaderAndBinding
     with CodeReader
 
+/**
+ * This "framework" can be used to read in Java 8 (version 52) class files with full
+ * support for resolving invokedynamic instructions created by the JDK8 compiler for
+ * lambda and method reference expressions. All standard information (as defined in the
+ * Java Virtual Machine Specification) is represented. Instructions will be cached.
+ *
+ * @author Arne Lottmann
+ */
+class Java8FrameworkWithLambdaSupportAndCaching(cache: BytecodeInstructionsCache)
+    extends Java8FrameworkWithCaching(cache)
+    with FullJDK8DeferredInvokedynamicResolution

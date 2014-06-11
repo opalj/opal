@@ -29,14 +29,72 @@
 package org.opalj
 package br
 
+import scala.IndexedSeq
+import org.junit.runner.RunWith
+import org.opalj.bi.ACC_BRIDGE
+import org.opalj.bi.TestSupport.locateTestResources
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
-import org.junit.runner.RunWith
-
-import org.opalj.bi.TestSupport.locateTestResources
 import analyses.Project
-import instructions._
+import instructions.AASTORE
+import instructions.ALOAD
+import instructions.ALOAD_0
+import instructions.ALOAD_1
+import instructions.ALOAD_2
+import instructions.ALOAD_3
+import instructions.ANEWARRAY
+import instructions.ARETURN
+import instructions.BIPUSH
+import instructions.CHECKCAST
+import instructions.DLOAD
+import instructions.DLOAD_0
+import instructions.DLOAD_1
+import instructions.DLOAD_2
+import instructions.DLOAD_3
+import instructions.DRETURN
+import instructions.DUP
+import instructions.F2D
+import instructions.FLOAD
+import instructions.FLOAD_0
+import instructions.FLOAD_1
+import instructions.FLOAD_2
+import instructions.FLOAD_3
+import instructions.FRETURN
+import instructions.GETFIELD
+import instructions.I2L
+import instructions.I2S
+import instructions.ICONST_0
+import instructions.ICONST_1
+import instructions.ICONST_2
+import instructions.ICONST_3
+import instructions.ICONST_4
+import instructions.ICONST_5
+import instructions.ILOAD
+import instructions.ILOAD_0
+import instructions.ILOAD_1
+import instructions.ILOAD_2
+import instructions.ILOAD_3
+import instructions.INVOKEINTERFACE
+import instructions.INVOKESPECIAL
+import instructions.INVOKESTATIC
+import instructions.INVOKEVIRTUAL
+import instructions.IRETURN
+import instructions.Instruction
+import instructions.InvocationInstruction
+import instructions.L2D
+import instructions.L2F
+import instructions.LLOAD
+import instructions.LLOAD_0
+import instructions.LLOAD_1
+import instructions.LLOAD_2
+import instructions.LLOAD_3
+import instructions.LRETURN
+import instructions.LoadLocalVariableInstruction
+import instructions.NEW
+import instructions.PUTFIELD
+import instructions.RETURN
+import instructions.ReturnInstruction
+import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class ClassFileFactoryTest extends FunSpec with Matchers {
@@ -55,8 +113,27 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             cf.methods.map((theClass, _))
         }.getOrElse(Iterable.empty)
 
-    describe("a Proxy ClassFile") {
-        describe("should proxify instance methods") {
+    private def checkAndReturnMethod(classFile: ClassFile)(filter: Method ⇒ Boolean): Method = {
+        val methods = classFile.methods.filter(filter)
+        methods should have size (1)
+        val method = methods.head
+        method.body should be('defined)
+        method
+    }
+
+    private def checkAndReturnConstructor(classFile: ClassFile): Method =
+        checkAndReturnMethod(classFile)(_.isConstructor)
+
+    private def checkAndReturnFactoryMethod(classFile: ClassFile): Method =
+        checkAndReturnMethod(classFile)(m ⇒
+            m.isStatic && m.isPublic && (m.name == "$newInstance" || m.name == "$createInstance"))
+
+    private def checkAndReturnForwardingMethod(classFile: ClassFile): Method =
+        checkAndReturnMethod(classFile)(m ⇒
+            !(m.isConstructor || m.name == "$newInstance" || m.name == "$createInstance"))
+
+    describe("ClassFileFactory") {
+        describe("should proxify all kinds of methods") {
             val instanceMethods = getMethods(InstanceMethods, testProject)
             instanceMethods should not be ('empty)
             val constructors = getMethods(Constructors, testProject)
@@ -65,99 +142,148 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             privateInstanceMethods should not be ('empty)
             val interfaceMethods = getMethods(InterfaceMethods, testProject)
             interfaceMethods should not be ('empty)
+            val staticMethods = getMethods(StaticMethods, testProject)
+            staticMethods should not be ('empty)
             val methods: Iterable[(ObjectType, Method)] = instanceMethods ++
-                constructors ++ privateInstanceMethods ++ interfaceMethods
+                constructors ++ privateInstanceMethods ++ interfaceMethods ++
+                staticMethods
 
-            it("with one instance field") {
+            it("with one instance field for instance methods, none for static") {
                 testMethods(methods, testProject) { (classFile, tuple) ⇒
-                    classFile.fields should have size (1)
-                    val field = classFile.fields(0)
-                    bi.ACC_FINAL.unapply(field.accessFlags) should be(true)
-                    hasFlag(field.accessFlags, bi.ACC_FINAL.mask) should be(true)
-                    hasFlag(field.accessFlags, bi.ACC_PRIVATE.mask) should be(true)
-                    field.fieldType should be(tuple._1)
+                    if (tuple._2.isStatic) {
+                        classFile.fields should have size (0)
+                    } else {
+                        classFile.fields should have size (1)
+                        val field = classFile.fields(0)
+                        bi.ACC_FINAL.isSet(field.accessFlags) should be(true)
+                        bi.ACC_FINAL.isSet(field.accessFlags) should be(true)
+                        field.fieldType should be(tuple._1)
+                    }
                 }
             }
 
-            it("and a constructor that sets that instance field") {
+            it("and a constructor that sets that instance field (if present)") {
                 testMethods(methods, testProject) { (classFile, tuple) ⇒
-                    val constructor = classFile.methods.find(_.isConstructor)
-                    constructor should be('defined)
-                    for (cons ← constructor) {
-                        hasFlag(cons.accessFlags, bi.ACC_PUBLIC.mask) should be(true)
-                        cons.parameterTypes should have size (1)
-                        cons.parameterTypes(0) should be(tuple._1)
+                    if (!tuple._2.isStatic) {
+                        val constructor = checkAndReturnConstructor(classFile)
+                        bi.ACC_PUBLIC.isSet(constructor.accessFlags) should be(true)
+                        constructor.parameterTypes should have size (1)
+                        constructor.parameterTypes(0) should be(tuple._1)
 
-                        cons.body should be('defined)
-                        for (body ← cons.body; instructions = body.instructions) {
-                            body.maxLocals should be(2)
-                            body.maxStack should be(2)
-                            instructions should be(Array(
-                                ALOAD_0,
-                                INVOKESPECIAL(ObjectType.Object,
-                                    "<init>",
-                                    NoArgumentAndNoReturnValueMethodDescriptor),
-                                ALOAD_0,
-                                ALOAD_1,
-                                PUTFIELD(classFile.thisType,
-                                    classFile.fields(0).name,
-                                    classFile.fields(0).fieldType),
-                                RETURN))
-                        }
+                        constructor.body should be('defined)
+                        val body = constructor.body.get
+                        val instructions = body.instructions
+                        body.maxLocals should be(2)
+                        body.maxStack should be(2)
+                        instructions should be(Array(
+                            ALOAD_0,
+                            INVOKESPECIAL(ObjectType.Object,
+                                "<init>",
+                                NoArgumentAndNoReturnValueMethodDescriptor),
+                            null,
+                            null,
+                            ALOAD_0,
+                            ALOAD_1,
+                            PUTFIELD(classFile.thisType,
+                                classFile.fields(0).name,
+                                classFile.fields(0).fieldType),
+                            null,
+                            null,
+                            RETURN))
                     }
+                }
+            }
+
+            it("and one static factory that calls the constructor") {
+                testMethods(methods, testProject) { (classFile, _) ⇒
+                    val factoryMethod = checkAndReturnFactoryMethod(classFile)
+                    val constructor = checkAndReturnConstructor(classFile)
+                    factoryMethod.descriptor should be(MethodDescriptor(
+                        constructor.parameterTypes, classFile.thisType
+                    ))
+                    val maxLocals = factoryMethod.parameterTypes.map(_.computationalType.operandSize).sum
+                    val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
+                    var currentVariableIndex = 0
+                    val loadParametersInstructions: Array[Instruction] = factoryMethod.parameterTypes.flatMap { t ⇒
+                        val instruction = LoadLocalVariableInstruction(t, currentVariableIndex)
+                        currentVariableIndex += t.computationalType.operandSize
+                        if (currentVariableIndex > 3) Array(instruction, null) else Array(instruction)
+                    }.toArray
+                    val body = factoryMethod.body.get
+                    body.maxStack should be(maxStack)
+                    body.maxLocals should be(maxLocals)
+                    body.instructions should be(
+                        Array(
+                            NEW(classFile.thisType),
+                            null,
+                            null,
+                            DUP) ++
+                            loadParametersInstructions ++
+                            Array(
+                                INVOKESPECIAL(classFile.thisType, "<init>", constructor.descriptor),
+                                null,
+                                null,
+                                ARETURN
+                            ))
                 }
             }
 
             it("and one forwarding method") {
                 testMethods(methods, testProject) { (classFile, _) ⇒
-                    classFile.methods.filterNot(_.isConstructor) should have size (1)
-                    val method = classFile.methods.filterNot(_.isConstructor).head
-                    hasFlag(method.accessFlags, bi.ACC_PUBLIC.mask) should be(true)
+                    val method = checkAndReturnForwardingMethod(classFile)
+                    bi.ACC_PUBLIC.isSet(method.accessFlags) should be(true)
                 }
             }
 
-            it("that calls the callee method with invokevirtual, invokespecial if private, or invokeinterface if the target type is an interface") {
+            it("that calls the callee method with the appropriate invokeX instruction") {
                 testMethods(methods, testProject) { (classFile, tuple) ⇒
-                    val method = classFile.methods.filterNot(_.isConstructor).head
-                    method.body should be('defined)
+                    val method = checkAndReturnForwardingMethod(classFile)
                     val (calleeType, calleeMethod) = tuple
-                    for (body ← method.body) {
-                        if (testProject.classFile(tuple._1).get.isInterfaceDeclaration) {
-                            body.instructions should contain(INVOKEINTERFACE(
-                                calleeType,
-                                calleeMethod.name,
-                                calleeMethod.descriptor
-                            ))
-                        } else if (tuple._2.isPrivate) {
-                            body.instructions should contain(INVOKESPECIAL(
-                                calleeType,
-                                calleeMethod.name,
-                                calleeMethod.descriptor
-                            ))
-                        } else {
-                            body.instructions should contain(INVOKEVIRTUAL(
-                                calleeType,
-                                calleeMethod.name,
-                                calleeMethod.descriptor
-                            ))
-                        }
+                    val body = method.body.get
+                    if (calleeMethod.isStatic) {
+                        body.instructions should contain(INVOKESTATIC(
+                            calleeType,
+                            calleeMethod.name,
+                            calleeMethod.descriptor
+                        ))
+                    } else if (testProject.classFile(calleeType).get.isInterfaceDeclaration) {
+                        body.instructions should contain(INVOKEINTERFACE(
+                            calleeType,
+                            calleeMethod.name,
+                            calleeMethod.descriptor
+                        ))
+                    } else if (calleeMethod.isPrivate) {
+                        body.instructions should contain(INVOKESPECIAL(
+                            calleeType,
+                            calleeMethod.name,
+                            calleeMethod.descriptor
+                        ))
+                    } else {
+                        body.instructions should contain(INVOKEVIRTUAL(
+                            calleeType,
+                            calleeMethod.name,
+                            calleeMethod.descriptor
+                        ))
                     }
                 }
             }
 
             it("and passes all parameters correctly [barring reference type check]") {
-                testMethods(methods, testProject) { (classFile, triple) ⇒
-                    val method = classFile.methods.filterNot(_.isConstructor).head
-                    method.body should be('defined)
+                testMethods(methods, testProject) { (classFile, tuple) ⇒
+                    val method = checkAndReturnForwardingMethod(classFile)
                     var currentInstruction = 0
-                    for {
-                        body ← method.body
-                        instructions = body.instructions
-                        invoke = instructions.find(_.isInstanceOf[INVOKESTATIC])
-                        indexOfInvoke = instructions.indexOf(invoke)
-                        instructionsPrecedingInvoke = instructions.slice(0, indexOfInvoke)
-                        requiredParameter ← method.parameterTypes
-                    } {
+                    val body = method.body.get
+                    val instructions = body.instructions
+                    val invoke = instructions.find(_.isInstanceOf[InvocationInstruction]).get
+                    val indexOfInvoke = instructions.indexOf(invoke)
+                    val instructionsPrecedingInvoke = instructions.slice(0, indexOfInvoke)
+                    val parameters =
+                        if (tuple._2.isStatic) {
+                            method.parameterTypes
+                        } else {
+                            tuple._1 +: method.parameterTypes
+                        }
+                    parameters.foreach { requiredParameter ⇒
                         val remainingInstructions = instructions.slice(currentInstruction, instructions.size)
                         val consumedInstructions = requiredParameter match {
                             case IntegerType      ⇒ requireInt(remainingInstructions)
@@ -177,22 +303,21 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
             it("and computes correct maxLocals/maxStack values") {
                 testMethods(methods, testProject) { (classFile, tuple) ⇒
-                    val method = classFile.methods.filterNot(_.isConstructor).head
-                    method.body should be('defined)
-                    for (body ← method.body) {
-                        val operandsSize: Int = 1 + // for `this` 
+                    val method = checkAndReturnForwardingMethod(classFile)
+                    val body = method.body.get
+                    val operandsSize: Int =
+                        (if (tuple._2.isStatic) 0 else 1 /* for `this`*/ ) +
                             method.parameterTypes.map(_.computationalType.operandSize).sum
 
-                        val returnSize: Int =
-                            if (method.returnType != VoidType) {
-                                method.returnType.computationalType.operandSize
-                            } else {
-                                0
-                            }
-                        val stackSize = math.max(operandsSize, returnSize)
-                        body.maxStack should be(stackSize)
-                        body.maxLocals should be(1 + operandsSize + returnSize)
-                    }
+                    val returnSize: Int =
+                        if (method.returnType != VoidType) {
+                            method.returnType.computationalType.operandSize
+                        } else {
+                            0
+                        }
+                    val stackSize = math.max(operandsSize, returnSize)
+                    body.maxStack should be(stackSize)
+                    body.maxLocals should be(1 + operandsSize + returnSize)
                 }
             }
 
@@ -200,194 +325,89 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 classFile(InstanceMethods).get.
                 findMethod("methodWithManyParametersAndNoReturnValue").get
 
+            val staticMethodWithManyParametersAndNoReturnValue = testProject.
+                classFile(StaticMethods).get.
+                findMethod("methodWithManyParametersAndNoReturnValue").get
+
             it("and produces correctly indexed load instructions") {
                 testMethod(InstanceMethods,
                     methodWithManyParametersAndNoReturnValue,
                     testProject) { (classFile, tuple) ⇒
                         val calleeField = classFile.fields.head
-                        val method = classFile.methods.filterNot(_.isConstructor).head
-                        method.body should be('defined)
+                        val method = checkAndReturnForwardingMethod(classFile)
                         val (calleeType, calleeMethod) = tuple
-                        for (body ← method.body; instructions = body.instructions) {
-                            body.maxStack should be(13)
-                            body.maxLocals should be(14)
-                            instructions should be(Array(
-                                ALOAD_0,
-                                GETFIELD(classFile.thisType,
-                                    calleeField.name,
-                                    calleeField.fieldType),
-                                null,
-                                null,
-                                DLOAD_1,
-                                FLOAD_3,
-                                LLOAD(4),
-                                null,
-                                ILOAD(6),
-                                null,
-                                ILOAD(7),
-                                null,
-                                ILOAD(8),
-                                null,
-                                ILOAD(9),
-                                null,
-                                ILOAD(10),
-                                null,
-                                ALOAD(11),
-                                null,
-                                ALOAD(12),
-                                null,
-                                INVOKEVIRTUAL(calleeType,
-                                    calleeMethod.name,
-                                    calleeMethod.descriptor),
-                                null,
-                                null,
-                                RETURN
-                            ))
-                        }
-                    }
-            }
-        }
-
-        describe("should proxify static methods") {
-            val methods = getMethods(StaticMethods, testProject).filter(_._2.isStatic)
-            methods should not be ('empty)
-
-            it("with no instance field") {
-                testMethods(methods, testProject) { (classFile, _) ⇒
-                    classFile.fields should be('empty)
-                }
-            }
-
-            it("and an empty default constructor") {
-                testMethods(methods, testProject) { (classFile, _) ⇒
-                    val constructor = classFile.constructors.next
-                    hasFlag(constructor.accessFlags, bi.ACC_PUBLIC.mask) should be(true)
-                    constructor.body should be('defined)
-                    for (body ← constructor.body) {
-                        body.maxLocals should be(1)
-                        body.maxStack should be(1)
-                        body.instructions should be(Array(
-                            instructions.ALOAD_0,
-                            instructions.INVOKESPECIAL(classFile.superclassType.getOrElse(ObjectType.Object),
-                                "<init>",
-                                NoArgumentAndNoReturnValueMethodDescriptor),
-                            instructions.RETURN
+                        val body = method.body.get
+                        val instructions = body.instructions
+                        body.maxStack should be(13)
+                        body.maxLocals should be(14)
+                        instructions should be(Array(
+                            ALOAD_0,
+                            GETFIELD(classFile.thisType,
+                                calleeField.name,
+                                calleeField.fieldType),
+                            null,
+                            null,
+                            DLOAD_1,
+                            FLOAD_3,
+                            LLOAD(4),
+                            null,
+                            ILOAD(6),
+                            null,
+                            ILOAD(7),
+                            null,
+                            ILOAD(8),
+                            null,
+                            ILOAD(9),
+                            null,
+                            ILOAD(10),
+                            null,
+                            ALOAD(11),
+                            null,
+                            ALOAD(12),
+                            null,
+                            INVOKEVIRTUAL(calleeType,
+                                calleeMethod.name,
+                                calleeMethod.descriptor),
+                            null,
+                            null,
+                            RETURN
                         ))
                     }
-                }
-            }
-
-            it("and one forwarding method") {
-                testMethods(methods, testProject) { (classFile, _) ⇒
-                    classFile.methods.filterNot(_.isConstructor) should have size (1)
-                    val method = classFile.methods.filterNot(_.isConstructor).head
-                    hasFlag(method.accessFlags, bi.ACC_PUBLIC.mask) should be(true)
-                }
-            }
-
-            it("that calls the callee method with invokestatic") {
-                testMethods(methods, testProject) { (classFile, tuple) ⇒
-                    val method = classFile.methods.filterNot(_.isConstructor).head
-                    method.body should be('defined)
-                    val (calleeType, calleeMethod) = tuple
-                    for (body ← method.body) {
-                        body.instructions should contain(INVOKESTATIC(
-                            calleeType,
-                            calleeMethod.name,
-                            calleeMethod.descriptor
-                        ))
-                    }
-                }
-            }
-
-            it("and passes all parameters correctly [barring reference type check]") {
-                // TODO rename: "triple" doesn't fit at all!
-                testMethods(methods, testProject) { (classFile, triple) ⇒
-                    val method = classFile.methods.filterNot(_.isConstructor).head
-                    method.body should be('defined)
-                    var currentInstruction = 0
-                    for {
-                        body ← method.body
-                        instructions = body.instructions
-                        invoke = instructions.find(_.isInstanceOf[INVOKESTATIC])
-                        indexOfInvoke = instructions.indexOf(invoke)
-                        instructionsPrecedingInvoke = instructions.slice(0, indexOfInvoke)
-                        requiredParameter ← method.parameterTypes
-                    } {
-                        val remainingInstructions = instructions.slice(currentInstruction, instructions.size)
-                        val consumedInstructions = requiredParameter match {
-                            case BooleanType | ByteType | CharType | ShortType | IntegerType ⇒
-                                requireInt(remainingInstructions)
-                            case FloatType        ⇒ requireFloat(remainingInstructions)
-                            case DoubleType       ⇒ requireDouble(remainingInstructions)
-                            case LongType         ⇒ requireLong(remainingInstructions)
-                            case _: ReferenceType ⇒ requireReference(remainingInstructions)
-                        }
-                        currentInstruction += consumedInstructions
-                    }
-                }
-            }
-
-            it("and computes correct maxLocals/maxStack values") {
-                testMethods(methods, testProject) { (classFile, tuple) ⇒
-                    val method = classFile.methods.filterNot(_.isConstructor).head
-                    method.body should be('defined)
-                    for (body ← method.body) {
-                        val operandsSize: Int = method.parameterTypes.map(_.computationalType.operandSize).sum
-                        val returnSize: Int =
-                            if (method.returnType != VoidType) {
-                                method.returnType.computationalType.operandSize
-                            } else {
-                                0
-                            }
-                        val stackSize = math.max(operandsSize, returnSize)
-                        body.maxStack should be(stackSize)
-                        body.maxLocals should be(1 + operandsSize + returnSize)
-                    }
-                }
-            }
-
-            val methodWithManyParametersAndNoReturnValue = testProject.
-                classFile(StaticMethods).get.
-                findMethod("methodWithManyParametersAndNoReturnValue").get
-
-            it("and produces correctly indexed load instructions") {
                 testMethod(StaticMethods,
-                    methodWithManyParametersAndNoReturnValue,
+                    staticMethodWithManyParametersAndNoReturnValue,
                     testProject) { (classFile, tuple) ⇒
-                        val method = classFile.methods.filterNot(_.isConstructor).head
-                        method.body should be('defined)
+                        val method = checkAndReturnForwardingMethod(classFile)
                         val (calleeType, calleeMethod) = tuple
-                        for (body ← method.body; instructions = body.instructions) {
-                            body.maxLocals should be(13)
-                            body.maxStack should be(12)
-                            instructions should be(Array(
-                                DLOAD_1,
-                                FLOAD_3,
-                                LLOAD(4),
-                                null,
-                                ILOAD(6),
-                                null,
-                                ILOAD(7),
-                                null,
-                                ILOAD(8),
-                                null,
-                                ILOAD(9),
-                                null,
-                                ILOAD(10),
-                                null,
-                                ALOAD(11),
-                                null,
-                                ALOAD(12),
-                                null,
-                                INVOKESTATIC(calleeType,
-                                    calleeMethod.name,
-                                    calleeMethod.descriptor),
-                                null,
-                                null,
-                                RETURN
-                            ))
-                        }
+                        val body = method.body.get
+                        val instructions = body.instructions
+                        body.maxLocals should be(13)
+                        body.maxStack should be(12)
+                        instructions should be(Array(
+                            DLOAD_1,
+                            FLOAD_3,
+                            LLOAD(4),
+                            null,
+                            ILOAD(6),
+                            null,
+                            ILOAD(7),
+                            null,
+                            ILOAD(8),
+                            null,
+                            ILOAD(9),
+                            null,
+                            ILOAD(10),
+                            null,
+                            ALOAD(11),
+                            null,
+                            ALOAD(12),
+                            null,
+                            INVOKESTATIC(calleeType,
+                                calleeMethod.name,
+                                calleeMethod.descriptor),
+                            null,
+                            null,
+                            RETURN
+                        ))
                     }
             }
 
@@ -407,61 +427,278 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     StaticMethods,
                     methodWithFiveDoubleParameters.name,
                     methodWithFiveDoubleParameters.descriptor,
-                    true,
-                    false,
-                    false)
+                    INVOKESTATIC.opcode)
 
-                val method = proxy.methods.filterNot(_.isConstructor).head
-                method.body should be('defined)
-                for (body ← method.body; instructions = body.instructions) {
-                    body.maxStack should be(10)
-                    body.maxLocals should be(11)
-                    instructions should be(Array(
-                        DLOAD_1,
-                        DLOAD_3,
-                        DLOAD(5),
-                        null,
-                        DLOAD(7),
-                        null,
-                        DLOAD(9),
-                        null,
-                        INVOKESTATIC(
-                            StaticMethods,
-                            methodWithFiveDoubleParameters.name,
-                            methodWithFiveDoubleParameters.descriptor),
-                        null,
-                        null,
-                        RETURN
-                    ))
+                val method = checkAndReturnForwardingMethod(proxy)
+                val body = method.body.get
+                val instructions = body.instructions
+                body.maxStack should be(10)
+                body.maxLocals should be(11)
+                instructions should be(Array(
+                    DLOAD_1,
+                    DLOAD_3,
+                    DLOAD(5),
+                    null,
+                    DLOAD(7),
+                    null,
+                    DLOAD(9),
+                    null,
+                    INVOKESTATIC(
+                        StaticMethods,
+                        methodWithFiveDoubleParameters.name,
+                        methodWithFiveDoubleParameters.descriptor),
+                    null,
+                    null,
+                    RETURN
+                ))
+            }
+
+            it("and creates fields for additional static parameters") {
+                for {
+                    (theType, method) ← methods
+                } {
+                    val invocationInstruction: Opcode =
+                        if (testProject.classFile(theType).get.isInterfaceDeclaration) {
+                            INVOKEINTERFACE.opcode
+                        } else if (method.isStatic) {
+                            INVOKESTATIC.opcode
+                        } else if (method.isPrivate) {
+                            INVOKESPECIAL.opcode
+                        } else {
+                            INVOKEVIRTUAL.opcode
+                        }
+                    val proxy = ClassFileFactory.Proxy(
+                        TypeDeclaration(
+                            ObjectType(s"TestProxy$$${theType}$$${method.name}"),
+                            false,
+                            Some(ObjectType.Object),
+                            Set.empty
+                        ),
+                        "theProxy",
+                        method.descriptor,
+                        theType,
+                        method.name,
+                        MethodDescriptor(
+                            IntegerType +: method.parameterTypes,
+                            method.returnType),
+                        invocationInstruction)
+
+                    val constructor = checkAndReturnConstructor(proxy)
+                    if (method.isStatic) {
+                        constructor.parameterTypes should be(IndexedSeq(IntegerType))
+                    } else {
+                        constructor.parameterTypes should be(IndexedSeq(theType, IntegerType))
+                    }
+
+                    val factory = checkAndReturnFactoryMethod(proxy)
+                    if (method.isStatic) {
+                        factory.parameterTypes should be(IndexedSeq(IntegerType))
+                    } else {
+                        factory.parameterTypes should be(IndexedSeq(theType, IntegerType))
+                    }
+
+                    val forwarder = checkAndReturnForwardingMethod(proxy)
+                    forwarder.parameterTypes should be(method.parameterTypes)
+                }
+            }
+
+            it("and correctly forwards those static parameters") {
+                for {
+                    (theType, method) ← methods
+                } {
+                    val invocationInstruction: Opcode =
+                        if (testProject.classFile(theType).get.isInterfaceDeclaration) {
+                            INVOKEINTERFACE.opcode
+                        } else if (method.isStatic) {
+                            INVOKESTATIC.opcode
+                        } else if (method.isPrivate) {
+                            INVOKESPECIAL.opcode
+                        } else {
+                            INVOKEVIRTUAL.opcode
+                        }
+                    val proxy = ClassFileFactory.Proxy(
+                        TypeDeclaration(
+                            ObjectType(s"TestProxy$$${theType}$$${method.name}"),
+                            false,
+                            Some(ObjectType.Object),
+                            Set.empty
+                        ),
+                        "theProxy",
+                        method.descriptor,
+                        theType,
+                        method.name,
+                        MethodDescriptor(
+                            IntegerType +: method.parameterTypes,
+                            method.returnType),
+                        invocationInstruction)
+                    val forwarderMethod = checkAndReturnForwardingMethod(proxy)
+                    val instructions = forwarderMethod.body.get.instructions
+
+                    var currentIndex = 0
+                    if (!method.isStatic) {
+                        // check that the receiver is loaded while advancing the index correctly
+                        if (method.isConstructor) {
+                            instructions(currentIndex) should be(NEW(theType))
+                            currentIndex = instructions(currentIndex).indexOfNextInstruction(currentIndex, false)
+                            instructions(currentIndex) should be(DUP)
+                            currentIndex = DUP.indexOfNextInstruction(currentIndex, false)
+                        } else {
+                            instructions(currentIndex) should be(ALOAD_0)
+                            currentIndex = ALOAD_0.indexOfNextInstruction(currentIndex, false)
+                            instructions(currentIndex) should be(
+                                GETFIELD(proxy.thisType, ClassFileFactory.ReceiverFieldName, theType)
+                            )
+                            currentIndex = instructions(currentIndex).indexOfNextInstruction(currentIndex, false)
+                        }
+                    }
+                    instructions(currentIndex) should be(ALOAD_0)
+                    currentIndex = ALOAD_0.indexOfNextInstruction(currentIndex, false)
+                    instructions(currentIndex) should be(
+                        GETFIELD(proxy.thisType, "staticParameter0", IntegerType)
+                    )
+                    currentIndex = instructions(currentIndex).indexOfNextInstruction(currentIndex, false)
+                    instructions(currentIndex) should not be (null)
                 }
             }
 
             it("and returns correctly") {
                 testMethods(methods, testProject) { (classFile, triple) ⇒
-                    val method = classFile.methods.filterNot(_.isConstructor).head
-                    method.body should be('defined)
-                    method.body foreach { body ⇒
-                        val instructions = body.instructions
-                        instructions.last should be(method.returnType match {
-                            case VoidType         ⇒ RETURN
-                            case IntegerType      ⇒ IRETURN
-                            case ShortType        ⇒ IRETURN
-                            case ByteType         ⇒ IRETURN
-                            case CharType         ⇒ IRETURN
-                            case BooleanType      ⇒ IRETURN
-                            case LongType         ⇒ LRETURN
-                            case FloatType        ⇒ FRETURN
-                            case DoubleType       ⇒ DRETURN
-                            case _: ReferenceType ⇒ ARETURN
-                        })
+                    val method = checkAndReturnForwardingMethod(classFile)
+                    val body = method.body.get
+                    val instructions = body.instructions
+                    instructions.last should be(method.returnType match {
+                        case VoidType         ⇒ RETURN
+                        case IntegerType      ⇒ IRETURN
+                        case ShortType        ⇒ IRETURN
+                        case ByteType         ⇒ IRETURN
+                        case CharType         ⇒ IRETURN
+                        case BooleanType      ⇒ IRETURN
+                        case LongType         ⇒ LRETURN
+                        case FloatType        ⇒ FRETURN
+                        case DoubleType       ⇒ DRETURN
+                        case _: ReferenceType ⇒ ARETURN
+                    })
+                }
+                for {
+                    (theType, method) ← methods if method.returnType != VoidType
+                } {
+                    val invocationInstruction: Opcode =
+                        if (testProject.classFile(theType).get.isInterfaceDeclaration) {
+                            INVOKEINTERFACE.opcode
+                        } else if (method.isStatic) {
+                            INVOKESTATIC.opcode
+                        } else if (method.isPrivate) {
+                            INVOKESPECIAL.opcode
+                        } else {
+                            INVOKEVIRTUAL.opcode
+                        }
+                    val proxy = ClassFileFactory.Proxy(
+                        TypeDeclaration(
+                            ObjectType(s"TestProxy$$${theType}$$${method.name}"),
+                            false,
+                            Some(ObjectType.Object),
+                            Set.empty
+                        ),
+                        "theProxy",
+                        method.descriptor,
+                        theType,
+                        method.name,
+                        MethodDescriptor(
+                            method.parameterTypes,
+                            ObjectType.Object
+                        ),
+                        invocationInstruction)
+                    val forwarderMethod = checkAndReturnForwardingMethod(proxy)
+                    val instructions = forwarderMethod.body.get.instructions
+
+                    val indexOfInvocation = instructions.indexWhere(_.isInstanceOf[InvocationInstruction])
+                    var currentIndex = instructions(indexOfInvocation).indexOfNextInstruction(indexOfInvocation, false)
+
+                    val returnType = method.returnType
+
+                    if (returnType.isBaseType) {
+                        // cast & unbox
+                        val baseType = returnType.asBaseType
+                        val wrapper = baseType.WrapperType
+                        val cast = CHECKCAST(wrapper)
+                        instructions(currentIndex) should be(cast)
+                        currentIndex = cast.indexOfNextInstruction(currentIndex, false)
+                        instructions(currentIndex) should be(
+                            INVOKEVIRTUAL(
+                                wrapper,
+                                s"${baseType.toJava}Value",
+                                new NoArgumentMethodDescriptor(baseType)
+                            ))
+                    } else if (returnType.isReferenceType) {
+                        // just cast
+                        val cast = CHECKCAST(returnType.asReferenceType)
+                        instructions(currentIndex) should be(cast)
                     }
+                    currentIndex = instructions(currentIndex).indexOfNextInstruction(currentIndex, false)
+                    instructions(currentIndex) should be(ReturnInstruction(returnType))
                 }
             }
-
         }
-    }
 
-    describe("the ClassFileFactory") {
+        describe("should be able to profixy $newInstance methods") {
+            it("by picking an alternate name for the factory method") {
+                val theType = ObjectType("ClassFileFactoryTest$newInstanceName")
+                val proxy = ClassFileFactory.Proxy(
+                    TypeDeclaration(
+                        ObjectType(theType.toJava+"$Proxy"),
+                        false,
+                        Some(ObjectType.Object),
+                        Set.empty
+                    ),
+                    "$newInstance",
+                    new NoArgumentMethodDescriptor(theType),
+                    theType,
+                    "newInstance",
+                    new NoArgumentMethodDescriptor(theType),
+                    INVOKESTATIC.opcode)
+                val factoryMethod = checkAndReturnFactoryMethod(proxy)
+                factoryMethod.name should be(ClassFileFactory.AlternativeFactoryMethodName)
+            }
+        }
+
+        describe("should create a bridge method to the forwarding method if so desired") {
+            it("the bridge method should stack & cast parameters and call the forwarding method") {
+                val receiverType = ObjectType("ClassFileFactoryTest$BridgeCast")
+                val proxyType = ObjectType(receiverType.simpleName+"$Proxy")
+                val methodDescriptor = MethodDescriptor(IndexedSeq(ObjectType.String, DoubleType), IntegerType)
+                val proxy = ClassFileFactory.Proxy(
+                    TypeDeclaration(proxyType, false, Some(ObjectType.Object), Set.empty),
+                    "method",
+                    methodDescriptor,
+                    receiverType,
+                    "method",
+                    methodDescriptor,
+                    INVOKESTATIC.opcode,
+                    Some(MethodDescriptor(IndexedSeq(ObjectType.Object, DoubleType), IntegerType))
+                )
+                val bridge = proxy.methods.find(m ⇒ ACC_BRIDGE.isSet(m.accessFlags))
+                bridge should be('defined)
+                bridge.get.body should be('defined)
+                val body = bridge.get.body.get
+                body.maxStack should be(4)
+                body.maxLocals should be(5)
+                body.instructions should be(
+                    Array(
+                        ALOAD_0,
+                        ALOAD_1,
+                        CHECKCAST(ObjectType.String),
+                        null,
+                        null,
+                        DLOAD_2,
+                        INVOKEVIRTUAL(proxyType, "method", methodDescriptor),
+                        null,
+                        null,
+                        IRETURN
+                    )
+                )
+            }
+        }
+
         describe("should compute correct constructor stack and local values") {
             val definingType = TypeDeclaration(
                 ObjectType("SomeRandomType"),
@@ -477,10 +714,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 }
                 val constructor = ClassFileFactory.createConstructor(definingType, fields)
                 constructor.body should be('defined)
-                for (code ← constructor.body) {
-                    code.maxStack should be(expectedStack)
-                    code.maxLocals should be(expectedLocals)
-                }
+                val code = constructor.body.get
+                code.maxStack should be(expectedStack)
+                code.maxLocals should be(expectedLocals)
             }
 
             it("for no fields") {
@@ -505,11 +741,251 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 testConstructor(IndexedSeq(ObjectType.Object, LongType, IntegerType), 5, 3)
             }
         }
-    }
+        describe("should create correct instructions for stacking parameters for the forwarding call") {
+            it("should produce no instructions for empty descriptors") {
+                val instructions = ClassFileFactory.parameterForwardingInstructions(
+                    NoArgumentAndNoReturnValueMethodDescriptor,
+                    NoArgumentAndNoReturnValueMethodDescriptor,
+                    0,
+                    Seq.empty,
+                    ObjectType.Object)
+                instructions should have size (0)
+            }
+            it("should forward all parameters for identical, non-empty descriptors") {
+                var d = MethodDescriptor(IndexedSeq(IntegerType, ObjectType.String), VoidType)
+                ClassFileFactory.parameterForwardingInstructions(
+                    d, d, 0, Seq.empty, ObjectType.Object) should be(
+                        Array(
+                            ILOAD_0,
+                            ALOAD_1
+                        ))
+                d = MethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
+                ClassFileFactory.parameterForwardingInstructions(
+                    d, d, 0, Seq.empty, ObjectType.Object) should be(
+                        Array(
+                            ALOAD_0
+                        ))
+                d = MethodDescriptor((1 to 10).map(_ ⇒ ByteType).toIndexedSeq, VoidType)
+                ClassFileFactory.parameterForwardingInstructions(
+                    d, d, 0, Seq.empty, ObjectType.Object) should be(
+                        Array(
+                            ILOAD_0,
+                            ILOAD_1,
+                            ILOAD_2,
+                            ILOAD_3,
+                            ILOAD(4),
+                            null,
+                            ILOAD(5),
+                            null,
+                            ILOAD(6),
+                            null,
+                            ILOAD(7),
+                            null,
+                            ILOAD(8),
+                            null,
+                            ILOAD(9),
+                            null
+                        ))
+                d = MethodDescriptor(IndexedSeq(DoubleType, ObjectType.String, ByteType,
+                    LongType, DoubleType, FloatType), VoidType)
+                ClassFileFactory.parameterForwardingInstructions(
+                    d, d, 0, Seq.empty, ObjectType.Object) should be(
+                        Array(
+                            DLOAD_0,
+                            ALOAD_2,
+                            ILOAD_3,
+                            LLOAD(4),
+                            null,
+                            DLOAD(6),
+                            null,
+                            FLOAD(8),
+                            null
+                        ))
+            }
+            it("should safely convert primitive values") {
+                val d1 = MethodDescriptor(IndexedSeq(ByteType, CharType, ShortType,
+                    IntegerType, FloatType, LongType), VoidType)
+                val d2 = MethodDescriptor(IndexedSeq(ShortType, ShortType, IntegerType,
+                    LongType, DoubleType, DoubleType), VoidType)
+                ClassFileFactory.parameterForwardingInstructions(
+                    d1, d2, 0, Seq.empty, ObjectType.Object) should be(
+                        Array(
+                            ILOAD_0,
+                            ILOAD_1,
+                            I2S,
+                            ILOAD_2,
+                            ILOAD_3,
+                            I2L,
+                            FLOAD(4),
+                            null,
+                            F2D,
+                            LLOAD(5),
+                            null,
+                            L2D
+                        ))
+            }
 
-    // checks if the given flag is among the given combination of flags
-    private def hasFlag(flags: Int, flag: Int): Boolean =
-        (flags & flag) == flag
+            def valueOfDescriptor(baseType: BaseType): MethodDescriptor =
+                MethodDescriptor(baseType, baseType.WrapperType)
+
+            it("should create boxing instructions for primitive types") {
+                val d1 = MethodDescriptor(IndexedSeq(ByteType, CharType, ShortType,
+                    IntegerType, FloatType, LongType), VoidType)
+                val d2 = MethodDescriptor(IndexedSeq(ObjectType.Byte, ObjectType.Character,
+                    ObjectType.Short, ObjectType.Integer, ObjectType.Float,
+                    ObjectType.Long), VoidType)
+                ClassFileFactory.parameterForwardingInstructions(
+                    d1, d2, 0, Seq.empty, ObjectType.Object) should be(
+                        Array(
+                            ILOAD_0,
+                            INVOKESTATIC(ObjectType.Byte, "valueOf", valueOfDescriptor(ByteType)),
+                            null,
+                            null,
+                            ILOAD_1,
+                            INVOKESTATIC(ObjectType.Character, "valueOf", valueOfDescriptor(CharType)),
+                            null,
+                            null,
+                            ILOAD_2,
+                            INVOKESTATIC(ObjectType.Short, "valueOf", valueOfDescriptor(ShortType)),
+                            null,
+                            null,
+                            ILOAD_3,
+                            INVOKESTATIC(ObjectType.Integer, "valueOf", valueOfDescriptor(IntegerType)),
+                            null,
+                            null,
+                            FLOAD(4),
+                            null,
+                            INVOKESTATIC(ObjectType.Float, "valueOf", valueOfDescriptor(FloatType)),
+                            null,
+                            null,
+                            LLOAD(5),
+                            null,
+                            INVOKESTATIC(ObjectType.Long, "valueOf", valueOfDescriptor(LongType)),
+                            null,
+                            null
+                        ))
+            }
+            it("should create unboxing instructions for wrapper types") {
+                val d1 = MethodDescriptor(ObjectType.Integer, VoidType)
+                val d2 = MethodDescriptor(IntegerType, VoidType)
+                ClassFileFactory.parameterForwardingInstructions(
+                    d1, d2, 0, Seq.empty, ObjectType.Object) should be(
+                        Array(
+                            ALOAD_0,
+                            INVOKEVIRTUAL(ObjectType.Integer, "intValue", MethodDescriptor.JustReturnsInteger),
+                            null,
+                            null
+                        )
+                    )
+            }
+            it("should cast arbitrary reference types") {
+                val d1 = MethodDescriptor(IndexedSeq(ObjectType.Object, ObjectType.Object), VoidType)
+                val d2 = MethodDescriptor(IndexedSeq(ObjectType.String, ArrayType.ArrayOfObjects), VoidType)
+                ClassFileFactory.parameterForwardingInstructions(
+                    d1, d2, 0, Seq.empty, ObjectType.Object) should be(Array(
+                        ALOAD_0,
+                        CHECKCAST(ObjectType.String),
+                        null,
+                        null,
+                        ALOAD_1,
+                        CHECKCAST(ArrayType.ArrayOfObjects),
+                        null,
+                        null
+                    ))
+            }
+            it("should pack everything into an Object[] if necessary") {
+                val d1 = MethodDescriptor(IndexedSeq(IntegerType, ObjectType.String,
+                    ByteType, BooleanType, ObjectType.Integer, LongType, ShortType), VoidType)
+                val d2 = MethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
+                ClassFileFactory.parameterForwardingInstructions(
+                    d1, d2, 0, Seq.empty, ObjectType.Object) should be(
+                        Array(
+                            BIPUSH(7),
+                            null,
+                            ANEWARRAY(ObjectType.Object),
+                            null,
+                            null,
+                            DUP,
+                            ICONST_0,
+                            ILOAD_0,
+                            INVOKESTATIC(ObjectType.Integer, "valueOf", valueOfDescriptor(IntegerType)),
+                            null,
+                            null,
+                            AASTORE,
+                            DUP,
+                            ICONST_1,
+                            ALOAD_1,
+                            AASTORE,
+                            DUP,
+                            ICONST_2,
+                            ILOAD_2,
+                            INVOKESTATIC(ObjectType.Byte, "valueOf", valueOfDescriptor(ByteType)),
+                            null,
+                            null,
+                            AASTORE,
+                            DUP,
+                            ICONST_3,
+                            ILOAD_3,
+                            INVOKESTATIC(ObjectType.Boolean, "valueOf", valueOfDescriptor(BooleanType)),
+                            null,
+                            null,
+                            AASTORE,
+                            DUP,
+                            ICONST_4,
+                            ALOAD(4),
+                            null,
+                            AASTORE,
+                            DUP,
+                            ICONST_5,
+                            LLOAD(5),
+                            null,
+                            INVOKESTATIC(ObjectType.Long, "valueOf", valueOfDescriptor(LongType)),
+                            null,
+                            null,
+                            AASTORE,
+                            DUP,
+                            BIPUSH(6),
+                            null,
+                            ILOAD(7),
+                            null,
+                            INVOKESTATIC(ObjectType.Short, "valueOf", valueOfDescriptor(ShortType)),
+                            null,
+                            null,
+                            AASTORE
+                        ))
+            }
+        }
+        describe("should create correct return/conversion instructions") {
+            it("should convert Object to base types by casting and unboxing") {
+                BaseType.baseTypes foreach { t ⇒
+                    val name = s"${t.toJava}Value"
+                    val desc = new NoArgumentMethodDescriptor(t)
+                    val conv = ClassFileFactory.returnAndConvertInstructions(t, ObjectType.Object)
+                    conv should have size (7)
+                    conv(0) should be(CHECKCAST(t.WrapperType))
+                    conv(3) should be(INVOKEVIRTUAL(t.WrapperType, name, desc))
+                    conv(6) should be(ReturnInstruction(t))
+                }
+            }
+            it("should convert Object to any reference type by casting") {
+                Seq(ObjectType.String, ArrayType(LongType), ObjectType.Integer).foreach(
+                    t ⇒ ClassFileFactory.returnAndConvertInstructions(t, ObjectType.Object) should be(
+                        Array(CHECKCAST(t.asReferenceType), null, null, ARETURN))
+                )
+            }
+            it("should convert other types if possible, e.g. base types to wrappers") {
+                ClassFileFactory.returnAndConvertInstructions(ObjectType.Byte, ByteType) should be(
+                    Array(
+                        INVOKESTATIC(ObjectType.Byte, "valueOf", MethodDescriptor(ByteType, ObjectType.Byte)),
+                        null,
+                        null,
+                        ARETURN
+                    ))
+                ClassFileFactory.returnAndConvertInstructions(FloatType, LongType) should be(
+                    Array(L2F, FRETURN))
+            }
+        }
+    }
 
     /* *************************************
      * 
@@ -530,7 +1006,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         val indexOfNextFittingInstruction =
             remainingInstructions.filter(_ != null).
                 indexWhere(instruction ⇒ oneOf contains instruction.opcode)
-        indexOfNextFittingInstruction should not be (-1)
+        assert(indexOfNextFittingInstruction != -1,
+            s"Could not find required instruction ${oneOf.mkString(",")}")
 
         indexOfNextFittingInstruction + 1
     }
@@ -542,8 +1019,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 ILOAD_1.opcode,
                 ILOAD_2.opcode,
                 ILOAD_3.opcode,
-                ILOAD.opcode,
-                ICONST_0.opcode // TODO Why does this make sense?
+                ILOAD.opcode
             ),
             remainingInstructions)
 
@@ -554,8 +1030,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 LLOAD_1.opcode,
                 LLOAD_2.opcode,
                 LLOAD_3.opcode,
-                LLOAD.opcode,
-                LCONST_0.opcode // TODO Why does this make sense?
+                LLOAD.opcode
             ),
             remainingInstructions)
 
@@ -566,8 +1041,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 FLOAD_1.opcode,
                 FLOAD_2.opcode,
                 FLOAD_3.opcode,
-                FLOAD.opcode,
-                FCONST_0.opcode // TODO Why does this make sense?
+                FLOAD.opcode
             ),
             remainingInstructions)
 
@@ -578,8 +1052,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 DLOAD_1.opcode,
                 DLOAD_2.opcode,
                 DLOAD_3.opcode,
-                DLOAD.opcode,
-                DCONST_0.opcode // TODO Why does this make sense?
+                DLOAD.opcode
             ),
             remainingInstructions)
 
@@ -591,7 +1064,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 ALOAD_2.opcode,
                 ALOAD_3.opcode,
                 ALOAD.opcode,
-                ACONST_NULL.opcode // TODO Why does this make sense?
+                NEW.opcode
             ),
             remainingInstructions)
 
@@ -625,6 +1098,16 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             Set())
         val methodName = calleeMethodName+"$Forwarded"
         val methodDescriptor = calleeMethodDescriptor
+        val invocationInstruction: Opcode =
+            if (repository.classFile(calleeType).get.isInterfaceDeclaration) {
+                INVOKEINTERFACE.opcode
+            } else if (calleeMethod.isStatic) {
+                INVOKESTATIC.opcode
+            } else if (calleeMethod.isPrivate) {
+                INVOKESPECIAL.opcode
+            } else {
+                INVOKEVIRTUAL.opcode
+            }
         val classFile = ClassFileFactory.Proxy(
             definingType,
             methodName,
@@ -632,9 +1115,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             calleeType,
             calleeMethodName,
             calleeMethodDescriptor,
-            calleeMethod.isStatic,
-            calleeMethod.isPrivate,
-            repository.classFile(calleeType).get.isInterfaceDeclaration
+            invocationInstruction
         )
 
         test(classFile, (calleeType, calleeMethod))

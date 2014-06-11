@@ -29,18 +29,18 @@
 package org.opalj
 package br
 
-import analyses.Project
-
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.ParallelTestExecution
 import org.junit.runner.RunWith
-
-import org.opalj.bi.TestSupport.locateTestResources
-
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
+import analyses.Project
+import instructions.INVOKESPECIAL
+import instructions.INVOKESTATIC
+import instructions.INVOKEVIRTUAL
+import org.scalatest.junit.JUnitRunner
 
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.
@@ -52,62 +52,56 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
 
     describe("the generation of Proxy classes") {
 
-        val testProject = Project(locateTestResources("classfiles/proxy.jar", "br"))
+        val testProject = Project(locateTestResources("classfiles", "br"))
+        val regularClassFiles = testProject.classFilesCount
+        val methodsCount = testProject.methodsCount
 
-        val StaticMethods = ObjectType("proxy/StaticMethods")
-        val InstanceMethods = ObjectType("proxy/InstanceMethods")
-        val Constructors = ObjectType("proxy/Constructors")
-        val PrivateInstanceMethods = ObjectType("proxy/PrivateInstanceMethods")
-        val InterfaceMethods = ObjectType("proxy/InterfaceMethods")
+        val proxies: Iterable[(ClassFile, java.net.URL)] = testProject.methods.map { m ⇒
+            val t = testProject.classFile(m).thisType
+            var proxy: ClassFile = null
+            describe(s"generating a valid proxy for ${t.toJava} { ${m.toJava} }") {
+                val definingType = TypeDeclaration(
+                    ObjectType("ProxyValidation$"+t.toJava+":"+m.toJava.replace(' ', '_')+"$"),
+                    false,
+                    Some(ObjectType.Object),
+                    Set.empty
+                )
+                val proxyMethodName = m.name+"$proxy"
+                val invocationInstruction =
+                    if (testProject.classFile(t).get.isInterfaceDeclaration) {
+                        INVOKEINTERFACE.opcode
+                    } else if (m.isStatic) {
+                        INVOKESTATIC.opcode
+                    } else if (m.isPrivate) {
+                        INVOKESPECIAL.opcode
+                    } else {
+                        INVOKEVIRTUAL.opcode
+                    }
+                proxy =
+                    ClassFileFactory.Proxy(definingType,
+                        proxyMethodName,
+                        m.descriptor,
+                        t,
+                        m.name,
+                        m.descriptor,
+                        invocationInstruction)
 
-        def getMethods(
-            theClass: ObjectType,
-            repository: ClassFileRepository): Iterable[(ObjectType, Method)] =
-            repository.classFile(theClass).map { cf ⇒
-                cf.methods.map((theClass, _))
-            }.getOrElse(Iterable.empty)
-
-        val types = Seq(StaticMethods, InstanceMethods, Constructors,
-            PrivateInstanceMethods, InterfaceMethods)
-
-        types.foreach { theType ⇒
-            val methods = getMethods(theType, testProject)
-            methods should not be ('empty)
-            methods.foreach { p ⇒
-                val (t: ObjectType, m: Method) = p
-                it(s"it should generate a valid proxy method for ${t.toJava} { ${m.toJava} }") {
-                    val definingType = TypeDeclaration(
-                        ObjectType("ProxyValidation$"+t.toJava+":"+m.toJava.replace(' ', '_')+"$"),
-                        false,
-                        Some(ObjectType.Object),
-                        Set.empty
-                    )
-                    val proxyMethodName = m.name+"$proxy"
-                    val proxy =
-                        ClassFileFactory.Proxy(definingType,
-                            proxyMethodName,
-                            m.descriptor,
-                            t,
-                            m.name,
-                            m.descriptor,
-                            m.isStatic,
-                            m.isPrivate,
-                            testProject.classFile(t).map(_.isInterfaceDeclaration).getOrElse(false))
-                    val proxyMethod = proxy.findMethod(proxyMethodName).get
-                    val domain = new BaseDomain(testProject, proxy, proxyMethod)
-                    val result = BaseAI(proxy, proxyMethod, domain)
+                def verifyMethod(classFile: ClassFile, method: Method) {
+                    val domain = new BaseDomain(testProject, classFile, method)
+                    val result = BaseAI(classFile, method, domain)
 
                     // the abstract interpretation succeed
                     result should not be ('wasAborted)
 
                     // the method was non-empty
-                    val instructions = proxyMethod.body.get.instructions
+                    val instructions = method.body.get.instructions
                     instructions.count(_ != null) should be >= 2
 
                     // there is no dead-code
-                    result.operandsArray.zip(instructions).foreach { p ⇒
-                        val (oa, i) = p
-                        if (i != null) oa should not be (null)
+                    var nextPc = 0
+                    while (nextPc < instructions.size) {
+                        result.operandsArray(nextPc) should not be (null)
+                        nextPc = instructions(nextPc).indexOfNextInstruction(nextPc, false)
                     }
 
                     // the layout of the instructions array is correct
@@ -117,6 +111,44 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                             instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
                         }
                     }
+                }
+
+                val proxyMethod = proxy.findMethod(proxyMethodName).get
+                it("should produce a correct forwarding method") {
+                    verifyMethod(proxy, proxyMethod)
+                }
+
+                val constructor = proxy.findMethod("<init>").get
+                it("should produce a correct constructor") {
+                    verifyMethod(proxy, constructor)
+                }
+
+                val factoryMethod = proxy.findMethod("$newInstance").getOrElse(
+                    proxy.findMethod("$createInstance").get)
+                it("should produce a correct factory method") {
+                    verifyMethod(proxy, factoryMethod)
+                }
+
+            }
+            proxy -> testProject.source(t).get
+        }
+
+        describe("the project should be extendable with the generated proxies") {
+            val extendedProject = testProject.extend(proxies, Iterable.empty)
+            it("should have the right amount of class files") {
+                extendedProject.classFilesCount should be(
+                    testProject.classFilesCount + proxies.size)
+            }
+            it("should have the right class files") {
+                testProject.classFiles foreach { cf ⇒
+                    extendedProject.classFile(cf.thisType) should be('defined)
+                    if (testProject.source(cf.thisType).isDefined)
+                        extendedProject.source(cf.thisType) should be('defined)
+                }
+                proxies foreach { p ⇒
+                    val (proxy, source) = p
+                    extendedProject.classFile(proxy.thisType) should be('defined)
+                    extendedProject.source(proxy.thisType) should be('defined)
                 }
             }
         }

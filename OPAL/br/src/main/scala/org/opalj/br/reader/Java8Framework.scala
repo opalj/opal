@@ -43,3 +43,11 @@ trait Java8Framework
 
 object Java8Framework extends Java8Framework
 
+/**
+ * Extends the standard Java8Framework with functionality to resolve `invokedynamic`
+ * instructions that have been produced by Oracle's JDK8 for Lambda/Method reference
+ * expressions.
+ */
+object Java8FrameworkWithLambdaSupport
+    extends Java8Framework
+    with FullJDK8DeferredInvokedynamicResolution

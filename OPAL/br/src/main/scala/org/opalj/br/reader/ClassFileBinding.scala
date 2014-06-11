@@ -70,21 +70,42 @@ trait ClassFileBinding extends ClassFileReader {
             attributes)
     }
 
-    val removeBootstrapMethodAttribute: Seq[ClassFile] ⇒ Seq[ClassFile] = { classFiles ⇒
+    val extractSynthesizedClassFiles: Seq[ClassFile] ⇒ Seq[ClassFile] = { classFiles ⇒
+        val classFile = classFiles.head
+        if (classFile.majorVersion < 52 || // can't contain lambda expressions
+            classFile.attributes.size == 0 ||
+            classFile.attributes.forall(a ⇒ !a.isInstanceOf[SynthesizedClassFiles])) {
+            classFiles
+        } else {
+            val synthesizedClassFiles: Seq[ClassFile] = classFile.attributes.find(
+                _.isInstanceOf[SynthesizedClassFiles]) match {
+                    case Some(scf: SynthesizedClassFiles) ⇒ scf.classFiles
+                    case _                                ⇒ Seq.empty
+                }
+
+            classFiles ++ synthesizedClassFiles
+        }
+    }
+
+    val removeTemporaryAttributes: Seq[ClassFile] ⇒ Seq[ClassFile] = { classFiles ⇒
         val classFile = classFiles.head
         val attributes = classFile.attributes
         if (classFile.majorVersion <= 50 /*does not have BootstrapMethodTable*/ ||
             attributes.size == 0 ||
-            attributes.forall(attribute ⇒ !attribute.isInstanceOf[BootstrapMethodTable]))
+            attributes.forall(attribute ⇒
+                !(attribute.isInstanceOf[BootstrapMethodTable] ||
+                    attribute.isInstanceOf[SynthesizedClassFiles])))
             classFiles
         else {
             val newAttributes = classFile.attributes filter { attribute ⇒
-                !attribute.isInstanceOf[BootstrapMethodTable]
+                !(attribute.isInstanceOf[BootstrapMethodTable] ||
+                    attribute.isInstanceOf[SynthesizedClassFiles])
             }
             classFile.updateAttributes(newAttributes) +: classFiles.tail
         }
     }
 
-    registerClassFilePostProcessor(removeBootstrapMethodAttribute)
+    registerClassFilePostProcessor(removeTemporaryAttributes)
+    registerClassFilePostProcessor(extractSynthesizedClassFiles)
 }
 
