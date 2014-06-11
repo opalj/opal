@@ -90,7 +90,7 @@ final class Method private (
     final override def asMethod = this
 
     def asVirtualMethod(declaringClassType: ObjectType): VirtualMethod =
-        VirtualMethod(declaringClassType, name, descriptor)
+        VirtualMethod(declaringClassType, name, descriptor, Some(this))
 
     def runtimeVisibleParameterAnnotations: ParameterAnnotations =
         (attributes collectFirst {
