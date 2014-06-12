@@ -100,8 +100,7 @@ final class ClassFile private (
 
     final override def asClassFile = this
 
-    def asVirtualClass: VirtualClass =
-        VirtualClass(thisType)
+    def asVirtualClass: VirtualClass = VirtualClass(thisType)
 
     def id = thisType.id
 
@@ -125,6 +124,13 @@ final class ClassFile private (
     def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
 
     def isInnerClass: Boolean = innerClasses.exists(_.exists(_.innerClassType == thisType))
+
+    /**
+     * Returns `true` if this class file has no direct representation in the source code.
+     *
+     * @see [[VirtualTypeFlag]] for further information.
+     */
+    def isVirtualType: Boolean = attributes.contains(VirtualTypeFlag)
 
     def enclosingMethod: Option[EnclosingMethod] =
         attributes collectFirst { case em: EnclosingMethod ⇒ em }
@@ -332,6 +338,22 @@ object ClassFile {
             methods sortWith { (m1, m2) ⇒ m1 < m2 },
             attributes)
     }
+    
+//    def apply(
+//            typeDeclaration : TypeDeclaration,
+//            virtualMethod : VirtualForwardingMethod) : ClassFile = {
+//       apply(0, 52,
+//                bi.ACC_SYNTHETIC.mask,
+//                typeDeclaration.objectType,
+//                typeDeclaration.theSuperclassType,
+//                typeDeclaration.theSuperinterfaceTypes.toSeq,
+//                IndexedSeq(),
+//                IndexedSeq(virtualMethod),
+//                IndexedSeq(VirtualTypeFlag))            
+//        }
+//    null
+//    }
+    
 
     def unapply(classFile: ClassFile): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
         import classFile._
