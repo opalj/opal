@@ -74,7 +74,7 @@ object TransitiveUsage extends AnalysisExecutor {
                     case VirtualField(declaringClassType, _, fieldType) ⇒
                         processType(declaringClassType)
                         processType(fieldType)
-                    case VirtualMethod(declaringClassType, _, descriptor, _) ⇒
+                    case VirtualMethod(declaringClassType, _, descriptor) ⇒
                         processType(declaringClassType)
                         processType(descriptor.returnType)
                         descriptor.parameterTypes.view foreach { processType(_) }

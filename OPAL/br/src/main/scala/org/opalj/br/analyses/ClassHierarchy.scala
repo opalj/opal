@@ -1441,22 +1441,25 @@ object ClassHierarchy {
     def preInitializedClassHierarchy: ClassHierarchy = apply(Traversable.empty)
 
     /**
-     * Creates the class hierarchy by analyzing the given class files, additional predefined
-     * type declarations, and the specified predefined class hierarchies. By default the
-     * class hierarchy related to the exceptions thrown by bytecode instructions are
-     * predefined as well as the class hierarchy related to the main classes of the JDK.
+     * Creates the class hierarchy by analyzing the given class files, the predefined
+     * type declarations, and the specified predefined class hierarchies.
+     *
+     * By default the class hierarchy related to the exceptions thrown by bytecode
+     * instructions are predefined as well as the class hierarchy related to the main
+     * classes of the JDK.
      * See the file `ClassHierarchyJVMExceptions.ths` and `ClassHierarchyJLS.ths`
      * (text files) for further details.
      *
      * Basically, only the part of a project's class hierarchy is reified that is referred
      * to in the ''class declarations'' of the analyzed classes  I.e., those classes
      * which are directly referred to in class declarations, but for which the respective
-     * class file was not analyzed, are also considered to be visible and are integrated in
-     * the class hierarchy. However, types only referred to in the body of a method, but for
-     * which neither the defining class file is analyzed nor a class exists that inherits from
+     * class file was not analyzed, are also considered to be visible and are integrated
+     * in the class hierarchy.
+     * However, types only referred to in the body of a method, but for which neither
+     * the defining class file is analyzed nor a class exists that inherits from
      * them are not integrated.
-     * For example, if the class file of the class `java.util.ArrayList` is analyzed, then the
-     * class hierarchy will have some information about, e.g., `java.util.List`
+     * For example, if the class file of the class `java.util.ArrayList` is analyzed,
+     * then the class hierarchy will have some information about, e.g., `java.util.List`
      * from which `ArrayList` inherits. However, the information about `List` is incomplete
      * and `List` will be a boundary class unless we also analyze the class file that
      * defines `java.util.List`.
@@ -1492,20 +1495,20 @@ object ClassHierarchy {
                     source.getLines.map(_.trim).filterNot {
                         l ⇒ l.startsWith("#") || l.length == 0
                     }
-                (
-                    for {
-                        SpecLineExtractor(typeKind, theType, _, superclassType, _, superinterfaceTypes) ← specLines
-                    } yield {
-                        TypeDeclaration(
-                            ObjectType(theType),
-                            typeKind == "interface",
-                            Option(superclassType).map(ObjectType(_)),
-                            Option(superinterfaceTypes).map { superinterfaceTypes ⇒
-                                HashSet.empty ++ superinterfaceTypes.split(',').map(_.trim).map(ObjectType(_))
-                            }.getOrElse(HashSet.empty)
-                        )
-                    }
-                )
+
+                for {
+                    SpecLineExtractor(typeKind, theType, _, superclassType, _, superinterfaceTypes) ← specLines
+                } yield {
+                    TypeDeclaration(
+                        ObjectType(theType),
+                        typeKind == "interface",
+                        Option(superclassType).map(ObjectType(_)),
+                        Option(superinterfaceTypes).map { superinterfaceTypes ⇒
+                            HashSet.empty ++
+                                superinterfaceTypes.split(',').map(_.trim).map(ObjectType(_))
+                        }.getOrElse(HashSet.empty)
+                    )
+                }
             }
         }
 
@@ -1610,7 +1613,7 @@ object ClassHierarchy {
 }
 
 /**
- * Stores the information about a type's supertypes.
+ * Stores information about a type's supertypes.
  *
  * @author Michael Eichberg
  */
