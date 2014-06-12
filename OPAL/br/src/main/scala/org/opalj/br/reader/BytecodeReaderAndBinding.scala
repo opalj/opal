@@ -46,6 +46,49 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     override type Constant_Pool = Array[Constant_Pool_Entry]
 
     /**
+     * This method looks up information about `invokedynamic` instructions from the
+     * class's [[BootstrapMethodTable]], completing the generally statically available
+     * information on these instructions.
+     *
+     * It is registered as a deferredActionHandler to be called after the byte stream
+     * under analysis has been completely parsed.
+     *
+     * To perform additional analysis on `invokedynamic` instructions, e.g. attempting to
+     * fully resolve their call targets, a subclass may override this method to do so.
+     *
+     * @note If you override this method, you need to make a call to
+     * `super.deferredCollectInvokedynamicInformation` to ensure that the basic
+     * information will still be available.
+     *
+     * @param classFile the [[ClassFile]] object containing the code under analysis
+     * @param cp the class file's [[Constant_Pool]]
+     * @param cpEntry the constant pool's entry referring to the `invokedynamic`
+     * 		instruction currently under analysis
+     * @param instructions an array of [[instructions.Instruction]]s to be eventually
+     * 		returned by the [[#Instructions]] method
+     * @param index the index in the `instructions` array to the `invokedynamic`
+     * 		instruction currently under analysis
+     */
+    def deferredCollectInvokedynamicInformation(
+        classFile: ClassFile,
+        cp: Constant_Pool,
+        cpEntry: CONSTANT_InvokeDynamic_info,
+        instructions: Array[Instruction],
+        index: Int): ClassFile = {
+
+        val bootstrapMethods = classFile.attributes collectFirst {
+            case BootstrapMethodTable(bms) ⇒ bms
+        }
+        val invokeDynamic = INVOKEDYNAMIC(
+            bootstrapMethods.get(cpEntry.bootstrapMethodAttributeIndex),
+            cpEntry.methodName(cp),
+            cpEntry.methodDescriptor(cp)
+        )
+        instructions(index) = invokeDynamic
+        classFile
+    }
+
+    /**
      * Transforms an array of bytes into an array of
      * [[org.opalj.br.instructions.Instruction]]s.
      */
@@ -222,16 +265,8 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     registerDeferredAction(cp) { classFile ⇒
-                        val bootstrapMethods = classFile.attributes collectFirst {
-                            case BootstrapMethodTable(bms) ⇒ bms
-                        }
-                        val invokeDynamic = INVOKEDYNAMIC(
-                            bootstrapMethods.get(cpEntry.bootstrapMethodAttributeIndex),
-                            cpEntry.methodName(cp),
-                            cpEntry.methodDescriptor(cp)
-                        )
-                        instructions(index) = invokeDynamic
-                        classFile
+                        deferredCollectInvokedynamicInformation(classFile, cp, cpEntry,
+                            instructions, index)
                     }
                     //INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
                     UNRESOLVED_INVOKEDYNAMIC
