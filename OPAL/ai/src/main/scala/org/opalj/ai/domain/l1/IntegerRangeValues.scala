@@ -200,19 +200,28 @@ trait IntegerRangeValues
         left: DomainValue,
         right: DomainValue): Answer = {
 
-        (left, right) match {
-            case (IntegerRange(leftLB, leftUB), IntegerRange(rightLB, rightUB)) ⇒
-                if (leftUB < rightLB)
-                    Yes
-                else if (leftLB > rightUB ||
-                    ( /*"for point ranges":*/
-                        leftLB == leftUB &&
-                        rightLB == rightUB &&
-                        leftLB == rightLB))
+        right match {
+            case IntegerRange(rightLB, rightUB) ⇒
+                if (rightUB == Int.MinValue)
                     No
                 else
-                    Unknown
-            case _ ⇒ Unknown
+                    left match {
+                        case IntegerRange(leftLB, leftUB) ⇒
+                            if (leftUB < rightLB)
+                                Yes
+                            else if (leftLB > rightUB ||
+                                ( /*"for point ranges":*/
+                                    leftLB == leftUB &&
+                                    rightLB == rightUB &&
+                                    leftLB == rightLB))
+                                No
+                            else
+                                Unknown
+                        case _ ⇒
+                            Unknown
+                    }
+            case _ ⇒
+                Unknown
         }
     }
 
@@ -220,16 +229,24 @@ trait IntegerRangeValues
         left: DomainValue,
         right: DomainValue): Answer = {
 
-        (left, right) match {
-
-            case (IntegerRange(leftLB, leftUB), IntegerRange(rightLB, rightUB)) ⇒
-                if (leftUB <= rightLB)
+        right match {
+            case IntegerRange(rightLB, rightUB) ⇒
+                if (rightLB == Int.MaxValue)
                     Yes
-                else if (leftLB > rightUB)
-                    No
                 else
-                    Unknown
-            case _ ⇒ Unknown
+                    left match {
+                        case IntegerRange(leftLB, leftUB) ⇒
+                            if (leftUB <= rightLB)
+                                Yes
+                            else if (leftLB > rightUB)
+                                No
+                            else
+                                Unknown
+                        case _ ⇒
+                            Unknown
+                    }
+            case _ ⇒
+                Unknown
         }
     }
 

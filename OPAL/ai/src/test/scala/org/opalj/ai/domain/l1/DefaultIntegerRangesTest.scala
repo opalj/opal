@@ -124,7 +124,7 @@ class DefaultIntegerRangesTest
                 assert(result.value eq v1)
             }
 
-            it("(join of a point range with a non-overlapping range) [0,0] join [1,Int.MaxValue]") {
+            it("(join of a \"point\" range with a non-overlapping range) [0,0] join [1,Int.MaxValue]") {
                 val v1 = IntegerRange(lb = 0, ub = 0)
                 val v2 = IntegerRange(lb = 1, ub = 2147483647)
                 v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 2147483647)))
@@ -188,6 +188,12 @@ class DefaultIntegerRangesTest
                     intIsGreaterThanOrEqualTo(p1, i2) should be(Yes)
                 }
 
+                it("[Int.MaxValue,Int.MaxValue] >= AnIntegerValue should be Yes") {
+                    val p1 = IntegerRange(lb = Int.MaxValue, ub = Int.MaxValue)
+                    val p2 = AnIntegerValue()
+                    intIsGreaterThanOrEqualTo(p1, p2) should be(Yes)
+                }
+
                 it("[0,3] >= [3,3] => Unknown") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val i2 = IntegerRange(lb = 0, ub = 3)
@@ -200,69 +206,93 @@ class DefaultIntegerRangesTest
                     intIsGreaterThanOrEqualTo(i1, i2) should be(Unknown)
                 }
 
+                it("[1,4] >= [2,3] => Unknown") {
+                    val i1 = IntegerRange(lb = 1, ub = 4)
+                    val i2 = IntegerRange(lb = 2, ub = 3)
+                    intIsGreaterThanOrEqualTo(i1, i2) should be(Unknown)
+                }
+
+                it("[Int.MinValue,Int.MinValue] >= AnIntegerValue should be Unknown") {
+                    val p1 = IntegerRange(lb = Int.MinValue, ub = Int.MinValue)
+                    val p2 = AnIntegerValue()
+                    intIsGreaterThanOrEqualTo(p1, p2) should be(Unknown)
+                }
+
                 it("[3,3] >= [4,4] => No") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val p2 = IntegerRange(lb = 4, ub = 4)
                     intIsGreaterThanOrEqualTo(p1, p2) should be(No)
                 }
 
-                it("[1,4] >= [2,3] => Unknown") {
-                    val i1 = IntegerRange(lb = 1, ub = 4)
-                    val i2 = IntegerRange(lb = 2, ub = 3)
-                    intIsGreaterThanOrEqualTo(i1, i2) should be(Unknown)
+                it("[-3,3] >= [4,40] => No") {
+                    val p1 = IntegerRange(lb = -3, ub = 3)
+                    val p2 = IntegerRange(lb = 4, ub = 40)
+                    intIsGreaterThanOrEqualTo(p1, p2) should be(No)
                 }
             }
 
             describe("the behavior of the greater than (>) operator") {
 
-                it("[3,3] > [0,2] => Yes") {
+                it("[3,3] > [0,2] should be Yes") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val i2 = IntegerRange(lb = 0, ub = 2)
                     intIsGreaterThan(p1, i2) should be(Yes)
                 }
 
-                it("[3,300] > [0,2] => Yes") {
+                it("[3,300] > [0,2] should be Yes") {
                     val p1 = IntegerRange(lb = 3, ub = 300)
                     val i2 = IntegerRange(lb = 0, ub = 2)
                     intIsGreaterThan(p1, i2) should be(Yes)
                 }
 
-                it("[3,3] > [0,3] => Unknown") {
+                it("[3,3] > [0,3] should be Unknown") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val i2 = IntegerRange(lb = 0, ub = 3)
                     intIsGreaterThan(p1, i2) should be(Unknown)
                 }
 
-                it("[0,3] > [3,3] => Unknown") {
+                it("[0,3] > [3,3] should be Unknown") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val i2 = IntegerRange(lb = 0, ub = 3)
                     intIsGreaterThan(i2, p1) should be(Unknown)
                 }
 
-                it("[2,3] > [1,4] => Unknown") {
+                it("[2,3] > [1,4] should be Unknown") {
                     val i1 = IntegerRange(lb = 2, ub = 3)
                     val i2 = IntegerRange(lb = 1, ub = 4)
                     intIsGreaterThan(i1, i2) should be(Unknown)
                 }
 
-                it("[3,3] > [4,4] => No") {
+                it("[-3,3] > [3,30] should be Unknown") {
+                    val p1 = IntegerRange(lb = -3, ub = 3)
+                    val p2 = IntegerRange(lb = 3, ub = 30)
+                    intIsGreaterThan(p1, p2) should be(Unknown)
+                }
+
+                it("[3,3] > [4,4] should be No") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val p2 = IntegerRange(lb = 4, ub = 4)
                     intIsGreaterThan(p1, p2) should be(No)
                 }
 
-                it("[3,3] > [3,3] => No") {
+                it("[3,3] > [3,3] should be No") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val p2 = IntegerRange(lb = 3, ub = 3)
                     intIsGreaterThan(p1, p2) should be(No)
                     intIsGreaterThan(p1, p1) should be(No)
                 }
 
+                it("[Int.MinValue,Int.MinValue] > AnIntegerValue should be No") {
+                    val p1 = IntegerRange(lb = Int.MinValue, ub = Int.MinValue)
+                    val p2 = AnIntegerValue()
+                    intIsGreaterThan(p1, p2) should be(No)
+                }
+
             }
 
             describe("the behavior of the equals (==) operator") {
 
-                it("[3,3] == [3,3]") {
+                it("[3,3] == [3,3] should be Yes") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val p2 = IntegerRange(lb = 3, ub = 3)
                     intAreEqual(p1, p2) should be(Yes)
@@ -270,26 +300,27 @@ class DefaultIntegerRangesTest
                     intAreEqual(p1, p1) should be(Yes) // reflexive
                 }
 
-                it("[2,2] == [3,3]") {
+                it("[2,2] == [3,3] should be No") {
                     val p1 = IntegerRange(lb = 2, ub = 2)
                     val p2 = IntegerRange(lb = 3, ub = 3)
                     intAreEqual(p1, p2) should be(No)
                     intAreEqual(p2, p1) should be(No) // reflexive
                 }
 
-                it("[0,3] == [3,3]") {
+                it("[0,3] == [4,10] should be No") {
+                    val p1 = IntegerRange(lb = 0, ub = 3)
+                    val p2 = IntegerRange(lb = 4, ub = 10)
+                    intAreEqual(p1, p2) should be(No)
+                    intAreEqual(p2, p1) should be(No) // reflexive
+                }
+
+                it("[0,3] == [3,3] should be Unknown") {
                     val p1 = IntegerRange(lb = 0, ub = 3)
                     val p2 = IntegerRange(lb = 3, ub = 3)
                     intAreEqual(p1, p2) should be(Unknown)
                     intAreEqual(p2, p1) should be(Unknown) // reflexive
                 }
 
-                it("[0,3] == [4,10]") {
-                    val p1 = IntegerRange(lb = 0, ub = 3)
-                    val p2 = IntegerRange(lb = 4, ub = 10)
-                    intAreEqual(p1, p2) should be(No)
-                    intAreEqual(p2, p1) should be(No) // reflexive
-                }
             }
         }
 
@@ -302,7 +333,7 @@ class DefaultIntegerRangesTest
         val testProject = org.opalj.br.analyses.Project(testFolder)
         val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
-        it("should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing") {
+        it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing") {
             val domain = new IntegerRangesTestDomain
             val method = IntegerValues.findMethod("aliasingMax5").get
             val result = BaseAI(IntegerValues, method, domain)
@@ -313,7 +344,7 @@ class DefaultIntegerRangesTest
             summary should be(domain.IntegerRange(Int.MinValue, 5))
         }
 
-        it("should be able to adapt (<=)the bounds of an IntegerRange value in the presences of aliasing") {
+        it("it should be able to adapt (<=) the bounds of an IntegerRange value in the presences of aliasing") {
             val domain = new IntegerRangesTestDomain
             val method = IntegerValues.findMethod("aliasingMax6").get
             val result = BaseAI(IntegerValues, method, domain)
@@ -324,7 +355,7 @@ class DefaultIntegerRangesTest
             summary should be(domain.IntegerRange(Int.MinValue, 6))
         }
 
-        it("should be able to adapt (>=)the bounds of an IntegerRange value in the presences of aliasing") {
+        it("it should be able to adapt (>=) the bounds of an IntegerRange value in the presences of aliasing") {
             val domain = new IntegerRangesTestDomain
             val method = IntegerValues.findMethod("aliasingMinM1").get
             val result = BaseAI(IntegerValues, method, domain)
@@ -335,7 +366,7 @@ class DefaultIntegerRangesTest
             summary should be(domain.IntegerRange(-1, Int.MaxValue))
         }
 
-        it("should be able to adapt (>)the bounds of an IntegerRange value in the presences of aliasing") {
+        it("it should be able to adapt (>) the bounds of an IntegerRange value in the presences of aliasing") {
             val domain = new IntegerRangesTestDomain
             val method = IntegerValues.findMethod("aliasingMin0").get
             val result = BaseAI(IntegerValues, method, domain)
@@ -346,7 +377,7 @@ class DefaultIntegerRangesTest
             summary should be(domain.IntegerRange(0, Int.MaxValue))
         }
 
-        ignore("should be able to collect a switch statement's cases and use that information to calculate a result") {
+        ignore("it should be able to collect a switch statement's cases and use that information to calculate a result") {
             val domain = new IntegerRangesTestDomain
             val method = IntegerValues.findMethod("someSwitch").get
             val result = BaseAI(IntegerValues, method, domain)
@@ -356,7 +387,7 @@ class DefaultIntegerRangesTest
             domain.allReturnedValues.head._2 should be(domain.IntegerRange(0, 8))
         }
 
-        it("should be able to detect contradicting conditions") {
+        it("it should be able to detect contradicting conditions") {
             val domain = new IntegerRangesTestDomain
             val method = IntegerValues.findMethod("someComparisonThatReturns5").get
             val result = BaseAI(IntegerValues, method, domain)
@@ -367,7 +398,7 @@ class DefaultIntegerRangesTest
             summary should be(domain.IntegerRange(5, 5))
         }
 
-        it("should be able to track integer values such that it is possible to potentially identify an array index out of bounds exception") {
+        it("it should be able to track integer values such that it is possible to potentially identify an array index out of bounds exception") {
             val domain = new IntegerRangesTestDomain
             val method = IntegerValues.findMethod("array10").get
             val result = BaseAI(IntegerValues, method, domain)
