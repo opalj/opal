@@ -1441,10 +1441,10 @@ object ClassHierarchy {
     def preInitializedClassHierarchy: ClassHierarchy = apply(Traversable.empty)
 
     /**
-     * Creates the class hierarchy by analyzing the given class files and
-     * the specified predefined class hierarchies. By default the class hierarchy
-     * related to the exceptions thrown by bytecode instructions are predefined
-     * as well as the class hierarchy related to the main classes of the JDK.
+     * Creates the class hierarchy by analyzing the given class files, additional predefined
+     * type declarations, and the specified predefined class hierarchies. By default the
+     * class hierarchy related to the exceptions thrown by bytecode instructions are
+     * predefined as well as the class hierarchy related to the main classes of the JDK.
      * See the file `ClassHierarchyJVMExceptions.ths` and `ClassHierarchyJLS.ths`
      * (text files) for further details.
      *
@@ -1467,7 +1467,8 @@ object ClassHierarchy {
             () ⇒ { getClass().getResourceAsStream("ClassHierarchyJLS.ths") },
             () ⇒ { getClass().getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
             () ⇒ { getClass().getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
-        )): ClassHierarchy = {
+        ),
+        predefinedTypeDeclarations: Traversable[TypeDeclaration] = Traversable.empty): ClassHierarchy = {
 
         import scala.collection.mutable.HashSet
         import scala.collection.mutable.HashMap
@@ -1587,7 +1588,7 @@ object ClassHierarchy {
             }
         }
 
-        typeDeclarations foreach { typeDecl ⇒
+        (predefinedTypeDeclarations ++ typeDeclarations) foreach { typeDecl ⇒
             process(
                 typeDecl.objectType,
                 typeDecl.isInterfaceType,

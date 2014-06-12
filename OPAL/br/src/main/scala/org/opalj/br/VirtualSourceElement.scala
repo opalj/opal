@@ -150,7 +150,8 @@ final case class VirtualField(
 final case class VirtualMethod(
         declaringClassType: ReferenceType,
         name: String,
-        descriptor: MethodDescriptor) extends VirtualClassMember {
+        descriptor: MethodDescriptor,
+        actualMethod: Option[Method] = None) extends VirtualClassMember {
 
     override def isMethod = true
 
