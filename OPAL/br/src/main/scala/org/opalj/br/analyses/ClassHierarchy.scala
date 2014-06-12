@@ -1470,8 +1470,7 @@ object ClassHierarchy {
             () ⇒ { getClass().getResourceAsStream("ClassHierarchyJLS.ths") },
             () ⇒ { getClass().getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
             () ⇒ { getClass().getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
-        ),
-        predefinedTypeDeclarations: Traversable[TypeDeclaration] = Traversable.empty): ClassHierarchy = {
+        )): ClassHierarchy = {
 
         import scala.collection.mutable.HashSet
         import scala.collection.mutable.HashMap
@@ -1591,7 +1590,7 @@ object ClassHierarchy {
             }
         }
 
-        (predefinedTypeDeclarations ++ typeDeclarations) foreach { typeDecl ⇒
+        typeDeclarations foreach { typeDecl ⇒
             process(
                 typeDecl.objectType,
                 typeDecl.isInterfaceType,
@@ -1612,13 +1611,4 @@ object ClassHierarchy {
     }
 }
 
-/**
- * Stores information about a type's supertypes.
- *
- * @author Michael Eichberg
- */
-case class TypeDeclaration(
-    objectType: ObjectType,
-    isInterfaceType: Boolean,
-    theSuperclassType: Option[ObjectType],
-    theSuperinterfaceTypes: Set[ObjectType])
+

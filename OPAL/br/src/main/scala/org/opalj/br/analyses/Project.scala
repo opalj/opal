@@ -30,10 +30,11 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.{ Set, Map }
-import scala.collection.mutable.{ AnyRefMap, OpenHashMap }
 import java.net.URL
 import java.io.File
+
+import scala.collection.{ Set, Map }
+import scala.collection.mutable.{ AnyRefMap, OpenHashMap }
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -126,13 +127,6 @@ class Project[Source] private (
      */
     def isLibraryType(objectType: ObjectType): Boolean =
         !projectTypes.contains(objectType)
-
-    /**
-     * Returns true if the given type has been introduced to the project through a virtual
-     * type declaration.
-     */
-    def isVirtualType(objectType: ObjectType): Boolean =
-        classFile(objectType).map(_.attributes.contains(VirtualTypeFlag)).getOrElse(false)
 
     /**
      * Returns the source (for example, a `File` object or `URL` object) from which
@@ -346,7 +340,7 @@ object Project {
      * Creates a new `Project` that consists of the source files of the previous
      * project and the newly given source files.
      */
-    def extend[Source: reflect.ClassTag](
+    def extend[Source >: Null <: AnyRef: reflect.ClassTag](
         project: Project[Source],
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
         libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
@@ -368,12 +362,21 @@ object Project {
      * @param classFiles The list of class files of this project that are considered
      *    to belong to the application/library that will be analyzed.
      *    [Thread Safety] The underlying data structure has to support concurrent access.
+     *
      * @param libraryClassFiles The list of class files of this project that make up
      *    the libraries used by the project that will be analyzed.
      *    [Thread Safety] The underlying data structure has to support concurrent access.
-     * @param virtualClassFiles A list of `TypeDeclaration`s with optional call targets
-     * 	  that are a result of searching class files for, e.g., `invokedynamic`
-     *    instructions (@see [[reader.BytecodeReaderAndBindingWithLambdaSupport]])
+     *
+     * @param virtualClassFiles A list of virtual class files that have no direct
+     *      representation in the project.
+     * 	    Such declarations are created, e.g., to handle `invokedynamic`
+     *      instructions (@see [[reader.BytecodeReaderAndBindingWithLambdaSupport]] for
+     *      further information).
+     *      '''In general, such class files should be added using
+     *      `projectClassFilesWithSources` and the `Source` should be the file that
+     *      was the reason for the creation of this additional `ClassFile`.'''
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
+     *
      * @param handleInconsistentProject A function that is called back if the project
      *      is not consistent. The default behavior
      *      ([[defaultHandlerForInconsistentProject]]) is to write a warning
@@ -381,10 +384,10 @@ object Project {
      *      exception to cancel the loading of the project (which is the only
      *      meaningful option for several advanced analyses.)
      */
-    def apply[Source: reflect.ClassTag](
+    def apply[Source >: Null <: AnyRef: reflect.ClassTag](
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Traversable[(ClassFile, Source)] = Iterable.empty,
-        virtualClassFiles: Traversable[(TypeDeclaration, Option[VirtualMethod])] = Traversable.empty,
+        libraryClassFilesWithSources: Traversable[(ClassFile, Source)] = Traversable.empty,
+        virtualClassFiles: Traversable[ClassFile] = Traversable.empty,
         handleInconsistentProject: (InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
 
         import scala.collection.mutable.{ Set, Map }
@@ -395,8 +398,8 @@ object Project {
         val classHierarchyFuture: Future[ClassHierarchy] = Future {
             ClassHierarchy(
                 projectClassFilesWithSources.view.map(_._1) ++
-                    libraryClassFilesWithSources.view.map(_._1),
-                predefinedTypeDeclarations = virtualClassFiles.map(_._1)
+                    libraryClassFilesWithSources.view.map(_._1) ++
+                    virtualClassFiles
             )
         }
 
@@ -416,7 +419,7 @@ object Project {
         val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile]
         val sources = OpenHashMap.empty[ObjectType, Source]
 
-        for ((classFile, source) ← projectClassFilesWithSources) {
+        def processClassFile(classFile: ClassFile, source: Source) {
             projectClassFiles = classFile :: projectClassFiles
             projectClassFilesCount += 1
             val objectType = classFile.thisType
@@ -435,13 +438,21 @@ object Project {
                         "The type "+
                             objectType.toJava+
                             " is defined by multiple class files: "+
-                            sources(objectType)+" and "+
-                            source+"."
+                            sources.get(objectType).getOrElse("<VIRTUAL>")+" and "+
+                            (if (source == null) "<VIRTUAL>" else source)+"."
                     )
                 )
             }
             objectTypeToClassFile.put(objectType, classFile)
-            sources.put(objectType, source)
+            if (source != null) sources.put(classFile.thisType, source)
+        }
+
+        for ((classFile, source) ← projectClassFilesWithSources) {
+            processClassFile(classFile, source)
+        }
+
+        for (classFile ← virtualClassFiles) {
+            processClassFile(classFile, null)
         }
 
         for ((classFile, source) ← libraryClassFilesWithSources) {
@@ -458,35 +469,6 @@ object Project {
             }
             objectTypeToClassFile.put(objectType, classFile)
             sources.put(objectType, source)
-        }
-
-        for ((typeDeclaration, virtualMethod) ← virtualClassFiles) {
-            val method: Option[Method] = virtualMethod match {
-                // in this case, the method is already fully resolved
-                case Some(VirtualMethod(_, _, _, some: Some[Method])) ⇒ some
-                // here, it is not, for example because it originated from a method
-                // reference that pointed to another class, which wasn't available during
-                // bytecode parsing
-                // hence, we need to try to resolve this here
-                case Some(VirtualMethod(declaringType: ObjectType, name, descriptor, None)) ⇒ {
-                    objectTypeToClassFile.get(declaringType).flatMap { classFile ⇒
-                        classFile.findMethod(name, descriptor)
-                    }
-                }
-                case _ ⇒ None
-            }
-            val syntheticClassFile = ClassFile(0, 52,
-                bi.ACC_SYNTHETIC.mask,
-                typeDeclaration.objectType,
-                typeDeclaration.theSuperclassType,
-                typeDeclaration.theSuperinterfaceTypes.toSeq,
-                IndexedSeq(),
-                method.map(IndexedSeq(_)).getOrElse(IndexedSeq()),
-                IndexedSeq(VirtualTypeFlag))
-            if (method.isDefined) {
-                methodToClassFile.put(method.get, syntheticClassFile)
-            }
-            objectTypeToClassFile.put(typeDeclaration.objectType, syntheticClassFile)
         }
 
         fieldToClassFile.repack()
@@ -511,12 +493,4 @@ object Project {
     }
 }
 
-/**
- * Internal [[ClassFile]] attribute that is used as a special marker for `ClassFile`s that
- * have been generated from virtual type declarations.
- *
- * @author Arne Lottmann
- */
-object VirtualTypeFlag extends Attribute {
-    override val kindId: Int = 0x10001
-}
+
