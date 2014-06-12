@@ -29,20 +29,18 @@
 package org.opalj
 package ai
 package domain
-package l1
+package li
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
+import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
  * Domain to track integer values at a configurable level of precision.
  *
  * @author Michael Eichberg
  */
-trait PreciseIntegerValues
-        extends Domain
-        with ConcreteIntegerValues {
+trait PreciseIntegerValues extends Domain with ConcreteIntegerValues {
     this: Configuration ⇒
 
     // -----------------------------------------------------------------------------------
@@ -53,16 +51,15 @@ trait PreciseIntegerValues
 
     /**
      * Determines how often a value can be update before we assume the value to be
-     * AnIntegerValue
+     * AnIntegerValue. The number of updates is determined by joins of incompatible
+     * values; simple mathematical operations are not counted as updates.
      */
-    protected def maxUpdateCountForIntegerValues: Int
+    protected def maxUpdatesForIntegerValues: Long
 
     /**
      * Abstracts over all values with computational type `integer`.
      */
-    sealed trait IntegerLikeValue
-            extends Value
-            with IsIntegerValue { this: DomainValue ⇒
+    sealed trait IntegerLikeValue extends Value with IsIntegerValue { this: DomainValue ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
@@ -339,7 +336,7 @@ trait PreciseIntegerValues
     override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue =
         value match {
             case v: IntegerValue ⇒
-                IntegerValue(v.value + increment)
+                IntegerValue(pc, v.value + increment)
             case _ ⇒
                 // The given value is "some (unknown) integer value"
                 // hence, we can directly return it.

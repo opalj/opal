@@ -140,4 +140,27 @@ package object ai {
     type Locals[T >: Null <: Domain#DomainValue] = org.opalj.ai.util.Locals[T]
     type ALocalsArray[T >: Null <: Domain#DomainValue] = Array[Locals[T]]
     type TheLocalsArray[T >: Null <: (Domain with Singleton)#Locals] = Array[T]
+
+    def memoryLayoutToText(
+        domain: Domain)(
+            operandsArray: domain.OperandsArray,
+            localsArray: domain.LocalsArray): String = {
+        (
+            for {
+                ((operands, locals), pc) ← (operandsArray.zip(localsArray)).zipWithIndex
+                if operands != null /*|| locals != null*/
+            } yield {
+                val localsWithIndex =
+                    for {
+                        (local, index) ← locals.zipWithIndex
+                        if (local != null)
+                    } yield {
+                        "("+index+":"+local+")"
+                    }
+
+                "PC: "+pc + operands.mkString("\n\tOperands: ", " <- ", "") +
+                    localsWithIndex.mkString("\n\tLocals: [", ",", "]")
+            }
+        ).mkString("Operands and Locals: \n", "\n", "\n")
+    }
 }

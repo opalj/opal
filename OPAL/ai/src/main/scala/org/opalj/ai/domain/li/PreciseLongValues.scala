@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 package domain
-package l1
+package li
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
@@ -37,6 +37,8 @@ import br._
 
 /**
  * Domain to track long values at a configurable level of precision.
+ *
+ * THIS DOMAIN IS CURRENTLY BUGGY AND SHOULD NOT BE USED
  *
  * @author Riadh Chtara
  * @author Michael Eichberg

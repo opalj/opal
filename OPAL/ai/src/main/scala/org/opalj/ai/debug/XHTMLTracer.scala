@@ -245,8 +245,9 @@ trait XHTMLTracer extends AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: TheOperandsArray[domain.Operands],
-            localsArray: TheLocalsArray[domain.Locals]) {
+            operandsArray: domain.OperandsArray,
+            localsArray: domain.LocalsArray,
+            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]) {
         /*ignored*/
     }
 
@@ -299,6 +300,16 @@ trait XHTMLTracer extends AITracer {
             otherOperands: domain.Operands,
             otherLocals: domain.Locals,
             result: Update[(domain.Operands, domain.Locals)]): Unit = {
+        /*ignored*/
+    }
+
+    override def establishedConstraint(
+        domain: Domain)(
+            pc: PC,
+            operands: domain.Operands,
+            locals: domain.Locals,
+            newOperands: domain.Operands,
+            newLocals: domain.Locals): Unit = {
         /*ignored*/
     }
 

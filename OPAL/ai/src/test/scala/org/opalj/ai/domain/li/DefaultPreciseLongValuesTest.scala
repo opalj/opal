@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 package domain
-package l1
+package li
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
@@ -43,88 +43,74 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 
 /**
- * This test(suite) tests various aspects related to the handling of integer values.
+ * This test(suite) checks if DefaultPreciseLongValues is working fine
  *
- * @author Michael Eichberg
+ * @author Riadh Chtara
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultPreciseIntegerValuesTest
+class DefaultPreciseLongValuesTest
         extends FlatSpec
         with Matchers
         with ParallelTestExecution {
 
-    object TestDomain
+    object LongValuesTestDomain
             extends Domain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
-            with l0.DefaultTypeLevelLongValues
+            with l0.DefaultTypeLevelIntegerValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultReferenceValuesBinding
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions
-            with DefaultPreciseIntegerValues
+            with l0.DefaultReferenceValuesBinding
+            with li.DefaultPreciseLongValues
+            with PredefinedClassHierarchy
             with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with PredefinedClassHierarchy {
+            with RecordLastReturnedValues
+            with IgnoreSynchronization {
 
         type Id = String
-        
-        def id = "TestDomain"
-        
-        override def maxUpdateCountForIntegerValues: Int = 2
+
+        override def id = "DefaultPreciseIntegerValuesTest-Domain"
+
     }
-    import TestDomain._
+
+    import LongValuesTestDomain._
 
     //
     // TESTS
     //
 
-    final val SomePC = Int.MinValue
+    behavior of "LongRange values"
 
-    behavior of "the Precise Integer Values domain"
-
-    it should ("be able to join a value with itself") in {
-        val v = IntegerValue(SomePC, 0)
+    it should ("be able to join two identical values") in {
+        val v = LongRange(0, 0)
         v.join(-1, v) should be(NoUpdate)
     }
 
-    it should ("be able to join two new values") in {
-        val v1 = IntegerValue(SomePC, 1)
-        val v2 = IntegerValue(SomePC, 2)
+    it should ("be able to join two overlapping values") in {
+        val v1 = LongRange(0, 1)
+        val v2 = LongRange(0, 2)
 
-        v1.join(SomePC, v2) should be(StructuralUpdate(TheIntegerValue(2, 1)))
-        v2.join(SomePC, v1) should be(StructuralUpdate(TheIntegerValue(1, 1)))
+        v1.join(-1, v2) should be(StructuralUpdate(LongRange(0, 2)))
+        v2.join(-1, v1) should be(NoUpdate)
+
+        val v3 = LongRange(-10, 10)
+        //v3.join(-1, v1) should be(NoUpdate)
+        v1.join(-1, v3) should be(StructuralUpdate(v3))
+
+        val v4 = LongRange(1, 0)
+        val v5 = LongRange(-3, -10)
+        v4.join(-1, v5) should be(StructuralUpdate(LongRange(1, -10)))
+
+        val v6 = LongRange(-3, -102)
+        v4.join(-1, v6) should be(StructuralUpdate(ALongValue())) // > SPREAD!
     }
 
-    it should ("be able to join two identical values without updating the update count") in {
-        val v1 = TheIntegerValue(5, 1 /*updates*/ )
-        val v2 = TheIntegerValue(5, 1 /*updates*/ )
+    it should ("be able to join with ALongValue") in {
+        val v1 = LongRange(0, 1)
 
-        v1.join(SomePC, v2) should be(NoUpdate)
-        v2.join(SomePC, v1) should be(NoUpdate)
+        v1.join(-1, ALongValue()) should be(StructuralUpdate(ALongValue()))
     }
 
-    it should ("be able to join two identical values even if the update count is exceed") in {
-        val v1 = TheIntegerValue(5, 5 /*updates*/ )
-        val v2 = TheIntegerValue(5, 5 /*updates*/ )
-
-        v1.join(SomePC, v2) should be(NoUpdate)
-        v2.join(SomePC, v1) should be(NoUpdate)
-    }
-
-    it should ("be able to join two values where one value was already updated the maximum number of times") in {
-        val v1 = TheIntegerValue(5, 2 /*updates*/ )
-        val v2 = IntegerValue(SomePC, 10)
-
-        v1.join(SomePC, v2) should be(StructuralUpdate(AnIntegerValue()))
-        v2.join(SomePC, v1) should be(StructuralUpdate(AnIntegerValue()))
-    }
-
-    it should ("be able to join with AnIntegerValue") in {
-        val v1 = IntegerValue(0, 1)
-
-        v1.join(-1, AnIntegerValue()) should be(StructuralUpdate(AnIntegerValue()))
-        AnIntegerValue().join(-1, v1) should be(NoUpdate)
-    }
 }

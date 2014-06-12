@@ -48,20 +48,7 @@ import language.implicitConversions
  *
  * @author Michael Eichberg
  */
-trait RecordReturnedValues extends Domain {
-
-    /**
-     * This type determines in which way the returned values are recorded.
-     *
-     * For example, if it is sufficient to just record the last value that was
-     * returned by a specific return instruction, then the type could be `DomainValue`
-     * and the implementation of `joinReturnedValues(...)` would just return the last
-     * given value. Furthermore, `returnedValue` would be the identity function.
-     *
-     * However, if you have a (more) precise domain you may want to collect all
-     * returned values. In this case the type of `ReturnedValue` could be Set[DomainValue].
-     */
-    type ReturnedValue <: AnyRef
+trait RecordReturnedValues extends RecordReturnedValuesInfrastructure {
 
     /**
      * Wraps the given value into a `ReturnedValue`.
@@ -107,6 +94,29 @@ trait RecordReturnedValues extends Domain {
                 }
             )
     }
+}
+
+/**
+ * Infrastructure to record returned values.
+ *
+ * @author Michael Eichberg
+ */
+trait RecordReturnedValuesInfrastructure extends Domain {
+
+    /**
+     * This type determines in which way the returned values are recorded.
+     *
+     * For example, if it is sufficient to just record the last value that was
+     * returned by a specific return instruction, then the type could be `DomainValue`
+     * and the implementation of `joinReturnedValues(...)` would just return the last
+     * given value. Furthermore, `returnedValue` would be the identity function.
+     *
+     * However, if you have a (more) precise domain you may want to collect all
+     * returned values. In this case the type of `ReturnedValue` could be Set[DomainValue].
+     */
+    type ReturnedValue <: AnyRef
+
+    protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit
 
     abstract override def areturn(pc: PC, value: DomainValue) {
         doRecordReturnedValue(pc, value)

@@ -37,9 +37,9 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-import br._
-import bi.reader.ClassFileReader
-import br.reader.Java8Framework.ClassFiles
+import org.opalj.br._
+import org.opalj.bi.reader.ClassFileReader
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * This system test(suite) just loads a very large number of class files and performs

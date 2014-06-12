@@ -65,8 +65,9 @@ trait AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: TheOperandsArray[domain.Operands],
-            localsArray: TheLocalsArray[domain.Locals])
+            operandsArray: domain.OperandsArray,
+            localsArray: domain.LocalsArray,
+            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)])
 
     /**
      * Always called by OPAL before an instruction is evaluated.
@@ -109,12 +110,12 @@ trait AITracer {
 
     /**
      * Called by the interpreter if a successor instruction is NOT scheduled, because
-     * the abstract state didn't change.        
-     */        
+     * the abstract state didn't change.
+     */
     def noFlow(
         domain: Domain)(
             currentPC: PC,
-            targetPC: PC) : Unit
+            targetPC: PC): Unit
 
     /**
      * Called if the instruction with the `targetPC` was rescheduled. I.e., the
@@ -196,4 +197,20 @@ trait AITracer {
      * interrupted.
      */
     def result(result: AIResult): Unit
+
+    /**
+     * Called by the framework if a constraint is established. Constraints are generally
+     * established whenever a conditional jump is performed and the
+     * evaluation of the condition wasn't definitive. In this case a constraint will
+     * be established for each branch. In general the constraint will be applied
+     * before the join of the stack and locals with the successor instruction is done.
+     */
+    def establishedConstraint(
+        domain: Domain)(
+            pc: PC,
+            operands: domain.Operands,
+            locals: domain.Locals,
+            newOperands: domain.Operands,
+            newLocals: domain.Locals)
+
 }

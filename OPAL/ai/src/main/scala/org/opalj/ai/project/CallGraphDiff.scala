@@ -55,58 +55,75 @@ object CallGraphDiff extends AnalysisExecutor {
             import CallGraphFactory.defaultEntryPointsForLibraries
             val entryPoints = defaultEntryPointsForLibraries(project)
 
-            val ComputedCallGraph(callGraph1, _, _) = time {
+            val ComputedCallGraph(lessPreciseCG, _, _) = time {
                 CallGraphFactory.create(
                     project,
                     entryPoints,
-                    new CHACallGraphAlgorithmConfiguration
+                                        new CHACallGraphAlgorithmConfiguration
 //                    new VTACallGraphAlgorithmConfiguration {
-//                        override def Domain(
-//                            theProject: SomeProject,
+//                        override def Domain[Source](
+//                            theProject: Project[Source],
 //                            cache: Cache,
 //                            classFile: ClassFile,
 //                            method: Method): VTACallGraphDomain =
-//                            new DefaultVTACallGraphDomain(theProject, cache, classFile, method, 0)
+//                            new DefaultVTACallGraphDomain(
+//                                theProject, cache, classFile, method, 16
+//                            )
 //                    }
                 )
             } { t ⇒ println("Creating the first call graph took: "+ns2sec(t)) }
 
-            val ComputedCallGraph(callGraph2, _, _) = time {
+            val ComputedCallGraph(morePreciseCG, _, _) = time {
                 CallGraphFactory.create(
                     project,
                     entryPoints,
                     new VTACallGraphAlgorithmConfiguration {
-                        override def Domain(
-                            theProject: SomeProject,
+                        override def Domain[Source](
+                            theProject: Project[Source],
                             cache: Cache,
                             classFile: ClassFile,
                             method: Method): VTACallGraphDomain =
-                            new DefaultVTACallGraphDomain(theProject, cache, classFile, method, 1)
+                            new DefaultVTACallGraphDomain(
+                                theProject, cache, classFile, method, 16
+                            ) with domain.ConstantFieldValuesResolution[Source]
                     })
             } { t ⇒ println("Creating the second call graph took: "+ns2sec(t)) }
 
             println("Methods that have different call graphs:")
             time {
-                callGraph1.foreachCallingMethod { (method, callees1 /*: Map[PC, Iterable[Method]]*/ ) ⇒
-                    val callees2 = callGraph2.calls(method)
-                    val diff =
-                        (callees1.par.collect {
-                            case (pc, callees) if callees2.get(pc).map(_ != callees).getOrElse(true) ⇒
-                                (
-                                    method.body.get.lineNumber(pc),
-                                    callees2.get(pc),
-                                    callees2.get(pc).map(callees.toSet -- _).getOrElse(callees)
-                                )
-                        }).filter(_._3.nonEmpty)
+                lessPreciseCG.foreachCallingMethod { (method, allCalleesLPCG /*: Map[PC, Iterable[Method]]*/ ) ⇒
+                    val allCalleesMPCG = morePreciseCG.calls(method)
 
-                    diff.seq foreach { callSite ⇒
+                    var reports: List[CGDifferenceReport] = Nil
+                    allCalleesLPCG foreach { callSiteLPCG ⇒
+                        val (pc, calleesLPCG) = callSiteLPCG
+                        val callSiteMPCGOption = allCalleesMPCG.get(pc)
+                        if (callSiteMPCGOption.isDefined) {
+                            val calleesMPCG = scala.collection.mutable.HashSet() ++ (callSiteMPCGOption.get)
+                            val additionalCallTargetsInLPCG = for {
+                                calleeLPCG ← calleesLPCG
+                                if !calleesMPCG.remove(calleeLPCG)
+                            } yield {
+                                calleeLPCG
+                            }
+                            if (additionalCallTargetsInLPCG.nonEmpty)
+                                reports = AdditionalCallTargets(project, method, pc, additionalCallTargetsInLPCG) :: reports
 
-                        print(project.classFile(method).thisType.toJava+"{ "+method.toJava+"{")
-                        print(Console.WHITE + Console.BLACK_B + callSite._1 + Console.RESET)
-                        print(Console.BLUE + callSite._2.mkString(", ") + Console.RESET)
-                        print(Console.RED + callSite._3.mkString(", ") + Console.RESET)
-                        println("} }")
+                            if (calleesMPCG.nonEmpty)
+                                reports = UnexpectedCallTargets(project, method, pc, calleesMPCG) :: reports
+
+                        } else {
+                            reports = AdditionalCallTargets(project, method, pc, calleesLPCG) :: reports
+                        }
                     }
+
+                    if (reports.nonEmpty)
+                        println(
+                            reports.mkString(
+                                "Differences for "+project.classFile(method).thisType.toJava+" - "+method.descriptor.toJava(method.name)+":\n\t",
+                                "\n\t",
+                                "\n\n")
+                        )
                 }
             } { t ⇒ println("Calculting the differences took: "+ns2sec(t)) }
 
@@ -115,7 +132,42 @@ object CallGraphDiff extends AnalysisExecutor {
     }
 }
 
+trait CGDifferenceReport {
+    val differenceClassifier: String
+    val project: SomeProject
+    val method: Method
+    val pc: PC
+    val callTargets: Iterable[Method]
+    final override def toString: String = {
+        import Console._
+        differenceClassifier+
+            "PC="+pc+"(Line="+method.body.get.lineNumber(pc).getOrElse("NotAvailable")+"): "+
+            (
+                callTargets map { method ⇒
+                    project.classFile(method).thisType.toJava+"{ "+
+                        CYAN + method.descriptor.toJava(method.name) + RESET+
+                        " }"
+                }
+            ).mkString(BOLD+"; "+RESET)
+    }
+}
 
-   
-                            
+import scala.language.existentials
+
+case class AdditionalCallTargets(
+        project: SomeProject,
+        method: Method,
+        pc: PC,
+        callTargets: Iterable[Method]) extends CGDifferenceReport {
+    import Console._
+    val differenceClassifier = BLUE+"[Additional] "+RESET
+}
+case class UnexpectedCallTargets(
+        project: SomeProject,
+        method: Method,
+        pc: PC,
+        callTargets: Iterable[Method]) extends CGDifferenceReport {
+    import Console._
+    val differenceClassifier = RED+"[Unexpected] "+RESET
+}                        
      

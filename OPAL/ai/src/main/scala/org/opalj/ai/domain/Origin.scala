@@ -31,7 +31,7 @@ package ai
 package domain
 
 /**
- * This domain can be used if information about the origin of a value is needed.
+ * Provides information about the origin of a value.
  *
  * ==Usage==
  * An analysis that requires information about the origin of a value should declare
@@ -42,7 +42,7 @@ package domain
  * }
  * }}}
  * Additionally, the analysis has to make sure that the analysis used to capture
- * information about values provide the necessary information.
+ * information about values provides the necessary information.
  *
  * ==Implementation==
  * This trait should be inherited from by all domains that make information about

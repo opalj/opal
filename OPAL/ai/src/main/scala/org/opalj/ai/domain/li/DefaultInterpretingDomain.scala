@@ -27,27 +27,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package reader
-
-import bi.reader.ConstantValue_attributeReader
+package ai
+package domain
+package li
 
 /**
- * @author Michael Eichberg
+ * ClassValues must come after TypeLevelInvokeInstructionsWithNullPointerHandling.
+ * @see ClassValues type documentation comment
  */
-trait ConstantValue_attributeBinding
-        extends ConstantValue_attributeReader
-        with ConstantPoolBinding
-        with AttributeBinding {
+trait DefaultInterpretingDomain
+    extends Domain
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l0.DefaultTypeLevelLongValues
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.TypeLevelInvokeInstructions
+    //    with DefaultReferenceValuesBinding
+    //    with DefaultStringValuesBinding
+    with l1.DefaultClassValuesBinding
+    with l1.DefaultArrayValuesBinding
+    with li.DefaultPreciseIntegerValues
+    with PredefinedClassHierarchy
 
-    type ConstantValue_attribute = ConstantFieldValue[_]
+class DefaultInterpretingConfigurableDomain[I](
+    val id: I)
+        extends DefaultInterpretingDomain
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization {
 
-    def ConstantValue_attribute(
-        cp: Constant_Pool,
-        attributeNameIndex: Constant_Pool_Index,
-        constantValueIndex: Constant_Pool_Index) = {
-        cp(constantValueIndex).asConstantFieldValue(cp)
-    }
+    type Id = I
+
+    override def maxUpdatesForIntegerValues: Long = 5l
 }
-
-

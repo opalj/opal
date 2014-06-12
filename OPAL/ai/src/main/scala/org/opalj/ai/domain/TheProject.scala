@@ -35,6 +35,20 @@ import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy, Project }
 /**
  * Provides information about the underlying project.
  *
+ * ==Usage==
+ * If a (partial-) domain needs information about the project declare a corresponding
+ * self-type dependency.
+ * {{{
+ * trait MyIntegerValuesDomain extends IntegerValues { this : TheProject =>
+ * }}}
+ *
+ * ==Providing Information about a Project==
+ * A domain that provides information about the currently analyzed project should inherit
+ * from this trait and implement the respective method. '''It is recommended that
+ * the domain that provides the project information does not use the `override` access
+ * flag.''' This way the compiler will issue a warning if two implementations are used
+ * to create a final domain.
+ *
  * @author Michael Eichberg
  */
 trait TheProject[Source] { this: Domain ⇒

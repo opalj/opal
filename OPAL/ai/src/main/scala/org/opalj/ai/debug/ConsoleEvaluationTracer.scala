@@ -43,17 +43,19 @@ import br.instructions.Instruction
  *
  * ==Thread Safety==
  * This tracer has internal state that is dependent on the state of the evaluation.
- * Hence, '''this class is not thread safe and every `AI` instance should use its
- * own instance'''.
+ * Hence, '''this class is not thread safe and a new `AI` instance should be used per
+ * method that is analyzed'''.
  *
  * @author Michael Eichberg
  */
 trait ConsoleEvaluationTracer extends AITracer {
 
+    import Console._
+
     private[this] var indent = 0
     private[this] def printIndent() { (0 until indent) foreach (i ⇒ print("\t")) }
 
-    def reset() { indent = 0 }
+    def reset(): Unit = { indent = 0 }
 
     override def instructionEvalution(
         domain: Domain)(
@@ -70,7 +72,10 @@ trait ConsoleEvaluationTracer extends AITracer {
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
             operandsArray: domain.OperandsArray,
-            localsArray: domain.LocalsArray) { /*EMPTY*/ }
+            localsArray: domain.LocalsArray,
+            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]): Unit = {
+        /*EMPTY*/
+    }
 
     override def rescheduled(
         domain: Domain)(
@@ -103,7 +108,7 @@ trait ConsoleEvaluationTracer extends AITracer {
     override def jumpToSubroutine(domain: Domain)(pc: PC): Unit = {
         println
         printIndent
-        print(Console.BOLD+"↳\t︎"+Console.RESET)
+        print(BOLD+"↳\t︎"+RESET)
         indent += 1
     }
 
@@ -113,19 +118,25 @@ trait ConsoleEvaluationTracer extends AITracer {
             returnAddress: PC,
             subroutineInstructions: List[PC]): Unit = {
         indent -= 1
-        println(Console.BOLD+"✓"+"(Resetting: "+subroutineInstructions.mkString(", ")+")"+Console.RESET)
+
+        println(BOLD+"✓"+"(Resetting: "+subroutineInstructions.mkString(", ")+")"+RESET)
         printIndent
     }
 
-    /**
-     * Called when a ret instruction is encountered.
-     */
     override def ret(
         domain: Domain)(
             pc: PC,
             returnAddress: PC,
             oldWorklist: List[PC],
             newWorklist: List[PC]): Unit = { /*EMPTY*/ }
+
+    override def establishedConstraint(
+        domain: Domain)(
+            pc: PC,
+            operands: domain.Operands,
+            locals: domain.Locals,
+            newOperands: domain.Operands,
+            newLocals: domain.Locals): Unit = { /*EMPTY*/ }
 
     override def result(result: AIResult): Unit = { /*EMPTY*/ }
 }

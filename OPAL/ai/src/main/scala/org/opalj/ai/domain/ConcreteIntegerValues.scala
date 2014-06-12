@@ -37,8 +37,14 @@ package domain
 import org.opalj.util.Answer
 
 /**
- * Optional functionality related to extracting a concrete integer value from some
- * domain value with computational type integer that is not required by the OPAL core.
+ * Provides information about an integer value's precise value, if this information
+ * is available.
+ *
+ * The information about an integer value's range that is required by OPAL is defined
+ * by the `Domain` trait.
+ *
+ *
+ * @note This functionality is not required by the OPAL core.
  *
  * @author Michael Eichberg
  */

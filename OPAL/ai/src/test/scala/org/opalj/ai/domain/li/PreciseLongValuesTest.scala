@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 package domain
-package l1
+package li
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
@@ -53,9 +53,31 @@ class PreciseLongValuesTest
         with Matchers
         with ParallelTestExecution {
 
-    val domain = new DefaultConfigurableDomain("PreciseLongValuesTest")
-    import domain._
+    object LongValuesTestDomain
+            extends Domain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            with l0.DefaultReferenceValuesBinding
+            with li.DefaultPreciseLongValues
+            with li.DefaultPreciseIntegerValues
+            with PredefinedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with RecordLastReturnedValues
+            with IgnoreSynchronization {
 
+        type Id = String
+
+        override def id = "DefaultPreciseIntegerValuesTest-Domain"
+
+        override def maxUpdatesForIntegerValues: Long = 5
+
+    }
+
+    import LongValuesTestDomain._
     //
     // TESTS
     //
@@ -74,22 +96,12 @@ class PreciseLongValuesTest
         v1.equals(v3) should be(false)
     }
 
-// TODO [RIADH]   it should ("be able to check if a long value is in some range") in {
-//        val v1 = LongValue(-1, 7)
-//        isSomeValueInRange(v1, 6, 10) should be(Yes)
-//    }
-//
-// TODO [RIADH]   it should ("be able to check if a long value is not in some range") in {
-//        val v1 = LongValue(-1, 7)
-//        isSomeValueNotInRange(v1, 8, 10) should be(No)
-//    }
-
     it should ("be able to check if a long value is less than another value") in {
         val v1 = LongValue(-1, 7)
         val v2 = LongValue(-1, 8)
-        longIsLessThan(v1, v2) should be(Answer(true))
-        longIsLessThan(v1, v1) should be(Answer(false))
-        longIsLessThan(v2, v1) should be(Answer(false))
+        longIsLessThan(v1, v2) should be(Yes)
+        longIsLessThan(v1, v1) should be(No)
+        longIsLessThan(v2, v1) should be(No)
     }
 
     it should ("be able to check if a long value is less than or equal another value") in {

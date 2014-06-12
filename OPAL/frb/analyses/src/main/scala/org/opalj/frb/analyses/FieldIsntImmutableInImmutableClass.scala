@@ -52,7 +52,6 @@ private class ImmutabilityAnalysisDomain[I](val id: I)
         extends Domain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
-        with DefaultPerInstructionPostProcessing
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with l0.DefaultTypeLevelLongValues

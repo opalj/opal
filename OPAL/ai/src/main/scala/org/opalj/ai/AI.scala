@@ -349,7 +349,8 @@ trait AI[D <: Domain] {
 
         if (tracer.isDefined)
             tracer.get.continuingInterpretation(code, theDomain)(
-                initialWorkList, alreadyEvaluated, theOperandsArray, theLocalsArray
+                initialWorkList, alreadyEvaluated,
+                theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall
             )
 
         import theDomain.{ DomainValue, ExceptionValue, ExceptionValues, Operands, Locals }
@@ -363,7 +364,6 @@ trait AI[D <: Domain] {
 
         // import int values related functionality
         import theDomain.{ intAreEqual, intAreNotEqual, IntAreEqual, IntAreNotEqual }
-        import theDomain.{ intEstablishAreEqual, intEstablishAreNotEqual }
         import theDomain.{ intIs0, intIsNot0, IntIs0, IntIsNot0 }
         import theDomain.{ intIsGreaterThan, intIsGreaterThan0, IntIsGreaterThan, IntIsGreaterThan0 }
         import theDomain.{ intIsLessThan, intIsLessThan0, IntIsLessThan, IntIsLessThan0 }
@@ -613,11 +613,23 @@ trait AI[D <: Domain] {
                             {
                                 val (newOperands, newLocals) =
                                     yesConstraint(branchTarget, operand, rest, locals)
+                                if (tracer.isDefined &&
+                                    ((rest ne newOperands) || (locals ne newLocals))) {
+                                    tracer.get.establishedConstraint(theDomain)(
+                                        pc, rest, locals, newOperands, newLocals
+                                    )
+                                }
                                 gotoTarget(pc, branchTarget, false, newOperands, newLocals)
                             }
                             {
                                 val (newOperands, newLocals) =
                                     noConstraint(nextPC, operand, rest, locals)
+                                if (tracer.isDefined &&
+                                    ((rest ne newOperands) || (locals ne newLocals))) {
+                                    tracer.get.establishedConstraint(theDomain)(
+                                        pc, rest, locals, newOperands, newLocals
+                                    )
+                                }
                                 gotoTarget(pc, nextPC, false, newOperands, newLocals)
                             }
                         }
@@ -634,24 +646,36 @@ trait AI[D <: Domain] {
 
                     val branchInstruction = as[ConditionalBranchInstruction](instruction)
                     val value2 = operands.head
-                    var remainingOperands = operands.tail
+                    val remainingOperands = operands.tail
                     val value1 = remainingOperands.head
-                    remainingOperands = remainingOperands.tail
+                    val rest = remainingOperands.tail
                     val branchTarget = pc + branchInstruction.branchoffset
                     val nextPC = code.pcOfNextInstruction(pc)
                     val testResult = domainTest(value1, value2)
                     testResult match {
-                        case Yes ⇒ gotoTarget(pc, branchTarget, false, remainingOperands, locals)
-                        case No  ⇒ gotoTarget(pc, nextPC, false, remainingOperands, locals)
+                        case Yes ⇒ gotoTarget(pc, branchTarget, false, rest, locals)
+                        case No  ⇒ gotoTarget(pc, nextPC, false, rest, locals)
                         case Unknown ⇒ {
                             {
                                 val (newOperands, newLocals) =
-                                    yesConstraint(branchTarget, value1, value2, remainingOperands, locals)
+                                    yesConstraint(branchTarget, value1, value2, rest, locals)
+                                if (tracer.isDefined &&
+                                    ((rest ne newOperands) || (locals ne newLocals))) {
+                                    tracer.get.establishedConstraint(theDomain)(
+                                        pc, rest, locals, newOperands, newLocals
+                                    )
+                                }
                                 gotoTarget(pc, branchTarget, false, newOperands, newLocals)
                             }
                             {
                                 val (newOperands, newLocals) =
-                                    noConstraint(nextPC, value1, value2, remainingOperands, locals)
+                                    noConstraint(nextPC, value1, value2, rest, locals)
+                                if (tracer.isDefined &&
+                                    ((rest ne newOperands) || (locals ne newLocals))) {
+                                    tracer.get.establishedConstraint(theDomain)(
+                                        pc, rest, locals, newOperands, newLocals
+                                    )
+                                }
                                 gotoTarget(pc, nextPC, false, newOperands, newLocals)
                             }
                         }
@@ -922,12 +946,17 @@ trait AI[D <: Domain] {
                                         previousKey = key
                                     }
                                 }
-
                                 if (theDomain.intIsSomeValueInRange(index, key, key).isYesOrUnknown) {
                                     val branchTarget = pc + offset
                                     val (updatedOperands, updatedLocals) =
                                         theDomain.intEstablishValue(
                                             branchTarget, key, index, remainingOperands, locals)
+                                    if (tracer.isDefined &&
+                                        ((remainingOperands ne updatedOperands) || (locals ne updatedLocals))) {
+                                        tracer.get.establishedConstraint(theDomain)(
+                                            pc, remainingOperands, locals, updatedOperands, updatedLocals
+                                        )
+                                    }
                                     gotoTarget(
                                         pc, branchTarget, false,
                                         updatedOperands, updatedLocals)
@@ -958,6 +987,12 @@ trait AI[D <: Domain] {
                                 val (updatedOperands, updatedLocals) =
                                     theDomain.intEstablishValue(
                                         branchTarget, v, index, remainingOperands, locals)
+                                if (tracer.isDefined &&
+                                    ((remainingOperands ne updatedOperands) || (locals ne updatedLocals))) {
+                                    tracer.get.establishedConstraint(theDomain)(
+                                        pc, remainingOperands, locals, updatedOperands, updatedLocals
+                                    )
+                                }
                                 gotoTarget(
                                     pc, branchTarget, false,
                                     updatedOperands, updatedLocals)
@@ -1880,19 +1915,19 @@ trait AI[D <: Domain] {
                 case cause @ DomainException(message) ⇒
                     throw InterpretationFailedException(
                         cause, theDomain)(
-                            pc, worklist, evaluated, operandsArray, localsArray)
+                            pc, worklist, evaluated,
+                            operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
 
                 case cause: Throwable ⇒
                     throw InterpretationFailedException(
                         cause, theDomain)(
-                            pc, worklist, evaluated, operandsArray, localsArray)
+                            pc, worklist, evaluated,
+                            operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
             }
         }
 
-        val result =
-            AIResultBuilder.completed(
-                code, theDomain)(
-                    evaluated, operandsArray, localsArray)
+        import AIResultBuilder.completed
+        val result = completed(code, theDomain)(evaluated, operandsArray, localsArray)
         theDomain.abstractInterpretationEnded(result)
         if (tracer.isDefined) tracer.get.result(result)
         result
@@ -1910,7 +1945,7 @@ private object AI {
      * The list of program counters (`List(0)`) that is used when we analysis a method
      * right from the beginning.
      */
-    private final val initialWorkList: List[PC] = List(0)
+    final val initialWorkList: List[PC] = List(0)
 
 }
 
@@ -1924,7 +1959,7 @@ private object AI {
  *
  * @author Michael Eichberg
  */
-private object CTC1 {
+object CTC1 {
     def unapply[D <: Domain](value: D#DomainValue): Boolean =
         value.computationalType.category == 1
 }
@@ -1939,7 +1974,7 @@ private object CTC1 {
  *
  * @author Michael Eichberg
  */
-private object CTC2 {
+object CTC2 {
     def unapply[D <: Domain](value: D#DomainValue): Boolean =
         value.computationalType.category == 2
 }

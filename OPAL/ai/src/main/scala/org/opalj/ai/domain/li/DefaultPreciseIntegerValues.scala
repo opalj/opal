@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 package domain
-package l1
+package li
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
@@ -79,7 +79,7 @@ trait DefaultPreciseIntegerValues
                             MetaInformationUpdate(TheIntegerValue(otherValue, Math.max(this.updateCount, otherUpdateCount)))
                     } else {
                         val newUpdateCount = Math.max(this.updateCount, otherUpdateCount)+1
-                        if (newUpdateCount < maxUpdateCountForIntegerValues)
+                        if (newUpdateCount < maxUpdatesForIntegerValues)
                             StructuralUpdate(TheIntegerValue(otherValue, newUpdateCount))
                         else
                             StructuralUpdate(AnIntegerValue())

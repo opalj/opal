@@ -29,10 +29,12 @@
 package org.opalj
 package ai
 
-import br._
+import org.opalj.br.Code
 
 /**
  * Encapsulates the result of the abstract interpretation of a method.
+ *
+ * @author Michael Eichberg
  */
 sealed abstract class AIResult {
     val code: Code
@@ -54,31 +56,27 @@ sealed abstract class AIResult {
     def stateToString: String = {
         var result = ""
         result += evaluated.mkString("Evaluated: ", ",", "\n")
-        result += worklist.mkString("(Remaining) Worklist: ", ",", "\n")
-        result +=
-            (
-                for {
-                    ((operands, locals), pc) ← (operandsArray.zip(localsArray)).zipWithIndex
-                    if operands != null /*|| locals != null*/
-                } yield {
-                    val localsWithIndex =
-                        for {
-                            (local, index) ← locals.zipWithIndex
-                            if (local != null)
-                        } yield {
-                            "("+index+":"+local+")"
-                        }
+        result += (
+            if (worklist.nonEmpty) worklist.mkString("Remaining Worklist: ", ",", "\n")
+            else "Worklist: empty\n"
+        )
+        if (memoryLayoutBeforeSubroutineCall.nonEmpty) {
+            for ((operandsArray, localsArray) ← memoryLayoutBeforeSubroutineCall) {
+                result += "Memory Layout Before Subroutine Call:\n"
+                result += memoryLayoutToText(domain)(operandsArray, localsArray)
+            }
+        }
+        result += "Current Memory Layout:\n"
+        result += memoryLayoutToText(domain)(operandsArray, localsArray)
 
-                    "PC: "+pc + operands.mkString("\n\tOperands: ", " <- ", "") +
-                        localsWithIndex.mkString("\n\tLocals: [", ",", "]")
-                }
-            ).mkString("Operands and Locals: \n", "\n", "\n")
         result
     }
 }
 
 /**
  * Encapsulates the intermediate result of an aborted abstract interpretation of a method.
+ *
+ * @author Michael Eichberg
  */
 sealed abstract class AIAborted extends AIResult {
 
@@ -87,7 +85,7 @@ sealed abstract class AIAborted extends AIResult {
     def continueInterpretation(ai: AI[_ >: domain.type]): AIResult
 
     override def stateToString: String =
-        "The abstract interpretation was aborted; "+super.stateToString
+        "The abstract interpretation was aborted:\n"+super.stateToString
 }
 
 /**
@@ -102,7 +100,7 @@ sealed abstract class AICompleted extends AIResult {
     def restartInterpretation(ai: AI[_ >: domain.type]): AIResult
 
     override def stateToString: String =
-        "The abstract interpretation succeeded; "+super.stateToString
+        "The abstract interpretation succeeded:\n"+super.stateToString
 }
 
 /**

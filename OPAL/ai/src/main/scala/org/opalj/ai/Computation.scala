@@ -36,9 +36,15 @@ package ai
  * exceptional value(s) and a value.
  *
  * In the latter case the abstract interpreter will generally follow all
- * possible paths. Please note, that a computation that declares to return a result
- * (i.e., `V` is not `Nothing`) must either return a result and/or throw an exception, but
- * is not allowed to return no result and no exceptions!
+ * possible paths. A computation that declares to return a result
+ * (i.e., the type `V` is not `Nothing`) must not return a result and/or throw an
+ * exception if the computation did not finish.
+ *
+ * ==Querying Computations==
+ * Before accessing a computations result ([[result]] or [[exceptions]]) it first 
+ * has to be checked whether the computation returned normally ([[returnsNormally]]) 
+ * or threw an exception ([[throwsException]]). Only if `returnsNormally` returns 
+ * `true` the methods `result` and `hasResult` are defined.
  *
  * @tparam V The result of the computation. Typically a `DomainValue`;
  *      if the computation is executed for its side

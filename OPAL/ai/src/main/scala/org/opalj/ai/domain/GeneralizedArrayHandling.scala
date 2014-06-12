@@ -40,6 +40,10 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
  */
 trait GeneralizedArrayHandling { this: Domain ⇒
 
+    //
+    // NEW INTERFACE
+    //
+    
     /*abstract*/ def arrayload(
         pc: PC,
         index: DomainValue,
@@ -50,6 +54,10 @@ trait GeneralizedArrayHandling { this: Domain ⇒
         value: DomainValue,
         index: DomainValue,
         arrayRef: DomainValue): ArrayStoreResult
+
+    //
+    // IMPLEMENTATION OF DOMAIN'S "ARRAY METHODS"
+    //
 
     /*override*/ def aaload(pc: PC, index: DomainValue, arrayref: DomainValue): ArrayLoadResult =
         arrayload(pc, index, arrayref)

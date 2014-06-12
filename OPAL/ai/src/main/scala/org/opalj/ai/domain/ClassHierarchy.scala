@@ -36,6 +36,8 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.{ ClassHierarchy ⇒ DefaultClassHierarchy }
 
 /**
+ * Makes a project's class hierarchy available to a `Domain`.
+ *
  * Implementation of a Domain's `isSubtypeOf(...)` method that delegates to
  * the corresponding method defined in
  * [[org.opalj.br.analyses.ClassHierarchy]].
@@ -57,7 +59,7 @@ trait ClassHierarchy { this: Domain ⇒
      *
      * @see Delegates to [[org.opalj.br.analyses.ClassHierarchy]]'s `isSubtypeOf` method.
      */
-    override def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
+    /*override*/ def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer =
         classHierarchy.isSubtypeOf(subtype, supertype)
 
 }

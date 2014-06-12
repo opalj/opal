@@ -27,27 +27,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package reader
+package ai
+package domain
 
-import bi.reader.ConstantValue_attributeReader
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import org.opalj.br.{ ObjectType, FieldType }
 
 /**
- * @author Michael Eichberg
+ * Resolves references to final static fields that have simple constant values.
+ *
+ * '''However, a typical Java compiler automatically resolves all simple references
+ * and, hence, this trait has for Java projects in general no effect.''' If we analyze
+ * other language that compile to the JVM platform, the effect might be different.
+ *
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait ConstantValue_attributeBinding
-        extends ConstantValue_attributeReader
-        with ConstantPoolBinding
-        with AttributeBinding {
+trait ConstantFieldValuesResolution[Source] extends Domain {
+    this: TheProject[Source] with ClassHierarchy ⇒
 
-    type ConstantValue_attribute = ConstantFieldValue[_]
+    abstract override def getstatic(
+        pc: PC,
+        classType: ObjectType,
+        fieldName: String,
+        fieldType: FieldType): Computation[DomainValue, Nothing] = {
 
-    def ConstantValue_attribute(
-        cp: Constant_Pool,
-        attributeNameIndex: Constant_Pool_Index,
-        constantValueIndex: Constant_Pool_Index) = {
-        cp(constantValueIndex).asConstantFieldValue(cp)
+        classHierarchy.resolveFieldReference(classType, fieldName, fieldType, project) match {
+            case Some(field) if field.isFinal && field.isStatic &&
+                (field.fieldType.isBaseType || (field.fieldType eq ObjectType.String)) ⇒
+                field.constantFieldValue.map(cv ⇒
+                    ComputedValue(ConstantFieldValue(pc, cv))
+                ).getOrElse(
+                    super.getstatic(pc, classType, fieldName, fieldType)
+                )
+
+            case _ ⇒
+                super.getstatic(pc, classType, fieldName, fieldType)
+        }
     }
 }
-
-

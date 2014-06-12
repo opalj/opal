@@ -30,12 +30,10 @@ package org.opalj
 package ai
 package project
 
-import br._
-import br.analyses.SomeProject
-
-import domain._
-
 import scala.collection.Set
+
+import org.opalj.br.{ ClassFile, Method, MethodSignature }
+import org.opalj.br.analyses.Project
 
 /**
  * Configuration of a call graph algorithm that uses CHA.
@@ -55,8 +53,8 @@ class CHACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration
     type Cache = CallGraphCache[Contour, Value]
     def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Value]
 
-    def Domain(
-        theProject: SomeProject,
+    def Domain[Source](
+        theProject: Project[Source],
         cache: Cache,
         classFile: ClassFile,
         method: Method): CHACallGraphDomain =

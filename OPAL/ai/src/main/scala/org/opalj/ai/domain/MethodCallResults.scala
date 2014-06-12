@@ -34,8 +34,8 @@ import language.implicitConversions
 
 /**
  * Trait that can be mixed in if information is needed about all returned values and
- * the thrown exceptions. This information is, however, only available after the
- * evaluation of a method has completed.
+ * the thrown exceptions. ''This information is, however, only available after the
+ * evaluation of a method has completed.''
  *
  * @author Michael Eichberg
  */

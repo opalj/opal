@@ -69,7 +69,7 @@ trait TypeLevelInvokeInstructions { this: Domain with Configuration ⇒
                     ComputedValueOrException(
                         TypedValue(pc, returnType),
                         Set(NullPointerException(pc)))
-            case _ ⇒
+            case /*No or Unknown & DoNotThrowNullPointerException*/ _ ⇒
                 val returnType = methodDescriptor.returnType
                 if (returnType.isVoidType)
                     ComputationWithSideEffectOnly

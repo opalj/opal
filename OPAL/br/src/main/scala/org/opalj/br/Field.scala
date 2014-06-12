@@ -88,8 +88,8 @@ final class Field private (
     /**
      * Returns this field's constant value.
      */
-    def constantValue: Option[ConstantValue[_]] =
-        attributes collectFirst { case cv: ConstantValue[_] ⇒ cv }
+    def constantFieldValue: Option[ConstantFieldValue[_]] =
+        attributes collectFirst { case cv: ConstantFieldValue[_] ⇒ cv }
 
     def toJavaSignature: String = fieldType.toJava+" "+name
 
@@ -97,8 +97,6 @@ final class Field private (
      * Defines an absolute order on `Field` objects w.r.t. their names and types.
      * The order is defined by first lexicographically comparing the names of the
      * fields and – if the names are identical – by comparing the types.
-     *
-     * Hence, for two fields that have the same name and type flags the result will be `false`.
      */
     def compare(other: Field): Int = {
         if (this.name eq other.name) {
@@ -126,7 +124,7 @@ object Field {
         accessFlags: Int,
         name: String,
         fieldType: FieldType,
-        attributes: Attributes): Field = {
+        attributes: Attributes): Field = {        
         new Field(
             accessFlags,
             name.intern(),

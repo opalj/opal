@@ -37,7 +37,6 @@ package ai
  *
  * @author Michael Eichberg
  */
-
 class BaseAI extends AI[Domain] {
 
     override def isInterrupted = Thread.interrupted()
@@ -45,6 +44,24 @@ class BaseAI extends AI[Domain] {
 }
 
 /**
- * Instance of the base abstract interpreter. 
+ * Instance of the base abstract interpreter.
  */
-object BaseAI extends BaseAI 
+object BaseAI extends BaseAI
+
+
+/**
+ * A domain that can be interrupted by calling the `interrupt` method.
+ *
+ * @author Michael Eichberg
+ */
+class InterruptableAI[D <: Domain] extends AI[D] {
+
+    private[this] var doInterrupt: Boolean = false
+
+    override def isInterrupted = doInterrupt
+
+    def interrupt(): Unit = {
+        doInterrupt = true
+    }
+
+}

@@ -91,7 +91,7 @@ class PerformInvocationsTest
         domain.returnedNormally should be(true)
 
         val exs = domain.thrownExceptions(result.domain, -1)
-        exs.size should be(1)
+        if (exs.size != 1) fail("expected one exception, found: "+exs)
         exs forall { ex ⇒
             ex match {
                 case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒
@@ -140,7 +140,7 @@ class PerformInvocationsTest
         var foundUnsupportedOperationException = false
         var foundNullPointerException = false
         var foundIllegalArgumentException = false
- 
+
         exs forall { ex ⇒
             ex match {
                 case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒
@@ -155,7 +155,7 @@ class PerformInvocationsTest
                 case domain.SObjectValue(ObjectType("java/lang/IllegalArgumentException")) ⇒
                     foundIllegalArgumentException = true
                     true
-                 case _ ⇒
+                case _ ⇒
                     fail("unexpected exception: "+ex)
             }
         } should be(true)
@@ -179,33 +179,31 @@ class PerformInvocationsTest
 
 object PerformInvocationsTestFixture {
 
-    class InvocationDomain(val project: Project[java.net.URL])
-            extends Domain
-            with TheProject[java.net.URL]
+    trait BaseDomain extends Domain
             with DefaultDomainValueBinding
+            with TheProject[java.net.URL]
             with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
+            with l1.DefaultReferenceValuesBinding
+            with li.DefaultPreciseIntegerValues
+            with li.DefaultPreciseLongValues
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions
-            //    with DefaultReferenceValuesBinding
-            //    with DefaultStringValuesBinding
-            with DefaultClassValuesBinding
-            with DefaultArrayValuesBinding
-            with DefaultPreciseIntegerValues
-            with DefaultPreciseLongValues
-            with DefaultPerInstructionPostProcessing
             with ProjectBasedClassHierarchy
             with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
+            with IgnoreSynchronization {
+        override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
+    }
+
+    class InvocationDomain(val project: Project[java.net.URL])
+            extends BaseDomain
             with PerformInvocations
             with RecordMethodCallResults {
 
         type Id = Project[java.net.URL]
 
         override def id = project
-
-        override def maxUpdateCountForIntegerValues: Int = 1
 
         def isRecursive(
             definingClass: ClassFile,

@@ -27,15 +27,54 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package domain
+package ai
 
 /**
  * Definition of common domains that can be used for the implementation of analyses.
  *
- *  ==Thread Safety==
- * Unless explicitly documented, a domain is never thred-safe. The general programming
- * model is to use one Domain object per code block/method and therefore, thread-safety
- * is not a general goal.
+ * ==Types of Domains==
+ * In general, we distinguish two types of domains. First, domains that define a
+ * general interface (on top of the one defined by [[Domain]]), but do not directly
+ * provide an implementation. Hence, whenever you develop a new `Domain` you should
+ * consider implementing/using these domains to maximize reusability. Second,
+ * `Domain`s that implement a specific interface (trait).  In this case, we further
+ * distinguish between domains that provide a default implementation (per ''interface''
+ * only one of these `Domain`s can be used to create a '''final `Domain`''') and
+ * those that can be stacked and basically refine.
+ *
+ * '''Examples'''
+ *  - Domains That Define a General Interface
+ *      - [[Origin]] defines two types which domains that provide information abou the
+ *      origin of a value should consider to implement.
+ *      - [[TheProject]] defines a standard mechanism how a domain can access the
+ *      ''current'' project.
+ *      - [[ClassHierarchy]] defines a standard mechanism how to get the project's
+ *      class hierarchy.
+ *      - ...
+ *
+ *  - Domains That Provide a Default Implementation
+ *      - [[Origin]] defines the functionality to return a value's origin if the value
+ *      supports that.
+ *      - [[ProjectBasedClassHierarchy]] default implementation of the [[ClassHierarchy]]
+ *      trait that uses the project's class hierarchy. Requires that the project is
+ *      made available using the standard functionality as defined by [[TheProject]].
+ *      - [[DefaultHandlingOfMethodResults]] basically implements a Domain's methods
+ *      related to return instructions an uncaught exceptions.
+ *      - ...
+ *
+ *  - Domains That Implement Stackable Functionality
+ *      - [[RecordThrownExceptions]] records information about all uncaught exceptions
+ *      by intercepting a `Domain`'s respective methods. However, it does provide a
+ *      default implementation. Hence, a typical pattern is:
+ *      {{{
+ *      class MyDomain extends Domain with ...
+ *          with DefaultHandlingOfMethodResults with RecordThrownExceptions
+ *      }}}
+ *
+ * ==Thread Safety==
+ * Unless explicitly documented, a domain is never thread-safe. The general programming
+ * model is to use one `Domain` object per code block/method and therefore, thread-safety
+ * is not required for `Domain`s.
  *
  * @author Michael Eichberg
  */

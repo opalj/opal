@@ -44,11 +44,13 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: TheOperandsArray[domain.Operands],
-            localsArray: TheLocalsArray[domain.Locals]): Unit = {
+            operandsArray: domain.OperandsArray,
+            localsArray: domain.LocalsArray,
+            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]): Unit = {
         tracers foreach { tracer ⇒
             tracer.continuingInterpretation(code, domain)(
-                initialWorkList, alreadyEvaluated, operandsArray, localsArray
+                initialWorkList, alreadyEvaluated,
+                operandsArray, localsArray, memoryLayoutBeforeSubroutineCall
             )
         }
     }
@@ -141,5 +143,18 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
 
     override def result(result: AIResult): Unit = {
         tracers foreach { _.result(result) }
+    }
+
+    override def establishedConstraint(
+        domain: Domain)(
+            pc: PC,
+            operands: domain.Operands,
+            locals: domain.Locals,
+            newOperands: domain.Operands,
+            newLocals: domain.Locals): Unit = {
+        tracers foreach { tracer ⇒
+            tracer.establishedConstraint(domain)(
+                pc, operands, locals, newOperands, newLocals)
+        }
     }
 }

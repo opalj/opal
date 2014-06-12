@@ -57,9 +57,7 @@ import domain.l1
  *
  * @author Michael Eichberg
  */
-trait CHACallGraphDomain
-        extends CallGraphDomain
-        with ClassHierarchy {
+trait CHACallGraphDomain extends Domain with CallGraphDomain { this: ClassHierarchy ⇒
 
     //
     // Helper data structures  
@@ -227,11 +225,11 @@ class DefaultCHACallGraphDomain[Source](
     val theClassFile: ClassFile,
     val theMethod: Method)
         extends Domain
-        with TheProject[Source]
         with DefaultDomainValueBinding
-        with GeneralizedArrayHandling
-        with DefaultHandlingOfMethodResults
         with ThrowAllPotentialExceptionsConfiguration
+        with TheProject[Source]
+        with ProjectBasedClassHierarchy
+        with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultTypeLevelLongValues
@@ -240,7 +238,6 @@ class DefaultCHACallGraphDomain[Source](
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with ProjectBasedClassHierarchy
         with CHACallGraphDomain {
 
     type Id = Method

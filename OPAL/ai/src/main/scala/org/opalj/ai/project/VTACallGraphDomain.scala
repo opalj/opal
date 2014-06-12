@@ -49,7 +49,8 @@ import domain.l1
  *
  * @author Michael Eichberg
  */
-trait VTACallGraphDomain extends CHACallGraphDomain { domain ⇒
+trait VTACallGraphDomain extends CHACallGraphDomain {
+    domain: org.opalj.ai.domain.ClassHierarchy ⇒
 
     @inline override protected[this] def virtualMethodCall(
         pc: PC,
@@ -123,23 +124,21 @@ class DefaultVTACallGraphDomain[Source](
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val theClassFile: ClassFile,
     val theMethod: Method,
-    override val maxUpdateCountForIntegerValues: Int)
+    override val maxSizeOfIntegerRanges: Long)
         extends Domain
-        with TheProject[Source]
         with DefaultDomainValueBinding
-        with GeneralizedArrayHandling
         with ThrowAllPotentialExceptionsConfiguration
+        with TheProject[Source]
+        with ProjectBasedClassHierarchy
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        //with l0.DefaultTypeLevelIntegerValues
-        with l1.DefaultPreciseIntegerValues
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        with l1.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with ProjectBasedClassHierarchy
+        with l1.DefaultIntegerRangeValues
+        with l1.DefaultReferenceValuesBinding
         with VTACallGraphDomain {
 
     type Id = Method

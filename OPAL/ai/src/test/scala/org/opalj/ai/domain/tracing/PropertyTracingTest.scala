@@ -68,8 +68,8 @@ class PropertyTracingTest
         type Id = String
         override def id = method.toJava
 
-        override def maxUpdateCountForIntegerValues: Int = 5
-        
+        override def maxSizeOfIntegerRanges: Long = 16l
+
         override def code: Code = method.body.get
 
         override def propertyName = "isSanitized"

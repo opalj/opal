@@ -49,7 +49,7 @@ trait DefaultIntegerRangeValues
      *      constraint that some value (after some kind of check) has to have a special
      *      value may affect unrelated values!
      */
-    case class AnIntegerValue() extends super.AnIntegerValue {
+    class AnIntegerValue() extends super.AnIntegerValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
@@ -57,7 +57,20 @@ trait DefaultIntegerRangeValues
 
         override def adapt(target: Domain, pc: PC): target.DomainValue =
             target.IntegerValue(pc)
+
+        override def hashCode: Int = 101;
+
+        override def equals(other: Any): Boolean = {
+            other match {
+                case that: AnIntegerValue ⇒ true
+                case _                    ⇒ false
+            }
+        }
+
+        override def toString: String = "AnIntegerValue"
     }
+
+    def AnIntegerValue() = new AnIntegerValue()
 
     class IntegerRange(
         val lowerBound: Int,
@@ -71,14 +84,14 @@ trait DefaultIntegerRangeValues
             new IntegerRange(newLowerBound, newUpperBound)
         }
 
-        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
-            other match {
-                case AnIntegerValue() ⇒ StructuralUpdate(other)
+        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {            
+            val result = other match {
+                case that: AnIntegerValue ⇒ StructuralUpdate(that)
                 case IntegerRange(otherLB, otherUB) ⇒
                     val newLowerBound = Math.min(this.lowerBound, otherLB)
                     val newUpperBound = Math.max(this.upperBound, otherUB)
 
-                    if (newUpperBound - newLowerBound > maxSpreadIntegerValueRanges)
+                    if (newUpperBound - newLowerBound > maxSizeOfIntegerRanges)
                         StructuralUpdate(AnIntegerValue())
 
                     else if (newLowerBound == lowerBound && newUpperBound == upperBound)
@@ -88,6 +101,8 @@ trait DefaultIntegerRangeValues
                     else
                         StructuralUpdate(IntegerRange(newLowerBound, newUpperBound))
             }
+            result
+        }
 
         override def summarize(pc: PC): DomainValue = this
 
@@ -99,7 +114,7 @@ trait DefaultIntegerRangeValues
                 thatDomain.IntegerRange(this.lowerBound, this.upperBound).
                     asInstanceOf[targetDomain.DomainValue]
             } else {
-                super.adapt(targetDomain, pc)
+                targetDomain.IntegerValue(pc)
             }
 
         override def abstractsOver(other: DomainValue): Boolean = {
@@ -113,8 +128,24 @@ trait DefaultIntegerRangeValues
             }
         }
 
+        override def hashCode = this.lowerBound * 13 + this.upperBound
+
+        override def equals(other: Any): Boolean = {
+            val thisValue = this
+            other match {
+                case that: IntegerRange ⇒
+                    (this eq that) || (
+                        that.lowerBound == this.lowerBound && that.upperBound == this.upperBound
+                    )
+                case _ ⇒
+                    false
+            }
+        }
+
         override def toString: String = "IntegerRange(lb="+lowerBound+", ub="+upperBound+")"
     }
+
+    override def IntegerRange(lb: Int, ub: Int): DomainValue = new IntegerRange(lb, ub)
 
     override def BooleanValue(pc: PC): DomainValue = AnIntegerValue()
     override def BooleanValue(pc: PC, value: Boolean): DomainValue =
