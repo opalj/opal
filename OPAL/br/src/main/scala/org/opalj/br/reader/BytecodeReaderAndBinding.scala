@@ -46,30 +46,32 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     override type Constant_Pool = Array[Constant_Pool_Entry]
 
     /**
-     * This method looks up information about `invokedynamic` instructions from the
-     * class's [[BootstrapMethodTable]], completing the generally statically available
-     * information on these instructions.
+     * Resolves an `invokedynamic` instruction using the [[BootstrapMethodTable]] of
+     * the class.
      *
-     * It is registered as a deferredActionHandler to be called after the byte stream
-     * under analysis has been completely parsed.
+     * Deferred resolution is necessary since the [[BootstrapMethodTable]] – which
+     * is an attribute of the class file – is loaded after the methods.
      *
-     * To perform additional analysis on `invokedynamic` instructions, e.g. attempting to
-     * fully resolve their call targets, a subclass may override this method to do so.
+     * @note This method is registered as callback method that is called (back) after
+     *      the class file was completely loaded. Registration as a callback method happens
+     *      whenever an `invokedynamic` instruction is found in a method's byte code.
      *
-     * @note If you override this method, you need to make a call to
-     * `super.deferredCollectInvokedynamicInformation` to ensure that the basic
-     * information will still be available.
+     * ==Overriding this Method==
+     * To perform additional analysis on `invokedynamic` instructions, e.g. to
+     * fully resolve the call target, a subclass may override this method to do so.
+     * When you override this method, you should call this method
+     * (`super.deferredResolveInvokedynamicInstruction`) that the default resolution
+     * is carried out.
      *
-     * @param classFile the [[ClassFile]] object containing the code under analysis
-     * @param cp the class file's [[Constant_Pool]]
-     * @param cpEntry the constant pool's entry referring to the `invokedynamic`
-     * 		instruction currently under analysis
-     * @param instructions an array of [[instructions.Instruction]]s to be eventually
-     * 		returned by the [[#Instructions]] method
-     * @param index the index in the `instructions` array to the `invokedynamic`
-     * 		instruction currently under analysis
+     * @param classFile The [[ClassFile]] with which the deferred action was registered.
+     * @param cp The class file's [[Constant_Pool]].
+     * @param cpEntry The `invokedynamic` instruction's constant pool entry.
+     * @param instructions This method's array of [[instructions.Instruction]]s.
+     * 		(The array eturned by the [[#Instructions]] method.)
+     * @param index The index in the `instructions` array that refers to the `invokedynamic`
+     * 		instruction.
      */
-    def deferredCollectInvokedynamicInformation(
+    protected def deferredResolveInvokedynamicInstruction(
         classFile: ClassFile,
         cp: Constant_Pool,
         cpEntry: CONSTANT_InvokeDynamic_info,
@@ -265,8 +267,9 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     registerDeferredAction(cp) { classFile ⇒
-                        deferredCollectInvokedynamicInformation(classFile, cp, cpEntry,
-                            instructions, index)
+                        deferredResolveInvokedynamicInstruction(
+                            classFile, cp, cpEntry, instructions, index
+                        )
                     }
                     //INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
                     UNRESOLVED_INVOKEDYNAMIC
