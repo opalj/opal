@@ -38,7 +38,7 @@ package instructions
  */
 case object LADD extends AddInstruction {
 
-    def opcode: Int = 97
+    override final val opcode = 97
 
     def mnemonic: String = "ladd"
 

@@ -41,7 +41,7 @@ case object FLOAD_0
 
     def lvIndex: Int = 0
 
-    def opcode: Int = 34
+    override final val opcode = 34
 
     def mnemonic: String = "fload_0"
 

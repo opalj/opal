@@ -53,7 +53,7 @@ case object UNRESOLVED_INVOKEDYNAMIC extends InvocationInstruction {
 
     override def methodDescriptor: MethodDescriptor = error
 
-    override def opcode: Int = 186
+    override final val opcode = INVOKEDYNAMIC.opcode
 
     override def mnemonic: String = "invokedynamic"
 
@@ -75,7 +75,7 @@ case class INVOKEDYNAMIC(
     override val methodDescriptor: MethodDescriptor)
         extends InvocationInstruction {
 
-    override def opcode: Int = 186
+    override def opcode: Opcode = INVOKEDYNAMIC.opcode
 
     override def mnemonic: String = "invokedynamic"
 
@@ -128,6 +128,7 @@ case class INVOKEDYNAMIC(
 object INVOKEDYNAMIC {
 
     val runtimeExceptions = List(ObjectType.BootstrapMethodError)
+    final val opcode = 186
     
     private val lambdaMetafactoryDescriptor = MethodDescriptor(
             IndexedSeq(ObjectType.MethodHandles$Lookup,
@@ -146,6 +147,6 @@ object INVOKEDYNAMIC {
                        ArrayType.ArrayOfObjects
             ),
             ObjectType.CallSite)
-}
 
+}
 

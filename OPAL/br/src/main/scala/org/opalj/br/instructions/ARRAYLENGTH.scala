@@ -37,7 +37,7 @@ package instructions
  */
 case object ARRAYLENGTH extends Instruction {
 
-    override def opcode: Int = 190
+    override final val opcode = 190
 
     override def mnemonic: String = "arraylength"
 

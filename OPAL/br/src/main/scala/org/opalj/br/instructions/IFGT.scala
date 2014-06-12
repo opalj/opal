@@ -39,8 +39,14 @@ case class IFGT(
     branchoffset: Int)
         extends ConditionalBranchInstruction {
 
-    def opcode: Int = 157
+    def opcode: Opcode = IFGT.opcode
 
     def mnemonic: String = "ifgt"
+
+}
+
+object IFGT {
+
+    final val opcode = 157
 
 }

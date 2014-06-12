@@ -29,6 +29,8 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  *
  * @author Michael Eichberg
@@ -40,6 +42,10 @@ case class SourceFile_attribute(
     def attribute_length = 2
 
     def attribute_name = SourceFile_attribute.name
+
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <div>, Source={ cp(sourceFile_index).asString }</div>
+    }
 
 }
 

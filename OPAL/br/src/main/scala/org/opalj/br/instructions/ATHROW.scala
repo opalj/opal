@@ -37,7 +37,7 @@ package instructions
  */
 case object ATHROW extends Instruction {
 
-    override def opcode: Int = 191
+    override final val opcode = 191
 
     override def mnemonic: String = "athrow"
 

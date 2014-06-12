@@ -38,7 +38,7 @@ package instructions
  */
 case object L2I extends NumericConversionInstruction {
 
-    def opcode: Int = 136
+    override final val opcode = 136
 
     def mnemonic: String = "l2i"
 

@@ -37,7 +37,7 @@ package instructions
  */
 case object MONITORENTER extends SynchronizationInstruction {
 
-    final override def opcode: Int = 194
+    override final val opcode = 194
 
     final override def mnemonic: String = "monitorenter"
 

@@ -37,7 +37,7 @@ package instructions
  */
 case object FREM extends FloatingPointRemainderInstruction {
 
-    def opcode: Int = 114
+    override final val opcode = 114
 
     def mnemonic: String = "frem"
 

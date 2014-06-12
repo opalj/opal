@@ -44,7 +44,7 @@ case class PUTFIELD(
     fieldType: FieldType)
         extends FieldWriteAccess {
 
-    def opcode: Int = 181
+    override def opcode: Opcode = PUTFIELD.opcode
 
     def mnemonic: String = "putfield"
 
@@ -57,5 +57,10 @@ case class PUTFIELD(
         )
 
     override def toString = "put "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+
+}
+object PUTFIELD {
+
+    final val opcode = 181
 
 }

@@ -27,18 +27,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package instructions
+package da
 
 /**
- * Convert double to float.
+ * <pre>
+ * Signature_attribute { 
+ * 	u2 attribute_name_index; 
+ * 	u4 attribute_length; 
+ * 	u2 signature_index; 
+ * } 
+ * </pre> 
  *
  * @author Michael Eichberg
  */
-case object D2F extends NumericConversionInstruction {
+case class Signature_attribute (
+        attribute_name_index: Int,
+        sourceFile_index: Int)extends Attribute {
 
-    override final val opcode = 144
+	/**
+	 * The value of the attribute_length item is fixed; it is always 4.
+	 */
+	def attribute_length = 2
+	
+	def attribute_name = Signature_attribute.name
 
-    def mnemonic: String = "d2f"
+}
 
+
+object Signature_attribute {
+	
+	val name = "Signature"
+	
 }

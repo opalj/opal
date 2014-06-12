@@ -39,8 +39,13 @@ case class IF_ICMPLT(
     branchoffset: Int)
         extends ConditionalBranchInstruction {
 
-    def opcode: Int = 161
+    override def opcode: Opcode = IF_ICMPLT.opcode
 
     def mnemonic: String = "if_icmplt"
+
+}
+object IF_ICMPLT {
+
+    final val opcode = 161
 
 }

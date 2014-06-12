@@ -28,12 +28,29 @@
  */
 package org.opalj
 package da
-
+import scala.xml.Node
+import bi.AccessFlags
+import bi.AccessFlagsContexts
 /**
  * @author Michael Eichberg
  */
 case class Method_Info(
-    val accessFlags: Int,
-    val name_index: Constant_Pool_Index,
-    val descriptor_index: Constant_Pool_Index,
-    val attributes: Attributes)
+        accessFlags: Int,
+        name_index: Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index,
+        attributes: Attributes) {
+
+    def toXHTML(implicit cp: Constant_Pool): Node = {
+        <li>
+            <div>
+                <span class="AccessFlags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.FIELD) }</span>
+                <span> { cp(name_index).asString } </span> 
+                <a href="#" class="tooltip">{ name_index } <span>{ cp(name_index) }</span></a> 
+            </div>
+       </li>
+    }
+
+    def attributesToXHTML(implicit cp: Constant_Pool) = {
+        for (attribute ← attributes) yield attribute.toXHTML(cp)
+    }
+}

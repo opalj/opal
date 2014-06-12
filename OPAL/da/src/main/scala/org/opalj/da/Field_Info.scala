@@ -29,27 +29,33 @@
 package org.opalj
 package da
 
-import bi.AccessFlags
-import bi.AccessFlagsContext
-import bi.AccessFlagsContexts
-
 import scala.xml.Node
+import bi.AccessFlags
+import bi.AccessFlagsContexts
 
 /**
  * @author Michael Eichberg
  */
 case class Field_Info(
-        val access_flags: Int,
-        val name_index: Constant_Pool_Index,
-        val descriptor_index: Constant_Pool_Index,
-        val attributes: Attributes) {
+        access_flags: Int,
+        name_index: Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index,
+        attributes: Attributes) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>
-            { AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }
-            <span> { cp(name_index).asString } </span> 
-            <span class="cp_index"> { name_index } </span> 
-        </div>
+        <li><div class="code">
+            <span class="AccessFlags">{ AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }</span>
+            <span> { cp(descriptor_index).asString } </span>
+            <span> { cp(name_index).asString } </span>
+       </div></li>
+        // The STYLE WAS MISSING...            
+        // < a href="#" class="tooltip">{ name_index } 
+        // < span>{ cp(name_index) }</span> // ????
+        // </ a>
+    }
+
+    def attributesToXHTML(implicit cp: Constant_Pool) = {
+        <ul>{ for (attribute ← attributes) yield attribute.toXHTML(cp) }</ul>
     }
 
 }

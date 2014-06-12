@@ -39,8 +39,13 @@ case class IF_ICMPGT(
     branchoffset: Int)
         extends ConditionalBranchInstruction {
 
-    def opcode: Int = 163
+    override def opcode: Opcode = IF_ICMPGT.opcode
 
     def mnemonic: String = "if_icmpgt"
+
+}
+object IF_ICMPGT {
+
+    final val opcode = 163
 
 }
