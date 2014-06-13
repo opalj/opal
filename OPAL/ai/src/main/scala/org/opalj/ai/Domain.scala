@@ -1253,9 +1253,10 @@ trait Domain {
     /**
      * Sets the given domain value to the `theValue`.
      *
-     * This function is called by OPAL before it starts to explore the branch
+     * This function is called by OPAL '''before''' it starts to explore the branch
      * where this condition has to hold. (This function is, e.g., called whenever we explore
-     * the branches of a switch-case statement.)
+     * the branches of a switch-case statement.) I.e., the constraint is established
+     * before a potential join operation.
      *
      * @param value An integer value that does not have the value `theValue` as it single
      *      possible value. (I.e., intHasValue(

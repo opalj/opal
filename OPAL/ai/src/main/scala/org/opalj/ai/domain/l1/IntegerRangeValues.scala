@@ -52,7 +52,7 @@ trait IntegerRangeValues
     // -----------------------------------------------------------------------------------
 
     /**
-     * Determines the maximum size of the integer value range.
+     * Determines the maximum number of values captured by an integer value range.
      */
     protected def maxSizeOfIntegerRanges: Long = 16l
 

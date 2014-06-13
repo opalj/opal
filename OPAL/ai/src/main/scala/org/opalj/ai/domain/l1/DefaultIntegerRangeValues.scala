@@ -135,7 +135,8 @@ trait DefaultIntegerRangeValues
             other match {
                 case that: IntegerRange ⇒
                     (this eq that) || (
-                        that.lowerBound == this.lowerBound && that.upperBound == this.upperBound
+                        that.lowerBound == this.lowerBound &&
+                        that.upperBound == this.upperBound
                     )
                 case _ ⇒
                     false
