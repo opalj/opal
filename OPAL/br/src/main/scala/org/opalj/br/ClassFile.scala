@@ -338,22 +338,59 @@ object ClassFile {
             methods sortWith { (m1, m2) ⇒ m1 < m2 },
             attributes)
     }
-    
-//    def apply(
-//            typeDeclaration : TypeDeclaration,
-//            virtualMethod : VirtualForwardingMethod) : ClassFile = {
-//       apply(0, 52,
-//                bi.ACC_SYNTHETIC.mask,
-//                typeDeclaration.objectType,
-//                typeDeclaration.theSuperclassType,
-//                typeDeclaration.theSuperinterfaceTypes.toSeq,
-//                IndexedSeq(),
-//                IndexedSeq(virtualMethod),
-//                IndexedSeq(VirtualTypeFlag))            
-//        }
-//    null
+
+    /**
+     * Creates a class that acts as a proxy for the specified class and that implements
+     * a single method that calls the specified method.
+     *
+     * I.e., a class is generated using the following template:
+     * {{{
+     * class <definingType.objectType>
+     *  extends <definingType.theSuperclassType>
+     *  implements <definingType.theSuperinterfaceTypes> {
+     *
+     *  private <calleeType> receiver;
+     *
+     *  public "<init>"( <calleeType> receiver) { // the constructor
+     *      this.receiver = receiver;
+     *  }
+     *
+     *  public <methodDescriptor.returnType> <methodName> <methodDescriptor.paramterTypes>{
+     *     return/*<= if the return type is not void*/ this.receiver.<calleMethodName>(<parameters>)
+     *  }
+     *  }
+     * }}}
+     * The class, the constructor and the method will be public. The field which holds
+     * the receiver object is private.
+     *
+     * If the receiver method is static, an empty '''default constructor''' is created
+     * and no field is generated.
+     *
+     * The synthetic access flag is always set, as well as the [[VirtualTypeFlag]]
+     * attribute.
+     *
+     * The used class file version is 49.0 (Java 5) (Using this version, we are not
+     * required to create the stack map table attribute to create a valid class file.)
+     */
+//    def Proxy(
+//        definingType: TypeDeclaration,
+//        methodName: String,
+//        methodDescriptor: MethodDescriptor,
+//        calleeType: ObjectType,
+//        calleeMethodName: String,
+//        calleeMethodDescriptor: String): ClassFile = {
+//
+//        val field: Option[Field] = None
+//        val method: Method = null
+//        ClassFile(0, 49,
+//            bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
+//            definingType.objectType,
+//            definingType.theSuperclassType,
+//            definingType.theSuperinterfaceTypes.toSeq,
+//            field.map(IndexedSeq(_)).getOrElse(IndexedSeq.empty),
+//            IndexedSeq(method),
+//            IndexedSeq(VirtualTypeFlag))
 //    }
-    
 
     def unapply(classFile: ClassFile): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
         import classFile._
