@@ -137,10 +137,49 @@ public class IntegerValuesFrenzy {
     }
 
     static int[] array10() {
-        int[] is = new int[10]; 
-        for(int i = 0; i <= 10; i++ ) { // DELIBERATE INDEX OUT OF BOUNDS
+        int[] is = new int[10];
+        for (int i = 0; i <= 10; i++) { // DELIBERATE INDEX OUT OF BOUNDS
             is[i] = i;
         }
         return is;
     }
+
+    private static int getByte() {
+        return (int) (System.currentTimeMillis() % 10000);
+    }
+
+    // Inspired by:
+    // com.sun.xml.internal.org.jvnet.mimepull.BASE64DecoderStream {
+    // int decode(byte[] outbuf, int pos, int len) throws IOException
+    // }
+    static int deadCode(byte[] outbuf, int pos, int len) throws UnknownError {
+        int pos0 = pos;
+        while (len >= 3) {
+            int got = 0;
+            while (got < 4) {
+                int i = getByte();
+                if (i == -1 || i == -2) {
+                    boolean atEOF;
+                    if (i == -1) {
+                        if (got == 0) {
+                            return pos - pos0;
+                        }
+                        atEOF = true; // don't read any more
+                    } else { // i == -2
+                        if (got == 0) {
+                            return pos - pos0;
+                        }
+                        atEOF = false;
+                    }
+
+                    // we cannot reach this point..
+                    throw new UnknownError("This is dead code!" + atEOF);
+                } else {
+                    return -666;
+                }
+            }
+        }
+        return 666;
+    }
+
 }

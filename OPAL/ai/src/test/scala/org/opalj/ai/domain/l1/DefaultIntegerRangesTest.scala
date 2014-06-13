@@ -96,12 +96,12 @@ class DefaultIntegerRangesTest
             v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
             v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
         }
-        
+
         it("(join of two ranges with positive values that do not exceed the spread); i1 join i2 => \"StructuralUpdate(IntegerRange(2,4))\"") {
             val v1 = IntegerRange(lb = 2, ub = 3)
             val v2 = IntegerRange(lb = 3, ub = 4)
-            v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(2,4)))
-            v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(2,4)))
+            v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(2, 4)))
+            v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(2, 4)))
         }
 
         it("(join of two ranges with negative values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
@@ -110,29 +110,27 @@ class DefaultIntegerRangesTest
             v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
             v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
         }
-        
+
         it("(join of two ranges with negative values that do not exceed the spread); i1 join i2 => \"StructuralUpdate(IntegerRange(-3,-1))\"") {
             val v1 = IntegerRange(lb = -2, ub = -1)
             val v2 = IntegerRange(lb = -3, ub = -2)
-            v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(-3,-1)))
-            v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-3,-1)))
+            v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(-3, -1)))
+            v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-3, -1)))
         }
-        
-          
+
         it("(join of two ranges with Int.MaxValue); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
             val v1 = IntegerRange(lb = 1, ub = Int.MaxValue)
             val v2 = IntegerRange(lb = -10, ub = -1)
             v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
             v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
         }
-        
-         it("(join of two ranges one with [Int.MinValue+1 and Int.MaxValue]); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
-            val v1 = IntegerRange(lb = Int.MinValue+1, ub = Int.MaxValue)
+
+        it("(join of two ranges one with [Int.MinValue+1 and Int.MaxValue]); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
+            val v1 = IntegerRange(lb = Int.MinValue + 1, ub = Int.MaxValue)
             val v2 = IntegerRange(lb = -10, ub = -1)
             v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
             v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
         }
-
 
     }
 
@@ -576,6 +574,23 @@ class DefaultIntegerRangesTest
             // get the loop counter at the "icmple instruction" which controls the 
             // loops that initializes the array
             result.operandsArray(20).tail.head should be(domain.IntegerRange(0, 11))
+        }
+
+        it("it should be possible to identify dead code - even for complex conditions") {
+            val domain = new IntegerRangesTestDomain
+            val method = IntegerValues.findMethod("deadCode").get
+            val result = BaseAI(IntegerValues, method, domain)
+            result.operandsArray(47) should be(null)
+            result.operandsArray(48) should be(null)
+            result.operandsArray(50) should be(null)
+
+            result.operandsArray(62) should be(null)
+            result.operandsArray(62) should be(null)
+            result.operandsArray(65) should be(null)
+            result.operandsArray(68) should be(null)
+            //...
+            result.operandsArray(89) should be(null)
+
         }
     }
 }
