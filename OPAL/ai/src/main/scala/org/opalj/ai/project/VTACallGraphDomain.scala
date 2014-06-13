@@ -114,38 +114,6 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
         }
     }
 }
-/**
- * Domain object which is used to calculate the call graph using variable type analysis.
- *
- * @author Michael Eichberg
- */
-class DefaultVTACallGraphDomain[Source](
-    val project: Project[Source],
-    val cache: CallGraphCache[MethodSignature, Set[Method]],
-    val theClassFile: ClassFile,
-    val theMethod: Method,
-    override val maxSizeOfIntegerRanges: Long)
-        extends Domain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with TheProject[Source]
-        with ProjectBasedClassHierarchy
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelLongValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with l1.DefaultIntegerRangeValues
-        with l1.DefaultReferenceValuesBinding
-        with VTACallGraphDomain {
-
-    type Id = Method
-
-    def id = theMethod
-
-}
 
 
 

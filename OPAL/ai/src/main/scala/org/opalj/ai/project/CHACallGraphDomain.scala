@@ -214,37 +214,6 @@ trait CHACallGraphDomain extends Domain with CallGraphDomain { this: ClassHierar
     }
 }
 
-/**
- * Domain object which is used to calculate the call graph.
- *
- * @author Michael Eichberg
- */
-class DefaultCHACallGraphDomain[Source](
-    val project: Project[Source],
-    val cache: CallGraphCache[MethodSignature, Set[Method]],
-    val theClassFile: ClassFile,
-    val theMethod: Method)
-        extends Domain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with TheProject[Source]
-        with ProjectBasedClassHierarchy
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultTypeLevelLongValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultReferenceValuesBinding
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with CHACallGraphDomain {
-
-    type Id = Method
-
-    def id = theMethod
-
-}
 
 
 

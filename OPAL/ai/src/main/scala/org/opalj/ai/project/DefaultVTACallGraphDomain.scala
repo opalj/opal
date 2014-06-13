@@ -33,35 +33,44 @@ package project
 import scala.collection.Set
 import scala.collection.Map
 
-import domain._
-
 import br._
 import br.analyses._
 
+import domain._
+import domain.l0
+import domain.l1
+
 /**
- * Configuration of a call graph algorithm that uses CHA.
- *
- * ==Thread Safety==
- * This class is thread-safe (it contains no mutable state.)
- *
- * ==Usage==
- * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
+ * Domain object which is used to calculate the call graph using variable type analysis.
  *
  * @author Michael Eichberg
  */
-class VTACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration {
+class DefaultVTACallGraphDomain[Source](
+    val project: Project[Source],
+    val cache: CallGraphCache[MethodSignature, Set[Method]],
+    val theClassFile: ClassFile,
+    val theMethod: Method,
+    override val maxSizeOfIntegerRanges: Long)
+        extends Domain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with TheProject[Source]
+        with ProjectBasedClassHierarchy
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with l1.DefaultIntegerRangeValues
+        with l1.DefaultReferenceValuesBinding
+        with VTACallGraphDomain {
 
-    type Contour = MethodSignature
-    type Value = Set[Method]
-    type Cache = CallGraphCache[Contour, Value]
-    def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Value]
+    type Id = Method
 
-    def Domain[Source](
-        theProject: Project[Source],
-        cache: Cache,
-        classFile: ClassFile,
-        method: Method): VTACallGraphDomain =
-        new DefaultVTACallGraphDomain(theProject, cache, classFile, method, 2)
+    def id = theMethod
+
 }
 
 
