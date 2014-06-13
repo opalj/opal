@@ -33,10 +33,13 @@ package l0
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
+import org.opalj.br.{ ComputationalType, ComputationalTypeFloat }
 
 /**
- * Domain that handles computations related to `Float` values at the type level.
+ * This partial `Domain` performs all computations related to primitive float
+ * values at the type level.
+ *
+ * This domain can be used as a foundation to build more complex domains.
  *
  * @author Michael Eichberg
  */

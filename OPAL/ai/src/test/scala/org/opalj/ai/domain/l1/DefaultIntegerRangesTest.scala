@@ -325,7 +325,7 @@ class DefaultIntegerRangesTest
                 iadd(-1, v2, v1) should be(IntegerRange(Int.MinValue + 3, 5))
             }
 
-            it("[-3,-1] * [-3,Int.MaxValue] => [-6,Int.MaxValue-1") {
+            it("[-3,-1] + [-3,Int.MaxValue] => [-6,Int.MaxValue-1]") {
                 val v1 = IntegerRange(-3, -1)
                 val v2 = IntegerRange(-3, Int.MaxValue)
 
@@ -333,6 +333,72 @@ class DefaultIntegerRangesTest
                 iadd(-1, v2, v1) should be(IntegerRange(-6, Int.MaxValue - 1))
             }
 
+        }
+
+        describe("the behavior of isub") {
+
+            it("[0,3] - [0,2] => [-2,3]") {
+                val v1 = IntegerRange(0, 3)
+                val v2 = IntegerRange(0, 2)
+
+                isub(-1, v1, v2) should be(IntegerRange(-2, 3))
+            }
+
+            it("[-3,-1] - [-10,-2] => [-1,9]") {
+                val v1 = IntegerRange(-3, -1)
+                val v2 = IntegerRange(-10, -2)
+
+                isub(-1, v1, v2) should be(IntegerRange(-1, 9))
+            }
+
+            it("[-1,3] - [0,2] => [-3,3]") {
+                val v1 = IntegerRange(-1, 3)
+                val v2 = IntegerRange(0, 2)
+
+                isub(-1, v1, v2) should be(IntegerRange(-3, 3))
+            }
+
+            it("[0,0] - AnIntegerValue => AnIntegerValue") {
+                val v1 = IntegerRange(0, 0)
+                val v2 = AnIntegerValue()
+
+                isub(-1, v1, v2) should be(AnIntegerValue)
+            }
+
+            it("AnIntegerValue - [0,0] => AnIntegerValue") {
+                val v1 = IntegerRange(0, 0)
+                val v2 = AnIntegerValue()
+
+                isub(-1, v2, v1) should be(AnIntegerValue)
+            }
+
+            it("[Int.MinValue,3] - [3,2] => AnIntegerValue") {
+                val v1 = IntegerRange(Int.MinValue, 3)
+                val v2 = IntegerRange(3, 2)
+
+                isub(-1, v1, v2) should be(AnIntegerValue)
+            }
+
+            it("[3,2] - [Int.MinValue,3] => AnIntegerValue") {
+                val v2 = IntegerRange(3, 2)
+                val v1 = IntegerRange(Int.MinValue, 3)
+
+                isub(-1, v2, v1) should be(AnIntegerValue)
+            }
+
+            it("[-3,-1] - [-3,Int.MaxValue] => AnIntegerValue") {
+                val v1 = IntegerRange(-3, -1)
+                val v2 = IntegerRange(-3, Int.MaxValue)
+
+                isub(-1, v1, v2) should be(AnIntegerValue)
+            }
+
+            it("[-1,-1] - [-3,Int.MaxValue] => [Int.MinValue,2]") {
+                val v1 = IntegerRange(-1, -1)
+                val v2 = IntegerRange(-3, Int.MaxValue)
+
+                isub(-1, v1, v2) should be(IntegerRange(Int.MinValue, 2))
+            }
         }
 
         describe("the behavior of the relational operators") {

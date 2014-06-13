@@ -41,8 +41,8 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
 /**
  * Most basic handling of method invocations that determines the value that is
  * put onto the operand stack/returned by a method call based on the called method's
- * signature. This implementation completely ignores exceptions and/or errors (e.g.,
- * `NullPointerException`s or exceptions thrown by the method).
+ * signature. This implementation completely ignores exceptions and/or errors
+ * thrown by the method.
  *
  * (Linkage related exceptions are currently generally ignored.)
  *

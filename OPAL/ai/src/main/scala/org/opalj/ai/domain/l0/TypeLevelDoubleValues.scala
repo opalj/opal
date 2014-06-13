@@ -36,7 +36,10 @@ import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeDouble
 
 /**
- * Domain that handles computations related to `Double` values at the type level.
+ * This partial `Domain` performs all computations related to primitive double
+ * values at the type level.
+ *
+ * This domain can be used as a foundation to build more complex domains.
  *
  * @author Michael Eichberg
  */

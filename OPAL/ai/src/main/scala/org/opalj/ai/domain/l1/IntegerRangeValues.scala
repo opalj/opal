@@ -476,19 +476,19 @@ trait IntegerRangeValues
         }
     }
 
-    override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            case (IntegerRange(lb1, ub1), IntegerRange(lb2, ub2)) ⇒
+    override def isub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+        (left, right) match {
+            case (IntegerRange(llb, lub), IntegerRange(rlb, rub)) ⇒
                 // to identify overflows we simply do the "add" on long values
                 // and check afterwards
-                val lb = lb1.toLong - ub2.toLong
-                val ub = ub1.toLong - lb2.toLong
+                val lb = llb.toLong - rub.toLong
+                val ub = lub.toLong - rlb.toLong
                 if (lb < Int.MinValue || ub > Int.MaxValue)
                     IntegerValue(pc)
                 else
                     IntegerRange(lb.toInt, ub.toInt)
             case _ ⇒
-                // we have to create a new instance... even if we just add "0"
+                // we have to create a new instance... even if we just subtract "0"
                 IntegerValue(pc)
         }
     }

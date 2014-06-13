@@ -35,8 +35,11 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import org.opalj.br.{ ComputationalType, ComputationalTypeLong }
 
-/**
- * Support the computation with long values at the type level.
+/** 
+ * This partial `Domain` performs all computations related to primitive long 
+ * values at the type level.
+ * 
+ * This domain can be used as a foundation to build more complex domains.
  *
  * @author Michael Eichberg
  */
@@ -68,7 +71,7 @@ trait TypeLevelLongValues extends Domain { this: Configuration ⇒
     //
     // RELATIONAL OPERATORS
     //
-    override def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def lcmp(pc: PC, left: DomainValue, right: DomainValue): DomainValue =
         IntegerValue(pc)
 
     //
@@ -82,8 +85,8 @@ trait TypeLevelLongValues extends Domain { this: Configuration ⇒
 
     override def ldiv(
         pc: PC,
-        value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        left: DomainValue,
+        right: DomainValue): IntegerLikeValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(LongValue(pc), ArithmeticException(pc))
         else
@@ -98,8 +101,8 @@ trait TypeLevelLongValues extends Domain { this: Configuration ⇒
 
     override def lrem(
         pc: PC,
-        value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        left: DomainValue,
+        right: DomainValue): IntegerLikeValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(LongValue(pc), ArithmeticException(pc))
         else

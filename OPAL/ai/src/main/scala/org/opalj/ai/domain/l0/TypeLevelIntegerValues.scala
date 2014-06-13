@@ -33,7 +33,7 @@ package l0
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
+import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
  * Domain that performs computations related to integer values at the type level.
@@ -51,7 +51,8 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     /**
      * Abstracts over values with computational type `integer`.
      */
-    protected[this] trait ComputationalTypeIntegerValue extends Value { this: DomainValue ⇒
+    protected[this] trait ComputationalTypeIntegerValue extends Value {
+        this: DomainValue ⇒
 
         final override def computationalType: ComputationalType = ComputationalTypeInt
 
@@ -64,6 +65,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
 
         override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             target.BooleanValue(vo)
+
     }
 
     trait ByteValue extends ComputationalTypeIntegerValue with IsByteValue {
