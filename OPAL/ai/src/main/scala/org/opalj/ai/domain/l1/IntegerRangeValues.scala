@@ -415,9 +415,12 @@ trait IntegerRangeValues
     //
     override def ineg(pc: PC, value: DomainValue) = value match {
         case IntegerRange(lb, ub) ⇒
-            if (lb == Int.MinValue) // -Int.MinValue === Int.MinValue
-                IntegerValue(pc)
-            else
+            if (lb == Int.MinValue) { // -Int.MinValue === Int.MinValue
+                if (ub == Int.MinValue)
+                    IntegerRange(Int.MinValue, Int.MinValue)
+                else
+                    IntegerValue(pc)
+            } else
                 IntegerRange(-ub, -lb)
         case _ ⇒ value
     }
@@ -451,7 +454,7 @@ trait IntegerRangeValues
                 if (newLB < Int.MinValue || newUB > Int.MaxValue)
                     IntegerValue(pc)
                 else
-                    IntegerValue(newLB.toInt, newUB.toInt)
+                    IntegerRange(newLB.toInt, newUB.toInt)
             case _ ⇒
                 IntegerValue(pc)
         }
