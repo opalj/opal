@@ -208,6 +208,7 @@ trait AITracer {
     def establishedConstraint(
         domain: Domain)(
             pc: PC,
+            effectivePC : PC,
             operands: domain.Operands,
             locals: domain.Locals,
             newOperands: domain.Operands,

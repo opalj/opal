@@ -155,11 +155,12 @@ trait ConsoleTracer extends AITracer {
     override def establishedConstraint(
         domain: Domain)(
             pc: PC,
+            effectivePC : PC,
             operands: domain.Operands,
             locals: domain.Locals,
             newOperands: domain.Operands,
             newLocals: domain.Locals): Unit = {
-        println(YELLOW_B + BLUE+"Establishing Constraint:")
+        println(pc+":"+YELLOW_B + BLUE+"Establishing Constraint at "+effectivePC+"):")
         val changedOperands = operands.view.zip(newOperands).filter(ops ⇒ ops._1 ne ops._2).force
         if (changedOperands.nonEmpty) {
             println(YELLOW_B + BLUE+"\tUpdated Operands:")

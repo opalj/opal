@@ -148,13 +148,14 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
     override def establishedConstraint(
         domain: Domain)(
             pc: PC,
+            effectivePC: PC,
             operands: domain.Operands,
             locals: domain.Locals,
             newOperands: domain.Operands,
             newLocals: domain.Locals): Unit = {
         tracers foreach { tracer ⇒
             tracer.establishedConstraint(domain)(
-                pc, operands, locals, newOperands, newLocals)
+                pc, effectivePC, operands, locals, newOperands, newLocals)
         }
     }
 }

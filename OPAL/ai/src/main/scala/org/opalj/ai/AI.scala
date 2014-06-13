@@ -616,7 +616,7 @@ trait AI[D <: Domain] {
                                 if (tracer.isDefined &&
                                     ((rest ne newOperands) || (locals ne newLocals))) {
                                     tracer.get.establishedConstraint(theDomain)(
-                                        pc, rest, locals, newOperands, newLocals
+                                        pc, branchTarget, rest, locals, newOperands, newLocals
                                     )
                                 }
                                 gotoTarget(pc, branchTarget, false, newOperands, newLocals)
@@ -627,7 +627,7 @@ trait AI[D <: Domain] {
                                 if (tracer.isDefined &&
                                     ((rest ne newOperands) || (locals ne newLocals))) {
                                     tracer.get.establishedConstraint(theDomain)(
-                                        pc, rest, locals, newOperands, newLocals
+                                        pc, nextPC, rest, locals, newOperands, newLocals
                                     )
                                 }
                                 gotoTarget(pc, nextPC, false, newOperands, newLocals)
@@ -662,7 +662,7 @@ trait AI[D <: Domain] {
                                 if (tracer.isDefined &&
                                     ((rest ne newOperands) || (locals ne newLocals))) {
                                     tracer.get.establishedConstraint(theDomain)(
-                                        pc, rest, locals, newOperands, newLocals
+                                        pc, branchTarget, rest, locals, newOperands, newLocals
                                     )
                                 }
                                 gotoTarget(pc, branchTarget, false, newOperands, newLocals)
@@ -673,7 +673,7 @@ trait AI[D <: Domain] {
                                 if (tracer.isDefined &&
                                     ((rest ne newOperands) || (locals ne newLocals))) {
                                     tracer.get.establishedConstraint(theDomain)(
-                                        pc, rest, locals, newOperands, newLocals
+                                        pc, nextPC, rest, locals, newOperands, newLocals
                                     )
                                 }
                                 gotoTarget(pc, nextPC, false, newOperands, newLocals)
@@ -954,7 +954,7 @@ trait AI[D <: Domain] {
                                     if (tracer.isDefined &&
                                         ((remainingOperands ne updatedOperands) || (locals ne updatedLocals))) {
                                         tracer.get.establishedConstraint(theDomain)(
-                                            pc, remainingOperands, locals, updatedOperands, updatedLocals
+                                            pc, branchTarget, remainingOperands, locals, updatedOperands, updatedLocals
                                         )
                                     }
                                     gotoTarget(
@@ -990,7 +990,7 @@ trait AI[D <: Domain] {
                                 if (tracer.isDefined &&
                                     ((remainingOperands ne updatedOperands) || (locals ne updatedLocals))) {
                                     tracer.get.establishedConstraint(theDomain)(
-                                        pc, remainingOperands, locals, updatedOperands, updatedLocals
+                                        pc, branchTarget, remainingOperands, locals, updatedOperands, updatedLocals
                                     )
                                 }
                                 gotoTarget(
