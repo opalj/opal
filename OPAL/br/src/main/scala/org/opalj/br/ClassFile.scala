@@ -219,10 +219,36 @@ final class ClassFile private (
     }
 
     /**
+     * Returns the field with the given name, if any.
+     *
+     * @note The complexity is O(log2 n); this algorithm uses a binary search algorithm.
+     */
+    def findField(name: String): Option[Field] = {
+        @tailrec @inline def findField(low: Int, high: Int): Option[Field] = {
+            if (high < low)
+                return None
+
+            val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 fields)
+            val field = fields(mid)
+            val fieldName = field.name
+            if (fieldName == name) {
+                Some(field)
+            } else if (fieldName.compareTo(name) < 0) {
+                findField(mid + 1, high)
+            } else {
+                findField(low, mid - 1)
+            }
+        }
+
+        findField(0, fields.size - 1)
+    }
+
+    /**
      * Returns the method with the given name, if any.
      *
      * @note Though the methods are sorted, no guarantee is given which method is
      *      returned if multiple methods are defined with the same name.
+     * @note The complexity is O(log2 n); this algorithm uses a binary search algorithm.
      */
     def findMethod(name: String): Option[Method] = {
         @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
@@ -372,25 +398,25 @@ object ClassFile {
      * The used class file version is 49.0 (Java 5) (Using this version, we are not
      * required to create the stack map table attribute to create a valid class file.)
      */
-//    def Proxy(
-//        definingType: TypeDeclaration,
-//        methodName: String,
-//        methodDescriptor: MethodDescriptor,
-//        calleeType: ObjectType,
-//        calleeMethodName: String,
-//        calleeMethodDescriptor: String): ClassFile = {
-//
-//        val field: Option[Field] = None
-//        val method: Method = null
-//        ClassFile(0, 49,
-//            bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
-//            definingType.objectType,
-//            definingType.theSuperclassType,
-//            definingType.theSuperinterfaceTypes.toSeq,
-//            field.map(IndexedSeq(_)).getOrElse(IndexedSeq.empty),
-//            IndexedSeq(method),
-//            IndexedSeq(VirtualTypeFlag))
-//    }
+    //    def Proxy(
+    //        definingType: TypeDeclaration,
+    //        methodName: String,
+    //        methodDescriptor: MethodDescriptor,
+    //        calleeType: ObjectType,
+    //        calleeMethodName: String,
+    //        calleeMethodDescriptor: String): ClassFile = {
+    //
+    //        val field: Option[Field] = None
+    //        val method: Method = null
+    //        ClassFile(0, 49,
+    //            bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
+    //            definingType.objectType,
+    //            definingType.theSuperclassType,
+    //            definingType.theSuperinterfaceTypes.toSeq,
+    //            field.map(IndexedSeq(_)).getOrElse(IndexedSeq.empty),
+    //            IndexedSeq(method),
+    //            IndexedSeq(VirtualTypeFlag))
+    //    }
 
     def unapply(classFile: ClassFile): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
         import classFile._

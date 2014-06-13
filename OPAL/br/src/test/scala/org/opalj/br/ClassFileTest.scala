@@ -31,21 +31,24 @@ package br
 
 import org.scalatest.FunSuite
 import org.scalatest.ParallelTestExecution
+import org.scalatest.Matchers
 
 /**
  * @author Michael Eichberg
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ClassFileTest extends FunSuite with ParallelTestExecution {
+class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
 
     import reader.Java8Framework.ClassFile
 
-    val codeJARFile = TestSupport.locateTestResources("classfiles/Code.jar","bi")
-    val cf1 = ClassFile(codeJARFile, "code/ImmutableList.class")
+    val codeJARFile = TestSupport.locateTestResources("classfiles/Code.jar", "bi")
+    val immutableList = ClassFile(codeJARFile, "code/ImmutableList.class")
+    val boundedBuffer = ClassFile(codeJARFile, "code/BoundedBuffer.class")
+    val quicksort = ClassFile(codeJARFile, "code/Quicksort.class")
 
     test("test that it can find the first constructor") {
         assert(
-            cf1.findMethod(
+            immutableList.findMethod(
                 "<init>",
                 MethodDescriptor(ObjectType.Object, VoidType)
             ).isDefined
@@ -54,7 +57,7 @@ class ClassFileTest extends FunSuite with ParallelTestExecution {
 
     test("test that it can find the second constructor") {
         assert(
-            cf1.findMethod(
+            immutableList.findMethod(
                 "<init>",
                 MethodDescriptor(
                     IndexedSeq(ObjectType.Object, ObjectType("code/ImmutableList")),
@@ -66,32 +69,59 @@ class ClassFileTest extends FunSuite with ParallelTestExecution {
 
     test("test that it can find all other methods") {
         assert(
-            cf1.findMethod(
+            immutableList.findMethod(
                 "getNext",
                 MethodDescriptor(IndexedSeq(), ObjectType("code/ImmutableList"))
             ).isDefined
         )
 
         assert(
-            cf1.findMethod(
+            immutableList.findMethod(
                 "prepend",
                 MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
             ).isDefined
         )
 
         assert(
-            cf1.findMethod(
+            immutableList.findMethod(
                 "getIterator",
                 MethodDescriptor(IndexedSeq(), ObjectType("java/util/Iterator"))
             ).isDefined
         )
 
         assert(
-            cf1.findMethod(
+            immutableList.findMethod(
                 "get",
                 MethodDescriptor(IndexedSeq(), ObjectType.Object)
             ).isDefined
         )
+    }
+
+    test("that findField on a class without fields does not fail") {
+        quicksort.fields should be(empty)
+        quicksort.findField("DoesNotExist") should be(None)
+    }
+
+    test("that findField finds all fields") {
+        if (boundedBuffer.fields.size != 5)
+            fail("expected five fields; found: "+boundedBuffer.fields)
+
+        boundedBuffer.findField("buffer") should be('defined)
+        boundedBuffer.findField("first") should be('defined)
+        boundedBuffer.findField("last") should be('defined)
+        boundedBuffer.findField("size") should be('defined)
+        boundedBuffer.findField("numberInBuffer") should be('defined)
+    }
+    
+    test("that findField does not find non-existing fields") {
+        if (boundedBuffer.fields.size != 5)
+            fail("expected five fields; found: "+boundedBuffer.fields)
+
+        boundedBuffer.findField("BUFFER") should be(None)
+        boundedBuffer.findField("firsT") should be(None)
+        boundedBuffer.findField("lAst") should be(None)
+        boundedBuffer.findField("Size") should be(None)
+        boundedBuffer.findField("AnumberInBuffers") should be(None)
     }
 
 }

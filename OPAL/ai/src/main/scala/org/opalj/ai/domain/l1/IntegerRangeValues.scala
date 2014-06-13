@@ -436,7 +436,7 @@ trait IntegerRangeValues
                 if (lb < Int.MinValue || ub > Int.MaxValue)
                     IntegerValue(pc)
                 else
-                    IntegerValue(lb.toInt, ub.toInt)
+                    IntegerRange(lb.toInt, ub.toInt)
             case _ ⇒
                 // we have to create a new instance... even if we just add "0"
                 IntegerValue(pc)
@@ -457,6 +457,9 @@ trait IntegerRangeValues
         }
     }
 
+    override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        IntegerValue(pc)
+
     override def idiv(
         pc: PC,
         numerator: DomainValue,
@@ -474,8 +477,44 @@ trait IntegerRangeValues
         }
     }
 
-    override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        value1 match {
+            case IntegerRange(lb1, ub1) ⇒
+                if (lb1 == 0 && ub1 == 0) IntegerRange(0, 0)
+                else value2 match {
+                    case IntegerRange(lb2, ub2) ⇒
+                        // to identify overflows we simply do the "mul" on long values
+                        // and check afterwards
+                        val lb1l = lb1.toLong
+                        val ub1l = ub1.toLong
+                        val lb2l = lb2.toLong
+                        val ub2l = ub2.toLong
+                        val ub =
+                            Math.max(lb1l * lb2l, ub1l * ub2l)
+                        val lb =
+                            Math.min(
+                                Math.min(
+                                    Math.min(lb1l * lb2l, ub1l * ub2l),
+                                    ub1l * lb2l),
+                                lb1l * ub2l)
+
+                        if (lb < Int.MinValue || ub > Int.MaxValue)
+                            IntegerValue(pc)
+                        else
+                            IntegerRange(lb.toInt, ub.toInt)
+                    case _ ⇒
+                        IntegerValue(pc)
+                }
+
+            case _ ⇒
+                value2 match {
+                    case IntegerRange(0, 0) ⇒ IntegerRange(0, 0)
+                    case _ ⇒
+                        // we have to create a new instance... even if we just add "0"
+                        IntegerValue(pc)
+                }
+        }
+    }
 
     override def irem(
         pc: PC,
@@ -504,9 +543,6 @@ trait IntegerRangeValues
         IntegerValue(pc)
 
     override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
-
-    override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
 
     override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =

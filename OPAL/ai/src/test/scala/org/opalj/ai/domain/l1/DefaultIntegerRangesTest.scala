@@ -173,6 +173,118 @@ class DefaultIntegerRangesTest
             }
         }
 
+        describe("the behavior of imul") {
+
+            it("[0,3] * [0,2] => [lb*lb=0,ub*ub=6]") {
+                val v1 = IntegerRange(0, 3)
+                val v2 = IntegerRange(0, 2)
+
+                imul(-1, v1, v2) should be(IntegerRange(0, 6))
+                imul(-1, v2, v1) should be(IntegerRange(0, 6))
+            }
+
+            it("[-3,-1] * [-10,-2] => [ub*ub=2,lb*lb=30]") {
+                val v1 = IntegerRange(-3, -1)
+                val v2 = IntegerRange(-10, -2)
+
+                imul(-1, v1, v2) should be(IntegerRange(2, 30))
+                imul(-1, v2, v1) should be(IntegerRange(2, 30))
+            }
+
+            it("[-1,3] * [0,2] => [lb*ub=-2,ub*ub=6]") {
+                val v1 = IntegerRange(-1, 3)
+                val v2 = IntegerRange(0, 2)
+
+                imul(-1, v1, v2) should be(IntegerRange(-2, 6))
+                imul(-1, v2, v1) should be(IntegerRange(-2, 6))
+            }
+
+            it("[-3,3] * [-3,2] => [lb*ub=-6,lb*lb=9]") {
+                val v1 = IntegerRange(-3, 3)
+                val v2 = IntegerRange(-3, 2)
+
+                imul(-1, v1, v2) should be(IntegerRange(-9, 9))
+                imul(-1, v2, v1) should be(IntegerRange(-9, 9))
+            }
+
+            it("[0,0] * AnIntegerValue => [0,0]") {
+                val v1 = IntegerRange(0, 0)
+                val v2 = AnIntegerValue()
+
+                imul(-1, v1, v2) should be(IntegerRange(0, 0))
+                imul(-1, v2, v1) should be(IntegerRange(0, 0))
+            }
+
+            it("[Int.MinValue,3] * [-3,2] => AnIntegerValue") {
+                val v1 = IntegerRange(Int.MinValue, 3)
+                val v2 = IntegerRange(-3, 2)
+
+                imul(-1, v1, v2) should be(AnIntegerValue())
+                imul(-1, v2, v1) should be(AnIntegerValue())
+            }
+
+            it("[0,3] * [-3,Int.MaxValue] => AnIntegerValue") {
+                val v1 = IntegerRange(0, 3)
+                val v2 = IntegerRange(-3, Int.MaxValue)
+
+                imul(-1, v1, v2) should be(AnIntegerValue())
+                imul(-1, v2, v1) should be(AnIntegerValue())
+            }
+
+        }
+
+        describe("the behavior of iadd") {
+
+            it("[0,3] + [0,2] => [0,5]") {
+                val v1 = IntegerRange(0, 3)
+                val v2 = IntegerRange(0, 2)
+
+                iadd(-1, v1, v2) should be(IntegerRange(0, 5))
+                iadd(-1, v2, v1) should be(IntegerRange(0, 5))
+            }
+
+            it("[-3,-1] + [-10,-2] => [-13,-3]") {
+                val v1 = IntegerRange(-3, -1)
+                val v2 = IntegerRange(-10, -2)
+
+                iadd(-1, v1, v2) should be(IntegerRange(-13, -3))
+                iadd(-1, v2, v1) should be(IntegerRange(-13, -3))
+            }
+
+            it("[-1,3] + [0,2] => [-1,5]") {
+                val v1 = IntegerRange(-1, 3)
+                val v2 = IntegerRange(0, 2)
+
+                iadd(-1, v1, v2) should be(IntegerRange(-1, 5))
+                iadd(-1, v2, v1) should be(IntegerRange(-1, 5))
+            }
+
+            it("[0,0] + AnIntegerValue => AnIntegerValue") {
+                val v1 = IntegerRange(0, 0)
+                val v2 = AnIntegerValue()
+
+                iadd(-1, v1, v2) should be(AnIntegerValue)
+                iadd(-1, v2, v1) should be(AnIntegerValue)
+            }
+
+            it("[Int.MinValue,3] + [3,2] => [Int.MinValue+3,5]") {
+                val v1 = IntegerRange(Int.MinValue, 3)
+                val v2 = IntegerRange(3, 2)
+
+                iadd(-1, v1, v2) should be(IntegerRange(Int.MinValue + 3, 5))
+                iadd(-1, v2, v1) should be(IntegerRange(Int.MinValue + 3, 5))
+            }
+
+            it("[-3,-1] * [-3,Int.MaxValue] => [-6,Int.MaxValue-1") {
+                val v1 = IntegerRange(-3, -1)
+                val v2 = IntegerRange(-3, Int.MaxValue)
+
+                iadd(-1, v1, v2) should be(IntegerRange(-6, Int.MaxValue - 1))
+                iadd(-1, v2, v1) should be(IntegerRange(-6, Int.MaxValue - 1))
+            }
+
+        }
+
         describe("the behavior of the relational operators") {
 
             describe("the behavior of the greater or equal than (>=) operator") {
@@ -377,7 +489,7 @@ class DefaultIntegerRangesTest
             summary should be(domain.IntegerRange(0, Int.MaxValue))
         }
 
-        ignore("it should be able to collect a switch statement's cases and use that information to calculate a result") {
+        it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
             val domain = new IntegerRangesTestDomain
             val method = IntegerValues.findMethod("someSwitch").get
             val result = BaseAI(IntegerValues, method, domain)
