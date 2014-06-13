@@ -75,7 +75,9 @@ trait IntegerRangeValues
     trait AnIntegerValue extends IntegerLikeValue { this: DomainValue ⇒ }
 
     /**
-     * Represents a concrete integer value.
+     * Represents a range of integer values. The range's bounds are inclusive.
+     * Unless a range has only one value it is impossible to tell whether or not
+     * a value that is in the range will potentially occur at runtime.
      */
     abstract class IntegerRange extends IntegerLikeValue { this: DomainValue ⇒
 
@@ -90,8 +92,15 @@ trait IntegerRangeValues
 
     }
 
+    /**
+     * Creates a new IntegerRange value with the lower and upper bound set to the
+     * given value.
+     */
     def IntegerRange(value: Int): DomainValue = IntegerRange(value, value)
 
+    /**
+     * Creates a new IntegerRange value with the given bounds.
+     */
     def IntegerRange(lb: Int, ub: Int): DomainValue
 
     object IntegerRange {
@@ -460,8 +469,22 @@ trait IntegerRangeValues
         }
     }
 
-    override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (IntegerRange(lb1, ub1), IntegerRange(lb2, ub2)) ⇒
+                // to identify overflows we simply do the "add" on long values
+                // and check afterwards
+                val lb = lb1.toLong - ub2.toLong
+                val ub = ub1.toLong - lb2.toLong
+                if (lb < Int.MinValue || ub > Int.MaxValue)
+                    IntegerValue(pc)
+                else
+                    IntegerRange(lb.toInt, ub.toInt)
+            case _ ⇒
+                // we have to create a new instance... even if we just add "0"
+                IntegerValue(pc)
+        }
+    }
 
     override def idiv(
         pc: PC,
