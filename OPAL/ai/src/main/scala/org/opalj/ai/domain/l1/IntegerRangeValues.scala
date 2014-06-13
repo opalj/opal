@@ -36,7 +36,14 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 import br._
 
 /**
- * Domain to track ranges of integer values.
+ * This domain enables the tracking of an integer value's range. The cardinality of
+ * the range can be configured to facilitate different needs with regard to the
+ * desired precision. Often, a very small cardinality (e.g., 2 or 8) may be
+ * completely sufficient and a large cardinality does not make the precision more
+ * precise.
+ *
+ * This domain supports the most common math operations to facilitate the tracking
+ * of adaptable domains.
  *
  * @author Michael Eichberg
  */
