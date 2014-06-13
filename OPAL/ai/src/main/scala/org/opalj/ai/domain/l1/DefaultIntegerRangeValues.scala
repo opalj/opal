@@ -84,14 +84,14 @@ trait DefaultIntegerRangeValues
             new IntegerRange(newLowerBound, newUpperBound)
         }
 
-        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {            
+        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             val result = other match {
                 case that: AnIntegerValue ⇒ StructuralUpdate(that)
                 case IntegerRange(otherLB, otherUB) ⇒
                     val newLowerBound = Math.min(this.lowerBound, otherLB)
                     val newUpperBound = Math.max(this.upperBound, otherUB)
 
-                    if (newUpperBound - newLowerBound > maxSizeOfIntegerRanges)
+                    if (newUpperBound.toLong - newLowerBound.toLong > maxSizeOfIntegerRanges)
                         StructuralUpdate(AnIntegerValue())
 
                     else if (newLowerBound == lowerBound && newUpperBound == upperBound)

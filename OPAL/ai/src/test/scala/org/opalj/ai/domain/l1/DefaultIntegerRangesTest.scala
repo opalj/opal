@@ -52,7 +52,8 @@ class DefaultIntegerRangesTest
         with Matchers
         with ParallelTestExecution {
 
-    class IntegerRangesTestDomain
+    class IntegerRangesTestDomain(
+        override val maxSizeOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
             extends Domain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
@@ -72,7 +73,6 @@ class DefaultIntegerRangesTest
 
         def id = "TestDomain"
 
-        override def maxSizeOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
     }
 
     describe("central properties of domains that use IntegerRange values") {
@@ -83,6 +83,57 @@ class DefaultIntegerRangesTest
         it("the representation of the constant integer value 0 should be an IntegerRange value") {
             theDomain.IntegerConstant0 should be(IntegerRange(0, 0))
         }
+    }
+
+    describe("the behavior or IntegerRange values if we exceed the max spread") {
+
+        val theDomain = new IntegerRangesTestDomain(2l)
+        import theDomain._
+
+        it("(join of two ranges with positive values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
+            val v1 = IntegerRange(lb = 2, ub = 3)
+            val v2 = IntegerRange(lb = 5, ub = 6)
+            v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
+            v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+        }
+        
+        it("(join of two ranges with positive values that do not exceed the spread); i1 join i2 => \"StructuralUpdate(IntegerRange(2,4))\"") {
+            val v1 = IntegerRange(lb = 2, ub = 3)
+            val v2 = IntegerRange(lb = 3, ub = 4)
+            v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(2,4)))
+            v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(2,4)))
+        }
+
+        it("(join of two ranges with negative values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
+            val v1 = IntegerRange(lb = -2, ub = -1)
+            val v2 = IntegerRange(lb = -5, ub = -4)
+            v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
+            v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+        }
+        
+        it("(join of two ranges with negative values that do not exceed the spread); i1 join i2 => \"StructuralUpdate(IntegerRange(-3,-1))\"") {
+            val v1 = IntegerRange(lb = -2, ub = -1)
+            val v2 = IntegerRange(lb = -3, ub = -2)
+            v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(-3,-1)))
+            v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-3,-1)))
+        }
+        
+          
+        it("(join of two ranges with Int.MaxValue); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
+            val v1 = IntegerRange(lb = 1, ub = Int.MaxValue)
+            val v2 = IntegerRange(lb = -10, ub = -1)
+            v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
+            v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+        }
+        
+         it("(join of two ranges one with [Int.MinValue+1 and Int.MaxValue]); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
+            val v1 = IntegerRange(lb = Int.MinValue+1, ub = Int.MaxValue)
+            val v2 = IntegerRange(lb = -10, ub = -1)
+            v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
+            v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+        }
+
+
     }
 
     describe("operations involving IntegerRange values") {
@@ -128,8 +179,9 @@ class DefaultIntegerRangesTest
                 val v1 = IntegerRange(lb = 0, ub = 0)
                 val v2 = IntegerRange(lb = 1, ub = 2147483647)
                 v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 2147483647)))
-                v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 2147483647)))
+                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(0, 2147483647)))
             }
+
         }
 
         describe("the behavior of the summary function") {
