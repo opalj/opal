@@ -399,7 +399,7 @@ object UShortSet {
         if (uShortValue1 < MinValue || uShortValue1 > MaxValue)
             throw new IllegalArgumentException("value out of range: "+uShortValue1)
         if (uShortValue2 < MinValue || uShortValue2 > MaxValue)
-            throw new IllegalArgumentException("value out of range: "+uShortValue1)
+            throw new IllegalArgumentException("value out of range: "+uShortValue2)
 
         if (uShortValue1 == uShortValue2)
             new UShortSet2(uShortValue1)
