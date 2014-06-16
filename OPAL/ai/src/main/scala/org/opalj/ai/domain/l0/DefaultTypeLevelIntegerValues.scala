@@ -36,8 +36,8 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 /**
  * Base implementation of the `TypeLevelIntegerValues` trait that requires that
  * the domain`s `Value` trait is not extended. This implementation satisfies
- * the requirements of OPAL-AI w.r.t. the domain's computational type but provides
- * some additional information about a value's range if possible.
+ * the requirements of OPAL w.r.t. the domain's computational type. Additionally,
+ * it collects information about a value's range, if possible.
  *
  * @author Michael Eichberg
  */
@@ -45,6 +45,16 @@ trait DefaultTypeLevelIntegerValues
         extends DefaultDomainValueBinding
         with TypeLevelIntegerValues {
     this: Configuration ⇒
+    
+    //
+    // IMPLEMENTATION NOTE
+    //
+    // It is safe to use singleton objects in this case since we do not propagate 
+    // constraints.
+    // I.e., all constraints that are stated by the AI (e.g., `intHasValue`) are
+    // completely ignored.
+    //
+    
 
     case object ABooleanValue extends super.BooleanValue {
 
