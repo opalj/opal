@@ -48,12 +48,13 @@ import domain.l1
 class DefaultCHACallGraphDomain[Source](
     val project: Project[Source],
     val cache: CallGraphCache[MethodSignature, Set[Method]],
-    val theClassFile: ClassFile,
-    val theMethod: Method)
+    val classFile: ClassFile,
+    val method: Method)
         extends Domain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject[Source]
+        with TheMethod
         with ProjectBasedClassHierarchy
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
@@ -66,9 +67,9 @@ class DefaultCHACallGraphDomain[Source](
         with l0.TypeLevelInvokeInstructions
         with CHACallGraphDomain {
 
-    type Id = Method
+    type Id = String
 
-    def id = theMethod
+    def id = classFile.thisType.toJava+"{ "+method.toJava+" }"
 
 }
 

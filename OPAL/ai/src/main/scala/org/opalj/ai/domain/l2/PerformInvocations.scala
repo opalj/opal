@@ -48,7 +48,8 @@ import org.opalj.ai.util.Locals
 trait PerformInvocations
         extends Domain
         with l0.TypeLevelInvokeInstructions
-        with ProjectBasedClassHierarchy { callingDomain: TheProject[_] with Configuration ⇒
+        with ProjectBasedClassHierarchy { 
+    callingDomain: TheProject[_] with Configuration with TheCode ⇒
 
     /**
      * Identifies recursive calls.

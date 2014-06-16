@@ -58,7 +58,15 @@ class MethodsWithArraysTest
     import MethodsWithArraysTest._
 
     class TestDomain
-            extends TypeLevelDomain
+            extends Domain
+            with DefaultDomainValueBinding
+            with DefaultReferenceValuesBinding
+            with DefaultTypeLevelIntegerValues
+            with DefaultTypeLevelLongValues
+            with DefaultTypeLevelFloatValues
+            with DefaultTypeLevelDoubleValues
+            with TypeLevelFieldAccessInstructions
+            with SimpleTypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
             with IgnoreSynchronization
             with DefaultHandlingOfMethodResults

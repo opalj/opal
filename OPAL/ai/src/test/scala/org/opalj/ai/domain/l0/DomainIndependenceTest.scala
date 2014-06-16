@@ -37,13 +37,13 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-import org.opalj.br._
+import org.opalj.br.Code
 import org.opalj.bi.reader.ClassFileReader
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of all methods using different domain configurations. 
+ * an abstract interpretation of all methods using different domain configurations.
  *
  * This test suite has the following goals:
  *  - Test if seemingly independent (partial-) domain implementations are really
@@ -64,23 +64,18 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
     // We use this domain for the comparison of the values; it has the same
     // expressive power as the other domains.
     private object ValuesDomain
-            extends Domain
-            with ThrowAllPotentialExceptionsConfiguration
+            extends ValuesCoordinatingDomain
             with l0.DefaultTypeLevelIntegerValues
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultReferenceValuesBinding
-            with l0.TypeLevelInvokeInstructions
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with l0.TypeLevelFieldAccessInstructions
             with PredefinedClassHierarchy {
         type Id = String
         def id = "Values Domain"
     }
 
-    private class Domain1[I](val id: I)
+    private class Domain1(val id: Code)
             extends Domain
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
@@ -93,11 +88,13 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
             with l0.DefaultTypeLevelDoubleValues
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions
-            with PredefinedClassHierarchy {
-        type Id = I
+            with PredefinedClassHierarchy
+            with TheCode {
+        type Id = Code
+        def code: Code = id
     }
 
-    private class Domain2[I](val id: I)
+    private class Domain2(val id: Code)
             extends Domain
             with Configuration
             with DefaultHandlingOfMethodResults
@@ -111,11 +108,13 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
             with l0.DefaultTypeLevelIntegerValues
             with l0.DefaultReferenceValuesBinding
             with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelLongValues {
-        type Id = I
+            with l0.DefaultTypeLevelLongValues
+            with TheCode {
+        type Id = Code
+        def code: Code = id
     }
 
-    private class Domain3[I](val id: I)
+    private class Domain3(val id: Code)
             extends Domain
             with l0.DefaultReferenceValuesBinding
             with l0.DefaultTypeLevelIntegerValues
@@ -127,8 +126,10 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
             with PredefinedClassHierarchy
             with IgnoreSynchronization
             with DefaultHandlingOfMethodResults
-            with ThrowAllPotentialExceptionsConfiguration {
-        type Id = I
+            with ThrowAllPotentialExceptionsConfiguration
+            with TheCode {
+        type Id = Code
+        def code: org.opalj.br.Code = id
     }
 
     behavior of "a final domain composed of \"independent\" partial domains"
@@ -170,17 +171,31 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
             (classFile, source) ← org.opalj.br.TestSupport.JREClassFiles.par
             method ← classFile.methods
             if method.body.isDefined
+            body = method.body.get
         } {
-            val r1 = new SelfTerminatingAI()(classFile, method, new Domain1((classFile, method)))
-            val r2 = new SelfTerminatingAI()(classFile, method, new Domain2((classFile, method)))
-            val r3 = new SelfTerminatingAI()(classFile, method, new Domain3((classFile, method)))
 
-            if (r1.wasAborted)
-                fail("abstract interpretation was aborted: "+r1.stateToString)
-            if (r2.wasAborted)
-                fail("abstract interpretation was aborted: "+r2.stateToString)
-            if (r3.wasAborted)
-                fail("abstract interpretation was aborted: "+r3.stateToString)
+            def TheAI() = new SelfTerminatingAI[Domain]() {
+                override val maxEffortInNs: Long = 15000l /*ms*/ * 1000l * 1000l
+            }
+
+            val a1 = TheAI()
+            val r1 = a1(classFile, method, new Domain1(body))
+            val a2 = TheAI()
+            val r2 = a2(classFile, method, new Domain2(body))
+            val a3 = TheAI()
+            val r3 = a3(classFile, method, new Domain3(body))
+
+            def abort(ai: SelfTerminatingAI[_], r: AIResult) {
+                fail("the abstract interpretation of "+
+                    classFile.thisType.toJava+
+                    "{ "+method.toJava+" } was aborted after "+
+                    org.opalj.util.PerformanceEvaluation.ns2sec(ai.abortedAfter)+"secs.\n "+
+                    r.stateToString)
+            }
+
+            if (r1.wasAborted) abort(a1, r1)
+            if (r2.wasAborted) abort(a2, r1)
+            if (r3.wasAborted) abort(a3, r1)
 
             if (!corresponds(r1, r2)) {
 

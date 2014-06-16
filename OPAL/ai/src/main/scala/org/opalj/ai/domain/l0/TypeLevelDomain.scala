@@ -52,5 +52,5 @@ trait TypeLevelDomain
         with DefaultTypeLevelDoubleValues
         with TypeLevelFieldAccessInstructions
         with TypeLevelInvokeInstructions {
-    this: Configuration with ClassHierarchy  ⇒
+    this: Configuration with ClassHierarchy with TheCode ⇒
 }

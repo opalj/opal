@@ -57,12 +57,12 @@ class DefaultPreciseLongValuesTest
             extends Domain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
+            with l0.SimpleTypeLevelInvokeInstructions
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.DefaultReferenceValuesBinding
             with l0.DefaultTypeLevelIntegerValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.TypeLevelInvokeInstructions
-            with l0.DefaultReferenceValuesBinding
             with li.DefaultPreciseLongValues
             with PredefinedClassHierarchy
             with DefaultHandlingOfMethodResults

@@ -69,7 +69,7 @@ class DefaultPreciseReferenceValuesTest
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultTypeLevelLongValues
             with l0.TypeLevelFieldAccessInstructions
-            with l0.TypeLevelInvokeInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultReferenceValuesBinding
             // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
             // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding

@@ -41,7 +41,8 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
 /**
  * Most basic handling of method invocations that determines the value that is
  * put onto the operand stack/returned by a method call based on the called method's
- * signature.
+ * signature. This implementation completely ignores exceptions and/or errors
+ * thrown by the method.
  *
  * (Linkage related exceptions are currently generally ignored.)
  *
@@ -51,15 +52,7 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelInvokeInstructions { this: Domain with Configuration with TheCode ⇒
-
-    def getExceptions(pc: PC): ExceptionValues = {
-        var exceptionTypes: Set[ObjectType] = Set.empty
-        code.handlersFor(pc) foreach { h ⇒
-            exceptionTypes += h.catchType.getOrElse(ObjectType.Throwable)
-        }
-        exceptionTypes.map(ex ⇒ InitializedObjectValue(pc, ex))
-    }
+trait SimpleTypeLevelInvokeInstructions { this: Domain with Configuration ⇒
 
     protected[this] def handleInstanceBasedInvoke(
         pc: PC,

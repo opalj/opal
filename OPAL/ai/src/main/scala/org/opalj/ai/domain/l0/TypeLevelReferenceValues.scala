@@ -400,7 +400,6 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
          *      special handling if a value is loaded from an array, override the method
          *      [[doLoad]].
          */
-
         override def load(pc: PC, index: DomainValue): ArrayLoadResult = {
             // The case "this.isNull == Yes" will not occur as the value "null" is always
             // represented by an instance of the respective class and this situation
@@ -413,7 +412,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
 
             var thrownExceptions: List[ExceptionValue] = Nil
-            if (isNull.isYesOrUnknown && throwNullPointerException)
+            if (isNull.isYesOrUnknown && throwNullPointerExceptionOnArrayAccess)
                 thrownExceptions = NullPointerException(pc) :: thrownExceptions
             if (isIndexValid.isNoOrUnknown && throwArrayIndexOutOfBoundsException)
                 thrownExceptions = ArrayIndexOutOfBoundsException(pc) :: thrownExceptions
@@ -455,7 +454,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
                 thrownExceptions = ArrayIndexOutOfBoundsException(pc) :: thrownExceptions
             if (isAssignable.isUnknown && throwArrayStoreException)
                 thrownExceptions = ArrayStoreException(pc) :: thrownExceptions
-            if (isNull.isYesOrUnknown && throwNullPointerException)
+            if (isNull.isYesOrUnknown && throwNullPointerExceptionOnArrayAccess)
                 thrownExceptions = NullPointerException(pc) :: thrownExceptions
 
             doStore(pc, value, index, thrownExceptions)
@@ -470,7 +469,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
             length.map(IntegerValue(pc, _)).getOrElse(IntegerValue(pc))
 
         override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
-            if (isNull == Unknown && throwNullPointerException)
+            if (isNull == Unknown && throwNullPointerExceptionOnArrayAccess)
                 ComputedValueOrException(doGetLength(pc), NullPointerException(pc))
             else
                 ComputedValue(doGetLength(pc))

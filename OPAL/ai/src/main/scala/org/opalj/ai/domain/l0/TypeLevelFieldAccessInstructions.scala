@@ -52,7 +52,7 @@ trait TypeLevelFieldAccessInstructions { this: Domain with Configuration ⇒
         fieldType: FieldType): Computation[DomainValue, ExceptionValue] =
         refIsNull(objectref) match {
             case Yes ⇒ throws(NullPointerException(pc))
-            case Unknown if throwNullPointerException ⇒
+            case Unknown if throwNullPointerExceptionOnFieldAccess ⇒
                 ComputedValueOrException(TypedValue(pc, fieldType), NullPointerException(pc))
             case _ ⇒
                 ComputedValue(TypedValue(pc, fieldType))
@@ -75,7 +75,7 @@ trait TypeLevelFieldAccessInstructions { this: Domain with Configuration ⇒
         refIsNull(objectref) match {
             case Yes ⇒
                 throws(NullPointerException(pc))
-            case Unknown if throwNullPointerException ⇒
+            case Unknown if throwNullPointerExceptionOnFieldAccess ⇒
                 ComputationWithSideEffectOrException(NullPointerException(pc))
             case _ ⇒
                 ComputationWithSideEffectOnly

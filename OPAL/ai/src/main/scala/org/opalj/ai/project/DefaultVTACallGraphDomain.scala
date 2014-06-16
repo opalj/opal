@@ -48,13 +48,14 @@ import domain.l1
 class DefaultVTACallGraphDomain[Source](
     val project: Project[Source],
     val cache: CallGraphCache[MethodSignature, Set[Method]],
-    val theClassFile: ClassFile,
-    val theMethod: Method,
+    val classFile: ClassFile,
+    val method: Method,
     override val maxSizeOfIntegerRanges: Long)
         extends Domain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject[Source]
+        with TheMethod
         with ProjectBasedClassHierarchy
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
@@ -67,9 +68,9 @@ class DefaultVTACallGraphDomain[Source](
         with l1.DefaultReferenceValuesBinding
         with VTACallGraphDomain {
 
-    type Id = Method
+    type Id = String
 
-    def id = theMethod
+    def id = classFile.thisType.toJava+"{ "+method.toJava+" }"
 
 }
 

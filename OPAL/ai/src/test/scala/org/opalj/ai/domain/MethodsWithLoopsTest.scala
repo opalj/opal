@@ -91,7 +91,7 @@ class MethodsWithLoopsTest
                 with l0.DefaultTypeLevelFloatValues
                 with l0.DefaultTypeLevelDoubleValues
                 with l0.TypeLevelFieldAccessInstructions
-                with l0.TypeLevelInvokeInstructions
+                with l0.SimpleTypeLevelInvokeInstructions
                 with PredefinedClassHierarchy
                 with DefaultHandlingOfMethodResults
                 with IgnoreSynchronization {

@@ -74,7 +74,8 @@ class PropertyTracingTest
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions
             with l1.DefaultReferenceValuesBinding
-            with l1.DefaultIntegerRangeValues {
+            with l1.DefaultIntegerRangeValues
+            with TheMethod {
 
         type Id = String
         override def id = method.toJava

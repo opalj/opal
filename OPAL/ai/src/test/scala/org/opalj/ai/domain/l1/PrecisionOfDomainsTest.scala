@@ -32,14 +32,13 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import org.opalj.br._
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.ai.domain.l0.ValuesCoordinatingDomain
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
@@ -61,15 +60,10 @@ class PrecisionOfDomainsTest extends FlatSpec with Matchers {
         // We use this domain for the comparison of the values; it has the same
         // expressive power as the other domains.
         class TheValuesDomain(val project: Project[java.net.URL])
-                extends Domain
-                with ThrowAllPotentialExceptionsConfiguration
-                with DefaultHandlingOfMethodResults
-                with IgnoreSynchronization
+                extends ValuesCoordinatingDomain
                 with l0.DefaultTypeLevelLongValues
                 with l0.DefaultTypeLevelFloatValues
                 with l0.DefaultTypeLevelDoubleValues
-                with l0.TypeLevelInvokeInstructions
-                with l0.TypeLevelFieldAccessInstructions
                 with l1.DefaultReferenceValuesBinding
                 with l1.DefaultIntegerRangeValues
                 with ProjectBasedClassHierarchy
@@ -78,8 +72,10 @@ class PrecisionOfDomainsTest extends FlatSpec with Matchers {
             def id = "Values Domain"
         }
 
-        class TypeLevelDomain[I](val id: I, val project: Project[java.net.URL])
+        class TypeLevelDomain(val id: Code, val project: Project[java.net.URL])
                 extends Domain
+                with TheProject[java.net.URL]
+                with TheCode
                 with DefaultHandlingOfMethodResults
                 with IgnoreSynchronization
                 with DefaultDomainValueBinding
@@ -91,12 +87,12 @@ class PrecisionOfDomainsTest extends FlatSpec with Matchers {
                 with l0.DefaultTypeLevelDoubleValues
                 with l0.TypeLevelFieldAccessInstructions
                 with l0.TypeLevelInvokeInstructions
-                with ProjectBasedClassHierarchy
-                with TheProject[java.net.URL] {
-            type Id = I
+                with ProjectBasedClassHierarchy {
+            type Id = Code
+            def code: Code = id
         }
 
-        class L1Domain[I](val id: I, val project: Project[java.net.URL])
+        class L1Domain[I](val id: Code, val project: Project[java.net.URL])
                 extends Domain
                 with ThrowAllPotentialExceptionsConfiguration
                 with DefaultHandlingOfMethodResults
@@ -109,8 +105,10 @@ class PrecisionOfDomainsTest extends FlatSpec with Matchers {
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelFieldAccessInstructions
                 with ProjectBasedClassHierarchy
-                with TheProject[java.net.URL] {
-            type Id = I
+                with TheProject[java.net.URL]
+                with TheCode {
+            type Id = Code
+            def code: Code = id
         }
 
         val ValuesDomain = new TheValuesDomain(project)
@@ -166,13 +164,14 @@ class PrecisionOfDomainsTest extends FlatSpec with Matchers {
             classFile ← classFiles.par
             method ← classFile.methods
             if method.body.isDefined
+            body = method.body.get
         } {
             val a1 = new SelfTerminatingAI[Domain]()
-            val r1 = a1(classFile, method, new TypeLevelDomain((classFile, method), project))
+            val r1 = a1(classFile, method, new TypeLevelDomain(body, project))
             val a2 = new SelfTerminatingAI[Domain]() {
-                override val maxTimeInNs: Long = 330000000l
+                override val maxEffortInNs: Long = 330000000l
             }
-            val r2 = a2(classFile, method, new L1Domain((classFile, method), project))
+            val r2 = a2(classFile, method, new L1Domain(body, project))
 
             def abort(ai: SelfTerminatingAI[_], r: AIResult) {
                 fail("the abstract interpretation of "+

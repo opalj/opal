@@ -60,7 +60,7 @@ class IincTracingDomain[I](override val id: I)
         with Configuration
         with DefaultReferenceValuesBinding
         with TypeLevelFieldAccessInstructions
-        with TypeLevelInvokeInstructions
+        with SimpleTypeLevelInvokeInstructions // FIXME We should use the regular TypeLevel...Domain
         with PredefinedClassHierarchy
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization { thisDomain ⇒
@@ -82,9 +82,7 @@ class IincTracingDomain[I](override val id: I)
          * is to preserve `IincResults values as well as possible.
          */
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
-            assert(this.computationalType == value.computationalType)
-
-            if (value.isInstanceOf[IincResults]) {
+              if (value.isInstanceOf[IincResults]) {
                 val other = value.asInstanceOf[IincResults]
                 if (this.iincPcs == other.iincPcs) {
                     // They're the same, so following code paths don't need to be updated

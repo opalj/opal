@@ -46,7 +46,7 @@ class SelfTerminatingAI[D <: Domain] extends AI[D] {
 
     def abortedAfter = interruptTime - startTime
 
-    val maxTimeInNs: Long = 150l /*ms*/ * 1000l * 1000l
+    val maxEffortInNs: Long = 150l /*ms*/ * 1000l * 1000l
 
     override def isInterrupted =
         interrupted ||
@@ -55,7 +55,7 @@ class SelfTerminatingAI[D <: Domain] extends AI[D] {
                 if (evaluationCount == 0) {
                     startTime = System.nanoTime()
                     false
-                } else if (evaluationCount % 100 == 0 && System.nanoTime() - startTime > maxTimeInNs) {
+                } else if (evaluationCount % 100 == 0 && System.nanoTime() - startTime > maxEffortInNs) {
                     interrupted = true
                     interruptTime = System.nanoTime()
                     true

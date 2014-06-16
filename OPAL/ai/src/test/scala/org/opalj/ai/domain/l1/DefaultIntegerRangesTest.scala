@@ -62,7 +62,7 @@ class DefaultIntegerRangesTest
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultReferenceValuesBinding
             with l0.TypeLevelFieldAccessInstructions
-            with l0.TypeLevelInvokeInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
             with DefaultIntegerRangeValues
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization

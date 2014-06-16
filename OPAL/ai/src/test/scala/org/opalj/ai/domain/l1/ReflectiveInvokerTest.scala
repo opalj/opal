@@ -64,7 +64,7 @@ class ReflectiveInvokerTest
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l0.TypeLevelFieldAccessInstructions
-            with l0.TypeLevelInvokeInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
             //    with DefaultReferenceValuesBinding
             //    with DefaultStringValuesBinding
             with l1.DefaultClassValuesBinding

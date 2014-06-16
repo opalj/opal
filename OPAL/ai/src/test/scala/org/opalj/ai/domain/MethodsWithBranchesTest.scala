@@ -60,9 +60,17 @@ class MethodsWithBranchesTest
     import domain.RecordConstraints
 
     class TestDomain(val name: String)
-            extends TypeLevelDomain
+            extends Domain
+            with DefaultDomainValueBinding
+            with DefaultReferenceValuesBinding
+            with DefaultTypeLevelIntegerValues
+            with DefaultTypeLevelLongValues
+            with DefaultTypeLevelFloatValues
+            with DefaultTypeLevelDoubleValues
+            with TypeLevelFieldAccessInstructions
+            with SimpleTypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
-            with PredefinedClassHierarchy 
+            with PredefinedClassHierarchy
             with IgnoreSynchronization
             with DefaultHandlingOfMethodResults
             with RecordLastReturnedValues

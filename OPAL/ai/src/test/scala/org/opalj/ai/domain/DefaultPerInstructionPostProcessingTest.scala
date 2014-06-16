@@ -74,7 +74,7 @@ class DefaultPerInstructionPostProcessingTest
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultTypeLevelLongValues
             with l0.TypeLevelFieldAccessInstructions
-            with l0.TypeLevelInvokeInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultReferenceValuesBinding
             with l1.DefaultIntegerRangeValues {
 
