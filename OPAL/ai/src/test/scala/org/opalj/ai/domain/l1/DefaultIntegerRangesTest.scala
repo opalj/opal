@@ -549,6 +549,12 @@ class DefaultIntegerRangesTest
                     intAreEqual(p2, p1) should be(Unknown) // reflexive
                 }
 
+                it("[0,3] == [0,3] should be Unknown") {
+                    val p1 = IntegerRange(lb = 0, ub = 3)
+                    val p2 = IntegerRange(lb = 0, ub = 3)
+                    intAreEqual(p1, p2) should be(Unknown)
+                    intAreEqual(p2, p1) should be(Unknown) // reflexive
+                }
             }
         }
 
