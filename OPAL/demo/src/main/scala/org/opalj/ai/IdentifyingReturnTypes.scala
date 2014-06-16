@@ -101,8 +101,6 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
         override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
             import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-            Thread.sleep(5)
-
             val methodsWithRefinedReturnTypes = time {
                 for {
                     classFile ← theProject.classFiles.par
