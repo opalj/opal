@@ -1742,12 +1742,16 @@ trait Domain {
     /**
      * Joins the given operand stacks and local variables.
      *
-     * This method heavily relies on reference comparison to speed up the overall
-     * process of performing an abstract interpretation of a method. Hence, a should
-     * whenever possible return the original object if a join of that original value with
-     * some other original value result in a value that has the same abstract state.
+     * ''In general there should be no need to refine this method.'' Overriding this
+     * method should only be done for analysis purposes.
      *
-     * ''In general there should be no need to override this method.''
+     * ==Performance==
+     * This method heavily relies on reference comparison to speed up the overall
+     * process of performing an abstract interpretation of a method. Hence,
+     * a computation should – whenever possible – return (one of) the original object(s) if
+     * that value has the same abstract state as the result. Furthermore, if all original
+     * values captures the same abstract state as result of the computation, the "left"
+     * value/the value that was already used in the past should be returned.
      *
      * @return The joined operand stack and registers.
      *      Returns `NoUpdate` if ''this'' memory layout already subsumes the ''other'' memory
