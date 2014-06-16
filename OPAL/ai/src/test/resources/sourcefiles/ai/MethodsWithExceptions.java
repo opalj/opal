@@ -92,10 +92,10 @@ public class MethodsWithExceptions {
                 throw t; // <= will throw t (non-null!)
             else {
                 System.out.println("Nothing happening");
-                // <= may throw NullPointerException which
-                // will be replaced by a
-                // NullPointerException in the finally
-                // clause because t is null
+                // May throw a NullPointerException. However, it
+                // will be replaced by a NullPointerException in the finally
+                // clause because t is null; i.e., this potential NullPointerException 
+                // will never be visible outside of this method.
             }
         } finally {
             t.printStackTrace(); // <= t may be null => may throw NullPointerException

@@ -41,37 +41,48 @@ import br._
  * @author Michael Eichberg
  */
 trait DefaultReferenceValuesBinding extends DefaultTypeLevelReferenceValues {
-    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
+    domain: Configuration with ClassHierarchy ⇒
 
     type DomainReferenceValue = ReferenceValue
     type DomainNullValue = NullValue
     type DomainObjectValue = ObjectValue
     type DomainArrayValue = ArrayValue
 
+    val TheNullValue: DomainNullValue = new NullValue()
+
     //
     // FACTORY METHODS
     //
 
-    protected[this] val TheNullValue: DomainNullValue = new NullValue()
-
     /**
      * @inheritdoc
-     * This implementation always returns the singleton instance `TheNullValue`.
+     *
+     * This implementation always returns the singleton instance [[TheNullValue]].
      */
     override def NullValue(pc: PC): DomainNullValue = TheNullValue
 
-    override protected[domain] def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue =
-        new SObjectValue(objectType)
+    override def ObjectValue(
+        pc: PC,
+        objectType: ObjectType): DomainObjectValue = {
 
-    override protected[domain] def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
-        assume(upperTypeBound.nonEmpty)
+        new SObjectValue(objectType)
+    }
+
+    override def ObjectValue(
+        pc: PC,
+        upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
+
         if (upperTypeBound.containsOneElement)
             ObjectValue(pc, upperTypeBound.first)
         else
             new MObjectValue(upperTypeBound)
     }
 
-    override protected[domain] def ArrayValue(pc: PC, arrayType: ArrayType): DomainArrayValue =
+    override protected[domain] def ArrayValue(
+        pc: PC,
+        arrayType: ArrayType): DomainArrayValue = {
+
         new ArrayValue(arrayType)
+    }
 
 }

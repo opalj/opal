@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 package domain
-package l1
+package li
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
@@ -53,8 +53,29 @@ class DefaultPreciseLongValuesTest
         with Matchers
         with ParallelTestExecution {
 
-    val domain = new DefaultConfigurableDomain("DefaultPreciseLongValuesTest")
-    import domain._
+    object LongValuesTestDomain
+            extends Domain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with l0.DefaultTypeLevelIntegerValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            with l0.DefaultReferenceValuesBinding
+            with li.DefaultPreciseLongValues
+            with PredefinedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with RecordLastReturnedValues
+            with IgnoreSynchronization {
+
+        type Id = String
+
+        override def id = "DefaultPreciseIntegerValuesTest-Domain"
+
+    }
+
+    import LongValuesTestDomain._
 
     //
     // TESTS

@@ -45,10 +45,10 @@ import org.opalj.ai.util.Locals
  *
  * @author Michael Eichberg
  */
-trait PerformInvocations[Source]
+trait PerformInvocations
         extends Domain
         with l0.TypeLevelInvokeInstructions
-        with ProjectBasedClassHierarchy[Source] { callingDomain ⇒
+        with ProjectBasedClassHierarchy { callingDomain: TheProject[_] with Configuration ⇒
 
     /**
      * Identifies recursive calls.
@@ -105,8 +105,11 @@ trait PerformInvocations[Source]
             val domain = result.domain
             val thrownExceptions = domain.thrownExceptions(callingDomain, callerPC)
             if (!domain.returnedNormally) {
-                // The method must have returned with an exception.
-                ThrowsException(thrownExceptions)
+                // The method must have returned with an exception or not at all...
+                if (thrownExceptions.nonEmpty)
+                    ThrowsException(thrownExceptions)
+                else
+                    ComputationFailed
             } else {
                 if (calledMethod.descriptor.returnType eq VoidType) {
                     if (thrownExceptions.nonEmpty) {
@@ -117,9 +120,9 @@ trait PerformInvocations[Source]
                 } else {
                     val returnedValue = domain.returnedValue(callingDomain, callerPC)
                     if (thrownExceptions.nonEmpty) {
-                        ComputedValueAndException(returnedValue, thrownExceptions)
+                        ComputedValueOrException(returnedValue.get, thrownExceptions)
                     } else {
-                        ComputedValue(returnedValue)
+                        ComputedValue(returnedValue.get)
                     }
                 }
             }
@@ -142,7 +145,7 @@ trait PerformInvocations[Source]
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: Operands): MethodCallResult =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+        super.invokevirtual(pc, declaringClass, name, methodDescriptor, operands)
 
     override def invokeinterface(
         pc: PC,
@@ -150,7 +153,7 @@ trait PerformInvocations[Source]
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: Operands): MethodCallResult =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+        super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
 
     override def invokespecial(
         pc: PC,
@@ -158,7 +161,7 @@ trait PerformInvocations[Source]
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: Operands): MethodCallResult =
-        ComputedValue(asTypedValue(pc, methodDescriptor.returnType))
+        super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
 
     /**
      * Implements the general strategy for handling "invokestatic" calls.

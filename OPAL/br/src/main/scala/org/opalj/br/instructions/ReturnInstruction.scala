@@ -37,22 +37,14 @@ package instructions
  */
 abstract class ReturnInstruction extends Instruction {
 
-    final override def runtimeExceptions: List[ObjectType] = 
+    final override def runtimeExceptions: List[ObjectType] =
         ReturnInstruction.runtimeExceptions
 
     final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         currentPC + 1
 
     final override def nextInstructions(currentPC: PC, code: Code): PCs = {
-        code.exceptionHandlersFor(currentPC) find { handler ⇒
-            handler.catchType.isEmpty ||
-                Code.preDefinedClassHierarchy.isSubtypeOf(
-                    ObjectType.IllegalMonitorStateException,
-                    handler.catchType.get).isYes
-        } match {
-            case Some(handler) ⇒ collection.mutable.UShortSet(handler.startPC)
-            case None          ⇒ collection.mutable.UShortSet.empty
-        }
+        org.opalj.collection.mutable.UShortSet.empty
     }
 
 }

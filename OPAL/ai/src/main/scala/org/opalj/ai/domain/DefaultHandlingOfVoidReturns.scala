@@ -37,7 +37,7 @@ package domain
  */
 trait DefaultHandlingOfVoidReturns { this: Domain ⇒
 
-    override def returnVoid(pc: PC): Unit = {
+    /*override*/ def returnVoid(pc: PC): Unit = {
         /* Nothing to do. */
     }
 

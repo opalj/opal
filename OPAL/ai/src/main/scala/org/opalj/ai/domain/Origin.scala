@@ -31,14 +31,38 @@ package ai
 package domain
 
 /**
+ * Provides information about the origin of a value.
+ *
+ * ==Usage==
+ * An analysis that requires information about the origin of a value should declare
+ * a corresponding self-type dependency. E.g.,
+ * {{{
+ * class MyAnalysis extends... {this: Origin =>
+ *  ...
+ * }
+ * }}}
+ * Additionally, the analysis has to make sure that the analysis used to capture
+ * information about values provides the necessary information.
+ *
+ * ==Implementation==
+ * This trait should be inherited from by all domains that make information about
+ * the origin of a value available.
+ *
  * @author Michael Eichberg
  */
 trait Origin { this: Domain ⇒
 
+    /**
+     * Should be mixed in by `Value`s that have a single origin.
+     */
     trait SingleOriginValue {
         def vo: ValueOrigin
     }
 
+    /**
+     * Should be mixed in by `Value` classes that capture information about all origins
+     * of a value.
+     */
     trait MultipleOriginsValue {
         def vos: Iterable[ValueOrigin]
     }

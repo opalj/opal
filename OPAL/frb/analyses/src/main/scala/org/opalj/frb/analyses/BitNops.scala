@@ -49,13 +49,13 @@ private class BitNopsDomain[I](override val id: I)
         with DefaultHandlingOfMethodResults
         with Configuration
         with PredefinedClassHierarchy
-        with l1.DefaultPreciseIntegerValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultReferenceValuesBinding
+        with li.DefaultPreciseIntegerValues
         with IgnoreSynchronization {
 
     type Id = I
@@ -64,7 +64,7 @@ private class BitNopsDomain[I](override val id: I)
      * We're only interested in certain specific values (0 and -1). Thus, we don't need
      * to track values that are known to be within some range a..b at all.
      */
-    override def maxSpreadInteger: Int = 0
+    override def maxUpdatesForIntegerValues: Long = 1
 
     /**
      * DomainValue matcher to allow matching IntegerValues.

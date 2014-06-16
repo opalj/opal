@@ -58,7 +58,6 @@ class IincTracingDomain[I](override val id: I)
         extends Domain
         with DefaultDomainValueBinding
         with Configuration
-        with IntegerValuesComparison
         with DefaultReferenceValuesBinding
         with TypeLevelFieldAccessInstructions
         with TypeLevelInvokeInstructions
@@ -233,8 +232,6 @@ class IincTracingDomain[I](override val id: I)
                                        upperBound: Int): Answer = Unknown
     override def intIsSomeValueNotInRange(value: DomainValue, lowerBound: Int,
                                           upperBound: Int): Answer = Unknown
-    override def intIsSomeValueInRange(value: DomainValue, lowerBound: DomainValue,
-                                       upperBound: DomainValue): Answer = Unknown
     override def intIsLessThan(smallerValue: DomainValue,
                                largerValue: DomainValue): Answer = Unknown
     override def intIsLessThanOrEqualTo(smallerOrEqualValue: DomainValue,

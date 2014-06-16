@@ -38,15 +38,15 @@ package hierarchyTest;
  */
 public abstract class AbstractParent {
 
-	public Class callerMethod(String s) {
-		return methodB(s);
-	}
+    public Class<?> callerMethod(String s) {
+        return methodB(s);
+    }
 
-	Class methodB(String s) {
-		try {
-			return Class.forName(s);
-		} catch (ClassNotFoundException e) {
-			return null;
-		}
-	}
+    Class<?> methodB(String s) {
+        try {
+            return Class.forName(s);
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+    }
 }

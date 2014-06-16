@@ -132,7 +132,7 @@ object InterpretMethod {
         val method =
             (
                 if (methodName.contains("("))
-                    classFile.methods.find(_.toJava.contains(methodName))
+                    classFile.methods.find(m ⇒ m.descriptor.toJava(m.name).contains(methodName))
                 else
                     classFile.methods.find(_.name == methodName)
             ) match {
@@ -147,7 +147,7 @@ object InterpretMethod {
                     case None ⇒
                         println(RED+
                             "[error] Cannot find the method: "+methodName+"."+RESET +
-                            classFile.methods.map(_.name).toSet.toSeq.sorted.mkString(" Candidates: ", ", ", "."))
+                            classFile.methods.map(m ⇒ m.descriptor.toJava(m.name)).toSet.toSeq.sorted.mkString(" Candidates: ", ", ", "."))
                         return ;
                 }
 

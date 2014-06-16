@@ -100,8 +100,7 @@ final class ClassFile private (
 
     final override def asClassFile = this
 
-    def asVirtualClass: VirtualClass =
-        VirtualClass(thisType)
+    def asVirtualClass: VirtualClass = VirtualClass(thisType)
 
     def id = thisType.id
 
@@ -125,6 +124,13 @@ final class ClassFile private (
     def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
 
     def isInnerClass: Boolean = innerClasses.exists(_.exists(_.innerClassType == thisType))
+
+    /**
+     * Returns `true` if this class file has no direct representation in the source code.
+     *
+     * @see [[VirtualTypeFlag]] for further information.
+     */
+    def isVirtualType: Boolean = attributes.contains(VirtualTypeFlag)
 
     def enclosingMethod: Option[EnclosingMethod] =
         attributes collectFirst { case em: EnclosingMethod ⇒ em }
@@ -213,10 +219,36 @@ final class ClassFile private (
     }
 
     /**
+     * Returns the field with the given name, if any.
+     *
+     * @note The complexity is O(log2 n); this algorithm uses a binary search algorithm.
+     */
+    def findField(name: String): Option[Field] = {
+        @tailrec @inline def findField(low: Int, high: Int): Option[Field] = {
+            if (high < low)
+                return None
+
+            val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 fields)
+            val field = fields(mid)
+            val fieldName = field.name
+            if (fieldName == name) {
+                Some(field)
+            } else if (fieldName.compareTo(name) < 0) {
+                findField(mid + 1, high)
+            } else {
+                findField(low, mid - 1)
+            }
+        }
+
+        findField(0, fields.size - 1)
+    }
+
+    /**
      * Returns the method with the given name, if any.
      *
      * @note Though the methods are sorted, no guarantee is given which method is
      *      returned if multiple methods are defined with the same name.
+     * @note The complexity is O(log2 n); this algorithm uses a binary search algorithm.
      */
     def findMethod(name: String): Option[Method] = {
         @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
@@ -332,6 +364,59 @@ object ClassFile {
             methods sortWith { (m1, m2) ⇒ m1 < m2 },
             attributes)
     }
+
+    /**
+     * Creates a class that acts as a proxy for the specified class and that implements
+     * a single method that calls the specified method.
+     *
+     * I.e., a class is generated using the following template:
+     * {{{
+     * class <definingType.objectType>
+     *  extends <definingType.theSuperclassType>
+     *  implements <definingType.theSuperinterfaceTypes> {
+     *
+     *  private <calleeType> receiver;
+     *
+     *  public "<init>"( <calleeType> receiver) { // the constructor
+     *      this.receiver = receiver;
+     *  }
+     *
+     *  public <methodDescriptor.returnType> <methodName> <methodDescriptor.paramterTypes>{
+     *     return/*<= if the return type is not void*/ this.receiver.<calleMethodName>(<parameters>)
+     *  }
+     *  }
+     * }}}
+     * The class, the constructor and the method will be public. The field which holds
+     * the receiver object is private.
+     *
+     * If the receiver method is static, an empty '''default constructor''' is created
+     * and no field is generated.
+     *
+     * The synthetic access flag is always set, as well as the [[VirtualTypeFlag]]
+     * attribute.
+     *
+     * The used class file version is 49.0 (Java 5) (Using this version, we are not
+     * required to create the stack map table attribute to create a valid class file.)
+     */
+    //    def Proxy(
+    //        definingType: TypeDeclaration,
+    //        methodName: String,
+    //        methodDescriptor: MethodDescriptor,
+    //        calleeType: ObjectType,
+    //        calleeMethodName: String,
+    //        calleeMethodDescriptor: String): ClassFile = {
+    //
+    //        val field: Option[Field] = None
+    //        val method: Method = null
+    //        ClassFile(0, 49,
+    //            bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
+    //            definingType.objectType,
+    //            definingType.theSuperclassType,
+    //            definingType.theSuperinterfaceTypes.toSeq,
+    //            field.map(IndexedSeq(_)).getOrElse(IndexedSeq.empty),
+    //            IndexedSeq(method),
+    //            IndexedSeq(VirtualTypeFlag))
+    //    }
 
     def unapply(classFile: ClassFile): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
         import classFile._

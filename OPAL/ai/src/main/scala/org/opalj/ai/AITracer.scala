@@ -34,18 +34,17 @@ import br.instructions._
 
 /**
  * Defines the interface between the abstract interpreter and a module for
- * tracing the interpreter's behavior. In general, a tracer is first registered with an
+ * tracing the interpreter's progress. In general, a tracer is first registered with an
  * abstract interpreter. After that, when a method is analyzed, OPAL calls the
  * tracer's methods at the respective points in time.
  *
  * A tracer is registered with an abstract interpreter by creating a new subclass of
- * `AI` and overriding the method `tracer`.
+ * [[AI]] and overriding the method [[AI.tracer]].
  *
- * @note In general, all mutable data structures (e.g. the current locals and the
- *      operand stack) passed to the tracer should not be mutated as '''these data
- *      structures are the original data structures on which the abstract interpreter
- *      works and they are not copies'''.
- *      However, using the `AITracer` it is possible to develop a debugger for OPAL-AI and
+ * @note '''All data structures passed to the tracer are the original data structures
+ *      used by the abstract interpreter.''' Hence, in case of mutation you have to
+ *      be very careful.
+ *      However, using the [[AITracer]] it is possible to develop a debugger for OPAL and
  *      to enable the user to perform certain mutations.
  *
  * @author Michael Eichberg
@@ -53,12 +52,12 @@ import br.instructions._
 trait AITracer {
 
     /**
-     * Called by OPAL immediately before the (abstract) interpretation of the
+     * Called by OPAL immediately before the abstract interpretation of the
      * specified code is performed.
      *
-     * The tracer is not expected to make any changes to the data structures
-     * (`operandsArray` and `localsArray`). If the tracer makes such changes, it is
-     * the responsibility of the tracer to ensure that the updates are meaningful.
+     * If the tracer changes the `operandsArray` and/or `localsArray`, it is
+     * the responsibility of the tracer to ensure that the data structures are still
+     * valid afterwards.
      * OPAL will not perform any checks.
      */
     def continuingInterpretation(
@@ -66,8 +65,9 @@ trait AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: TheOperandsArray[domain.Operands],
-            localsArray: TheLocalsArray[domain.Locals])
+            operandsArray: domain.OperandsArray,
+            localsArray: domain.LocalsArray,
+            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)])
 
     /**
      * Always called by OPAL before an instruction is evaluated.
@@ -87,8 +87,8 @@ trait AITracer {
             locals: domain.Locals): Unit
 
     /**
-     * Called by OPAL-AI after an instruction (`currentPC`) was evaluated and before the
-     * `targetPC` may be evaluated.
+     * Called by the interpreter after an instruction (`currentPC`) was evaluated and
+     * before the instruction with the program counter `targetPC` may be evaluated.
      *
      * This method is only called if the instruction with the program counter
      * `targetPC` will be evaluated. I.e., when the abstract interpreter
@@ -97,15 +97,25 @@ trait AITracer {
      * schedule the successor instruction this method is not called.
      *
      * In case of `if` or `switch` instructions `flow` may be
-     * called multiple times before the method `instructionEvaluation` is called again.
+     * called multiple times (even with the same targetPC) before the method
+     * `instructionEvaluation` is called again.
      *
-     * Recall that OPAL-AI performs a depth-first exploration.
+     * @note OPAL performs a depth-first exploration.
      */
     def flow(
         domain: Domain)(
             currentPC: PC,
             targetPC: PC,
             isExceptionalControlFlow: Boolean): Unit
+
+    /**
+     * Called by the interpreter if a successor instruction is NOT scheduled, because
+     * the abstract state didn't change.
+     */
+    def noFlow(
+        domain: Domain)(
+            currentPC: PC,
+            targetPC: PC): Unit
 
     /**
      * Called if the instruction with the `targetPC` was rescheduled. I.e., the
@@ -115,7 +125,7 @@ trait AITracer {
      * However, further instructions may be appended to the list before the
      * next `instructionEvaluation` takes place.
      *
-     * Recall that OPAL-AI performs a depth-first exploration.
+     * @note OPAL performs a depth-first exploration.
      */
     def rescheduled(
         domain: Domain)(
@@ -124,8 +134,8 @@ trait AITracer {
             isExceptionalControlFlow: Boolean): Unit
 
     /**
-     * Called by OPAL-AI whenever two paths converge and the values on the operand stack
-     * and the registers are joined.
+     * Called by the abstract interpreter whenever two paths converge and the values
+     * on the operand stack and the registers are joined.
      *
      * @param thisOperands The operand stack as it was used the last time when the
      * 		instruction with the given program counter was evaluated.
@@ -173,9 +183,9 @@ trait AITracer {
             subroutineInstructions: List[PC]): Unit
 
     /**
-     * Called when the analyzed method throws an exception (i.e., the interpreter
-     * evaluates an `athrow` instruction) that is not caught within
-     * the method.
+     * Called when the analyzed method throws an exception that is not caught within
+     * the method. I.e., the interpreter evaluates an `athrow` instruction or some
+     * other instruction that throws an exception.
      */
     def abruptMethodExecution(
         domain: Domain)(
@@ -183,8 +193,25 @@ trait AITracer {
             exception: domain.DomainValue)
 
     /**
-     * Called by OPAL-AI when the abstract interpretation of a method has completed/was
+     * Called when the abstract interpretation of a method has completed/was
      * interrupted.
      */
     def result(result: AIResult): Unit
+
+    /**
+     * Called by the framework if a constraint is established. Constraints are generally
+     * established whenever a conditional jump is performed and the
+     * evaluation of the condition wasn't definitive. In this case a constraint will
+     * be established for each branch. In general the constraint will be applied
+     * before the join of the stack and locals with the successor instruction is done.
+     */
+    def establishedConstraint(
+        domain: Domain)(
+            pc: PC,
+            effectivePC : PC,
+            operands: domain.Operands,
+            locals: domain.Locals,
+            newOperands: domain.Operands,
+            newLocals: domain.Locals)
+
 }

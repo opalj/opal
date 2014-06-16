@@ -29,25 +29,35 @@
 package org.opalj
 package ai
 package domain
-
-import org.opalj.util.Answer
+package li
 
 /**
- * Optional functionality related to extracting a concrete integer value from some
- * domain value with computational type integer that is not required by the OPAL-AI core.
- *
- * @author Michael Eichberg
+ * ClassValues must come after TypeLevelInvokeInstructionsWithNullPointerHandling.
+ * @see ClassValues type documentation comment
  */
-trait IntegerValuesComparison { this: Domain ⇒
+trait DefaultInterpretingDomain
+    extends Domain
+    with DefaultDomainValueBinding
+    with ThrowAllPotentialExceptionsConfiguration
+    with l0.DefaultTypeLevelFloatValues
+    with l0.DefaultTypeLevelDoubleValues
+    with l0.DefaultTypeLevelLongValues
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.TypeLevelInvokeInstructions
+    //    with DefaultReferenceValuesBinding
+    //    with DefaultStringValuesBinding
+    with l1.DefaultClassValuesBinding
+    with l1.DefaultArrayValuesBinding
+    with li.DefaultPreciseIntegerValues
+    with PredefinedClassHierarchy
 
-    /**
-     * Tests if the given value, which has to have computational type integer,
-     * is in the range `[lowerBound, upperBound]`. I.e., both
-     * bounds are inclusive.
-     */
-    def intIsSomeValueInRange(
-        value: DomainValue,
-        lowerBound: DomainValue,
-        upperBound: DomainValue): Answer
+class DefaultInterpretingConfigurableDomain[I](
+    val id: I)
+        extends DefaultInterpretingDomain
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization {
 
+    type Id = I
+
+    override def maxUpdatesForIntegerValues: Long = 5l
 }

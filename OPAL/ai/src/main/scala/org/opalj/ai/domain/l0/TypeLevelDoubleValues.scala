@@ -32,11 +32,14 @@ package domain
 package l0
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import br._
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeDouble
 
 /**
- * Domain that handles computations related to `Double` values at the type level.
+ * This partial `Domain` performs all computations related to primitive double
+ * values at the type level.
+ *
+ * This domain can be used as a foundation to build more complex domains.
  *
  * @author Michael Eichberg
  */
@@ -51,11 +54,9 @@ trait TypeLevelDoubleValues extends Domain {
     /**
      * Abstracts over double values at the type level.
      */
-    trait DoubleValue
-            extends Value
-            with IsDoubleValue { this: DomainValue ⇒
+    trait DoubleValue extends Value with IsDoubleValue { this: DomainValue ⇒
 
-        override final def computationalType: ComputationalType = ComputationalTypeDouble
+        final override def computationalType: ComputationalType = ComputationalTypeDouble
 
     }
 
@@ -66,6 +67,12 @@ trait TypeLevelDoubleValues extends Domain {
     // -----------------------------------------------------------------------------------
 
     //
+    // UNARY EXPRESSIONS
+    //
+    override def dneg(pc: PC, value: DomainValue): DomainValue =
+        DoubleValue(pc)
+
+    //
     // RELATIONAL OPERATORS
     //
     override def dcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
@@ -73,12 +80,6 @@ trait TypeLevelDoubleValues extends Domain {
 
     override def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
-
-    //
-    // UNARY EXPRESSIONS
-    //
-    override def dneg(pc: PC, value: DomainValue) =
-        DoubleValue(pc)
 
     //
     // BINARY EXPRESSIONS
@@ -101,14 +102,11 @@ trait TypeLevelDoubleValues extends Domain {
     //
     // TYPE CONVERSION INSTRUCTIONS
     //
-    override def d2f(pc: PC, value: DomainValue): DomainValue =
-        FloatValue(pc)
+    override def d2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
 
-    override def d2i(pc: PC, value: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def d2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
 
-    override def d2l(pc: PC, value: DomainValue): DomainValue =
-        LongValue(pc)
+    override def d2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 }
 
 

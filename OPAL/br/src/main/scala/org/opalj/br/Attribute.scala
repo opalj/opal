@@ -81,6 +81,7 @@ trait Attribute {
      *  - 29-41 The AnnotationDefault Attribute
      *  - 42 The BootstrapMethods Attribute
      *  - 43 The MethodParameters Attribute
+     *  - 1001 OPAL's VirtualTypeFlag Attribute
      */
     def kindId: Int
 }

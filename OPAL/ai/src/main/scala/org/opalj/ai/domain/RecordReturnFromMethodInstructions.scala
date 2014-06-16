@@ -50,10 +50,6 @@ import collection.mutable.UShortSet
  * This domain can be stacked on top of other traits that handle
  * return instructions and abrupt method executions.
  *
- * ==Thread Safety==
- * This class is not thread safe. I.e., this domain can only be used if
- * an instance of this domain is not used by multiple threads.
- *
  * @author Michael Eichberg
  */
 trait RecordReturnFromMethodInstructions extends Domain {

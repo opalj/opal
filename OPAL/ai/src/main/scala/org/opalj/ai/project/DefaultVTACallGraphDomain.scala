@@ -1,5 +1,5 @@
-/* License (BSD Style License):
- * Copyright (c) 2009 - 2013
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,11 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische
- *    Universität Darmstadt nor the names of its contributors may be used to
- *    endorse or promote products derived from this software without specific
- *    prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,24 +28,50 @@
  */
 package org.opalj
 package ai
-package domain
-package l0
+package project
 
-import org.opalj.util.{ Answer, Unknown }
-import org.opalj.ai.Domain
+import scala.collection.Set
+import scala.collection.Map
+
+import br._
+import br.analyses._
+
+import domain._
+import domain.l0
+import domain.l1
 
 /**
- * Component interface that defines methods related to the comparison of domain-level
- * integer values.
+ * Domain object which is used to calculate the call graph using variable type analysis.
  *
  * @author Michael Eichberg
  */
-trait DefaultIntegerValuesComparison extends IntegerValuesComparison {
-    this: Domain ⇒
+class DefaultVTACallGraphDomain[Source](
+    val project: Project[Source],
+    val cache: CallGraphCache[MethodSignature, Set[Method]],
+    val theClassFile: ClassFile,
+    val theMethod: Method,
+    override val maxSizeOfIntegerRanges: Long)
+        extends Domain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with TheProject[Source]
+        with ProjectBasedClassHierarchy
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with l1.DefaultIntegerRangeValues
+        with l1.DefaultReferenceValuesBinding
+        with VTACallGraphDomain {
 
-    override def intIsSomeValueInRange(
-        value: DomainValue,
-        lowerBound: DomainValue,
-        upperBound: DomainValue): Answer =
-        Unknown
+    type Id = Method
+
+    def id = theMethod
+
 }
+
+
+

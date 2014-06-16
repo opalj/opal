@@ -44,11 +44,13 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: TheOperandsArray[domain.Operands],
-            localsArray: TheLocalsArray[domain.Locals]): Unit = {
+            operandsArray: domain.OperandsArray,
+            localsArray: domain.LocalsArray,
+            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]): Unit = {
         tracers foreach { tracer ⇒
             tracer.continuingInterpretation(code, domain)(
-                initialWorkList, alreadyEvaluated, operandsArray, localsArray
+                initialWorkList, alreadyEvaluated,
+                operandsArray, localsArray, memoryLayoutBeforeSubroutineCall
             )
         }
     }
@@ -70,6 +72,13 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
             targetPC: PC,
             isExceptionalControlFlow: Boolean): Unit = {
         tracers foreach { _.flow(domain)(currentPC, targetPC, isExceptionalControlFlow) }
+    }
+
+    override def noFlow(
+        domain: Domain)(
+            currentPC: PC,
+            targetPC: PC): Unit = {
+        tracers foreach { _.noFlow(domain)(currentPC, targetPC) }
     }
 
     override def rescheduled(
@@ -120,9 +129,6 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         }
     }
 
-    /**
-     * Called when the evaluation of a subroutine (JSR/RET) is completed.
-     */
     override def returnFromSubroutine(
         domain: Domain)(
             pc: Int,
@@ -137,5 +143,19 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
 
     override def result(result: AIResult): Unit = {
         tracers foreach { _.result(result) }
+    }
+
+    override def establishedConstraint(
+        domain: Domain)(
+            pc: PC,
+            effectivePC: PC,
+            operands: domain.Operands,
+            locals: domain.Locals,
+            newOperands: domain.Operands,
+            newLocals: domain.Locals): Unit = {
+        tracers foreach { tracer ⇒
+            tracer.establishedConstraint(domain)(
+                pc, effectivePC, operands, locals, newOperands, newLocals)
+        }
     }
 }

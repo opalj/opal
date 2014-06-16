@@ -30,25 +30,18 @@ package org.opalj
 package ai
 package domain
 
+import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy, Project }
+
 /**
  * Delegates type hierarchy related queries to the project's class hierarchy.
  *
  * @author Michael Eichberg
  */
-trait ProjectBasedClassHierarchy[Source] extends ClassHierarchy { this: Domain ⇒
-
-    import br.analyses.{ ClassHierarchy, Project }
-
-    /**
-     * Returns the project that is currently analyzed.
-     */
-    def project: Project[Source]
+trait ProjectBasedClassHierarchy extends ClassHierarchy { this: Domain with TheProject[_] ⇒
 
     /**
      * Returns the project's class hierarchy.
      */
-    override final def classHierarchy: ClassHierarchy = project.classHierarchy
+    final override val classHierarchy: TheClassHierarchy = project.classHierarchy
 
 }
-
-

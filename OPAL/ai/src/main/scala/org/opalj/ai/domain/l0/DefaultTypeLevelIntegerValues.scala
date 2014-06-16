@@ -43,7 +43,8 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
  */
 trait DefaultTypeLevelIntegerValues
         extends DefaultDomainValueBinding
-        with TypeLevelIntegerValues { Domain ⇒
+        with TypeLevelIntegerValues {
+    this: Configuration ⇒
 
     case object ABooleanValue extends super.BooleanValue {
 
@@ -53,51 +54,27 @@ trait DefaultTypeLevelIntegerValues
                 case _             ⇒ StructuralUpdate(AnIntegerValue)
             }
 
-        override def adapt(
-            target: Domain,
-            pc: PC): target.DomainValue =
-            target match {
-                case thatDomain: DefaultTypeLevelIntegerValues ⇒
-                    thatDomain.ABooleanValue.asInstanceOf[target.DomainValue]
-                case _ ⇒ super.adapt(target, pc)
-            }
     }
 
     case object AByteValue extends super.ByteValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             value match {
-                case AByteValue ⇒ NoUpdate
-                case _          ⇒ StructuralUpdate(AnIntegerValue)
+                case ABooleanValue | AByteValue ⇒ NoUpdate
+                case _                          ⇒ StructuralUpdate(AnIntegerValue)
             }
 
-        override def adapt(
-            target: Domain,
-            pc: PC): target.DomainValue =
-            target match {
-                case thatDomain: DefaultTypeLevelIntegerValues ⇒
-                    thatDomain.AByteValue.asInstanceOf[target.DomainValue]
-                case _ ⇒ super.adapt(target, pc)
-            }
     }
 
     case object AShortValue extends super.ShortValue {
 
         override def doJoin(pc: PC, that: DomainValue): Update[DomainValue] =
             that match {
-                case AShortValue ⇒ NoUpdate
-                case _           ⇒ StructuralUpdate(AnIntegerValue)
+                case AByteValue | AShortValue ⇒ NoUpdate
+                case _                        ⇒ StructuralUpdate(AnIntegerValue)
 
             }
 
-        override def adapt(
-            target: Domain,
-            pc: PC): target.DomainValue =
-            target match {
-                case thatDomain: DefaultTypeLevelIntegerValues⇒
-                    thatDomain.AShortValue.asInstanceOf[target.DomainValue]
-                case _ ⇒ super.adapt(target, pc)
-            }
     }
 
     case object ACharValue extends super.CharValue {
@@ -107,45 +84,28 @@ trait DefaultTypeLevelIntegerValues
                 case ACharValue ⇒ NoUpdate
                 case _          ⇒ StructuralUpdate(AnIntegerValue)
             }
-
-        override def adapt(
-            target: Domain,
-            pc: PC): target.DomainValue =
-            target match {
-                case thatDomain: DefaultTypeLevelIntegerValues ⇒
-                    thatDomain.ACharValue.asInstanceOf[target.DomainValue]
-                case _ ⇒ super.adapt(target, pc)
-            }
     }
 
     case object AnIntegerValue extends super.IntegerValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
+            // the other value also has computational type Int
             NoUpdate
-
-        override def adapt(
-            target: Domain,
-            pc: PC): target.DomainValue =
-            target match {
-                case thatDomain: DefaultTypeLevelIntegerValues ⇒
-                    thatDomain.AnIntegerValue.asInstanceOf[target.DomainValue]
-                case _ ⇒ super.adapt(target, pc)
-            }
     }
 
-    override def BooleanValue(pc: PC): DomainValue = ABooleanValue
-    override def BooleanValue(pc: PC, value: Boolean): DomainValue = ABooleanValue
+    override def BooleanValue(pc: PC): BooleanValue = ABooleanValue
+    override def BooleanValue(pc: PC, value: Boolean): BooleanValue = ABooleanValue
 
-    override def ByteValue(pc: PC): DomainValue = AByteValue
-    override def ByteValue(pc: PC, value: Byte) = AByteValue
+    override def ByteValue(pc: PC): ByteValue = AByteValue
+    override def ByteValue(pc: PC, value: Byte): ByteValue = AByteValue
 
-    override def ShortValue(pc: PC): DomainValue = AShortValue
-    override def ShortValue(pc: PC, value: Short) = AShortValue
+    override def ShortValue(pc: PC): ShortValue = AShortValue
+    override def ShortValue(pc: PC, value: Short): ShortValue = AShortValue
 
-    override def CharValue(pc: PC): DomainValue = ACharValue
-    override def CharValue(pc: PC, value: Char) = ACharValue
+    override def CharValue(pc: PC): CharValue = ACharValue
+    override def CharValue(pc: PC, value: Char): CharValue = ACharValue
 
-    override def IntegerValue(pc: PC): DomainValue = AnIntegerValue
-    override def IntegerValue(pc: PC, value: Int) = AnIntegerValue
+    override def IntegerValue(pc: PC): IntegerValue = AnIntegerValue
+    override def IntegerValue(pc: PC, value: Int): IntegerValue = AnIntegerValue
 }
 

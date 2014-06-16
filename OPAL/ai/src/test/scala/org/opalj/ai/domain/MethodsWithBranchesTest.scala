@@ -62,6 +62,7 @@ class MethodsWithBranchesTest
 
     class TestDomain(val name: String)
             extends TypeLevelDomain
+            with ThrowAllPotentialExceptionsConfiguration
             with IgnoreSynchronization
             with DefaultHandlingOfMethodResults
             with RecordLastReturnedValues

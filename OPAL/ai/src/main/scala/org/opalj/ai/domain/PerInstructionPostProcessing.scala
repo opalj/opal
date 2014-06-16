@@ -38,16 +38,74 @@ package domain
  * Provides the generic infrastructure to register a function that updates the operands
  * and locals associated with an instruction that will be evaluated "next".
  * For example, let's assume that we are currently processing instruction X and that
- * instruction Y is the successor instrution. In this case, the framework will first
+ * instruction Y is the successor instruction. In this case, the framework will first
  * determine the effect of function X on the stack/locals. After that all registered
- * updater will be called. All registered updaters will be discarded as soon the
+ * updaters will be called. All registered updaters will be discarded as soon the
  * evaluation of instruction X has completed.
  *
  * @author Michael Eichberg
  */
-trait PerInstructionPostProcessing { this: Domain ⇒
+trait PerInstructionPostProcessing extends Domain {
 
     type DomainValueUpdater = (DomainValue) ⇒ DomainValue
+
+    private[this] var onExceptionalControlFlow: List[DomainValueUpdater] = Nil
+
+    private[this] var onRegularControlFlow: List[DomainValueUpdater] = Nil
+
+    abstract override def flow(
+        currentPC: PC,
+        successorPC: PC,
+        isExceptionalControlFlow: Boolean,
+        worklist: List[PC],
+        operandsArray: OperandsArray,
+        localsArray: LocalsArray,
+        tracer: Option[AITracer]): List[PC] = {
+
+        def doUpdate(updaters: List[DomainValueUpdater]): Unit = {
+            operandsArray(successorPC) =
+                operandsArray(successorPC) map { op ⇒
+                    val updatedValue = updaters.head(op)
+                    updaters.tail.foldLeft(updatedValue) { (updatedValue, updater) ⇒
+                        updater(updatedValue)
+                    }
+                    updatedValue
+                }
+
+            val locals: Locals = localsArray(successorPC)
+            locals.update { l ⇒
+                if (l ne null)
+                    updaters.tail.foldLeft(updaters.head.apply(l))((c, u) ⇒ u.apply(c))
+                else
+                    null
+            }
+
+        }
+
+        if (isExceptionalControlFlow) {
+            val updaters = onExceptionalControlFlow
+            if (updaters.nonEmpty) {
+                doUpdate(updaters)
+            }
+        } else {
+            val updaters = onRegularControlFlow
+            if (updaters.nonEmpty) {
+                doUpdate(updaters)
+            }
+        }
+
+        super.flow(
+            currentPC, successorPC, isExceptionalControlFlow, worklist,
+            operandsArray, localsArray, tracer)
+    }
+
+    def registerOnRegularControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit = {
+        onRegularControlFlow = f :: onRegularControlFlow
+    }
+
+    def registerOnExceptionalControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit = {
+        onExceptionalControlFlow = f :: onExceptionalControlFlow
+    }
 
     /**
      * @see [[registerOnRegularControlFlowUpdater]]
@@ -58,7 +116,20 @@ trait PerInstructionPostProcessing { this: Domain ⇒
         registerOnExceptionalControlFlowUpdater(f)
     }
 
-    def registerOnRegularControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit
+    override def evaluationCompleted(
+        pc: PC,
+        worklist: List[PC],
+        evaluated: List[PC],
+        operandsArray: OperandsArray,
+        localsArray: LocalsArray,
+        tracer: Option[AITracer]): Unit = {
+        val l = Nil
+        onExceptionalControlFlow = l
+        onRegularControlFlow = l
 
-    def registerOnExceptionalControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit
+        super.evaluationCompleted(
+            pc, worklist, evaluated,
+            operandsArray, localsArray,
+            tracer)
+    }
 }

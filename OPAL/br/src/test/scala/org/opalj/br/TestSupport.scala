@@ -103,7 +103,11 @@ object TestSupport {
      * @return List of class files ready to be passed to a `IndexBasedProject`.
      */
     lazy val JREClassFiles: Seq[(ClassFile, java.net.URL)] = {
-        org.opalj.br.reader.Java8LibraryFramework.ClassFiles(JRELibraryFolder)
+        val classFiles = org.opalj.br.reader.Java8Framework.ClassFiles(JRELibraryFolder)
+        if (classFiles.isEmpty)
+            sys.error("Loading the JRE failed.")
+            
+        classFiles.toSeq
     }
 
 }

@@ -512,7 +512,7 @@
 //    def newarray(pc: Int,
 //                 count: DomainValue,
 //                 componentType: FieldType): Computation[DomainValue, DomainValue] =
-//        //ComputedValueAndException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
+//        //ComputedValueOrException(TypedValue(ArrayType(componentType)), TypedValue(ObjectType.NegativeArraySizeException))
 //        ComputedValue(newArray(pc, ArrayType(componentType)))
 //
 //    /**
@@ -521,7 +521,7 @@
 //    def multianewarray(pc: Int,
 //                       counts: List[DomainValue],
 //                       arrayType: ArrayType) =
-//        //ComputedValueAndException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
+//        //ComputedValueOrException(TypedValue(arrayType), TypedValue(ObjectType.NegativeArraySizeException))
 //        ComputedValue(newArray(pc, arrayType, No, true))
 //
 //    //

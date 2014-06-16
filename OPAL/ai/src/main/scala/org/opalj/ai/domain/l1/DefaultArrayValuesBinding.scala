@@ -47,7 +47,7 @@ import br._
 trait DefaultArrayValuesBinding
         extends l1.DefaultReferenceValuesBinding
         with ArrayValues {
-    domain: Configuration with IntegerValuesComparison with IntegerValuesProvider with ClassHierarchy with PerInstructionPostProcessing ⇒
+    domain: Configuration with ConcreteIntegerValues with ClassHierarchy  ⇒
 
     //
     // FACTORY METHODS

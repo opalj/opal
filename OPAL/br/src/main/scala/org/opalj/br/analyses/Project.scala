@@ -30,6 +30,9 @@ package org.opalj
 package br
 package analyses
 
+import java.net.URL
+import java.io.File
+
 import scala.collection.{ Set, Map }
 import scala.collection.mutable.{ AnyRefMap, OpenHashMap }
 
@@ -318,9 +321,6 @@ class Project[Source] private (
     }
 }
 
-import java.net.URL
-import java.io.File
-
 /**
  * Factory for `Project`s.
  *
@@ -340,7 +340,7 @@ object Project {
      * Creates a new `Project` that consists of the source files of the previous
      * project and the newly given source files.
      */
-    def extend[Source: reflect.ClassTag](
+    def extend[Source >: Null <: AnyRef: reflect.ClassTag](
         project: Project[Source],
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
         libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
@@ -362,9 +362,21 @@ object Project {
      * @param classFiles The list of class files of this project that are considered
      *    to belong to the application/library that will be analyzed.
      *    [Thread Safety] The underlying data structure has to support concurrent access.
+     *
      * @param libraryClassFiles The list of class files of this project that make up
      *    the libraries used by the project that will be analyzed.
      *    [Thread Safety] The underlying data structure has to support concurrent access.
+     *
+     * @param virtualClassFiles A list of virtual class files that have no direct
+     *      representation in the project.
+     * 	    Such declarations are created, e.g., to handle `invokedynamic`
+     *      instructions (@see [[reader.BytecodeReaderAndBindingWithLambdaSupport]] for
+     *      further information).
+     *      '''In general, such class files should be added using
+     *      `projectClassFilesWithSources` and the `Source` should be the file that
+     *      was the reason for the creation of this additional `ClassFile`.'''
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
+     *
      * @param handleInconsistentProject A function that is called back if the project
      *      is not consistent. The default behavior
      *      ([[defaultHandlerForInconsistentProject]]) is to write a warning
@@ -372,9 +384,10 @@ object Project {
      *      exception to cancel the loading of the project (which is the only
      *      meaningful option for several advanced analyses.)
      */
-    def apply[Source: reflect.ClassTag](
+    def apply[Source >: Null <: AnyRef: reflect.ClassTag](
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Traversable[(ClassFile, Source)] = Iterable.empty,
+        libraryClassFilesWithSources: Traversable[(ClassFile, Source)] = Traversable.empty,
+        virtualClassFiles: Traversable[ClassFile] = Traversable.empty,
         handleInconsistentProject: (InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
 
         import scala.collection.mutable.{ Set, Map }
@@ -385,7 +398,8 @@ object Project {
         val classHierarchyFuture: Future[ClassHierarchy] = Future {
             ClassHierarchy(
                 projectClassFilesWithSources.view.map(_._1) ++
-                    libraryClassFilesWithSources.view.map(_._1)
+                    libraryClassFilesWithSources.view.map(_._1) ++
+                    virtualClassFiles
             )
         }
 
@@ -405,7 +419,7 @@ object Project {
         val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile]
         val sources = OpenHashMap.empty[ObjectType, Source]
 
-        for ((classFile, source) ← projectClassFilesWithSources) {
+        def processClassFile(classFile: ClassFile, source: Source) {
             projectClassFiles = classFile :: projectClassFiles
             projectClassFilesCount += 1
             val objectType = classFile.thisType
@@ -424,13 +438,21 @@ object Project {
                         "The type "+
                             objectType.toJava+
                             " is defined by multiple class files: "+
-                            sources(objectType)+" and "+
-                            source+"."
+                            sources.get(objectType).getOrElse("<VIRTUAL>")+" and "+
+                            (if (source == null) "<VIRTUAL>" else source)+"."
                     )
                 )
             }
             objectTypeToClassFile.put(objectType, classFile)
-            sources.put(objectType, source)
+            if (source != null) sources.put(classFile.thisType, source)
+        }
+
+        for ((classFile, source) ← projectClassFilesWithSources) {
+            processClassFile(classFile, source)
+        }
+
+        for (classFile ← virtualClassFiles) {
+            processClassFile(classFile, null)
         }
 
         for ((classFile, source) ← libraryClassFilesWithSources) {
@@ -470,3 +492,5 @@ object Project {
         )
     }
 }
+
+

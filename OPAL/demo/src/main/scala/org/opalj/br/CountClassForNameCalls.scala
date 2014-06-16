@@ -29,10 +29,10 @@
 package org.opalj
 package br
 
-import instructions._
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-
 import java.net.URL
+
+import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.instructions.INVOKESTATIC
 
 /**
  * Counts the number of `Class.forName` calls.
@@ -53,7 +53,7 @@ object CountClassForNameCalls extends AnalysisExecutor {
             // Next, we create a descriptor of a method that takes a single parameter of 
             // type "String" and that returns a value of type Class.
             val descriptor = MethodDescriptor(String, Class)
-            val invokes = 
+            val invokes =
                 // The following collects all calls of the method "forName" on
                 // an object of type "java.lang.Class".
                 for {

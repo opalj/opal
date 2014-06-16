@@ -44,6 +44,9 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
  * ==Usage==
  * If you need to adapt a setting just override the respective method in your domain.
  *
+ * In general, the [[ThrowAllPotentialExceptionsConfiguration]] should be used as it
+ * generates all exceptions that may be thrown.
+ *
  * @author Michael Eichberg
  */
 trait Configuration {
@@ -67,6 +70,18 @@ trait Configuration {
     def throwArithmeticExceptions: Boolean = false
 
     /**
+     * Returns `true` if potential `NullPointerExceptions` should be thrown and `false`
+     * if such `NullPointerExceptions` should be ignored. However, if the interpreter
+     * identifies a situation in which a `NullPointerException` is guaranteed to be
+     * thrown, it will be thrown. Example:
+     * {{{
+     * def demo(o : Object) {
+     *      o.toString  // - If "true", a NullPointerException will ALSO be thrown;
+     *                  //   the operation also succeeds.
+     *                  // - If "false" the operation will "just" succeed
+     * }
+     * }}}
+     *
      * @return `true`
      */
     def throwNullPointerException: Boolean = false
@@ -97,13 +112,13 @@ trait Configuration {
      * @return `false`
      */
     def throwClassCastException: Boolean = false
-    
+
     /**
-     * Throw a `ClassNotFoundException` if the a specific reference type is not 
+     * Throw a `ClassNotFoundException` if the a specific reference type is not
      * known in the current context. The context is typically a specific `Project`.
-     * 
+     *
      * @return `true`
      */
-    def throwClassNotFoundException : Boolean = true
+    def throwClassNotFoundException: Boolean = true
 
 }

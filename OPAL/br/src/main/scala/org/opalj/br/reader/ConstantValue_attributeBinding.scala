@@ -33,8 +33,6 @@ package reader
 import bi.reader.ConstantValue_attributeReader
 
 /**
- *
- *
  * @author Michael Eichberg
  */
 trait ConstantValue_attributeBinding
@@ -50,7 +48,6 @@ trait ConstantValue_attributeBinding
         constantValueIndex: Constant_Pool_Index) = {
         cp(constantValueIndex).asConstantFieldValue(cp)
     }
-
 }
 
 

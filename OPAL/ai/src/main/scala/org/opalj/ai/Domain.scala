@@ -587,6 +587,9 @@ trait Domain {
     def ArrayStoreException(pc: PC): ExceptionValue =
         InitializedObjectValue(pc, ObjectType.ArrayStoreException)
 
+    def ArithmeticException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.ArithmeticException)
+
     /**
      * Factory method to create domain values with a specific type. I.e., values for
      * which we have some type information but no value or source information.
@@ -611,6 +614,19 @@ trait Domain {
         case rt: ReferenceType ⇒ ReferenceValue(vo, rt)
         case VoidType ⇒
             throw DomainException("a domain value cannot have the type void")
+    }
+
+    /**
+     * Creates the domain value that represents the constant field value.
+     */
+    final def ConstantFieldValue(pc: PC, cv: ConstantFieldValue[_]): DomainValue = {
+        (cv.kindId: @scala.annotation.switch) match {
+            case ConstantInteger.KindId ⇒ IntegerValue(pc, cv.toInt)
+            case ConstantLong.KindId    ⇒ LongValue(pc, cv.toLong)
+            case ConstantFloat.KindId   ⇒ FloatValue(pc, cv.toFloat)
+            case ConstantDouble.KindId  ⇒ DoubleValue(pc, cv.toDouble)
+            case ConstantString.KindId  ⇒ StringValue(pc, cv.toUTF8)
+        }
     }
 
     /**
@@ -994,8 +1010,7 @@ trait Domain {
      */
     /*ABSTRACT*/ def refIsNull(value: DomainValue): Answer
 
-    final private[ai] def refIsNonNull(value: DomainValue): Answer =
-        refIsNull(value).negate
+    def refIsNonNull(value: DomainValue): Answer = refIsNull(value).negate
 
     /**
      * Compares the given values for reference equality. Returns `Yes` if both values
@@ -1008,19 +1023,18 @@ trait Domain {
      */
     /*ABSTRACT*/ def refAreEqual(value1: DomainValue, value2: DomainValue): Answer
 
-    final private[ai] def refAreNotEqual(
-        value1: DomainValue,
-        value2: DomainValue): Answer =
+    def refAreNotEqual(value1: DomainValue, value2: DomainValue): Answer =
         refAreEqual(value1, value2).negate
 
     /**
-     * Returns `Yes` or `Unknown` iff at least one possible extension of the given
+     * Returns `Yes` iff at least one possible extension of the given
      * `value` is in the specified range; that is, if the intersection of the range of
      * values captured by the given `value` and the specified range is non-empty.
      *
      * For example, if the given value captures all positive integer values and the
      * specified range is [-1,1] then the answer has to be `Yes`. If we know nothing
      * about the potential extension of the given value the answer will be `Unknown`.
+     * The answer is `No` iff both ranges are non-overlapping.
      *
      * @param value A value that has to be of computational type integer.
      * @param lowerBound The range's lower bound (inclusive).
@@ -1032,7 +1046,7 @@ trait Domain {
         upperBound: Int): Answer
 
     /**
-     * Returns `Yes` or Unknown` iff at least one (possible) extension of given value is
+     * Returns `Yes` iff at least one (possible) extension of a given value is
      * not in the specified range; that is, if the set difference of the range of
      * values captured by the given `value` and  the specified range is non-empty.
      * For example, if the given `value` has the integer value `10` and the
@@ -1043,7 +1057,7 @@ trait Domain {
      * The answer is Yes iff the analysis determined that at runtime `value`  will have
      * a value that is not in the specified range. If the analysis(domain) is not able
      * to determine whether the value is or is not in the given range then the answer
-     * has to be unknown.
+     * has to be `Unknown`.
      *
      * @param value A value that has to be of computational type integer.
      * @param lowerBound The range's lower bound (inclusive).
@@ -1068,7 +1082,7 @@ trait Domain {
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
      */
-    final private[ai] def intAreNotEqual(
+    def intAreNotEqual(
         value1: DomainValue,
         value2: DomainValue): Answer =
         intAreEqual(value1, value2).negate
@@ -1099,7 +1113,7 @@ trait Domain {
      * @param largerValue A value with computational type integer.
      * @param smallerValue A value with computational type integer.
      */
-    final private[ai] def intIsGreaterThan(
+    def intIsGreaterThan(
         largerValue: DomainValue,
         smallerValue: DomainValue): Answer =
         intIsLessThan(smallerValue, largerValue)
@@ -1110,7 +1124,7 @@ trait Domain {
      * @param largerOrEqualValue A value with computational type integer.
      * @param smallerOrEqualValue A value with computational type integer.
      */
-    final private[ai] def intIsGreaterThanOrEqualTo(
+    def intIsGreaterThanOrEqualTo(
         largerOrEqualValue: DomainValue,
         smallerOrEqualValue: DomainValue): Answer =
         intIsLessThanOrEqualTo(smallerOrEqualValue, largerOrEqualValue)
@@ -1120,7 +1134,7 @@ trait Domain {
      *
      * @param value A value with computational type integer.
      */
-    final private[ai] def intIs0(value: DomainValue): Answer =
+    def intIs0(value: DomainValue): Answer =
         intAreEqual(value, IntegerConstant0)
 
     /**
@@ -1128,7 +1142,7 @@ trait Domain {
      *
      * @param value A value with computational type integer.
      */
-    final private[ai] def intIsNot0(value: DomainValue): Answer =
+    def intIsNot0(value: DomainValue): Answer =
         intAreNotEqual(value, IntegerConstant0)
 
     /**
@@ -1136,7 +1150,7 @@ trait Domain {
      *
      * @param value A value with computational type integer.
      */
-    final private[ai] def intIsLessThan0(value: DomainValue): Answer =
+    def intIsLessThan0(value: DomainValue): Answer =
         intIsLessThan(value, IntegerConstant0)
 
     /**
@@ -1145,7 +1159,7 @@ trait Domain {
      *
      * @param value A value with computational type integer.
      */
-    final private[ai] def intIsLessThanOrEqualTo0(value: DomainValue): Answer =
+    def intIsLessThanOrEqualTo0(value: DomainValue): Answer =
         intIsLessThanOrEqualTo(value, IntegerConstant0)
 
     /**
@@ -1153,7 +1167,7 @@ trait Domain {
      *
      * @param value A value with computational type integer.
      */
-    final private[ai] def intIsGreaterThan0(value: DomainValue): Answer =
+    def intIsGreaterThan0(value: DomainValue): Answer =
         intIsGreaterThan(value, IntegerConstant0)
 
     /**
@@ -1162,7 +1176,7 @@ trait Domain {
      *
      * @param value A value with computational type integer.
      */
-    final private[ai] def intIsGreaterThanOrEqualTo0(value: DomainValue): Answer =
+    def intIsGreaterThanOrEqualTo0(value: DomainValue): Answer =
         intIsGreaterThanOrEqualTo(value, IntegerConstant0)
 
     // -----------------------------------------------------------------------------------
@@ -1183,8 +1197,7 @@ trait Domain {
         pc: PC,
         value: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def RefIsNull = refEstablishIsNull _
 
     /**
@@ -1197,21 +1210,19 @@ trait Domain {
         pc: PC,
         value: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def RefIsNonNull = refEstablishIsNonNull _
 
     /**
-     * Called by OPAL-AI when two values were compared for reference equality and
-     * we are currently analyzing the branch where the comparison succeeded.
+     * Called by OPAL when two values were compared for reference equality and
+     * we are going to analyze the branch where the comparison succeeded.
      */
     def refEstablishAreEqual(
         pc: PC,
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def RefAreEqual = refEstablishAreEqual _
 
     def refEstablishAreNotEqual(
@@ -1219,12 +1230,11 @@ trait Domain {
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def RefAreNotEqual = refEstablishAreNotEqual _
 
     /**
-     * Called by OPAL-AI to inform the domain that the given type is a new additional upper
+     * Called by OPAL to inform the domain that the given type is a new additional upper
      * bound of the given value that the value is guaranteed to satisfy from here on.
      *
      * This method is called iff a subtype query (typeOf(value) <: bound) returned
@@ -1235,27 +1245,35 @@ trait Domain {
         bound: ReferenceType,
         value: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
 
     //
     // W.r.t. Integer values
 
+    /**
+     * Sets the given domain value to the `theValue`.
+     *
+     * This function is called by OPAL '''before''' it starts to explore the branch
+     * where this condition has to hold. (This function is, e.g., called whenever we explore
+     * the branches of a switch-case statement.) I.e., the constraint is established
+     * before a potential join operation.
+     *
+     * @param value An integer value that does not have the value `theValue` as it single
+     *      possible value. (I.e., intHasValue(
+     */
     def intEstablishValue(
         pc: PC,
         theValue: Int,
         value: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
 
     def intEstablishAreEqual(
         pc: PC,
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def IntAreEqual = intEstablishAreEqual _
 
     def intEstablishAreNotEqual(
@@ -1263,8 +1281,7 @@ trait Domain {
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def IntAreNotEqual = intEstablishAreNotEqual _
 
     def intEstablishIsLessThan(
@@ -1272,8 +1289,7 @@ trait Domain {
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def IntIsLessThan = intEstablishIsLessThan _
 
     def intEstablishIsLessThanOrEqualTo(
@@ -1281,8 +1297,7 @@ trait Domain {
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (operands, locals)
+        locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def IntIsLessThanOrEqualTo = intEstablishIsLessThanOrEqualTo _
 
     /**
@@ -1585,7 +1600,7 @@ trait Domain {
     // METHOD INVOCATIONS
     //
 
-    protected type MethodCallResult = Computation[Option[DomainValue], ExceptionValues]
+    type MethodCallResult = Computation[DomainValue, ExceptionValues]
 
     def invokevirtual(
         pc: PC,
@@ -1838,7 +1853,7 @@ trait Domain {
      * register and joining the updated stack and registers with the stack and registers
      * associated with the instruction `successorPC`.
      * This function basically informs the domain about the instruction that
-     * may be evaluated next. The flow function is called for ''every possible
+     * ''may be'' evaluated next. The flow function is called for ''every possible
      * successor'' of the instruction with `currentPC`. This includes all branch
      * targets as well as those instructions that handle exceptions.
      *
@@ -1991,4 +2006,5 @@ trait Domain {
      * this method and should return a textual representation of the property.
      */
     def properties(pc: PC): Option[String] = None
+
 }

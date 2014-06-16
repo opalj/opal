@@ -135,10 +135,18 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultConfigurableDomain] The most precise domain readily available; this is primarily meant as a showcase!",
+        "[l1.DefaultConfigurableDomain] A classical abstract domain that performs calculations using ranges.",
         classOf[domain.l1.DefaultConfigurableDomain[(ClassFile, Method)]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.l1.DefaultConfigurableDomain((ClassFile, Method))
+        }
+    )
+
+    register(
+        "[l1.DefaultInterpretingConfigurableDomain] This domain performs some partical concrete evaluation.",
+        classOf[domain.li.DefaultInterpretingConfigurableDomain[(ClassFile, Method)]],
+        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
+            new domain.li.DefaultInterpretingConfigurableDomain((ClassFile, Method))
         }
     )
 }

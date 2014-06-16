@@ -56,12 +56,12 @@ class VTACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration
     type Cache = CallGraphCache[Contour, Value]
     def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Value]
 
-    def Domain(
-        theProject: SomeProject,
+    def Domain[Source](
+        theProject: Project[Source],
         cache: Cache,
         classFile: ClassFile,
         method: Method): VTACallGraphDomain =
-        new DefaultVTACallGraphDomain(theProject, cache, classFile, method)
+        new DefaultVTACallGraphDomain(theProject, cache, classFile, method, 2)
 }
 
 

@@ -37,6 +37,7 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
+
 import org.opalj.util._
 import br._
 import br.analyses.{ SomeProject, Project }
@@ -90,7 +91,7 @@ class PerformInvocationsTest
         domain.returnedNormally should be(true)
 
         val exs = domain.thrownExceptions(result.domain, -1)
-        exs.size should be(1)
+        if (exs.size != 1) fail("expected one exception, found: "+exs)
         exs forall { ex ⇒
             ex match {
                 case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒
@@ -134,7 +135,7 @@ class PerformInvocationsTest
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(false)
         val exs = domain.thrownExceptions(result.domain, -1)
-        exs.size should be(4)
+        if (exs.size != 4) fail("too many exceptions: "+exs)
         var foundUnknownError = false
         var foundUnsupportedOperationException = false
         var foundNullPointerException = false
@@ -160,8 +161,8 @@ class PerformInvocationsTest
         } should be(true)
         if (!(foundUnknownError &&
             foundUnsupportedOperationException &&
-            foundNullPointerException &&
-            foundIllegalArgumentException)) fail("Not all expected exceptions were thrown")
+            foundIllegalArgumentException &&
+            foundNullPointerException)) fail("Not all expected exceptions were thrown")
     }
 
     it should ("be able to analyze a static method that calls another static method that calls ...") in {
@@ -178,9 +179,31 @@ class PerformInvocationsTest
 
 object PerformInvocationsTestFixture {
 
-    class InvocationDomain(val project: Project[java.net.URL]) extends l1.DefaultConfigurableDomain("Root Domain")
-            with PerformInvocations[java.net.URL]
+    trait BaseDomain extends Domain
+            with DefaultDomainValueBinding
+            with TheProject[java.net.URL]
+            with ThrowAllPotentialExceptionsConfiguration
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l1.DefaultReferenceValuesBinding
+            with li.DefaultPreciseIntegerValues
+            with li.DefaultPreciseLongValues
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            with ProjectBasedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization {
+        override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
+    }
+
+    class InvocationDomain(val project: Project[java.net.URL])
+            extends BaseDomain
+            with PerformInvocations
             with RecordMethodCallResults {
+
+        type Id = Project[java.net.URL]
+
+        override def id = project
 
         def isRecursive(
             definingClass: ClassFile,

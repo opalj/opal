@@ -1,5 +1,5 @@
-/* License (BSD Style License):
- * Copyright (c) 2009 - 2013
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,11 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *  - Neither the name of the Software Technology Group or Technische
- *    Universität Darmstadt nor the names of its contributors may be used to
- *    endorse or promote products derived from this software without specific
- *    prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,31 +27,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
-
-import org.opalj.util.Answer
+package br
 
 /**
- * Optional functionality related to extracting a concrete integer value from some
- * domain value with computational type integer that is not required by the OPAL-AI core.
+ * This class file level attribute identifies [[ClassFile]] objects that have
+ * no direct representation in the bytecode of a project.
  *
- * @author Michael Eichberg
+ * Instead, the class file annotated with this attribute was generated to represent
+ * a class file object that is either explicitly generated at runtime and then used
+ * by the program or is conceptually generated at runtime by the JavaVM, but not exposed
+ * to the program.
+ * An example of the later case are the call site objects that are generated
+ * for `invokedynamic` instructions.
+ *
+ * However, such classes are generally required to facilitate subsequent analyses.
+ *
+ * @author Arne Lottmann
  */
-trait IntegerValuesProvider { this: Domain ⇒
+case object VirtualTypeFlag extends Attribute {
 
-    /**
-     * If the given value encapsulates a precise integer value then the function
-     * `ifThen` is called with the respective value otherwise `orElse` is called.
-     */
-    def intValue[T](value: DomainValue)(ifThen: Int ⇒ T)(orElse: ⇒ T): T
-
-    /**
-     * Returns the current int value of the domain value if it exists.
-     *
-     * @note This method returns `None` if the DomainValue does not represent an
-     *      Integer value. I.e., this method never fails.
-     */
-    def intValueOption(value: DomainValue): Option[Int]
+    override val kindId: Int = 1001
 
 }

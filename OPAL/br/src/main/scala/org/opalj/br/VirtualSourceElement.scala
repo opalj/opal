@@ -147,10 +147,10 @@ final case class VirtualField(
  *
  * @author Michael Eichberg
  */
-final case class VirtualMethod(
-        declaringClassType: ReferenceType,
-        name: String,
-        descriptor: MethodDescriptor) extends VirtualClassMember {
+sealed class VirtualMethod(
+        val declaringClassType: ReferenceType,
+        val name: String,
+        val descriptor: MethodDescriptor) extends VirtualClassMember {
 
     override def isMethod = true
 
@@ -188,5 +188,50 @@ final case class VirtualMethod(
                     this.name == that.name
             case _ ⇒ false
         }
+    }
+}
+object VirtualMethod {
+
+    def apply(declaringClassType: ReferenceType,
+              name: String,
+              descriptor: MethodDescriptor): VirtualMethod =
+        new VirtualMethod(declaringClassType, name, descriptor)
+
+    def unapply(virtualMethod: VirtualMethod): Option[(ReferenceType, String, MethodDescriptor)] = {
+        Some((
+            virtualMethod.declaringClassType,
+            virtualMethod.name,
+            virtualMethod.descriptor
+        ))
+    }
+}
+
+final class VirtualForwardingMethod(
+        declaringClassType: ReferenceType,
+        name: String,
+        descriptor: MethodDescriptor,
+        val target: Method) extends VirtualMethod(declaringClassType, name, descriptor) {
+
+    override def toJava: String =
+        declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
+
+}
+
+object VirtualForwardingMethod {
+
+    def apply(
+        declaringClassType: ReferenceType,
+        name: String,
+        descriptor: MethodDescriptor,
+        target: Method): VirtualMethod =
+        new VirtualForwardingMethod(declaringClassType, name, descriptor, target)
+
+    def unapply(virtualMethod: VirtualForwardingMethod): Option[(ReferenceType, String, MethodDescriptor, Method)] = {
+        Some((
+            virtualMethod.declaringClassType,
+            virtualMethod.name,
+            virtualMethod.descriptor,
+            virtualMethod.target
+        ))
     }
 }

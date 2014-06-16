@@ -35,7 +35,7 @@ package domain
  * throws an exception (or multiple exceptions) all exceptions are recorded.
  *
  * @note This domain requires that `DomainValue`s that represent thrown exceptions
- *      have meaningful `equals` and `hashCode` methods. (Depending on the purpose 
+ *      have meaningful `equals` and `hashCode` methods. (Depending on the purpose
  *      of the abstract interpretation, reference equality may be sufficient.)
  *
  * @author Michael Eichberg
@@ -44,7 +44,9 @@ trait RecordAllThrownExceptions extends RecordThrownExceptions {
 
     type ThrownException = Set[ExceptionValue]
 
-    override protected[this] def recordThrownException(pc: PC, value: ExceptionValue): ThrownException =
+    override protected[this] def recordThrownException(
+        pc: PC,
+        value: ExceptionValue): ThrownException =
         Set.empty + value
 
     override protected[this] def joinThrownExceptions(

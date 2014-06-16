@@ -29,21 +29,18 @@
 package org.opalj
 package ai
 package domain
-package l1
+package li
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
+import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
  * Domain to track integer values at a configurable level of precision.
  *
  * @author Michael Eichberg
  */
-trait PreciseIntegerValues
-        extends Domain
-        with IntegerValuesProvider
-        with IntegerValuesComparison {
+trait PreciseIntegerValues extends Domain with ConcreteIntegerValues {
     this: Configuration ⇒
 
     // -----------------------------------------------------------------------------------
@@ -53,33 +50,16 @@ trait PreciseIntegerValues
     // -----------------------------------------------------------------------------------
 
     /**
-     * Determines for an integer value that is updated how large the update can be
-     * before we stop the precise tracking of the value and represent the respective
-     * value as "some integer value".
-     *
-     * '''This value is only taken into consideration when two paths converge'''.
-     *
-     * The default value is 25 which will, e.g., effectively unroll a loop with a loop
-     * counter that starts with 0 and which is incremented by one in each round up to
-     * 25 times.
-     *
-     * This is a runtime configurable setting that may affect the overall precision of
-     * subsequent analyses that require knowledge about integers.
+     * Determines how often a value can be update before we assume the value to be
+     * AnIntegerValue. The number of updates is determined by joins of incompatible
+     * values; simple mathematical operations are not counted as updates.
      */
-    def maxSpreadInteger: Int
-
-    /**
-     * Calculates the distance between the two given values. The value is always equal or
-     * larger than zero.
-     */
-    protected def spread(a: Int, b: Int): Int = Math.abs(a - b)
+    protected def maxUpdatesForIntegerValues: Long
 
     /**
      * Abstracts over all values with computational type `integer`.
      */
-    sealed trait IntegerLikeValue
-            extends Value
-            with IsIntegerValue { this: DomainValue ⇒
+    sealed trait IntegerLikeValue extends Value with IsIntegerValue { this: DomainValue ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
@@ -97,23 +77,13 @@ trait PreciseIntegerValues
      */
     trait IntegerValue extends IntegerLikeValue { this: DomainValue ⇒
 
-        /**
-         * The value that was originally assigned to this integer value(variable).
-         */
-        val initial: Int
+        val updateCount: Int
 
         val value: Int
 
         /**
          * Creates a new `IntegerValue` with the given value as the current value,
-         * and the same [[initial]] value.
-         *
-         * @note It is ok if the new value is between the current value and the
-         *      initial value or if the new value actually exceeds the maximum
-         *      allowed spread.
-         *
-         * @note This method must not check whether the initial value and the new value
-         *      exceed the spread. This is done by the join method.
+         * and an increased updateCount.
          */
         def update(newValue: Int): DomainValue
 
@@ -184,22 +154,6 @@ trait PreciseIntegerValues
         }
     }
 
-    override def intIsSomeValueInRange(
-        value: DomainValue,
-        lowerBound: DomainValue,
-        upperBound: DomainValue): Answer = {
-
-        (value, lowerBound, upperBound) match {
-            case (IntegerValue(v), IntegerValue(l), IntegerValue(u)) ⇒
-                Answer(l <= v && v <= u)
-            case (IntegerValue(v), IntegerValue(l), _) if v <= l ⇒
-                if (v == l) Yes else No
-            case (IntegerValue(v), _, IntegerValue(u)) if v >= u ⇒
-                if (v == u) Yes else No
-            case _ ⇒ Unknown
-        }
-    }
-
     override def intIsSomeValueNotInRange(
         value: DomainValue,
         lowerBound: Int,
@@ -263,7 +217,7 @@ trait PreciseIntegerValues
     // UNARY EXPRESSIONS
     //
     override def ineg(pc: PC, value: DomainValue) = value match {
-        case v: IntegerValue ⇒ v.update(-v.value)
+        case v: IntegerValue ⇒ IntegerValue(pc, -v.value)
         case _               ⇒ value
     }
 
@@ -289,17 +243,19 @@ trait PreciseIntegerValues
         pc: PC,
         value1: DomainValue,
         value2: DomainValue): IntegerLikeValueOrArithmeticException = {
-        import ObjectType.ArithmeticException
-        intValues(value1, value2) { (v1, v2) ⇒
+        intValue(value2) { v2 ⇒
             if (v2 == 0)
-                ThrowsException(InitializedObjectValue(pc, ArithmeticException))
-            else
-                ComputedValue(IntegerValue(pc, v1 / v2))
+                ThrowsException(ArithmeticException(pc))
+            else {
+                intValue(value1) { v1 ⇒
+                    ComputedValue(IntegerValue(pc, v1 / v2))
+                } {
+                    ComputedValue(IntegerValue(pc))
+                }
+            }
         } {
             if (throwArithmeticExceptions)
-                ComputedValueAndException(
-                    IntegerValue(pc),
-                    InitializedObjectValue(pc, ArithmeticException))
+                ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
             else
                 ComputedValue(IntegerValue(pc))
         }
@@ -323,16 +279,20 @@ trait PreciseIntegerValues
         pc: PC,
         value1: DomainValue,
         value2: DomainValue): IntegerLikeValueOrArithmeticException = {
-        import ObjectType.ArithmeticException
-        intValues(value1, value2) { (v1, v2) ⇒
+        intValue(value2) { v2 ⇒
             if (v2 == 0)
-                ThrowsException(InitializedObjectValue(pc, ArithmeticException))
-            else
-                ComputedValue(IntegerValue(pc, v1 % v2))
+                ThrowsException(ArithmeticException(pc))
+            else {
+                intValue(value1) { v1 ⇒
+                    ComputedValue(IntegerValue(pc, v1 % v2))
+                } {
+                    ComputedValue(IntegerValue(pc))
+                }
+            }
         } {
             if (throwArithmeticExceptions)
-                ComputedValueAndException(
-                    IntegerValue(pc), InitializedObjectValue(pc, ArithmeticException))
+                ComputedValueOrException(
+                    IntegerValue(pc), ArithmeticException(pc))
             else
                 ComputedValue(IntegerValue(pc))
         }
@@ -376,7 +336,7 @@ trait PreciseIntegerValues
     override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue =
         value match {
             case v: IntegerValue ⇒
-                v.update(v.value + increment)
+                IntegerValue(pc, v.value + increment)
             case _ ⇒
                 // The given value is "some (unknown) integer value"
                 // hence, we can directly return it.

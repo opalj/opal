@@ -33,18 +33,19 @@ package domain
 import language.implicitConversions
 
 /**
- * Trait that can be mixed in if we need - after evaluation of a method – an abstract
- * representation of all returned values and the thrown exceptions.
+ * Trait that can be mixed in if information is needed about all returned values and
+ * the thrown exceptions. ''This information is, however, only available after the
+ * evaluation of a method has completed.''
  *
  * @author Michael Eichberg
  */
 trait MethodCallResults extends Domain {
 
     /**
-     * `true` if the method returned due to a `( |a|i|l|f|d)return` instruction.
+     * `true` if the method returned due to a `("void"|a|i|l|f|d)return` instruction.
      *
      * @note This method may only be called after the abstract interpretation of a
-     * 		the method has completed.
+     * 		 method has completed.
      */
     def returnedNormally: Boolean
 
@@ -56,7 +57,7 @@ trait MethodCallResults extends Domain {
      *   	`Some(DomainValue)` is returned otherwise.
      *
      * @note This method may only be called after the abstract interpretation of a
-     * 		the method has completed.
+     * 		 method has completed.
      */
     def returnedValue(target: Domain, callerPC: PC): Option[target.DomainValue]
 
@@ -67,7 +68,7 @@ trait MethodCallResults extends Domain {
      * `ExceptionValue`.
      *
      * @note This method may only be called after the abstract interpretation of a
-     * 		the method has completed.
+     * 		 method has completed.
      */
     def thrownExceptions(target: Domain, callerPC: PC): target.ExceptionValues
 

@@ -37,9 +37,9 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-import br._
-import bi.reader.ClassFileReader
-import br.reader.Java8Framework.ClassFiles
+import org.opalj.br._
+import org.opalj.bi.reader.ClassFileReader
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
@@ -72,7 +72,6 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultIntegerValuesComparison
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions
             with PredefinedClassHierarchy {
@@ -86,7 +85,6 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
             with IgnoreSynchronization
             with l0.TypeLevelInvokeInstructions
             with l0.TypeLevelFieldAccessInstructions
-            with l0.DefaultIntegerValuesComparison
             with PredefinedClassHierarchy
             with DefaultDomainValueBinding
             with l0.DefaultTypeLevelDoubleValues
@@ -101,7 +99,6 @@ class BaseConfigurableDomainTest extends FlatSpec with Matchers {
             extends Domain
             with l0.DefaultReferenceValuesBinding
             with l0.DefaultTypeLevelIntegerValues
-            with l0.DefaultIntegerValuesComparison
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelDoubleValues

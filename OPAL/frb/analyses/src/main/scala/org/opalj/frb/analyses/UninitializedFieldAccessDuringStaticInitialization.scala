@@ -197,8 +197,8 @@ private class FieldStatusTracingDomain[Source](
         with PropertyTracing
         with RecordReturnFromMethodInstructions
         with IgnoreSynchronization {
-    
-    override def maxSpreadInteger: Int = 1
+
+    override def maxSizeOfIntegerRanges: Long = 5l
 
     /**
      * Check whether a class is a strict subclass of (and not equal to) the class we're

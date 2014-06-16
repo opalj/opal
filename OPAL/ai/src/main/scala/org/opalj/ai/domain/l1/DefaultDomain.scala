@@ -38,17 +38,18 @@ package l1
 trait DefaultDomain
     extends Domain
     with DefaultDomainValueBinding
-    with TypeLevelFieldAccessInstructionsWithNullPointerHandling
-    with TypeLevelInvokeInstructionsWithNullPointerHandling
-    //    with DefaultReferenceValuesBinding
-    //    with DefaultStringValuesBinding
-    with DefaultClassValuesBinding
-    with DefaultArrayValuesBinding
-    with DefaultPreciseIntegerValues
-    with DefaultPreciseLongValues
+    with ThrowAllPotentialExceptionsConfiguration
     with l0.DefaultTypeLevelFloatValues
     with l0.DefaultTypeLevelDoubleValues
-    with DefaultPerInstructionPostProcessing
+    with l0.DefaultTypeLevelLongValues
+    with l0.TypeLevelFieldAccessInstructions
+    with l0.TypeLevelInvokeInstructions
+    //    with DefaultReferenceValuesBinding
+    //    with DefaultStringValuesBinding
+    with l1.DefaultClassValuesBinding
+    with l1.DefaultArrayValuesBinding
+    with l1.DefaultIntegerRangeValues
+    with PerInstructionPostProcessing
     with PredefinedClassHierarchy
 
 class DefaultConfigurableDomain[I](
@@ -56,9 +57,11 @@ class DefaultConfigurableDomain[I](
         extends DefaultDomain
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization {
+
     type Id = I
 
-    override def maxSpreadInteger: Int = 5
+    override protected def maxSizeOfIntegerRanges: Long = 25l
+
 }
 
 class DefaultRecordingDomain[I](
@@ -69,9 +72,11 @@ class DefaultRecordingDomain[I](
         with RecordAllThrownExceptions
         with RecordVoidReturns
         with IgnoreSynchronization {
+
     type Id = I
 
-    override def maxSpreadInteger: Int = 5
+    override protected def maxSizeOfIntegerRanges: Long = 25l
+
 }
         
 

@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 package domain
-package l1
+package li
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
@@ -41,7 +41,7 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
  */
 trait DefaultPreciseLongValues
         extends DefaultDomainValueBinding
-        with PreciseLongValues {
+        with PreciseLongValues { this: Configuration ⇒
 
     // ATTENTION: The functionality to propagate a constraint crucially depends on
     // the fact two long values created at two different places are represented

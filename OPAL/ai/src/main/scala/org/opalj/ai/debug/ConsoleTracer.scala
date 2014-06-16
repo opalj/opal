@@ -40,6 +40,8 @@ import br.instructions.Instruction
  */
 trait ConsoleTracer extends AITracer {
 
+    import Console._
+
     private def correctIndent(value: Object): String = {
         if (value eq null)
             "<EMPTY>"
@@ -72,9 +74,10 @@ trait ConsoleTracer extends AITracer {
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
             operandsArray: domain.OperandsArray,
-            localsArray: domain.LocalsArray) {
+            localsArray: domain.LocalsArray,
+            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]) {
 
-        println(Console.BLACK_B + Console.WHITE+"Starting Code Analysis"+Console.RESET)
+        println(BLACK_B + WHITE+"Starting Code Analysis"+RESET)
         println("Number of registers:      "+code.maxLocals)
         println("Size of operand stack:    "+code.maxStack)
         //println("Program counters:         "+code.programCounters.mkString(", "))     
@@ -85,11 +88,9 @@ trait ConsoleTracer extends AITracer {
             sourcePC: PC,
             targetPC: PC,
             isExceptionalControlFlow: Boolean): Unit = {
-        println(
-            Console.CYAN_B + Console.RED+
-                "rescheduled the evaluation of the instruction with the program counter: "+
-                targetPC +
-                Console.RESET)
+        println(CYAN_B + RED+
+            "rescheduled the evaluation of the instruction with the program counter: "+
+            targetPC + RESET)
     }
 
     override def flow(
@@ -97,6 +98,13 @@ trait ConsoleTracer extends AITracer {
             currentPC: PC,
             targetPC: PC,
             isExceptionalControlFlow: Boolean) { /* ignored */ }
+
+    override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC) {
+        println(Console.RED_B + Console.YELLOW+
+            "did not schedule the interpretation of instruction "+
+            targetPC+
+            "; the abstract state didn't change"+Console.RESET)
+    }
 
     override def join(
         domain: Domain)(
@@ -142,6 +150,32 @@ trait ConsoleTracer extends AITracer {
                 )
         }
         println(Console.RESET)
+    }
+
+    override def establishedConstraint(
+        domain: Domain)(
+            pc: PC,
+            effectivePC : PC,
+            operands: domain.Operands,
+            locals: domain.Locals,
+            newOperands: domain.Operands,
+            newLocals: domain.Locals): Unit = {
+        println(pc+":"+YELLOW_B + BLUE+"Establishing Constraint w.r.t. "+effectivePC+":")
+        val changedOperands = operands.view.zip(newOperands).filter(ops ⇒ ops._1 ne ops._2).force
+        if (changedOperands.nonEmpty) {
+            println(YELLOW_B + BLUE+"\tUpdated Operands:")
+            changedOperands.foreach(ops ⇒ print(YELLOW_B + BLUE+"\t\t"+ops._1+" => "+ops._2+"\n"))
+        }
+        val changedLocals =
+            locals.zip(newLocals).zipWithIndex.map(localsWithIdx ⇒
+                (localsWithIdx._1._1, localsWithIdx._1._2, localsWithIdx._2)
+            ).filter(ops ⇒ ops._1 ne ops._2)
+        if (changedLocals.hasNext) {
+            println(YELLOW_B + BLUE+"\tUpdated Locals:")
+            changedLocals.foreach(locals ⇒ print(YELLOW_B + BLUE+"\t\t"+locals._3+":"+locals._1+" => "+locals._2+"\n"))
+        }
+        println(YELLOW_B + BLUE+"\tDone"+RESET)
+
     }
 
     override def abruptMethodExecution(

@@ -51,7 +51,7 @@ sealed trait TypesAnswer
  *
  * @note Recall that the computational type of a value always has to be available, but
  *      that a `Domain.typeOfValue(...)` query does not need to take the computational type
- *      into account (Whenever OPAL-AI requires the computational type of a value it uses
+ *      into account (Whenever the core framework requires the computational type of a value it uses
  *      the respective method.)
  *
  * @author Michael Eichberg
@@ -108,7 +108,7 @@ trait IsDoubleValue extends IsPrimitiveValue {
  * {{{
  * val o = If(...) new Object() else "STRING"
  * }}}
- * o is a reference value (`IsReferenceValue`) that refers to two "primitive" values each
+ * o is a reference value (`IsReferenceValue`) that refers to two "simple" values each
  * represented by an instance of an `IsAReferenceValue` (`new Object()` and `"STRING"`).
  *
  * @author Michael Eichberg
@@ -145,7 +145,7 @@ trait IsAReferenceValue {
      * Returns `true` if the type information is precise. I.e., the type precisely
      * models the runtime type of the value.
      *
-     * @note If value is known to be `null`, `isPrecise` will also return `true`.
+     * @note `isPrecise` is always `true` if this value is known to be `null`. 
      */
     def isPrecise: Boolean
 
@@ -154,9 +154,10 @@ trait IsAReferenceValue {
      * reference type under the assumption that this value is not `null`!
      *
      * Basically, this method implements the same semantics as the `ClassHierarchy`'s
-     * `isSubtypeOf` method, but it additionally  checks if the type of this value
-     * '''could be a subtype'' of the given supertype. I.e., if this value's type
-     * identifies a supertype of the given `supertype` the answer is unknown.
+     * `isSubtypeOf` method, but it additionally checks if the type of this value
+     * ''could be a subtype'' of the given supertype. I.e., if this value's type
+     * identifies a supertype of the given `supertype` and that type is not known
+     * to be precise the answer is `Unknown`.
      *
      * For example, assume that the type of this reference value is
      * `java.util.Collection` and we know/have to assume that this is only an
@@ -176,11 +177,13 @@ trait IsAReferenceValue {
 }
 
 object IsAReferenceValue {
-    def unapply(value: IsAReferenceValue): Option[IsAReferenceValue] = Some(value)
+    def unapply(value: IsAReferenceValue): Option[UpperTypeBound] =
+        Some(value.upperTypeBound)
 }
 
 /**
- * The value is a reference value.
+ * The value identifies one or more reference values. Additionally, it is possible
+ * to get a representation that represents a summary of all underlying reference values.
  *
  * @author Michael Eichberg
  */

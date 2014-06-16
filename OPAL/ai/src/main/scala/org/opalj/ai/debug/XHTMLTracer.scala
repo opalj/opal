@@ -240,19 +240,20 @@ trait XHTMLTracer extends AITracer {
         </html>
     }
 
-    def continuingInterpretation(
+    override def continuingInterpretation(
         code: Code,
         domain: Domain)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
-            operandsArray: TheOperandsArray[domain.Operands],
-            localsArray: TheLocalsArray[domain.Locals]) {
+            operandsArray: domain.OperandsArray,
+            localsArray: domain.LocalsArray,
+            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]) {
         /*ignored*/
     }
 
     private[this] var continuingWithBranch = true
 
-    def flow(
+    override def flow(
         domain: Domain)(
             currentPC: PC,
             successorPC: PC,
@@ -260,7 +261,9 @@ trait XHTMLTracer extends AITracer {
         continuingWithBranch = currentPC < successorPC
     }
 
-    def rescheduled(
+    override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = { /*EMPTY*/ }
+
+    override def rescheduled(
         domain: Domain)(
             sourcePC: PC,
             targetPC: PC,
@@ -268,7 +271,7 @@ trait XHTMLTracer extends AITracer {
         /*ignored for now*/
     }
 
-    def instructionEvalution(
+    override def instructionEvalution(
         domain: Domain)(
             pc: PC,
             instruction: Instruction,
@@ -297,6 +300,17 @@ trait XHTMLTracer extends AITracer {
             otherOperands: domain.Operands,
             otherLocals: domain.Locals,
             result: Update[(domain.Operands, domain.Locals)]): Unit = {
+        /*ignored*/
+    }
+
+    override def establishedConstraint(
+        domain: Domain)(
+            pc: PC,
+            effectivePC : PC,
+            operands: domain.Operands,
+            locals: domain.Locals,
+            newOperands: domain.Operands,
+            newLocals: domain.Locals): Unit = {
         /*ignored*/
     }
 

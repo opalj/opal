@@ -62,28 +62,55 @@ class PerformInvocationsWithRecursionDetectionTest
     behavior of "PerformInvocationsWithRecursionDetection"
 
     it should ("be able to analyze a simple static, recursive method") in {
-        val domain = new InvocationDomain(project) { val calledMethodsStore = createCalledMethodsStore() }
+        val domain = new InvocationDomain(project) {
+            val calledMethodsStore = createCalledMethodsStore(project)
+        }
         val result = BaseAI(StaticCalls, StaticCalls.findMethod("simpleRecursion").get, domain)
         result.domain.returnedNormally should be(true)
     }
 
-    it should ("be able to analyze a method that calls itself unconditionally") in {
-        val theCalledMethodsStore = createCalledMethodsStore()
-        val domain = new InvocationDomain(project) { val calledMethodsStore = theCalledMethodsStore }
+    it should ("be able to analyze a method that is self-recursive and which will never abort") in {
+        val theCalledMethodsStore = createCalledMethodsStore(project)
+        val domain = new InvocationDomain(project) {
+            val calledMethodsStore = theCalledMethodsStore
+        }
         BaseAI(StaticCalls, StaticCalls.findMethod("endless").get, domain)
-        if (domain.returnedNormally) fail("the method never returns")
+        if (domain.allReturnedValues.nonEmpty)
+            fail("the method never returns, but the following result was produced: "+
+                domain.allReturnedValues)
+        if (domain.allThrownExceptions.nonEmpty)
+            fail("the method never returns, but the following result was produced: "+
+                domain.allReturnedValues)
+    }
+
+    it should ("be able to analyze a method that is self-recursive and which will never abort due to exception handling") in {
+        val theCalledMethodsStore = createCalledMethodsStore(project)
+        val domain = new InvocationDomain(project) {
+            val calledMethodsStore = theCalledMethodsStore
+        }
+        BaseAI(StaticCalls, StaticCalls.findMethod("endlessDueToExceptionHandling").get, domain)
+        if (domain.allReturnedValues.nonEmpty)
+            fail("the method never returns, but the following result was produced: "+
+                domain.allReturnedValues)
+        if (domain.allThrownExceptions.nonEmpty)
+            fail("the method never returns, but the following result was produced: "+
+                domain.allReturnedValues)
     }
 
     it should ("be able to analyze some methods with mutual recursion") in {
-        val theCalledMethodsStore = createCalledMethodsStore()
-        val domain = new InvocationDomain(project) { val calledMethodsStore = theCalledMethodsStore }
+        val theCalledMethodsStore = createCalledMethodsStore(project)
+        val domain = new InvocationDomain(project) {
+            val calledMethodsStore = theCalledMethodsStore
+        }
         BaseAI(StaticCalls, StaticCalls.findMethod("mutualRecursionA").get, domain)
 
         domain.returnedNormally should be(true) // because we work at the type level at some point..
     }
 
     it should ("be able to analyze a static method that uses recursion to calculate the factorial of a small concrete number") in {
-        val domain = new InvocationDomain(project) { val calledMethodsStore = createCalledMethodsStore() }
+        val domain = new InvocationDomain(project) {
+            val calledMethodsStore = createCalledMethodsStore(project)
+        }
         BaseAI.perform(StaticCalls, StaticCalls.findMethod("fak").get, domain)(
             Some(IndexedSeq(domain.IntegerValue(-1, 3)))
         )
@@ -92,7 +119,7 @@ class PerformInvocationsWithRecursionDetectionTest
     }
 
     it should ("issue a warning if a method is called very often using different operands") in {
-        val theCalledMethodsStore = createCalledMethodsStore()
+        val theCalledMethodsStore = createCalledMethodsStore(project)
         val domain = new InvocationDomain(project) { val calledMethodsStore = theCalledMethodsStore }
         BaseAI.perform(StaticCalls, StaticCalls.findMethod("fak").get, domain)(
             Some(IndexedSeq(domain.IntegerValue(-1, 11)))
@@ -108,8 +135,29 @@ class PerformInvocationsWithRecursionDetectionTest
 
 object PerformInvocationsWithRecursionDetectionTestFixture {
 
-    def createCalledMethodsStore(): CalledMethodsStore { def warningIssued: Boolean } =
-        new CalledMethodsStore(new l1.DefaultConfigurableDomain("Called Methods Store Domain") { override def maxSpreadInteger: Int = Int.MaxValue }) {
+    abstract class BaseDomain(override val project: Project[java.net.URL]) extends Domain
+            with DefaultDomainValueBinding
+            with TheProject[java.net.URL]
+            with ThrowAllPotentialExceptionsConfiguration
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.DefaultTypeLevelLongValues
+            with l0.TypeLevelInvokeInstructions
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l1.DefaultReferenceValuesBinding
+            with li.DefaultPreciseIntegerValues
+            with ProjectBasedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization {
+        override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
+    }
+
+    def createCalledMethodsStore(theProject: Project[java.net.URL]): CalledMethodsStore { def warningIssued: Boolean } =
+        new CalledMethodsStore(
+            new BaseDomain(theProject) {
+                type Id = String
+                override def id = "Called Methods Store Domain"
+            }) {
             var warningIssued = false
             override def frequentEvalution(
                 definingClass: ClassFile,
@@ -120,14 +168,16 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             }
         }
 
-    abstract class InvocationDomain(
-        val project: Project[java.net.URL]) extends l1.DefaultConfigurableDomain("Root Domain")
-            with PerformInvocationsWithRecursionDetection[java.net.URL]
+    abstract class InvocationDomain(project: Project[java.net.URL])
+            extends BaseDomain(project)
+            with PerformInvocationsWithRecursionDetection
             with RecordMethodCallResults {
 
-        /*ABSTRACT*/ val calledMethodsStore: CalledMethodsStore
+        type Id = Project[java.net.URL]
 
-        override def maxSpreadInteger: Int = Int.MaxValue
+        override def id = project
+
+        /*ABSTRACT*/ val calledMethodsStore: CalledMethodsStore
 
         def invokeExecutionHandler(
             pc: PC,

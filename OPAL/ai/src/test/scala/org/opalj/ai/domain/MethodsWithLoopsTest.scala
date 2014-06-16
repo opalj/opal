@@ -58,25 +58,29 @@ class MethodsWithLoopsTest
         classFile.methods.find(_.name == name).get
     }
 
-    import domain.l0.BaseDomain
-    private def evaluateMethod(name: String, f: BaseDomain ⇒ Unit) {
-        val domain = new BaseDomain()
-        val method = classFile.methods.find(_.name == name).get
-        val result = BaseAI(classFile, method, domain)
-
-        org.opalj.ai.debug.XHTML.dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
-            f(domain)
-        }
-    }
+//    import domain.l0.BaseDomain
+//    private def evaluateMethod(name: String, f: BaseDomain ⇒ Unit) {
+//        val domain = new BaseDomain()
+//        val method = classFile.methods.find(_.name == name).get
+//        val result = BaseAI(classFile, method, domain)
+//
+//        org.opalj.ai.debug.XHTML.dumpOnFailureDuringValidation(
+//            Some(classFile),
+//            Some(method),
+//            method.body.get,
+//            result) {
+//                f(domain)
+//            }
+//    }
 
     behavior of "the abstract interpreter when analyzing methods with loops"
 
     //
     // RETURNS
     it should "be able to analyze a method that never terminates" in {
-        val domain = new BaseDomain()
+        val domain = new l0.BaseDomain()
         val method = findMethod("endless")
-        val result = BaseAI(classFile, method, domain) // TODO [AI - Test] Update the test to not wait forever in case of a bug.
+        val result = BaseAI(classFile, method, domain) 
     }
 
 }

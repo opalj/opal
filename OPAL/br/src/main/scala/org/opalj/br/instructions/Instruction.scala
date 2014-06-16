@@ -109,7 +109,7 @@ object Instruction {
         var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC, code))
 
         def processException(exception: ObjectType) {
-            code.exceptionHandlersFor(currentPC) find { handler ⇒
+            code.handlersFor(currentPC) find { handler ⇒
                 handler.catchType.isEmpty ||
                     Code.preDefinedClassHierarchy.isSubtypeOf(
                         exception,
@@ -133,7 +133,7 @@ object Instruction {
 
         val nextInstruction = instruction.indexOfNextInstruction(currentPC, code)
 
-        code.exceptionHandlersFor(currentPC) find { handler ⇒
+        code.handlersFor(currentPC) find { handler ⇒
             handler.catchType.isEmpty ||
                 Code.preDefinedClassHierarchy.isSubtypeOf(
                     exception,

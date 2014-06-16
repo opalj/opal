@@ -40,23 +40,23 @@ package domain
  */
 trait DefaultHandlingForReturnInstructions { this: Domain ⇒
 
-    override def areturn(pc: PC, value: DomainValue): Unit = {
+    /*override*/ def areturn(pc: PC, value: DomainValue): Unit = {
         /* Nothing to do. */
     }
 
-    override def dreturn(pc: PC, value: DomainValue): Unit = {
+    /*override*/ def dreturn(pc: PC, value: DomainValue): Unit = {
         /* Nothing to do. */
     }
 
-    override def freturn(pc: PC, value: DomainValue): Unit = {
+    /*override*/ def freturn(pc: PC, value: DomainValue): Unit = {
         /* Nothing to do. */
     }
 
-    override def ireturn(pc: PC, value: DomainValue): Unit = {
+    /*override*/ def ireturn(pc: PC, value: DomainValue): Unit = {
         /* Nothing to do. */
     }
 
-    override def lreturn(pc: PC, value: DomainValue): Unit = {
+    /*override*/ def lreturn(pc: PC, value: DomainValue): Unit = {
         /* Nothing to do. */
     }
 

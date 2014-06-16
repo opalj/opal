@@ -44,7 +44,7 @@ import br._
 trait DefaultTypeLevelReferenceValues
         extends DefaultDomainValueBinding
         with TypeLevelReferenceValues {
-    domain: Configuration with IntegerValuesComparison with ClassHierarchy ⇒
+    domain: Configuration with ClassHierarchy ⇒
 
     // ---------------------------------1-------------------------------------------------
     //
@@ -56,21 +56,22 @@ trait DefaultTypeLevelReferenceValues
     type DomainObjectValue <: ObjectValue with DomainReferenceValue // <= SObject.. and MObject...
     type DomainArrayValue <: ArrayValue with DomainReferenceValue
 
-    protected class NullValue
+    protected[this] class NullValue
             extends super.NullValue {
         this: DomainNullValue ⇒
 
         override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case that: NullValue ⇒ NoUpdate
-                case that: ReferenceValue ⇒
-                    assume(that.isNull.isYesOrUnknown)
+                case _: NullValue ⇒ NoUpdate
+                case _: ReferenceValue ⇒
+                    // THIS domain does not track whether ReferenceValues 
+                    // are definitively not null!
                     StructuralUpdate(other)
             }
         }
     }
 
-    protected class ArrayValue(
+    protected[this] class ArrayValue(
         override val theUpperTypeBound: ArrayType)
             extends super.ArrayValue
             with SReferenceValue[ArrayType] {
@@ -97,16 +98,29 @@ trait DefaultTypeLevelReferenceValues
 
         override def isAssignable(value: DomainValue): Answer = {
             typeOfValue(value) match {
+
                 case IsPrimitiveValue(primitiveType) ⇒
                     // The following is an overapproximation that makes it theoretically 
-                    // possible to store an int value in a byte array.
+                    // possible to store an int value in a byte array. However, 
+                    // such bytecode is illegal
                     Answer(
                         theUpperTypeBound.componentType.computationalType eq primitiveType.computationalType
                     )
-                case _ ⇒
-                    // IMPROVE We could check if this array's type and the given value's type are in no inheritance hierarchy
-                    // IMPROVE We could check if the type of the other value is precise and if so if this type is a supertype of it
-                    Unknown
+
+                case IsAReferenceValue(UIDSet1(valueType: ArrayType)) if valueType.elementType.isBaseType ⇒
+                    // supports arrays of arrays of primitive values
+                    if (theUpperTypeBound.componentType eq valueType)
+                        Yes
+                    else
+                        No
+
+                case _ /* ReferenceValue */ ⇒
+                    if (theUpperTypeBound.componentType.isBaseType)
+                        No
+                    else
+                        // IMPROVE We could check if this array's type and the given value's type are in no inheritance hierarchy
+                        // IMPROVE We could check if the type of the other value is precise and if so if this type is a supertype of it
+                        Unknown
             }
         }
 
@@ -114,7 +128,7 @@ trait DefaultTypeLevelReferenceValues
             pc: PC,
             index: DomainValue,
             potentialExceptions: ExceptionValues): ArrayLoadResult = {
-            ComputedValueAndException(
+            ComputedValueOrException(
                 TypedValue(pc, theUpperTypeBound.componentType),
                 potentialExceptions)
         }
@@ -391,18 +405,17 @@ trait DefaultTypeLevelReferenceValues
         override def refineUpperTypeBound(
             pc: PC,
             supertype: ReferenceType): DomainReferenceValue = {
-            // OPAL-AI calls this method only if a previous "subtype of" test 
+            // OPAL calls this method only if a previous "subtype of" test 
             // (typeOf(this.value) <: additionalUpperBound ?) 
             // returned unknown. Hence, we only handle the case where the new bound
             // is more strict than the previous bound.
 
             var newUpperTypeBound: UIDSet[ObjectType] = UIDSet.empty[ObjectType]
             upperTypeBound foreach { (anUpperTypeBound: ObjectType) ⇒
-                // ATTENTION: "!..yes" is not the same as "no" (there is also unknown)
-                if (!domain.isSubtypeOf(supertype, anUpperTypeBound).isYes)
+                if (domain.isSubtypeOf(supertype, anUpperTypeBound).isNoOrUnknown)
                     newUpperTypeBound = newUpperTypeBound + anUpperTypeBound
             }
-            if (newUpperTypeBound.size == 0)
+            if (newUpperTypeBound.isEmpty)
                 ReferenceValue(pc, supertype)
             else if (supertype.isObjectType)
                 ObjectValue(pc, newUpperTypeBound + supertype.asObjectType)
@@ -448,10 +461,10 @@ trait DefaultTypeLevelReferenceValues
 
         override def adapt(target: Domain, pc: PC): target.DomainValue =
             target match {
-                case td: DefaultTypeLevelReferenceValues ⇒
-                    td.ObjectValue(pc, this.upperTypeBound).
-                        asInstanceOf[target.DomainValue]
-                case _ ⇒ super.adapt(target, pc)
+                case td: TypeLevelReferenceValues ⇒
+                    td.ObjectValue(pc, upperTypeBound).asInstanceOf[target.DomainValue]
+                case _ ⇒
+                    super.adapt(target, pc)
             }
 
         override def summarize(pc: PC): DomainValue = this

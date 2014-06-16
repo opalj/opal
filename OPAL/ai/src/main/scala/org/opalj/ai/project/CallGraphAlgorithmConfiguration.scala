@@ -68,8 +68,8 @@ trait CallGraphAlgorithmConfiguration {
      * Returns the new domain object that will be used to analyze the given
      * method.
      */
-    def Domain(
-        theProject: SomeProject,
+    def Domain[Source](
+        theProject: Project[Source],
         cache: this.type#Cache,
         classFile: ClassFile,
         method: Method): CallGraphDomain

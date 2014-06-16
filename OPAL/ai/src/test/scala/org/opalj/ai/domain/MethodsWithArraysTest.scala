@@ -59,6 +59,7 @@ class MethodsWithArraysTest
 
     class TestDomain
             extends TypeLevelDomain
+            with ThrowAllPotentialExceptionsConfiguration
             with IgnoreSynchronization
             with DefaultHandlingOfMethodResults
             with RecordLastReturnedValues {

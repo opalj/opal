@@ -30,13 +30,13 @@ package org.opalj
 package ai
 
 /**
- * A base abstract interpreter that can be used with any domain. The base
+ * A base abstract interpreter that can be used with any domain that has
+ * no special requirements on the abstract interpreter. The base
  * interpreter can be interrupted by calling the `interrupt` method of the
  * AI's thread.
  *
  * @author Michael Eichberg
  */
-
 class BaseAI extends AI[Domain] {
 
     override def isInterrupted = Thread.interrupted()
@@ -44,6 +44,24 @@ class BaseAI extends AI[Domain] {
 }
 
 /**
- * Instance of the base abstract interpreter. 
+ * Instance of the base abstract interpreter.
  */
-object BaseAI extends BaseAI 
+object BaseAI extends BaseAI
+
+
+/**
+ * A domain that can be interrupted by calling the `interrupt` method.
+ *
+ * @author Michael Eichberg
+ */
+class InterruptableAI[D <: Domain] extends AI[D] {
+
+    private[this] var doInterrupt: Boolean = false
+
+    override def isInterrupted = doInterrupt
+
+    def interrupt(): Unit = {
+        doInterrupt = true
+    }
+
+}

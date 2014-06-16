@@ -29,7 +29,79 @@
 package org.opalj
 package ai
 
-import br._
+import org.opalj.br.Code
+
+/**
+ * Encapsulates the result of the abstract interpretation of a method.
+ *
+ * @author Michael Eichberg
+ */
+sealed abstract class AIResult {
+    val code: Code
+    val domain: Domain
+    val worklist: List[PC]
+    val evaluated: List[PC]
+    val operandsArray: domain.OperandsArray
+    val localsArray: domain.LocalsArray
+    val memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]
+
+    /**
+     * Returns `true` if the abstract interpretation was aborted.
+     */
+    def wasAborted: Boolean
+
+    /**
+     * Textual representation of the state encapsulated by this result.
+     */
+    def stateToString: String = {
+        var result = ""
+        result += evaluated.mkString("Evaluated: ", ",", "\n")
+        result += (
+            if (worklist.nonEmpty) worklist.mkString("Remaining Worklist: ", ",", "\n")
+            else "Worklist: empty\n"
+        )
+        if (memoryLayoutBeforeSubroutineCall.nonEmpty) {
+            for ((operandsArray, localsArray) ← memoryLayoutBeforeSubroutineCall) {
+                result += "Memory Layout Before Subroutine Call:\n"
+                result += memoryLayoutToText(domain)(operandsArray, localsArray)
+            }
+        }
+        result += "Current Memory Layout:\n"
+        result += memoryLayoutToText(domain)(operandsArray, localsArray)
+
+        result
+    }
+}
+
+/**
+ * Encapsulates the intermediate result of an aborted abstract interpretation of a method.
+ *
+ * @author Michael Eichberg
+ */
+sealed abstract class AIAborted extends AIResult {
+
+    override def wasAborted: Boolean = true
+
+    def continueInterpretation(ai: AI[_ >: domain.type]): AIResult
+
+    override def stateToString: String =
+        "The abstract interpretation was aborted:\n"+super.stateToString
+}
+
+/**
+ * Encapsulates the final result of the successful abstract interpretation of a method.
+ */
+sealed abstract class AICompleted extends AIResult {
+
+    override val worklist: List[PC] = List.empty
+
+    override def wasAborted: Boolean = false
+
+    def restartInterpretation(ai: AI[_ >: domain.type]): AIResult
+
+    override def stateToString: String =
+        "The abstract interpretation succeeded:\n"+super.stateToString
+}
 
 /**
  * Factory to create `AIResult` objects. Primarily used to return the
@@ -37,13 +109,13 @@ import br._
  *
  * @author Michael Eichberg
  */
-/* Design - We need to use a kind of builder to construct a Result object in two steps. 
+/* Design - We need to use a builder to construct a Result object in two steps. 
  * This is necessary to correctly type the data structures that store the memory 
  * layout and which depend on the given domain. */
 object AIResultBuilder {
 
     /**
-     * Creates a domain dependent `AIAborted` object which stores the results of the
+     * Creates a domain dependent [[AIAborted]] object which stores the results of the
      * computation.
      */
     def aborted(
@@ -74,8 +146,9 @@ object AIResultBuilder {
     }
 
     /**
-     * Creates a domain dependent `AICompleted` object which stores the results of the
-     * computation.
+     * Creates a domain dependent [[AICompleted]] object which stores the results of the
+     * completed abstract interpretation of the given code. The precise meaning of
+     * ''completed'' is depending on the used domain.
      */
     def completed(
         theCode: Code,
@@ -100,77 +173,4 @@ object AIResultBuilder {
 
         }
     }
-}
-
-/**
- * Encapsulates the result of the abstract interpretation of a method.
- */
-sealed abstract class AIResult {
-    val code: Code
-    val domain: Domain
-    val worklist: List[PC]
-    val evaluated: List[PC]
-    val operandsArray: domain.OperandsArray
-    val localsArray: domain.LocalsArray
-    val memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]
-
-    /**
-     * Returns `true` if the abstract interpretation was aborted.
-     */
-    def wasAborted: Boolean
-
-    /**
-     * Textual representation of the state encapsulated by this result.
-     */
-    def stateToString: String = {
-        var result = ""
-        result += evaluated.mkString("Evaluated: ", ",", "\n")
-        result += worklist.mkString("(Remaining) Worklist: ", ",", "\n")
-        result +=
-            (
-                for {
-                    ((operands, locals), pc) ← (operandsArray.zip(localsArray)).zipWithIndex
-                    if operands != null /*|| locals != null*/
-                } yield {
-                    val localsWithIndex =
-                        for {
-                            (local, index) ← locals.zipWithIndex
-                            if (local != null)
-                        } yield {
-                            "("+index+":"+local+")"
-                        }
-
-                    "PC: "+pc + operands.mkString("\n\tOperands: ", " <- ", "") + localsWithIndex.mkString("\n\tLocals: [", ",", "]")
-                }
-            ).mkString("Operands and Locals: \n", "\n", "\n")
-        result
-    }
-}
-
-/**
- * Encapsulates the intermediate result of an aborted abstract interpretation of a method.
- */
-sealed abstract class AIAborted extends AIResult {
-
-    override def wasAborted: Boolean = true
-
-    def continueInterpretation(ai: AI[_ >: domain.type]): AIResult
-
-    override def stateToString: String =
-        "The abstract interpretation was aborted; "+super.stateToString
-}
-
-/**
- * Encapsulates the final result of the successful abstract interpretation of a method.
- */
-sealed abstract class AICompleted extends AIResult {
-
-    override val worklist: List[PC] = List.empty
-
-    override def wasAborted: Boolean = false
-
-    def restartInterpretation(ai: AI[_ >: domain.type]): AIResult
-
-    override def stateToString: String =
-        "The abstract interpretation succeeded; "+super.stateToString
 }

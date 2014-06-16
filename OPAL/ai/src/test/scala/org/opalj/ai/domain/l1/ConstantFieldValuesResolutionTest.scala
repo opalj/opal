@@ -31,77 +31,60 @@ package ai
 package domain
 package l1
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
+import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import org.scalatest.concurrent.TimeLimitedTests
-import org.scalatest.time._
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.Project
+
 /**
- * This test(suite) tests various aspects related to the handling of integer values.
+ * Tests the resolution of ConstantFieldValues.
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultPreciseIntegerValuesTest
-        extends FlatSpec
+class ConstantFieldValuesResolutionTest
+        extends FunSpec
         with Matchers
         with ParallelTestExecution {
 
-    val domain = new DefaultConfigurableDomain("DefaultPreciseIntegerValuesTest") {
-        override def maxSpreadInteger: Int = 25
-    }
-    import domain._
+    class ConstantFieldValuesResolutionTestDomain(val project: Project[java.net.URL])
+            extends Domain
+            with DefaultDomainValueBinding
+            with TheProject[java.net.URL]
+            with ThrowAllPotentialExceptionsConfiguration
+            with l0.DefaultTypeLevelLongValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultReferenceValuesBinding
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            with l1.DefaultIntegerRangeValues
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with ProjectBasedClassHierarchy
+            with RecordLastReturnedValues {
 
-    
-    
-    //
-    // TESTS
-    //
+        type Id = String
 
-    behavior of "IntegerRange values"
-
-    it should ("be able to join two identical values") in {
-        val v = IntegerRange(0, 0)
-        v.join(-1, v) should be(NoUpdate)
-    }
-
-    it should ("be able to join two overlapping values") in {
-        val v1 = IntegerRange(0, 1)
-        val v2 = IntegerRange(0, 2)
-
-        v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 2)))
-        v2.join(-1, v1) should be(NoUpdate)
-
-        val v3 = IntegerRange(-10, 10)
-        //v3.join(-1, v1) should be(NoUpdate)
-        v1.join(-1, v3) should be(StructuralUpdate(v3))
-
-        val v4 = IntegerRange(1, 0)
-        val v5 = IntegerRange(-3, -10)
-        v4.join(-1, v5) should be(StructuralUpdate(IntegerRange(1, -10)))
-
-        val v6 = IntegerRange(-3, -102)
-        v4.join(-1, v6) should be(StructuralUpdate(AnIntegerValue())) // > SPREAD!
+        def id = "TestDomain"
     }
 
-    it should ("be able to join with AnIntegerValue") in {
-        val v1 = IntegerRange(0, 1)
+    describe("Using ConstantFieldValuesResolution") {
 
-        v1.join(-1, AnIntegerValue()) should be(StructuralUpdate(AnIntegerValue()))
+        val testJAR = "classfiles/ai.jar"
+        val testFolder = org.opalj.br.TestSupport.locateTestResources(testJAR, "ai")
+        val testProject = org.opalj.br.analyses.Project(testFolder)
+        val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
+
+        it("(Prerequisite) should be possible to get the constant value of a class") {
+            val theField = IntegerValues.fields.find(_.name == "theValue").get
+            theField.constantFieldValue should be('defined)
+            theField.constantFieldValue.get.toInt should be(42)
+        }
     }
-
-    behavior of "AnIntegerValue"
-
-    it should ("be able to adapt to the same domain") in {
-        val v1 = AnIntegerValue()
-
-        v1.adapt(domain, -1) should be(AnIntegerValue())
-    }
-
 }

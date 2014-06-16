@@ -65,6 +65,14 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     /* ABSTRACT */ def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals[T]
 
+    /* ABSTRACT */ def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals[X]
+
+    /**
+     * Transforms the values of this locals array. If all values are the same as
+     * before `this` is returned.
+     */
+    /* ABSTRACT */ def transform(f: T ⇒ T): Locals[T]
+
     /**
      * Returns `true` if all elements satisfy the given predicate, `false` otherwise.
      */
@@ -106,8 +114,6 @@ sealed trait Locals[T >: Null <: AnyRef] {
         foreach { e ⇒ newLocals :+ f(e) }
         newLocals
     }
-
-    def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals[X]
 
     /**
      * Performs a fold left over all elements of this set.
@@ -223,6 +229,8 @@ private[util] final object Locals0 extends Locals[Null] {
         this.asInstanceOf[Locals[X]]
     }
 
+    override def transform(f: Null ⇒ Null) = this
+
     override def equals(other: Any): Boolean = {
         other match {
             case Locals0 ⇒ true
@@ -295,6 +303,15 @@ private[util] final class Locals1[T >: Null <: AnyRef](
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals1[X] = {
         new Locals1[X](f(v))
+    }
+
+    override def transform(f: T ⇒ T): Locals1[T] = {
+        val thisV = v
+        val newV = f(thisV)
+        if (newV eq thisV)
+            this
+        else
+            new Locals1(newV)
     }
 }
 
@@ -370,6 +387,17 @@ private[util] final class Locals2[T >: Null <: AnyRef](
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals2[X] = {
         new Locals2[X](f(v0), f(v1))
+    }
+
+    override def transform(f: T ⇒ T): Locals2[T] = {
+        val thisV0 = v0
+        val newV0 = f(thisV0)
+        val thisV1 = v1
+        val newV1 = f(thisV1)
+        if ((newV0 eq thisV0) && (newV1 eq thisV1))
+            this
+        else
+            new Locals2(newV0, newV1)
     }
 
     override def foreach(f: T ⇒ Unit): Unit = { f(v0); f(v1) }
@@ -470,6 +498,19 @@ private[util] final class Locals3[T >: Null <: AnyRef](
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals3[X] = {
         new Locals3[X](f(v0), f(v1), f(v2))
+    }
+
+    override def transform(f: T ⇒ T): Locals3[T] = {
+        val thisV0 = v0
+        val newV0 = f(thisV0)
+        val thisV1 = v1
+        val newV1 = f(thisV1)
+        val thisV2 = v2
+        val newV2 = f(thisV2)
+        if ((newV0 eq thisV0) && (newV1 eq thisV1) && (newV2 eq thisV2))
+            this
+        else
+            new Locals3(newV0, newV1, newV2)
     }
 
     override def foreach(f: T ⇒ Unit): Unit = { f(v0); f(v1); f(v2) }
@@ -589,6 +630,21 @@ private[util] final class Locals4[T >: Null <: AnyRef](
         new Locals4[X](f(v0), f(v1), f(v2), f(v3))
     }
 
+    override def transform(f: T ⇒ T): Locals4[T] = {
+        val thisV0 = v0
+        val newV0 = f(thisV0)
+        val thisV1 = v1
+        val newV1 = f(thisV1)
+        val thisV2 = v2
+        val newV2 = f(thisV2)
+        val thisV3 = v3
+        val newV3 = f(thisV3)
+        if ((newV0 eq thisV0) && (newV1 eq thisV1) && (newV2 eq thisV2) && (newV3 eq thisV3))
+            this
+        else
+            new Locals4(newV0, newV1, newV2, newV3)
+    }
+
     final override def foreach(f: T ⇒ Unit): Unit = { f(v0); f(v1); f(v2); f(v3) }
 }
 
@@ -669,6 +725,17 @@ private[util] final class Locals5[T >: Null <: AnyRef](
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals5[X] = {
         new Locals5[X](vs1.map(f), vs2.map(f))
+    }
+
+    override def transform(f: T ⇒ T): Locals5[T] = {
+        val thisVs1 = vs1
+        val newVs1 = thisVs1.transform(f)
+        val thisVs2 = vs2
+        val newVs2 = thisVs2.transform(f)
+        if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2))
+            this
+        else
+            new Locals5(newVs1, newVs2)
     }
 
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
@@ -754,6 +821,17 @@ private[util] final class Locals6[T >: Null <: AnyRef](
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals6[X] = {
         new Locals6[X](vs1.map(f), vs2.map(f))
     }
+
+    override def transform(f: T ⇒ T): Locals6[T] = {
+        val thisVs1 = vs1
+        val newVs1 = thisVs1.transform(f)
+        val thisVs2 = vs2
+        val newVs2 = thisVs2.transform(f)
+        if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2))
+            this
+        else
+            new Locals6(newVs1, newVs2)
+    }
 }
 
 private[util] final class Locals7[T >: Null <: AnyRef](
@@ -836,108 +914,18 @@ private[util] final class Locals7[T >: Null <: AnyRef](
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals7[X] = {
         new Locals7[X](vs1.map(f), vs2.map(f))
     }
-}
 
-//
-//private[util] final class Locals7[T >: Null <: AnyRef](
-//        final val vs1: Locals2[T] = new Locals2[T],
-//        final val vs2: Locals2[T] = new Locals2[T],
-//        final val vs3: Locals3[T] = new Locals3[T]) extends LocalsX[T] {
-//
-//    final def size = 7
-//
-//    override def apply(index: Int): T = {
-//        (index: @scala.annotation.switch) match {
-//            case 0 | 1     ⇒ vs1(index)
-//            case 2 | 3     ⇒ vs2(index - 2)
-//            case 4 | 5 | 6 ⇒ vs3(index - 4)
-//            case _ ⇒
-//                throw new IndexOutOfBoundsException("invalid index("+index+")")
-//        }
-//    }
-//
-//    override def update(f: (T) ⇒ T): Unit = {
-//        vs1.update(f)
-//        vs2.update(f)
-//        vs3.update(f)
-//    }
-//
-//    override def set(index: Int, newValue: T): Unit = {
-//        (index: @scala.annotation.switch) match {
-//            case 0 | 1     ⇒ vs1.set(index, newValue)
-//            case 2 | 3     ⇒ vs2.set(index - 2, newValue)
-//            case 4 | 5 | 6 ⇒ vs3.set(index - 4, newValue)
-//            case _ ⇒
-//                throw new IndexOutOfBoundsException("invalid index("+index+")")
-//        }
-//    }
-//
-//    override def updated(index: Int, newValue: T): Locals[T] = {
-//        (index: @scala.annotation.switch) match {
-//            case 0 | 1     ⇒ new Locals7(vs1.updated(index, newValue), vs2, vs3)
-//            case 2 | 3     ⇒ new Locals7(vs1, vs2.updated(index - 2, newValue), vs3)
-//            case 4 | 5 | 6 ⇒ new Locals7(vs1, vs2, vs3.updated(index - 4, newValue))
-//            case _ ⇒
-//                throw new IndexOutOfBoundsException("invalid index("+index+")")
-//        }
-//    }
-//
-//    override def foreach(f: T ⇒ Unit): Unit = {
-//        vs1.foreach(f); vs2.foreach(f); vs3.foreach(f)
-//    }
-//
-//    override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals7[T] = {
-//        val that = other.asInstanceOf[Locals7[T]]
-//        var useThis = true
-//        var useThat = true
-//        val newVs1 = {
-//            val thisVs1 = this.vs1
-//            val thatVs1 = that.vs1
-//            if (thisVs1 eq thatVs1)
-//                thisVs1
-//            else {
-//                val newV = thisVs1.merge(thatVs1, onDiff)
-//                if (newV ne thisVs1) useThis = false
-//                if (newV ne thatVs1) useThat = false
-//                newV
-//            }
-//        }
-//        val newVs2 = {
-//            val thisVs2 = this.vs2
-//            val thatVs2 = that.vs2
-//            if (thisVs2 eq thatVs2)
-//                thisVs2
-//            else {
-//                val newV = thisVs2.merge(thatVs2, onDiff)
-//                if (newV ne thisVs2) useThis = false
-//                if (newV ne thatVs2) useThat = false
-//                newV
-//            }
-//        }
-//        val newVs3 = {
-//            val thisVs3 = this.vs3
-//            val thatVs3 = that.vs3
-//            if (thisVs3 eq thatVs3)
-//                thisVs3
-//            else {
-//                val newV = thisVs3.merge(thatVs3, onDiff)
-//                if (newV ne thisVs3) useThis = false
-//                if (newV ne thatVs3) useThat = false
-//                newV
-//            }
-//        }
-//        if (useThis)
-//            this
-//        else if (useThat)
-//            that
-//        else
-//            new Locals7(newVs1, newVs2, newVs3)
-//    }
-//
-//    override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals7[X] = {
-//        new Locals7[X](vs1.map(f), vs2.map(f), vs3.map(f))
-//    }
-//}
+    override def transform(f: T ⇒ T): Locals7[T] = {
+        val thisVs1 = vs1
+        val newVs1 = thisVs1.transform(f)
+        val thisVs2 = vs2
+        val newVs2 = thisVs2.transform(f)
+        if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2))
+            this
+        else
+            new Locals7(newVs1, newVs2)
+    }
+}
 
 private[util] final class Locals8[T >: Null <: AnyRef](
         final val vs1: Locals2[T] = new Locals2[T],
@@ -1036,6 +1024,19 @@ private[util] final class Locals8[T >: Null <: AnyRef](
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals8[X] = {
         new Locals8[X](vs1.map(f), vs2.map(f), vs3.map(f))
+    }
+
+    override def transform(f: T ⇒ T): Locals8[T] = {
+        val thisVs1 = vs1
+        val newVs1 = thisVs1.transform(f)
+        val thisVs2 = vs2
+        val newVs2 = thisVs2.transform(f)
+        val thisVs3 = vs3
+        val newVs3 = thisVs3.transform(f)
+        if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2) && (newVs3 eq thisVs3))
+            this
+        else
+            new Locals8(newVs1, newVs2, newVs3)
     }
 }
 
@@ -1137,6 +1138,19 @@ private[util] final class Locals9[T >: Null <: AnyRef](
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals9[X] = {
         new Locals9[X](vs1.map(f), vs2.map(f), vs3.map(f))
     }
+
+    override def transform(f: T ⇒ T): Locals9[T] = {
+        val thisVs1 = vs1
+        val newVs1 = thisVs1.transform(f)
+        val thisVs2 = vs2
+        val newVs2 = thisVs2.transform(f)
+        val thisVs3 = vs3
+        val newVs3 = thisVs3.transform(f)
+        if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2) && (newVs3 eq thisVs3))
+            this
+        else
+            new Locals9(newVs1, newVs2, newVs3)
+    }
 }
 
 private[util] final class Locals10[T >: Null <: AnyRef](
@@ -1236,6 +1250,19 @@ private[util] final class Locals10[T >: Null <: AnyRef](
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals10[X] = {
         new Locals10[X](vs1.map(f), vs2.map(f), vs3.map(f))
     }
+
+    override def transform(f: T ⇒ T): Locals10[T] = {
+        val thisVs1 = vs1
+        val newVs1 = thisVs1.transform(f)
+        val thisVs2 = vs2
+        val newVs2 = thisVs2.transform(f)
+        val thisVs3 = vs3
+        val newVs3 = thisVs3.transform(f)
+        if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2) && (newVs3 eq thisVs3))
+            this
+        else
+            new Locals10(newVs1, newVs2, newVs3)
+    }
 }
 
 private[util] final class Locals11[T >: Null <: AnyRef](
@@ -1334,6 +1361,19 @@ private[util] final class Locals11[T >: Null <: AnyRef](
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals11[X] = {
         new Locals11[X](vs1.map(f), vs2.map(f), vs3.map(f))
+    }
+
+    override def transform(f: T ⇒ T): Locals11[T] = {
+        val thisVs1 = vs1
+        val newVs1 = thisVs1.transform(f)
+        val thisVs2 = vs2
+        val newVs2 = thisVs2.transform(f)
+        val thisVs3 = vs3
+        val newVs3 = thisVs3.transform(f)
+        if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2) && (newVs3 eq thisVs3))
+            this
+        else
+            new Locals11(newVs1, newVs2, newVs3)
     }
 }
 
@@ -1449,6 +1489,23 @@ private[util] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals12_N[X] = {
         new Locals12_N[X](vs11.map(f), vs12_N.map(f))
+    }
+
+    override def transform(f: T ⇒ T): Locals12_N[T] = {
+        val thisVs11 = vs11
+        val newVs11 = thisVs11.transform(f)
+        val thisVs12_N = vs12_N
+        var vs12_Nupdated = false
+        var newVs12_N = thisVs12_N map { v ⇒
+            val newV = f(v); if (newV ne v) vs12_Nupdated = true; newV
+        }
+        if (!vs12_Nupdated)
+            newVs12_N = thisVs12_N
+
+        if ((newVs11 eq thisVs11) && (newVs12_N eq thisVs12_N))
+            this
+        else
+            new Locals12_N(newVs11, newVs12_N)
     }
 }
 

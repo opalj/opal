@@ -29,6 +29,8 @@
 package org.opalj
 package br
 
+import org.opalj.br.reader.Java8Framework.{ ClassFile ⇒ ClassFileReader }
+
 /**
  * Loads class files form a JAR archive and prints the signatures of the classes.
  *
@@ -37,8 +39,6 @@ package br
 object ClassFileInformation {
 
     def main(args: Array[String]) {
-
-        import reader.Java8Framework
 
         if (args.length < 2) {
             println("Usage: java …ClassFileInformation "+
@@ -54,7 +54,7 @@ object ClassFileInformation {
             // the file inside the archive.)
             // The Java7Framework defines multiple other methods that make it convenient
             // to load class files stored in folders or in jars within jars.
-            val classFile = Java8Framework.ClassFile(args(0), classFileName)
+            val classFile = ClassFileReader(args(0), classFileName)
             import classFile._
 
             // print the name of the type defined by this class file

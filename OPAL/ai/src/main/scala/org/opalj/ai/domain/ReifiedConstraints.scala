@@ -33,7 +33,7 @@ package domain
 import br._
 
 /**
- * Mixin this trait if you want to reify the stated constraints. This trait
+ * Mixin this trait to reify the stated constraints. This trait
  * need to be mixed in after all traits that actually handle constraints.
  *
  * This is particularly useful for testing and debugging purposes.
@@ -55,7 +55,7 @@ trait ReifiedConstraints extends Domain {
         /**
          * The pc associated with the constraint.
          */
-        def pc: Int
+        def pc: PC
 
         /**
          * A textual description of the constraint.
@@ -68,7 +68,7 @@ trait ReifiedConstraints extends Domain {
      * Representation of a constraint related to a single value.
      */
     case class ReifiedSingleValueConstraint(
-        pc: Int,
+        pc: PC,
         value: DomainValue,
         constraint: String) extends ReifiedConstraint
 
@@ -76,12 +76,12 @@ trait ReifiedConstraints extends Domain {
      * Representation of a constraint related to two values.
      */
     case class ReifiedTwoValuesConstraint(
-        pc: Int,
+        pc: PC,
         value1: DomainValue, value2: DomainValue,
         constraint: String) extends ReifiedConstraint
 
     abstract override def refEstablishIsNull(
-        pc: Int,
+        pc: PC,
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
@@ -91,7 +91,7 @@ trait ReifiedConstraints extends Domain {
     }
 
     abstract override def refEstablishIsNonNull(
-        pc: Int,
+        pc: PC,
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
@@ -101,7 +101,7 @@ trait ReifiedConstraints extends Domain {
     }
 
     abstract override def refEstablishAreEqual(
-        pc: Int,
+        pc: PC,
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
@@ -112,7 +112,7 @@ trait ReifiedConstraints extends Domain {
     }
 
     abstract override def refEstablishAreNotEqual(
-        pc: Int,
+        pc: PC,
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
@@ -123,7 +123,7 @@ trait ReifiedConstraints extends Domain {
     }
 
     abstract override def refEstablishUpperBound(
-        pc: Int,
+        pc: PC,
         bound: ReferenceType,
         value: DomainValue,
         operands: Operands,
@@ -137,7 +137,7 @@ trait ReifiedConstraints extends Domain {
     // W.r.t. Integer values
 
     abstract override def intEstablishValue(
-        pc: Int,
+        pc: PC,
         theValue: Int,
         value: DomainValue,
         operands: Operands,
@@ -148,7 +148,7 @@ trait ReifiedConstraints extends Domain {
     }
 
     abstract override def intEstablishAreEqual(
-        pc: Int,
+        pc: PC,
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
@@ -159,7 +159,7 @@ trait ReifiedConstraints extends Domain {
     }
 
     abstract override def intEstablishAreNotEqual(
-        pc: Int,
+        pc: PC,
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
@@ -170,7 +170,7 @@ trait ReifiedConstraints extends Domain {
     }
 
     abstract override def intEstablishIsLessThan(
-        pc: Int,
+        pc: PC,
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,
@@ -181,7 +181,7 @@ trait ReifiedConstraints extends Domain {
     }
 
     abstract override def intEstablishIsLessThanOrEqualTo(
-        pc: Int,
+        pc: PC,
         value1: DomainValue,
         value2: DomainValue,
         operands: Operands,

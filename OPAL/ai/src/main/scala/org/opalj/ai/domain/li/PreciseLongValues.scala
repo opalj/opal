@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 package domain
-package l1
+package li
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
@@ -38,10 +38,12 @@ import br._
 /**
  * Domain to track long values at a configurable level of precision.
  *
+ * THIS DOMAIN IS CURRENTLY BUGGY AND SHOULD NOT BE USED
+ *
  * @author Riadh Chtara
  * @author Michael Eichberg
  */
-trait PreciseLongValues extends Domain with Configuration {
+trait PreciseLongValues extends Domain { this: Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -214,14 +216,19 @@ trait PreciseLongValues extends Domain with Configuration {
         pc: PC,
         value1: DomainValue,
         value2: DomainValue): IntegerLikeValueOrArithmeticException = {
-        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
+        withLongValueOrElse(value2) { v2 ⇒
             if (v2 == 0)
                 ThrowsException(InitializedObjectValue(pc, ObjectType.ArithmeticException))
-            else
-                ComputedValue(LongValue(pc, v1 / v2))
+            else {
+                withLongValueOrElse(value1) { v1 ⇒
+                    ComputedValue(LongValue(pc, v1 / v2))
+                } {
+                    ComputedValue(LongValue(pc))
+                }
+            }
         } {
             if (throwArithmeticExceptions)
-                ComputedValueAndException(
+                ComputedValueOrException(
                     LongValue(pc),
                     InitializedObjectValue(pc, ObjectType.ArithmeticException))
             else
@@ -261,14 +268,19 @@ trait PreciseLongValues extends Domain with Configuration {
         pc: PC,
         value1: DomainValue,
         value2: DomainValue): IntegerLikeValueOrArithmeticException =
-        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
+        withLongValueOrElse(value2) { v2 ⇒
             if (v2 == 0l)
                 ThrowsException(InitializedObjectValue(pc, ObjectType.ArithmeticException))
-            else
-                ComputedValue(LongValue(pc, v1 % v2))
+            else {
+                withLongValueOrElse(value1) { v1 ⇒
+                    ComputedValue(LongValue(pc, v1 % v2))
+                } {
+                    ComputedValue(LongValue(pc))
+                }
+            }
         } {
             if (throwArithmeticExceptions)
-                ComputedValueAndException(
+                ComputedValueOrException(
                     LongValue(pc),
                     InitializedObjectValue(pc, ObjectType.ArithmeticException))
             else

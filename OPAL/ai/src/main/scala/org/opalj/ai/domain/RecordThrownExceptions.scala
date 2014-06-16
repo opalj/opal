@@ -39,10 +39,6 @@ package domain
  * This domain can be stacked on top of other traits that handle
  * [[abruptMethodExecution]]s.
  *
- * ==Thread Safety==
- * This class is not thread safe. I.e., this domain can only be used if
- * an instance of this domain is not used by multiple threads.
- *
  * @author Michael Eichberg
  */
 trait RecordThrownExceptions extends Domain {
@@ -71,7 +67,9 @@ trait RecordThrownExceptions extends Domain {
      * @see For details study the documentation of the abstract type `ThrownException`
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
-    protected[this] def recordThrownException(pc: PC, value: ExceptionValue): ThrownException
+    protected[this] def recordThrownException(
+        pc: PC,
+        value: ExceptionValue): ThrownException
 
     /**
      * Joins the previously thrown exception and the newly thrown exception. Both

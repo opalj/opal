@@ -33,18 +33,25 @@ package ai
  * Exception that is thrown by the abstract interpreter when the abstract
  * interpretation of a method's implementation failed.
  *
+ * To create an instance use the companion object [[InterpretationFailedException$]].
+ *
  * @author Michael Eichberg
  */
-trait InterpretationFailedException {
+sealed trait InterpretationFailedException {
     def cause: Throwable
     val domain: Domain
     val pc: PC
     val worklist: List[PC]
     val evaluated: List[PC]
-    val operandsArray: TheOperandsArray[domain.Operands]
-    val localsArray: TheLocalsArray[domain.Locals]
+    val operandsArray: domain.OperandsArray
+    val localsArray: domain.LocalsArray
+    val memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]
 }
-
+/**
+ * Factory for [[InterpretationFailedException]]s.
+ *
+ * @author Michael Eichberg
+ */
 object InterpretationFailedException {
 
     def apply(
@@ -53,16 +60,18 @@ object InterpretationFailedException {
             thePc: PC,
             theWorklist: List[PC],
             theEvaluated: List[PC],
-            theOperandsArray: TheOperandsArray[theDomain.Operands],
-            theLocalsArray: TheLocalsArray[theDomain.Locals]): AIException with InterpretationFailedException = {
+            theOperandsArray: theDomain.OperandsArray,
+            theLocalsArray: theDomain.LocalsArray,
+            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIException with InterpretationFailedException = {
         new AIException("the interpretation failed", theCause) with InterpretationFailedException {
             def cause = super.getCause
             val domain: theDomain.type = theDomain
             val pc: PC = thePc
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
-            val operandsArray: TheOperandsArray[theDomain.Operands] = theOperandsArray
-            val localsArray: TheLocalsArray[theDomain.Locals] = theLocalsArray
+            val operandsArray: theDomain.OperandsArray = theOperandsArray
+            val localsArray: theDomain.LocalsArray = theLocalsArray
+            val memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
         }
     }
 }

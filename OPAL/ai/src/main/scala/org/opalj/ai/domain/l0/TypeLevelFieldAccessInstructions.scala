@@ -31,52 +31,62 @@ package ai
 package domain
 package l0
 
-import scala.reflect.ClassTag
-
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
+import org.opalj.br.{ ObjectType, FieldType }
 
 /**
- * Implements the handling of field access instructions at the type level ignoring
- * potentially thrown exceptions such as `NullPointerException`s.
+ * Implements the handling of field access instructions at the type level.
  *
  * (Linkage related exceptions are currently generally ignored.)
  *
- * @note By ignoring potentially thrown exceptions it may be the case that not all
- *      possible paths in a program are explored and the overall analysis may not be
- *      sound.
- *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait TypeLevelFieldAccessInstructions { this: Domain ⇒
+trait TypeLevelFieldAccessInstructions { this: Domain with Configuration ⇒
 
-    override def getfield(
+    /*override*/ def getfield(
         pc: PC,
         objectref: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) = ComputedValue(TypedValue(pc, fieldType))
+        fieldType: FieldType): Computation[DomainValue, ExceptionValue] =
+        refIsNull(objectref) match {
+            case Yes ⇒ throws(NullPointerException(pc))
+            case Unknown if throwNullPointerException ⇒
+                ComputedValueOrException(TypedValue(pc, fieldType), NullPointerException(pc))
+            case _ ⇒
+                ComputedValue(TypedValue(pc, fieldType))
+        }
 
-    override def getstatic(
+    /*override*/ def getstatic(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) = ComputedValue(TypedValue(pc, fieldType))
+        fieldType: FieldType): Computation[DomainValue, Nothing] =
+        ComputedValue(TypedValue(pc, fieldType))
 
-    override def putfield(
+    /*override*/ def putfield(
         pc: PC,
         objectref: DomainValue,
         value: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) = ComputationWithSideEffectOnly
+        fieldType: FieldType): Computation[Nothing, ExceptionValue] =
+        refIsNull(objectref) match {
+            case Yes ⇒
+                throws(NullPointerException(pc))
+            case Unknown if throwNullPointerException ⇒
+                ComputationWithSideEffectOrException(NullPointerException(pc))
+            case _ ⇒
+                ComputationWithSideEffectOnly
+        }
 
-    override def putstatic(
+    /*override*/ def putstatic(
         pc: PC,
         value: DomainValue,
         declaringClass: ObjectType,
         name: String,
-        fieldType: FieldType) = ComputationWithSideEffectOnly
+        fieldType: FieldType): Computation[Nothing, Nothing] =
+        ComputationWithSideEffectOnly
 
 }

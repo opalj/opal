@@ -43,6 +43,7 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 trait DefaultTypeLevelLongValues
         extends DefaultDomainValueBinding
         with TypeLevelLongValues {
+    this: Configuration ⇒
 
     case object ALongValue extends super.LongValue {
 
@@ -50,17 +51,11 @@ trait DefaultTypeLevelLongValues
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(
-            target: Domain,
-            pc: PC): target.DomainValue =
-            target match {
-                case thatDomain: DefaultTypeLevelLongValues ⇒
-                    thatDomain.ALongValue.asInstanceOf[target.DomainValue]
-                case _ ⇒ super.adapt(target, pc)
-            }
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
+            target.LongValue(pc)
     }
 
-    override def LongValue(pc: PC): DomainValue = ALongValue
+    override def LongValue(pc: PC): LongValue = ALongValue
 
     override def LongValue(pc: PC, value: Long): LongValue = ALongValue
 }

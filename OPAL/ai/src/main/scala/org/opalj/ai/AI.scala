@@ -349,7 +349,8 @@ trait AI[D <: Domain] {
 
         if (tracer.isDefined)
             tracer.get.continuingInterpretation(code, theDomain)(
-                initialWorkList, alreadyEvaluated, theOperandsArray, theLocalsArray
+                initialWorkList, alreadyEvaluated,
+                theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall
             )
 
         import theDomain.{ DomainValue, ExceptionValue, ExceptionValues, Operands, Locals }
@@ -363,7 +364,6 @@ trait AI[D <: Domain] {
 
         // import int values related functionality
         import theDomain.{ intAreEqual, intAreNotEqual, IntAreEqual, IntAreNotEqual }
-        import theDomain.{ intEstablishAreEqual, intEstablishAreNotEqual }
         import theDomain.{ intIs0, intIsNot0, IntIs0, IntIsNot0 }
         import theDomain.{ intIsGreaterThan, intIsGreaterThan0, IntIsGreaterThan, IntIsGreaterThan0 }
         import theDomain.{ intIsLessThan, intIsLessThan0, IntIsLessThan, IntIsLessThan0 }
@@ -434,6 +434,9 @@ trait AI[D <: Domain] {
                 )
                 mergeResult match {
                     case NoUpdate ⇒ /* nothing to do*/
+                        if (tracer.isDefined) {
+                            tracer.get.noFlow(theDomain)(sourcePC, targetPC)
+                        }
 
                     case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
                         operandsArray(targetPC) = updatedOperands
@@ -471,6 +474,10 @@ trait AI[D <: Domain] {
                             if (tracer.isDefined)
                                 tracer.get.rescheduled(theDomain)(
                                     sourcePC, targetPC, isExceptionalControlFlow)
+                        } else {
+                            if (tracer.isDefined) {
+                                tracer.get.noFlow(theDomain)(sourcePC, targetPC)
+                            }
                         }
                 }
             }
@@ -606,11 +613,23 @@ trait AI[D <: Domain] {
                             {
                                 val (newOperands, newLocals) =
                                     yesConstraint(branchTarget, operand, rest, locals)
+                                if (tracer.isDefined &&
+                                    ((rest ne newOperands) || (locals ne newLocals))) {
+                                    tracer.get.establishedConstraint(theDomain)(
+                                        pc, branchTarget, rest, locals, newOperands, newLocals
+                                    )
+                                }
                                 gotoTarget(pc, branchTarget, false, newOperands, newLocals)
                             }
                             {
                                 val (newOperands, newLocals) =
                                     noConstraint(nextPC, operand, rest, locals)
+                                if (tracer.isDefined &&
+                                    ((rest ne newOperands) || (locals ne newLocals))) {
+                                    tracer.get.establishedConstraint(theDomain)(
+                                        pc, nextPC, rest, locals, newOperands, newLocals
+                                    )
+                                }
                                 gotoTarget(pc, nextPC, false, newOperands, newLocals)
                             }
                         }
@@ -627,24 +646,36 @@ trait AI[D <: Domain] {
 
                     val branchInstruction = as[ConditionalBranchInstruction](instruction)
                     val value2 = operands.head
-                    var remainingOperands = operands.tail
+                    val remainingOperands = operands.tail
                     val value1 = remainingOperands.head
-                    remainingOperands = remainingOperands.tail
+                    val rest = remainingOperands.tail
                     val branchTarget = pc + branchInstruction.branchoffset
                     val nextPC = code.pcOfNextInstruction(pc)
                     val testResult = domainTest(value1, value2)
                     testResult match {
-                        case Yes ⇒ gotoTarget(pc, branchTarget, false, remainingOperands, locals)
-                        case No  ⇒ gotoTarget(pc, nextPC, false, remainingOperands, locals)
+                        case Yes ⇒ gotoTarget(pc, branchTarget, false, rest, locals)
+                        case No  ⇒ gotoTarget(pc, nextPC, false, rest, locals)
                         case Unknown ⇒ {
                             {
                                 val (newOperands, newLocals) =
-                                    yesConstraint(branchTarget, value1, value2, remainingOperands, locals)
+                                    yesConstraint(branchTarget, value1, value2, rest, locals)
+                                if (tracer.isDefined &&
+                                    ((rest ne newOperands) || (locals ne newLocals))) {
+                                    tracer.get.establishedConstraint(theDomain)(
+                                        pc, branchTarget, rest, locals, newOperands, newLocals
+                                    )
+                                }
                                 gotoTarget(pc, branchTarget, false, newOperands, newLocals)
                             }
                             {
                                 val (newOperands, newLocals) =
-                                    noConstraint(nextPC, value1, value2, remainingOperands, locals)
+                                    noConstraint(nextPC, value1, value2, rest, locals)
+                                if (tracer.isDefined &&
+                                    ((rest ne newOperands) || (locals ne newLocals))) {
+                                    tracer.get.establishedConstraint(theDomain)(
+                                        pc, nextPC, rest, locals, newOperands, newLocals
+                                    )
+                                }
                                 gotoTarget(pc, nextPC, false, newOperands, newLocals)
                             }
                         }
@@ -666,7 +697,7 @@ trait AI[D <: Domain] {
                  *      an object that is a subtype of `java.lang.Throwable`.
                  */
                 def handleException(exceptionValue: DomainValue) {
-                    val isHandled = code.exceptionHandlersFor(pc) exists { eh ⇒
+                    val isHandled = code.handlersFor(pc) exists { eh ⇒
                         // find the exception handler that matches the given exception
                         val branchTarget = eh.handlerPC
                         val catchType = eh.catchType
@@ -765,14 +796,14 @@ trait AI[D <: Domain] {
                 }
 
                 def computationWithOptionalReturnValueAndExceptions(
-                    computation: Computation[Option[DomainValue], ExceptionValues],
+                    computation: Computation[DomainValue, ExceptionValues],
                     rest: Operands) {
 
-                    if (computation.hasResult) {
-                        computation.result match {
-                            case Some(value) ⇒ fallThrough(value :: rest)
-                            case None        ⇒ fallThrough(rest)
-                        }
+                    if (computation.returnsNormally) {
+                        if (computation.hasResult)
+                            fallThrough(computation.result :: rest)
+                        else
+                            fallThrough(rest)
                     }
                     if (computation.throwsException)
                         handleExceptions(computation.exceptions)
@@ -915,12 +946,17 @@ trait AI[D <: Domain] {
                                         previousKey = key
                                     }
                                 }
-
                                 if (theDomain.intIsSomeValueInRange(index, key, key).isYesOrUnknown) {
                                     val branchTarget = pc + offset
                                     val (updatedOperands, updatedLocals) =
                                         theDomain.intEstablishValue(
                                             branchTarget, key, index, remainingOperands, locals)
+                                    if (tracer.isDefined &&
+                                        ((remainingOperands ne updatedOperands) || (locals ne updatedLocals))) {
+                                        tracer.get.establishedConstraint(theDomain)(
+                                            pc, branchTarget, remainingOperands, locals, updatedOperands, updatedLocals
+                                        )
+                                    }
                                     gotoTarget(
                                         pc, branchTarget, false,
                                         updatedOperands, updatedLocals)
@@ -951,6 +987,12 @@ trait AI[D <: Domain] {
                                 val (updatedOperands, updatedLocals) =
                                     theDomain.intEstablishValue(
                                         branchTarget, v, index, remainingOperands, locals)
+                                if (tracer.isDefined &&
+                                    ((remainingOperands ne updatedOperands) || (locals ne updatedLocals))) {
+                                    tracer.get.establishedConstraint(theDomain)(
+                                        pc, branchTarget, remainingOperands, locals, updatedOperands, updatedLocals
+                                    )
+                                }
                                 gotoTarget(
                                     pc, branchTarget, false,
                                     updatedOperands, updatedLocals)
@@ -1000,7 +1042,7 @@ trait AI[D <: Domain] {
 
                             theDomain.typeOfValue(exceptionValue) match {
                                 case TypeUnknown ⇒
-                                    code.exceptionHandlersFor(pc).foreach { eh ⇒
+                                    code.handlersFor(pc).foreach { eh ⇒
                                         val branchTarget = eh.handlerPC
                                         // unless we have a "finally" handler, we can state
                                         // a constraint
@@ -1030,7 +1072,7 @@ trait AI[D <: Domain] {
                                     val isHandled = referenceValues.forall(referenceValue ⇒
                                         // find the exception handler that matches the given 
                                         // exception
-                                        code.exceptionHandlersFor(pc).exists { eh ⇒
+                                        code.handlersFor(pc).exists { eh ⇒
                                             val branchTarget = eh.handlerPC
                                             val catchType = eh.catchType
                                             if (catchType.isEmpty) {
@@ -1873,19 +1915,19 @@ trait AI[D <: Domain] {
                 case cause @ DomainException(message) ⇒
                     throw InterpretationFailedException(
                         cause, theDomain)(
-                            pc, worklist, evaluated, operandsArray, localsArray)
+                            pc, worklist, evaluated,
+                            operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
 
                 case cause: Throwable ⇒
                     throw InterpretationFailedException(
                         cause, theDomain)(
-                            pc, worklist, evaluated, operandsArray, localsArray)
+                            pc, worklist, evaluated,
+                            operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
             }
         }
 
-        val result =
-            AIResultBuilder.completed(
-                code, theDomain)(
-                    evaluated, operandsArray, localsArray)
+        import AIResultBuilder.completed
+        val result = completed(code, theDomain)(evaluated, operandsArray, localsArray)
         theDomain.abstractInterpretationEnded(result)
         if (tracer.isDefined) tracer.get.result(result)
         result
@@ -1903,28 +1945,8 @@ private object AI {
      * The list of program counters (`List(0)`) that is used when we analysis a method
      * right from the beginning.
      */
-    private final val initialWorkList: List[PC] = List(0)
+    final val initialWorkList: List[PC] = List(0)
 
-    /**
-     * Special value that is added to the work list/list of evaluated instructions
-     * before the program counter of the first
-     * instruction of a subroutine.
-     */
-    // some value smaller than -65536 to avoid confusion with local variable indexes
-    // in the worklist this value is replaced by the local variable index
-    // once we encounter a ret insruction.
-    final val SUBROUTINE_START = -80000008
-    /**
-     * Special value that is added to the list of evaluated instructions
-     * to mark the end of the evaluation of a subroutine.
-     */
-    final val SUBROUTINE_END = -88888888
-
-    /**
-     * Special value that is added to the work list to mark the beginning of a
-     * subroutine call.
-     */
-    private final val SUBROUTINE = -90000009 // some value smaller than -2^16
 }
 
 /**
@@ -1937,7 +1959,7 @@ private object AI {
  *
  * @author Michael Eichberg
  */
-private object CTC1 {
+object CTC1 {
     def unapply[D <: Domain](value: D#DomainValue): Boolean =
         value.computationalType.category == 1
 }
@@ -1952,7 +1974,7 @@ private object CTC1 {
  *
  * @author Michael Eichberg
  */
-private object CTC2 {
+object CTC2 {
     def unapply[D <: Domain](value: D#DomainValue): Boolean =
         value.computationalType.category == 2
 }

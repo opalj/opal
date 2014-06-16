@@ -33,10 +33,13 @@ package l0
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
+import org.opalj.br.{ ComputationalType, ComputationalTypeFloat }
 
 /**
- * Domain that handles computations related to `Float` values at the type level.
+ * This partial `Domain` performs all computations related to primitive float
+ * values at the type level.
+ *
+ * This domain can be used as a foundation to build more complex domains.
  *
  * @author Michael Eichberg
  */
@@ -51,11 +54,10 @@ trait TypeLevelFloatValues extends Domain {
     /**
      * Abstracts over all values with computational type `float`.
      */
-    trait FloatValue
-            extends Value
-            with IsFloatValue { this: DomainValue ⇒
+    trait FloatValue extends Value with IsFloatValue { this: DomainValue ⇒
 
-        override final def computationalType: ComputationalType = ComputationalTypeFloat
+        final override def computationalType: ComputationalType = ComputationalTypeFloat
+
     }
 
     // -----------------------------------------------------------------------------------
@@ -63,6 +65,11 @@ trait TypeLevelFloatValues extends Domain {
     // HANDLING OF COMPUTATIONS
     //
     // -----------------------------------------------------------------------------------
+
+    //
+    // UNARY EXPRESSIONS
+    //
+    override def fneg(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
 
     //
     // RELATIONAL OPERATORS
@@ -74,14 +81,8 @@ trait TypeLevelFloatValues extends Domain {
         IntegerValue(pc)
 
     //
-    // UNARY EXPRESSIONS
-    //
-    override def fneg(pc: PC, value: DomainValue) = FloatValue(pc)
-
-    //
     // BINARY EXPRESSIONS
     //
-
     override def fadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         FloatValue(pc)
 
@@ -100,7 +101,6 @@ trait TypeLevelFloatValues extends Domain {
     //
     // TYPE CONVERSIONS
     //
-
     override def f2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
     override def f2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
     override def f2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
