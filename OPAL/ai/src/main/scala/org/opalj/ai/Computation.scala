@@ -41,9 +41,9 @@ package ai
  * exception if the computation did not finish.
  *
  * ==Querying Computations==
- * Before accessing a computations result ([[result]] or [[exceptions]]) it first 
- * has to be checked whether the computation returned normally ([[returnsNormally]]) 
- * or threw an exception ([[throwsException]]). Only if `returnsNormally` returns 
+ * Before accessing a computations result ([[result]] or [[exceptions]]) it first
+ * has to be checked whether the computation returned normally ([[returnsNormally]])
+ * or threw an exception ([[throwsException]]). Only if `returnsNormally` returns
  * `true` the methods `result` and `hasResult` are defined.
  *
  * @tparam V The result of the computation. Typically a `DomainValue`;
@@ -63,10 +63,11 @@ package ai
 sealed trait Computation[+V, +E] {
 
     /**
-     * The return value of the computation (if any); defined if and only if
-     * `hasResult` returns true.
+     * Returns `true` if this computation ''may have returned normally'' without
+     * throwing an exception. Given that some computations are performed for their
+     * side effect only, the computation may not have a result.
      */
-    def result: V
+    def returnsNormally: Boolean
 
     /**
      * Returns `true` if this computation has a result value, `false` otherwise.
@@ -78,11 +79,15 @@ sealed trait Computation[+V, +E] {
     def hasResult: Boolean
 
     /**
-     * Returns `true` if this computation ''may have returned normally'' without
-     * throwing an exception. Given that some computations are performed for their
-     * side effect only, the computation may not have a result.
+     * The return value of the computation (if any); defined if and only if
+     * `hasResult` returns true.
      */
-    def returnsNormally: Boolean
+    def result: V
+
+    /**
+     * Returns `true` if this computation ''may have raised an exception''.
+     */
+    def throwsException: Boolean
 
     /**
      * The exception or exceptions when the computation raised an exception;
@@ -91,11 +96,6 @@ sealed trait Computation[+V, +E] {
      * E.g., the invocation of a method may lead to several (checked/unchecked) exceptions.
      */
     def exceptions: E
-
-    /**
-     * Returns `true` if this computation ''may have raised an exception''.
-     */
-    def throwsException: Boolean
 
 }
 
@@ -107,16 +107,16 @@ final case class ComputedValue[+V](
     result: V)
         extends Computation[V, Nothing] {
 
+    def returnsNormally: Boolean = true
+
     def hasResult: Boolean = true
+
+    def throwsException: Boolean = false
 
     def exceptions: Nothing =
         throw new UnsupportedOperationException(
             "the computation succeeded without an exception"
         )
-
-    def returnsNormally: Boolean = true
-
-    def throwsException: Boolean = false
 }
 
 /**
@@ -128,9 +128,9 @@ final case class ComputedValueOrException[+V, +E](
     exceptions: E)
         extends Computation[V, E] {
 
-    def hasResult: Boolean = true
-
     def returnsNormally: Boolean = true
+
+    def hasResult: Boolean = true
 
     def throwsException: Boolean = true
 }
@@ -138,18 +138,16 @@ final case class ComputedValueOrException[+V, +E](
 /**
  * Encapsulates the result of a computation that threw an exception.
  */
-final case class ThrowsException[+E](
-    exceptions: E)
-        extends Computation[Nothing, E] {
+final case class ThrowsException[+E](exceptions: E) extends Computation[Nothing, E] {
+
+    def returnsNormally: Boolean = false
+
+    def hasResult: Boolean = false
 
     def result: Nothing =
         throw new UnsupportedOperationException(
             "the computation resulted in an exception"
         )
-
-    def hasResult: Boolean = false
-
-    def returnsNormally: Boolean = false
 
     def throwsException: Boolean = true
 }
@@ -162,16 +160,17 @@ final case class ComputationWithSideEffectOrException[+E](
     exceptions: E)
         extends Computation[Nothing, E] {
 
+    def returnsNormally: Boolean = true
+
+    def hasResult: Boolean = false
+
     def result: Nothing =
         throw new UnsupportedOperationException(
             "the computation was executed for its side effect only"
         )
 
-    def hasResult: Boolean = false
-
-    def returnsNormally: Boolean = true
-
     def throwsException: Boolean = true
+
 }
 
 /**
@@ -179,21 +178,22 @@ final case class ComputationWithSideEffectOrException[+E](
  */
 case object ComputationWithSideEffectOnly extends Computation[Nothing, Nothing] {
 
+    def returnsNormally: Boolean = true
+
+    def hasResult: Boolean = false
+
     def result: Nothing =
         throw new UnsupportedOperationException(
             "the computation was executed for its side effect only"
         )
 
-    def hasResult: Boolean = false
-
-    def returnsNormally: Boolean = true
+    def throwsException: Boolean = false
 
     def exceptions: Nothing =
         throw new UnsupportedOperationException(
             "the computation succeeded without an exception"
         )
 
-    def throwsException: Boolean = false
 }
 
 /**
