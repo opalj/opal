@@ -1003,7 +1003,8 @@ private object MethodsPlainTest {
             extends domain.l0.TypeLevelDomain
             with ThrowAllPotentialExceptionsConfiguration
             with IgnoreSynchronization
-            with DefaultHandlingForThrownExceptions {
+            with DefaultHandlingForThrownExceptions
+            with PredefinedClassHierarchy {
 
         type Id = String
         def id = "SimpleRecordingDomain"

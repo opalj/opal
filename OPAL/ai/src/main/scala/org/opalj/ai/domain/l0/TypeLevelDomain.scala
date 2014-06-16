@@ -43,13 +43,14 @@ package l0
  * @author Michael Eichberg
  */
 trait TypeLevelDomain
-    extends Domain
-    with DefaultDomainValueBinding
-    with DefaultReferenceValuesBinding
-    with DefaultTypeLevelIntegerValues
-    with DefaultTypeLevelLongValues
-    with DefaultTypeLevelFloatValues
-    with DefaultTypeLevelDoubleValues
-    with TypeLevelFieldAccessInstructions
-    with TypeLevelInvokeInstructions
-    with PredefinedClassHierarchy { this: Configuration ⇒ }
+        extends Domain
+        with DefaultDomainValueBinding
+        with DefaultReferenceValuesBinding
+        with DefaultTypeLevelIntegerValues
+        with DefaultTypeLevelLongValues
+        with DefaultTypeLevelFloatValues
+        with DefaultTypeLevelDoubleValues
+        with TypeLevelFieldAccessInstructions
+        with TypeLevelInvokeInstructions {
+    this: Configuration with ClassHierarchy  ⇒
+}

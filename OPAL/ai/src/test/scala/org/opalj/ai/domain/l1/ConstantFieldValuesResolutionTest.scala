@@ -81,7 +81,7 @@ class ConstantFieldValuesResolutionTest
         val testProject = org.opalj.br.analyses.Project(testFolder)
         val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
-        it("(Prerequisite) should be possible to get the constant value of a class") {
+        it("(Prerequisite) it should be possible to get the constant value of a field") {
             val theField = IntegerValues.fields.find(_.name == "theValue").get
             theField.constantFieldValue should be('defined)
             theField.constantFieldValue.get.toInt should be(42)

@@ -37,7 +37,7 @@ import br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy }
  * This class uses OPAL's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
  * for class hierarchy related queries.
  *
- * '''Hence, you should only use this trait if you just want to do some testing.'''
+ * '''Use this trait ONLY if you just want to do some testing.'''
  *
  * @author Michael Eichberg
  */

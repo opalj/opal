@@ -72,7 +72,7 @@ class ClassValuesTest
     it should ("be able to create the right representation for Arrays of object values") in {
         val domain = new RecordingDomain("Test static class values"); import domain._
         domain.simpleClassForNameCall(-1, "[Ljava/lang/Object;") should be(
-            ComputedValue(ClassValue(-1, ArrayType(ObjectType.Object )))
+            ComputedValue(ClassValue(-1, ArrayType(ObjectType.Object)))
         )
     }
 
@@ -114,7 +114,7 @@ class ClassValuesTest
     }
 
     it should ("be able to correctly join multiple class values") in {
-        val domain = new DefaultConfigurableDomain("test")
+        val domain = new RecordingDomain("test")
         val c1 = domain.ClassValue(1, ObjectType.Serializable)
         val c2 = domain.ClassValue(1, ObjectType.Cloneable)
         c1.join(-1, c2) should be(StructuralUpdate(domain.InitializedObjectValue(1, ObjectType.Class)))
@@ -151,10 +151,22 @@ class ClassValuesTest
 
 object PlainClassesTest {
 
-    class RecordingDomain[I](id: I) extends DefaultConfigurableDomain[I](id)
-            with DefaultClassValuesBinding
+    class RecordingDomain[I](val id: I)
+            extends Domain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with PredefinedClassHierarchy
+            with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
-            with DefaultHandlingForThrownExceptions {
+            with l0.DefaultTypeLevelIntegerValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            with l1.DefaultClassValuesBinding {
+
+        type Id = I
 
         var returnedValue: Option[DomainValue] = _
         override def areturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }

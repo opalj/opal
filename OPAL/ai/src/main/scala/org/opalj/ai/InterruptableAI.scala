@@ -28,36 +28,20 @@
  */
 package org.opalj
 package ai
-package domain
-package li
 
 /**
- * ClassValues must come after TypeLevelInvokeInstructionsWithNullPointerHandling.
- * @see ClassValues type documentation comment
+ * A domain that can be interrupted by calling the `interrupt` method.
+ *
+ * @author Michael Eichberg
  */
-trait DefaultInterpretingDomain
-    extends Domain
-    with DefaultDomainValueBinding
-    with ThrowAllPotentialExceptionsConfiguration
-    with l0.DefaultTypeLevelFloatValues
-    with l0.DefaultTypeLevelDoubleValues
-    with l0.DefaultTypeLevelLongValues
-    with l0.TypeLevelFieldAccessInstructions
-    with l0.TypeLevelInvokeInstructions
-    //    with DefaultReferenceValuesBinding
-    //    with DefaultStringValuesBinding
-    with l1.DefaultClassValuesBinding
-    with l1.DefaultArrayValuesBinding
-    with li.DefaultPreciseIntegerValues
-    with PredefinedClassHierarchy
+class InterruptableAI[D <: Domain] extends AI[D] {
 
-class DefaultInterpretingConfigurableDomain[I](
-    val id: I)
-        extends DefaultInterpretingDomain
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization {
+    private[this] var doInterrupt: Boolean = false
 
-    type Id = I
+    override def isInterrupted = doInterrupt
 
-    override def maxUpdatesForIntegerValues: Long = 5l
+    def interrupt(): Unit = {
+        doInterrupt = true
+    }
+
 }

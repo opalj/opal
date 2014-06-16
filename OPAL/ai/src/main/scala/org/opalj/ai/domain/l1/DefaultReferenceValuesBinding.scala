@@ -59,21 +59,21 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues {
     // FACTORY METHODS
     //
 
-    override def NullValue(pc: PC): DomainNullValue =
-        new NullValue(pc)
+    override def NullValue(pc: PC): DomainNullValue = new NullValue(pc)
 
     override protected[domain] def ObjectValue(
         pc: PC,
         isNull: Answer,
         isPrecise: Boolean,
-        theUpperTypeBound: ObjectType): DomainObjectValue =
+        theUpperTypeBound: ObjectType): DomainObjectValue = {
         new SObjectValue(pc, isNull, isPrecise, theUpperTypeBound)
+    }
 
     override protected[domain] def ObjectValue(
         pc: PC,
         isNull: Answer,
         upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
-        assume(upperTypeBound.nonEmpty)
+
         if (upperTypeBound.containsOneElement)
             ObjectValue(pc, isNull, false, upperTypeBound.first)
         else
@@ -84,12 +84,14 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues {
         pc: PC,
         isNull: Answer,
         isPrecise: Boolean,
-        theUpperTypeBound: ArrayType): DomainArrayValue =
+        theUpperTypeBound: ArrayType): DomainArrayValue = {
         new ArrayValue(pc, isNull, isPrecise, theUpperTypeBound)
+    }
 
     override protected[domain] def MultipleReferenceValues(
-        values: scala.collection.Set[SingleOriginReferenceValue]): DomainMultipleReferenceValues =
+        values: scala.collection.Set[SingleOriginReferenceValue]): MultipleReferenceValues = {
         new MultipleReferenceValues(values)
+    }
 
 }
 

@@ -56,7 +56,7 @@ trait Origin { this: Domain ⇒
      * Should be mixed in by `Value`s that have a single origin.
      */
     trait SingleOriginValue {
-        def vo: ValueOrigin
+        def origin: ValueOrigin
     }
 
     /**
@@ -64,7 +64,7 @@ trait Origin { this: Domain ⇒
      * of a value.
      */
     trait MultipleOriginsValue {
-        def vos: Iterable[ValueOrigin]
+        def origins: Iterable[ValueOrigin]
     }
 
     /**
@@ -79,9 +79,17 @@ trait Origin { this: Domain ⇒
      */
     def origin(value: DomainValue): Iterable[ValueOrigin] =
         value match {
-            case sov: SingleOriginValue    ⇒ Iterable[ValueOrigin](sov.vo)
-            case mov: MultipleOriginsValue ⇒ mov.vos
+            case sov: SingleOriginValue    ⇒ Iterable[ValueOrigin](sov.origin)
+            case mov: MultipleOriginsValue ⇒ mov.origins
             case _                         ⇒ Iterable.empty
         }
+
+    def foreachOrigin(value: DomainValue, f: (ValueOrigin) ⇒ Unit) {
+        value match {
+            case sov: SingleOriginValue    ⇒ f(sov.origin)
+            case mov: MultipleOriginsValue ⇒ mov.origins.foreach(f)
+            case _                         ⇒ /* nothing to do */
+        }
+    }
 
 }

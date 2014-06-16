@@ -142,5 +142,5 @@ abstract class StringPassedToClassForName
 }
 
 object StringPassedToClassForName extends DataFlowProblemRunner(
-    new StringPassedToClassForName with NaiveSolver
+    new StringPassedToClassForName with NaiveSolver[java.net.URL]
 )

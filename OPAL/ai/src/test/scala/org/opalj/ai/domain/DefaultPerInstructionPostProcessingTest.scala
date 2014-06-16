@@ -41,7 +41,7 @@ import org.scalatest.Matchers
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import br._
-import br.reader.Java7Framework
+
 
 /**
  * Tests the `DefaultPerInstructionPostProcessing`.
@@ -59,8 +59,32 @@ class DefaultPerInstructionPostProcessingTest
     import MethodsWithExceptionsTest._
     import org.opalj.collection.mutable.UShortSet
 
-    private def evaluateMethod(name: String)(f: l1.DefaultRecordingDomain[String] ⇒ Unit) {
-        val domain = new l1.DefaultRecordingDomain(name)
+    class DefaultRecordingDomain[I](
+        val id: I)
+            extends Domain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with PredefinedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with RecordLastReturnedValues
+            with RecordAllThrownExceptions
+            with RecordVoidReturns
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            with l1.DefaultReferenceValuesBinding
+            with l1.DefaultIntegerRangeValues {
+
+        type Id = I
+
+        override protected def maxSizeOfIntegerRanges: Long = 25l
+    }
+
+    private def evaluateMethod(name: String)(f: DefaultRecordingDomain[String] ⇒ Unit) {
+        val domain = new DefaultRecordingDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 

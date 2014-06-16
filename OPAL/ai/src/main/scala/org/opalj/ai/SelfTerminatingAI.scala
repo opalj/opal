@@ -28,48 +28,40 @@
  */
 package org.opalj
 package ai
-package domain
-package l0
-
-import org.opalj.br.analyses.Project
-import org.opalj.br.{ Method, ClassFile }
 
 /**
- * A domain with a configurable identifier.
+ * A domain that interrupts itself after some configurable time has passed.
  *
  * @author Michael Eichberg
  */
-class BaseConfigurableDomain[I, Source](
-    val id: I,
-    val project: Project[Source],
-    val classFile: ClassFile,
-    val method: Method)
-        extends TypeLevelDomain
-        with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with ProjectBasedClassHierarchy
-        with TheProject[Source]
-        with TheMethod {
+class SelfTerminatingAI[D <: Domain] extends AI[D] {
 
-    type Id = I
+    private[this] var evaluationCount = -1
+
+    private[this] var startTime: Long = _
+
+    private[this] var interrupted: Boolean = false
+
+    private[this] var interruptTime: Long = 0
+
+    def abortedAfter = interruptTime - startTime
+
+    val maxTimeInNs: Long = 150l /*ms*/ * 1000l * 1000l
+
+    override def isInterrupted =
+        interrupted ||
+            {
+                evaluationCount += 1
+                if (evaluationCount == 0) {
+                    startTime = System.nanoTime()
+                    false
+                } else if (evaluationCount % 100 == 0 && System.nanoTime() - startTime > maxTimeInNs) {
+                    interrupted = true
+                    interruptTime = System.nanoTime()
+                    true
+                } else {
+                    false
+                }
+            }
+
 }
-
-/**
- * This is a ready to use domain which sets the domain identifier to "BaseTypeLevelDomain".
- *
- * This domain is primarily useful for testing and debugging purposes.
- *
- * @author Michael Eichberg
- */
-class BaseDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends BaseConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)
-
-

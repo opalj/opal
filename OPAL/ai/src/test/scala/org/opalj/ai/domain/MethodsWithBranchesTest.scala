@@ -58,11 +58,11 @@ class MethodsWithBranchesTest
     import MethodsWithBranchesTest._
 
     import domain.RecordConstraints
-    import domain.l0.BaseRecordingDomain
 
     class TestDomain(val name: String)
             extends TypeLevelDomain
             with ThrowAllPotentialExceptionsConfiguration
+            with PredefinedClassHierarchy 
             with IgnoreSynchronization
             with DefaultHandlingOfMethodResults
             with RecordLastReturnedValues

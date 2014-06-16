@@ -160,6 +160,21 @@ sealed trait Locals[T >: Null <: AnyRef] {
         }
     }
 
+    def corresponds[U >: Null <: AnyRef](
+        other: Locals[U])(
+            compare: (T, U) ⇒ Boolean): Boolean = {
+        this.size == other.size &&
+            {
+                var i = 0
+                while (i < this.size) {
+                    if (!compare(this(i), other(i)))
+                        return false;
+                    i += 1
+                }
+                true
+            }
+    }
+
     def iterator: Iterator[T] = {
         new Iterator[T] {
             var index = 0

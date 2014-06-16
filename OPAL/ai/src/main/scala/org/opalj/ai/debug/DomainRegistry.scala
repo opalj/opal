@@ -127,26 +127,26 @@ object DomainRegistry {
 
     // initialize the registry with the known default domains 
     register(
-        "[l0.BaseConfigurableDomain] The most basic domain; it does all computations at the type level.",
-        classOf[domain.l0.BaseConfigurableDomain[(ClassFile, Method)]],
+        "[l0.BaseDomain] The most basic domain; it does all computations at the type level.",
+        classOf[domain.l0.BaseDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l0.BaseConfigurableDomain((ClassFile, Method))
+            new domain.l0.BaseDomain(project, classFile, method)
         }
     )
 
     register(
-        "[l1.DefaultConfigurableDomain] A classical abstract domain that performs calculations using ranges.",
-        classOf[domain.l1.DefaultConfigurableDomain[(ClassFile, Method)]],
+        "[l1.DefaultDomain] A classical abstract domain that performs calculations using ranges.",
+        classOf[domain.l1.DefaultDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l1.DefaultConfigurableDomain((ClassFile, Method))
+            new domain.l1.DefaultDomain(project, classFile, method)
         }
     )
 
     register(
-        "[l1.DefaultInterpretingConfigurableDomain] This domain performs some partical concrete evaluation.",
-        classOf[domain.li.DefaultInterpretingConfigurableDomain[(ClassFile, Method)]],
+        "[l1.DefaultDomain] This domain performs some partical concrete evaluation.",
+        classOf[domain.li.DefaultDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.li.DefaultInterpretingConfigurableDomain((ClassFile, Method))
+            new domain.li.DefaultDomain(project, classFile, method)
         }
     )
 }

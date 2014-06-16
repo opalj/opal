@@ -30,10 +30,10 @@ package org.opalj
 package ai
 package debug
 
-import br._
-import br.analyses.SomeProject
+import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.analyses.{ Project, SomeProject }
 
-import domain.l0.BaseConfigurableDomain
+import org.opalj.ai.domain.l0.BaseDomain
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -81,7 +81,7 @@ object InterpretMethod {
             if (args.length > 3)
                 Class.forName(args(3).substring(8)).asInstanceOf[Class[_ <: Domain]]
             else // default domain
-                classOf[BaseConfigurableDomain[_]]
+                classOf[BaseDomain[java.net.URL]]
         }
 
         def createDomain[Source: reflect.ClassTag](
@@ -96,7 +96,7 @@ object InterpretMethod {
 
             val constructor =
                 domainClass.getConstructor(
-                    classOf[analyses.Project[java.net.URL]],
+                    classOf[Project[java.net.URL]],
                     classOf[ClassFile],
                     classOf[Method])
             return constructor.newInstance(project, classFile, method)
@@ -110,7 +110,7 @@ object InterpretMethod {
 
         val project =
             try {
-                analyses.Project(file)
+                Project(file)
             } catch {
                 case e: Exception ⇒
                     println(RED+"[error] Cannot process file: "+e.getMessage()+"."+RESET)

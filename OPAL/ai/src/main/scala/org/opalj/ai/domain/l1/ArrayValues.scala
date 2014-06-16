@@ -196,7 +196,7 @@ trait ArrayValues
                     (that eq this) ||
                     (
                         (that canEqual this) &&
-                        this.vo == that.vo &&
+                        this.origin == that.origin &&
                         (this.upperTypeBound eq that.upperTypeBound) &&
                         this.values == that.values
                     )

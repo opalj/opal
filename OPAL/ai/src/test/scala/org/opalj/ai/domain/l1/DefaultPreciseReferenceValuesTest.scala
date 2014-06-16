@@ -43,6 +43,7 @@ import org.scalatest.ParallelTestExecution
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import br._
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * This test(suite) just loads a very large number of class files and performs
@@ -56,10 +57,33 @@ class DefaultPreciseReferenceValuesTest
         with Matchers
         with ParallelTestExecution {
 
-    val domain = new DefaultConfigurableDomain("Reference Values Tests") {
+    object DefaultPreciseReferenceValuesDomain
+            extends Domain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with PredefinedClassHierarchy
+            with PerInstructionPostProcessing
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            with l1.DefaultReferenceValuesBinding
+            // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
+            // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
+            // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
+            with l1.DefaultIntegerRangeValues {
 
+        type Id = String
+
+        def id = "Reference Values Tests"
+
+        override protected def maxSizeOfIntegerRanges: Long = 25l
     }
-    import domain._
+
+    import DefaultPreciseReferenceValuesDomain._
 
     val File = ObjectType("java/io/File")
 
@@ -151,15 +175,15 @@ class DefaultPreciseReferenceValuesTest
     }
 
     it should ("be able to handle the case where we throw a \"null\" value or some other value") in {
-        import language.existentials
 
-        val classFiles = reader.Java8Framework.ClassFiles(
+        val classFiles = ClassFiles(
             TestSupport.locateTestResources("classfiles/cornercases.jar", "ai"))
         val classFile = classFiles.find(_._1.thisType.fqn == "cornercases/ThrowsNullValue").get._1
         val method = classFile.methods.find(_.name == "main").get
 
-        val exception = BaseAI(classFile, method, domain).operandsArray(20)
-        domain.refIsNull(exception.head) should be(No)
+        val result = BaseAI(classFile, method, DefaultPreciseReferenceValuesDomain)
+        val exception = result.operandsArray(20)
+        DefaultPreciseReferenceValuesDomain.refIsNull(exception.head) should be(No)
     }
 
 }

@@ -38,6 +38,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
 import org.opalj.br.analyses.Project
+import org.opalj.ai.debug.InterpretMethodsAnalysis.interpret
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
@@ -47,23 +48,18 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultConfigurableDomainTest extends FlatSpec with Matchers {
+class DefaultDomainTest extends FlatSpec with Matchers {
 
-    behavior of "the abstract interpretation framework's l1.DefaultConfigurableDomain"
+    behavior of "the l1.DefaultDomain"
 
-    it should ("be able to perform an abstract interpretation of all methods of the JRE") in {
+    it should ("be able to perform an abstract interpretation of the JRE's classes") in {
         val project = Project(org.opalj.br.TestSupport.JREClassFiles)
 
-        val (message, source) =
-            org.opalj.ai.debug.InterpretMethodsAnalysis.interpret(
-                project,
-                classOf[DefaultConfigurableDomain[_]],
-                false)
+        val (message, source) = interpret(project, classOf[DefaultDomain[_]], false)
 
         if (source.nonEmpty)
             fail(message+" (details: "+source+")")
         else
             info(message)
     }
-
 }
