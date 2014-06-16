@@ -575,6 +575,9 @@ trait Domain {
     def MethodType(pc: PC, descriptor: MethodDescriptor): DomainValue =
         InitializedObjectValue(pc, ObjectType.MethodType)
 
+    def Throwable(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.Throwable)
+
     def ClassCastException(pc: PC): ExceptionValue =
         InitializedObjectValue(pc, ObjectType.ClassCastException)
 
@@ -821,8 +824,8 @@ trait Domain {
      *
      * ==Summary==
      * The properties of the domain value are:
-     *  - Initialized: '''Yes''' 
-     *  	(i.e., the fields of the array have the type dependent default value)  
+     *  - Initialized: '''Yes'''
+     *  	(i.e., the fields of the array have the type dependent default value)
      *  - Type: '''Precise'''
      *  - Null: '''No'''
      *  - Content: '''Unknown'''
