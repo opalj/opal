@@ -61,8 +61,28 @@ class MethodsWithExceptionsTest
     import MethodsWithExceptionsTest._
     import org.opalj.collection.mutable.UShortSet
 
-    private def evaluateMethod(name: String)(f: l1.DefaultRecordingDomain[String] ⇒ Unit) {
-        val domain = new l1.DefaultRecordingDomain(name)
+    class DefaultRecordingDomain[I](val id: I)
+            extends Domain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with PredefinedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with l0.DefaultTypeLevelIntegerValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
+            with l1.DefaultReferenceValuesBinding
+            /* => */ with RecordLastReturnedValues
+            /* => */ with RecordAllThrownExceptions
+            /* => */ with RecordVoidReturns {
+        type Id = I
+    }
+
+    private def evaluateMethod(name: String)(f: DefaultRecordingDomain[String] ⇒ Unit) {
+        val domain = new DefaultRecordingDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 

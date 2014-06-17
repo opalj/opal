@@ -41,7 +41,7 @@ import org.scalatest.Matchers
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import br._
-import br.reader.Java8Framework
+import br.reader.Java8Framework.ClassFiles
 import l0._
 
 /**
@@ -58,11 +58,20 @@ class MethodsWithArraysTest
     import MethodsWithArraysTest._
 
     class TestDomain
-            extends TypeLevelDomain
+            extends Domain
+            with DefaultDomainValueBinding
+            with DefaultReferenceValuesBinding
+            with DefaultTypeLevelIntegerValues
+            with DefaultTypeLevelLongValues
+            with DefaultTypeLevelFloatValues
+            with DefaultTypeLevelDoubleValues
+            with TypeLevelFieldAccessInstructions
+            with SimpleTypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
             with IgnoreSynchronization
             with DefaultHandlingOfMethodResults
-            with RecordLastReturnedValues {
+            with RecordLastReturnedValues
+            with PredefinedClassHierarchy {
 
         type Id = String
         def id = "MethodsWithArraysTestDomain"
@@ -125,8 +134,7 @@ class MethodsWithArraysTest
 }
 private object MethodsWithArraysTest {
 
-    val classFiles = Java8Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
 
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithArrays").get
 }

@@ -47,8 +47,8 @@ import solver.NaiveSolver
  *
  * @author Michael Eichberg and Ben Hermann
  */
-abstract class StringPassedToClassForName
-        extends DataFlowProblemSpecification {
+abstract class StringPassedToClassForName[Source]
+        extends DataFlowProblemSpecification[Source] {
 
     //
     // Handling for the specified "java.security" file.
@@ -142,5 +142,5 @@ abstract class StringPassedToClassForName
 }
 
 object StringPassedToClassForName extends DataFlowProblemRunner(
-    new StringPassedToClassForName with NaiveSolver
+    new StringPassedToClassForName[java.net.URL] with NaiveSolver[java.net.URL]
 )

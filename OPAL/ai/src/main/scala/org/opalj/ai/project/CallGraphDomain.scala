@@ -54,9 +54,9 @@ trait CallGraphDomain extends Domain {
 
     /* abstract */ val project: SomeProject
 
-    /* abstract */ val theClassFile: ClassFile
+    /* abstract */ val classFile: ClassFile
 
-    /* abstract */ val theMethod: Method
+    /* abstract */ val method: Method
 
     // METHODS TO GET THE RESULTS AFTER THE DOMAIN WAS USED FOR THE ABSTRACT
     // INTERPRETATION OF THIS METHOD.

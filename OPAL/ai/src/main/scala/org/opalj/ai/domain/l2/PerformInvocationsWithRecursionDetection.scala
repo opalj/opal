@@ -35,7 +35,7 @@ import br.Method
 import br.ClassFile
 
 trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
-    rootDomain: TheProject[_] with Configuration ⇒
+    rootDomain: TheProject[_] with Configuration with TheCode ⇒
 
     val calledMethodsStore: CalledMethodsStore
 

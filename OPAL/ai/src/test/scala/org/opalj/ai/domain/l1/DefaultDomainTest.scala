@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,51 +31,35 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ ClassFile, Method }
+import org.junit.runner.RunWith
+
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+
 import org.opalj.br.analyses.Project
+import org.opalj.ai.debug.InterpretMethodsAnalysis.interpret
 
 /**
- * This domain uses the l1 level ''stable'', partial domains.
+ * This system test(suite) just loads a very large number of class files and performs
+ * an abstract interpretation of all methods. It basically tests if we can load and
+ * process a large number of different classes without exceptions.
  *
  * @author Michael Eichberg
  */
-class DefaultConfigurableDomain[I, Source](
-    val id: I,
-    val project: Project[Source],
-    val classFile: ClassFile,
-    val method: Method)
-        extends Domain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with ProjectBasedClassHierarchy
-        with TheProject[Source]
-        with TheMethod
-        with PerInstructionPostProcessing
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultTypeLevelLongValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with l1.DefaultReferenceValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-        with l1.DefaultIntegerRangeValues {
+@RunWith(classOf[JUnitRunner])
+class DefaultDomainTest extends FlatSpec with Matchers {
 
-    type Id = I
+    behavior of "the l1.DefaultDomain"
 
-    override protected def maxSizeOfIntegerRanges: Long = 25l
+    it should ("be able to perform an abstract interpretation of the JRE's classes") in {
+        val project = Project(org.opalj.br.TestSupport.JREClassFiles)
 
+        val (message, source) = interpret(project, classOf[DefaultDomain[_]], false)
+
+        if (source.nonEmpty)
+            fail(message+" (details: "+source+")")
+        else
+            info(message)
+    }
 }
-
-class DefaultDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends DefaultConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)

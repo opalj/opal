@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,42 +28,40 @@
  */
 package org.opalj
 package ai
-package domain
-package l1
-
-import org.junit.runner.RunWith
-
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-
-import org.opalj.br.analyses.Project
 
 /**
- * This system test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of all methods. It basically tests if we can load and
- * process a large number of different classes without exceptions.
+ * A domain that interrupts itself after some configurable time has passed.
  *
  * @author Michael Eichberg
  */
-@RunWith(classOf[JUnitRunner])
-class DefaultConfigurableDomainTest extends FlatSpec with Matchers {
+class SelfTerminatingAI[D <: Domain] extends AI[D] {
 
-    behavior of "the abstract interpretation framework's l1.DefaultConfigurableDomain"
+    private[this] var evaluationCount = -1
 
-    it should ("be able to perform an abstract interpretation of all methods of the JRE") in {
-        val project = Project(org.opalj.br.TestSupport.JREClassFiles)
+    private[this] var startTime: Long = _
 
-        val (message, source) =
-            org.opalj.ai.debug.InterpretMethodsAnalysis.interpret(
-                project,
-                classOf[DefaultConfigurableDomain[_]],
-                false)
+    private[this] var interrupted: Boolean = false
 
-        if (source.nonEmpty)
-            fail(message+" (details: "+source+")")
-        else
-            info(message)
-    }
+    private[this] var interruptTime: Long = 0
+
+    def abortedAfter = interruptTime - startTime
+
+    val maxEffortInNs: Long = 150l /*ms*/ * 1000l * 1000l
+
+    override def isInterrupted =
+        interrupted ||
+            {
+                evaluationCount += 1
+                if (evaluationCount == 0) {
+                    startTime = System.nanoTime()
+                    false
+                } else if (evaluationCount % 100 == 0 && System.nanoTime() - startTime > maxEffortInNs) {
+                    interrupted = true
+                    interruptTime = System.nanoTime()
+                    true
+                } else {
+                    false
+                }
+            }
 
 }

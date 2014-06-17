@@ -198,6 +198,9 @@ trait DefaultTypeLevelReferenceValues
                     NoUpdate
             }
         }
+
+        override def adapt(target: Domain, pc: PC): target.DomainValue =
+            target.ReferenceValue(pc, theUpperTypeBound)
     }
 
     /**

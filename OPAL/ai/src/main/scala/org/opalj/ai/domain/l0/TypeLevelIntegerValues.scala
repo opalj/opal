@@ -119,14 +119,10 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
         upperBound: Int): Answer =
         Unknown
 
-    override def intIsLessThan(
-        smallerValue: DomainValue,
-        largerValue: DomainValue): Answer =
+    override def intIsLessThan(left: DomainValue, right: DomainValue): Answer =
         Unknown
 
-    override def intIsLessThanOrEqualTo(
-        smallerOrEqualValue: DomainValue,
-        equalOrLargerValue: DomainValue): Answer =
+    override def intIsLessThanOrEqualTo(left: DomainValue, right: DomainValue): Answer =
         Unknown
 
     // -----------------------------------------------------------------------------------
@@ -152,8 +148,8 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
 
     override def idiv(
         pc: PC,
-        value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        left: DomainValue,
+        right: DomainValue): IntegerLikeValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
         else
@@ -168,30 +164,30 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
 
     override def irem(
         pc: PC,
-        value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        left: DomainValue,
+        right: DomainValue): IntegerLikeValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
         else
             ComputedValue(IntegerValue(pc))
     }
 
-    override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ishl(pc: PC, left: DomainValue, right: DomainValue): DomainValue =
         IntegerValue(pc)
 
-    override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ishr(pc: PC, left: DomainValue, right: DomainValue): DomainValue =
         IntegerValue(pc)
 
-    override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def isub(pc: PC, left: DomainValue, right: DomainValue): DomainValue =
         IntegerValue(pc)
 
-    override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def iushr(pc: PC, left: DomainValue, right: DomainValue): DomainValue =
         IntegerValue(pc)
 
     override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
 
-    override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue =
+    override def iinc(pc: PC, left: DomainValue, right: Int): DomainValue =
         IntegerValue(pc)
 
     //

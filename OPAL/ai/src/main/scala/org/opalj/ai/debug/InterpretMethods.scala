@@ -101,7 +101,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
             } else {
                 InterpretMethodsAnalysis.interpret(
                     project,
-                    classOf[domain.l0.BaseConfigurableDomain[_]],
+                    classOf[domain.l0.BaseConfigurableDomain[_, java.net.URL]],
                     verbose)
 
             }
@@ -123,7 +123,11 @@ object InterpretMethodsAnalysis {
         import performanceEvaluationContext.{ time, getTime }
         val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
-        val domainConstructor = domainClass.getConstructor(classOf[Object])
+        val domainConstructor =
+            domainClass.getConstructor(
+                classOf[Project[java.net.URL]],
+                classOf[ClassFile],
+                classOf[Method])
 
         def analyzeClassFile(
             source: String,
@@ -140,7 +144,8 @@ object InterpretMethodsAnalysis {
                                 BaseAI(
                                     classFile,
                                     method,
-                                    domainConstructor.newInstance((classFile, method)))
+                                    domainConstructor.newInstance(project, classFile, method)
+                                )
                             if (result.wasAborted)
                                 throw new InterruptedException();
                         }

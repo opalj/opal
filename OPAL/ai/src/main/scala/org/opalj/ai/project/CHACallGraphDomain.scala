@@ -98,8 +98,7 @@ trait CHACallGraphDomain extends Domain with CallGraphDomain { this: ClassHierar
         }
     }
 
-    def allCallEdges: (Method, Map[PC, Set[Method]]) =
-        (theMethod, callEdgesMap)
+    def allCallEdges: (Method, Map[PC, Set[Method]]) = (method, callEdgesMap)
 
     // handles method calls where the target method can statically be resolved
     @inline protected[this] def staticMethodCall(
@@ -111,7 +110,7 @@ trait CHACallGraphDomain extends Domain with CallGraphDomain { this: ClassHierar
 
         def handleUnresolvedMethodCall() =
             addUnresolvedMethodCall(
-                theClassFile.thisType, theMethod, pc,
+                classFile.thisType, method, pc,
                 declaringClassType, name, descriptor
             )
 
@@ -151,7 +150,7 @@ trait CHACallGraphDomain extends Domain with CallGraphDomain { this: ClassHierar
 
         if (callees.isEmpty)
             addUnresolvedMethodCall(
-                theClassFile.thisType, theMethod, pc,
+                classFile.thisType, method, pc,
                 declaringClassType, name, descriptor)
         else {
             addCallEdge(pc, callees)

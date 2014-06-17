@@ -62,7 +62,7 @@ class DefaultIntegerRangesTest
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultReferenceValuesBinding
             with l0.TypeLevelFieldAccessInstructions
-            with l0.TypeLevelInvokeInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
             with DefaultIntegerRangeValues
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
@@ -549,6 +549,12 @@ class DefaultIntegerRangesTest
                     intAreEqual(p2, p1) should be(Unknown) // reflexive
                 }
 
+                it("[0,3] == [0,3] should be Unknown") {
+                    val p1 = IntegerRange(lb = 0, ub = 3)
+                    val p2 = IntegerRange(lb = 0, ub = 3)
+                    intAreEqual(p1, p2) should be(Unknown)
+                    intAreEqual(p2, p1) should be(Unknown) // reflexive
+                }
             }
         }
 

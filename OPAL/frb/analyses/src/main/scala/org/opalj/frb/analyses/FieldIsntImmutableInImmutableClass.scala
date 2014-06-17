@@ -53,13 +53,13 @@ private class ImmutabilityAnalysisDomain[I](val id: I)
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
+        with l0.SimpleTypeLevelInvokeInstructions // FIXME We should use the regular TypeLevel....
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l0.DefaultTypeLevelIntegerValues
         with DefaultReferenceValuesBinding
-        with PredefinedClassHierarchy // FIXME This should not give sufficient information.
+        with PredefinedClassHierarchy // FIXME This will not give sufficient information.
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization {
 

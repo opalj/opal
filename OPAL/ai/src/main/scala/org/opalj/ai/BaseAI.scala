@@ -48,20 +48,3 @@ class BaseAI extends AI[Domain] {
  */
 object BaseAI extends BaseAI
 
-
-/**
- * A domain that can be interrupted by calling the `interrupt` method.
- *
- * @author Michael Eichberg
- */
-class InterruptableAI[D <: Domain] extends AI[D] {
-
-    private[this] var doInterrupt: Boolean = false
-
-    override def isInterrupted = doInterrupt
-
-    def interrupt(): Unit = {
-        doInterrupt = true
-    }
-
-}

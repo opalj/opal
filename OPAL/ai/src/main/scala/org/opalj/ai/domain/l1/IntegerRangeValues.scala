@@ -167,7 +167,7 @@ trait IntegerRangeValues
                     case IntegerRange(lb2, ub2) ⇒
                         if (ub1 < lb2 || lb1 > ub2)
                             No
-                        else if (lb1 == lb2 && ub1 == ub2 && lb1 == lb2 /* or...*/ )
+                        else if (lb1 == lb2 && lb1 == ub2 && ub1 == ub2 /* or...*/ )
                             Yes
                         else
                             Unknown

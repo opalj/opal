@@ -48,7 +48,7 @@ trait IgnoreSynchronization { this: Domain with Configuration ⇒
             case No ⇒
                 ComputationWithSideEffectOnly
             case Unknown ⇒
-                if (throwNullPointerException)
+                if (throwNullPointerExceptionOnMonitorAccess)
                     ComputationWithSideEffectOrException(NullPointerException(pc))
                 else
                     ComputationWithSideEffectOnly
@@ -63,7 +63,7 @@ trait IgnoreSynchronization { this: Domain with Configuration ⇒
      * the value is known not to be `null` the given value is (also) returned as this
      * computation's results.
      */
-    override def monitorenter(
+    /*override*/ def monitorenter(
         pc: PC,
         value: DomainValue): Computation[Nothing, ExceptionValue] = {
         sideEffectOnlyOrNullPointerException(pc, value)
@@ -77,7 +77,7 @@ trait IgnoreSynchronization { this: Domain with Configuration ⇒
      * the value is known not to be `null` the given value is (also) returned as this
      * computation's results.
      */
-    override def monitorexit(
+    /*override*/ def monitorexit(
         pc: PC,
         value: DomainValue): Computation[Nothing, ExceptionValue] = {
         sideEffectOnlyOrNullPointerException(pc, value)

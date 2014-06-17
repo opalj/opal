@@ -44,10 +44,10 @@ import org.scalatest.ParallelTestExecution
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import br._
-import br.reader.Java7Framework
+import br.reader.Java8Framework.ClassFiles
 
 /**
- * This test(suite) basically tests OPAL-AIs support for tracing a property.
+ * This test(suite) basically tests OPAL's support for tracing a property.
  *
  * @author Michael Eichberg
  */
@@ -61,9 +61,21 @@ class PropertyTracingTest
     import PropertyTracingTest._
 
     class AnalysisDomain(val method: Method)
-            extends l1.DefaultDomain
+            extends Domain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
-            with SimpleBooleanPropertyTracing {
+            with PredefinedClassHierarchy
+            with SimpleBooleanPropertyTracing
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            with l1.DefaultReferenceValuesBinding
+            with l1.DefaultIntegerRangeValues
+            with TheMethod {
 
         type Id = String
         override def id = method.toJava
@@ -172,8 +184,7 @@ class PropertyTracingTest
 
 private object PropertyTracingTest {
 
-    val classFiles = Java7Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
 
     val classFile = classFiles.map(_._1).
         find(_.thisType.fqn == "ai/domain/Sanitization").get

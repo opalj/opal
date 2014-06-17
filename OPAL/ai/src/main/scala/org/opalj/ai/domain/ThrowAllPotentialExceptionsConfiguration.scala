@@ -53,7 +53,21 @@ trait ThrowAllPotentialExceptionsConfiguration extends Configuration {
      *
      * @return `true`
      */
-    override def methodThrowsAllCheckedExceptions: Boolean = true
+    override def throwAllHandledExceptionsOnMethodCall: Boolean = true
+
+    /**
+     * @inheritdoc
+     *
+     * @return `true`
+     */
+    override def throwNullPointerExceptionOnMethodCall: Boolean = true
+
+    /**
+     * @inheritdoc
+     *
+     * @return `true`
+     */
+    override def throwNullPointerExceptionOnFieldAccess: Boolean = true
 
     /**
      * @inheritdoc
@@ -67,15 +81,22 @@ trait ThrowAllPotentialExceptionsConfiguration extends Configuration {
      *
      * @return `true`
      */
-    override def throwNullPointerException: Boolean = true
+    override def throwIllegalMonitorStateException: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    override def throwIllegalMonitorStateException: Boolean = true
+    override def throwNullPointerExceptionOnMonitorAccess: Boolean = false
 
+    /**
+     * @inheritdoc
+     *
+     * @return `true`
+     */
+    override def throwNullPointerExceptionOnArrayAccess: Boolean = false
+    
     /**
      * @inheritdoc
      *

@@ -57,8 +57,26 @@ class StringValuesTest
 
     import PlainClassesTest._
 
-    val someDomainWithStringValues = new DefaultConfigurableDomain("StringValuesTest")
-    import someDomainWithStringValues._
+    object AnalysisDomain
+            extends Domain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with PredefinedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
+            with l1.DefaultStringValuesBinding
+            with l1.DefaultIntegerRangeValues {
+
+        type Id = String
+        def id = "Domain which tracks String Values"
+    }
+
+    import AnalysisDomain._
 
     val s1 = StringValue(-1, "test")
     val s1Alt = StringValue(-1, "alt")

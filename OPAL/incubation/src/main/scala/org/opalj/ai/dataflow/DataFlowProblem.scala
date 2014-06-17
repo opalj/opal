@@ -60,7 +60,7 @@ import domain.l0._
  *
  * @author Michael Eichberg and Ben Hermann
  */
-trait DataFlowProblem {
+trait DataFlowProblem[Source] {
 
     def description: String =
         "Finds instances of the specified dataflow problem (see documentation for details)."
@@ -190,11 +190,11 @@ trait DataFlowProblem {
     //
     //
 
-    private[this] var theProject: SomeProject = null
+    private[this] var theProject: Project[Source] = null
     def project = theProject
-    def project_=(project: SomeProject): Unit = {
+    def project_=(project: Project[Source]): Unit = {
 
-        if (this.project != null)
+        if (this.theProject != null)
             throw new IllegalStateException("the project is already set")
         this.theProject = project
 

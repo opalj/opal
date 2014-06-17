@@ -31,6 +31,30 @@ package ai
 package domain
 package l0
 
+import org.opalj.br.analyses.Project
+import org.opalj.br.{ Method, ClassFile }
+
+/**
+ * A domain with a configurable identifier.
+ *
+ * @author Michael Eichberg
+ */
+class BaseConfigurableDomain[I, Source](
+    val id: I,
+    val project: Project[Source],
+    val classFile: ClassFile,
+    val method: Method)
+        extends TypeLevelDomain
+        with ThrowAllPotentialExceptionsConfiguration
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with ProjectBasedClassHierarchy
+        with TheProject[Source]
+        with TheMethod {
+
+    type Id = I
+}
+
 /**
  * This is a ready to use domain which sets the domain identifier to "BaseTypeLevelDomain".
  *
@@ -38,42 +62,14 @@ package l0
  *
  * @author Michael Eichberg
  */
-class BaseDomain
-        extends TypeLevelDomain
-        with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization {
+class BaseDomain[Source](
+    project: Project[Source],
+    classFile: ClassFile,
+    method: Method)
+        extends BaseConfigurableDomain[String, Source](
+            classFile.thisType.toJava+"{ "+method.toJava+"}",
+            project,
+            classFile,
+            method)
 
-    type Id = String
 
-    def id = "BaseTypeLevelDomain"
-
-}
-
-/**
- * A domain with a configurable identifier.
- *
- * @author Michael Eichberg
- */
-class BaseConfigurableDomain[I](
-    val id: I)
-        extends TypeLevelDomain
-        with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization {
-
-    type Id = I
-}
-
-class BaseRecordingDomain[I](
-    val id: I)
-        extends TypeLevelDomain
-        with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with RecordReturnFromMethodInstructions
-        with RecordAllThrownExceptions
-        with RecordVoidReturns {
-
-    type Id = I
-}

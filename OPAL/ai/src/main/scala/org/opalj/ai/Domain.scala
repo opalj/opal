@@ -321,7 +321,7 @@ trait Domain {
          * domain-adaptation. I.e., to make it possible to change the abstract domain at
          * runtime if the analysis time takes too long using a (more) precise domain.
          *
-         * @note The framework does not use/call this method. This method
+         * @note The OPAL core does not use/call this method. This method
          *      is solely predefined to facilitate the development of project-wide
          *      analyses.
          */
@@ -331,12 +331,15 @@ trait Domain {
 
         /**
          * Returns `true` iff the abstract state represented by this value
-         * is at least as abstract as the abstract state of the given value. I.e.,
-         * this method is '''not reflexive'''.
+         * is at least as abstract as the abstract state of the given value. In other
+         * words if every possible runtime value represented by the given value
+         * is also represented by this value.
          *
          * The abstract state generally encompasses every information that would
          * be considered during a [[join]] of `this` value and the `other` value and that
          * could lead to a [[StructuralUpdate]].
+         *
+         * This method is '''not reflexive'''.
          *
          * ==Implementation==
          * The default implementation relies on this domain value's [[join]] method.
@@ -393,7 +396,7 @@ trait Domain {
     /**
      * The class tag for the type `DomainValue`.
      *
-     * Required by OPAL-AI to generate instances of arrays in which values of type
+     * Required to generate instances of arrays in which values of type
      * `DomainValue` can be stored in a type-safe manner.
      *
      * ==Initialization==
@@ -542,6 +545,12 @@ trait Domain {
     //
     // -----------------------------------------------------------------------------------
 
+    final def justThrows(value: ExceptionValue): ThrowsException[ExceptionValues] =
+        ThrowsException(Seq(value))
+
+    final def throws(value: ExceptionValue): ThrowsException[ExceptionValue] =
+        ThrowsException(value)
+
     /**
      * Called by the AI framework for each load constant method handle instruction to
      * get a representation of/a DomainValue that represents the handle.
@@ -566,11 +575,8 @@ trait Domain {
     def MethodType(pc: PC, descriptor: MethodDescriptor): DomainValue =
         InitializedObjectValue(pc, ObjectType.MethodType)
 
-    final def justThrows(value: ExceptionValue): ThrowsException[ExceptionValues] =
-        ThrowsException(Seq(value))
-
-    final def throws(value: ExceptionValue): ThrowsException[ExceptionValue] =
-        ThrowsException(value)
+    def Throwable(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.Throwable)
 
     def ClassCastException(pc: PC): ExceptionValue =
         InitializedObjectValue(pc, ObjectType.ClassCastException)
@@ -795,19 +801,19 @@ trait Domain {
      * information whether the value is `null` or not is not available. Furthermore, the
      * type may also just be an upper bound.
      *
-     * The domain may ignore the information about the value and the origin (`vo`), but
+     * The domain may ignore the information about the value and the origin, but
      * it has to remain possible for the domain to identify the component type of an
      * array.
      *
      * ==Summary==
      * The properties of the domain value are:
      *
-     *  - Initialized: '''Yes''' (if non-null the constructor was called)
+     *  - Initialized: '''Yes''' (if non-null the constructor was called/the array was initialized)
      *  - Type: '''Upper Bound'''
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    def ReferenceValue(vo: ValueOrigin, referenceType: ReferenceType): DomainValue
+    def ReferenceValue(origin: ValueOrigin, referenceType: ReferenceType): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''an array''
@@ -819,17 +825,18 @@ trait Domain {
      * ==Summary==
      * The properties of the domain value are:
      *  - Initialized: '''Yes'''
+     *  	(i.e., the fields of the array have the type dependent default value)
      *  - Type: '''Precise'''
      *  - Null: '''No'''
      *  - Content: '''Unknown'''
      *
-     * @param vo Information about the origin of the value.
+     * @param origin Information about the origin of the value.
      * @param counts The size of each dimension if available. `counts` may be empty (`Nil`)
      * 		if no corresponding information is available; however, if available the
      *   	following condition always has to hold: `counts.length <= arrayType.dimensions`.
      */
     def InitializedArrayValue(
-        vo: ValueOrigin,
+        origin: ValueOrigin,
         counts: List[Int],
         arrayType: ArrayType): DomainValue
 
@@ -1742,12 +1749,16 @@ trait Domain {
     /**
      * Joins the given operand stacks and local variables.
      *
-     * This method heavily relies on reference comparison to speed up the overall
-     * process of performing an abstract interpretation of a method. Hence, a should
-     * whenever possible return the original object if a join of that original value with
-     * some other original value result in a value that has the same abstract state.
+     * ''In general there should be no need to refine this method.'' Overriding this
+     * method should only be done for analysis purposes.
      *
-     * ''In general there should be no need to override this method.''
+     * ==Performance==
+     * This method heavily relies on reference comparison to speed up the overall
+     * process of performing an abstract interpretation of a method. Hence,
+     * a computation should – whenever possible – return (one of) the original object(s) if
+     * that value has the same abstract state as the result. Furthermore, if all original
+     * values captures the same abstract state as result of the computation, the "left"
+     * value/the value that was already used in the past should be returned.
      *
      * @return The joined operand stack and registers.
      *      Returns `NoUpdate` if ''this'' memory layout already subsumes the ''other'' memory

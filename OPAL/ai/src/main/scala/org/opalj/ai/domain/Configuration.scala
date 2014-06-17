@@ -52,9 +52,40 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 trait Configuration {
 
     /**
+     * A method call throws all exceptions that are potentially handled. The is
+     * a sound over approximation. A domain that has precise information about the
+     * potentially thrown exceptions is free to ignored this setting.
+     *
      * @return `true`
      */
-    def methodThrowsAllCheckedExceptions: Boolean = true
+    def throwAllHandledExceptionsOnMethodCall: Boolean = true
+
+    /**
+     * Returns `true` if potential `NullPointerExceptions` should be thrown and `false`
+     * if such `NullPointerExceptions` should be ignored. However, if the interpreter
+     * identifies a situation in which a `NullPointerException` is guaranteed to be
+     * thrown, it will be thrown. Example:
+     * {{{
+     * def demo(o : Object) {
+     *      o.toString  // - If "true", a NullPointerException will ALSO be thrown;
+     *                  //   the operation also succeeds.
+     *                  // - If "false" the operation will "just" succeed
+     * }
+     * }}}
+     *
+     * @return `true`
+     */
+    def throwNullPointerExceptionOnMethodCall: Boolean = false
+
+    /**
+     * Returns `true` if potential `NullPointerExceptions` should be thrown and `false`
+     * if such `NullPointerExceptions` should be ignored. However, if the interpreter
+     * identifies a situation in which a `NullPointerException` is guaranteed to be
+     * thrown, it will be thrown.
+     *
+     * @return `true`
+     */
+    def throwNullPointerExceptionOnFieldAccess: Boolean = false
 
     /**
      * If `true`, all instructions that may raise an arithmetic exception (e.g., ''idiv'',
@@ -73,18 +104,11 @@ trait Configuration {
      * Returns `true` if potential `NullPointerExceptions` should be thrown and `false`
      * if such `NullPointerExceptions` should be ignored. However, if the interpreter
      * identifies a situation in which a `NullPointerException` is guaranteed to be
-     * thrown, it will be thrown. Example:
-     * {{{
-     * def demo(o : Object) {
-     *      o.toString  // - If "true", a NullPointerException will ALSO be thrown;
-     *                  //   the operation also succeeds.
-     *                  // - If "false" the operation will "just" succeed
-     * }
-     * }}}
+     * thrown, it will be thrown.
      *
      * @return `true`
      */
-    def throwNullPointerException: Boolean = false
+    def throwNullPointerExceptionOnMonitorAccess: Boolean = false
 
     /**
      * @return `false` since it is extremely unlikely that this exception will ever
@@ -92,6 +116,16 @@ trait Configuration {
      *      invalid bytecode.
      */
     def throwIllegalMonitorStateException: Boolean = false
+
+    /**
+     * Returns `true` if potential `NullPointerExceptions` should be thrown and `false`
+     * if such `NullPointerExceptions` should be ignored. However, if the interpreter
+     * identifies a situation in which a `NullPointerException` is guaranteed to be
+     * thrown, it will be thrown.
+     *
+     * @return `true`
+     */
+    def throwNullPointerExceptionOnArrayAccess: Boolean = false
 
     /**
      * @return `false`

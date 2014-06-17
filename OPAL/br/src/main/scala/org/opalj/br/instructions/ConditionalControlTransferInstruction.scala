@@ -27,43 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package dataflow
+package br
+package instructions
 
-import scala.collection.{ Map, Set }
+import org.opalj.collection.UShortSet
 
-import bi.AccessFlagsMatcher
+object ConditionalControlTransferInstruction {
 
-import br._
-import br.instructions._
-import br.analyses._
-
-import domain._
-import domain.l0._
-
-/**
- * Implements the infrastructure for solving a data-flow problem.
- *
- * @author Michael Eichberg and Ben Hermann
- */
-trait DataFlowProblemSolver[Source] extends DataFlowProblem[Source] { solver ⇒
-
-    /* ABSTRACT */ val theDomain: Domain
-
-    type DomainValue = theDomain.DomainValue
-
-    protected[this] class TaintedValue(
-        override val domainValue: DomainValue)
-            extends super.TaintedValue
-            with TaintInformation {
-
-        def typeInformation: TypesAnswer = theDomain.typeOfValue(domainValue)
-
+    def unapply(instruction: Instruction): Boolean = {
+        instruction match {
+            case _: ConditionalBranchInstruction         ⇒ true
+            case _: CompoundConditionalBranchInstruction ⇒ true
+            case _                                       ⇒ false
+        }
     }
-
-    def ValueIsTainted: (DomainValue) ⇒ TaintInformation =
-        (value: DomainValue) ⇒ new TaintedValue(value)
-
 }
-
-

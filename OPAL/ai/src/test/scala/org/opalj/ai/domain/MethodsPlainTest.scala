@@ -1000,10 +1000,19 @@ class MethodsPlainTest
 private object MethodsPlainTest {
 
     class RecordingDomain
-            extends domain.l0.TypeLevelDomain
+            extends Domain
+            with DefaultDomainValueBinding
+            with DefaultReferenceValuesBinding
+            with DefaultTypeLevelIntegerValues
+            with DefaultTypeLevelLongValues
+            with DefaultTypeLevelFloatValues
+            with DefaultTypeLevelDoubleValues
+            with TypeLevelFieldAccessInstructions
+            with SimpleTypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
             with IgnoreSynchronization
-            with DefaultHandlingForThrownExceptions {
+            with DefaultHandlingForThrownExceptions
+            with PredefinedClassHierarchy {
 
         type Id = String
         def id = "SimpleRecordingDomain"

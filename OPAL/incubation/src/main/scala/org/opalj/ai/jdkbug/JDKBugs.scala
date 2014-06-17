@@ -177,6 +177,7 @@ trait TaintAnalysisDomain[Source]
         with TypeLevelInvokeInstructions
         with TypeLevelReferenceValues
         with TheProject[Source]
+        with TheCode
         with ProjectBasedClassHierarchy
         with Report { thisDomain ⇒
 
@@ -185,8 +186,10 @@ trait TaintAnalysisDomain[Source]
     import ObjectType._
 
     protected def declaringClass = id.classFile.thisType
+    def method = id.method
     protected def methodName = id.method.name
     protected def methodDescriptor = id.method.descriptor
+    def code = method.body.get
 
     protected def contextIdentifier =
         declaringClass.fqn+"{ "+methodDescriptor.toJava(methodName)+" }"

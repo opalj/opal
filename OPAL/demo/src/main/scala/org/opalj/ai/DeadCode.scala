@@ -36,113 +36,109 @@ import org.opalj.collection.immutable.{ UIDSet, UIDSet1 }
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.{ ReferenceType }
+import org.opalj.br.instructions.{ Instruction, ConditionalControlTransferInstruction }
 
 /**
- * A shallow analysis that tries to refine the return types of methods.
+ * A shallow analysis that tries to identify dead code based on the evaluation
+ * of branches following if instructions that are not followed.
  *
  * @author Michael Eichberg
  */
-object IdentifyingReturnTypes extends AnalysisExecutor {
+object DeadCode extends AnalysisExecutor {
 
     class AnalysisDomain(
         override val project: Project[java.net.URL],
-        val ai: InterruptableAI[_],
         val method: Method)
             extends Domain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultTypeLevelIntegerValues
             with domain.l0.DefaultTypeLevelLongValues
             with domain.l0.DefaultTypeLevelFloatValues
             with domain.l0.DefaultTypeLevelDoubleValues
             with domain.l0.TypeLevelFieldAccessInstructions
             with domain.l0.TypeLevelInvokeInstructions
+            with domain.l1.DefaultIntegerRangeValues
             with domain.l1.DefaultReferenceValuesBinding
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
             with domain.TheProject[java.net.URL]
             with domain.TheMethod
-            with domain.ProjectBasedClassHierarchy
-            with domain.RecordReturnedValuesInfrastructure {
+            with domain.ProjectBasedClassHierarchy {
 
         type Id = String
 
-        def id = "Return Type Analysis Domain"
+        def id = "Dead Code Analysis Domain"
 
-        type ReturnedValue = DomainValue
-
-        private[this] val originalReturnType: ReferenceType =
-            method.descriptor.returnType.asReferenceType
-
-        private[this] var theReturnedValue: DomainValue = null
-
-        // e.g., a method that always throws an exception...
-        def returnedValue: Option[DomainValue] = Option(theReturnedValue)
-
-        protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit = {
-            if (theReturnedValue == null)
-                theReturnedValue = value.summarize(Int.MinValue)
-            else
-                theReturnedValue = summarize(Int.MinValue, Iterable(theReturnedValue, value))
-
-            typeOfValue(theReturnedValue) match {
-                case rv @ IsAReferenceValue(UIDSet1(`originalReturnType`)) if rv.isNull.isUnknown || !rv.isPrecise ⇒
-                    // the return type will not be more precise than the original type
-                    ai.interrupt()
-                case _ ⇒ /*go on*/
-            }
-        }
+        override protected def maxSizeOfIntegerRanges: Long = 64l
     }
 
     val analysis = new Analysis[URL, BasicReport] {
 
         override def title: String =
-            "Tries to refine the return type of methods."
+            "Identifies Dead Code"
 
         override def description: String =
-            "Identifies methods where we can – statically – derive more precise return type information."
+            "Identifies dead code."
 
         override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
             import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-            val methodsWithRefinedReturnTypes = time {
+            val methodsWithDeadCode = time {
                 for {
                     classFile ← theProject.classFiles.par
                     method ← classFile.methods
                     if method.body.isDefined
-                    originalType = method.returnType
-                    if method.returnType.isReferenceType
-                    ai = new InterruptableAI[Domain]
-                    domain = new AnalysisDomain(theProject, ai, method)
-                    result = ai(classFile, method, domain)
+                    body = method.body.get
+                    domain = new AnalysisDomain(theProject, method)
+                    result = BaseAI(classFile, method, domain)
                     if !result.wasAborted
-                    if domain.returnedValue.isEmpty ||
-                        (domain.returnedValue.get.isInstanceOf[IsAReferenceValue] &&
-                            domain.returnedValue.get.asInstanceOf[IsAReferenceValue].upperTypeBound != UIDSet(originalType))
+                    operandsArray = result.operandsArray
+                    (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
+                        case (ctiPC, instruction @ ConditionalControlTransferInstruction()) if operandsArray(ctiPC) != null ⇒
+                            (ctiPC, instruction, instruction.nextInstructions(ctiPC, /*not required*/ null))
+                    }
+                    branchTarget ← branchTargetPCs
+                    if operandsArray(branchTarget) == null
                 } yield {
-                    RefinedReturnType(classFile, method, domain.returnedValue)
+                    val operands = operandsArray(ctiPC).take(2)
+                    DeadCode(classFile, method, ctiPC, body.lineNumber(ctiPC), instruction, operands)
                 }
             } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
 
             BasicReport(
-                methodsWithRefinedReturnTypes.mkString(
-                    "Methods with refined return types ("+methodsWithRefinedReturnTypes.size+"): \n", "\n", "\n"))
+                methodsWithDeadCode.toList.sortWith((l, r) ⇒
+                    l.classFile.thisType < r.classFile.thisType ||
+                        (l.classFile.thisType == r.classFile.thisType && (
+                            l.method < r.method || (
+                                l.method == r.method &&
+                                l.ctiInstruction < r.ctiInstruction
+                            )
+                        ))
+                ).mkString(
+                    "Dead code (number of dead branches: "+methodsWithDeadCode.size+"): \n",
+                    "\n",
+                    "\n"))
         }
     }
 }
 
-case class RefinedReturnType(
+case class DeadCode(
         classFile: ClassFile,
         method: Method,
-        refinedType: Option[Domain#DomainValue]) {
+        ctiInstruction: PC,
+        lineNumber: Option[Int],
+        instruction: Instruction,
+        operands: List[_]) {
 
     override def toString = {
         import Console._
         val declaringClassOfMethod = classFile.thisType.toJava
 
-        "Refined the return type of "+BOLD + BLUE +
-            declaringClassOfMethod+"{ "+method.toJava+" }"+
-            " => "+GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET
+        "Dead code in "+BOLD + BLUE +
+            declaringClassOfMethod+"{ "+method.toJava+"{ "+
+            GREEN+"PC: "+ctiInstruction + lineNumber.map("; Line: "+_+" - ").getOrElse("; Line: N/A - ") +
+            instruction + operands.reverse.mkString("(", ",", ")") +
+            RESET+" }}"
     }
 
 }

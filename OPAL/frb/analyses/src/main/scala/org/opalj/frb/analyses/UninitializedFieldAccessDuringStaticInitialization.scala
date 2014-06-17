@@ -192,11 +192,23 @@ private class FieldStatusTracingDomain[Source](
 
     // Callback used to analyze invoked methods
     val evaluateMethod: (ClassFile, ClassFile, Method, FieldStatus) ⇒ FieldStatus)
-
-        extends l1.DefaultDomain
+        extends Domain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with ProjectBasedClassHierarchy
+        with TheProject[Source]
+        with TheMethod
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with l1.DefaultReferenceValuesBinding
+        with l1.DefaultIntegerRangeValues
         with PropertyTracing
-        with RecordReturnFromMethodInstructions
-        with IgnoreSynchronization {
+        with RecordReturnFromMethodInstructions {
 
     override def maxSizeOfIntegerRanges: Long = 5l
 

@@ -29,16 +29,11 @@
 package org.opalj
 package ai
 package domain
-package l1
+package li
 
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.Project
 
-/**
- * This domain uses the l1 level ''stable'', partial domains.
- *
- * @author Michael Eichberg
- */
 class DefaultConfigurableDomain[I, Source](
     val id: I,
     val project: Project[Source],
@@ -55,18 +50,18 @@ class DefaultConfigurableDomain[I, Source](
         with IgnoreSynchronization
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultTypeLevelLongValues
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with l1.DefaultReferenceValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-        with l1.DefaultIntegerRangeValues {
+        //    with l1.DefaultReferenceValuesBinding
+        //    with l1.DefaultStringValuesBinding
+        with l1.DefaultClassValuesBinding
+        with l1.DefaultArrayValuesBinding
+        with li.DefaultPreciseIntegerValues
+        with li.DefaultPreciseLongValues {
 
     type Id = I
 
-    override protected def maxSizeOfIntegerRanges: Long = 25l
+    override protected def maxUpdatesForIntegerValues: Long = 25l
 
 }
 

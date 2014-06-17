@@ -58,29 +58,49 @@ class MethodsWithLoopsTest
         classFile.methods.find(_.name == name).get
     }
 
-//    import domain.l0.BaseDomain
-//    private def evaluateMethod(name: String, f: BaseDomain ⇒ Unit) {
-//        val domain = new BaseDomain()
-//        val method = classFile.methods.find(_.name == name).get
-//        val result = BaseAI(classFile, method, domain)
-//
-//        org.opalj.ai.debug.XHTML.dumpOnFailureDuringValidation(
-//            Some(classFile),
-//            Some(method),
-//            method.body.get,
-//            result) {
-//                f(domain)
-//            }
-//    }
+    //    import domain.l0.BaseDomain
+    //    private def evaluateMethod(name: String, f: BaseDomain ⇒ Unit) {
+    //        val domain = new BaseDomain()
+    //        val method = classFile.methods.find(_.name == name).get
+    //        val result = BaseAI(classFile, method, domain)
+    //
+    //        org.opalj.ai.debug.XHTML.dumpOnFailureDuringValidation(
+    //            Some(classFile),
+    //            Some(method),
+    //            method.body.get,
+    //            result) {
+    //                f(domain)
+    //            }
+    //    }
 
     behavior of "the abstract interpreter when analyzing methods with loops"
+
+    import org.opalj.ai.domain.l0._
 
     //
     // RETURNS
     it should "be able to analyze a method that never terminates" in {
-        val domain = new l0.BaseDomain()
+
+        object MostBasicDomain
+                extends Domain
+                with DefaultDomainValueBinding
+                with ThrowAllPotentialExceptionsConfiguration
+                with l0.DefaultReferenceValuesBinding
+                with l0.DefaultTypeLevelIntegerValues
+                with l0.DefaultTypeLevelLongValues
+                with l0.DefaultTypeLevelFloatValues
+                with l0.DefaultTypeLevelDoubleValues
+                with l0.TypeLevelFieldAccessInstructions
+                with l0.SimpleTypeLevelInvokeInstructions
+                with PredefinedClassHierarchy
+                with DefaultHandlingOfMethodResults
+                with IgnoreSynchronization {
+            type Id = String
+            def id = "Most Basic Domain"
+        }
+
         val method = findMethod("endless")
-        val result = BaseAI(classFile, method, domain) 
+        val result = BaseAI(classFile, method, MostBasicDomain)
     }
 
 }
