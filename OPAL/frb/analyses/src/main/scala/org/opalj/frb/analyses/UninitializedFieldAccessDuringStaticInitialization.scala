@@ -79,13 +79,26 @@ class UninitializedFieldAccessDuringStaticInitialization[Source]
          */
         def evaluateMethod(
             analyzedClass: ClassFile,
+            methodStack: Set[Method],
             classFile: ClassFile,
             method: Method,
             initialStatus: FieldStatus): FieldStatus = {
 
+            // Prevent infinite recursion in case we're already currently analyzing this
+            // method.
+            if (methodStack.contains(method)) {
+                return initialStatus
+            }
+
             val domain =
-                new FieldStatusTracingDomain(project, analyzedClass, classFile, method,
-                    initialStatus, evaluateMethod)
+                new FieldStatusTracingDomain(
+                    project,
+                    analyzedClass,
+                    methodStack + method,
+                    classFile,
+                    method,
+                    initialStatus,
+                    evaluateMethod)
 
             BaseTracingAI(classFile, method, domain)
 
@@ -107,7 +120,7 @@ class UninitializedFieldAccessDuringStaticInitialization[Source]
         } {
             // Analyze this <clinit>
             val finalStatus =
-                evaluateMethod(analyzedClass, analyzedClass, clinit,
+                evaluateMethod(analyzedClass, Set(), analyzedClass, clinit,
                     FieldStatus(Set(), Set()))
 
             // Turn the uninitialized accesses collected in the context into reports.
@@ -182,6 +195,10 @@ private class FieldStatusTracingDomain[Source](
     // field accesses reference one of its strict subclasses or not)
     val analyzedClass: ClassFile,
 
+    // List of all methods currently being evaluated, allowing us to detect infinite
+    // recursion.
+    val methodStack: Set[Method],
+
     // The method (and its parent class file) analyzed during this run of the AI
     val classFile: ClassFile,
     val method: Method,
@@ -191,7 +208,7 @@ private class FieldStatusTracingDomain[Source](
     val initialStatus: FieldStatus,
 
     // Callback used to analyze invoked methods
-    val evaluateMethod: (ClassFile, ClassFile, Method, FieldStatus) ⇒ FieldStatus)
+    val evaluateMethod: (ClassFile, Set[Method], ClassFile, Method, FieldStatus) ⇒ FieldStatus)
         extends Domain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
@@ -339,8 +356,12 @@ private class FieldStatusTracingDomain[Source](
             val status = getStatusAt(pc)
 
             val exitStatus =
-                evaluateMethod(analyzedClass, project.classFile(theCalledMethod),
-                    theCalledMethod, status)
+                evaluateMethod(
+                    analyzedClass,
+                    methodStack,
+                    project.classFile(theCalledMethod),
+                    theCalledMethod,
+                    status)
 
             // And combine its results back into the status of the current instruction
             setStatusAt(pc, status.add(exitStatus))
