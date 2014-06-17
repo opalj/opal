@@ -47,12 +47,14 @@ import domain.l0._
  *
  * @author Michael Eichberg and Ben Hermann
  */
-trait DataFlowProblemSpecification extends DataFlowProblem with SourcesAndSinks {
-    
+trait DataFlowProblemSpecification[Source]
+        extends DataFlowProblem[Source]
+        with SourcesAndSinks {
+
     override protected[this] def initializeSourcesAndSinks(): Unit = {
         initializeSourcesAndSinks(project)
     }
-    
+
 }
 
 

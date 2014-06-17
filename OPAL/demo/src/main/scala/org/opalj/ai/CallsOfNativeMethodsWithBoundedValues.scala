@@ -43,7 +43,9 @@ import org.opalj.br.{ ObjectType, IntegerType }
  */
 object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
 
-    class AnalysisDomain(override val project: Project[java.net.URL])
+    class AnalysisDomain(
+        override val project: Project[java.net.URL],
+        val method: Method)
             extends Domain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
@@ -57,6 +59,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
             with domain.TheProject[java.net.URL]
+            with domain.TheMethod
             with domain.ProjectBasedClassHierarchy {
 
         type Id = String
@@ -68,10 +71,10 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        override def title: String = 
+        override def title: String =
             "Calls of native Methods with Bounded Integer Values"
 
-        override def description: String = 
+        override def description: String =
             "Identifies calls of native methods with bounded integer parameters."
 
         override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
@@ -113,7 +116,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
                 stackIndexes = parameterIndexes.map((parametersCount - 1) - _)
                 (caller, pcs) ← callGraph.calledBy(nativeMethod)
             } {
-                val domain = new AnalysisDomain(theProject)
+                val domain = new AnalysisDomain(theProject, caller)
                 val callerClassFile = theProject.classFile(caller)
                 val result = BaseAI(callerClassFile, caller, domain)
 

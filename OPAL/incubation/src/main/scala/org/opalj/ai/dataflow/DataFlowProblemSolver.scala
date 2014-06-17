@@ -46,14 +46,16 @@ import domain.l0._
  *
  * @author Michael Eichberg and Ben Hermann
  */
-trait DataFlowProblemSolver extends DataFlowProblem { solver ⇒
+trait DataFlowProblemSolver[Source] extends DataFlowProblem[Source] { solver ⇒
 
     /* ABSTRACT */ val theDomain: Domain
 
     type DomainValue = theDomain.DomainValue
 
     protected[this] class TaintedValue(
-            override val domainValue: DomainValue) extends super.TaintedValue with TaintInformation {
+        override val domainValue: DomainValue)
+            extends super.TaintedValue
+            with TaintInformation {
 
         def typeInformation: TypesAnswer = theDomain.typeOfValue(domainValue)
 

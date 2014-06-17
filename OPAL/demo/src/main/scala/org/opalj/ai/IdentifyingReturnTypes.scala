@@ -47,7 +47,7 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
     class AnalysisDomain(
         override val project: Project[java.net.URL],
         val ai: InterruptableAI[_],
-        val originalReturnType: ReferenceType)
+        val method: Method)
             extends Domain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
@@ -61,14 +61,18 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
             with domain.TheProject[java.net.URL]
+            with domain.TheMethod
             with domain.ProjectBasedClassHierarchy
             with domain.RecordReturnedValuesInfrastructure {
 
         type Id = String
 
-        def id = "AnalysisDomain"
+        def id = "Return Type Analysis Domain"
 
         type ReturnedValue = DomainValue
+
+        private[this] val originalReturnType: ReferenceType =
+            method.descriptor.returnType.asReferenceType
 
         private[this] var theReturnedValue: DomainValue = null
 
@@ -109,7 +113,7 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
                     originalType = method.returnType
                     if method.returnType.isReferenceType
                     ai = new InterruptableAI[Domain]
-                    domain = new AnalysisDomain(theProject, ai, originalType.asReferenceType)
+                    domain = new AnalysisDomain(theProject, ai, method)
                     result = ai(classFile, method, domain)
                     if !result.wasAborted
                     if domain.returnedValue.isEmpty ||

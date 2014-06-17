@@ -31,34 +31,31 @@ package ai
 package dataflow
 package solver
 
+import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.ai.Domain
+import org.opalj.ai.domain.l0.ValuesCoordinatingDomain
 
 /**
  * Implements the infrastructure for solving a data-flow problem.
  *
  * @author Michael Eichberg and Ben Hermann
  */
-trait NaiveSolver[Source] extends DataFlowProblemSolver {
+trait NaiveSolver[Source] extends DataFlowProblemSolver[Source] {
 
-    val theDomain: Domain = new BaseDomain(project)
+    val theDomain: Domain = new BaseDomain[Source](project) with ValuesCoordinatingDomain
 
 }
 
-class BaseDomain[Source](
-    val project: Project[Source])
+abstract class BaseDomain[Source](val project: Project[Source])
         extends Domain
         with domain.DefaultDomainValueBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
         with domain.ProjectBasedClassHierarchy
         with domain.TheProject[Source]
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues
         with domain.l0.DefaultTypeLevelLongValues
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
         with domain.l1.DefaultReferenceValuesBinding
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
@@ -73,4 +70,34 @@ class BaseDomain[Source](
 
 }
 
+
+//class BaseDomain[Source](
+//    val project: Project[Source],
+//    val method: Method)
+//        extends Domain
+//        with domain.DefaultDomainValueBinding
+//        with domain.ThrowAllPotentialExceptionsConfiguration
+//        with domain.ProjectBasedClassHierarchy
+//        with domain.TheProject[Source]
+//        with domain.TheMethod
+//        with domain.DefaultHandlingOfMethodResults
+//        with domain.IgnoreSynchronization
+//        with domain.l0.DefaultTypeLevelFloatValues
+//        with domain.l0.DefaultTypeLevelDoubleValues
+//        with domain.l0.DefaultTypeLevelLongValues
+//        with domain.l0.TypeLevelFieldAccessInstructions
+//        with domain.l0.TypeLevelInvokeInstructions
+//        with domain.l1.DefaultReferenceValuesBinding
+//        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
+//        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
+//        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
+//        with domain.l1.DefaultIntegerRangeValues {
+//
+//    type Id = String
+//
+//    def id = "Domain of the Naive Solver"
+//
+//    override protected def maxSizeOfIntegerRanges: Long = 25l
+//
+//}
 

@@ -46,7 +46,9 @@ import org.opalj.br.instructions.{ Instruction, ConditionalControlTransferInstru
  */
 object DeadCode extends AnalysisExecutor {
 
-    class AnalysisDomain(override val project: Project[java.net.URL])
+    class AnalysisDomain(
+        override val project: Project[java.net.URL],
+        val method: Method)
             extends Domain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
@@ -60,11 +62,12 @@ object DeadCode extends AnalysisExecutor {
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
             with domain.TheProject[java.net.URL]
+            with domain.TheMethod
             with domain.ProjectBasedClassHierarchy {
 
         type Id = String
 
-        def id = "AnalysisDomain"
+        def id = "Dead Code Analysis Domain"
 
         override protected def maxSizeOfIntegerRanges: Long = 64l
     }
@@ -86,7 +89,7 @@ object DeadCode extends AnalysisExecutor {
                     method ← classFile.methods
                     if method.body.isDefined
                     body = method.body.get
-                    domain = new AnalysisDomain(theProject)
+                    domain = new AnalysisDomain(theProject, method)
                     result = BaseAI(classFile, method, domain)
                     if !result.wasAborted
                     operandsArray = result.operandsArray
