@@ -207,8 +207,32 @@ class TestUninitializedFieldAccessDuringStaticInitialization extends AnalysisTes
             "Access to uninitialized static field 'UninitializedFieldAccessDuringStaticInitialization/CodePathsSubclass.i31'"))
     }
 
-    it should "find 28 issues in total" in {
-        reports.size should be(28)
+    it should "detect that Recursion.<clinit>() causes an uninitialized subclass static field access in limitedRecursion()" in {
+        reports should contain(
+            MethodReport(
+                "Recursion",
+                MethodDescriptor(IndexedSeq(IntegerType), VoidType),
+                "limitedRecursion",
+                43,
+                "Access to uninitialized static field "+
+                    "'UninitializedFieldAccessDuringStaticInitialization/RecursionSubclass.i1' "+
+                    "during static initialization"))
+    }
+
+    it should "detect that Recursion.<clinit>() causes an uninitialized subclass static field access in infiniteRecursion()" in {
+        reports should contain(
+            MethodReport(
+                "Recursion",
+                MethodDescriptor.NoArgsAndReturnVoid,
+                "infiniteRecursion",
+                48,
+                "Access to uninitialized static field "+
+                    "'UninitializedFieldAccessDuringStaticInitialization/RecursionSubclass.i2' "+
+                    "during static initialization"))
+    }
+
+    it should "find 30 issues in total" in {
+        reports.size should be(30)
     }
 }
 
