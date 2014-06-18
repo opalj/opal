@@ -87,8 +87,8 @@ case class Code(
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def handlersFor(pc: PC): Iterator[ExceptionHandler] =
-        exceptionHandlers.iterator.filter { handler ⇒
+    def handlersFor(pc: PC): Iterable[ExceptionHandler] =
+        exceptionHandlers.view.filter { handler ⇒
             handler.startPC <= pc && handler.endPC > pc
         }
 
