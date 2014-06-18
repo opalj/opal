@@ -445,8 +445,14 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             if (file.length() == 0) {
                 Nil
             } else if (filename.endsWith(".jar")) {
-                process(new ZipFile(file)) { zf ⇒
-                    ClassFiles(zf, exceptionHandler)
+                try {
+                    process(new ZipFile(file)) { zf ⇒
+                        ClassFiles(zf, exceptionHandler)
+                    }
+                } catch {
+                    case e: Exception ⇒
+                        exceptionHandler(e)
+                        Nil
                 }
             } else if (filename.endsWith(".class")) {
                 try {
