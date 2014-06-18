@@ -31,6 +31,7 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import java.io.ByteArrayInputStream
 
 /**
  * Template method to read in the SourceDebugExtension attribute.
@@ -48,7 +49,7 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
         constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        debug_extension: String): SourceDebugExtension_attribute
+        debug_extension: Array[Byte]): SourceDebugExtension_attribute
 
     /* From the Specification
      *
@@ -59,7 +60,10 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
      * SourceDebugExtension_attribute {
      *  u2 attribute_name_index;
      *  u4 attribute_length;
-     *  u1 debug_extension[attribute_length];
+     *  u1 debug_extension[attribute_length]; 
+     *  // <- which is a modified UTF 8 String... but – as stated in the spec –
+     *  // Note that the debug_extension array may denote a string longer than 
+     *  // that which can be represented with an instance of class String.
      * }
      * </pre>
      */
@@ -67,8 +71,12 @@ trait SourceDebugExtension_attributeReader extends AttributeReader {
         SourceDebugExtension_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
                 val attribute_length = in.readInt
+
+                val data = new Array[Byte](attribute_length)
+                in.readFully(data)
+
                 SourceDebugExtension_attribute(
-                    cp, attribute_name_index, attribute_length, in.readUTF
+                    cp, attribute_name_index, attribute_length, data
                 )
             }
         )

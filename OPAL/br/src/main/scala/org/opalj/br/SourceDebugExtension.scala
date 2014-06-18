@@ -37,7 +37,7 @@ package br
  * @author Michael Eichberg
  */
 case class SourceDebugExtension(
-    debug_extension: String)
+    debug_extension: Array[Byte])
         extends Attribute {
 
     override def kindId: Int = SourceDebugExtension.KindId
