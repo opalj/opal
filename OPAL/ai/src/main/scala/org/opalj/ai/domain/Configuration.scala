@@ -58,7 +58,7 @@ trait Configuration {
      *
      * @return `true`
      */
-    def throwAllHandledExceptionsOnMethodCall: Boolean = true
+    def throwAllHandledExceptionsOnMethodCall: Boolean
 
     /**
      * Returns `true` if potential `NullPointerExceptions` should be thrown and `false`
@@ -75,7 +75,7 @@ trait Configuration {
      *
      * @return `true`
      */
-    def throwNullPointerExceptionOnMethodCall: Boolean = false
+    def throwNullPointerExceptionOnMethodCall: Boolean
 
     /**
      * Returns `true` if potential `NullPointerExceptions` should be thrown and `false`
@@ -85,7 +85,7 @@ trait Configuration {
      *
      * @return `true`
      */
-    def throwNullPointerExceptionOnFieldAccess: Boolean = false
+    def throwNullPointerExceptionOnFieldAccess: Boolean
 
     /**
      * If `true`, all instructions that may raise an arithmetic exception (e.g., ''idiv'',
@@ -98,7 +98,7 @@ trait Configuration {
      *
      * @return `true`
      */
-    def throwArithmeticExceptions: Boolean = false
+    def throwArithmeticExceptions: Boolean
 
     /**
      * Returns `true` if potential `NullPointerExceptions` should be thrown and `false`
@@ -108,14 +108,14 @@ trait Configuration {
      *
      * @return `true`
      */
-    def throwNullPointerExceptionOnMonitorAccess: Boolean = false
+    def throwNullPointerExceptionOnMonitorAccess: Boolean
 
     /**
      * @return `false` since it is extremely unlikely that this exception will ever
      *      be thrown. Basically, this exception can only be thrown if a compiler creates
      *      invalid bytecode.
      */
-    def throwIllegalMonitorStateException: Boolean = false
+    def throwIllegalMonitorStateException: Boolean
 
     /**
      * Returns `true` if potential `NullPointerExceptions` should be thrown and `false`
@@ -125,27 +125,27 @@ trait Configuration {
      *
      * @return `true`
      */
-    def throwNullPointerExceptionOnArrayAccess: Boolean = false
+    def throwNullPointerExceptionOnArrayAccess: Boolean
 
     /**
      * @return `false`
      */
-    def throwArrayIndexOutOfBoundsException: Boolean = false
+    def throwArrayIndexOutOfBoundsException: Boolean
 
     /**
      * @return `false`
      */
-    def throwArrayStoreException: Boolean = false
+    def throwArrayStoreException: Boolean
 
     /**
      * @return `false`
      */
-    def throwNegativeArraySizeException: Boolean = false
+    def throwNegativeArraySizeException: Boolean
 
     /**
      * @return `false`
      */
-    def throwClassCastException: Boolean = false
+    def throwClassCastException: Boolean
 
     /**
      * Throw a `ClassNotFoundException` if the a specific reference type is not
@@ -153,6 +153,6 @@ trait Configuration {
      *
      * @return `true`
      */
-    def throwClassNotFoundException: Boolean = true
+    def throwClassNotFoundException: Boolean
 
 }
