@@ -11,4 +11,4 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.1"
 // We want to use different VM settings for OPAL
 fork in run := true
 
-javaOptions in run := Seq("-Xmx3G", "-Xms1014m", "-XX:CompileThreshold=100", "-XX:+AggressiveOpts", "-Xnoclassgc", "-XX:InlineSmallCode=1500", "-XX:MaxInlineSize=52")
+javaOptions in run := Seq("-Xmx8G", "-Xms1014m", "-XX:CompileThreshold=100", "-XX:+AggressiveOpts", "-Xnoclassgc", "-XX:InlineSmallCode=1500", "-XX:MaxInlineSize=52")
