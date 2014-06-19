@@ -33,24 +33,77 @@ package l1
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
+import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
  * This domain enables the tracking of an integer value's range. The cardinality of
  * the range can be configured to facilitate different needs with regard to the
- * desired precision. Often, a very small cardinality (e.g., 2 or 8) may be
- * completely sufficient and a large cardinality does not make the precision more
- * precise.
+ * desired precision. Often, a very small cardinality (e.g., between 2 and 8) may be
+ * completely sufficient and a large cardinality does not add the overall precision
+ * significantly.
  *
  * This domain supports the most common math operations to facilitate the tracking
- * of adaptable domains.
+ * of adaptable domains. Additionally, it supports constraint propagation (e.g.,
+ * [[#intEstablishValue]], [[#intEstablishIsLessThan]],...).
+ *
+ * ==Origin of an IntegerRangeValue==
+ *
+ * IntegerRangeValues provide implicit, limited information about the origin of the value;
+ * i.e., about the instruction which ''created'' the value. This information is
+ * implicitly encoded by the object reference as every update and creation of an
+ * `IntegerRangeValue` always creates a new instance. I.e, `IntegerRangeValue`s are
+ * ''explicitly not cached or reused''.
+ * In case that the value was passed to the method as a parameter the origin is also
+ * implicitly available since the value can be found in the registers values associated
+ * with the very first instruction.
+ *
+ * Hence, two integer range values (`ir1`,`ir2`) are reference equal (`eq` in Scala)
+ * iff both values were created by the ‘’’same instruction at the same time’’’.
+ *
+ * E.g., consider the following fictitious sequence:
+ *  - iconst2 ...
+ *          Stack: EMPTY
+ *          Locals: EMPTY
+ *  - dup ...
+ *          Stack: IntegerRangeValue(2,2)@123456;
+ *          Locals: EMPTY
+ *  - istore_0 ...
+ *          Stack: IntegerRangeValue(2,2)@123456 <- IntegerRangeValue(2,2)@123456;
+ *          Locals: EMPTY
+ *  - iconst2 ...
+ *          Stack: IntegerRangeValue(2,2)@123456;
+ *          Locals: 0=IntegerRangeValue(2,2)@123456, 1=EMPTY
+ *  - istore_1 ...
+ *          Stack: IntegerRangeValue(2,2)@654321 <- IntegerRangeValue(2,2)@123456;
+ *          Locals: 0=IntegerRangeValue(2,2)@123456, 1=EMPTY
+ *  - ...
+ *          Stack: IntegerRangeValue(2,2)@123456;
+ *          Locals: 0=IntegerRangeValue(2,2)@123456, 1=IntegerRangeValue(2,2)@654321
+ *
+ * Additionally, if the sequence would be part of a loop, the next iteration would
+ * create new `IntegerRangeValue`s. Hence, to identify the instruction that
+ * created or constrained the respective value, it is necessary to identify the
+ * memory layout that first (w.r.t. the evaluation order) contained the value and the
+ * instruction that was immediately executed before that is then the responsible
+ * instruction. In case that the value was constrained at some point the identified
+ * instruction may be a switch or an if instruction, as that instruction added
+ * additional information.
+ *
+ * ==Implementation Requirements==
+ *
+ * Implementations are required to create new instances of `IntegerRangeValue`s and
+ * `AnIntegerValue` '''whenever''' a computation related to the value is performed.
+ * Even if the result of the computation is the original value (e.g., SomeValue +0
+ * or SomeValue-0).
+ *
+ * If this property is not satisfied the implemented constraint propagation mechanism
+ * will produce unpredictable results as it may constrain unrelated values!
+ * This is true for concrete ranges as well as `AnIntegerValue.
+ *
  *
  * @author Michael Eichberg
  */
-trait IntegerRangeValues
-        extends Domain
-        with ConcreteIntegerValues {
-    this: Configuration ⇒
+trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -66,9 +119,7 @@ trait IntegerRangeValues
     /**
      * Abstracts over all values with computational type `integer`.
      */
-    sealed trait IntegerLikeValue
-            extends Value
-            with IsIntegerValue { this: DomainValue ⇒
+    sealed trait IntegerLikeValue extends Value with IsIntegerValue { this: DomainValue ⇒
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
@@ -96,7 +147,6 @@ trait IntegerRangeValues
          * Creates a new `IntegerRange` that contains the given value.
          */
         def update(newValue: Int): DomainValue
-
     }
 
     /**
@@ -150,8 +200,7 @@ trait IntegerRangeValues
         }
 
     @inline protected final def intValues[T](
-        value1: DomainValue,
-        value2: DomainValue)(
+        value1: DomainValue, value2: DomainValue)(
             f: (Int, Int) ⇒ T)(orElse: ⇒ T): T = {
         intValue(value1) { v1 ⇒
             intValue(value2) { v2 ⇒ f(v1, v2) } { orElse }
@@ -276,7 +325,9 @@ trait IntegerRangeValues
             case IntegerRange(`theValue`, `theValue`) ⇒
                 (operands, locals)
             case _ ⇒
-                updateIntegerRangeValue(value, IntegerRange(theValue, theValue), operands, locals)
+                updateIntegerRangeValue(
+                    value, IntegerRange(theValue, theValue),
+                    operands, locals)
         }
     }
 
@@ -290,6 +341,9 @@ trait IntegerRangeValues
             // this basically handles the case that both are "AnIntegerValue"
             (operands, locals)
         else
+            // Given that the values are EQUAL, every subsequent 
+            // constraint applies to both values (independent of 
+            // the origin).
             value1 match {
                 case IntegerRange(lb1, ub1) ⇒
                     value2 match {
