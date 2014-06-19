@@ -306,7 +306,7 @@ trait XHTMLTracer extends AITracer {
     override def establishedConstraint(
         domain: Domain)(
             pc: PC,
-            effectivePC : PC,
+            effectivePC: PC,
             operands: domain.Operands,
             locals: domain.Locals,
             newOperands: domain.Operands,
@@ -343,6 +343,15 @@ trait XHTMLTracer extends AITracer {
         writeAndOpenDump(dumpXHTML((new java.util.Date).toString()))
     }
 
+}
+
+class ConfigurableXHTMLTracer(openDumpOnResult: Boolean = false) extends XHTMLTracer {
+    
+    override def result(result: AIResult): Unit = {
+        if (openDumpOnResult)
+            super.result(result)
+    }
+    
 }
 
 object AnXHTMLTracer extends XHTMLTracer {
