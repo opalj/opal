@@ -158,7 +158,7 @@ trait AITracer {
     /**
      * Called before a jump to a subroutine.
      */
-    def jumpToSubroutine(domain: Domain)(pc: PC, target: PC): Unit
+    def jumpToSubroutine(domain: Domain)(pc: PC, target: PC, nestingLevel: Int): Unit
 
     /**
      * Called when a `RET` instruction is encountered. (That does not necessary imply

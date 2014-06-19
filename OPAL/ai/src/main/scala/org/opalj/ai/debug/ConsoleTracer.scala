@@ -155,7 +155,7 @@ trait ConsoleTracer extends AITracer {
     override def establishedConstraint(
         domain: Domain)(
             pc: PC,
-            effectivePC : PC,
+            effectivePC: PC,
             operands: domain.Operands,
             locals: domain.Locals,
             newOperands: domain.Operands,
@@ -188,9 +188,11 @@ trait ConsoleTracer extends AITracer {
             Console.RESET)
     }
 
-    override def jumpToSubroutine(domain: Domain)(pc: PC, target: PC): Unit = {
+    override def jumpToSubroutine(
+        domain: Domain)(
+            pc: PC, target: PC, nestingLevel: Int): Unit = {
         import Console._
-        println(pc+":"+YELLOW_B + BOLD+"JUMP TO SUBROUTINE: "+target + RESET)
+        println(pc+":"+YELLOW_B + BOLD+"JUMP TO SUBROUTINE(Nesting level: "+nestingLevel+"): "+target + RESET)
     }
 
     override def returnFromSubroutine(

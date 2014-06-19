@@ -857,7 +857,7 @@ trait AI[D <: Domain] {
                             locals)
 
                         if (tracer.isDefined) {
-                            tracer.get.jumpToSubroutine(theDomain)(pc)
+                            tracer.get.jumpToSubroutine(theDomain)(pc, branchtarget,memoryLayoutBeforeSubroutineCall.size)
                         }
 
                     case 169 /*ret*/ ⇒

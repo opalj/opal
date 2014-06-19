@@ -321,7 +321,11 @@ trait XHTMLTracer extends AITracer {
         /*ignored*/
     }
 
-    override def jumpToSubroutine(domain: Domain)(pc: PC, target: PC): Unit = { /* ignored */ }
+    override def jumpToSubroutine(
+        domain: Domain)(
+            pc: PC, target: PC, nestingLevel: Int): Unit = {
+        /* ignored */
+    }
 
     override def returnFromSubroutine(
         domain: Domain)(
@@ -346,12 +350,12 @@ trait XHTMLTracer extends AITracer {
 }
 
 class ConfigurableXHTMLTracer(openDumpOnResult: Boolean = false) extends XHTMLTracer {
-    
+
     override def result(result: AIResult): Unit = {
         if (openDumpOnResult)
             super.result(result)
     }
-    
+
 }
 
 object AnXHTMLTracer extends XHTMLTracer {
