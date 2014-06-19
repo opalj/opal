@@ -101,7 +101,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
             } else {
                 InterpretMethodsAnalysis.interpret(
                     project,
-                    classOf[domain.l0.BaseConfigurableDomain[_, java.net.URL]],
+                    classOf[domain.l0.BaseDomain[java.net.URL]],
                     verbose)
 
             }
