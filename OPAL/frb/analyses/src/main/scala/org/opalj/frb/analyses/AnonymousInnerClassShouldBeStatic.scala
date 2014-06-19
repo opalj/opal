@@ -33,7 +33,7 @@ package analyses
 import br._
 import br.analyses._
 import br.instructions._
-import AnalysesHelpers.getReadFields
+import util._
 
 /**
  * This analysis reports anonymous inner classes that do not use their reference to the
@@ -105,17 +105,6 @@ class AnonymousInnerClassShouldBeStatic[Source]
     }
 
     /**
-     * A heuristic for determining whether an inner class can be made static
-     * by checking if it is not in an anonymous inner class, based on its name.
-     *
-     * @param classFile The inner class to check.
-     * @return Whether the inner class can be converted to a `static` inner class.
-     */
-    private def canConvertToStaticInnerClass(classFile: ClassFile): Boolean = {
-        !isWithinAnonymousInnerClass(classFile)
-    }
-
-    /**
      * A heuristic for determining whether the field points to the enclosing instance
      * by checking if its name starts with "this".
      *
@@ -127,27 +116,66 @@ class AnonymousInnerClassShouldBeStatic[Source]
     }
 
     /**
-     * A heuristic that determines whether the outer this field is read, by counting
-     * aload_1 instructions. The count must be greater than 1, because the variable will
-     * always be read at least once for storing it into the field reference for the outer
-     * this instance.
+     * Checks whether a class has any methods which read the given field.
      *
-     * @param classFile The inner class whose constructors should be checked.
-     * @return Whether a constructor of the inner class accesses the reference to the
-     * inner class's parent object for more than storing the initial reference.
+     * Note: This assumes the class also declares this field, and that it's enough to
+     * check for accesses through the context of that class. In other words, accesses
+     * through the context of subclasses would not be detected, but that's not required
+     * when checking the outer class reference field of an anonymous inner class.
      */
-    private def constructorReadsOuterThisField(classFile: ClassFile): Boolean = {
-        classFile.constructors.filter(_.body.isDefined).exists { method ⇒
+    private def hasMethodsReadingField(classFile: ClassFile, field: Field): Boolean = {
+        for (MethodWithBody(body) ← classFile.methods) {
+            if (body.instructions.exists {
+                case FieldReadAccess(
+                    classFile.thisType,
+                    field.name,
+                    field.fieldType) ⇒ true
+                case _ ⇒ false
+            }) {
+                return true
+            }
+        }
+        false
+    }
+
+    /**
+     * Checks whether a class has any constructors with multiple ALOAD_1 instructions.
+     */
+    private def hasConstructorsWithMultipleALOAD_1s(classFile: ClassFile): Boolean = {
+        for (method @ MethodWithBody(body) ← classFile.constructors) {
             var count = 0
-            method.body.get.instructions foreach (instruction ⇒
-                if (instruction == ALOAD_1) {
+            body.instructions.foreach {
+                case ALOAD_1 ⇒
                     count += 1;
                     if (count > 1) {
                         return true
                     }
-                })
-            false
+                case _ ⇒
+            }
         }
+        false
+    }
+
+    private def isOuterClassReferenceUsed(classFile: ClassFile): Answer = {
+        // Try to find the outer class reference field.
+        val outerClassReference = classFile.fields.find(isOuterThisField(_))
+        if (outerClassReference.isEmpty) {
+            return Unknown
+        }
+
+        // Any constructors with more than one access to their outer class reference
+        // parameter? It's always read at least once, to store the outer class reference
+        // into the outer class reference field.
+        if (hasConstructorsWithMultipleALOAD_1s(classFile)) {
+            return Yes
+        }
+
+        // Any methods reading the outer class reference field?
+        if (hasMethodsReadingField(classFile, outerClassReference.get)) {
+            return Yes
+        }
+
+        No
     }
 
     /**
@@ -160,17 +188,12 @@ class AnonymousInnerClassShouldBeStatic[Source]
     def analyze(
         project: Project[Source],
         parameters: Seq[String] = List.empty): Iterable[ClassBasedReport[Source]] = {
-        val readFields: Traversable[(ObjectType, String, Type)] =
-            AnalysesHelpers.getReadFields(project.classFiles).map(_._2)
         for {
             classFile ← project.classFiles
             if !project.isLibraryType(classFile)
             if isAnonymousInnerClass(classFile) &&
-                canConvertToStaticInnerClass(classFile)
-            field @ Field(_, name, fieldType) ← classFile.fields
-            if isOuterThisField(field) &&
-                !readFields.exists(_ == ((classFile.thisType, name, fieldType))) &&
-                !constructorReadsOuterThisField(classFile)
+                !isWithinAnonymousInnerClass(classFile) &&
+                isOuterClassReferenceUsed(classFile).isNo
         } yield {
             ClassBasedReport(
                 project.source(classFile.thisType),
