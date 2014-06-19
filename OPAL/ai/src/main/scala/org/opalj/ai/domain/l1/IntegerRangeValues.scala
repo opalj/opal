@@ -297,14 +297,16 @@ trait IntegerRangeValues
                             val lb = Math.max(lb1, lb2)
                             val ub = Math.min(ub1, ub2)
                             val newValue = IntegerRange(lb, ub)
-                            updateIntegerRangeValue(value1, newValue, operands, locals)
-                            updateIntegerRangeValue(value2, newValue, operands, locals)
+
+                            val (operands1, locals1) =
+                                updateIntegerRangeValue(value1, newValue, operands, locals)
+                            updateIntegerRangeValue(value2, newValue, operands1, locals1)
+
                         case _ ⇒
-                            // value1 is unchanged
+                            // value1 remains unchanged
                             updateIntegerRangeValue(value2, value1, operands, locals)
                     }
                 case _ ⇒
-                    // value2 is unchanged
                     updateIntegerRangeValue(value1, value2, operands, locals)
             }
     }
