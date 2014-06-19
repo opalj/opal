@@ -52,7 +52,7 @@ object ClassFileInformation {
 
             // Load class file (the class file name has to correspond to the name of 
             // the file inside the archive.)
-            // The Java7Framework defines multiple other methods that make it convenient
+            // The JavaXFramework defines multiple other methods that make it convenient
             // to load class files stored in folders or in jars within jars.
             val classFile = ClassFileReader(args(0), classFileName)
             import classFile._
@@ -75,9 +75,9 @@ object ClassFileInformation {
             // JDK defines additional (new) features.
             println("\tVERSION: "+majorVersion+"."+minorVersion)
 
-            println(fields.mkString("\tFIELDS:\n\t", "\n\t", ""))
+            println(fields.map(_.toJavaSignature).mkString("\tFIELDS:\n\t", "\n\t", ""))
 
-            println(methods.mkString("\tMETHODS:\n\t", "\n\t", ""))
+            println(methods.map(_.toJava).mkString("\tMETHODS:\n\t", "\n\t", ""))
 
             println
         }
