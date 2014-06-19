@@ -57,7 +57,7 @@ import org.opalj.ai.domain.l0._
 class IincTracingDomain[I](override val id: I)
         extends Domain
         with DefaultDomainValueBinding
-        with Configuration
+        with ThrowAllPotentialExceptionsConfiguration
         with DefaultReferenceValuesBinding
         with TypeLevelFieldAccessInstructions
         with SimpleTypeLevelInvokeInstructions // FIXME We should use the regular TypeLevel...Domain
