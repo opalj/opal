@@ -94,7 +94,7 @@ object SignatureParser {
                     case ftps ~ psts ~ rt ~ tss ⇒ MethodTypeSignature(ftps, psts, rt, tss)
                 }
 
-        protected val identifierParser: Parser[String] = """[^.;\[\]/\<>\:]*+""".r
+        protected val identifierParser: Parser[String] = """[^.;\[/\<>\:]*""".r
 
         protected def formalTypeParametersParser: Parser[List[FormalTypeParameter]] =
             '<' ~> rep1(formalTypeParameterParser) <~ '>'
