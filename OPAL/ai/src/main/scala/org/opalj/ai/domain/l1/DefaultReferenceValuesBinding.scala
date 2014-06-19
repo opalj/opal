@@ -89,7 +89,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues {
     }
 
     override protected[domain] def MultipleReferenceValues(
-        values: scala.collection.Set[SingleOriginReferenceValue]): MultipleReferenceValues = {
+        values: SortedSet[SingleOriginReferenceValue]): MultipleReferenceValues = {
         new MultipleReferenceValues(values)
     }
 

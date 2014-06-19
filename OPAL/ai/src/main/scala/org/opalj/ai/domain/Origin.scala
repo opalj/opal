@@ -52,6 +52,14 @@ package domain
  */
 trait Origin { this: Domain ⇒
 
+    implicit object SingleOriginValueOrdering
+            extends Ordering[SingleOriginValue] {
+
+        def compare(x: SingleOriginValue, y: SingleOriginValue): Int = {
+            x.origin - y.origin
+        }
+    }
+
     /**
      * Should be mixed in by `Value`s that have a single origin.
      */

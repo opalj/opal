@@ -51,6 +51,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
     type DomainMultipleReferenceValues <: MultipleReferenceValues with DomainReferenceValue
 
+    implicit object DomainSingleOriginReferenceValueOrdering
+            extends Ordering[DomainSingleOriginReferenceValue] {
+
+        def compare(x: DomainSingleOriginReferenceValue, y: DomainSingleOriginReferenceValue): Int = {
+            x.origin - y.origin
+        }
+    }
+
     /**
      * Functionality common to all DomainValues that represent a reference value where
      * – in the current analysis context – the value has a single origin.
@@ -150,7 +158,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                                     doJoinWithNonNullValueWithSameOrigin(joinPC, that)
                             }
                         else
-                            StructuralUpdate(MultipleReferenceValues(Set(this, that)))
+                            StructuralUpdate(MultipleReferenceValues(
+                                SortedSet[DomainSingleOriginReferenceValue](this, that)
+                            ))
                     case that: DomainMultipleReferenceValues ⇒
                         doJoinWithMultipleReferenceValues(joinPC, that)
                 }
@@ -691,7 +701,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * to abstract over the properties of that respective value.
      */
     protected class MultipleReferenceValues(
-        val values: scala.collection.Set[DomainSingleOriginReferenceValue])
+        val values: scala.collection.SortedSet[DomainSingleOriginReferenceValue])
             extends ReferenceValue
             with MultipleOriginsValue {
         this: DomainMultipleReferenceValues ⇒
@@ -848,7 +858,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     case _   ⇒ throw DomainException("unsupported refinement")
                 }
             var valueRefined = false
-            val refinedValues: scala.collection.Set[DomainSingleOriginReferenceValue] =
+            val refinedValues: SortedSet[DomainSingleOriginReferenceValue] =
                 relevantValues map { value ⇒
                     val refinedValue = value.refineIsNull(pc, isNull)
                     if (refinedValue ne value)
@@ -868,12 +878,11 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainReferenceValue = {
-            import scala.collection.mutable.HashSet
-            val newValues = HashSet.empty[DomainSingleOriginReferenceValue]
+            var newValues = SortedSet.empty[DomainSingleOriginReferenceValue]
             var valueRefined = false
             this.values foreach { value ⇒
                 if (value.isNull.isYes)
-                    newValues += value
+                    newValues = newValues + value
                 else {
                     val isSubtypeOf = value.isValueSubtypeOf(supertype)
                     if (isSubtypeOf.isYes)
@@ -931,7 +940,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 case that: MultipleReferenceValues ⇒
                     var updateType: UpdateType = NoUpdateType
                     var otherValues = that.values
-                    var newValues = scala.collection.mutable.HashSet.empty[DomainSingleOriginReferenceValue]
+                    var newValues = SortedSet.empty[DomainSingleOriginReferenceValue]
                     this.values foreach { thisValue ⇒
                         otherValues.find(thisValue.origin == _.origin) match {
                             case Some(otherValue) ⇒
@@ -1062,6 +1071,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         theUpperTypeBound: ArrayType): DomainArrayValue
 
     protected[domain] def MultipleReferenceValues(
-        values: scala.collection.Set[DomainSingleOriginReferenceValue]): DomainMultipleReferenceValues
+        values: SortedSet[DomainSingleOriginReferenceValue]): DomainMultipleReferenceValues
 
 }
