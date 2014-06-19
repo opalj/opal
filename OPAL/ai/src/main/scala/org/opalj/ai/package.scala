@@ -118,6 +118,12 @@ package object ai {
      */
     final val SUBROUTINE_END = -88888888
 
+    final val SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND = -80000000
+    
+    final val SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE = -88880008
+    
+    final val SUBROUTINE_RETURN_TO_TARGET = -80008888
+    
     /**
      * Special value that is added to the work list to mark the beginning of a
      * subroutine call.
