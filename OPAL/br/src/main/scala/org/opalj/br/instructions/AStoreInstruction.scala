@@ -31,23 +31,15 @@ package br
 package instructions
 
 /**
- * Store reference into local variable.
+ * An instruction that stores the top-most stack value with computational type
+ * reference value OR return address in a local variable.
  *
  * @author Michael Eichberg
  */
-case class ASTORE(
-    lvIndex: Int)
-        extends AStoreInstruction
-        with ExplicitLocalVariableIndex {
-		
-    override def opcode: Opcode = ASTORE.opcode
+abstract class AStoreInstruction extends StoreLocalVariableInstruction
 
-    override def mnemonic: String = "astore"
+object AStoreInstruction {
 
-}
-
-object ASTORE {
-
-    final val opcode = 58
-
+    def unapply(instruction: AStoreInstruction): Some[Int] =
+        Some(instruction.lvIndex)
 }

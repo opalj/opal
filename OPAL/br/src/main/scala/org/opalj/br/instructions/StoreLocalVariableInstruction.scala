@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-
 /**
  * An instruction that stores the top-most stack value in a local variable.
  *
