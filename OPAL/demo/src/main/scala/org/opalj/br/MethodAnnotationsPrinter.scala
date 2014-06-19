@@ -43,7 +43,9 @@ object MethodAnnotationsPrinter extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Prints out the annotations of methods."
+        override def title: String = "Collect Method-level Annotations"
+
+        override def description: String = "Prints out the annotations of methods."
 
         def analyze(project: Project[URL], parameters: Seq[String]) = {
             val annotations =
