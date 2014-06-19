@@ -123,9 +123,9 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         }
     }
 
-    override def jumpToSubroutine(domain: Domain)(pc: PC): Unit = {
+    override def jumpToSubroutine(domain: Domain)(pc: PC, target: PC): Unit = {
         tracers foreach { tracer ⇒
-            tracer.jumpToSubroutine(domain)(pc)
+            tracer.jumpToSubroutine(domain)(pc, target)
         }
     }
 

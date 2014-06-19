@@ -184,13 +184,13 @@ trait ConsoleTracer extends AITracer {
             exception: domain.DomainValue): Unit = {
         println(Console.BOLD +
             Console.RED +
-            pc+": RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION :"+exception +
+            pc+":RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION :"+exception +
             Console.RESET)
     }
 
-    override def jumpToSubroutine(domain: Domain)(pc: PC): Unit = {
+    override def jumpToSubroutine(domain: Domain)(pc: PC, target: PC): Unit = {
         import Console._
-        println(YELLOW_B + BOLD+"JUMP TO SUBROUTINE : "+pc + RESET)
+        println(pc+":"+YELLOW_B + BOLD+"JUMP TO SUBROUTINE: "+target + RESET)
     }
 
     override def returnFromSubroutine(
@@ -200,7 +200,7 @@ trait ConsoleTracer extends AITracer {
             subroutineInstructions: List[PC]): Unit = {
         println(Console.YELLOW_B +
             Console.BOLD +
-            pc+": RETURN FROM SUBROUTINE : "+returnAddress+
+            pc+":RETURN FROM SUBROUTINE: target="+returnAddress+
             " : RESETTING : "+subroutineInstructions.mkString(", ") +
             Console.RESET)
     }
@@ -216,7 +216,7 @@ trait ConsoleTracer extends AITracer {
             newWorklist: List[PC]): Unit = {
         println(Console.GREEN_B +
             Console.BOLD +
-            pc+": RET : "+returnAddress+
+            pc+":RET : target="+returnAddress+
             " : OLD_WORKLIST : "+oldWorklist.mkString(", ")+
             " : NEW_WORKLIST : "+newWorklist.mkString(", ") +
             Console.RESET)

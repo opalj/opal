@@ -321,7 +321,7 @@ trait XHTMLTracer extends AITracer {
         /*ignored*/
     }
 
-    override def jumpToSubroutine(domain: Domain)(pc: PC): Unit = { /* ignored */ }
+    override def jumpToSubroutine(domain: Domain)(pc: PC, target: PC): Unit = { /* ignored */ }
 
     override def returnFromSubroutine(
         domain: Domain)(
