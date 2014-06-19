@@ -31,6 +31,7 @@ package br
 
 import java.io.File
 import java.net.URL
+import java.io.IOException
 
 /**
  * Defines convenience methods related to reading in class files.
@@ -71,8 +72,14 @@ package object reader {
         }
 
         val allClassFiles = for (file ← files.par) yield {
-            perFile(file)
-            classFilesReader(file, addException)
+            try {
+                perFile(file)
+                classFilesReader(file, addException)
+            } catch {
+                case e: Exception ⇒
+                    addException(new java.io.IOException("exception occured while processing: "+file, e))
+                    Iterable.empty
+            }
         }
         (allClassFiles.flatten.seq, exceptions)
     }

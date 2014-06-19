@@ -153,7 +153,7 @@ trait AnalysisExecutor {
 
         if (!checkAnalysisSpecificParameters(parameters)) {
             println(Console.RED+
-                "[error] Unknown parameters: "+parameters.mkString("\"", " ", "\"")+
+                "[error] Unknown parameters: "+parameters.mkString("\"", " ", "\"") +
                 Console.RESET)
             printUsage()
             sys.exit(-3)
@@ -204,10 +204,10 @@ trait AnalysisExecutor {
                 exception.printStackTrace(pout)
             }
             pout.flush
-            util.writeAndOpenDesktopApplication(
-                new String(out.toByteArray()),
-                "Exceptions",
-                ".txt").map { Console.err.println("Details can be found in: "+(_: File).toString); null }
+            val message = new String(out.toByteArray())
+            util.writeAndOpenDesktopApplication(message, "Exceptions", ".txt") foreach { f ⇒
+                Console.err.println("Details can be found in: "+f.toString)
+            }
         }
 
         var project = Project(classFiles, libraryClassFiles)
