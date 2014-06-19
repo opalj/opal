@@ -370,8 +370,7 @@ object Project {
      * @param virtualClassFiles A list of virtual class files that have no direct
      *      representation in the project.
      * 	    Such declarations are created, e.g., to handle `invokedynamic`
-     *      instructions (@see [[reader.BytecodeReaderAndBindingWithLambdaSupport]] for
-     *      further information).
+     *      instructions.
      *      '''In general, such class files should be added using
      *      `projectClassFilesWithSources` and the `Source` should be the file that
      *      was the reason for the creation of this additional `ClassFile`.'''
