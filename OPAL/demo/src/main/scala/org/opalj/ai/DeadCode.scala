@@ -87,7 +87,7 @@ object DeadCode extends AnalysisExecutor {
             val methodsWithDeadCode = time {
                 val results = new java.util.concurrent.ConcurrentLinkedQueue[DeadCode]()
                 for {
-                    classFiles ← theProject.groupedClassFilesWithCode(cpus / 2 /*no hyperthreaded cores!*/ ).par
+                    classFiles ← theProject.groupedClassFilesWithCode(cpus  /*no hyperthreaded cores!*/ ).par
                     classFile ← classFiles
                     method ← classFile.methods
                     if method.body.isDefined
