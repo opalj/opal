@@ -4,11 +4,12 @@ version := "0.0.1-SNAPSHOT"
 
 scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
 
-scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Abstract Interpretation Framework") 
+scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Abstract Interpretation Framework")
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.1"
 
 // We want to use different VM settings for OPAL
 fork in run := true
 
-javaOptions in run := Seq("-Xmx8G", "-Xms1014m", "-XX:CompileThreshold=100", "-XX:+AggressiveOpts", "-Xnoclassgc", "-XX:InlineSmallCode=1500", "-XX:MaxInlineSize=52")
+//javaOptions in run := Seq("-Xmx8G", "-Xms1014m", "-XX:CompileThreshold=100", "-XX:NewRatio=4", "-XX:+UseParallelGC", "-XX:+AggressiveOpts", "-Xnoclassgc", "-XX:InlineSmallCode=1500", "-XX:MaxInlineSize=52")
+javaOptions in run := Seq("-Xmx8G", "-Xms1024m", "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts", "-Xnoclassgc")
