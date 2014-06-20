@@ -32,9 +32,12 @@ package analyses
 
 import java.net.URL
 import java.io.File
-
 import scala.collection.{ Set, Map }
 import scala.collection.mutable.{ AnyRefMap, OpenHashMap }
+import scala.collection.parallel.mutable.ParArray
+import scala.collection.parallel.immutable.ParVector
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.Buffer
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -77,6 +80,7 @@ class Project[Source] private (
         val libraryClassFilesCount: Int,
         val libraryMethodsCount: Int,
         val libraryFieldsCount: Int,
+        val codeSize: Long,
         val classHierarchy: ClassHierarchy) extends ClassFileRepository {
 
     val classFilesCount: Int =
@@ -90,6 +94,22 @@ class Project[Source] private (
 
     val classFiles: Iterable[ClassFile] =
         projectClassFiles.toIterable ++ libraryClassFiles.toIterable
+
+    def groupedClassFilesWithCode(groupsCount: Int): Array[Buffer[ClassFile]] = {
+        var nextGroupId = 0
+        val groups = Array.fill[Buffer[ClassFile]](groupsCount)(new ArrayBuffer[ClassFile](methodsCount / groupsCount))
+        for {
+            classFile ← classFiles
+            if classFile.methods.exists(_.body.isDefined)
+        } {
+            // we distribute the classfiles among the different bins
+            // to avoid that one bin accidientally just contains
+            // interfaces
+            groups(nextGroupId) += classFile
+            nextGroupId = (nextGroupId + 1) % groupsCount
+        }
+        groups
+    }
 
     def classFilesWithSources: Iterable[(Source, ClassFile)] = {
         projectClassFiles.view.map(cf ⇒ (sources(cf.thisType), cf)) ++
@@ -413,6 +433,8 @@ object Project {
         var libraryMethodsCount: Int = 0
         var libraryFieldsCount: Int = 0
 
+        var codeSize: Long = 0l
+
         val methodToClassFile = AnyRefMap.empty[Method, ClassFile]
         val fieldToClassFile = AnyRefMap.empty[Field, ClassFile]
         val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile]
@@ -426,6 +448,7 @@ object Project {
             for (method ← classFile.methods) {
                 projectMethodsCount += 1
                 methodToClassFile.put(method, classFile)
+                method.body.foreach(codeSize += _.instructions.size)
             }
             for (field ← classFile.fields) {
                 projectFieldsCount += 1
@@ -461,6 +484,7 @@ object Project {
             for (method ← classFile.methods) {
                 libraryMethodsCount += 1
                 methodToClassFile.put(method, classFile)
+                method.body.foreach(codeSize += _.instructions.size)
             }
             for (field ← classFile.fields) {
                 libraryFieldsCount += 1
@@ -487,6 +511,7 @@ object Project {
             libraryClassFilesCount,
             libraryMethodsCount,
             libraryFieldsCount,
+            codeSize,
             Await.result(classHierarchyFuture, Duration.Inf)
         )
     }

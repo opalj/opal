@@ -985,12 +985,15 @@ class ClassHierarchy private (
             if (subclassTypes ne null)
                 subclassTypes
             else
-                HashSet.empty[ObjectType]
+                Set.empty[ObjectType]
         }
 
         val subinterfaceTypes = this.subinterfaceTypesMap(id)
         if (subinterfaceTypes ne null)
-            directSubtypes ++ subinterfaceTypes
+            if (directSubtypes.nonEmpty)
+                directSubtypes ++ subinterfaceTypes
+            else
+                subinterfaceTypes
         else
             directSubtypes
     }
