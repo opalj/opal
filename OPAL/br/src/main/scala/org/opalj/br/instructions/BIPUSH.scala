@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class BIPUSH(
+class BIPUSH private (
     override val value: Int)
         extends LoadConstantInstruction[Int] {
 
@@ -45,10 +45,31 @@ case class BIPUSH(
 
     override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
 
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: BIPUSH ⇒ this eq that
+            case _            ⇒ false
+        }
+    }
+
+    override def hashCode = 127 * value
+
+    override def toString = "BIPUSH("+value+")"
 }
 
 object BIPUSH {
 
     final val opcode = 16
 
+    private val bipushes = {
+        val bipushes = new Array[BIPUSH](256)
+        for (i ← -128 to 127) {
+            bipushes(i + 128) = new BIPUSH(i)
+        }
+        bipushes
+    }
+
+    def apply(value: Int): BIPUSH = bipushes(value + 128)
+
+    def unapply(bipush: BIPUSH): Some[Int] = Some(bipush.value)
 }
