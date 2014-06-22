@@ -39,9 +39,9 @@ case class INSTANCEOF(
     referenceType: ReferenceType)
         extends Instruction {
 
-    override def opcode: Opcode = INSTANCEOF.opcode
+    final override def opcode: Opcode = INSTANCEOF.opcode
 
-    def mnemonic: String = "instanceof"
+    final override def mnemonic: String = "instanceof"
 
     final override def runtimeExceptions: List[ObjectType] = Nil
 

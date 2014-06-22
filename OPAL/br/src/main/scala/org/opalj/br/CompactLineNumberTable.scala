@@ -28,26 +28,49 @@
  */
 package org.opalj
 package br
-package instructions
 
 /**
- * Load float from local variable.
+ * A method's line number table.
  *
  * @author Michael Eichberg
  */
-case class FLOAD(
-    lvIndex: Int)
-        extends LoadLocalVariableInstruction
-        with ExplicitLocalVariableIndex {
+case class CompactLineNumberTable(
+    lineNumbers: Array[Byte])
+        extends LineNumberTable {
 
-    final override def opcode: Opcode = FLOAD.opcode
+    def lookupLineNumber(pc: PC): Option[Int] = {
+        /* FORMAT
+         *  <pre>
+         * LineNumberTable_attribute {
+         *   DATA:
+         *   {  u2 start_pc;
+         *      u2 line_number;
+         *   }  
+         * }
+         * </pre>
+         *
+         */
+        val breaks = new scala.util.control.Breaks
+        import breaks.{ break, breakable }
 
-    final override def mnemonic: String = "fload"
-
-}
-
-object FLOAD {
-
-    final val opcode = 23
+        var lastLineNumber: Option[Int] = None
+        breakable {
+            var e = 0
+            val entries = lineNumbers.size / 4
+            while (e < entries) {
+                val index = e * 4
+                val startPC = ((lineNumbers(index) & 0xFF) << 8) + (lineNumbers(index + 1) & 0xFF)
+                if (startPC <= pc) {
+                    val currentLineNumber =
+                        ((lineNumbers(index + 2) & 0xFF) << 8) + (lineNumbers(index + 3) & 0xFF)
+                    lastLineNumber = Some(currentLineNumber)
+                } else {
+                    break
+                }
+                e += 1
+            }
+        }
+        lastLineNumber
+    }
 
 }

@@ -28,26 +28,31 @@
  */
 package org.opalj
 package br
-package instructions
+package reader
+
+import org.opalj.bi.reader.CodeReader
 
 /**
- * Load float from local variable.
+ * This "framework" can be used to read in Java 8 (version 52) class files. All
+ * standard information (as defined in the Java Virtual Machine Specification)
+ * is represented. Instructions will be cached.
  *
  * @author Michael Eichberg
  */
-case class FLOAD(
-    lvIndex: Int)
-        extends LoadLocalVariableInstruction
-        with ExplicitLocalVariableIndex {
+class Java8FrameworkWithCaching(cache: BytecodeInstructionsCache)
+    extends Java8LibraryFrameworkWithCaching(cache)
+    with CodeAttributeBinding
+    with SourceDebugExtension_attributeBinding
+    // THOUGH THE BOOTSTRAP.. IS A CLASS-LEVEL ATTRIBUTE
+    // IT IS OF NO USE IF WE DO NOT ALSO REIFY
+    // THE METHOD BODY
+    with BootstrapMethods_attributeBinding
+    with StackMapTable_attributeBinding
+    with CompactLineNumberTable_attributeBinding
+    with LocalVariableTable_attributeBinding
+    with LocalVariableTypeTable_attributeBinding
+    with Exceptions_attributeBinding
+    with CachedBytecodeReaderAndBinding
+    with CodeReader
 
-    final override def opcode: Opcode = FLOAD.opcode
 
-    final override def mnemonic: String = "fload"
-
-}
-
-object FLOAD {
-
-    final val opcode = 23
-
-}

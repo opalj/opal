@@ -36,13 +36,13 @@ package instructions
  * @author Michael Eichberg
  */
 case class ALOAD(
-    override val lvIndex: Int)
+    lvIndex: Int)
         extends LoadLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
-    override def opcode: Opcode = ALOAD.opcode
+    final override def opcode: Opcode = ALOAD.opcode
 
-    override def mnemonic: String = "aload"
+    final override def mnemonic: String = "aload"
 
 }
 object ALOAD {

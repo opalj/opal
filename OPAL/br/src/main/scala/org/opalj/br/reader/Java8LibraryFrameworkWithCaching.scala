@@ -28,26 +28,39 @@
  */
 package org.opalj
 package br
-package instructions
+package reader
+
+import org.opalj.bi.reader.AttributesReader
+import org.opalj.bi.reader.SkipUnknown_attributeReader
 
 /**
- * Load float from local variable.
+ * This "framework" can be used to read in Java 8 (version 52) class files. All
+ * standard information (as defined in the Java Virtual Machine Specification)
+ * is represented except of method bodies.
  *
  * @author Michael Eichberg
  */
-case class FLOAD(
-    lvIndex: Int)
-        extends LoadLocalVariableInstruction
-        with ExplicitLocalVariableIndex {
+class Java8LibraryFrameworkWithCaching(
+    final val cache: BytecodeInstructionsCache)
+        extends ConstantPoolBinding
+        with FieldsBinding
+        with MethodsBinding
+        with ClassFileBinding
+        with AttributesReader
+        /* If you want unknown attributes to be represented uncomment the following: */
+        // with Unknown_attributeBinding 
+        /* and comment out the following line: */
+        with SkipUnknown_attributeReader
+        with AnnotationAttributesBinding
+        with InnerClasses_attributeBinding
+        with EnclosingMethod_attributeBinding
+        with SourceFile_attributeBinding
+        with Deprecated_attributeBinding
+        with Signature_attributeBinding
+        with Synthetic_attributeBinding
+        with ConstantValue_attributeBinding
+        with MethodParameters_attributeBinding
+        with TypeAnnotationAttributesBinding
 
-    final override def opcode: Opcode = FLOAD.opcode
 
-    final override def mnemonic: String = "fload"
 
-}
-
-object FLOAD {
-
-    final val opcode = 23
-
-}

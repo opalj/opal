@@ -30,14 +30,12 @@ package org.opalj
 package br
 package reader
 
-import bi.reader.FieldsReader
-import bi.reader.MethodsReader
 import bi.reader.AttributesReader
 import bi.reader.SkipUnknown_attributeReader
 
 /**
- * This "framework" can be used to read in Java 7 (version 51) class files if you
- * are only interested in the public interface of a class.
+ * This "framework" can be used to read in Java 7 (version 51) class files if only
+ * the public interface of a class is needed.
  *
  * @author Michael Eichberg
  */

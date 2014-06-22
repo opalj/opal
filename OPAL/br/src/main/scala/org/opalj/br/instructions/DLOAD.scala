@@ -40,9 +40,9 @@ case class DLOAD(
         extends LoadLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
-    def opcode: Opcode = DLOAD.opcode
+    final override def opcode: Opcode = DLOAD.opcode
 
-    def mnemonic: String = "dload"
+    final override def mnemonic: String = "dload"
 
 }
 

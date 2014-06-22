@@ -36,12 +36,12 @@ package instructions
  * @author Michael Eichberg
  */
 case class RET(
-    val lvIndex: Int)
+    lvIndex: Int)
         extends ControlTransferInstruction {
 
-    override def opcode: Opcode = RET.opcode
+    final override def opcode: Opcode = RET.opcode
 
-    override def mnemonic: String = "ret"
+    final override def mnemonic: String = "ret"
 
     final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         currentPC + 2

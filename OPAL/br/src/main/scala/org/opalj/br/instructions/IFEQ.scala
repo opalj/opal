@@ -39,9 +39,9 @@ case class IFEQ(
     branchoffset: Int)
         extends ConditionalBranchInstruction {
 
-    def opcode: Opcode = IFEQ.opcode
+    final override def opcode: Opcode = IFEQ.opcode
 
-    def mnemonic: String = "ifeq"
+    final override def mnemonic: String = "ifeq"
 
 }
 

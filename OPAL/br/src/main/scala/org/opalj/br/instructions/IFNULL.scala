@@ -39,9 +39,9 @@ case class IFNULL(
     branchoffset: Int)
         extends ConditionalBranchInstruction {
 
-    override def opcode: Opcode = IFNULL.opcode
+    final override def opcode: Opcode = IFNULL.opcode
 
-    def mnemonic: String = "ifnull"
+    final override def mnemonic: String = "ifnull"
 
 }
 object IFNULL {

@@ -35,43 +35,84 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class NEWARRAY(
-    atype: Int)
-        extends CreateNewArrayInstruction {
+sealed abstract class NEWARRAY extends CreateNewArrayInstruction {
 
-    override def opcode: Opcode = NEWARRAY.opcode
+    def atype: Int = elementType.atype
 
-    def mnemonic: String = "newarray"
+    def elementType: BaseType
+
+    final override def mnemonic: String = "newarray"
+
+    final override def opcode: Opcode = NEWARRAY.opcode
 
     final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         currentPC + 2
 
-    override def toString: String = "NEWARRAY("+NEWARRAY.getType(atype).toJava+"[])"
+    final override def toString: String = "NEWARRAY("+elementType.toJava+"[])"
 
+}
+
+private object NEWARRAY_Boolean extends NEWARRAY {
+    final val elementType = BooleanType
+}
+
+private object NEWARRAY_Char extends NEWARRAY {
+    final val elementType = CharType
+}
+
+private object NEWARRAY_Float extends NEWARRAY {
+    final val elementType = FloatType
+}
+
+private object NEWARRAY_Double extends NEWARRAY {
+    final val elementType = DoubleType
+}
+
+private object NEWARRAY_Byte extends NEWARRAY {
+    final val elementType = ByteType
+}
+
+private object NEWARRAY_Short extends NEWARRAY {
+    final val elementType = ShortType
+}
+
+private object NEWARRAY_Integer extends NEWARRAY {
+    final val elementType = IntegerType
+}
+
+private object NEWARRAY_Long extends NEWARRAY {
+    final val elementType = LongType
 }
 
 object NEWARRAY {
 
     final val opcode = 188
 
+    def unapply(newarray: NEWARRAY): Option[BaseType] = Some(newarray.elementType)
+
+    def apply(atype: Int): NEWARRAY = {
+        (atype: @annotation.switch) match {
+            case BooleanType.atype ⇒ NEWARRAY_Boolean
+            case CharType.atype    ⇒ NEWARRAY_Char
+            case FloatType.atype   ⇒ NEWARRAY_Float
+            case DoubleType.atype  ⇒ NEWARRAY_Double
+            case ByteType.atype    ⇒ NEWARRAY_Byte
+            case ShortType.atype   ⇒ NEWARRAY_Short
+            case IntegerType.atype ⇒ NEWARRAY_Integer
+            case LongType.atype    ⇒ NEWARRAY_Long
+        }
+    }
+
     def getType(atype: Int): BaseType = {
         (atype: @annotation.switch) match {
-            case BooleanType.atype ⇒
-                BooleanType
-            case CharType.atype ⇒
-                CharType
-            case FloatType.atype ⇒
-                FloatType
-            case DoubleType.atype ⇒
-                DoubleType
-            case ByteType.atype ⇒
-                ByteType
-            case ShortType.atype ⇒
-                ShortType
-            case IntegerType.atype ⇒
-                IntegerType
-            case LongType.atype ⇒
-                LongType
+            case BooleanType.atype ⇒ BooleanType
+            case CharType.atype    ⇒ CharType
+            case FloatType.atype   ⇒ FloatType
+            case DoubleType.atype  ⇒ DoubleType
+            case ByteType.atype    ⇒ ByteType
+            case ShortType.atype   ⇒ ShortType
+            case IntegerType.atype ⇒ IntegerType
+            case LongType.atype    ⇒ LongType
         }
     }
 }
