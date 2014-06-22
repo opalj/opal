@@ -342,7 +342,7 @@ class FieldIsntImmutableInImmutableClass[Source]
                     val originPc = domain.origin(operands.head).head
                     originPc >= 0 && {
                         results.code.instructions(originPc) match {
-                            case NEW(_) | NEWARRAY(_) | ANEWARRAY(_) |
+                            case _: NEW | _: NEWARRAY | _: ANEWARRAY |
                                 INVOKEVIRTUAL(`fieldType`, "clone",
                                     MethodDescriptor(IndexedSeq(), ObjectType.Object)) ⇒
                                 if (fieldType.isArrayType) {

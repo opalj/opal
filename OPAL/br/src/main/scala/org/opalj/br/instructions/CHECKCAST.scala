@@ -39,9 +39,9 @@ case class CHECKCAST(
     referenceType: ReferenceType)
         extends Instruction {
 
-    def opcode: Opcode = CHECKCAST.opcode
+    final override def opcode: Opcode = CHECKCAST.opcode
 
-    def mnemonic: String = "checkcast"
+    final override def mnemonic: String = "checkcast"
 
     final override def runtimeExceptions: List[ObjectType] = CHECKCAST.runtimeExceptions
 
@@ -53,8 +53,8 @@ case class CHECKCAST(
             this, currentPC, code, ObjectType.ClassCastException)
     }
 
-    override def toString : String = "CHECKCAST("+referenceType.toJava+")"
-    
+    override def toString: String = "CHECKCAST("+referenceType.toJava+")"
+
 }
 
 object CHECKCAST {

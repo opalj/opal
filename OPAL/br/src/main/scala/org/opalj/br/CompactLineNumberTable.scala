@@ -57,14 +57,12 @@ case class CompactLineNumberTable(
         breakable {
             var e = 0
             val entries = lineNumbers.size / 4
-            println("ENTRIES:"+entries+"  ....  "+lineNumbers.grouped(4).map(_.mkString(",")).mkString(" - "))
             while (e < entries) {
                 val index = e * 4
                 val startPC = ((lineNumbers(index) & 0xFF) << 8) + (lineNumbers(index + 1) & 0xFF)
                 if (startPC <= pc) {
                     val currentLineNumber =
                         ((lineNumbers(index + 2) & 0xFF) << 8) + (lineNumbers(index + 3) & 0xFF)
-                    println(pc+": start_pc "+startPC+" => "+currentLineNumber)
                     lastLineNumber = Some(currentLineNumber)
                 } else {
                     break
@@ -72,7 +70,6 @@ case class CompactLineNumberTable(
                 e += 1
             }
         }
-        println("FOUND:"+lastLineNumber+"\n\n")
         lastLineNumber
     }
 

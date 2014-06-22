@@ -40,9 +40,9 @@ case class FSTORE(
         extends StoreLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
-    def opcode: Opcode = FSTORE.opcode
+    final override def opcode: Opcode = FSTORE.opcode
 
-    def mnemonic: String = "fstore"
+    final override def mnemonic: String = "fstore"
 
 }
 

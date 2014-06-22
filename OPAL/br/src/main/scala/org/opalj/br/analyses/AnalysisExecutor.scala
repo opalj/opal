@@ -30,8 +30,9 @@ package org.opalj
 package br
 package analyses
 
-import reader.Java8Framework
-import reader.Java8LibraryFramework
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
 
 import java.net.URL
 import java.io.File
@@ -176,10 +177,14 @@ trait AnalysisExecutor {
         cpFiles: Iterable[File],
         libcpFiles: Iterable[File]): Project[URL] = {
         println("[info] Reading class files (found in):")
+        val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
+        val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
+        val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
+
         val (classFiles, exceptions1) =
             reader.readClassFiles(
                 cpFiles,
-                Java8Framework.ClassFiles,
+                Java8ClassFileReader.ClassFiles,
                 (file) ⇒ println("[info]\t"+file))
 
         val (libraryClassFiles, exceptions2) = {
@@ -187,7 +192,7 @@ trait AnalysisExecutor {
                 println("[info]Reading library class files (found in):")
                 reader.readClassFiles(
                     libcpFiles,
-                    Java8LibraryFramework.ClassFiles,
+                    Java8LibraryClassFileReader.ClassFiles,
                     (file) ⇒ println("[info]\t"+file))
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])

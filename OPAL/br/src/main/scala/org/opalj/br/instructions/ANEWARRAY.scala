@@ -38,12 +38,12 @@ package instructions
 case class ANEWARRAY(
     componentType: ReferenceType)
         extends CreateNewArrayInstruction {
-		
-    override def opcode: Opcode = ANEWARRAY.opcode
 
-    def mnemonic: String = "anewarray"
+    final override def opcode: Opcode = ANEWARRAY.opcode
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = 
+    final override def mnemonic: String = "anewarray"
+
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         currentPC + 3
 
 }

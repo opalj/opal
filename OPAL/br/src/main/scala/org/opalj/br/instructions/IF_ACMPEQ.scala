@@ -39,9 +39,9 @@ case class IF_ACMPEQ(
     branchoffset: Int)
         extends ConditionalBranchInstruction {
 
-    override def opcode: Opcode = IF_ACMPEQ.opcode
+    final override def opcode: Opcode = IF_ACMPEQ.opcode
 
-    def mnemonic: String = "if_acmpeq"
+    final override def mnemonic: String = "if_acmpeq"
 
 }
 object IF_ACMPEQ {

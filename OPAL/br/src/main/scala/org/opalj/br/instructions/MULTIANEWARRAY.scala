@@ -40,11 +40,12 @@ case class MULTIANEWARRAY(
     dimensions: Int)
         extends CreateNewArrayInstruction {
 
-    override def opcode: Opcode = MULTIANEWARRAY.opcode
+    final override def opcode: Opcode = MULTIANEWARRAY.opcode
 
-    def mnemonic: String = "multianewarray"
+    final override def mnemonic: String = "multianewarray"
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 4
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        currentPC + 4
 
 }
 object MULTIANEWARRAY {

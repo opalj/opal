@@ -39,9 +39,9 @@ case class NEW(
     objectType: ObjectType)
         extends Instruction {
 
-    override def opcode: Opcode = NEW.opcode
+    final override def opcode: Opcode = NEW.opcode
 
-    def mnemonic: String = "new"
+    final override def mnemonic: String = "new"
 
     final override def runtimeExceptions: List[ObjectType] = Nil
 

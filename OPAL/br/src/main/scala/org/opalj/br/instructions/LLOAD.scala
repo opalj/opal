@@ -37,12 +37,12 @@ package instructions
  */
 case class LLOAD(
     lvIndex: Int)
-        extends LoadLocalVariableInstruction 
+        extends LoadLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
-    override def opcode: Opcode = LLOAD.opcode
+    final override def opcode: Opcode = LLOAD.opcode
 
-    def mnemonic: String = "lload"
+    final override def mnemonic: String = "lload"
 
 }
 object LLOAD {

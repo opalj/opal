@@ -95,6 +95,19 @@ class Project[Source] private (
     val classFiles: Iterable[ClassFile] =
         projectClassFiles.toIterable ++ libraryClassFiles.toIterable
 
+    def packages: Set[String] = {
+        var packages = Set.empty[String]
+        classFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
+        packages
+    }
+
+    /**
+     * Number of packages.
+     *
+     * @note The result is (re)calculated for each call.
+     */
+    def packagesCount = packages.size
+
     def groupedClassFilesWithCode(groupsCount: Int): Array[Buffer[ClassFile]] = {
         var nextGroupId = 0
         val groups = Array.fill[Buffer[ClassFile]](groupsCount)(new ArrayBuffer[ClassFile](methodsCount / groupsCount))
