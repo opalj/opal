@@ -37,12 +37,12 @@ package instructions
  */
 case class ASTORE(
     lvIndex: Int)
-        extends StoreLocalVariableInstruction
+        extends AStoreInstruction
         with ExplicitLocalVariableIndex {
-		
-    override def opcode: Opcode = ASTORE.opcode
 
-    override def mnemonic: String = "astore"
+    final override def opcode: Opcode = ASTORE.opcode
+
+    final override def mnemonic: String = "astore"
 
 }
 

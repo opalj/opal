@@ -41,60 +41,15 @@ import instructions._
  *
  * @author Michael Eichberg
  */
-trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
-
-    override type Constant_Pool = Array[Constant_Pool_Entry]
-
-    /**
-     * Resolves an `invokedynamic` instruction using the [[BootstrapMethodTable]] of
-     * the class.
-     *
-     * Deferred resolution is necessary since the [[BootstrapMethodTable]] – which
-     * is an attribute of the class file – is loaded after the methods.
-     *
-     * @note This method is registered as callback method that is called (back) after
-     *      the class file was completely loaded. Registration as a callback method happens
-     *      whenever an `invokedynamic` instruction is found in a method's byte code.
-     *
-     * ==Overriding this Method==
-     * To perform additional analysis on `invokedynamic` instructions, e.g. to
-     * fully resolve the call target, a subclass may override this method to do so.
-     * When you override this method, you should call this method
-     * (`super.deferredResolveInvokedynamicInstruction`) that the default resolution
-     * is carried out.
-     *
-     * @param classFile The [[ClassFile]] with which the deferred action was registered.
-     * @param cp The class file's [[Constant_Pool]].
-     * @param cpEntry The `invokedynamic` instruction's constant pool entry.
-     * @param instructions This method's array of [[instructions.Instruction]]s.
-     * 		(The array eturned by the [[#Instructions]] method.)
-     * @param index The index in the `instructions` array that refers to the `invokedynamic`
-     * 		instruction.
-     */
-    protected def deferredResolveInvokedynamicInstruction(
-        classFile: ClassFile,
-        cp: Constant_Pool,
-        cpEntry: CONSTANT_InvokeDynamic_info,
-        instructions: Array[Instruction],
-        index: Int): ClassFile = {
-
-        val bootstrapMethods = classFile.attributes collectFirst {
-            case BootstrapMethodTable(bms) ⇒ bms
-        }
-        val invokeDynamic = INVOKEDYNAMIC(
-            bootstrapMethods.get(cpEntry.bootstrapMethodAttributeIndex),
-            cpEntry.methodName(cp),
-            cpEntry.methodDescriptor(cp)
-        )
-        instructions(index) = invokeDynamic
-        classFile
-    }
+trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
 
     /**
      * Transforms an array of bytes into an array of
      * [[org.opalj.br.instructions.Instruction]]s.
      */
-    def Instructions(cp: Constant_Pool, source: Array[Byte]): Instructions = {
+    def Instructions(
+        cp: Constant_Pool,
+        source: Array[Byte]): Instructions = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
 
@@ -139,7 +94,9 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                 case 16  ⇒ BIPUSH(in.readByte /* value */ )
                 case 52  ⇒ CALOAD
                 case 85  ⇒ CASTORE
-                case 192 ⇒ CHECKCAST(cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType)
+                case 192 ⇒
+                    val referenceType = cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType
+                    CHECKCAST(referenceType)
                 case 144 ⇒ D2F
                 case 142 ⇒ D2I
                 case 143 ⇒ D2L
@@ -267,7 +224,7 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     registerDeferredAction(cp) { classFile ⇒
-                        deferredResolveInvokedynamicInstruction(
+                        deferredInvokedynamicResolution(
                             classFile, cp, cpEntry, instructions, index
                         )
                     }
@@ -393,7 +350,8 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
                     val jumpOffsets: IndexedSeq[Int] = repeat(high - low + 1) { in.readInt }
                     TABLESWITCH(defaultOffset, low, high, jumpOffsets)
                 case 196 ⇒
-                    wide = true; WIDE
+                    wide = true
+                    WIDE
 
                 case opcode ⇒
                     throw new BytecodeProcessingFailedException(
@@ -405,3 +363,4 @@ trait BytecodeReaderAndBinding extends ConstantPoolBinding with CodeBinding {
     }
 
 }
+

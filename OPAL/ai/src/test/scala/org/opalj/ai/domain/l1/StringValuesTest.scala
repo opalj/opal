@@ -31,6 +31,8 @@ package ai
 package domain
 package l1
 
+import scala.collection.SortedSet
+
 import org.junit.runner.RunWith
 import org.junit.Ignore
 
@@ -83,7 +85,7 @@ class StringValuesTest
     val s2 = StringValue(-2, "test")
     val oN = ObjectValue(-1, No, true, ObjectType.String)
     val oU = ObjectValue(-1, Unknown, true, ObjectType.String)
-    val joinS1AndS2 = MultipleReferenceValues(Set(s1, s2))
+    val joinS1AndS2 = MultipleReferenceValues(SortedSet[DomainSingleOriginReferenceValue](s1, s2))
 
     behavior of "joining two StringValues"
 

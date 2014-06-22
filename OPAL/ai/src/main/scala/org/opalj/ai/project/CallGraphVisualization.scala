@@ -30,7 +30,10 @@ package org.opalj
 package ai
 package project
 
-import br._
+import org.opalj.br.{ Method }
+import org.opalj.br.analyses.Project
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java8FrameworkWithCaching
 
 /**
  * Visualizes call graphs using Graphviz.
@@ -88,7 +91,10 @@ object CallGraphVisualization {
         //
         val project =
             memory {
+                //val ClassFileReader = new reader.Java8Framework
                 time {
+                    var cache = new BytecodeInstructionsCache
+                    var ClassFileReader = new Java8FrameworkWithCaching(cache)
                     val fileName = args(1)
                     val file = new java.io.File(fileName)
                     if (!file.exists()) {
@@ -97,13 +103,15 @@ object CallGraphVisualization {
                     }
                     val classFiles =
                         try {
-                            reader.Java8Framework.ClassFiles(file)
+                            ClassFileReader.ClassFiles(file)
                         } catch {
                             case e: Exception ⇒
                                 println(RED+"cannot read file: "+e.getMessage() + RESET)
                                 sys.exit(-3)
                         }
-                    br.analyses.Project(classFiles)
+                    cache = null
+                    ClassFileReader = null
+                    Project(classFiles)
                 } { t ⇒ println("Setting up the project took: "+ns2sec(t)) }
             } { m ⇒ println("Required memory for base representation: "+asMB(m)) }
         val fqnFilter = args(2)
@@ -211,15 +219,15 @@ object CallGraphVisualization {
         }
 
         // The graph_____________________________________________________________________:
-//        val classFiles = project.classFiles.filter(_.thisType.fqn.startsWith(fqnFilter))
-//        val methods = classFiles.flatMap(_.methods)
-//        val consoleOutput = methods flatMap (m ⇒ callGraph.calls(m) flatMap { allCallees ⇒
-//            val (pc, callees) = allCallees
-//            for {
-//                callee ← callees
-//            } yield m.toJava+" => ["+pc+"] "+project.classFile(callee).thisType.toJava+"{ "+callee.toJava+" }"
-//        })
-//        println(consoleOutput.mkString("\n"))
+        //        val classFiles = project.classFiles.filter(_.thisType.fqn.startsWith(fqnFilter))
+        //        val methods = classFiles.flatMap(_.methods)
+        //        val consoleOutput = methods flatMap (m ⇒ callGraph.calls(m) flatMap { allCallees ⇒
+        //            val (pc, callees) = allCallees
+        //            for {
+        //                callee ← callees
+        //            } yield m.toJava+" => ["+pc+"] "+project.classFile(callee).thisType.toJava+"{ "+callee.toJava+" }"
+        //        })
+        //        println(consoleOutput.mkString("\n"))
 
         // The exceptions________________________________________________________________:
         if (exceptions.size > 0) {

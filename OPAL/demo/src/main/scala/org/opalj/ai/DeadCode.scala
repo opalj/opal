@@ -83,9 +83,12 @@ object DeadCode extends AnalysisExecutor {
         override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
             import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
+            val cpus = Runtime.getRuntime().availableProcessors()
             val methodsWithDeadCode = time {
+                val results = new java.util.concurrent.ConcurrentLinkedQueue[DeadCode]()
                 for {
-                    classFile ← theProject.classFiles.par
+                    classFiles ← theProject.groupedClassFilesWithCode(cpus  /*no hyperthreaded cores!*/ ).par
+                    classFile ← classFiles
                     method ← classFile.methods
                     if method.body.isDefined
                     body = method.body.get
@@ -99,10 +102,13 @@ object DeadCode extends AnalysisExecutor {
                     }
                     branchTarget ← branchTargetPCs
                     if operandsArray(branchTarget) == null
-                } yield {
+                } { // using "yield" is more convenient but a bit slower if there is not much to yield...
                     val operands = operandsArray(ctiPC).take(2)
-                    DeadCode(classFile, method, ctiPC, body.lineNumber(ctiPC), instruction, operands)
+                    results.add(
+                        DeadCode(classFile, method, ctiPC, body.lineNumber(ctiPC), instruction, operands)
+                    )
                 }
+                scala.collection.JavaConversions.collectionAsScalaIterable(results)
             } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
 
             BasicReport(

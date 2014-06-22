@@ -172,7 +172,7 @@ trait TaintAnalysisDomain[Source]
         with DefaultTypeLevelDoubleValues
         with DefaultTypeLevelIntegerValues
         with DefaultStringValuesBinding
-        with Configuration
+        with ThrowAllPotentialExceptionsConfiguration
         with TypeLevelFieldAccessInstructions
         with TypeLevelInvokeInstructions
         with TypeLevelReferenceValues

@@ -36,7 +36,7 @@ package instructions
  * @author Michael Eichberg
  */
 case object ASTORE_1
-        extends StoreLocalVariableInstruction
+        extends AStoreInstruction
         with ImplicitLocalVariableIndex {
 
     override def lvIndex = 1

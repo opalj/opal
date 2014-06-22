@@ -380,7 +380,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                         val classFile = ClassFile(jarFile, jarEntry)
                         classFileHandler(classFile, url)
                     } catch {
-                        case e: Exception ⇒ exceptionHandler(e)
+                        case e: Exception ⇒
+                            exceptionHandler(new java.io.IOException("cannot process: "+jarEntryName, e))
                     }
                 } else if (jarEntryName.endsWith(".jar")) {
                     try {
@@ -445,8 +446,14 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             if (file.length() == 0) {
                 Nil
             } else if (filename.endsWith(".jar")) {
-                process(new ZipFile(file)) { zf ⇒
-                    ClassFiles(zf, exceptionHandler)
+                try {
+                    process(new ZipFile(file)) { zf ⇒
+                        ClassFiles(zf, exceptionHandler)
+                    }
+                } catch {
+                    case e: Exception ⇒
+                        exceptionHandler(new java.io.IOException("cannot process: "+file, e))
+                        Nil
                 }
             } else if (filename.endsWith(".class")) {
                 try {

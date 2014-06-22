@@ -35,7 +35,7 @@ import bi.reader.CodeReader
 /**
  * This "framework" can be used to read in Java 8 (version 52) class files. All
  * standard information (as defined in the Java Virtual Machine Specification)
- * is represented.
+ * is represented except of method implementations.
  *
  * @author Michael Eichberg
  */

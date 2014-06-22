@@ -45,7 +45,7 @@ trait Java7Framework
     with SourceDebugExtension_attributeBinding
     with BootstrapMethods_attributeBinding
     with StackMapTable_attributeBinding
-    with LineNumberTable_attributeBinding
+    with CompactLineNumberTable_attributeBinding
     with LocalVariableTable_attributeBinding
     with LocalVariableTypeTable_attributeBinding
     with Exceptions_attributeBinding

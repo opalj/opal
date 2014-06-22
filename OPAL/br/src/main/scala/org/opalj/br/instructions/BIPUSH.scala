@@ -35,20 +35,39 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class BIPUSH(
+class BIPUSH private (
     override val value: Int)
         extends LoadConstantInstruction[Int] {
 
-    override def opcode: Opcode = BIPUSH.opcode
+    final override def opcode: Opcode = BIPUSH.opcode
 
-    override def mnemonic: String = "bipush"
+    final override def mnemonic: String = "bipush"
 
     override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
 
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: BIPUSH ⇒ this eq that
+            case _            ⇒ false
+        }
+    }
+
+    override def hashCode = value
+
+    override def toString = "BIPUSH("+value+")"
 }
 
 object BIPUSH {
 
     final val opcode = 16
 
+    private[this] val bipushes = {
+        val bipushes = new Array[BIPUSH](256)
+        for (i ← -128 to 127) { bipushes(i + 128) = new BIPUSH(i) }
+        bipushes
+    }
+
+    def apply(value: Int): BIPUSH = bipushes(value + 128)
+
+    def unapply(bipush: BIPUSH): Some[Int] = Some(bipush.value)
 }

@@ -32,9 +32,12 @@ package analyses
 
 import java.net.URL
 import java.io.File
-
 import scala.collection.{ Set, Map }
 import scala.collection.mutable.{ AnyRefMap, OpenHashMap }
+import scala.collection.parallel.mutable.ParArray
+import scala.collection.parallel.immutable.ParVector
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.Buffer
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -77,6 +80,7 @@ class Project[Source] private (
         val libraryClassFilesCount: Int,
         val libraryMethodsCount: Int,
         val libraryFieldsCount: Int,
+        val codeSize: Long,
         val classHierarchy: ClassHierarchy) extends ClassFileRepository {
 
     val classFilesCount: Int =
@@ -90,6 +94,35 @@ class Project[Source] private (
 
     val classFiles: Iterable[ClassFile] =
         projectClassFiles.toIterable ++ libraryClassFiles.toIterable
+
+    def packages: Set[String] = {
+        var packages = Set.empty[String]
+        classFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
+        packages
+    }
+
+    /**
+     * Number of packages.
+     *
+     * @note The result is (re)calculated for each call.
+     */
+    def packagesCount = packages.size
+
+    def groupedClassFilesWithCode(groupsCount: Int): Array[Buffer[ClassFile]] = {
+        var nextGroupId = 0
+        val groups = Array.fill[Buffer[ClassFile]](groupsCount)(new ArrayBuffer[ClassFile](methodsCount / groupsCount))
+        for {
+            classFile ← classFiles
+            if classFile.methods.exists(_.body.isDefined)
+        } {
+            // we distribute the classfiles among the different bins
+            // to avoid that one bin accidientally just contains
+            // interfaces
+            groups(nextGroupId) += classFile
+            nextGroupId = (nextGroupId + 1) % groupsCount
+        }
+        groups
+    }
 
     def classFilesWithSources: Iterable[(Source, ClassFile)] = {
         projectClassFiles.view.map(cf ⇒ (sources(cf.thisType), cf)) ++
@@ -319,6 +352,13 @@ class Project[Source] private (
         else
             None
     }
+
+    def extend(
+        projectClassFilesWithSources: Iterable[(ClassFile, Source)],
+        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
+        Project.extend[Source](this, projectClassFilesWithSources, libraryClassFilesWithSources)
+    }
+
 }
 
 /**
@@ -336,11 +376,15 @@ object Project {
         Project.apply[URL](reader.Java8Framework.ClassFiles(file))
     }
 
+    def extend(project: Project[URL], file: File): Project[URL] = {
+        project.extend(reader.Java8Framework.ClassFiles(file))
+    }
+
     /**
      * Creates a new `Project` that consists of the source files of the previous
      * project and the newly given source files.
      */
-    def extend[Source >: Null <: AnyRef: reflect.ClassTag](
+    def extend[Source](
         project: Project[Source],
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
         libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
@@ -370,8 +414,7 @@ object Project {
      * @param virtualClassFiles A list of virtual class files that have no direct
      *      representation in the project.
      * 	    Such declarations are created, e.g., to handle `invokedynamic`
-     *      instructions (@see [[reader.BytecodeReaderAndBindingWithLambdaSupport]] for
-     *      further information).
+     *      instructions.
      *      '''In general, such class files should be added using
      *      `projectClassFilesWithSources` and the `Source` should be the file that
      *      was the reason for the creation of this additional `ClassFile`.'''
@@ -384,7 +427,7 @@ object Project {
      *      exception to cancel the loading of the project (which is the only
      *      meaningful option for several advanced analyses.)
      */
-    def apply[Source >: Null <: AnyRef: reflect.ClassTag](
+    def apply[Source](
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
         libraryClassFilesWithSources: Traversable[(ClassFile, Source)] = Traversable.empty,
         virtualClassFiles: Traversable[ClassFile] = Traversable.empty,
@@ -414,12 +457,14 @@ object Project {
         var libraryMethodsCount: Int = 0
         var libraryFieldsCount: Int = 0
 
+        var codeSize: Long = 0l
+
         val methodToClassFile = AnyRefMap.empty[Method, ClassFile]
         val fieldToClassFile = AnyRefMap.empty[Field, ClassFile]
         val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile]
         val sources = OpenHashMap.empty[ObjectType, Source]
 
-        def processClassFile(classFile: ClassFile, source: Source) {
+        def processClassFile(classFile: ClassFile, source: Option[Source]) {
             projectClassFiles = classFile :: projectClassFiles
             projectClassFilesCount += 1
             val objectType = classFile.thisType
@@ -427,6 +472,7 @@ object Project {
             for (method ← classFile.methods) {
                 projectMethodsCount += 1
                 methodToClassFile.put(method, classFile)
+                method.body.foreach(codeSize += _.instructions.size)
             }
             for (field ← classFile.fields) {
                 projectFieldsCount += 1
@@ -444,15 +490,15 @@ object Project {
                 )
             }
             objectTypeToClassFile.put(objectType, classFile)
-            if (source != null) sources.put(classFile.thisType, source)
+            source.foreach(sources.put(classFile.thisType, _))
         }
 
         for ((classFile, source) ← projectClassFilesWithSources) {
-            processClassFile(classFile, source)
+            processClassFile(classFile, Some(source))
         }
 
         for (classFile ← virtualClassFiles) {
-            processClassFile(classFile, null)
+            processClassFile(classFile, None)
         }
 
         for ((classFile, source) ← libraryClassFilesWithSources) {
@@ -462,6 +508,7 @@ object Project {
             for (method ← classFile.methods) {
                 libraryMethodsCount += 1
                 methodToClassFile.put(method, classFile)
+                method.body.foreach(codeSize += _.instructions.size)
             }
             for (field ← classFile.fields) {
                 libraryFieldsCount += 1
@@ -488,6 +535,7 @@ object Project {
             libraryClassFilesCount,
             libraryMethodsCount,
             libraryFieldsCount,
+            codeSize,
             Await.result(classHierarchyFuture, Duration.Inf)
         )
     }

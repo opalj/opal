@@ -30,6 +30,8 @@ package org.opalj
 package ai
 package domain
 
+import scala.collection.SortedSet
+
 import org.junit.runner.RunWith
 
 import org.scalatest.junit.JUnitRunner
@@ -147,7 +149,7 @@ class MethodsWithExceptionsTest
                     (19, Set(ObjectValue(19, No, true, ObjectType.NullPointerException))),
                     (23, Set(
                         ObjectValue(-1, No, false, ObjectType.Throwable),
-                        MultipleReferenceValues(Set(
+                        MultipleReferenceValues(SortedSet[DomainSingleOriginReferenceValue](
                             ObjectValue(-1, No, false, ObjectType.Throwable),
                             ObjectValue(11, No, true, ObjectType.NullPointerException))))),
                     (25, Set(ObjectValue(25, No, true, ObjectType.NullPointerException)))

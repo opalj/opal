@@ -39,9 +39,9 @@ case class IF_ICMPGE(
     branchoffset: Int)
         extends ConditionalBranchInstruction {
 
-    override def opcode: Opcode = IF_ICMPGE.opcode
+    final override def opcode: Opcode = IF_ICMPGE.opcode
 
-    def mnemonic: String = "if_icmpge"
+    final override def mnemonic: String = "if_icmpge"
 
 }
 object IF_ICMPGE {

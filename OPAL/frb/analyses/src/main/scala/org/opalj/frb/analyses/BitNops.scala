@@ -47,7 +47,7 @@ private class BitNopsDomain[I](override val id: I)
         extends Domain
         with DefaultDomainValueBinding
         with DefaultHandlingOfMethodResults
-        with Configuration
+        with ThrowAllPotentialExceptionsConfiguration
         with PredefinedClassHierarchy
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues

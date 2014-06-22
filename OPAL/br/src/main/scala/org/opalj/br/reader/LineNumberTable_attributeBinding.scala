@@ -39,7 +39,7 @@ import bi.reader.LineNumberTable_attributeReader
  *
  * @author Michael Eichberg
  */
-trait LineNumberTable_attributeBinding
+trait UnpackedLineNumberTable_attributeBinding
         extends LineNumberTable_attributeReader
         with ConstantPoolBinding
         with AttributeBinding {
@@ -47,14 +47,14 @@ trait LineNumberTable_attributeBinding
     type LineNumberTableEntry = br.LineNumber
     val LineNumberTableEntryManifest: ClassTag[LineNumber] = implicitly
 
-    type LineNumberTable_attribute = br.LineNumberTable
+    type LineNumberTable_attribute = br.UnpackedLineNumberTable
 
     def LineNumberTable_attribute(
         constant_pool: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         attribute_length: Int,
-        line_number_table: LineNumbers): LineNumberTable =
-        new LineNumberTable(line_number_table)
+        line_number_table: LineNumbers): UnpackedLineNumberTable =
+        new UnpackedLineNumberTable(line_number_table)
 
     def LineNumberTableEntry(start_pc: Int, line_number: Int) =
         new LineNumber(start_pc, line_number)
@@ -66,8 +66,8 @@ trait LineNumberTable_attributeBinding
         val (lineNumberTables, otherAttributes) =
             attributes partition {
                 _ match {
-                    case lnt: LineNumberTable ⇒ true
-                    case _                    ⇒ false
+                    case lnt: UnpackedLineNumberTable ⇒ true
+                    case _                            ⇒ false
                 }
             }
         lineNumberTables match {
@@ -75,13 +75,54 @@ trait LineNumberTable_attributeBinding
             case Seq(lnt) ⇒ attributes
             case lnts ⇒ {
                 val mergedTables =
-                    lnts.map(_.asInstanceOf[LineNumberTable].lineNumbers).flatten
+                    lnts.map(_.asInstanceOf[UnpackedLineNumberTable].lineNumbers).flatten
                 val sortedTable =
                     mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
-                new LineNumberTable(sortedTable) +: otherAttributes
+                new UnpackedLineNumberTable(sortedTable) +: otherAttributes
             }
         }
     }
 }
+
+import bi.reader.CompactLineNumberTable_attributeReader
+
+/**
+ * Implements the factory methods to create line number tables.
+ *
+ * @author Michael Eichberg
+ */
+trait CompactLineNumberTable_attributeBinding
+        extends CompactLineNumberTable_attributeReader
+        with ConstantPoolBinding
+        with AttributeBinding {
+
+    type LineNumberTable_attribute = br.CompactLineNumberTable
+
+    def LineNumberTable_attribute(
+        constant_pool: Constant_Pool,
+        attribute_name_index: Constant_Pool_Index,
+        attribute_length: Int,
+        line_number_table: Array[Byte]): CompactLineNumberTable =
+        new CompactLineNumberTable(line_number_table)
+
+    /**
+     * Merge all line number tables and create a single sorted line number table.
+     */
+    registerAttributesPostProcessor { attributes ⇒
+        val (lineNumberTables, otherAttributes) =
+            attributes partition {
+                _ match {
+                    case lnt: UnpackedLineNumberTable ⇒ true
+                    case _                            ⇒ false
+                }
+            }
+        lineNumberTables match {
+            case Seq()    ⇒ attributes
+            case Seq(lnt) ⇒ attributes
+            case lnts     ⇒ throw new UnsupportedOperationException("contact Michael Eichberg for support")
+        }
+    }
+}
+
 
 

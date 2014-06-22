@@ -53,83 +53,83 @@ trait ThrowAllPotentialExceptionsConfiguration extends Configuration {
      *
      * @return `true`
      */
-    override def throwAllHandledExceptionsOnMethodCall: Boolean = true
+    /*implements(not override!)*/ def throwAllHandledExceptionsOnMethodCall: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    override def throwNullPointerExceptionOnMethodCall: Boolean = true
+    /*implements(not override!)*/ def throwNullPointerExceptionOnMethodCall: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    override def throwNullPointerExceptionOnFieldAccess: Boolean = true
+    /*implements(not override!)*/ def throwNullPointerExceptionOnFieldAccess: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    override def throwArithmeticExceptions: Boolean = true
+    /*implements(not override!)*/ def throwArithmeticExceptions: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    override def throwIllegalMonitorStateException: Boolean = true
+    /*implements(not override!)*/ def throwIllegalMonitorStateException: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    override def throwNullPointerExceptionOnMonitorAccess: Boolean = false
+    /*implements(not override!)*/ def throwNullPointerExceptionOnMonitorAccess: Boolean = false
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    override def throwNullPointerExceptionOnArrayAccess: Boolean = false
-    
-    /**
-     * @inheritdoc
-     *
-     * @return `true`
-     */
-    override def throwArrayIndexOutOfBoundsException: Boolean = true
+    /*implements(not override!)*/ def throwNullPointerExceptionOnArrayAccess: Boolean = false
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    override def throwArrayStoreException: Boolean = true
+    /*implements(not override!)*/ def throwArrayIndexOutOfBoundsException: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    override def throwNegativeArraySizeException: Boolean = true
+    /*implements(not override!)*/ def throwArrayStoreException: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    override def throwClassCastException: Boolean = true
+    /*implements(not override!)*/ def throwNegativeArraySizeException: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    override def throwClassNotFoundException: Boolean = true
+    /*implements(not override!)*/ def throwClassCastException: Boolean = true
+
+    /**
+     * @inheritdoc
+     *
+     * @return `true`
+     */
+    /*implements(not override!)*/ def throwClassNotFoundException: Boolean = true
 
 }

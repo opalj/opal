@@ -165,7 +165,15 @@ final class ClassFile private (
     def sourceFile: Option[String] =
         attributes collectFirst { case SourceFile(s) ⇒ s }
 
-    def sourceDebugExtension: Option[String] =
+    /**
+     * The SourceDebugExtension attribute is an optional attribute [...]. There can be
+     * at most one `SourceDebugExtension` attribute. The data (which is modified UTF8
+     * String may, however, not be representable using a String object (see the
+     * spec. for further details.)
+     * 
+     * The returned Array must not be mutated.
+     */
+    def sourceDebugExtension: Option[Array[Byte]] =
         attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
 
     /**

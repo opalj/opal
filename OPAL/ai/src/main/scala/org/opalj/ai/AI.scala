@@ -506,8 +506,7 @@ trait AI[D <: Domain] {
                 return result
             }
 
-            // The central worklist is manipulated at the following
-            // places:
+            // The central worklist is manipulated at the following places:
             // - here 
             // - by the JSR / RET instructions
             // - by the "gotoTarget" method
@@ -516,23 +515,42 @@ trait AI[D <: Domain] {
                 // I.e., all paths in a subroutine are explored and we know all
                 // exit points; we will now schedule the jump to the return
                 // address and reset the subroutine's computation context
-                while (worklist.head < 0) {
+                while (worklist.head < 0) { // while we may return from multiple nested subroutines
                     evaluated = SUBROUTINE_END :: evaluated
                     // the structure is:
-                    // -lvIndex (:: RET_PC)* :: RETURN_ADDRESS :: SUBROUTINE
-                    val lvIndex = -worklist.head
-                    worklist = worklist.tail
+                    // SUBROUTINE_START ::
+                    //   (
+                    //      (RET_PC :: )+
+                    //      SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE  :: lvIndex ::
+                    //   )?
+                    // SUBROUTINE_RETURN_TO_TARGET :: returnTarget :: 
+                    // SUBROUTINE :: 
+                    // remaining worklist
+                    worklist = worklist.tail // remove SUBROUTINE_START 
                     var retPCs = Set.empty[PC]
-                    while (worklist.tail.head != SUBROUTINE) {
-                        // in case that a subroutine throws a (non-caught) exception, 
+                    while (worklist.head >= SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND) {
+                        // in case that a subroutine always throws a (non-caught) exception, 
                         // we will not have encountered a single ret instruction
                         retPCs += worklist.head
                         worklist = worklist.tail
                     }
+                    // we don't know the local variable in case that the subroutine
+                    // never returned normally and we were not able to fetch the
+                    // information eagerly... 
+                    val lvIndex =
+                        if (worklist.head == SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE) {
+                            worklist = worklist.tail
+                            val lvIndex = worklist.head
+                            worklist = worklist.tail
+                            Some(lvIndex)
+                        } else {
+                            None
+                        }
+
+                    worklist = worklist.tail // remove SUBROUTINE_RETURN_TO_TARGET
                     val returnAddress = worklist.head
                     worklist = worklist.tail.tail // let's remove the subroutine marker
                     val targets = retPCs.map { retPC ⇒
-                        // reset the local variable that stores the return address
                         if (tracer.isDefined) {
                             val subroutine = evaluated.tail.takeWhile(_ != SUBROUTINE_START)
                             tracer.get.returnFromSubroutine(theDomain)(
@@ -541,10 +559,13 @@ trait AI[D <: Domain] {
                                 subroutine
                             )
                         }
-
+                        // reset the local variable that stores the return address
+                        // to avoid conflicts on merge in case of a nested subroutine
+                        // that is evaluated in a loop
                         val operands = operandsArray(retPC)
                         val locals = localsArray(retPC)
-                        val updatedLocals = locals.updated(lvIndex, theDomain.Null)
+                        val updatedLocals =
+                            lvIndex.map(locals.updated(_, theDomain.Null)).getOrElse(locals)
                         (retPC, operands, updatedLocals)
                     }
                     // clear all computations to make this subroutine callable again
@@ -842,12 +863,26 @@ trait AI[D <: Domain] {
                     case 168 /*jsr*/
                         | 201 /*jsr_w*/ ⇒
                         val returnTarget = pcOfNextInstruction
-                        worklist = SUBROUTINE_START :: returnTarget :: SUBROUTINE :: worklist
                         evaluated = SUBROUTINE_START :: evaluated
                         memoryLayoutBeforeSubroutineCall =
                             (operandsArray.clone, localsArray.clone) :: memoryLayoutBeforeSubroutineCall
 
                         val branchtarget = pc + as[JSRInstruction](instruction).branchoffset
+                        // let's check if we can eagerly fetch the information where the 
+                        // return address is stored!
+                        instructions(branchtarget) match {
+                            case AStoreInstruction(lvIndex) ⇒
+                                worklist = SUBROUTINE_START ::
+                                    SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :: lvIndex ::
+                                    SUBROUTINE_RETURN_TO_TARGET :: returnTarget ::
+                                    SUBROUTINE ::
+                                    worklist
+                            case _ ⇒
+                                worklist = SUBROUTINE_START ::
+                                    SUBROUTINE_RETURN_TO_TARGET :: returnTarget ::
+                                    SUBROUTINE ::
+                                    worklist
+                        }
                         val newOperands = theDomain.ReturnAddressValue(returnTarget) :: operands
                         gotoTarget(
                             pc,
@@ -857,22 +892,41 @@ trait AI[D <: Domain] {
                             locals)
 
                         if (tracer.isDefined) {
-                            tracer.get.jumpToSubroutine(theDomain)(pc)
+                            tracer.get.jumpToSubroutine(theDomain)(pc, branchtarget,memoryLayoutBeforeSubroutineCall.size)
                         }
 
                     case 169 /*ret*/ ⇒
                         val lvIndex = as[RET](instruction).lvIndex
-                        // we now know the local variable that is used - we replace
-                        // the SUBROUTINE_START marker by the local variable index
-                        // to make it possible to later on clear it...
+                        // we now know the local variable that is used and
+                        // (one of) the ret instruction, we store this for later usage
                         val oldWorklist = worklist
-                        var beginning = List.empty[PC]
+                        var remaining = List.empty[PC]
                         var tail = worklist
-                        while (tail.head >= 0) { // until we found the subroutine marker or the "-local variable index" 
-                            beginning = tail.head :: beginning
+                        while (tail.head >= 0) {
+                            remaining = tail.head :: remaining
                             tail = tail.tail
                         }
-                        worklist = beginning.reverse ::: (-lvIndex :: pc :: tail.tail)
+                        remaining = remaining.reverse // reestablish the correct order
+                        tail = tail.tail // remove SUBROUTINE_START marker
+                        var dynamic_subroutine_information = List.empty[PC]
+                        while (tail.head != SUBROUTINE_RETURN_TO_TARGET) {
+                            dynamic_subroutine_information = tail.head :: dynamic_subroutine_information
+                            tail = tail.tail
+                        }
+                        // let's check if we already know the used local variable
+                        if (dynamic_subroutine_information.isEmpty) {
+                            // let's store the local variable
+                            worklist =
+                                remaining :::
+                                    (SUBROUTINE_START :: pc :: SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :: lvIndex :: tail)
+                        } else {
+                            // just let's store this ret instruction
+                            worklist =
+                                remaining :::
+                                    (SUBROUTINE_START :: pc :: dynamic_subroutine_information.reverse) :::
+                                    tail
+                        }
+
                         if (tracer.isDefined) {
                             tracer.get.ret(theDomain)(
                                 pc,

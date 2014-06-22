@@ -105,7 +105,9 @@ trait ConsoleEvaluationTracer extends AITracer {
             pc: Int,
             exception: domain.DomainValue): Unit = { /*EMPTY*/ }
 
-    override def jumpToSubroutine(domain: Domain)(pc: PC): Unit = {
+    override def jumpToSubroutine(
+        domain: Domain)(
+            pc: PC, target: PC, nestingLevel: Int): Unit = {
         println
         printIndent
         print(BOLD+"↳\t︎"+RESET)

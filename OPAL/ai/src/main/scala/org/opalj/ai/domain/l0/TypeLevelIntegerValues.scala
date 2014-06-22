@@ -36,7 +36,7 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
- * Domain that performs computations related to integer values at the type level.
+ * Domain that performs computations related to integer values at the type level. 
  *
  * @author Michael Eichberg
  */
