@@ -3,11 +3,18 @@ import Keys._
 
 import sbtassembly.Plugin.AssemblyKeys._
 
+import scoverage.ScoverageSbtPlugin.instrumentSettings
+
 object OPALBuild extends Build {
-	 
+
+	// Default settings without scoverage 
 	lazy val buildSettings =
-		Defaults.defaultSettings 
-	 
+		Defaults.defaultSettings
+
+	// Includes scoverage scope
+	lazy val opalDefaultSettings =
+		Defaults.defaultSettings ++ instrumentSettings
+
 	lazy val opal = Project(
 		id = "OPAL",
 		base = file("."),
@@ -41,22 +48,26 @@ object OPALBuild extends Build {
 	
 	lazy val bi = Project(
 		id = "BytecodeInfrastructure",
-		base = file("OPAL/bi")
+		base = file("OPAL/bi"),
+		settings = opalDefaultSettings
 	) dependsOn(common)
 
 	lazy val br = Project(
 		id = "BytecodeRepresentation",
-		base = file("OPAL/br")
+		base = file("OPAL/br"),
+		settings = opalDefaultSettings
 	) dependsOn(bi)
 	
 	lazy val da = Project(
 		id = "BytecodeDisassembler",
-		base = file("OPAL/da")
+		base = file("OPAL/da"),
+		settings = opalDefaultSettings
 	) dependsOn(bi % "test->test;compile->compile")
 
 	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",
-		base = file("OPAL/ai")
+		base = file("OPAL/ai"),
+		settings = opalDefaultSettings
 	) dependsOn(br % "test->test;compile->compile")
 
 	// The project "DependenciesExtractionLibrary" depends on
@@ -64,12 +75,14 @@ object OPALBuild extends Build {
 	// resolve calls using MethodHandle/MethodType/"invokedynamic"/...
 	lazy val de = Project(
 		id = "DependenciesExtractionLibrary",
-		base = file("OPAL/de")
+		base = file("OPAL/de"),
+		settings = opalDefaultSettings
 	) dependsOn(ai % "test->test;compile->compile")
 
 	lazy val av = Project(
 		id = "ArchitectureValidation",
-		base = file("OPAL/av")
+		base = file("OPAL/av"),
+		settings = opalDefaultSettings
 	) dependsOn(de % "test->test;compile->compile")
 
 	lazy val opalDeveloperTools = Project(
