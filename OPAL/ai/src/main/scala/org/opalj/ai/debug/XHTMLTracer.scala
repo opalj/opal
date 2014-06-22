@@ -299,9 +299,7 @@ trait XHTMLTracer extends AITracer {
             thisLocals: domain.Locals,
             otherOperands: domain.Operands,
             otherLocals: domain.Locals,
-            result: Update[(domain.Operands, domain.Locals)]): Unit = {
-        /*ignored*/
-    }
+            result: Update[(domain.Operands, domain.Locals)]): Unit = { /*ignored*/ }
 
     override def establishedConstraint(
         domain: Domain)(
@@ -310,22 +308,16 @@ trait XHTMLTracer extends AITracer {
             operands: domain.Operands,
             locals: domain.Locals,
             newOperands: domain.Operands,
-            newLocals: domain.Locals): Unit = {
-        /*ignored*/
-    }
+            newLocals: domain.Locals): Unit = { /*ignored*/ }
 
     override def abruptMethodExecution(
         domain: Domain)(
             pc: Int,
-            exception: domain.DomainValue): Unit = {
-        /*ignored*/
-    }
+            exception: domain.DomainValue): Unit = { /*ignored*/ }
 
     override def jumpToSubroutine(
         domain: Domain)(
-            pc: PC, target: PC, nestingLevel: Int): Unit = {
-        /* ignored */
-    }
+            pc: PC, target: PC, nestingLevel: Int): Unit = { /* ignored */ }
 
     override def returnFromSubroutine(
         domain: Domain)(
@@ -358,8 +350,3 @@ class ConfigurableXHTMLTracer(openDumpOnResult: Boolean = false) extends XHTMLTr
 
 }
 
-object AnXHTMLTracer extends XHTMLTracer {
-
-    def instance(): AITracer = this
-
-}
