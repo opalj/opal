@@ -28,30 +28,55 @@
  */
 package org.opalj
 package br
-package reader
-
-import bi.reader.CodeReader
 
 /**
- * This "framework" can be used to read in Java 7 (version 51) class files. All
- * standard information (as defined in the Java Virtual Machine Specification)
- * is represented.
+ * A method's line number table.
  *
  * @author Michael Eichberg
  */
-trait Java7Framework
-    extends Java7LibraryFramework
-    with CodeAttributeBinding
-    with SourceDebugExtension_attributeBinding
-    with BootstrapMethods_attributeBinding
-    with StackMapTable_attributeBinding
-    with CompactLineNumberTable_attributeBinding
-    with LocalVariableTable_attributeBinding
-    with LocalVariableTypeTable_attributeBinding
-    with Exceptions_attributeBinding
-    with BytecodeReaderAndBinding
-    with CodeReader
+case class UnpackedLineNumberTable(
+    lineNumbers: LineNumbers)
+        extends LineNumberTable {
 
-object Java7Framework extends Java7Framework
+    /**
+     * Looks up the line number of the instruction with the given pc.
+     *
+     * @param pc The program counter/the index of an instruction in the code array for
+     *    which we want to determine the source line.
+     * @return The line number of the instruction with the given pc, if the line number
+     *    is available.
+     */
+    def lookupLineNumber(pc: PC): Option[Int] = {
+        import scala.util.control.Breaks
+        val breaks = new Breaks
+        import breaks.{ break, breakable }
 
+        val lnsIterator = lineNumbers.iterator
+        var lastLineNumber: LineNumber = null
+        breakable {
+            while (lnsIterator.hasNext) {
+                var currentLineNumber = lnsIterator.next
+                if (currentLineNumber.startPC <= pc) {
+                    lastLineNumber = currentLineNumber
+                } else {
+                    break
+                }
+            }
+        }
 
+        if (lastLineNumber eq null)
+            return None
+        else
+            return Some(lastLineNumber.lineNumber)
+    }
+
+}
+
+/**
+ * An entry in a line number table.
+ *
+ * @author Michael Eichberg
+ */
+case class LineNumber(
+    startPC: Int,
+    lineNumber: Int)
