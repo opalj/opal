@@ -65,7 +65,7 @@ trait AttributeReader
      * or to remove attributes if they are completely resolved.
      *
      * @see The implementation of
-     *      [[org.opalj.br.reader.LineNumberTable_attributeBinding]]
+     *      [[org.opalj.br.reader.UnpackedLineNumberTable_attributeBinding]]
      *      for a concrete example.
      */
     def registerAttributesPostProcessor(p: (Attributes) ⇒ Attributes): Unit
