@@ -77,14 +77,12 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
      * Returns the first element of this set. I.e., the element with the smallest
      * unique id.
      */
-    @throws[NoSuchElementException]("If the set is empty.") /* ABSTRACT */
-    def first(): T
+    /* ABSTRACT */ @throws[NoSuchElementException]("If the set is empty.") def first(): T
 
     /**
      * Returns the remaining elements of this set. This operation has linear complexity.
      */
-    @throws[NoSuchElementException]("If the set is empty.") /* ABSTRACT */
-    def tail(): UIDSet[T]
+    /* ABSTRACT */ @throws[NoSuchElementException]("If the set is empty.") def tail(): UIDSet[T]
 
     /**
      * Passes all elements of this list to the given function.
@@ -262,9 +260,9 @@ final class UIDSet1[T <: UID](
     final val e: T)
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
-    override final def size = 1
+    final override def size = 1
 
-    override final def containsOneElement: Boolean = true
+    final override def containsOneElement: Boolean = true
 
     override def +[X >: T <: UID](o: X): UIDSet[X] = UIDSet(e, o) // <= factory method
 
