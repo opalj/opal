@@ -81,29 +81,29 @@ class ClassHierarchy private (
     require(knownTypesMap.length == subinterfaceTypesMap.length)
 
     import java.util.concurrent.locks.ReentrantReadWriteLock
-
-    private[this] val objectTypesMapRWLock =
-        new ReentrantReadWriteLock();
-
     private[this] var objectTypesMap: Array[ObjectType] =
         new Array(ObjectType.objectTypesCount)
 
-    private[this] val objectTypesCreationListener =
-        (objectType: ObjectType) ⇒ {
-            val id = objectType.id
-            try {
-                objectTypesMapRWLock.writeLock().lock()
-                if (id >= objectTypesMap.length) {
-                    val newLength = Math.max(ObjectType.objectTypesCount, id) + 20
-                    val newObjectTypesMap = new Array[ObjectType](newLength)
-                    Array.copy(objectTypesMap, 0, newObjectTypesMap, 0, objectTypesMap.length)
-                    objectTypesMap = newObjectTypesMap
-                }
-                objectTypesMap(id) = objectType
-            } finally {
-                objectTypesMapRWLock.writeLock().unlock()
+    private[this] final val objectTypesMapRWLock = new ReentrantReadWriteLock()
+
+    private[this] final val objectTypesCreationListener = (objectType: ObjectType) ⇒ {
+        val id = objectType.id
+        objectTypesMapRWLock.writeLock().lock()
+        try {
+            val thisObjectTypesMap = objectTypesMap
+            if (id >= thisObjectTypesMap.length) {
+                val newLength = Math.max(ObjectType.objectTypesCount, id) + 20
+                val newObjectTypesMap = new Array[ObjectType](newLength)
+                Array.copy(thisObjectTypesMap, 0, newObjectTypesMap, 0, thisObjectTypesMap.length)
+                newObjectTypesMap(id) = objectType
+                objectTypesMap = newObjectTypesMap
+            } else {
+                thisObjectTypesMap(id) = objectType
             }
+        } finally {
+            objectTypesMapRWLock.writeLock().unlock()
         }
+    }
 
     ObjectType.setObjectTypeCreationListener(objectTypesCreationListener)
 
@@ -112,16 +112,12 @@ class ClassHierarchy private (
      * ObjectType.
      */
     final def getObjectType(objectTypeId: Int): ObjectType = {
-        require(0 <= objectTypeId)
+        objectTypesMapRWLock.readLock().lock()
         try {
-            objectTypesMapRWLock.readLock().lock()
-
-            require(objectTypeId < objectTypesMap.length)
             val ot = objectTypesMap(objectTypeId)
             if (ot == null)
-                throw new IllegalArgumentException("ObjectType invalid: "+objectTypeId)
+                throw new IllegalArgumentException("ObjectType id invalid: "+objectTypeId)
             ot
-
         } finally {
             objectTypesMapRWLock.readLock().unlock()
         }
