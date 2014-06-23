@@ -558,8 +558,8 @@ case object BooleanType extends BooleanType
  *      (e.g. "java/lang/Object").
  */
 final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
-    val id: Int,
-    val fqn: String)
+    final val id: Int,
+    final val fqn: String)
         extends ReferenceType {
 
     override def isObjectType: Boolean = true
@@ -609,9 +609,9 @@ final object ObjectType {
      * object type creation. However, invocation may occur concurrently.
      */
     def setObjectTypeCreationListener(f: ObjectType ⇒ Unit): Unit = {
-        objectTypeCreationListener = f
         cacheRWLock.readLock().lock()
         try {
+            objectTypeCreationListener = f
             val objectTypesIterator = cache.values().iterator()
             while (objectTypesIterator.hasNext) {
                 val objectType = objectTypesIterator.next.get()
@@ -623,7 +623,7 @@ final object ObjectType {
     }
 
     /**
-     * The number of different `ObjectType`s in the analyzed class files.
+     * The number of different `ObjectType`s that were created.
      */
     def objectTypesCount = nextId.get
 
@@ -651,7 +651,7 @@ final object ObjectType {
         }
 
         cacheRWLock.writeLock().lock()
-        val newOT = try {
+        try {
             // WE HAVE TO CHECK AGAIN
             val wrOT = cache.get(fqn)
             if (wrOT != null) {
@@ -663,14 +663,13 @@ final object ObjectType {
             val newOT = new ObjectType(nextId.getAndIncrement(), fqn)
             val wrNewOT = new WeakReference(newOT)
             cache.put(fqn, wrNewOT)
+            val currentObjectTypeCreationListener = objectTypeCreationListener
+            if (currentObjectTypeCreationListener ne null)
+                currentObjectTypeCreationListener(newOT)
             newOT
         } finally {
             cacheRWLock.writeLock().unlock()
         }
-        val currentObjectTypeCreationListener = objectTypeCreationListener
-        if (currentObjectTypeCreationListener ne null)
-            currentObjectTypeCreationListener(newOT)
-        newOT
     }
 
     def unapply(ot: ObjectType): Option[String] = Some(ot.fqn)
@@ -701,7 +700,7 @@ final object ObjectType {
     final val Long = ObjectType("java/lang/Long")
     final val Float = ObjectType("java/lang/Float")
     final val Double = ObjectType("java/lang/Double")
-    assume(Double.id - Boolean.id == 7)
+    require(Double.id - Boolean.id == 7)
 
     final val Class = ObjectType("java/lang/Class")
     final val Throwable = ObjectType("java/lang/Throwable")

@@ -1731,6 +1731,31 @@ trait Domain {
     //
     //
 
+    def updateMemoryLayout(
+        oldValue: DomainValue,
+        newValue: DomainValue,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) = {
+
+        var opsUpdated = false
+        var newOps: Operands = Nil
+        if (operands.nonEmpty) {
+            val opIt = operands.iterator
+            while (opIt.hasNext) {
+                if (opIt.next eq oldValue) {
+                    newOps = newValue :: newOps
+                    opsUpdated = true
+                } else
+                    newOps = oldValue :: newOps
+            }
+        }
+
+        (
+            if (opsUpdated) newOps.reverse else operands,
+            locals.transform(l ⇒ if (l eq oldValue) newValue else l)
+        )
+    }
+
     /**
      * Merges the given value `v1` with the value `v2` and returns the merged value
      * which is `v1` if `v1` is an abstraction of `v2`, `v2` if `v2` is an abstraction
