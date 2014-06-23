@@ -106,7 +106,7 @@ trait ArrayValues
             // However, we now have to provide the solution for the happy path
             intValue[ArrayStoreResult](index) { index ⇒
                 // let's check if we need to do anything
-                if (values(index) == value) {
+                if (values(index) != value) {
                     // TODO [BUG] Mark array as dead                    
                     var newArrayValue: DomainValue = null // <= we create the new array value only on demand and at most once!
                     registerOnRegularControlFlowUpdater { someDomainValue ⇒
