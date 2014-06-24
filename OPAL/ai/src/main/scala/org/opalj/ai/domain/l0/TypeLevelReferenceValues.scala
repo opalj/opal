@@ -237,12 +237,14 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
          * 		for the refinement.
          * @param isNull This value's new null-ness property. `isNull` either
          * 		has to be `Yes` or `No`.
-         * @return The refined value, if the refinement was meaningful. Otherwise
-         * 		`this`. Note, if this value's `isNull` property is `Unknown`
-         * 		`this` may also be returned, but in that case subsequent analyses may
-         *   	be less precise.
+         * @return The updated value, operand stack and register values if
+         * 		there was something to refine.
          */
-        def refineIsNull(pc: PC, isNull: Answer): DomainReferenceValue
+        def refineIsNull(
+            pc: PC,
+            isNull: Answer,
+            operands: Operands,
+            locals: Locals): (DomainValue, (Operands, Locals))
 
         /**
          * Returns `true` if the type information associated with this value is precise.
@@ -281,9 +283,16 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
          * This call can be ignored if the type information related to this value is
          * precise, i.e., if we know that we precisely capture the runtime type of
          * this value.
+         *
+         * @return The updated operand stack and register values if there was something
+         * 		to refine.
          */
         @throws[ImpossibleRefinement]("If the refinement is not meaningful.")
-        def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainReferenceValue
+        def refineUpperTypeBound(
+            pc: PC,
+            supertype: ReferenceType,
+            operands: Operands,
+            locals: Locals): (DomainValue, (Operands, Locals))
 
     }
 
@@ -306,7 +315,12 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
          */
         final override def isNull = Yes
 
-        final override def refineIsNull(pc: PC, isNull: Answer): DomainNullValue = this
+        final override def refineIsNull(
+            pc: PC,
+            isNull: Answer,
+            operands: Operands,
+            locals: Locals): (DomainNullValue, (Operands, Locals)) =
+            throw new ImpossibleRefinement(this, "nullness property of null value")
 
         /**
          * Returns `true`.
@@ -342,8 +356,13 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
         final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing =
             throw DomainException("isSubtypeOf is not defined for \"null\" values")
 
-        override def refineUpperTypeBound(pc: PC, supertype: ReferenceType): this.type =
-            this
+        override def refineUpperTypeBound(
+            pc: PC,
+            supertype: ReferenceType,
+            operands: Operands,
+            locals: Locals): (DomainValue, (Operands, Locals)) =
+            //(operands, locals)
+            throw new ImpossibleRefinement(this, "refinement of type of null value")
 
         override def summarize(pc: PC): this.type = this
 
@@ -719,7 +738,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
 
     override def InitializedArrayValue(
         pc: PC, counts: List[Int],
-        arrayType: ArrayType): DomainValue =
+        arrayType: ArrayType): DomainArrayValue =
         ArrayValue(pc, arrayType)
 
     //
@@ -825,34 +844,15 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
     //
     // -----------------------------------------------------------------------------------
 
-    protected[this] def updateOperandsAndLocals(
-        oldValue: DomainValue,
-        newValue: DomainValue,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) = {
-        if (oldValue eq newValue)
-            (
-                operands,
-                locals
-            )
-        else
-            (
-                operands.map(op ⇒ if (op eq oldValue) newValue else op),
-                locals.transform(l ⇒ if (l eq oldValue) newValue else l)
-            )
-    }
-
     override def refEstablishUpperBound(
         pc: PC,
         bound: ReferenceType,
         value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        updateOperandsAndLocals(
-            value,
-            asReferenceValue(value).refineUpperTypeBound(pc, bound),
-            operands,
-            locals)
+        val (_, newMemoryLayout) =
+            asReferenceValue(value).refineUpperTypeBound(pc, bound, operands, locals)
+        newMemoryLayout
     }
 
     protected[this] def refineIsNull(
@@ -861,11 +861,9 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
         isNull: Answer,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        updateOperandsAndLocals(
-            value,
-            asReferenceValue(value).refineIsNull(pc, isNull),
-            operands,
-            locals)
+        val (_, newMemoryLayout) =
+            asReferenceValue(value).refineIsNull(pc, isNull, operands, locals)
+        newMemoryLayout
     }
 
     /**

@@ -1526,6 +1526,8 @@ private[util] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
 
 object Locals {
 
+    def empty[T >: Null <: AnyRef: ClassTag]: Locals[T] = Locals0.asInstanceOf[Locals[T]]
+
     def apply[T >: Null <: AnyRef: ClassTag](data: IndexedSeq[T]): Locals[T] = {
         (data.size: @scala.annotation.switch) match {
             case 0 ⇒ Locals0.asInstanceOf[Locals[T]]

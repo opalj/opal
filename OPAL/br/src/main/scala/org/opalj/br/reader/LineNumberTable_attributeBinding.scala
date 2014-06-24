@@ -112,14 +112,17 @@ trait CompactLineNumberTable_attributeBinding
         val (lineNumberTables, otherAttributes) =
             attributes partition {
                 _ match {
-                    case lnt: UnpackedLineNumberTable ⇒ true
-                    case _                            ⇒ false
+                    case lnt: CompactLineNumberTable ⇒ true
+                    case _                           ⇒ false
                 }
             }
         lineNumberTables match {
             case Seq()    ⇒ attributes
             case Seq(lnt) ⇒ attributes
-            case lnts     ⇒ throw new UnsupportedOperationException("contact Michael Eichberg for support")
+            case lnts ⇒
+                throw new UnsupportedOperationException(
+                        "multiple line number tables are not yet supported;"+
+                        "contact Michael Eichberg")
         }
     }
 }

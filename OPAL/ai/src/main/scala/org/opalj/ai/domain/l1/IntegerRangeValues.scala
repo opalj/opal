@@ -171,16 +171,6 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
     //
     // -----------------------------------------------------------------------------------
 
-    protected[this] def updateIntegerRangeValue(
-        oldValue: DomainValue,
-        newValue: DomainValue,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (
-            operands.map { operand ⇒ if (operand eq oldValue) newValue else operand },
-            locals.map { local ⇒ if (local eq oldValue) newValue else local }
-        )
-
     //
     // QUESTION'S ABOUT VALUES
     //
@@ -325,7 +315,7 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
             case IntegerRange(`theValue`, `theValue`) ⇒
                 (operands, locals)
             case _ ⇒
-                updateIntegerRangeValue(
+                updateMemoryLayout(
                     value, IntegerRange(theValue, theValue),
                     operands, locals)
         }
@@ -353,15 +343,15 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
                             val newValue = IntegerRange(lb, ub)
 
                             val (operands1, locals1) =
-                                updateIntegerRangeValue(value1, newValue, operands, locals)
-                            updateIntegerRangeValue(value2, newValue, operands1, locals1)
+                                updateMemoryLayout(value1, newValue, operands, locals)
+                            updateMemoryLayout(value2, newValue, operands1, locals1)
 
                         case _ ⇒
                             // value1 remains unchanged
-                            updateIntegerRangeValue(value2, value1, operands, locals)
+                            updateMemoryLayout(value2, value1, operands, locals)
                     }
                 case _ ⇒
-                    updateIntegerRangeValue(value1, value2, operands, locals)
+                    updateMemoryLayout(value1, value2, operands, locals)
             }
     }
 
@@ -386,16 +376,16 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
         }
         if (lb1 == ub1) {
             if (lb2 == ub1)
-                updateIntegerRangeValue(value2, IntegerRange(lb2 + 1, ub2), operands, locals)
+                updateMemoryLayout(value2, IntegerRange(lb2 + 1, ub2), operands, locals)
             else if (ub2 == lb1)
-                updateIntegerRangeValue(value2, IntegerRange(lb2, ub2 - 1), operands, locals)
+                updateMemoryLayout(value2, IntegerRange(lb2, ub2 - 1), operands, locals)
             else
                 (operands, locals)
         } else if (lb2 == ub2) {
             if (lb1 == ub2)
-                updateIntegerRangeValue(value1, IntegerRange(lb1 + 1, ub1), operands, locals)
+                updateMemoryLayout(value1, IntegerRange(lb1 + 1, ub1), operands, locals)
             else if (ub1 == lb2)
-                updateIntegerRangeValue(value1, IntegerRange(lb1, ub1 - 1), operands, locals)
+                updateMemoryLayout(value1, IntegerRange(lb1, ub1 - 1), operands, locals)
             else
                 (operands, locals)
         } else {
@@ -429,13 +419,13 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
         val ub = Math.min(ub2 - 1, ub1)
         val newMemoryLayout @ (operands1, locals1) =
             if (ub != ub1)
-                updateIntegerRangeValue(left, IntegerRange(lb1, ub), operands, locals)
+                updateMemoryLayout(left, IntegerRange(lb1, ub), operands, locals)
             else
                 (operands, locals)
 
         val lb = Math.max(lb1 + 1, lb2)
         if (lb != lb2)
-            updateIntegerRangeValue(
+            updateMemoryLayout(
                 right,
                 IntegerRange(lb, ub2),
                 operands1,
@@ -464,14 +454,14 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
         val newMemoryLayout @ (operands1, locals1) =
             if (ub != ub1) {
                 val newV1 = IntegerRange(lb1, ub)
-                updateIntegerRangeValue(left, newV1, operands, locals)
+                updateMemoryLayout(left, newV1, operands, locals)
             } else
                 (operands, locals)
 
         val lb = Math.max(lb1, lb2)
         if (lb != lb2) {
             val newV2 = IntegerRange(lb, ub2)
-            updateIntegerRangeValue(right, newV2, operands1, locals1)
+            updateMemoryLayout(right, newV2, operands1, locals1)
         } else
             newMemoryLayout
     }
