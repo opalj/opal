@@ -73,7 +73,11 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             origin: ValueOrigin = this.origin,
             isNull: Answer = this.isNull): DomainSingleOriginReferenceValue
 
-        override def refineIsNull(pc: PC, isNull: Answer): DomainSingleOriginReferenceValue
+        override def refineIsNull(
+            pc: PC,
+            isNull: Answer,
+            operands: Operands,
+            locals: Locals): (DomainSingleOriginReferenceValue, (Operands, Locals))
 
         /*ABSTRACT*/ protected def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,
@@ -209,15 +213,21 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     trait NonNullSingleOriginReferenceValue extends SingleOriginReferenceValue {
         this: DomainSingleOriginReferenceValue ⇒
 
-        override def refineIsNull(pc: PC, isNull: Answer): DomainSingleOriginReferenceValue = {
+        override def refineIsNull(
+            pc: PC,
+            isNull: Answer,
+            operands: Operands,
+            locals: Locals): (DomainSingleOriginReferenceValue, (Operands, Locals)) = {
             if (this.isNull == isNull)
-                this
-            else if (isNull.isYes)
-                NullValue(this.origin)
-            else if (isNull.isNo)
-                this(isNull = No)
-            else
-                throw DomainException("refining \"isNull\" to Unknown is not supported")
+                (this, (operands, locals))
+            else if (isNull.isYes) {
+                val newValue = NullValue(this.origin)
+                (newValue, updateMemoryLayout(this, newValue, operands, locals))
+            } else if (isNull.isNo) {
+                val newValue = this(isNull = No)
+                (newValue, updateMemoryLayout(this, newValue, operands, locals))
+            } else
+                throw ImpossibleRefinement(this, "\"refining\" null property to Unknown")
         }
     }
 
@@ -387,7 +397,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def refineUpperTypeBound(
             pc: PC,
-            supertype: ReferenceType): DomainReferenceValue = {
+            supertype: ReferenceType,
+            operands: Operands,
+            locals: Locals): (DomainReferenceValue, (Operands, Locals)) = {
             if (isPrecise)
                 // Actually, it doesn't make sense to allow calls to this method if
                 // the type is precise. However, we have to handle this case 
@@ -396,25 +408,27 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 // by a domain value on the stack/in a register 
                 // and in this case it may make sense to establish a more stringent
                 // bound for the others.
-                return this
+                return (this, (operands, locals))
             if (supertype eq theUpperTypeBound)
-                return this
+                return (this, (operands, locals))
 
             if (domain.isSubtypeOf(supertype, theUpperTypeBound).isYes) {
                 // this also handles the case where we cast an Object to an array
-                ReferenceValue(this.origin, isNull, false, supertype)
+                val newValue = ReferenceValue(this.origin, isNull, false, supertype)
+                (newValue, updateMemoryLayout(this, newValue, operands, locals))
             } else if (domain.isSubtypeOf(theUpperTypeBound, supertype).isYes) {
                 // useless refinement...
-                this
+                (this, (operands, locals))
             } else {
                 if (supertype.isArrayType)
                     throw ImpossibleRefinement(this, "incompatible bound "+supertype.toJava)
 
                 // basically, we are adding another type bound
-                ObjectValue(
+                val newValue = ObjectValue(
                     this.origin,
                     this.isNull,
                     UIDSet(supertype.asObjectType, theUpperTypeBound))
+                (newValue, updateMemoryLayout(this, newValue, operands, locals))
             }
         }
 
@@ -566,8 +580,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def refineUpperTypeBound(
             pc: PC,
-            supertype: ReferenceType): DomainReferenceValue = {
-            // OPAL-AI calls this method only if a previous "subtype of" test 
+            supertype: ReferenceType,
+            operands: Operands,
+            locals: Locals): (DomainSingleOriginReferenceValue, (Operands, Locals)) = {
+            // OPAL calls this method only if a previous "subtype of" test 
             // (typeOf(this.value) <: additionalUpperBound ?) 
             // returned unknown. Hence, we only handle the case where the new bound
             // is more strict than the previous bound.
@@ -578,11 +594,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 if (!domain.isSubtypeOf(supertype, anUpperTypeBound).isYes)
                     newUpperTypeBound = newUpperTypeBound + anUpperTypeBound
             }
-            if (newUpperTypeBound.size == 0)
-                ReferenceValue(pc, isNull, false, supertype)
-            else if (supertype.isObjectType)
-                ObjectValue(pc, isNull, newUpperTypeBound + supertype.asObjectType)
-            else
+            if (newUpperTypeBound.size == 0) {
+                val newValue = ReferenceValue(pc, isNull, false, supertype)
+                (newValue, updateMemoryLayout(this, newValue, operands, locals))
+            } else if (supertype.isObjectType) {
+                val newValue = ObjectValue(pc, isNull, newUpperTypeBound + supertype.asObjectType)
+                (newValue, updateMemoryLayout(this, newValue, operands, locals))
+            } else
                 throw ImpossibleRefinement(this, "incompatible bound "+supertype.toJava)
         }
 
@@ -846,38 +864,65 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             answer
         }
 
-        override def refineIsNull(pc: PC, isNull: Answer): DomainReferenceValue = {
+        override def refineIsNull(
+            pc: PC,
+            isNull: Answer,
+            operands: Operands,
+            locals: Locals): (DomainReferenceValue, (Operands, Locals)) = {
             // Recall that this value's property – as a whole – can be undefined also 
             // each value's property is well defined (Yes, No)
             // Furthermore, isNull is either Yes or No and we are going to ignore
             // those updates that are meaningless.
-            val relevantValues =
-                isNull match {
-                    case Yes ⇒ this.values filter { _.isNull.isYesOrUnknown }
-                    case No  ⇒ this.values filter { _.isNull.isNoOrUnknown }
-                    case _   ⇒ throw DomainException("unsupported refinement")
+            var valuesToKeep = SortedSet.empty[DomainSingleOriginReferenceValue]
+            var valuesToRefine = SortedSet.empty[DomainSingleOriginReferenceValue]
+            isNull match {
+                case Yes ⇒ this.values foreach { v ⇒
+                    val isNull = v.isNull
+                    if (isNull.isYes) valuesToKeep += v
+                    else if (isNull.isUnknown) valuesToRefine += v
                 }
+                case No ⇒ this.values foreach { v ⇒
+                    val isNull = v.isNull
+                    if (isNull.isNo) valuesToKeep += v
+                    else if (isNull.isUnknown) valuesToRefine += v
+                }
+                case _ ⇒ throw DomainException("unsupported refinement")
+            }
+
+            var newMemoryLayout = (operands, locals)
             var valueRefined = false
             val refinedValues: SortedSet[DomainSingleOriginReferenceValue] =
-                relevantValues map { value ⇒
-                    val refinedValue = value.refineIsNull(pc, isNull)
-                    if (refinedValue ne value)
+                (valuesToRefine map { value ⇒
+                    val (refinedValue: DomainSingleOriginReferenceValue, updatedMemoryLayout) =
+                        value.refineIsNull(pc, isNull, newMemoryLayout._1, newMemoryLayout._2)
+                    if (refinedValue ne value) {
+                        newMemoryLayout = updatedMemoryLayout
                         valueRefined = true
+                    }
                     refinedValue
-                }
-            if (refinedValues.size == 1)
-                refinedValues.head
-            // The following test should not be necessary, as this method is
-            // only intended to be called, if this value as a whole needs
-            // refinement:
-            else if (valueRefined || this.values.size != refinedValues.size)
-                MultipleReferenceValues(refinedValues)
-            else
+                }) ++ valuesToKeep
+            if (refinedValues.size == 1) {
+                val newValue = refinedValues.head
+                (newValue, updateMemoryLayout(this, newValue, newMemoryLayout._1, newMemoryLayout._2))
+                // The following test should not be necessary, as this method is
+                // only intended to be called, if this value as a whole needs
+                // refinement:
+            } else if (valueRefined || this.values.size != refinedValues.size) {
+                val newValue = MultipleReferenceValues(refinedValues)
+                (newValue, updateMemoryLayout(this, newValue, newMemoryLayout._1, newMemoryLayout._2))
+            } else {
                 // defensive programming...
-                this
+                (this, newMemoryLayout)
+            }
         }
 
-        override def refineUpperTypeBound(pc: PC, supertype: ReferenceType): DomainReferenceValue = {
+        override def refineUpperTypeBound(
+            pc: PC,
+            supertype: ReferenceType,
+            operands: Operands,
+            locals: Locals): (DomainValue, (Operands, Locals)) = {
+            var updatedOperands: Operands = operands
+            var updatedLocals: Locals = locals
             var newValues = SortedSet.empty[DomainSingleOriginReferenceValue]
             var valueRefined = false
             this.values foreach { value ⇒
@@ -888,28 +933,32 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     if (isSubtypeOf.isYes)
                         newValues += value
                     else if (isSubtypeOf.isUnknown) {
-                        try {
-                            val newValue = value.refineUpperTypeBound(pc, supertype)
-                            valueRefined = valueRefined || (newValue ne value)
-                            newValues += newValue.asInstanceOf[DomainSingleOriginReferenceValue]
-                        } catch {
-                            case _: ImpossibleRefinement ⇒ /*let's filter this value*/
-                            case t: Throwable            ⇒ throw t
+                        val (newValue, (newOperands, newLocals)) =
+                            value.refineUpperTypeBound(
+                                pc, supertype,
+                                updatedOperands, updatedLocals)
+                        if ((newOperands ne updatedOperands) || (newLocals ne updatedLocals)) {
+                            updatedOperands = newOperands
+                            updatedLocals = newLocals
                         }
+                        valueRefined = valueRefined || (value ne newValue)
+                        newValues += newValue.asInstanceOf[DomainSingleOriginReferenceValue]
                     }
                     // if isSubtypeOf.no then we can just remove it
                 }
             }
 
-            if (newValues.size == 1)
-                newValues.head
-            // The following test should not be necessary, as this method is
-            // only intended to be called, if this value as a whole needs
-            // refinement:
-            else if (valueRefined || this.values.size != newValues.size)
-                MultipleReferenceValues(newValues)
-            else
-                this
+            if (newValues.size == 1) {
+                val newValue = newValues.head
+                (newValue, updateMemoryLayout(this, newValue, operands, locals))
+                // The following test should not be necessary, as this method is
+                // only intended to be called, if this value as a whole needs
+                // refinement:
+            } else if (valueRefined || this.values.size != newValues.size) {
+                val newValue = MultipleReferenceValues(newValues)
+                (newValue, updateMemoryLayout(this, newValue, operands, locals))
+            } else
+                (this, (operands, locals))
         }
 
         override protected def doJoin(joinPC: PC, other: DomainValue): Update[DomainValue] = {
@@ -1025,7 +1074,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     override def ObjectValue(pc: PC, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue =
         ObjectValue(pc, Unknown, upperTypeBound)
 
-    override def InitializedArrayValue(pc: PC, counts: List[Int], arrayType: ArrayType): DomainValue =
+    override def InitializedArrayValue(pc: PC, counts: List[Int], arrayType: ArrayType): DomainArrayValue =
         ArrayValue(pc, No, true, arrayType)
 
     override def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue =
@@ -1044,7 +1093,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         pc: PC,
         isNull: Answer,
         isPrecise: Boolean,
-        theUpperTypeBound: ReferenceType): DomainReferenceValue = {
+        theUpperTypeBound: ReferenceType): DomainSingleOriginReferenceValue = {
         theUpperTypeBound match {
             case ot: ObjectType ⇒
                 ObjectValue(pc, isNull, isPrecise, ot)
