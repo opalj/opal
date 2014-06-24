@@ -79,12 +79,12 @@ trait DefaultTypeLevelReferenceValues
             pc: PC,
             isNull: Answer,
             operands: Operands,
-            locals: Locals): (DomainReferenceValue, (Operands, Locals)) = {
+            locals: Locals):  (Operands, Locals) = {
             if (isNull.isYes) {
                 val newValue = NullValue(pc)
-                (newValue, updateMemoryLayout(this, newValue, operands, locals))
+                updateMemoryLayout(this, newValue, operands, locals)
             } else {
-                (this, (operands, locals))
+                (operands,locals)
             }
         }
 
@@ -224,11 +224,11 @@ trait DefaultTypeLevelReferenceValues
             pc: PC,
             isNull: Answer,
             operands: Operands,
-            locals: Locals): (DomainReferenceValue, (Operands, Locals)) = {
+            locals: Locals): (Operands, Locals) = {
             if (isNull.isYes)
-                (this, updateMemoryLayout(this, NullValue(pc), operands, locals))
+                updateMemoryLayout(this, NullValue(pc), operands, locals)
             else
-                (this, (operands, locals))
+                (operands, locals)
         }
 
         protected def asStructuralUpdate(

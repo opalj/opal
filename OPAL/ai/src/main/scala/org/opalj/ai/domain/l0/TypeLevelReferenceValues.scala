@@ -244,7 +244,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
             pc: PC,
             isNull: Answer,
             operands: Operands,
-            locals: Locals): (DomainValue, (Operands, Locals))
+            locals: Locals): (Operands, Locals)
 
         /**
          * Returns `true` if the type information associated with this value is precise.
@@ -319,7 +319,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
             pc: PC,
             isNull: Answer,
             operands: Operands,
-            locals: Locals): (DomainNullValue, (Operands, Locals)) =
+            locals: Locals): (Operands, Locals) =
             throw new ImpossibleRefinement(this, "nullness property of null value")
 
         /**
@@ -829,7 +829,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
      *
      * ==Summary==
      * The properties of the value are:
-     *  - Type: '''Upper Bound'''
+     *  - Type: '''Upper Bound''' (unless the elementType is a base type)
      *  - Null: '''Unknown'''
      *  - Size: '''Unknown'''
      *  - Content: '''Unknown'''
@@ -861,9 +861,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
         isNull: Answer,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        val (_, newMemoryLayout) =
-            asReferenceValue(value).refineIsNull(pc, isNull, operands, locals)
-        newMemoryLayout
+        asReferenceValue(value).refineIsNull(pc, isNull, operands, locals)
     }
 
     /**
