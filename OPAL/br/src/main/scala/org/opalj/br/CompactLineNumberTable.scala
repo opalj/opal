@@ -60,7 +60,7 @@ case class CompactLineNumberTable(
             while (e < entries) {
                 val index = e * 4
                 val startPC = ((lineNumbers(index) & 0xFF) << 8) + (lineNumbers(index + 1) & 0xFF)
-                if (startPC <= pc) {
+                if (startPC < pc) {
                     val currentLineNumber =
                         ((lineNumbers(index + 2) & 0xFF) << 8) + (lineNumbers(index + 3) & 0xFF)
                     lastLineNumber = Some(currentLineNumber)
