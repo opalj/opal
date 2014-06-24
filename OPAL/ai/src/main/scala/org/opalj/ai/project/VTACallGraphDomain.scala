@@ -83,14 +83,54 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
 
         // there may be additional calls
         if (isNull.isNoOrUnknown) {
-            val isPrecise = value.isPrecise
+            //            val isPrecise = value.isPrecise
+            //            val upperTypeBound = value.upperTypeBound
+            //            if (isPrecise && upperTypeBound.containsOneElement) {
+            //                val theType = upperTypeBound.first
+            //                if (theType.isArrayType)
+            //                    staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
+            //                else
+            //                    staticMethodCall(pc, theType.asObjectType, name, descriptor, operands)
+            //            } else {
+            //                // _Also_ supports the case where we have a "precise type", but
+            //                // multiple types as an upper bound. This is useful in some selected
+            //                // cases where the class is generated dynamically at runtime and 
+            //                // hence, the currently available information is simply the best that
+            //                // is available.
+            //
+            //                for (utb ← upperTypeBound) {
+            //                    if (utb.isArrayType) {
+            //                        staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
+            //                    } else if (domain.isSubtypeOf(declaringClassType, utb).isYes) {
+            //                        // for whatever reason, but the invoke's declaring class type
+            //                        // is "more" precise
+            //                        super.virtualMethodCall(pc, declaringClassType, name, descriptor, operands)
+            //                        return // it doesn't make sense
+            //                    } else {
+            //                        super.virtualMethodCall(pc, utb.asObjectType, name, descriptor, operands)
+            //                    }
+            //                }
+            //            }
             val upperTypeBound = value.upperTypeBound
-            if (isPrecise && upperTypeBound.containsOneElement) {
+            if (upperTypeBound.containsOneElement) {
                 val theType = upperTypeBound.first
                 if (theType.isArrayType)
                     staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
-                else
+                else if (value.isPrecise)
                     staticMethodCall(pc, theType.asObjectType, name, descriptor, operands)
+                else if ((declaringClassType ne theType) &&
+                    domain.isSubtypeOf(declaringClassType, theType).isYes) {
+                    // the invoke's declaring class type is "more" precise
+                    println(
+                        "[warn] type information incomplete: "+
+                            theType.toJava+
+                            " should be a subtype of "+
+                            declaringClassType.toJava+
+                            " (but it is the other way round)")
+                    super.virtualMethodCall(pc, declaringClassType, name, descriptor, operands)
+                } else {
+                    super.virtualMethodCall(pc, theType.asObjectType, name, descriptor, operands)
+                }
             } else {
                 // _Also_ supports the case where we have a "precise type", but
                 // multiple types as an upper bound. This is useful in some selected
@@ -101,11 +141,18 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
                 for (utb ← upperTypeBound) {
                     if (utb.isArrayType) {
                         staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
-                    } else if (domain.isSubtypeOf(declaringClassType, utb).isYes) {
-                        // for whatever reason, but the invoke's declaring class type
-                        // is "more" precise
+                    } else if ((declaringClassType ne utb) &&
+                        domain.isSubtypeOf(declaringClassType, utb).isYes) {
+                        // The invoke's declaring class type is "more" precise
+                        println(
+                            "[warn] type information incomplete: "+
+                                utb.toJava+
+                                " part of the upper type bound "+
+                                upperTypeBound.map(_.toJava).mkString("(", ",", ")")+
+                                " should be a subtype of "+
+                                declaringClassType.toJava+
+                                " (but it is the other way round)")
                         super.virtualMethodCall(pc, declaringClassType, name, descriptor, operands)
-                        return // it doesn't make sense
                     } else {
                         super.virtualMethodCall(pc, utb.asObjectType, name, descriptor, operands)
                     }
