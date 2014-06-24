@@ -1742,11 +1742,12 @@ trait Domain {
         if (operands.nonEmpty) {
             val opIt = operands.iterator
             while (opIt.hasNext) {
-                if (opIt.next eq oldValue) {
+                val opValue = opIt.next
+                if (opValue eq oldValue) {
                     newOps = newValue :: newOps
                     opsUpdated = true
                 } else
-                    newOps = oldValue :: newOps
+                    newOps = opValue :: newOps
             }
         }
 
