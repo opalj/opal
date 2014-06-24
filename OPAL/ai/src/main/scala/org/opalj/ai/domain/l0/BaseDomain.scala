@@ -35,7 +35,14 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.{ Method, ClassFile }
 
 /**
- * A domain with a configurable identifier.
+ * A domain that performs all computations at the type level that has
+ * a configurable identifier.
+ *
+ * @note This domain is intended to be used for Demo purposes only.
+ *      Tests should create their own domains to make sure that
+ *      the test results remain stable. The configuration of this
+ *      domain just reflects a reasonable configuration that may
+ *      change without further notice.
  *
  * @author Michael Eichberg
  */
@@ -56,9 +63,10 @@ class BaseConfigurableDomain[I, Source](
 }
 
 /**
- * This is a ready to use domain which sets the domain identifier to "BaseTypeLevelDomain".
+ * This is a ready to use domain which sets the domain identifier
+ * a string that indentifies the method that is analyzed.
  *
- * This domain is primarily useful for testing and debugging purposes.
+ * This domain is primarily useful for demonstration purposes.
  *
  * @author Michael Eichberg
  */
