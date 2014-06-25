@@ -412,6 +412,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             with ObjectValue {
         this: DomainObjectValue ⇒
 
+        require(isPrecise == false || (theUpperTypeBound ne ObjectType("java/nio/charset/CharsetEncoder")))
         require(this.isNull.isNoOrUnknown)
 
         override def apply(vo: ValueOrigin, isNull: Answer): DomainSingleOriginReferenceValue = {
@@ -812,18 +813,20 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         private[this] def calculateIsPrecise(): Boolean = {
             val vIt = values.iterator
-            var theUpperTypeBound: UpperTypeBound = null
-            while (vIt.hasNext) {
+            val firstV = vIt.next
+            var isPrecise: Boolean = firstV.isPrecise
+            var theUpperTypeBound: UpperTypeBound = firstV.upperTypeBound
+            while (isPrecise && vIt.hasNext) {
                 val v = vIt.next
-                if (!v.isNull.isYes) {
-                    if (theUpperTypeBound == null)
-                        theUpperTypeBound = v.upperTypeBound
-                    else if (theUpperTypeBound != v.upperTypeBound)
-                        return false
+                if (v.isPrecise) {
+                    val upperTypeBound = v.upperTypeBound
+                    isPrecise = theUpperTypeBound == upperTypeBound
+                    theUpperTypeBound = upperTypeBound
+                } else {
+                    isPrecise = false
                 }
             }
-            // <=> all values are null values or have the same bound
-            true
+            isPrecise
         }
 
         override lazy val isNull: Answer = calculateIsNull()
@@ -1057,7 +1060,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override def toString() = values.mkString("OneOf(", ", ", ")")
+        override def toString() = {
+            var s = values.mkString("OneOf(", ", ", ")")
+            s += upperTypeBound.map(_.toJava).mkString(";lutb=", " with ", "")
+            if (!isPrecise) s += ";isUpperBound"
+            s += ";isNull="+isNull
+            s
+        }
     }
 
     object MultipleReferenceValues {
