@@ -40,6 +40,8 @@ import domain._
 import domain.l0
 import domain.l1
 
+import org.opalj.ai.domain.ClassHierarchy
+
 /**
  * Domain object which is used to calculate the call graph.
  *
@@ -50,7 +52,7 @@ import domain.l1
  * @author Michael Eichberg
  */
 trait VTACallGraphDomain extends CHACallGraphDomain {
-    domain: org.opalj.ai.domain.ClassHierarchy ⇒
+    domain: ClassHierarchy with TheMethod ⇒
 
     @inline override protected[this] def virtualMethodCall(
         pc: PC,

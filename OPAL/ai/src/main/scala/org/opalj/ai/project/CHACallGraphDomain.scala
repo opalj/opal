@@ -57,7 +57,8 @@ import domain.l1
  *
  * @author Michael Eichberg
  */
-trait CHACallGraphDomain extends Domain with CallGraphDomain { this: ClassHierarchy ⇒
+trait CHACallGraphDomain extends Domain with CallGraphDomain {
+    this: ClassHierarchy with TheMethod ⇒
 
     //
     // Helper data structures  
