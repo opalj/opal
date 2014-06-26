@@ -819,9 +819,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             while (isPrecise && vIt.hasNext) {
                 val v = vIt.next
                 if (v.isPrecise) {
-                    val upperTypeBound = v.upperTypeBound
-                    isPrecise = theUpperTypeBound == upperTypeBound
-                    theUpperTypeBound = upperTypeBound
+                    if (!v.isNull.isYes) {
+                        val upperTypeBound = v.upperTypeBound
+                        if (theUpperTypeBound != null) {
+                            isPrecise = theUpperTypeBound == upperTypeBound
+                        }
+                        theUpperTypeBound = upperTypeBound
+                    }
                 } else {
                     isPrecise = false
                 }
