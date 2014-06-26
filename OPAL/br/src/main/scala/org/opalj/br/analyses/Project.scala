@@ -359,6 +359,13 @@ class Project[Source] private (
         Project.extend[Source](this, projectClassFilesWithSources, libraryClassFilesWithSources)
     }
 
+    def extend(otherProject: Project[Source]): Project[Source] = {
+        Project.extend[Source](
+            this,
+            otherProject.projectClassFilesWithSources,
+            otherProject.libraryClassFilesWithSources)
+    }
+
 }
 
 /**
