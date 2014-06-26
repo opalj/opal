@@ -40,8 +40,6 @@ class InterruptableAI[D <: Domain] extends AI[D] {
 
     override def isInterrupted = doInterrupt
 
-    def interrupt(): Unit = {
-        doInterrupt = true
-    }
+    def interrupt(): Unit = { doInterrupt = true }
 
 }
