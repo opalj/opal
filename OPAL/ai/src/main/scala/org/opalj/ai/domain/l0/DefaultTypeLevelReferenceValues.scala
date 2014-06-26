@@ -46,7 +46,7 @@ trait DefaultTypeLevelReferenceValues
         with TypeLevelReferenceValues {
     domain: Configuration with ClassHierarchy ⇒
 
-    // ---------------------------------1-------------------------------------------------
+    // -----------------------------------------------------------------------------------
     //
     // REPRESENTATION OF REFERENCE VALUES
     //
@@ -79,12 +79,12 @@ trait DefaultTypeLevelReferenceValues
             pc: PC,
             isNull: Answer,
             operands: Operands,
-            locals: Locals):  (Operands, Locals) = {
+            locals: Locals): (Operands, Locals) = {
             if (isNull.isYes) {
                 val newValue = NullValue(pc)
                 updateMemoryLayout(this, newValue, operands, locals)
             } else {
-                (operands,locals)
+                (operands, locals)
             }
         }
 
@@ -267,14 +267,22 @@ trait DefaultTypeLevelReferenceValues
             val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
             isSubtypeOf match {
                 case Yes ⇒ Yes
-                case No if isPrecise ||
-                    (
+                case No if isPrecise
+                    || (
                         supertype.isArrayType &&
                         // and it is impossible that this value is actually an array...
                         (theUpperTypeBound ne ObjectType.Object) &&
                         (theUpperTypeBound ne ObjectType.Serializable) &&
                         (theUpperTypeBound ne ObjectType.Cloneable)
-                    ) ⇒ No
+                    ) || (
+                            // If both types represent class types and it is not
+                            // possible that some value of this type may be a subtype
+                            // of the given supertype, the answer "No" is correct.
+                            supertype.isObjectType &&
+                            !classHierarchy.isInterface(supertype.asObjectType) &&
+                            !classHierarchy.isInterface(theUpperTypeBound) &&
+                            domain.isSubtypeOf(supertype, theUpperTypeBound).isNo
+                        ) ⇒ No
                 case _ ⇒ Unknown
             }
         }
