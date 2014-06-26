@@ -1787,17 +1787,18 @@ trait Domain {
      * value/the value that was already used in the past should be returned.
      *
      * @return The joined operand stack and registers.
-     *      Returns `NoUpdate` if ''this'' memory layout already subsumes the ''other'' memory
-     *      layout.
+     *      Returns `NoUpdate` if ''this'' memory layout already subsumes the 
+     *      ''other'' memory layout.
      * @note The size of the operands stacks that are to be joined and the number of
      *      registers/locals that are to be joined can be expected to be identical
-     *      under the assumption that the bytecode is valid and framework contains no
+     *      under the assumption that the bytecode is valid and the framework contains no
      *      bugs.
      * @note The operand stacks are guaranteed to contain compatible values w.r.t. the
      *      computational type (unless the bytecode is not valid or OPAL contains
      *      an error). I.e., if the result of joining two operand stack values is an
      *      `IllegalValue` we assume that the domain implementation is incorrect.
-     *      However, the joining of two register values can result in an illegal value.
+     *      However, the joining of two register values can result in an illegal value
+     *      which identifies the value is dead.
      */
     def join(
         pc: PC,
@@ -1805,13 +1806,6 @@ trait Domain {
         thisLocals: Locals,
         otherOperands: Operands,
         otherLocals: Locals): Update[(Operands, Locals)] = {
-
-        // These internal tests should no longer be necessary!
-        // assume(thisOperands.size == otherOperands.size,
-        //      "domain join - different stack sizes: "+thisOperands+" <=> "+otherOperands)
-        //
-        // assume(thisLocals.size == otherLocals.size,
-        //      "domain join - different register sizes: "+thisLocals+" <=> "+otherLocals)
 
         var operandsUpdated: UpdateType = NoUpdateType
         val newOperands: Operands =
@@ -1888,7 +1882,8 @@ trait Domain {
      * ''Called by the framework after performing a computation''. That is, after
      * evaluating the effect of the instruction with `currentPC` on the current stack and
      * register and joining the updated stack and registers with the stack and registers
-     * associated with the instruction `successorPC`.
+     * associated with the instruction `successorPC`. (Hence, this method is NOT called
+     * for `return` instructions.)
      * This function basically informs the domain about the instruction that
      * ''may be'' evaluated next. The flow function is called for ''every possible
      * successor'' of the instruction with `currentPC`. This includes all branch
@@ -1995,9 +1990,9 @@ trait Domain {
         tracer: Option[AITracer]): Unit = { /*Nothing*/ }
 
     /**
-     * Called by (OPAL)AI when the abstract interpretation of a method has ended. The
-     * abstract interpretation of a method ends if either the fixpoint is reached or
-     * the interpretation was aborted.
+     * Called by the abstract interpreter when the abstract interpretation of a method
+     * has ended. The abstract interpretation of a method ends if either the fixpoint
+     * is reached or the interpretation was aborted.
      *
      * By default this method does nothing.
      */
@@ -2013,9 +2008,9 @@ trait Domain {
      *      a new value is returned that abstracts over/summarizes the given values.
      * @param values An `Iterable` over one or more values.
      *
-     * @note The current algorithm is very generic and should satisfy most needs, but
-     * 		it is also not very efficient. However, it should be easy to tailor it for a
-     *   	specific domain, if need be.
+     * @note The current algorithm is generic and should satisfy most needs, but
+     * 		it is not very efficient. However, it should be easy to tailor it for a
+     *   	specific domain/domain values, if need be.
      */
     def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue = {
         var summary = values.head.summarize(pc)
@@ -2039,7 +2034,7 @@ trait Domain {
      * This method is predefined to facilitate the development of support tools
      * and is not used by the abstract interpretation framework.
      *
-     * `DomainValue`s that define (additional) properties should (`abstract`) `override`
+     * `Domain`s that define (additional) properties should (`abstract`) `override`
      * this method and should return a textual representation of the property.
      */
     def properties(pc: PC): Option[String] = None
