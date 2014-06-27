@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package project
 
-import br._
+import org.opalj.br.{ ClassFile, Method }
 
 /**
  * Encapsulates an exception that is thrown during the creation of the call graph.

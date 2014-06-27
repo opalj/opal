@@ -30,9 +30,8 @@ package org.opalj
 package ai
 package project
 
-import br._
-import br.analyses.{ SomeProject, Project }
-import domain._
+import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.analyses.{ Project }
 
 /**
  * Configuration of a specific call graph algorithm. Basically, the configuration
