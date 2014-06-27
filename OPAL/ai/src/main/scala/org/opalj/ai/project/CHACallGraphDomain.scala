@@ -55,9 +55,9 @@ import domain.l1
  * '''This domain is not thread-safe'''. However, given the strong coupling of a
  * domain instance to a specific method this is usually not an issue.
  *
- * @author Michael Eichberg  
+ * @author Michael Eichberg
  */
-trait CHACallGraphDomain extends CallGraphDomain   {
+trait CHACallGraphDomain extends CallGraphDomain {
     domain: ClassHierarchy with TheMethod ⇒
 
     //
@@ -217,14 +217,13 @@ trait CHACallGraphDomain extends CallGraphDomain   {
         name: String,
         descriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
-        val result = super.invokevirtual(pc, declaringClass, name, descriptor, operands)
 
         if (declaringClass.isArrayType) {
             resolvedCall(pc, ObjectType.Object, name, descriptor, true, operands)
         } else {
             unresolvedCall(pc, declaringClass.asObjectType, name, descriptor, operands)
         }
-        result
+        super.invokevirtual(pc, declaringClass, name, descriptor, operands)
     }
 
     abstract override def invokeinterface(
@@ -233,9 +232,8 @@ trait CHACallGraphDomain extends CallGraphDomain   {
         name: String,
         descriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
-        val result = super.invokeinterface(pc, declaringClass, name, descriptor, operands)
         unresolvedCall(pc, declaringClass, name, descriptor, operands)
-        result
+        super.invokeinterface(pc, declaringClass, name, descriptor, operands)
     }
 
     /**
@@ -247,10 +245,9 @@ trait CHACallGraphDomain extends CallGraphDomain   {
         name: String,
         descriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
-        val result = super.invokespecial(pc, declaringClass, name, descriptor, operands)
         // for invokespecial the dynamic type is not "relevant" (even for Java 8) 
         resolvedCall(pc, declaringClass, name, descriptor, true, operands)
-        result
+        super.invokespecial(pc, declaringClass, name, descriptor, operands)
     }
 
     /**
@@ -262,9 +259,8 @@ trait CHACallGraphDomain extends CallGraphDomain   {
         name: String,
         descriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
-        val result = super.invokestatic(pc, declaringClass, name, descriptor, operands)
         resolvedCall(pc, declaringClass, name, descriptor, false, operands)
-        result
+        super.invokestatic(pc, declaringClass, name, descriptor, operands)
     }
 }
 
