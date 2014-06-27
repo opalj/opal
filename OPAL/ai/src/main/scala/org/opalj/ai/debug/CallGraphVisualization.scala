@@ -28,12 +28,28 @@
  */
 package org.opalj
 package ai
-package project
+package debug
+
+import scala.Console.RED
+import scala.Console.RESET
+import scala.Console.err
 
 import org.opalj.br.{ Method }
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.ai.project.CHACallGraphAlgorithmConfiguration
+import org.opalj.ai.project.CallGraphFactory
+import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
+import org.opalj.ai.project.ComputedCallGraph
+import org.opalj.ai.project.VTACallGraphAlgorithmConfiguration
+import org.opalj.graphs.Node
+import org.opalj.graphs.SimpleNode
+import org.opalj.util.PerformanceEvaluation.asMB
+import org.opalj.util.PerformanceEvaluation.memory
+import org.opalj.util.PerformanceEvaluation.ns2sec
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.writeAndOpenDesktopApplication
 
 /**
  * Visualizes call graphs using Graphviz.

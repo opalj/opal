@@ -54,7 +54,7 @@ import org.opalj.ai.domain.ClassHierarchy
 trait VTACallGraphDomain extends CHACallGraphDomain {
     domain: ClassHierarchy with TheMethod ⇒
 
-    @inline override protected[this] def virtualMethodCall(
+    @inline override protected[this] def unresolvedCall(
         pc: PC,
         declaringClassType: ObjectType,
         name: String,
@@ -73,53 +73,23 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
         //  - the value is null => call to the constructor of NullPointerException
         //  - the value maybe null => additional call to the constructor of NullPointerException
 
+        // TODO The following should no longer be necessary...:
         val isNull = value.isNull
         if (isNull.isYesOrUnknown) {
-            staticMethodCall(
-                pc,
-                ObjectType.NullPointerException,
-                "<init>",
-                MethodDescriptor.NoArgsAndReturnVoid,
-                List(domain.NullPointerException(pc)))
+            implicitExceptionConstructorCall(
+                classFile.thisType, method, pc,
+                ObjectType.NullPointerException)
         }
 
         // there may be additional calls
         if (isNull.isNoOrUnknown) {
-            //            val isPrecise = value.isPrecise
-            //            val upperTypeBound = value.upperTypeBound
-            //            if (isPrecise && upperTypeBound.containsOneElement) {
-            //                val theType = upperTypeBound.first
-            //                if (theType.isArrayType)
-            //                    staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
-            //                else
-            //                    staticMethodCall(pc, theType.asObjectType, name, descriptor, operands)
-            //            } else {
-            //                // _Also_ supports the case where we have a "precise type", but
-            //                // multiple types as an upper bound. This is useful in some selected
-            //                // cases where the class is generated dynamically at runtime and 
-            //                // hence, the currently available information is simply the best that
-            //                // is available.
-            //
-            //                for (utb ← upperTypeBound) {
-            //                    if (utb.isArrayType) {
-            //                        staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
-            //                    } else if (domain.isSubtypeOf(declaringClassType, utb).isYes) {
-            //                        // for whatever reason, but the invoke's declaring class type
-            //                        // is "more" precise
-            //                        super.virtualMethodCall(pc, declaringClassType, name, descriptor, operands)
-            //                        return // it doesn't make sense
-            //                    } else {
-            //                        super.virtualMethodCall(pc, utb.asObjectType, name, descriptor, operands)
-            //                    }
-            //                }
-            //            }
             val upperTypeBound = value.upperTypeBound
             if (upperTypeBound.containsOneElement) {
                 val theType = upperTypeBound.first
                 if (theType.isArrayType)
-                    staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
+                    resolvedCall(pc, ObjectType.Object, name, descriptor, true, operands)
                 else if (value.isPrecise)
-                    staticMethodCall(pc, theType.asObjectType, name, descriptor, operands)
+                    resolvedCall(pc, theType.asObjectType, name, descriptor, true, operands)
                 else if ((declaringClassType ne theType) &&
                     domain.isSubtypeOf(declaringClassType, theType).isYes) {
                     // the invoke's declaring class type is "more" precise
@@ -129,9 +99,9 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
                             " should be a subtype of "+
                             declaringClassType.toJava+
                             " (but it is the other way round)")
-                    super.virtualMethodCall(pc, declaringClassType, name, descriptor, operands)
+                    super.unresolvedCall(pc, declaringClassType, name, descriptor, operands)
                 } else {
-                    super.virtualMethodCall(pc, theType.asObjectType, name, descriptor, operands)
+                    super.unresolvedCall(pc, theType.asObjectType, name, descriptor, operands)
                 }
             } else {
                 // _Also_ supports the case where we have a "precise type", but
@@ -142,7 +112,7 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
 
                 for (utb ← upperTypeBound) {
                     if (utb.isArrayType) {
-                        staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
+                        resolvedCall(pc, ObjectType.Object, name, descriptor, true, operands)
                     } else if ((declaringClassType ne utb) &&
                         domain.isSubtypeOf(declaringClassType, utb).isYes) {
                         // The invoke's declaring class type is "more" precise
@@ -154,9 +124,15 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
                                 " should be a subtype of "+
                                 declaringClassType.toJava+
                                 " (but it is the other way round)")
-                        super.virtualMethodCall(pc, declaringClassType, name, descriptor, operands)
+                        doResolveCall(pc, declaringClassType, name, descriptor, operands)
                     } else {
-                        super.virtualMethodCall(pc, utb.asObjectType, name, descriptor, operands)
+                        val callees =
+                            this.callees(pc, utb.asObjectType, name, descriptor, operands)
+                        callees.filter { m ⇒
+                            upperTypeBound.exists(
+                                domain.isSubtypeOf(project.classFile(m).thisType, _).isYesOrUnknown
+                            )
+                        }
                     }
                 }
             }

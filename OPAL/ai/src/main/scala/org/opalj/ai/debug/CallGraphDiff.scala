@@ -28,7 +28,7 @@
  */
 package org.opalj
 package ai
-package project
+package debug
 
 import java.net.URL
 
@@ -36,8 +36,9 @@ import scala.Console.{ err, RED, RESET }
 
 import org.opalj.util.PerformanceEvaluation.{ time, memory, asMB, ns2sec }
 
-import br._
-import br.analyses._
+import org.opalj.ai.project._
+import org.opalj.br._
+import org.opalj.br.analyses._
 
 /**
  *
@@ -60,16 +61,16 @@ object CallGraphDiff extends AnalysisExecutor {
                     project,
                     entryPoints,
                     new CHACallGraphAlgorithmConfiguration
-                //                    new VTACallGraphAlgorithmConfiguration {
-                //                        override def Domain[Source](
-                //                            theProject: Project[Source],
-                //                            cache: Cache,
-                //                            classFile: ClassFile,
-                //                            method: Method): VTACallGraphDomain =
-                //                            new DefaultVTACallGraphDomain(
-                //                                theProject, cache, classFile, method, 16
-                //                            )
-                //                    }
+                //                                    new VTACallGraphAlgorithmConfiguration {
+                //                                        override def Domain[Source](
+                //                                            theProject: Project[Source],
+                //                                            cache: Cache,
+                //                                            classFile: ClassFile,
+                //                                            method: Method): VTACallGraphDomain =
+                //                                            new DefaultVTACallGraphDomain(
+                //                                                theProject, cache, classFile, method, 1
+                //                                            )
+                //                                    }
                 )
             } { t ⇒ println("Creating the first call graph took: "+ns2sec(t)) }
 
@@ -84,7 +85,7 @@ object CallGraphDiff extends AnalysisExecutor {
                             classFile: ClassFile,
                             method: Method): VTACallGraphDomain =
                             new DefaultVTACallGraphDomain(
-                                theProject, cache, classFile, method, 4
+                                theProject, cache, classFile, method, 8
                             ) with domain.ConstantFieldValuesResolution[Source]
                     })
             } { t ⇒ println("Creating the second call graph took: "+ns2sec(t)) }

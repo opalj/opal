@@ -55,10 +55,10 @@ import domain.l1
  * '''This domain is not thread-safe'''. However, given the strong coupling of a
  * domain instance to a specific method this is usually not an issue.
  *
- * @author Michael Eichberg
+ * @author Michael Eichberg  
  */
-trait CHACallGraphDomain extends Domain with CallGraphDomain {
-    this: ClassHierarchy with TheMethod ⇒
+trait CHACallGraphDomain extends CallGraphDomain   {
+    domain: ClassHierarchy with TheMethod ⇒
 
     //
     // Helper data structures  
@@ -72,19 +72,19 @@ trait CHACallGraphDomain extends Domain with CallGraphDomain {
     import scala.collection.mutable.OpenHashMap
     import scala.collection.mutable.HashSet
 
-    private[this] var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
+    private[this] var unresolvableMethodCalls = List.empty[UnresolvedMethodCall]
 
     @inline final private[this] def addUnresolvedMethodCall(
         callerClass: ReferenceType, caller: Method, pc: PC,
         calleeClass: ReferenceType, calleeName: String, calleeDescriptor: MethodDescriptor): Unit = {
-        unresolvedMethodCalls =
+        unresolvableMethodCalls =
             new UnresolvedMethodCall(
                 callerClass, caller, pc,
                 calleeClass, calleeName, calleeDescriptor
-            ) :: unresolvedMethodCalls
+            ) :: unresolvableMethodCalls
     }
 
-    def allUnresolvedMethodCalls: List[UnresolvedMethodCall] = unresolvedMethodCalls
+    def allUnresolvableMethodCalls: List[UnresolvedMethodCall] = unresolvableMethodCalls
 
     private[this] val callEdgesMap = OpenHashMap.empty[PC, Set[Method]]
 
@@ -101,13 +101,39 @@ trait CHACallGraphDomain extends Domain with CallGraphDomain {
 
     def allCallEdges: (Method, Map[PC, Set[Method]]) = (method, callEdgesMap)
 
+    def implicitExceptionConstructorCall(
+        callerType: ObjectType, callerMethod: Method, pc: PC,
+        exceptionType: ObjectType) {
+
+        project.classFile(exceptionType) match {
+            case Some(classFile) ⇒
+                classFile.findMethod("<init>", MethodDescriptor.NoArgsAndReturnVoid) match {
+                    case Some(defaultConstructor) ⇒
+                        addCallEdge(pc, HashSet(defaultConstructor))
+                    case _ ⇒
+                        throw new UnknownError("internal implementation error")
+                }
+            case _ ⇒
+                addUnresolvedMethodCall(
+                    callerType, callerMethod, pc,
+                    exceptionType, "<init>", MethodDescriptor.NoArgsAndReturnVoid
+                )
+        }
+    }
+
     // handles method calls where the target method can statically be resolved
-    @inline protected[this] def staticMethodCall(
+    @inline protected[this] def resolvedCall(
         pc: PC,
         declaringClassType: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
+        staticMethod: Boolean,
         operands: Operands): Unit = {
+
+        if (!staticMethod)
+            implicitExceptionConstructorCall(
+                classFile.thisType, method, pc,
+                ObjectType.NullPointerException)
 
         def handleUnresolvedMethodCall() =
             addUnresolvedMethodCall(
@@ -129,25 +155,34 @@ trait CHACallGraphDomain extends Domain with CallGraphDomain {
         }
     }
 
-    @inline protected[this] def virtualMethodCall(
+    @inline protected[this] def callees(
+        pc: PC,
+        declaringClassType: ObjectType,
+        name: String,
+        descriptor: MethodDescriptor,
+        operands: Operands): Set[Method] = {
+
+        if (classHierarchy.isKnown(declaringClassType)) {
+            val methodSignature = new MethodSignature(name, descriptor)
+            cache.getOrElseUpdate(declaringClassType, methodSignature) {
+                classHierarchy.lookupImplementingMethods(
+                    declaringClassType, name, descriptor, project
+                )
+            }
+        } else {
+            Set.empty
+        }
+    }
+
+    @inline protected[this] def doResolveCall(
         pc: PC,
         declaringClassType: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
         operands: Operands): Unit = {
 
-        val callees: Set[Method] = {
-            if (classHierarchy.isKnown(declaringClassType)) {
-                val methodSignature = new MethodSignature(name, descriptor)
-                cache.getOrElseUpdate(declaringClassType, methodSignature) {
-                    classHierarchy.lookupImplementingMethods(
-                        declaringClassType, name, descriptor, project
-                    )
-                }
-            } else {
-                Set.empty
-            }
-        }
+        val callees: Set[Method] =
+            this.callees(pc, declaringClassType, name, descriptor, operands)
 
         if (callees.isEmpty)
             addUnresolvedMethodCall(
@@ -158,6 +193,24 @@ trait CHACallGraphDomain extends Domain with CallGraphDomain {
         }
     }
 
+    /**
+     * @Note An unresolved call is always an instance based call and never a call to
+     *      a static method.
+     */
+    @inline protected[this] def unresolvedCall(
+        pc: PC,
+        declaringClassType: ObjectType,
+        name: String,
+        descriptor: MethodDescriptor,
+        operands: Operands): Unit = {
+
+        implicitExceptionConstructorCall(
+            classFile.thisType, method, pc,
+            ObjectType.NullPointerException)
+
+        doResolveCall(pc, declaringClassType, name, descriptor, operands)
+    }
+
     abstract override def invokevirtual(
         pc: PC,
         declaringClass: ReferenceType,
@@ -165,10 +218,11 @@ trait CHACallGraphDomain extends Domain with CallGraphDomain {
         descriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
         val result = super.invokevirtual(pc, declaringClass, name, descriptor, operands)
+
         if (declaringClass.isArrayType) {
-            staticMethodCall(pc, ObjectType.Object, name, descriptor, operands)
+            resolvedCall(pc, ObjectType.Object, name, descriptor, true, operands)
         } else {
-            virtualMethodCall(pc, declaringClass.asObjectType, name, descriptor, operands)
+            unresolvedCall(pc, declaringClass.asObjectType, name, descriptor, operands)
         }
         result
     }
@@ -180,7 +234,7 @@ trait CHACallGraphDomain extends Domain with CallGraphDomain {
         descriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
         val result = super.invokeinterface(pc, declaringClass, name, descriptor, operands)
-        virtualMethodCall(pc, declaringClass, name, descriptor, operands)
+        unresolvedCall(pc, declaringClass, name, descriptor, operands)
         result
     }
 
@@ -195,7 +249,7 @@ trait CHACallGraphDomain extends Domain with CallGraphDomain {
         operands: Operands): MethodCallResult = {
         val result = super.invokespecial(pc, declaringClass, name, descriptor, operands)
         // for invokespecial the dynamic type is not "relevant" (even for Java 8) 
-        staticMethodCall(pc, declaringClass, name, descriptor, operands)
+        resolvedCall(pc, declaringClass, name, descriptor, true, operands)
         result
     }
 
@@ -209,7 +263,7 @@ trait CHACallGraphDomain extends Domain with CallGraphDomain {
         descriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
         val result = super.invokestatic(pc, declaringClass, name, descriptor, operands)
-        staticMethodCall(pc, declaringClass, name, descriptor, operands)
+        resolvedCall(pc, declaringClass, name, descriptor, false, operands)
         result
     }
 }

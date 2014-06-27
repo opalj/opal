@@ -79,7 +79,7 @@ trait CallGraphDomain extends Domain { this: TheMethod ⇒
      * @note This method should only be called after the abstract interpretation
      *      of `thisMethod`.
      */
-    def allUnresolvedMethodCalls: List[UnresolvedMethodCall]
+    def allUnresolvableMethodCalls: List[UnresolvedMethodCall]
 
 }
 
