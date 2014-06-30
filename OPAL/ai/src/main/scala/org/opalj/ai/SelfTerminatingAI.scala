@@ -33,9 +33,13 @@ package ai
  * A abstract interpreter that interrupts itself after some configurable
  * ([[maxEffortInNs]]) time has passed.
  *
+ * @param maxEffortInNs  The number of nanoseconds after which the abstract interpretation is
+ * aborted. The default value is 150 milliseconds.
+ *
  * @author Michael Eichberg
  */
-class SelfTerminatingAI[D <: Domain] extends AI[D] {
+class SelfTerminatingAI[D <: Domain](
+        val maxEffortInNs: Long = 150l /*ms*/ * 1000l * 1000l) extends AI[D] {
 
     private[this] var evaluationCount = -1
 
@@ -46,12 +50,6 @@ class SelfTerminatingAI[D <: Domain] extends AI[D] {
     private[this] var interruptTime: Long = 0
 
     def abortedAfter = interruptTime - startTime
-
-    /**
-     * The number of nanoseconds after which the abstract interpretation is
-     * aborted. The default value is 150 milliseconds.
-     */
-    val maxEffortInNs: Long = 150l /*ms*/ * 1000l * 1000l
 
     override def isInterrupted =
         interrupted || {
