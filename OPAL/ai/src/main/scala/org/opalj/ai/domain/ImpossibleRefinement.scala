@@ -36,7 +36,7 @@ package domain
  * @author Michael Eichberg
  */
 case class ImpossibleRefinement(
-    value: Domain#DomainValue,
+    value: AnyRef,
     refinementGoal: String)
         extends Exception(
             "refining "+value+" failed: "+refinementGoal) //,null, true, false)
