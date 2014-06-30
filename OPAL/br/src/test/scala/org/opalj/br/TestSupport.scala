@@ -32,6 +32,8 @@ package br
 
 import java.io.File
 
+import org.opalj.br.analyses.Project
+
 /**
  * Common functionality required by all test.
  *
@@ -106,8 +108,12 @@ object TestSupport {
         val classFiles = org.opalj.br.reader.Java8Framework.ClassFiles(JRELibraryFolder)
         if (classFiles.isEmpty)
             sys.error("Loading the JRE failed.")
-            
+
         classFiles.toSeq
+    }
+
+    lazy val JREProject: Project[java.net.URL] = {
+        Project(JREClassFiles)
     }
 
 }
