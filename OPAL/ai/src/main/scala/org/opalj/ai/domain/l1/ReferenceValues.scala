@@ -496,7 +496,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
                     classHierarchy.joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true) match {
                         case UIDSet1(`thisUpperTypeBound`) if (
-                            this.isNull == that.isNull && !this.isPrecise
+                            (this.isNull == that.isNull || this.isNull.isUnknown)
+                            && !this.isPrecise
                         ) ⇒
                             NoUpdate
 
@@ -519,7 +520,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     classHierarchy.joinAnyArrayTypeWithObjectType(thisUpperTypeBound) match {
 
                         case UIDSet1(`thisUpperTypeBound`) if (
-                            this.isNull == that.isNull && !this.isPrecise
+                            (this.isNull == that.isNull || this.isNull.isUnknown) &&
+                            !this.isPrecise
                         ) ⇒
                             NoUpdate
 
