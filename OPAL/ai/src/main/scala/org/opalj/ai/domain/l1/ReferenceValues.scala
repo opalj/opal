@@ -879,9 +879,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 if (answer == Unknown)
                     return Unknown
 
-                if (!value.isNull.isYes) {
-                    answer = answer & value.isValueSubtypeOf(supertype)
-                }
+                answer = answer & value.isValueSubtypeOf(supertype)
             }
             // either Yes or No
             answer
