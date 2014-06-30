@@ -1218,10 +1218,7 @@ class ClassHierarchy private (
             if (aIsSubtypeOfAllOfb)
                 return upperTypeBoundB
             if (newUpperTypeBound.nonEmpty) {
-                if (newUpperTypeBound.containsOneElement)
-                    Left(newUpperTypeBound.first)
-                else
-                    return newUpperTypeBound
+                return newUpperTypeBound
             }
         }
         // if we reach this point the types are in no inheritance relationship
