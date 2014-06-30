@@ -35,8 +35,8 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class DLOAD(
-    lvIndex: Int)
+class DLOAD(
+    override val lvIndex: Int)
         extends LoadLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
@@ -44,10 +44,27 @@ case class DLOAD(
 
     final override def mnemonic: String = "dload"
 
+    override def equals(other: Any): Boolean = other match {
+        case DLOAD(index) ⇒ index == lvIndex
+        case _            ⇒ false
+    }
+    
+    override lazy val hashCode: Int = 47 * lvIndex
+
+    override lazy val toString: String = s"DLOAD($lvIndex)"
 }
 
 object DLOAD {
 
     final val opcode = 24
 
+    def apply(lvIndex: Int): LoadLocalVariableInstruction = lvIndex match {
+        case 0 ⇒ DLOAD_0
+        case 1 ⇒ DLOAD_1
+        case 2 ⇒ DLOAD_2
+        case 3 ⇒ DLOAD_3
+        case _ ⇒ new DLOAD(lvIndex)
+    }
+
+    def unapply(dload: DLOAD): Option[Int] = Some(dload.lvIndex)
 }
