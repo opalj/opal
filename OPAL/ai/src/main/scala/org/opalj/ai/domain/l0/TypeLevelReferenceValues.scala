@@ -212,7 +212,11 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
      * Abstracts over all values with computational type `reference`. I.e.,
      * abstracts over class and array values and also the `null` value.
      */
-    trait ReferenceValue extends Value with IsReferenceValue with ArrayAbstraction {
+    trait ReferenceValue
+            extends AnyRef
+            with Value
+            with IsReferenceValue
+            with ArrayAbstraction {
         this: DomainReferenceValue ⇒
 
         /**
@@ -229,22 +233,6 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
          * This default implementation always returns `Unknown`.
          */
         override def isNull: Answer = Unknown
-
-        /**
-         * Refines this value's `isNull` property, if meaningful.
-         *
-         * @param pc The program counter of the instruction that was the reason
-         * 		for the refinement.
-         * @param isNull This value's new null-ness property. `isNull` either
-         * 		has to be `Yes` or `No`.
-         * @return The updated value, operand stack and register values if
-         * 		there was something to refine.
-         */
-        def refineIsNull(
-            pc: PC,
-            isNull: Answer,
-            operands: Operands,
-            locals: Locals): (Operands, Locals)
 
         /**
          * Returns `true` if the type information associated with this value is precise.
@@ -277,23 +265,6 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
         @throws[DomainException]("If this value is null (isNull.yes == true).")
         override def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
-        /**
-         * Refines the upper bound of this value's type to the given supertype.
-         *
-         * This call can be ignored if the type information related to this value is
-         * precise, i.e., if we know that we precisely capture the runtime type of
-         * this value.
-         *
-         * @return The updated operand stack and register values if there was something
-         * 		to refine.
-         */
-        @throws[ImpossibleRefinement]("If the refinement is not meaningful.")
-        def refineUpperTypeBound(
-            pc: PC,
-            supertype: ReferenceType,
-            operands: Operands,
-            locals: Locals): (DomainValue, (Operands, Locals))
-
     }
 
     /**
@@ -314,13 +285,6 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
          * Returns `Yes`.
          */
         final override def isNull = Yes
-
-        final override def refineIsNull(
-            pc: PC,
-            isNull: Answer,
-            operands: Operands,
-            locals: Locals): (Operands, Locals) =
-            throw new ImpossibleRefinement(this, "nullness property of null value")
 
         /**
          * Returns `true`.
@@ -355,14 +319,6 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
         @throws[DomainException]("always thrown since it is context-dependent.")
         final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing =
             throw DomainException("isSubtypeOf is not defined for \"null\" values")
-
-        override def refineUpperTypeBound(
-            pc: PC,
-            supertype: ReferenceType,
-            operands: Operands,
-            locals: Locals): (DomainValue, (Operands, Locals)) =
-            //(operands, locals)
-            throw new ImpossibleRefinement(this, "refinement of type of null value")
 
         override def summarize(pc: PC): this.type = this
 
@@ -844,55 +800,24 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
     //
     // -----------------------------------------------------------------------------------
 
-    override def refEstablishUpperBound(
+    // This domain does not support the propagation of constraints, since 
+    // the join operator reuses the current domain value (the same instance) 
+    // if its properties are correctly abstracting over the current state. Hence,
+    // the same domain value is used to potentially represent different objects at
+    // runtime/this domain does not support the identification of aliases.
+    // As long as the memory address/the reference of a DomainValue is used to ensure
+    // termination, we cannot propagate constraints. A different property is needed
+    // that does not depend on the reference. (I.e., we cannot simply create a new
+    // domain value whenever some operation is performed since we cannot guarantee 
+    // the termination any longer!)
+
+    def refEstablishUpperBound(
         pc: PC,
-        bound: ReferenceType,
-        value: DomainValue,
+        upperTypeBound: ReferenceType,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        val (_, newMemoryLayout) =
-            asReferenceValue(value).refineUpperTypeBound(pc, bound, operands, locals)
-        newMemoryLayout
+        (ReferenceValue(pc, upperTypeBound) :: operands.tail, locals)
     }
-
-    protected[this] def refineIsNull(
-        pc: PC,
-        value: DomainValue,
-        isNull: Answer,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) = {
-        asReferenceValue(value).refineIsNull(pc, isNull, operands, locals)
-    }
-
-    /**
-     * Refines the "null"ness property (`isNull == No`) of the given value.
-     *
-     * Calls `refineIsNull` on the given `ReferenceValue` and replaces every occurrence
-     * on the stack/in a register with the updated value.
-     *
-     * @param value A `ReferenceValue` that does not represent the value `null`.
-     */
-    override def refEstablishIsNonNull(
-        pc: PC,
-        value: DomainValue,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        refineIsNull(pc, value, No, operands, locals)
-
-    /**
-     * Updates the "null"ness property (`isNull == Yes`) of the given value.
-     *
-     * Calls `refineIsNull` on the given `ReferenceValue` and replaces every occurrence
-     * on the stack/in a register with the updated value.
-     *
-     * @param value A `ReferenceValue`.
-     */
-    override def refEstablishIsNull(
-        pc: PC,
-        value: DomainValue,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        refineIsNull(pc, value, Yes, operands, locals)
 
 }
 

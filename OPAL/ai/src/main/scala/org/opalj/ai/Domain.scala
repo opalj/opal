@@ -1241,18 +1241,20 @@ trait Domain {
     private[ai] final def RefAreNotEqual = refEstablishAreNotEqual _
 
     /**
-     * Called by OPAL to inform the domain that the given type is a new additional upper
-     * bound of the given value that the value is guaranteed to satisfy from here on.
+     * Called by the abstract interpreter when '''the type bound of the top most stack
+     * value needs to be refined'''. This method is only called by the abstract
+     * interpreter iff an immediately preceding subtype query (typeOf(value) <: bound)
+     * returned `Unknown` and must not be ignored – w.r.t. the top-most stack value –
+     * by the value.
      *
-     * This method is called iff a subtype query (typeOf(value) <: bound) returned
-     * `Unknown`.
+     * A domain that is able to identify aliases can use this information to propagate
+     * the information to the other aliases.
      */
-    def refEstablishUpperBound(
+    /*abstract*/ def refEstablishUpperBound(
         pc: PC,
         bound: ReferenceType,
-        value: DomainValue,
         operands: Operands,
-        locals: Locals): (Operands, Locals) = (operands, locals)
+        locals: Locals): (Operands, Locals) 
 
     //
     // W.r.t. Integer values

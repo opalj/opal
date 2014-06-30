@@ -124,12 +124,12 @@ class DefaultPreciseReferenceValuesTest
         val theObject = ObjectValue(-1, No, false, ObjectType.Object)
         val theFile = ObjectValue(-1, No, false, File)
 
-        val (update1, _) = theObject.refineUpperTypeBound(-1, File, Nil, Locals.empty)
-        update1.upperTypeBound.first should be(File)
-        val (update2, _) = theFile.refineUpperTypeBound(-1, File, Nil, Locals.empty)
-        update2.upperTypeBound.first should be(File)
-        val (update3, _) = theFile.refineUpperTypeBound(-1, ObjectType.Object, Nil, Locals.empty)
-        update3.upperTypeBound.first should be(File)
+        val (update1, _) = theObject.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
+        update1.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
+        val (update2, _) = theFile.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
+        update2.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
+        val (update3, _) = theFile.refineUpperTypeBound(-1, ObjectType.Object, List(theFile), Locals.empty)
+        update3.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
     }
 
     it should ("be able to create an ObjectValue with the expected values") in {

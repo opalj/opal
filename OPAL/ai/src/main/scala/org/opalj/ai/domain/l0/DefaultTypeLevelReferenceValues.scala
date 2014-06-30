@@ -75,19 +75,6 @@ trait DefaultTypeLevelReferenceValues
             with SReferenceValue[ArrayType] {
         this: DomainArrayValue ⇒
 
-        override def refineIsNull(
-            pc: PC,
-            isNull: Answer,
-            operands: Operands,
-            locals: Locals): (Operands, Locals) = {
-            if (isNull.isYes) {
-                val newValue = NullValue(pc)
-                updateMemoryLayout(this, newValue, operands, locals)
-            } else {
-                (operands, locals)
-            }
-        }
-
         override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
             val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
             isSubtypeOf match {
@@ -144,27 +131,10 @@ trait DefaultTypeLevelReferenceValues
             thrownExceptions: ExceptionValues): ArrayStoreResult =
             ComputationWithSideEffectOrException(thrownExceptions)
 
-        // NARROWING OPERATION
-        @throws[ImpossibleRefinement]("if the refinement of the type is not possible")
-        override def refineUpperTypeBound(
-            pc: PC,
-            supertype: ReferenceType,
-            operands: Operands,
-            locals: Locals): (DomainReferenceValue, (Operands, Locals)) = {
-            // OPAL calls this method only if a previous "subtype of" test 
-            // (this.isValueSubtypeOf <: supertype ?) 
-            // returned unknown and we are now on the branch where this relation
-            // has to hold. Hence, we only need to handle the case where 
-            // supertype is more strict than this type's upper type bound.
-            if (supertype.isArrayType) {
-                val newValue = ArrayValue(pc, supertype.asArrayType)
-                (newValue, updateMemoryLayout(this, newValue, operands, locals))
-            } else
-                throw ImpossibleRefinement(this, "cast to a non-array value: "+supertype)
-        }
-
         // WIDENING OPERATION
         override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
+            require(this ne other)
+
             val thisUpperTypeBound = this.theUpperTypeBound
             other match {
                 case SObjectValue(thatUpperTypeBound) ⇒
@@ -220,17 +190,6 @@ trait DefaultTypeLevelReferenceValues
     protected trait ObjectValue extends super.ObjectValue {
         this: DomainObjectValue ⇒
 
-        override def refineIsNull(
-            pc: PC,
-            isNull: Answer,
-            operands: Operands,
-            locals: Locals): (Operands, Locals) = {
-            if (isNull.isYes)
-                updateMemoryLayout(this, NullValue(pc), operands, locals)
-            else
-                (operands, locals)
-        }
-
         protected def asStructuralUpdate(
             joinPC: PC,
             newUpperTypeBound: UIDSet[ObjectType]): Update[DomainValue] = {
@@ -279,46 +238,13 @@ trait DefaultTypeLevelReferenceValues
                             // possible that some value of this type may be a subtype
                             // of the given supertype, the answer "No" is correct.
                             supertype.isObjectType &&
+                            classHierarchy.isKnown(supertype.asObjectType) &&
+                            classHierarchy.isKnown(theUpperTypeBound) &&
                             !classHierarchy.isInterface(supertype.asObjectType) &&
                             !classHierarchy.isInterface(theUpperTypeBound) &&
                             domain.isSubtypeOf(supertype, theUpperTypeBound).isNo
                         ) ⇒ No
                 case _ ⇒ Unknown
-            }
-        }
-
-        // NARROWING OPERATION
-        override def refineUpperTypeBound(
-            pc: PC,
-            supertype: ReferenceType,
-            operands: Operands,
-            locals: Locals): (DomainReferenceValue, (Operands, Locals)) = {
-            if (supertype eq theUpperTypeBound) {
-                return (this, (operands, locals))
-            }
-
-            // OPAL calls this method only if a previous "subtype of" test 
-            // (this.typeOfvalue <: supertype ?) 
-            // returned unknown and we are now on the branch where this relation
-            // has to hold. Hence, we only need to handle the case where 
-            // supertype is more strict than this type's upper type bound.
-            val isSubtypeOf = domain.isSubtypeOf(supertype, theUpperTypeBound)
-            if (isSubtypeOf.isYes)
-                if (supertype.isArrayType) {
-                    val newValue = ArrayValue(pc, supertype.asArrayType)
-                    (newValue, updateMemoryLayout(this, newValue, operands, locals))
-                } else {
-                    val newValue = ObjectValue(pc, supertype.asObjectType)
-                    (newValue, updateMemoryLayout(this, newValue, operands, locals))
-                }
-            else {
-                if (supertype.isArrayType)
-                    throw ImpossibleRefinement(this, "cast to array type: "+supertype.toJava)
-
-                // probably some (abstract) class and an interface or two
-                // unrelated interfaces
-                val newValue = ObjectValue(pc, UIDSet(theUpperTypeBound, supertype.asObjectType))
-                (newValue, updateMemoryLayout(this, newValue, operands, locals))
             }
         }
 
@@ -423,37 +349,12 @@ trait DefaultTypeLevelReferenceValues
                     supertype.isArrayType &&
                     upperTypeBound != ObjectType.SerializableAndCloneable
                 ) ⇒
-                    // even if the upper bound is not precise we are now a 100% sure 
-                    // this value is not a subtype of the given supertype
+                    // even if the upper bound is not precise we are now 100% sure 
+                    // that this value is not a subtype of the given supertype
                     No
                 case _ ⇒
                     Unknown
             }
-        }
-
-        override def refineUpperTypeBound(
-            pc: PC,
-            supertype: ReferenceType,
-            operands: Operands,
-            locals: Locals): (DomainReferenceValue, (Operands, Locals)) = {
-            // OPAL calls this method only if a previous "subtype of" test 
-            // (typeOf(this.value) <: additionalUpperBound ?) 
-            // returned unknown. Hence, we only handle the case where the new bound
-            // is more strict than the previous bound.
-
-            var newUpperTypeBound: UIDSet[ObjectType] = UIDSet.empty[ObjectType]
-            upperTypeBound foreach { (anUpperTypeBound: ObjectType) ⇒
-                if (domain.isSubtypeOf(supertype, anUpperTypeBound).isNoOrUnknown)
-                    newUpperTypeBound = newUpperTypeBound + anUpperTypeBound
-            }
-            if (newUpperTypeBound.isEmpty) {
-                val newValue = ReferenceValue(pc, supertype)
-                (newValue, updateMemoryLayout(this, newValue, operands, locals))
-            } else if (supertype.isObjectType) {
-                val newValue = ObjectValue(pc, newUpperTypeBound + supertype.asObjectType)
-                (newValue, updateMemoryLayout(this, newValue, operands, locals))
-            } else
-                throw ImpossibleRefinement(this, "incompatible bounds: "+supertype.toJava)
         }
 
         override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {

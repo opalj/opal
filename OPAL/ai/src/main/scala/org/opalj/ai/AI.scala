@@ -744,7 +744,6 @@ trait AI[D <: Domain] {
                                             theDomain.refEstablishUpperBound(
                                                 branchTarget,
                                                 catchType.get,
-                                                exceptionValue,
                                                 List(exceptionValue),
                                                 locals)
                                         gotoTarget(pc, branchTarget, true, updatedOperands, updatedLocals)
@@ -892,7 +891,7 @@ trait AI[D <: Domain] {
                             locals)
 
                         if (tracer.isDefined) {
-                            tracer.get.jumpToSubroutine(theDomain)(pc, branchtarget,memoryLayoutBeforeSubroutineCall.size)
+                            tracer.get.jumpToSubroutine(theDomain)(pc, branchtarget, memoryLayoutBeforeSubroutineCall.size)
                         }
 
                     case 169 /*ret*/ ⇒
@@ -1106,7 +1105,6 @@ trait AI[D <: Domain] {
                                                     theDomain.refEstablishUpperBound(
                                                         branchTarget,
                                                         catchType,
-                                                        exceptionValue,
                                                         updatedOperands,
                                                         updatedLocals)
                                                 gotoTarget(
@@ -1157,7 +1155,6 @@ trait AI[D <: Domain] {
                                                             theDomain.refEstablishUpperBound(
                                                                 branchTarget,
                                                                 catchType.get,
-                                                                exceptionValue,
                                                                 updatedOperands,
                                                                 updatedLocals)
                                                         gotoTarget(
@@ -1915,7 +1912,7 @@ trait AI[D <: Domain] {
                                     val (newOperands, newLocals) =
                                         theDomain.refEstablishUpperBound(
                                             pc,
-                                            supertype, objectref,
+                                            supertype,
                                             operands, locals)
                                     fallThrough(newOperands, newLocals)
                             }

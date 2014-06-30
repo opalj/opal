@@ -71,17 +71,17 @@ class CallGraphCache[Contour, Value] {
 
     import java.util.concurrent.{ ConcurrentHashMap ⇒ CHMap }
 
-//    private[this] val constructorsCache: CHMap[ObjectType, Value] = new CHMap(512)
-//
-//    def getDefaultConstructorOrElseUpdate(objectType: ObjectType)(f: ⇒ Value): Value = {
-//        // we don't care if we calculate the result multiple times..
-//        var cachedValue = constructorsCache.get(objectType)
-//        if (cachedValue == null) {
-//            cachedValue = f
-//            constructorsCache.put(objectType, cachedValue)
-//        }
-//        cachedValue
-//    }
+    private[this] val baseCache: CHMap[ObjectType, Value] = new CHMap(512)
+
+    def getOrElseUpdate(key: ObjectType)(f: ⇒ Value): Value = {
+        // we don't care if we calculate the result multiple times..
+        var cachedValue = baseCache.get(key)
+        if (cachedValue == null) {
+            cachedValue = f
+            baseCache.put(key, cachedValue)
+        }
+        cachedValue
+    }
 
     private[this] val cache: Array[CHMap[Contour, Value]] = {
         // The cache is 5% larger than the number of "seen" ObjectType's to have
@@ -108,18 +108,18 @@ class CallGraphCache[Contour, Value] {
      * returned.
      */
     def getOrElseUpdate(
-        declaringClassType: ObjectType,
+        key: ObjectType,
         contour: Contour)(
             f: ⇒ Value, syncOnEvaluation: Boolean = true): Value = {
 
         val typeBasedCache = {
-            val id = declaringClassType.id
+            val id = key.id
             if (id < cache.length) cache(id)
             else {
-                val typeBasedCache = overflowCache.get(declaringClassType)
+                val typeBasedCache = overflowCache.get(key)
                 if (typeBasedCache == null) {
                     val newCache = new CHMap[Contour, Value](16)
-                    val existingCache = overflowCache.putIfAbsent(declaringClassType, newCache)
+                    val existingCache = overflowCache.putIfAbsent(key, newCache)
                     if (existingCache != null)
                         existingCache
                     else
