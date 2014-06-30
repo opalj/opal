@@ -39,7 +39,7 @@ import org.opalj.br.{ ObjectType, FieldType }
  *
  * '''However, a typical Java compiler automatically resolves all simple references
  * and, hence, this trait has for Java projects in general no effect.''' If we analyze
- * other language that compile to the JVM platform, the effect might be different.
+ * other languages that compile to the JVM platform, the effect might be different.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */

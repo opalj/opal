@@ -231,8 +231,13 @@ class TestUninitializedFieldAccessDuringStaticInitialization extends AnalysisTes
                     "during static initialization"))
     }
 
-    it should "find 30 issues in total" in {
-        reports.size should be(30)
+    it should "detect that StaticNativeMethod.<clinit>() accesses uninitialized subclass static field StaticNativeMethodSubclass.i" in {
+        reports should contain(ClinitReport("StaticNativeMethod", 48,
+            "Access to uninitialized static field 'UninitializedFieldAccessDuringStaticInitialization/StaticNativeMethodSubclass.i'"))
+    }
+
+    it should "find 31 issues in total" in {
+        reports.size should be(31)
     }
 }
 

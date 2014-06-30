@@ -877,10 +877,11 @@ class ClassHierarchy private (
         project: SomeProject,
         classesFilter: ObjectType ⇒ Boolean = { _ ⇒ true }): Set[Method] = {
 
+        val receiverIsInterface = isInterface(receiverType)
         // TODO [Improvement] Implement an "UnsafeListSet" that does not check for the set property if (by construction) it has to be clear that all elements are unique
         var implementingMethods: Set[Method] =
             {
-                if (isInterface(receiverType))
+                if (receiverIsInterface)
                     lookupMethodDefinition(
                         ObjectType.Object, // to handle calls such as toString on a (e.g.) "java.util.List"
                         methodName,
@@ -905,7 +906,11 @@ class ClassHierarchy private (
                 if (classesFilter(subtype)) {
                     project.classFile(subtype) foreach { classFile ⇒
                         val methodOption =
-                            classFile.findMethod(methodName, methodDescriptor)
+                            if (receiverIsInterface) {
+                                lookupMethodDefinition(subtype, methodName, methodDescriptor, project)
+                            } else {
+                                classFile.findMethod(methodName, methodDescriptor)
+                            }
                         if (methodOption.isDefined) {
                             val method = methodOption.get
                             if (!method.isAbstract)

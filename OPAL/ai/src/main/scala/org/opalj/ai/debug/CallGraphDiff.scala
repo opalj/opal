@@ -28,7 +28,7 @@
  */
 package org.opalj
 package ai
-package project
+package debug
 
 import java.net.URL
 
@@ -36,8 +36,9 @@ import scala.Console.{ err, RED, RESET }
 
 import org.opalj.util.PerformanceEvaluation.{ time, memory, asMB, ns2sec }
 
-import br._
-import br.analyses._
+import org.opalj.ai.project._
+import org.opalj.br._
+import org.opalj.br.analyses._
 
 /**
  *
@@ -59,17 +60,17 @@ object CallGraphDiff extends AnalysisExecutor {
                 CallGraphFactory.create(
                     project,
                     entryPoints,
-                                        new CHACallGraphAlgorithmConfiguration
-//                    new VTACallGraphAlgorithmConfiguration {
-//                        override def Domain[Source](
-//                            theProject: Project[Source],
-//                            cache: Cache,
-//                            classFile: ClassFile,
-//                            method: Method): VTACallGraphDomain =
-//                            new DefaultVTACallGraphDomain(
-//                                theProject, cache, classFile, method, 16
-//                            )
-//                    }
+                    new CHACallGraphAlgorithmConfiguration
+                //                                    new VTACallGraphAlgorithmConfiguration {
+                //                                        override def Domain[Source](
+                //                                            theProject: Project[Source],
+                //                                            cache: Cache,
+                //                                            classFile: ClassFile,
+                //                                            method: Method): VTACallGraphDomain =
+                //                                            new DefaultVTACallGraphDomain(
+                //                                                theProject, cache, classFile, method, 1
+                //                                            )
+                //                                    }
                 )
             } { t ⇒ println("Creating the first call graph took: "+ns2sec(t)) }
 
@@ -84,7 +85,7 @@ object CallGraphDiff extends AnalysisExecutor {
                             classFile: ClassFile,
                             method: Method): VTACallGraphDomain =
                             new DefaultVTACallGraphDomain(
-                                theProject, cache, classFile, method, 16
+                                theProject, cache, classFile, method, 8
                             ) with domain.ConstantFieldValuesResolution[Source]
                     })
             } { t ⇒ println("Creating the second call graph took: "+ns2sec(t)) }
@@ -116,14 +117,15 @@ object CallGraphDiff extends AnalysisExecutor {
                             reports = AdditionalCallTargets(project, method, pc, calleesLPCG) :: reports
                         }
                     }
-
-                    if (reports.nonEmpty)
-                        println(
-                            reports.mkString(
-                                "Differences for "+project.classFile(method).thisType.toJava+" - "+method.descriptor.toJava(method.name)+":\n\t",
-                                "\n\t",
-                                "\n\n")
-                        )
+                    val (unexpected, additional) = reports.partition(_.isInstanceOf[UnexpectedCallTargets])
+                    if (unexpected.nonEmpty || additional.nonEmpty) {
+                        println("Differences for "+project.classFile(method).thisType.toJava+" - "+method.descriptor.toJava(method.name))
+                        if (additional.nonEmpty)
+                            println(additional.mkString("\t", "\n\t", "\n"))
+                        if (unexpected.nonEmpty)
+                            println(unexpected.mkString("\t", "\n\t", "\n"))
+                        println("\n")
+                    }
                 }
             } { t ⇒ println("Calculting the differences took: "+ns2sec(t)) }
 

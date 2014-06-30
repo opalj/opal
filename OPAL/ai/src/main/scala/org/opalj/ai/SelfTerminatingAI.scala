@@ -30,7 +30,8 @@ package org.opalj
 package ai
 
 /**
- * A domain that interrupts itself after some configurable time has passed.
+ * A abstract interpreter that interrupts itself after some configurable
+ * ([[maxEffortInNs]]) time has passed.
  *
  * @author Michael Eichberg
  */
@@ -46,22 +47,26 @@ class SelfTerminatingAI[D <: Domain] extends AI[D] {
 
     def abortedAfter = interruptTime - startTime
 
+    /**
+     * The number of nanoseconds after which the abstract interpretation is
+     * aborted. The default value is 150 milliseconds.
+     */
     val maxEffortInNs: Long = 150l /*ms*/ * 1000l * 1000l
 
     override def isInterrupted =
-        interrupted ||
-            {
-                evaluationCount += 1
-                if (evaluationCount == 0) {
-                    startTime = System.nanoTime()
-                    false
-                } else if (evaluationCount % 100 == 0 && System.nanoTime() - startTime > maxEffortInNs) {
-                    interrupted = true
-                    interruptTime = System.nanoTime()
-                    true
-                } else {
-                    false
-                }
+        interrupted || {
+            evaluationCount += 1
+            if (evaluationCount == 0) {
+                startTime = System.nanoTime()
+                false
+            } else if (evaluationCount % 100 == 0 &&
+                (System.nanoTime() - startTime) > maxEffortInNs) {
+                interrupted = true
+                interruptTime = System.nanoTime()
+                true
+            } else {
+                false
             }
+        }
 
 }

@@ -61,10 +61,7 @@ trait DefaultReferenceValuesBinding extends DefaultTypeLevelReferenceValues {
      */
     override def NullValue(pc: PC): DomainNullValue = TheNullValue
 
-    override def ObjectValue(
-        pc: PC,
-        objectType: ObjectType): DomainObjectValue = {
-
+    override def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
         new SObjectValue(objectType)
     }
 

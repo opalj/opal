@@ -100,12 +100,12 @@ object CallGraphFactory {
                     val domain = configuration.Domain(theProject, cache, classFile, method)
                     try {
                         BaseAI(classFile, method, domain)
-                        (domain.allCallEdges, domain.allUnresolvedMethodCalls, None)
+                        (domain.allCallEdges, domain.allUnresolvableMethodCalls, None)
                     } catch {
                         case exception: Exception ⇒
                             (
                                 domain.allCallEdges,
-                                domain.allUnresolvedMethodCalls,
+                                domain.allUnresolvableMethodCalls,
                                 Some(CallGraphConstructionException(classFile, method, exception))
                             )
                     }

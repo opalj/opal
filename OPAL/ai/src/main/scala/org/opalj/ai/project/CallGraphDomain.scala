@@ -48,15 +48,13 @@ import br.analyses._
  *
  * @author Michael Eichberg
  */
-trait CallGraphDomain extends Domain {
+trait CallGraphDomain extends Domain { this: TheMethod ⇒
 
     // THE CONTEXT - SET DURING THE CREATION OF THE DOMAIN
 
     /* abstract */ val project: SomeProject
 
     /* abstract */ val classFile: ClassFile
-
-    /* abstract */ val method: Method
 
     // METHODS TO GET THE RESULTS AFTER THE DOMAIN WAS USED FOR THE ABSTRACT
     // INTERPRETATION OF THIS METHOD.
@@ -81,7 +79,7 @@ trait CallGraphDomain extends Domain {
      * @note This method should only be called after the abstract interpretation
      *      of `thisMethod`.
      */
-    def allUnresolvedMethodCalls: List[UnresolvedMethodCall]
+    def allUnresolvableMethodCalls: List[UnresolvedMethodCall]
 
 }
 

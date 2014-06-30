@@ -22,24 +22,34 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
+
+package UninitializedFieldAccessDuringStaticInitialization;
 
 /**
- * A domain that can be interrupted by calling the `interrupt` method.
- *
- * @author Michael Eichberg
+ * A class that calls a `static native` method during `<clinit>`. This is special because
+ * references to `native` methods can be resolved, but they can still not be analyzed
+ * because they don't have known bodies.
+ * 
+ * This test class must have a subclass with a static field, or else the analysis would
+ * simply skip it immediately.
+ * 
+ * @author Daniel Klauer
  */
-class InterruptableAI[D <: Domain] extends AI[D] {
+public class StaticNativeMethod {
 
-    private[this] var doInterrupt: Boolean = false
+    public static native int f();
 
-    override def isInterrupted = doInterrupt
+    static {
+        System.out.println(f());
+        System.out.println(StaticNativeMethodSubclass.i);
+    }
+}
 
-    def interrupt(): Unit = { doInterrupt = true }
+class StaticNativeMethodSubclass extends StaticNativeMethod {
 
+    static int i = 123;
 }

@@ -71,6 +71,18 @@ class CallGraphCache[Contour, Value] {
 
     import java.util.concurrent.{ ConcurrentHashMap ⇒ CHMap }
 
+//    private[this] val constructorsCache: CHMap[ObjectType, Value] = new CHMap(512)
+//
+//    def getDefaultConstructorOrElseUpdate(objectType: ObjectType)(f: ⇒ Value): Value = {
+//        // we don't care if we calculate the result multiple times..
+//        var cachedValue = constructorsCache.get(objectType)
+//        if (cachedValue == null) {
+//            cachedValue = f
+//            constructorsCache.put(objectType, cachedValue)
+//        }
+//        cachedValue
+//    }
+
     private[this] val cache: Array[CHMap[Contour, Value]] = {
         // The cache is 5% larger than the number of "seen" ObjectType's to have
         // room for "new ObjectType"s discovered, e.g., by a reflection analysis
@@ -82,7 +94,7 @@ class CallGraphCache[Contour, Value] {
     // that are discovered after the project was loaded and for which we have
     // not reserved regular space.
     private[this] val overflowCache: CHMap[ObjectType, CHMap[Contour, Value]] =
-        new CHMap(cache.length / 20 /* ~ 5%*/)
+        new CHMap(cache.length / 20 /* ~ 5%*/ )
 
     //    private[this] val cacheHits = new java.util.concurrent.atomic.AtomicInteger(0)
     //    private[this] val cacheUpdates = new java.util.concurrent.atomic.AtomicInteger(0)

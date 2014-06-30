@@ -45,7 +45,7 @@ import DependencyType._
  * @author Michael Eichberg
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class DependencyExtractorTest extends FunSuite {
+class DependencyExtractorJava7Test extends FunSuite {
 
     import DependencyType._
 
@@ -58,7 +58,7 @@ class DependencyExtractorTest extends FunSuite {
         var dependencies: Map[(String, String, DependencyType), Int] =
             DependencyExtractorFixture.extractDependencies(
                 "de",
-                "classfiles/Dependencies.jar",
+                "classfiles/Dependencies-1.7.jar",
                 (dp: DependencyProcessor) ⇒ new DependencyExtractor(dp))
 
         def assertDependency(src: String, trgt: String, dType: DependencyType): Unit = {

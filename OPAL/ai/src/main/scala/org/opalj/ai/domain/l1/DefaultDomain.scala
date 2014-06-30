@@ -50,7 +50,6 @@ class DefaultConfigurableDomain[I, Source](
         with ProjectBasedClassHierarchy
         with TheProject[Source]
         with TheMethod
-        with PerInstructionPostProcessing
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with l0.DefaultTypeLevelFloatValues
@@ -59,6 +58,7 @@ class DefaultConfigurableDomain[I, Source](
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with l1.DefaultReferenceValuesBinding
+        // [NOT YET NEEDED] with PerInstructionPostProcessing
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
