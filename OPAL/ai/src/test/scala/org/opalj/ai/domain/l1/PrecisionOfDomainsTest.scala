@@ -38,7 +38,6 @@ import org.scalatest.Matchers
 import org.opalj.br._
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.domain.l0.ValuesCoordinatingDomain
 
 /**
  * This system test(suite) just loads a very large number of class files and performs

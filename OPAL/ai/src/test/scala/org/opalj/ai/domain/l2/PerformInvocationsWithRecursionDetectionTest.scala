@@ -44,7 +44,6 @@ import br.analyses.{ SomeProject, Project }
 import reader.Java8Framework.ClassFiles
 import l1._
 import org.opalj.ai.domain.l0.RecordMethodCallResults
-import org.opalj.ai.domain.l0.ValuesCoordinatingDomain
 
 /**
  * Tests that we can detect situations in which a method calls itself.

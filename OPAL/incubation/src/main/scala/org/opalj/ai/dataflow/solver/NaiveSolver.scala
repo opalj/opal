@@ -34,7 +34,7 @@ package solver
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.ai.Domain
-import org.opalj.ai.domain.l0.ValuesCoordinatingDomain
+import org.opalj.ai.domain.ValuesCoordinatingDomain
 
 /**
  * Implements the infrastructure for solving a data-flow problem.
