@@ -35,8 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-class ILOAD(
-    override val lvIndex: Int)
+final class ILOAD private ( final override val lvIndex: Int)
         extends LoadLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
@@ -44,26 +43,28 @@ class ILOAD(
 
     final override def mnemonic: String = "iload"
 
-    override def equals(other: Any): Boolean = other match {
-        case ILOAD(index) ⇒ index == lvIndex
-        case _            ⇒ false
-    }
-    
-    override lazy val hashCode: Int = 47 * lvIndex
+    override def equals(other: Any): Boolean =
+        other match {
+            case that: ILOAD ⇒ that.lvIndex == this.lvIndex
+            case _           ⇒ false
+        }
 
-    override lazy val toString: String = s"ILOAD($lvIndex)"
+    override def hashCode: Int = ILOAD.opcode * 17 + lvIndex
+
+    override def toString: String = "ILOAD_"+lvIndex
 }
 object ILOAD {
 
     final val opcode = 21
 
-    def apply(lvIndex: Int): LoadLocalVariableInstruction = lvIndex match {
-        case 0 ⇒ ILOAD_0
-        case 1 ⇒ ILOAD_1
-        case 2 ⇒ ILOAD_2
-        case 3 ⇒ ILOAD_3
-        case _ ⇒ new ILOAD(lvIndex)
-    }
+    def apply(lvIndex: Int): LoadLocalVariableInstruction =
+        (lvIndex: @scala.annotation.switch) match {
+            case 0 ⇒ ILOAD_0
+            case 1 ⇒ ILOAD_1
+            case 2 ⇒ ILOAD_2
+            case 3 ⇒ ILOAD_3
+            case _ ⇒ new ILOAD(lvIndex)
+        }
 
     def unapply(iload: ILOAD): Option[Int] = Some(iload.lvIndex)
 }
