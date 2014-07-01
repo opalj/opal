@@ -85,7 +85,7 @@ object CallGraphDiff extends AnalysisExecutor {
                             classFile: ClassFile,
                             method: Method): VTACallGraphDomain =
                             new DefaultVTACallGraphDomain(
-                                theProject, cache, classFile, method, 8
+                                theProject, cache, classFile, method, 4
                             ) with domain.ConstantFieldValuesResolution[Source]
                     })
             } { t ⇒ println("Creating the second call graph took: "+ns2sec(t)) }
@@ -95,7 +95,7 @@ object CallGraphDiff extends AnalysisExecutor {
                 lessPreciseCG.foreachCallingMethod { (method, allCalleesLPCG /*: Map[PC, Iterable[Method]]*/ ) ⇒
                     val allCalleesMPCG = morePreciseCG.calls(method)
 
-                    var reports: List[CGDifferenceReport] = Nil
+                    var reports: List[CallGraphDifferenceReport] = Nil
                     allCalleesLPCG foreach { callSiteLPCG ⇒
                         val (pc, calleesLPCG) = callSiteLPCG
                         val callSiteMPCGOption = allCalleesMPCG.get(pc)
@@ -134,7 +134,7 @@ object CallGraphDiff extends AnalysisExecutor {
     }
 }
 
-trait CGDifferenceReport {
+trait CallGraphDifferenceReport {
     val differenceClassifier: String
     val project: SomeProject
     val method: Method
@@ -160,15 +160,16 @@ case class AdditionalCallTargets(
         project: SomeProject,
         method: Method,
         pc: PC,
-        callTargets: Iterable[Method]) extends CGDifferenceReport {
+        callTargets: Iterable[Method]) extends CallGraphDifferenceReport {
     import Console._
     val differenceClassifier = BLUE+"[Additional] "+RESET
 }
+
 case class UnexpectedCallTargets(
         project: SomeProject,
         method: Method,
         pc: PC,
-        callTargets: Iterable[Method]) extends CGDifferenceReport {
+        callTargets: Iterable[Method]) extends CallGraphDifferenceReport {
     import Console._
     val differenceClassifier = RED+"[Unexpected] "+RESET
 }                        
