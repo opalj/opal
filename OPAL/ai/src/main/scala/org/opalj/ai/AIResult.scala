@@ -37,12 +37,23 @@ import org.opalj.br.Code
  * @author Michael Eichberg
  */
 sealed abstract class AIResult {
+
     val code: Code
+
     val domain: Domain
+
     val worklist: List[PC]
+
     val evaluated: List[PC]
+
     val operandsArray: domain.OperandsArray
+
+    /**
+     * The values stored in the registers. Note, that ''it makes only sense to analyze
+     * those values that are not dead'', but this information is not directly available.
+     */
     val localsArray: domain.LocalsArray
+
     val memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]
 
     /**
