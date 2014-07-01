@@ -102,14 +102,14 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
             fail(lValue+" join "+rValue+" was "+joinedValue+" expected "+expectedValue)
     }
 
-    it should "be able to calculate the correct least upper type bound if one the types of a MultipleReferenceValues already defines that bound" in {
-        val l = ObjectType("javafx/embed/swt/FXCanvas")
-        val r = ObjectType("org/eclipse/swt/widgets/Composite")
+    it should "be able to calculate the correct least upper type bound if one of the types of a MultipleReferenceValues already defines that bound" in {
+        val l = ObjectType("java/util/AbstractCollection")
+        val r = ObjectType("java/util/ArrayList")
         val lValue = ValuesDomain.ObjectValue(-1, l)
         val rValue = ValuesDomain.ObjectValue(-2, r)
         val value = ValuesDomain.MultipleReferenceValues(scala.collection.SortedSet(lValue, rValue))
-        if (value.upperTypeBound.first != r)
-            fail("unexpected upper type bound:"+value.upperTypeBound+" expected org.eclipse.swt.widgets.Composite")
+        if (value.upperTypeBound.first != l)
+            fail("unexpected upper type bound:"+value.upperTypeBound+" expected "+l.toJava)
     }
 
 }
