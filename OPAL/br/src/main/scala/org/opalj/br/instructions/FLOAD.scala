@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-final class FLOAD private ( final override val lvIndex: Int)
+final class FLOAD( final override val lvIndex: Int)
         extends LoadLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
