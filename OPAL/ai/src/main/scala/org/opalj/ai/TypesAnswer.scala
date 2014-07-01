@@ -145,7 +145,7 @@ trait IsAReferenceValue {
      * Returns `true` if the type information is precise. I.e., the type precisely
      * models the runtime type of the value.
      *
-     * @note `isPrecise` is always `true` if this value is known to be `null`. 
+     * @note `isPrecise` is always `true` if this value is known to be `null`.
      */
     def isPrecise: Boolean
 
@@ -174,6 +174,15 @@ trait IsAReferenceValue {
      *      assumption that the value is not `null` at runtime.
      */
     def isValueSubtypeOf(referenceType: ReferenceType): Answer
+
+    /**
+     * Returns this reference value as a DomainValue.
+     *
+     * @param domain The domain that was used to create this object can be used
+     *      to get/create a DomainValue.
+     */
+    @throws[UnsupportedOperationException]("the given domain has to be equal to the domain that created this object")
+    def asDomainValue(implicit domain: Domain): domain.DomainValue
 }
 
 object IsAReferenceValue {
@@ -194,7 +203,7 @@ trait IsReferenceValue extends TypesAnswer with IsAReferenceValue {
      * on the control flow). Each of these values can have a different upper bound and
      * an upper bound can in turn consist of several interfaces and a class.
      */
-    def referenceValues: Iterator[IsAReferenceValue]
+    def referenceValues: Traversable[IsAReferenceValue]
 
 }
 
@@ -205,7 +214,7 @@ trait IsReferenceValue extends TypesAnswer with IsAReferenceValue {
  */
 object IsReferenceValue {
 
-    def unapply(value: IsReferenceValue): Option[Iterator[IsAReferenceValue]] = {
+    def unapply(value: IsReferenceValue): Option[Traversable[IsAReferenceValue]] = {
         Some(value.referenceValues)
     }
 }
