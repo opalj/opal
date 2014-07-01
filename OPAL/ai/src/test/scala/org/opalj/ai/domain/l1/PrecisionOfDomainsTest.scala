@@ -40,7 +40,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
- * This system test(suite) just loads a very large number of class files and performs
+ * This integration test(suite) just loads a very large number of class files and performs
  * an abstract interpretation of all methods to test if a domain that uses more
  * precise partial domains leads to a more precise result.
  *
@@ -51,7 +51,7 @@ class PrecisionOfDomainsTest extends FlatSpec with Matchers {
 
     behavior of "a more precise domain "
 
-    ignore should "calculate a more precise result" in {
+    it should "calculate a more precise result" in {
         val project = org.opalj.br.TestSupport.JREProject
         // The following three domains are very basic domains that – given that the
         // same partial domains are used – should compute the same results.
@@ -117,34 +117,16 @@ class PrecisionOfDomainsTest extends FlatSpec with Matchers {
 
             r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) ⇒
                 (lOperands == null && rOperands == null) ||
-                    (lOperands != null &&
-                        (rOperands == null ||
-                            lOperands.corresponds(rOperands) { (lValue, rValue) ⇒
-                                val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                if (!lVD.abstractsOver(rVD)) {
-                                    return Some("the operand stack value "+lValue+" does not abstract over "+rValue+" the result of the join was: "+lVD.join(-1, rVD))
-                                }
-                                true
+                    (lOperands != null && (rOperands == null ||
+                        lOperands.corresponds(rOperands) { (lValue, rValue) ⇒
+                            val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
+                            val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
+                            if (!lVD.abstractsOver(rVD)) {
+                                return Some("the operand stack value "+lValue+
+                                    " does not abstract over "+rValue+
+                                    " the result of the join was: "+lVD.join(-1, rVD))
                             }
-                        )
-                    )
-            }
-            r1.localsArray.corresponds(r2.localsArray) { (lLocals, rLocals) ⇒
-                (lLocals == null && rLocals == null) ||
-                    (lLocals != null && (rLocals == null ||
-                        lLocals.corresponds(rLocals) { (lValue, rValue) ⇒
-                            (lValue == null && rValue == null) ||
-                                (lValue != null && (rValue == null || {
-                                    val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                    if (lVD != ValuesDomain.TheIllegalValue) {
-                                        val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                        if (!lVD.abstractsOver(rVD)) {
-                                            return Some(Console.YELLOW_B + Console.BLUE+"the register value "+lValue+" does not abstract over "+rValue)
-                                        }
-                                    }
-                                    true
-                                }))
+                            true
                         }
                     ))
             }
@@ -159,7 +141,7 @@ class PrecisionOfDomainsTest extends FlatSpec with Matchers {
             (v1, v2) ⇒ v1._1 < v2._1
         )
         for ((packageName, classFiles) ← classFilesPerPackageSorted) {
-            println("processing "+(if (packageName.length == 0) "<DEFAULT>" else packageName))
+            println("Comparing the results of different domains for the classes in: "+(if (packageName.length == 0) "<DEFAULT>" else packageName))
             for {
                 classFile ← classFiles.par
                 method @ MethodWithBody(body) ← classFile.methods
