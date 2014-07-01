@@ -246,14 +246,14 @@ object FindRealBugsCLI extends ProgressListener {
     /**
      * Called at the beginning of each analysis.
      */
-    override def beginAnalysis(name: String, position: Int) {
+    override def analysisStarted(name: String, position: Int) {
         printProgress(Console.GREEN, position, "running", "               \t"+name)
     }
 
     /**
      * Called at the end of each analysis.
      */
-    override def endAnalysis(
+    override def analysisCompleted(
         name: String,
         position: Int,
         seconds: Double,

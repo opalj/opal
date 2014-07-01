@@ -158,7 +158,7 @@ object FindRealBugs {
             // Only start new analysis if the process wasn't cancelled yet
             if (!progressController.map(pc ⇒ pc.isCancelled).getOrElse(false)) {
                 val position = startedCount.incrementAndGet()
-                progressListener.map(_.beginAnalysis(name, position))
+                progressListener.map(_.analysisStarted(name, position))
 
                 // Invoke the analysis and immediately turn the `Iterable` result into a
                 // `Set`, to enforce immediate execution instead of delayed (on-demand)
@@ -173,7 +173,7 @@ object FindRealBugs {
                     reports
                 } { (time, reports) ⇒
                     progressListener.map(
-                        _.endAnalysis(name, position, ns2sec(time), reports))
+                        _.analysisCompleted(name, position, ns2sec(time), reports))
                 }
             }
         }
