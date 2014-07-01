@@ -146,56 +146,39 @@ object FindRealBugs {
         progressController: Option[ProgressController] = None,
         analyses: AnalysesMap = builtInAnalyses): Iterable[AnalysisResult] = {
 
-        val lock = new Object
-        var allResults: Set[AnalysisResult] = Set.empty
-        var startedCount: Int = 0
-        var cancelled: Boolean = false
+        import scala.collection.JavaConversions._
+
+        val results: scala.collection.concurrent.Map[String, AnalysisReports] =
+            new java.util.concurrent.ConcurrentHashMap[String, AnalysisReports]()
+
+        val startedCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
         for (name ← analysesToRun.par) {
 
-            // Check whether this analysis should be run at all, and if so, determine it's
-            // start position
-            var position: Int = 0
-            lock.synchronized {
-                // Only start new analysis if the process wasn't cancelled yet
-                if (!cancelled) {
-                    // Check whether we should cancel now
-                    if (progressController.isDefined) {
-                        cancelled = progressController.get.isCancelled
-                    }
-                    if (!cancelled) {
-                        startedCount += 1
-                        position = startedCount
-                        if (progressListener.isDefined) {
-                            progressListener.get.beginAnalysis(name, position)
-                        }
-                    }
-                }
-            }
+            // Only start new analysis if the process wasn't cancelled yet
+            if (!progressController.map(pc ⇒ pc.isCancelled).getOrElse(false)) {
+                val position = startedCount.incrementAndGet()
+                progressListener.map(_.beginAnalysis(name, position))
 
-            // Should we run this analysis?
-            if (position > 0) {
                 // Invoke the analysis and immediately turn the `Iterable` result into a
                 // `Set`, to enforce immediate execution instead of delayed (on-demand)
                 // execution.
                 import util.PerformanceEvaluation.{ run, ns2sec }
 
                 run {
-                    analyses(name)().analyze(project, Seq.empty).toSet
-                } { (time, reports) ⇒
-                    // TODO [Refactor] Move lock.synchronized into the if statement as soon as the progress listener is thread safe
-                    lock.synchronized {
-                        if (reports.nonEmpty) {
-                            allResults += ((name, reports))
-                        }
-                        progressListener.map(
-                            _.endAnalysis(name, position, ns2sec(time), reports))
+                    val reports = analyses(name)().analyze(project, Seq.empty).toSet
+                    if (reports.nonEmpty) {
+                        results += name -> reports
                     }
+                    reports
+                } { (time, reports) ⇒
+                    progressListener.map(
+                        _.endAnalysis(name, position, ns2sec(time), reports))
                 }
             }
         }
 
-        allResults
+        results.toMap
     }
 
     // TODO [Refactor] (Re)use the same code as AnalysisExcecutor (after the refactoring of that code). 

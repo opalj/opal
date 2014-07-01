@@ -221,6 +221,7 @@ object FindRealBugsCLI extends ProgressListener {
     }
 
     var analysesTotalSeconds: Double = 0
+    val progressLock = new Object
 
     /**
      * Builds a nice string to display time in the console.
@@ -257,7 +258,9 @@ object FindRealBugsCLI extends ProgressListener {
         position: Int,
         seconds: Double,
         reports: AnalysisReports) {
-        analysesTotalSeconds += seconds
+        progressLock.synchronized {
+            analysesTotalSeconds += seconds
+        }
         printProgress(Console.RED, position, "finished",
             secondsToString(seconds)+"\t"+name+", "+reports.size+" reports.")
     }
