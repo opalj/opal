@@ -231,10 +231,10 @@ object XHTML {
             operandsArray: TheOperandsArray[domain.Operands],
             localsArray: TheLocalsArray[domain.Locals]): Node = {
 
-        val indexedExceptionHandlers = indexExceptionHandlers(code)
+        val indexedExceptionHandlers = indexExceptionHandlers(code).toSeq.sortWith(_._2 < _._2)
         val exceptionHandlers =
             (
-                for ((eh, index) ← indexExceptionHandlers(code)) yield {
+                for ((eh, index) ← indexedExceptionHandlers) yield {
                     "⚡: "+index+" "+eh.catchType.map(_.toJava).getOrElse("<finally>")+
                         " ["+eh.startPC+","+eh.endPC+")"+" => "+eh.handlerPC
                 }
@@ -284,7 +284,7 @@ object XHTML {
     }
 
     private def indexExceptionHandlers(code: Code) =
-        Map() ++ code.exceptionHandlers.zipWithIndex
+        code.exceptionHandlers.zipWithIndex.toMap
 
     private def dumpInstructions(
         code: Code,
