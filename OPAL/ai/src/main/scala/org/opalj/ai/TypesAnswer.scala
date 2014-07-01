@@ -51,8 +51,9 @@ sealed trait TypesAnswer
  *
  * @note Recall that the computational type of a value always has to be available, but
  *      that a `Domain.typeOfValue(...)` query does not need to take the computational type
- *      into account (Whenever the core framework requires the computational type of a value it uses
- *      the respective method.)
+ *      into account (Whenever the core framework requires the computational type of a
+ *      value it uses the respective method.) However, in case of array or exception
+ *      values the reported type must not be `TypeUnknown`.
  *
  * @author Michael Eichberg
  */
@@ -181,10 +182,17 @@ trait IsAReferenceValue {
      * @param domain The domain that was used to create this object can be used
      *      to get/create a DomainValue.
      */
-    @throws[UnsupportedOperationException]("the given domain has to be equal to the domain that created this object")
+    @throws[UnsupportedOperationException](
+        "the given domain has to be equal to the domain that created this object"
+    )
     def asDomainValue(implicit domain: Domain): domain.DomainValue
 }
 
+/**
+ * Extractor for reference values.
+ *
+ * @author Michael Eichberg
+ */
 object IsAReferenceValue {
     def unapply(value: IsAReferenceValue): Option[UpperTypeBound] =
         Some(value.upperTypeBound)
@@ -220,6 +228,8 @@ object IsReferenceValue {
 }
 
 /**
+ * Defines and extractor for the null-property of reference values.
+ *
  * @author Michael Eichberg
  */
 object IsNullValue {
