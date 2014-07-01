@@ -194,7 +194,7 @@ trait CHACallGraphDomain extends CallGraphDomain {
     }
 
     /**
-     * @Note An unresolved call is always an instance based call and never a call to
+     * @note An unresolved call is always an instance based call and never a call to
      *      a static method.
      */
     @inline protected[this] def unresolvedCall(

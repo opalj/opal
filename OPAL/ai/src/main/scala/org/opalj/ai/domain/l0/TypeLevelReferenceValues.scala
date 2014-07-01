@@ -265,6 +265,12 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
         @throws[DomainException]("If this value is null (isNull.yes == true).")
         override def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
+        final override def asDomainValue(implicit targetDomain: Domain): targetDomain.DomainValue =
+            if (targetDomain == domain)
+                return this.asInstanceOf[targetDomain.DomainValue];
+            else
+                throw new UnsupportedOperationException(
+                    "the given domain has to be equal to this value's domain")
     }
 
     /**
@@ -278,8 +284,8 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
     protected trait NullValue extends ReferenceValue {
         this: DomainNullValue ⇒
 
-        final override def referenceValues: Iterator[IsAReferenceValue] =
-            Iterator.single(this)
+        final override def referenceValues: Iterable[IsAReferenceValue] =
+            Iterable(this)
 
         /**
          * Returns `Yes`.
@@ -336,8 +342,8 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
 
         val theUpperTypeBound: T
 
-        final override def referenceValues: Iterator[IsAReferenceValue] =
-            Iterator.single(this)
+        final override def referenceValues: Iterable[IsAReferenceValue] =
+            Iterable(this)
 
         final override def upperTypeBound: UpperTypeBound = UIDSet(theUpperTypeBound)
 
@@ -501,11 +507,13 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
         val value2IsNull = v2.isNull
         if (value1IsNull.isYes && value2IsNull.isYesOrNo)
             // both are null or the second one is definitively not null
-            Answer(value2IsNull.isYes)
+            value2IsNull
         else if (value2IsNull.isYes && value1IsNull.isNo)
             // both are null or the first one is definitively not null
             No
-        else if (v1.isPrecise && v2.isPrecise && v1.upperTypeBound != v2.upperTypeBound)
+        else if (value1IsNull.isNoOrUnknown && value2IsNull.isNoOrUnknown &&
+            v1.isPrecise && v2.isPrecise &&
+            v1.upperTypeBound != v2.upperTypeBound)
             No
         else
             // we could also check if it is conceivable that both values are not equal based 

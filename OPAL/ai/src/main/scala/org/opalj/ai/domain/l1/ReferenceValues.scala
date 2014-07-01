@@ -946,7 +946,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override def referenceValues: Iterator[IsAReferenceValue] = values.iterator
+        override def referenceValues: Iterable[IsAReferenceValue] = values
 
         /**
          * Returns `true` if the upper type bound of this value precisely captures the
