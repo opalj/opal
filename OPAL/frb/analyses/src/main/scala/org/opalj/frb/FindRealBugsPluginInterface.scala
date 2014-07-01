@@ -64,7 +64,7 @@ object FindRealBugsPluginInterface {
         progressListener: ProgressListener,
         progressController: ProgressController,
         // TODO [Improve] Why do you create an Array? There seems to be no apparent reason! If integration with Java is neede consider using: scala.collection.JavaConversions.
-        additionalAnalyses: Map[String, Analysis]): Array[(String, AnalysisReports)] = {
+        additionalAnalyses: Map[String, () ⇒ Analysis]): Array[(String, AnalysisReports)] = {
 
         // TODO [Refactor] Responsibility of the caller!
         if (inputFileNames.size == 0) {
@@ -90,13 +90,8 @@ object FindRealBugsPluginInterface {
 
         // Determine analyses that should be run
         val allAnalyses = builtInAnalyses ++ additionalAnalyses
-        val analysesToRun =
-            for {
-                analysisName ← allAnalyses.keys
-                if (!disabledAnalyses.exists(_ == analysisName))
-            } yield {
-                analysisName
-            }
+        val analysesToRun = allAnalyses.keys.filterNot(analysisName ⇒
+            disabledAnalyses.exists(_ == analysisName))
 
         // Analyze
         analyze(project,
@@ -106,4 +101,3 @@ object FindRealBugsPluginInterface {
             allAnalyses).toArray
     }
 }
-

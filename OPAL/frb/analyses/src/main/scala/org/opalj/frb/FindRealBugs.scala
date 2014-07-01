@@ -51,76 +51,77 @@ object FindRealBugs {
     type Analysis = MultipleResultsAnalysis[URL, SourceLocationBasedReport[URL]]
     type AnalysisReports = Iterable[SourceLocationBasedReport[URL]]
     type AnalysisResult = (String, AnalysisReports)
-    type AnalysesMap = Map[String, Analysis]
+    type AnalysisCreator = () ⇒ Analysis
+    type AnalysesMap = Map[String, AnalysisCreator]
 
     /**
-     * A list of available analyses: names and instances.
+     * FindRealBugs' built-in analyses.
      */
     val builtInAnalyses: AnalysesMap = Map(
         ("AnonymousInnerClassShouldBeStatic" ->
-            new AnonymousInnerClassShouldBeStatic[URL]),
+            (() ⇒ new AnonymousInnerClassShouldBeStatic[URL])),
         ("BadlyOverriddenAdapter" ->
-            new BadlyOverriddenAdapter[URL]),
+            (() ⇒ new BadlyOverriddenAdapter[URL])),
         ("BitNops" ->
-            new BitNops[URL]),
+            (() ⇒ new BitNops[URL])),
         ("BoxingImmediatelyUnboxedToPerformCoercion" ->
-            new BoxingImmediatelyUnboxedToPerformCoercion[URL]),
+            (() ⇒ new BoxingImmediatelyUnboxedToPerformCoercion[URL])),
         ("CatchesIllegalMonitorStateException" ->
-            new CatchesIllegalMonitorStateException[URL]),
+            (() ⇒ new CatchesIllegalMonitorStateException[URL])),
         ("CloneDoesNotCallSuperClone" ->
-            new CloneDoesNotCallSuperClone[URL]),
+            (() ⇒ new CloneDoesNotCallSuperClone[URL])),
         ("CnImplementsCloneButNotCloneable" ->
-            new CnImplementsCloneButNotCloneable[URL]),
+            (() ⇒ new CnImplementsCloneButNotCloneable[URL])),
         ("CovariantCompareTo" ->
-            new CovariantCompareTo[URL]),
+            (() ⇒ new CovariantCompareTo[URL])),
         ("CovariantEquals" ->
-            new CovariantEquals[URL]),
+            (() ⇒ new CovariantEquals[URL])),
         ("DmRunFinalizersOnExit" ->
-            new DmRunFinalizersOnExit[URL]),
+            (() ⇒ new DmRunFinalizersOnExit[URL])),
         ("DoInsideDoPrivileged" ->
-            new DoInsideDoPrivileged[URL]),
+            (() ⇒ new DoInsideDoPrivileged[URL])),
         ("EqualsHashCodeContract" ->
-            new EqualsHashCodeContract[URL]),
+            (() ⇒ new EqualsHashCodeContract[URL])),
         ("FieldIsntImmutableInImmutableClass" ->
-            new FieldIsntImmutableInImmutableClass[URL]),
+            (() ⇒ new FieldIsntImmutableInImmutableClass[URL])),
         ("FieldShouldBeFinal" ->
-            new FieldShouldBeFinal[URL]),
+            (() ⇒ new FieldShouldBeFinal[URL])),
         ("FieldShouldBePackageProtected" ->
-            new FieldShouldBePackageProtected[URL]),
+            (() ⇒ new FieldShouldBePackageProtected[URL])),
         ("FinalizeUseless" ->
-            new FinalizeUseless[URL]),
+            (() ⇒ new FinalizeUseless[URL])),
         ("ImmutableClassInheritsMutableClass" ->
-            new ImmutableClassInheritsMutableClass[URL]),
+            (() ⇒ new ImmutableClassInheritsMutableClass[URL])),
         ("ImplementsCloneableButNotClone" ->
-            new ImplementsCloneableButNotClone[URL]),
+            (() ⇒ new ImplementsCloneableButNotClone[URL])),
         ("InefficientToArray" ->
-            new InefficientToArray[URL]),
+            (() ⇒ new InefficientToArray[URL])),
         ("LongBitsToDoubleInvokedOnInt" ->
-            new LongBitsToDoubleInvokedOnInt[URL]),
+            (() ⇒ new LongBitsToDoubleInvokedOnInt[URL])),
         ("NativeMethodInImmutableClass" ->
-            new NativeMethodInImmutableClass[URL]),
+            (() ⇒ new NativeMethodInImmutableClass[URL])),
         ("NonSerializableClassHasASerializableInnerClass" ->
-            new NonSerializableClassHasASerializableInnerClass[URL]),
+            (() ⇒ new NonSerializableClassHasASerializableInnerClass[URL])),
         ("ManualGarbageCollection" ->
-            new ManualGarbageCollection[URL]),
+            (() ⇒ new ManualGarbageCollection[URL])),
         ("ProtectedFieldInFinalClass" ->
-            new ProtectedFieldInFinalClass[URL]),
+            (() ⇒ new ProtectedFieldInFinalClass[URL])),
         ("PublicFinalizeMethodShouldBeProtected" ->
-            new PublicFinalizeMethodShouldBeProtected[URL]),
+            (() ⇒ new PublicFinalizeMethodShouldBeProtected[URL])),
         ("SerializableNoSuitableConstructor" ->
-            new SerializableNoSuitableConstructor[URL]),
+            (() ⇒ new SerializableNoSuitableConstructor[URL])),
         ("SwingMethodInvokedInSwingThread" ->
-            new SwingMethodInvokedInSwingThread[URL]),
+            (() ⇒ new SwingMethodInvokedInSwingThread[URL])),
         ("SyncSetUnsyncGet" ->
-            new SyncSetUnsyncGet[URL]),
+            (() ⇒ new SyncSetUnsyncGet[URL])),
         ("UninitializedFieldAccessDuringStaticInitialization" ->
-            new UninitializedFieldAccessDuringStaticInitialization[URL]),
+            (() ⇒ new UninitializedFieldAccessDuringStaticInitialization[URL])),
         ("UnusedPrivateFields" ->
-            new UnusedPrivateFields[URL]),
+            (() ⇒ new UnusedPrivateFields[URL])),
         ("UrUninitReadCalledFromSuperConstructor" ->
-            new UrUninitReadCalledFromSuperConstructor[URL]),
+            (() ⇒ new UrUninitReadCalledFromSuperConstructor[URL])),
         ("UselessIncrementInReturn" ->
-            new UselessIncrementInReturn[URL])
+            (() ⇒ new UselessIncrementInReturn[URL]))
     )
 
     /**
@@ -180,7 +181,7 @@ object FindRealBugs {
                 import util.PerformanceEvaluation.{ run, ns2sec }
 
                 run {
-                    analyses(name).analyze(project, Seq.empty).toSet
+                    analyses(name)().analyze(project, Seq.empty).toSet
                 } { (time, reports) ⇒
                     // TODO [Refactor] Move lock.synchronized into the if statement as soon as the progress listener is thread safe
                     lock.synchronized {
