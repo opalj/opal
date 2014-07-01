@@ -1209,7 +1209,7 @@ trait Domain {
 
     /**
      * Called by OPAL-AI when it establishes that the value is guaranteed not to be `null`.
-     * E.g., after a comparison with `null` OPAL-AI can establish that the
+     * E.g., after a comparison with `null` OPAL can establish that the
      * value has to be `null` on one branch and that the value is not `null` on the
      * other branch.
      */
