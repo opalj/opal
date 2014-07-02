@@ -37,6 +37,7 @@ import java.net.URL
  * This object provides an interface for the Eclipse plugin.
  *
  * @author Florian Brandherm
+ * @author Daniel Klauer
  */
 object FindRealBugsPluginInterface {
     import FindRealBugs._
@@ -48,23 +49,19 @@ object FindRealBugsPluginInterface {
      * @param inputFileNames The .class/.jar files that should be analyzed together.
      * @param inputLibraryFileNames The .class/.jar files that should be included in the
      * analysis as library class files.
-     * @param disabledAnalyses Names of analyses that should not be run (default: empty).
+     * @param analyses The analyses to run.
      * @param progressListener A `ProgressListener` object that will be notified about the
      * analysis progress.
      * @param progressController A `ProgressController` object that may be used to control
      * the analysis process.
-     * @param additionalAnalyses External analyses that should be added to the list of
-     * analyses to run.
      * @return The analyses' reports.
      */
-    def runAnalysis(
+    def analyze(
         inputFileNames: Iterable[String],
         inputLibraryFileNames: Iterable[String],
-        disabledAnalyses: Iterable[String] = Nil,
+        analyses: Set[AnalysisCreator],
         progressListener: ProgressListener,
-        progressController: ProgressController,
-        // TODO [Improve] Why do you create an Array? There seems to be no apparent reason! If integration with Java is neede consider using: scala.collection.JavaConversions.
-        additionalAnalyses: Map[String, () ⇒ Analysis]): Array[(String, AnalysisReports)] = {
+        progressController: ProgressController): Map[Analysis, AnalysisReports] = {
 
         // TODO [Refactor] Responsibility of the caller!
         if (inputFileNames.size == 0) {
@@ -85,19 +82,9 @@ object FindRealBugsPluginInterface {
         val classFiles = loadClassFilesForPlugin(inputFileNames, false)
         val libraryClassFiles = loadClassFilesForPlugin(inputLibraryFileNames, true)
 
-        // Create project
         val project = Project(classFiles, libraryClassFiles)
 
-        // Determine analyses that should be run
-        val allAnalyses = builtInAnalyses ++ additionalAnalyses
-        val analysesToRun = allAnalyses.keys.filterNot(analysisName ⇒
-            disabledAnalyses.exists(_ == analysisName))
-
-        // Analyze
-        analyze(project,
-            analysesToRun,
-            Some(progressListener),
-            Some(progressController),
-            allAnalyses).toArray
+        FindRealBugs.analyze(project, analyses,
+            Some(progressListener), Some(progressController))
     }
 }

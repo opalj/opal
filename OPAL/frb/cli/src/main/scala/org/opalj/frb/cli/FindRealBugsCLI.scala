@@ -30,16 +30,12 @@ package org.opalj
 package frb
 package cli
 
-import java.io.File
-import java.io.IOException
-import java.net.URL
-import java.text.DecimalFormat
-
-import util.PerformanceEvaluation
-
 import br._
 import br.analyses._
 import br.reader._
+import util.PerformanceEvaluation
+import java.net.URL
+import java.text.DecimalFormat
 
 /**
  * The FindRealBugs command line interface.
@@ -54,6 +50,10 @@ object FindRealBugsCLI extends ProgressListener {
     // TODO(future): Read the Wiki URL from a config file
     val wikiUrlPrefix = "https://bitbucket.org/delors/opal/wiki/FindREALBugs/"
 
+    def getAnalysisWikiUrl(analysis: Analysis): String = {
+        wikiUrlPrefix + analysis.title
+    }
+
     /**
      * Displays help output and aborts the program. Optionally shows an error message.
      *
@@ -67,25 +67,52 @@ object FindRealBugsCLI extends ProgressListener {
         println("usage: java "+this.getClass().getName()+" <options> <input files...>")
         println("input files: *.class, *.jar, or directories containing either")
         println("options:")
-        println("  -i=<analysis>    Ignore and do not run the specified analysis")
-        println("  -l=<input file>  Load an input file as Library (This file will not "+
-            "be searched for bugs)")
-        println("  -c=<configuration file> read the list of disabled anlyses from a "+
-            "configuration file")
-        println("                          if this is used, no -i= arguments are allowed")
+        println("  -l=<input file>")
+        println("      Add library input file (won't be analyzed for bugs, but may help")
+        println("      making the analysis more accurate)")
+        println("  --config=<file>")
+        println("      Run only the analysis listed as enabled in that file.")
+        println("      Format: Java properties file:")
+        println("      keys = full names of FindRealBugs.Analysis-compatible classes")
+        println("      values = 'yes' (enabled) or 'no' (disabled)")
+        println("  --write-default-config=<file>")
+        println("      Write the default list of built-in analysis into a file and exit.")
         sys.exit(1)
     }
 
-    /**
-     * List of analyses to run. By default, all analyses are enabled.
-     */
-    var analysesToRun: Set[String] = builtInAnalyses.keySet
+    var inputFiles = Set[String]()
+    var libraryInputFiles = Set[String]()
+    var analysisClassNames = Set[String]()
 
-    /**
-     * Disable a certain analysis. Used to implement the -i command line option.
-     */
-    private def disableAnalysis(name: String) {
-        analysesToRun = analysesToRun.filter(_ != name)
+    private def parseArgs(args: Array[String]) {
+        var i = 0
+        while (i < args.size) {
+            val arg = args(i)
+            if (arg.startsWith("-")) {
+                val option = arg.split("=", 2)
+                option(0) match {
+                    case "-l" ⇒
+                        libraryInputFiles += option(1)
+                    case "--config" ⇒
+                        analysisClassNames ++=
+                            loadRegistry(new java.io.File(option(1))).
+                            filter {
+                                case (className, enabled) ⇒ enabled
+                            }.map {
+                                case (className, enabled) ⇒ className
+                            }
+                    case "--write-default-config" ⇒
+                        saveRegistry(new java.io.File(option(1)),
+                            builtInAnalysisClassNames.map(name ⇒ name -> true).toMap)
+                        sys.exit(0)
+                    case _ ⇒
+                        printUsageAndExit("unknown command line option: "+arg)
+                }
+            } else {
+                inputFiles += arg
+            }
+            i += 1
+        }
     }
 
     /**
@@ -95,78 +122,19 @@ object FindRealBugsCLI extends ProgressListener {
      * @param args List of command line arguments.
      */
     def main(args: Array[String]) {
-        val (options, inputFiles) = args.partition(_.startsWith("-"))
+        parseArgs(args)
 
-        val ignoreParams = options.filter(_.startsWith("-i="))
-        val libraryInputFileParams = options.filter(_.startsWith("-l="))
-        val configurationFileParams = options.filter(_.startsWith("-c="))
-        val unknownParams = options.diff(
-            ignoreParams ++ libraryInputFileParams ++ configurationFileParams)
-
-        // Check for unknown parameters:
-        if (unknownParams.size > 0) {
-            if (unknownParams.size == 1) {
-                printUsageAndExit("unknown parameter: "+unknownParams(0))
-            } else {
-                printUsageAndExit("unknown parameters: "+unknownParams.mkString(", "))
-            }
-        }
-
-        //
-        // Check for -c command line options:
-        // -c=<filename>
-        //
-        if (configurationFileParams.size > 1) {
-            printUsageAndExit("only one configuration file allowed")
-        }
-        if (configurationFileParams.size == 1) {
-            if (!ignoreParams.isEmpty) {
-                printUsageAndExit("if a configuration file is used, no -i parameters "+
-                    "are allowed")
-            }
-
-            // Load configuration file
-            val filename = configurationFileParams(0).substring(3)
-            try {
-                ConfigurationFile.getDisabledAnalysesNamesFromFile(filename).
-                    foreach(disableAnalysis(_))
-            } catch {
-                case e: IOException ⇒
-                    printUsageAndExit("could not load configuration file \""+
-                        filename+"\" ("+e+")")
-            }
-        }
-
-        //
-        // Check for -i command line options:
-        // -i=<analysis-name>
-        //
-        for (ignoreParam ← ignoreParams) {
-            val name = ignoreParam.substring(3)
-            if (!builtInAnalyses.contains(name)) {
-                printUsageAndExit("unknown analysis \""+name+"\"")
-            }
-            disableAnalysis(name)
-        }
-
-        //
-        // Check for -l command line options:
-        // -l=<input-file-name>
-        //
-        val libraryInputFiles =
-            for (libraryInputFileParam ← libraryInputFileParams) yield {
-                val fileName = libraryInputFileParam.substring(3)
-                if (fileName == "") {
-                    printUsageAndExit("empty library file name")
-                }
-                fileName
-            }
-
-        //
-        // Do some basic validation of the input files
-        //
         if (inputFiles.size == 0) {
             printUsageAndExit("no input files")
+        }
+
+        // If the user didn't specify any analyses, use the default built-in ones
+        if (analysisClassNames.size == 0) {
+            analysisClassNames ++= builtInAnalysisClassNames
+        }
+
+        val analysisCreators = analysisClassNames.map { name ⇒
+            (() ⇒ loadAnalysis(name))
         }
 
         //
@@ -193,31 +161,34 @@ object FindRealBugsCLI extends ProgressListener {
         println("\tClass files loaded: "+project.classFilesCount)
 
         //
-        // Execute enabled analyses on the `Project`
+        // Execute analyses on the `Project`
         //
         val timer = new PerformanceEvaluation
         val allResults = timer.time('analysis) {
-            analyze(project, analysesToRun, Some(this))
+            analyze(project, analysisCreators, Some(this))
         }
         val realSeconds = PerformanceEvaluation.ns2sec(timer.getTime('analysis))
 
         println("sum: "+secondsToString(analysesTotalSeconds)+", "+
             "real time: "+secondsToString(realSeconds))
 
-        allResults.foreach(
-            results ⇒
+        allResults.foreach {
+            case (analysis, reports) ⇒
                 // Display report's console messages, separated by newlines, with the
                 // analysis description and wiki URL at the bottom of each analysis' list
                 // of reports.
-                println(results._2.map(_.consoleReport(urlToLocationIdentifier)).
+                println(reports.map(_.consoleReport(urlToLocationIdentifier)).
                     mkString("\n", "\n",
                         "\n"+Console.BLUE+"description: "+Console.RESET
-                            + wikiUrlPrefix + results._1))
-        )
+                            + getAnalysisWikiUrl(analysis)))
+        }
 
         // Display how many reports came from every analysis.
         println("\nNumber of reports per analysis:")
-        allResults.foreach(results ⇒ println(results._1+" "+results._2.size))
+        allResults.foreach {
+            case (analysis, reports) ⇒
+                println(analysis.title+" "+reports.size)
+        }
     }
 
     var analysesTotalSeconds: Double = 0
@@ -237,31 +208,35 @@ object FindRealBugsCLI extends ProgressListener {
     private def printProgress(
         color: String,
         position: Int,
+        total: Int,
         status: String,
         message: String) {
-        println(color+"["+position+"/"+analysesToRun.size+"]"+Console.RESET+
+        println(color+"["+position+"/"+total+"]"+Console.RESET+
             " "+status+" "+message)
     }
 
     /**
      * Called at the beginning of each analysis.
      */
-    override def analysisStarted(name: String, position: Int) {
-        printProgress(Console.GREEN, position, "running", "               \t"+name)
+    override def analysisStarted(analysis: Analysis, position: Int, total: Int) {
+        printProgress(Console.GREEN, position, total, "running",
+            "               \t"+analysis.title)
     }
 
     /**
      * Called at the end of each analysis.
      */
     override def analysisCompleted(
-        name: String,
+        analysis: Analysis,
         position: Int,
+        total: Int,
         seconds: Double,
         reports: AnalysisReports) {
         progressLock.synchronized {
             analysesTotalSeconds += seconds
         }
-        printProgress(Console.RED, position, "finished",
-            secondsToString(seconds)+"\t"+name+", "+reports.size+" reports.")
+        printProgress(Console.RED, position, total, "finished",
+            secondsToString(seconds)+"\t"+analysis.title+", "+
+                reports.size+" reports.")
     }
 }

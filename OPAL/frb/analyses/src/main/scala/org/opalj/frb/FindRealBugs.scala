@@ -34,7 +34,9 @@ import br._
 import br.analyses._
 import br.reader._
 import java.net.URL
-import java.io.File
+import java.io._
+import java.util.Properties
+import scala.collection.JavaConversions._
 
 /**
  * FindRealBugs is a QA-tool using the OPAL(AI) framework to perform static code analysis
@@ -49,80 +51,56 @@ import java.io.File
  */
 object FindRealBugs {
     type Analysis = MultipleResultsAnalysis[URL, SourceLocationBasedReport[URL]]
-    type AnalysisReports = Iterable[SourceLocationBasedReport[URL]]
-    type AnalysisResult = (String, AnalysisReports)
+    type AnalysisReports = Set[SourceLocationBasedReport[URL]]
     type AnalysisCreator = () ⇒ Analysis
-    type AnalysesMap = Map[String, AnalysisCreator]
+    type AnalysisRegistry = Map[String, Boolean]
 
     /**
      * FindRealBugs' built-in analyses.
      */
-    val builtInAnalyses: AnalysesMap = Map(
-        ("AnonymousInnerClassShouldBeStatic" ->
-            (() ⇒ new AnonymousInnerClassShouldBeStatic[URL])),
-        ("BadlyOverriddenAdapter" ->
-            (() ⇒ new BadlyOverriddenAdapter[URL])),
-        ("BitNops" ->
-            (() ⇒ new BitNops[URL])),
-        ("BoxingImmediatelyUnboxedToPerformCoercion" ->
-            (() ⇒ new BoxingImmediatelyUnboxedToPerformCoercion[URL])),
-        ("CatchesIllegalMonitorStateException" ->
-            (() ⇒ new CatchesIllegalMonitorStateException[URL])),
-        ("CloneDoesNotCallSuperClone" ->
-            (() ⇒ new CloneDoesNotCallSuperClone[URL])),
-        ("CnImplementsCloneButNotCloneable" ->
-            (() ⇒ new CnImplementsCloneButNotCloneable[URL])),
-        ("CovariantCompareTo" ->
-            (() ⇒ new CovariantCompareTo[URL])),
-        ("CovariantEquals" ->
-            (() ⇒ new CovariantEquals[URL])),
-        ("DmRunFinalizersOnExit" ->
-            (() ⇒ new DmRunFinalizersOnExit[URL])),
-        ("DoInsideDoPrivileged" ->
-            (() ⇒ new DoInsideDoPrivileged[URL])),
-        ("EqualsHashCodeContract" ->
-            (() ⇒ new EqualsHashCodeContract[URL])),
-        ("FieldIsntImmutableInImmutableClass" ->
-            (() ⇒ new FieldIsntImmutableInImmutableClass[URL])),
-        ("FieldShouldBeFinal" ->
-            (() ⇒ new FieldShouldBeFinal[URL])),
-        ("FieldShouldBePackageProtected" ->
-            (() ⇒ new FieldShouldBePackageProtected[URL])),
-        ("FinalizeUseless" ->
-            (() ⇒ new FinalizeUseless[URL])),
-        ("ImmutableClassInheritsMutableClass" ->
-            (() ⇒ new ImmutableClassInheritsMutableClass[URL])),
-        ("ImplementsCloneableButNotClone" ->
-            (() ⇒ new ImplementsCloneableButNotClone[URL])),
-        ("InefficientToArray" ->
-            (() ⇒ new InefficientToArray[URL])),
-        ("LongBitsToDoubleInvokedOnInt" ->
-            (() ⇒ new LongBitsToDoubleInvokedOnInt[URL])),
-        ("NativeMethodInImmutableClass" ->
-            (() ⇒ new NativeMethodInImmutableClass[URL])),
-        ("NonSerializableClassHasASerializableInnerClass" ->
-            (() ⇒ new NonSerializableClassHasASerializableInnerClass[URL])),
-        ("ManualGarbageCollection" ->
-            (() ⇒ new ManualGarbageCollection[URL])),
-        ("ProtectedFieldInFinalClass" ->
-            (() ⇒ new ProtectedFieldInFinalClass[URL])),
-        ("PublicFinalizeMethodShouldBeProtected" ->
-            (() ⇒ new PublicFinalizeMethodShouldBeProtected[URL])),
-        ("SerializableNoSuitableConstructor" ->
-            (() ⇒ new SerializableNoSuitableConstructor[URL])),
-        ("SwingMethodInvokedInSwingThread" ->
-            (() ⇒ new SwingMethodInvokedInSwingThread[URL])),
-        ("SyncSetUnsyncGet" ->
-            (() ⇒ new SyncSetUnsyncGet[URL])),
-        ("UninitializedFieldAccessDuringStaticInitialization" ->
-            (() ⇒ new UninitializedFieldAccessDuringStaticInitialization[URL])),
-        ("UnusedPrivateFields" ->
-            (() ⇒ new UnusedPrivateFields[URL])),
-        ("UrUninitReadCalledFromSuperConstructor" ->
-            (() ⇒ new UrUninitReadCalledFromSuperConstructor[URL])),
-        ("UselessIncrementInReturn" ->
-            (() ⇒ new UselessIncrementInReturn[URL]))
+    val builtInAnalysisNames: Set[String] = Set(
+        "AnonymousInnerClassShouldBeStatic",
+        "BadlyOverriddenAdapter",
+        "BitNops",
+        "BoxingImmediatelyUnboxedToPerformCoercion",
+        "CatchesIllegalMonitorStateException",
+        "CloneDoesNotCallSuperClone",
+        "CnImplementsCloneButNotCloneable",
+        "CovariantCompareTo",
+        "CovariantEquals",
+        "DmRunFinalizersOnExit",
+        "DoInsideDoPrivileged",
+        "EqualsHashCodeContract",
+        "FieldIsntImmutableInImmutableClass",
+        "FieldShouldBeFinal",
+        "FieldShouldBePackageProtected",
+        "FinalizeUseless",
+        "ImmutableClassInheritsMutableClass",
+        "ImplementsCloneableButNotClone",
+        "InefficientToArray",
+        "LongBitsToDoubleInvokedOnInt",
+        "NativeMethodInImmutableClass",
+        "NonSerializableClassHasASerializableInnerClass",
+        "ManualGarbageCollection",
+        "ProtectedFieldInFinalClass",
+        "PublicFinalizeMethodShouldBeProtected",
+        "SerializableNoSuitableConstructor",
+        "SwingMethodInvokedInSwingThread",
+        "SyncSetUnsyncGet",
+        "UninitializedFieldAccessDuringStaticInitialization",
+        "UnusedPrivateFields",
+        "UrUninitReadCalledFromSuperConstructor",
+        "UselessIncrementInReturn"
     )
+
+    /**
+     * Full class names of FindRealBugs' built-in analyses.
+     */
+    val builtInAnalysisClassNames: Set[String] =
+        builtInAnalysisNames.map("org.opalj.frb.analyses."+_)
+
+    val defaultRegistry: AnalysisRegistry =
+        builtInAnalysisClassNames.map(name ⇒ name -> true).toMap
 
     /**
      * Analyzes a project using the currently enabled analyses.
@@ -131,34 +109,32 @@ object FindRealBugs {
      * it makes to the given `progressListener` are synchronized.
      *
      * @param project The project to analyze.
-     * TODO [Refactor] This is counter-intuitive - I can't see a good reason why we need both parameters: analysesToRun and analyses. The latter should you contain that analyses that are required.
-     * @param analysesToRun Iterable of names of the analyses that should be run.
-     * @param progressListener ProgressListener object that will get notified about the
+     * @param analysisCreators The analyses to run.
+     * @param progressListener `ProgressListener` object that will get notified about the
      *      analysis progress.
-     * @param analyses Map of names and analyses; this contains all possible analyses
-     *      (filtering is done with the `analysesToRun` parameter).
-     * @return List of analyses' reports: each analysis' name associated with its reports.
+     * @param progressController `ProgressController` object that can abort the analyses.
+     * @return List of reports per analysis.
      */
     final def analyze(
         project: Project[URL],
-        analysesToRun: Iterable[String],
+        analysisCreators: Set[AnalysisCreator],
         progressListener: Option[ProgressListener] = None,
-        progressController: Option[ProgressController] = None,
-        analyses: AnalysesMap = builtInAnalyses): Iterable[AnalysisResult] = {
+        progressController: Option[ProgressController] = None): Map[Analysis, AnalysisReports] = {
 
         import scala.collection.JavaConversions._
 
-        val results: scala.collection.concurrent.Map[String, AnalysisReports] =
-            new java.util.concurrent.ConcurrentHashMap[String, AnalysisReports]()
-
+        val results: scala.collection.concurrent.Map[Analysis, AnalysisReports] =
+            new java.util.concurrent.ConcurrentHashMap[Analysis, AnalysisReports]()
         val startedCount = new java.util.concurrent.atomic.AtomicInteger(0)
+        val total = analysisCreators.size
 
-        for (name ← analysesToRun.par) {
+        for (analysisCreator ← analysisCreators.par) {
+            val analysis = analysisCreator()
 
             // Only start new analysis if the process wasn't cancelled yet
             if (!progressController.map(pc ⇒ pc.isCancelled).getOrElse(false)) {
                 val position = startedCount.incrementAndGet()
-                progressListener.map(_.analysisStarted(name, position))
+                progressListener.map(_.analysisStarted(analysis, position, total))
 
                 // Invoke the analysis and immediately turn the `Iterable` result into a
                 // `Set`, to enforce immediate execution instead of delayed (on-demand)
@@ -166,14 +142,14 @@ object FindRealBugs {
                 import util.PerformanceEvaluation.{ run, ns2sec }
 
                 run {
-                    val reports = analyses(name)().analyze(project, Seq.empty).toSet
+                    val reports = analysis.analyze(project, Seq.empty).toSet
                     if (reports.nonEmpty) {
-                        results += name -> reports
+                        results += analysis -> reports
                     }
                     reports
                 } { (time, reports) ⇒
                     progressListener.map(
-                        _.analysisCompleted(name, position, ns2sec(time), reports))
+                        _.analysisCompleted(analysis, position, total, ns2sec(time), reports))
                 }
             }
         }
@@ -218,4 +194,58 @@ object FindRealBugs {
             }
         }).flatten
     }
+
+    /**
+     * Load an `AnalysisRegistry` from a Java properties file.
+     *
+     * Properties file syntax:
+     * Keys are interpreted as analysis class names; values can be "yes" or "no" to indicate
+     * whether or not the analysis is enabled.
+     *
+     * @author Daniel Klauer
+     */
+    def loadRegistry(file: File): AnalysisRegistry = {
+        process(new BufferedInputStream(new FileInputStream(file))) { stream ⇒
+            val properties = new Properties()
+            properties.load(stream)
+            (properties.stringPropertyNames().map { name ⇒
+                val value = properties.getProperty(name, "")
+                val enabled = value match {
+                    case "yes" ⇒ true
+                    case "no"  ⇒ false
+                    case _ ⇒
+                        throw new IllegalArgumentException(
+                            file.getName()+": "+name+": invalid value '"+value+"'"+
+                                ", expected 'yes' or 'no'")
+                }
+
+                name -> enabled
+            }).toMap
+        }
+    }
+
+    /**
+     * Save an `AnalysisRegistry` to a Java properties file. See also `load`.
+     */
+    def saveRegistry(file: File, registry: AnalysisRegistry): Unit = {
+        process(new BufferedOutputStream(new FileOutputStream(file))) { stream ⇒
+            val properties = new Properties()
+            for ((name, enabled) ← registry) {
+                properties.setProperty(name, if (enabled) "yes" else "no")
+            }
+            properties.store(stream, null)
+        }
+    }
+
+    /**
+     * Load (and instantiate) a class by name and cast to a certain type.
+     */
+    def newInstance[T](className: String): T = {
+        Class.forName(className).newInstance.asInstanceOf[T]
+    }
+
+    /**
+     * Load (and instantiate) classes implementing `Analysis` by full class name.
+     */
+    def loadAnalysis(className: String): Analysis = newInstance[Analysis](className)
 }
