@@ -32,20 +32,43 @@ package ai
 import org.opalj.br.Code
 
 /**
- * Encapsulates the result of the abstract interpretation of a method.
+ * Encapsulates the ''result'' of the abstract interpretation of a method. If
+ * the abstract interpretation was cancelled, the result encapsulate the current
+ * state and can be continued later on, if necessary/desired.
  *
  * @author Michael Eichberg
  */
 sealed abstract class AIResult {
 
+    /**
+     * The code for which the abstract interpretation was performed.
+     */
     val code: Code
 
+    /**
+     * The domain object that was used to perform the abstract interpretation.
+     */
     val domain: Domain
 
+    /**
+     * The list of instructions that need to interpreted next. This list is empty
+     * if the abstract interpretation succeed.
+     */
     val worklist: List[PC]
 
+    /**
+     * The list of evaluated instructions ordered by the evaluation time.
+     */
     val evaluated: List[PC]
 
+    /**
+     * The array of the operands in effect before the execution of the instruction with
+     * the respective pc.
+     *
+     * For those instruction that were never executed (potentially dead code if the
+     * abstract interpretation succeeded) the operands array will be empty (the
+     * value will be `null.).
+     */
     val operandsArray: domain.OperandsArray
 
     /**
@@ -54,6 +77,10 @@ sealed abstract class AIResult {
      */
     val localsArray: domain.LocalsArray
 
+    /**
+     * Contains the memory layout before the call to a subroutine. This list is
+     * empty if the abstract interpretation completed successfully.
+     */
     val memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]
 
     /**

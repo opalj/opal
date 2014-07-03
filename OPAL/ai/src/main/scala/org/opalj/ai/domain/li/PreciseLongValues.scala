@@ -215,7 +215,7 @@ trait PreciseLongValues extends Domain { this: Configuration ⇒
     override def ldiv(
         pc: PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        value2: DomainValue): LongValueOrArithmeticException = {
         withLongValueOrElse(value2) { v2 ⇒
             if (v2 == 0)
                 ThrowsException(InitializedObjectValue(pc, ObjectType.ArithmeticException))
@@ -267,7 +267,7 @@ trait PreciseLongValues extends Domain { this: Configuration ⇒
     override def lrem(
         pc: PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException =
+        value2: DomainValue): LongValueOrArithmeticException =
         withLongValueOrElse(value2) { v2 ⇒
             if (v2 == 0l)
                 ThrowsException(InitializedObjectValue(pc, ObjectType.ArithmeticException))

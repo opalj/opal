@@ -33,17 +33,19 @@ import br._
 import br.instructions._
 
 /**
- * Defines the interface between the abstract interpreter and a module for
- * tracing the interpreter's progress. In general, a tracer is first registered with an
- * abstract interpreter. After that, when a method is analyzed, OPAL calls the
+ * Defines the interface between the abstract interpreter and a module for tracing and
+ * debugging the interpreter's progress. In general, a tracer is first registered with an
+ * abstract interpreter. After that, when a method is analyzed, the [[AI]] calls the
  * tracer's methods at the respective points in time.
  *
  * A tracer is registered with an abstract interpreter by creating a new subclass of
  * [[AI]] and overriding the method [[AI.tracer]].
  *
  * @note '''All data structures passed to the tracer are the original data structures
- *      used by the abstract interpreter.''' Hence, in case of mutation you have to
- *      be very careful.
+ *      used by the abstract interpreter.''' Hence, if a value is mutated (e.g., for
+ *      debugging purposes) it has to be guaranteed that the VM's conditions are never
+ *      violated. E.g., exchanging a integer value against a reference value will most
+ *      likely crash the interpreter. 
  *      However, using the [[AITracer]] it is possible to develop a debugger for OPAL and
  *      to enable the user to perform certain mutations.
  *

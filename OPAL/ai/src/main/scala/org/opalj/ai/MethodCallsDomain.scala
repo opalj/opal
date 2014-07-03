@@ -28,36 +28,58 @@
  */
 package org.opalj
 package ai
-package domain
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
+
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import br._
 
 /**
- * Final binding of a `Domain`'s type `DomainValue` as well as all subtypes of it that are
- * also defined by `Domain`.
  *
- * The type `DomainValue` is set to the type [[org.opalj.ai.Domain.Value]].
- *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait DefaultDomainValueBinding extends CoreDomain {
+trait MethodCallsDomain { this: CoreDomain ⇒
 
-    final type DomainValue = Value
+    type MethodCallResult = Computation[DomainValue, ExceptionValues]
 
-    final override val DomainValueTag: ClassTag[DomainValue] = implicitly
+    def invokevirtual(
+        pc: PC,
+        declaringClass: ReferenceType, // e.g., Array[] x = ...; x.clone()
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: Operands): MethodCallResult
 
-    final type DomainIllegalValue = IllegalValue
+    def invokeinterface(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: Operands): MethodCallResult
 
-    final override val TheIllegalValue: DomainIllegalValue = new IllegalValue
+    def invokespecial(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: Operands): MethodCallResult
 
-    final override val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
+    def invokestatic(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: Operands): MethodCallResult
 
-    final type DomainReturnAddressValue = ReturnAddressValue
+    //
+    // INVOKEDYNAMIC
+    //
 
-    final override def ReturnAddressValue(address: Int) = new ReturnAddressValue(address)
+    def invokedynamic(
+        pc: PC,
+        bootstrapMethod: BootstrapMethod,
+        name: String,
+        methodDescriptor: MethodDescriptor,
+        operands: Operands): Computation[DomainValue, ExceptionValues]
+
 }
-
-
-
-
-

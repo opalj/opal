@@ -253,7 +253,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
          * This test takes the precision of the type information into account.
          * That is, if the currently available type information is not precise and
          * the given type has a subtype that is always a subtype of the current
-         * upper type bound, then `Unknown` should be returned. Given that it may be
+         * upper type bound, then `Unknown` is returned. Given that it may be
          * computationally intensive to determine whether two types have a common subtype
          * it may be better to just return `Unknown` in case that this type and the
          * given type are not in a direct inheritance relationship.
@@ -265,12 +265,14 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
         @throws[DomainException]("If this value is null (isNull.yes == true).")
         override def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
-        final override def asDomainValue(implicit targetDomain: Domain): targetDomain.DomainValue =
+        final override def asDomainValue(
+            implicit targetDomain: Domain): targetDomain.DomainValue = {
             if (targetDomain == domain)
                 return this.asInstanceOf[targetDomain.DomainValue];
             else
                 throw new UnsupportedOperationException(
                     "the given domain has to be equal to this value's domain")
+        }
     }
 
     /**
@@ -281,11 +283,9 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
      *    `null` using `ifnull` or `ifnonnull` and we are now on the branch where
      *    the value has to be `null`.
      */
-    protected trait NullValue extends ReferenceValue {
-        this: DomainNullValue ⇒
+    protected trait NullValue extends ReferenceValue { this: DomainNullValue ⇒
 
-        final override def referenceValues: Iterable[IsAReferenceValue] =
-            Iterable(this)
+        final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
         /**
          * Returns `Yes`.

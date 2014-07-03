@@ -30,34 +30,31 @@ package org.opalj
 package ai
 package domain
 
-import reflect.ClassTag
-
 /**
- * Final binding of a `Domain`'s type `DomainValue` as well as all subtypes of it that are
- * also defined by `Domain`.
+ * Functionality to identify domains.
  *
- * The type `DomainValue` is set to the type [[org.opalj.ai.Domain.Value]].
- *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Dennis Siebert
  */
-trait DefaultDomainValueBinding extends CoreDomain {
+trait DomainId { this: CoreDomain ⇒
 
-    final type DomainValue = Value
+    /**
+     * The type which is used to identify the domain or the domain's context.
+     * E.g., if a new domain is created to analyze a called method it may be
+     * associated with the instruction caused its creation. It can, however,
+     * also just identify the method (by means of, e.g., the pair `(classFile,method)`
+     * that it is used for.
+     */
+    type Id
 
-    final override val DomainValueTag: ClassTag[DomainValue] = implicitly
+    /**
+     * Returns the value that identifies this domain (usually it is loosely
+     * connected to the analyzed method).
+     *
+     * This value may subsequently be used to identify/track object instances but – if
+     * so – this happens at the sole responsibility of the domain. OPAL-AI does
+     * not require any kind of tracking.
+     */
+    def id: Id
 
-    final type DomainIllegalValue = IllegalValue
-
-    final override val TheIllegalValue: DomainIllegalValue = new IllegalValue
-
-    final override val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
-
-    final type DomainReturnAddressValue = ReturnAddressValue
-
-    final override def ReturnAddressValue(address: Int) = new ReturnAddressValue(address)
 }
-
-
-
-
-

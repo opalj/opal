@@ -69,10 +69,6 @@ class PreciseLongValuesTest
             with RecordLastReturnedValues
             with IgnoreSynchronization {
 
-        type Id = String
-
-        override def id = "DefaultPreciseIntegerValuesTest-Domain"
-
         override def maxUpdatesForIntegerValues: Long = 5
 
     }

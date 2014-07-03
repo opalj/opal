@@ -28,36 +28,61 @@
  */
 package org.opalj
 package ai
-package domain
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
+
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import br._
 
 /**
- * Final binding of a `Domain`'s type `DomainValue` as well as all subtypes of it that are
- * also defined by `Domain`.
  *
- * The type `DomainValue` is set to the type [[org.opalj.ai.Domain.Value]].
- *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait DefaultDomainValueBinding extends CoreDomain {
+trait FieldAccessesDomain { this: CoreDomain ⇒
 
-    final type DomainValue = Value
+    /**
+     * Returns the field's value and/or a new `NullPointerException` if the given
+     * `objectref` represents the value `null`.
+     *
+     * @return The field's value or a new `NullPointerException`.
+     */
+    def getfield(
+        pc: PC,
+        objectref: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType): Computation[DomainValue, ExceptionValue]
 
-    final override val DomainValueTag: ClassTag[DomainValue] = implicitly
+    /**
+     * Returns the field's value.
+     */
+    def getstatic(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType): Computation[DomainValue, Nothing]
 
-    final type DomainIllegalValue = IllegalValue
+    /**
+     * Sets the field's value if the given `objectref` is not `null`(in the [[Domain]]).
+     * In the latter case a `NullPointerException` is thrown.
+     */
+    def putfield(
+        pc: PC,
+        objectref: DomainValue,
+        value: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType): Computation[Nothing, ExceptionValue]
 
-    final override val TheIllegalValue: DomainIllegalValue = new IllegalValue
+    /**
+     * Sets the field's value.
+     */
+    def putstatic(
+        pc: PC,
+        value: DomainValue,
+        declaringClass: ObjectType,
+        name: String,
+        fieldType: FieldType): Computation[Nothing, Nothing]
 
-    final override val MetaInformationUpdateIllegalValue = MetaInformationUpdate(TheIllegalValue)
-
-    final type DomainReturnAddressValue = ReturnAddressValue
-
-    final override def ReturnAddressValue(address: Int) = new ReturnAddressValue(address)
 }
-
-
-
-
-

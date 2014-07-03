@@ -54,7 +54,7 @@ import org.opalj.ai.domain.l0._
  *
  * @author Daniel Klauer
  */
-class IincTracingDomain[I](override val id: I)
+class IincTracingDomain
         extends Domain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
@@ -64,8 +64,6 @@ class IincTracingDomain[I](override val id: I)
         with PredefinedClassHierarchy
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization { thisDomain ⇒
-
-    type Id = I
 
     /**
      * The DomainValue implementation used to represent IINC result values. It tracks
@@ -82,7 +80,7 @@ class IincTracingDomain[I](override val id: I)
          * is to preserve `IincResults values as well as possible.
          */
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
-              if (value.isInstanceOf[IincResults]) {
+            if (value.isInstanceOf[IincResults]) {
                 val other = value.asInstanceOf[IincResults]
                 if (this.iincPcs == other.iincPcs) {
                     // They're the same, so following code paths don't need to be updated
@@ -241,14 +239,14 @@ class IincTracingDomain[I](override val id: I)
     override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         MakeIntegerResult(pc, value1, value2)
     override def idiv(pc: PC, value1: DomainValue,
-                      value2: DomainValue): IntegerLikeValueOrArithmeticException =
+                      value2: DomainValue): IntegerValueOrArithmeticException =
         ComputedValue(MakeIntegerResult(pc, value1, value2))
     override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         MakeIntegerResult(pc, value1, value2)
     override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         MakeIntegerResult(pc, value1, value2)
     override def irem(pc: PC, value1: DomainValue,
-                      value2: DomainValue): IntegerLikeValueOrArithmeticException =
+                      value2: DomainValue): IntegerValueOrArithmeticException =
         ComputedValue(MakeIntegerResult(pc, value1, value2))
     override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         MakeIntegerResult(pc, value1, value2)
@@ -280,14 +278,14 @@ class IincTracingDomain[I](override val id: I)
     override def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         MakeLongResult(pc, value1, value2)
     override def ldiv(pc: PC, value1: DomainValue,
-                      value2: DomainValue): IntegerLikeValueOrArithmeticException =
+                      value2: DomainValue): LongValueOrArithmeticException =
         ComputedValue(MakeLongResult(pc, value1, value2))
     override def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         MakeLongResult(pc, value1, value2)
     override def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         MakeLongResult(pc, value1, value2)
     override def lrem(pc: PC, value1: DomainValue,
-                      value2: DomainValue): IntegerLikeValueOrArithmeticException =
+                      value2: DomainValue): LongValueOrArithmeticException =
         ComputedValue(MakeLongResult(pc, value1, value2))
     override def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         MakeLongResult(pc, value1, value2)
@@ -423,7 +421,7 @@ class UselessIncrementInReturn[S]
             if !project.isLibraryType(classFile)
             method @ MethodWithBody(body) ← classFile.methods
         } {
-            val domain = new IincTracingDomain((classFile, method))
+            val domain = new IincTracingDomain
             val result = BaseAI(classFile, method, domain)
             val code = body.associateWithIndex
 

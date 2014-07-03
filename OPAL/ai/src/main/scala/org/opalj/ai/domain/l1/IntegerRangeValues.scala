@@ -542,7 +542,7 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
     override def idiv(
         pc: PC,
         numerator: DomainValue,
-        denominator: DomainValue): IntegerLikeValueOrArithmeticException = {
+        denominator: DomainValue): IntegerValueOrArithmeticException = {
         denominator match {
             case IntegerRange(lb, ub) if lb > 0 || ub < 0 ⇒
                 // no div by "0"
@@ -598,7 +598,7 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
     override def irem(
         pc: PC,
         left: DomainValue,
-        right: DomainValue): IntegerLikeValueOrArithmeticException = {
+        right: DomainValue): IntegerValueOrArithmeticException = {
         right match {
             case IntegerRange(rightLB, rightUB) if rightLB > 0 || rightUB < 0 ⇒
                 // no div by "0"

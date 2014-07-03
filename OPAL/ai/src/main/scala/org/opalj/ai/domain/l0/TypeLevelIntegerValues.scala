@@ -36,7 +36,7 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
- * Domain that performs computations related to integer values at the type level. 
+ * Domain that performs computations related to integer values at the type level.
  *
  * @author Michael Eichberg
  */
@@ -134,6 +134,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     //
     // UNARY EXPRESSIONS
     //
+
     override def ineg(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
 
     //
@@ -149,7 +150,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     override def idiv(
         pc: PC,
         left: DomainValue,
-        right: DomainValue): IntegerLikeValueOrArithmeticException = {
+        right: DomainValue): IntegerValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
         else
@@ -165,7 +166,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     override def irem(
         pc: PC,
         left: DomainValue,
-        right: DomainValue): IntegerLikeValueOrArithmeticException = {
+        right: DomainValue): IntegerValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
         else

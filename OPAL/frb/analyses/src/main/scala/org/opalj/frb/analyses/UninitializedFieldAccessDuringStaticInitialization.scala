@@ -378,9 +378,7 @@ private class FieldStatusTracingDomain[Source](
 
         super.invokestatic(pc, accessClass, name, descriptor, operands)
     }
-
-    override type Id = Method
-    override def id = method
+ 
     override final type DomainProperty = FieldStatusProperty
     override final val DomainPropertyTag: reflect.ClassTag[DomainProperty] = implicitly
 

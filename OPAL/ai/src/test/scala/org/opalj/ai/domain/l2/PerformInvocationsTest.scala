@@ -208,10 +208,6 @@ object PerformInvocationsTestFixture {
             with PerformInvocations
             with RecordMethodCallResults {
 
-        type Id = Project[java.net.URL]
-
-        override def id = project
-
         def isRecursive(
             definingClass: ClassFile,
             method: Method,

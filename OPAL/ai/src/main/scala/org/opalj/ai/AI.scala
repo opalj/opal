@@ -44,7 +44,7 @@ import org.opalj.br.instructions._
  * and evaluates each instruction using an exchangeable
  * [[org.opalj.ai.Domain]].
  *
- * ==Interacting with OPAL-AI==
+ * ==Interacting with OPAL's Abstract Interpreter==
  * The primary means how to make use of this framework is to perform
  * an abstract interpretation of a method using a customized `Domain`. That
  * customized domain can be used, e.g., to build a call graph or to
@@ -68,9 +68,9 @@ import org.opalj.br.instructions._
  * override the relevant methods (in particular: `isInterrupted` and `tracer`).
  *
  * @note
- *     OPAL-AI does not make assumptions about the number of domain objects that
+ *     OPAL does not make assumptions about the number of domain objects that
  *     are used. However, if a single domain object is used by multiple instances
- *     of this class and the abstract interpretation are executed concurrently, then
+ *     of this class and the abstract interpretations are executed concurrently, then
  *     the domain has to be thread-safe.
  *     The latter is trivially the case when the domain object itself does not have
  *     any state.
@@ -106,16 +106,16 @@ trait AI[D <: Domain] {
     def isInterrupted: Boolean = false
 
     /**
-     * The tracer (default: `None`) that is called by OPAL-AI while performing the abstract
+     * The tracer (default: `None`) that is called by OPAL while performing the abstract
      * interpretation of a method.
      *
-     * This method is called by OPAL-AI at various different points (see
-     * [[org.opalj.ai.AITracer]]) to report the analysis progress.
+     * This method is called at different points (see
+     * [[org.opalj.ai.AITracer]]) to report on the analysis progress.
      *
      * '''To attach a tracer to the abstract interpreter override this
      * method in subclasses''' and return some tracer object.
      *
-     * OPAL-AI enables the attachment/detachment of tracers at any time.
+     * OPAL enables the attachment/detachment of tracers at any time.
      */
     def tracer: Option[AITracer] = None
 

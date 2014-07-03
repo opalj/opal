@@ -35,7 +35,7 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.{ Type, ObjectType, ReferenceType, FieldType }
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.BootstrapMethod
-import org.opalj.br.analyses.{ Project, ClassHierarchy }
+import org.opalj.br.analyses.{ Project }
 
 /**
  * A `Domain` that is intended to be used to coordinate the exchange of values between

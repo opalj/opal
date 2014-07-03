@@ -242,7 +242,7 @@ trait PreciseIntegerValues extends Domain with ConcreteIntegerValues {
     override def idiv(
         pc: PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        value2: DomainValue): IntegerValueOrArithmeticException = {
         intValue(value2) { v2 ⇒
             if (v2 == 0)
                 ThrowsException(ArithmeticException(pc))
@@ -278,7 +278,7 @@ trait PreciseIntegerValues extends Domain with ConcreteIntegerValues {
     override def irem(
         pc: PC,
         value1: DomainValue,
-        value2: DomainValue): IntegerLikeValueOrArithmeticException = {
+        value2: DomainValue): IntegerValueOrArithmeticException = {
         intValue(value2) { v2 ⇒
             if (v2 == 0)
                 ThrowsException(ArithmeticException(pc))

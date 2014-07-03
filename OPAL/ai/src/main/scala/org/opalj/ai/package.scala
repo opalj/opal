@@ -119,11 +119,11 @@ package object ai {
     final val SUBROUTINE_END = -88888888
 
     final val SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND = -80000000
-    
+
     final val SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE = -88880008
-    
+
     final val SUBROUTINE_RETURN_TO_TARGET = -80008888
-    
+
     /**
      * Special value that is added to the work list to mark the beginning of a
      * subroutine call.
@@ -139,13 +139,13 @@ package object ai {
      */
     final val ConstantValueOrigin: ValueOrigin = -257
 
-    type Operands[T >: Null <: Domain#DomainValue] = List[T]
-    type AnOperandsArray[T >: Null <: Domain#DomainValue] = Array[Operands[T]]
-    type TheOperandsArray[T >: Null <: (Domain with Singleton)#Operands] = Array[T]
+    type Operands[T >: Null <: CoreDomain#DomainValue] = List[T]
+    type AnOperandsArray[T >: Null <: CoreDomain#DomainValue] = Array[Operands[T]]
+    type TheOperandsArray[T >: Null <: (CoreDomain with Singleton)#Operands] = Array[T]
 
-    type Locals[T >: Null <: Domain#DomainValue] = org.opalj.ai.util.Locals[T]
-    type ALocalsArray[T >: Null <: Domain#DomainValue] = Array[Locals[T]]
-    type TheLocalsArray[T >: Null <: (Domain with Singleton)#Locals] = Array[T]
+    type Locals[T >: Null <: CoreDomain#DomainValue] = org.opalj.ai.util.Locals[T]
+    type ALocalsArray[T >: Null <: CoreDomain#DomainValue] = Array[Locals[T]]
+    type TheLocalsArray[T >: Null <: (CoreDomain with Singleton)#Locals] = Array[T]
 
     def memoryLayoutToText(
         domain: Domain)(

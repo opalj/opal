@@ -158,11 +158,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     def createCalledMethodsStore(theProject: Project[java.net.URL]): CalledMethodsStore { def warningIssued: Boolean } =
-        new CalledMethodsStore(
-            new BaseDomain(theProject) with ValuesCoordinatingDomain {
-                type Id = String
-                override def id = "Called Methods Store Domain"
-            }) {
+        new CalledMethodsStore(new BaseDomain(theProject) with ValuesCoordinatingDomain) {
             var warningIssued = false
             override def frequentEvalution(
                 definingClass: ClassFile,
@@ -184,10 +180,6 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             with TheMethod
             with PerformInvocationsWithRecursionDetection
             with RecordMethodCallResults {
-
-        type Id = Project[java.net.URL]
-
-        override def id = project
 
         /*ABSTRACT*/ val calledMethodsStore: CalledMethodsStore
 
