@@ -38,6 +38,7 @@ import scala.collection.parallel.mutable.ParArray
 import scala.collection.parallel.immutable.ParVector
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
+import scala.collection.SortedMap
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -95,10 +96,57 @@ class Project[Source] private (
     val classFiles: Iterable[ClassFile] =
         projectClassFiles.toIterable ++ libraryClassFiles.toIterable
 
+    /**
+     * Returns the list of all packages that contain at least one class.
+     *
+     * For example, in case of Java the package "java" does not directly contain
+     * any class – only its subclasses. This package is, hence, not returned by this
+     * function.
+     */
     def packages: Set[String] = {
         var packages = Set.empty[String]
         classFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
         packages
+    }
+
+    /**
+     * Determines for all packages of this project that contain at least one class
+     * the "root" packages and stores the mapping between the package and its root package.
+     *
+     * For example, let's assume that we have project which has the following packages
+     * that contain at least one class:
+     *  - org.opalj
+     *  - org.opalj.ai
+     *  - org.opalj.ai.domain
+     *  - org.apache.commons.io
+     *  - java.lang
+     * Then the map will be:
+     *  - org.opalj => org.opalj
+     *  - org.opalj.ai => org.opalj
+     *  - org.opalj.ai.domain => org.opalj
+     *  - org.apache.commons.io => org.apache.commons.io
+     *  - java.lang => java.lang
+     *
+     * @return a Map which contains for each package name the root package name.
+     */
+    def rootPackages: Map[String, String] = {
+        val allPackages = packages.toSeq.sorted
+        if (allPackages.isEmpty)
+            Map.empty
+        else if (allPackages.tail.isEmpty)
+            Map((allPackages.head, allPackages.head))
+        else {
+            allPackages.tail.foldLeft(SortedMap((allPackages.head, allPackages.head))) {
+                (rootPackages, nextPackage) ⇒
+                    // java is not a root package of "javax"...
+                    val (_, lastPackage) = rootPackages.last
+                    if (nextPackage.startsWith(lastPackage) &&
+                        nextPackage.charAt(lastPackage.size) == '/')
+                        rootPackages + ((nextPackage, lastPackage))
+                    else
+                        rootPackages + ((nextPackage, nextPackage))
+            }
+        }
     }
 
     /**
