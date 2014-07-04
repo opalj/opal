@@ -70,8 +70,11 @@ object FindRealBugsCLI extends ProgressListener {
         println("  -l=<input file>")
         println("      Add library input file (won't be analyzed for bugs, but may help")
         println("      making the analysis more accurate)")
+        println("  --analysis=<classname>")
+        println("      Specify a FindRealBugs.Analysis-compatible class to use instead")
+        println("      of the default set of analyses.")
         println("  --config=<file>")
-        println("      Run only the analysis listed as enabled in that file.")
+        println("      Use only the analysis classes listed as enabled in the file.")
         println("      Format: Java properties file:")
         println("      keys = full names of FindRealBugs.Analysis-compatible classes")
         println("      values = 'yes' (enabled) or 'no' (disabled)")
@@ -93,6 +96,8 @@ object FindRealBugsCLI extends ProgressListener {
                 option(0) match {
                     case "-l" ⇒
                         libraryInputFiles += option(1)
+                    case "--analysis" ⇒
+                        analysisClassNames += option(1)
                     case "--config" ⇒
                         analysisClassNames ++=
                             loadRegistry(new java.io.File(option(1))).
