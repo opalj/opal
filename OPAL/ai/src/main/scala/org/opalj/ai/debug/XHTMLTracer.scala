@@ -30,12 +30,20 @@ package org.opalj
 package ai
 package debug
 
+import scala.collection.immutable.SortedMap
+import scala.collection.immutable.SortedSet
 import scala.language.existentials
 
-import br.Code
-import br.instructions._
-
-import XHTML._
+import org.opalj.ai.debug.XHTML.dumpLocals
+import org.opalj.ai.debug.XHTML.dumpStack
+import org.opalj.ai.debug.XHTML.writeAndOpenDump
+import org.opalj.br.Code
+import org.opalj.br.instructions.CHECKCAST
+import org.opalj.br.instructions.FieldAccess
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.LoadString
+import org.opalj.br.instructions.NEW
+import org.opalj.br.instructions.StaticMethodInvocationInstruction
 
 case class FlowEntity(
         val pc: PC,
@@ -113,6 +121,17 @@ trait XHTMLTracer extends AITracer {
             }
         }
         val pcsToRowIndex = SortedMap.empty[Int, Int] ++ (pcs.zipWithIndex)
+        val ids = new java.util.IdentityHashMap[AnyRef, Integer]
+        var nextId = 1
+        val idsLookup = (value: AnyRef) ⇒ {
+            var id = ids.get(value)
+            if (id == null) {
+                id = nextId
+                nextId += 1
+                ids.put(value, id)
+            }
+            id.intValue()
+        }
         val dialogSetup =
             for (path ← inOrderFlow; entity ← path) yield {
                 xml.Unparsed("$(function() { $( \"#dialog"+entity.flowId+"\" ).dialog({autoOpen:false}); });\n")
@@ -122,9 +141,9 @@ trait XHTMLTracer extends AITracer {
                 val dialogId = "dialog"+flowEntity.flowId
                 <div id={ dialogId } title={ flowEntity.pc + " " + flowEntity.instruction.mnemonic }>
         	<b>Stack</b><br/>
-        	{ dumpStack(flowEntity.operands) }
+        	{ dumpStack(flowEntity.operands)(Some(idsLookup)) }
         	<b>Locals</b><br/>
-        	{ dumpLocals(flowEntity.locals) }
+        	{ dumpLocals(flowEntity.locals)(Some(idsLookup)) }
         	</div>
             }
         def row(pc: PC) =
@@ -137,7 +156,7 @@ trait XHTMLTracer extends AITracer {
         val flowTable =
             for ((pc, rowIndex) ← pcsToRowIndex) yield {
                 <tr>
-            		<td>{ rowIndex + "→" + pc }</td>
+            		<td>{ /*rowIndex + "→"*/ } <b>{ pc }</b></td>
             		{ row(pc) }
             	</tr>
             }

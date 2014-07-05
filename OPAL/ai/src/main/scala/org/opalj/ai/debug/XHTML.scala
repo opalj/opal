@@ -247,6 +247,18 @@ object XHTML {
                 </span><br />
             }
 
+        val ids = new java.util.IdentityHashMap[AnyRef, Integer]
+        var nextId = 1
+        val idsLookup = (value: AnyRef) ⇒ {
+            var id = ids.get(value)
+            if (id == null) {
+                id = nextId
+                nextId += 1
+                ids.put(value, id)
+            }
+            id.intValue()
+        }
+
         <div>
         <table>
             <caption>
@@ -263,7 +275,7 @@ object XHTML {
                 <th class="properties">Properties</th></tr>
             </thead>
             <tbody>
-            { dumpInstructions(code, domain)(operandsArray, localsArray) }
+            { dumpInstructions(code, domain)(operandsArray, localsArray)(Some(idsLookup)) }
             </tbody>
         </table>
         { exceptionHandlers }
@@ -290,7 +302,8 @@ object XHTML {
         code: Code,
         domain: Domain)(
             operandsArray: TheOperandsArray[domain.Operands],
-            localsArray: TheLocalsArray[domain.Locals]): Array[Node] = {
+            localsArray: TheLocalsArray[domain.Locals])(
+                implicit ids: Option[AnyRef ⇒ Int]): Array[Node] = {
         val indexedExceptionHandlers = indexExceptionHandlers(code)
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
@@ -307,7 +320,8 @@ object XHTML {
         exceptionHandlers: Option[String],
         domain: Domain)(
             operands: domain.Operands,
-            locals: domain.Locals): Node = {
+            locals: domain.Locals)(
+                implicit ids: Option[AnyRef ⇒ Int]): Node = {
         <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
             <td class="pc">{ Unparsed(pc.toString + "<br>" + exceptionHandlers.getOrElse("")) }</td>
             <td class="instruction">{ Unparsed(instruction.toString(pc).replace("\n", "<br>")) }</td>
@@ -317,7 +331,9 @@ object XHTML {
         </tr >
     }
 
-    def dumpStack(operands: Operands[_]): Node =
+    def dumpStack(
+        operands: Operands[_])(
+            implicit ids: Option[AnyRef ⇒ Int]): Node =
         if (operands eq null)
             <em>Information about operands is not available.</em>
         else {
@@ -326,14 +342,19 @@ object XHTML {
             </ul>
         }
 
-    def dumpLocals(locals: Locals[_ <: AnyRef /**/ ]): Node =
+    def dumpLocals(
+        locals: Locals[_ <: AnyRef /**/ ])(
+            implicit ids: Option[AnyRef ⇒ Int]): Node =
         if (locals eq null)
             <em>Information about the local variables is not available.</em>
         else {
             <ol start="0" class="registers">
-            { locals.map(l ⇒ if (l eq null) "UNUSED" else l.toString()).map(l ⇒ <li>{ l }</li>).iterator }
+            { locals.map(l ⇒ if (l eq null) "UNUSED" else valueToString(l)).map(l ⇒ <li>{ l }</li>).iterator }
             </ol>
         }
+
+    def valueToString(value: AnyRef)(implicit ids: Option[AnyRef ⇒ Int]): String =
+        value.toString + ids.map("; #"+_.apply(value)).getOrElse("")
 
     def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
         val node =
