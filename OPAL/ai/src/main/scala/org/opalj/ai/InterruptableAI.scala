@@ -36,10 +36,16 @@ package ai
  */
 class InterruptableAI[D <: Domain] extends AI[D] {
 
-    private[this] var doInterrupt: Boolean = false
+    @volatile private[this] var doInterrupt: Boolean = false
 
-    override def isInterrupted = doInterrupt
+    override def isInterrupted = doInterrupt || Thread.currentThread().isInterrupted()
 
+    /**
+     * After a call of this method the abstract interpretation of the current method
+     * will be terminated before the evaluation of the next instruction starts.
+     *
+     * This functionality is appropriately synchronized to ensure a timely interruption.
+     */
     def interrupt(): Unit = { doInterrupt = true }
 
 }
