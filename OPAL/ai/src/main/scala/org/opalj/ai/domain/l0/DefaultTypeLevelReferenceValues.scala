@@ -84,12 +84,15 @@ trait DefaultTypeLevelReferenceValues
                     StructuralUpdate(other)
             }
         }
+
+        override def abstractsOver(other: DomainValue): Boolean = {
+            other.isInstanceOf[NullValue]
+        }
     }
 
     protected[this] class ArrayValue(
         override val theUpperTypeBound: ArrayType)
-            extends super.ArrayValue
-            with SReferenceValue[ArrayType] {
+            extends super.ArrayValue with SReferenceValue[ArrayType] {
         this: DomainArrayValue ⇒
 
         override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
@@ -112,7 +115,8 @@ trait DefaultTypeLevelReferenceValues
                     // possible to store an int value in a byte array. However, 
                     // such bytecode is illegal
                     Answer(
-                        theUpperTypeBound.componentType.computationalType eq primitiveType.computationalType
+                        theUpperTypeBound.componentType.computationalType eq
+                            primitiveType.computationalType
                     )
 
                 case IsAReferenceValue(UIDSet1(valueType: ArrayType)) if valueType.elementType.isBaseType ⇒
@@ -190,6 +194,15 @@ trait DefaultTypeLevelReferenceValues
 
                 case NullValue() ⇒
                     NoUpdate
+            }
+        }
+
+        override def abstractsOver(other: DomainValue): Boolean = {
+            other match {
+                case NullValue() ⇒ true
+                case ArrayValue(thatUpperTypeBound) ⇒
+                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
+                case _ ⇒ false
             }
         }
 
@@ -305,6 +318,22 @@ trait DefaultTypeLevelReferenceValues
 
                 case NullValue() ⇒
                     NoUpdate
+            }
+        }
+
+        override def abstractsOver(other: DomainValue): Boolean = {
+            other match {
+                case SObjectValue(thatUpperTypeBound) ⇒
+                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
+                case NullValue() ⇒
+                    true
+                case ArrayValue(thatUpperTypeBound) ⇒
+                    domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
+                case MObjectValue(thatUpperTypeBound) ⇒
+                    val lutb =
+                        classHierarchy.joinObjectTypes(
+                            this.theUpperTypeBound, thatUpperTypeBound, true)
+                    lutb.containsOneElement && (lutb.first() eq this.theUpperTypeBound)
             }
         }
 

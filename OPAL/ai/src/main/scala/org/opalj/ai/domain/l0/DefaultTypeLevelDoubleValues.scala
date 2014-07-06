@@ -54,6 +54,8 @@ trait DefaultTypeLevelDoubleValues
             // NoUpdate. 
             NoUpdate
 
+        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
+
         override def summarize(pc: PC): DomainValue = this
 
         override def adapt(target: Domain, pc: PC): target.DomainValue =

@@ -46,6 +46,8 @@ trait DefaultTypeLevelFloatValues
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
+        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
+
         override def summarize(pc: PC): DomainValue = this
 
         override def adapt(target: Domain, pc: PC): target.DomainValue =

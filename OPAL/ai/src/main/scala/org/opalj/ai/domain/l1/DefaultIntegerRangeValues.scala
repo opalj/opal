@@ -104,6 +104,15 @@ trait DefaultIntegerRangeValues
             result
         }
 
+        override def abstractsOver(other: DomainValue): Boolean = {
+            (this eq other) || (other match {
+                case that: IntegerRange ⇒
+                    this.lowerBound <= that.lowerBound &&
+                        this.upperBound >= that.upperBound
+                case _ ⇒ false
+            })
+        }
+
         override def summarize(pc: PC): DomainValue = this
 
         override def adapt(
@@ -116,17 +125,6 @@ trait DefaultIntegerRangeValues
             } else {
                 targetDomain.IntegerValue(pc)
             }
-
-        override def abstractsOver(other: DomainValue): Boolean = {
-            if (this eq other)
-                return true;
-
-            other match {
-                case IntegerRange(otherLB, otherUB) ⇒
-                    this.lowerBound <= otherLB && this.upperBound >= otherUB
-                case _ ⇒ false
-            }
-        }
 
         override def hashCode = this.lowerBound * 13 + this.upperBound
 

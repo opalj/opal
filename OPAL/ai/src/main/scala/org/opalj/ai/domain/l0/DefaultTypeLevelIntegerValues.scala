@@ -57,7 +57,7 @@ trait DefaultTypeLevelIntegerValues
         extends DefaultDomainValueBinding
         with TypeLevelIntegerValues {
     this: Configuration ⇒
-    
+
     //
     // IMPLEMENTATION NOTE
     //
@@ -66,7 +66,6 @@ trait DefaultTypeLevelIntegerValues
     // I.e., all constraints that are stated by the AI (e.g., `intHasValue`) are
     // completely ignored.
     //
-    
 
     case object ABooleanValue extends super.BooleanValue {
 
@@ -75,6 +74,8 @@ trait DefaultTypeLevelIntegerValues
                 case ABooleanValue ⇒ NoUpdate
                 case _             ⇒ StructuralUpdate(AnIntegerValue)
             }
+
+        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
 
     }
 
@@ -86,26 +87,35 @@ trait DefaultTypeLevelIntegerValues
                 case _                          ⇒ StructuralUpdate(AnIntegerValue)
             }
 
+        override def abstractsOver(other: DomainValue): Boolean =
+            (other eq this) || (other eq ABooleanValue)
+
     }
 
     case object AShortValue extends super.ShortValue {
 
         override def doJoin(pc: PC, that: DomainValue): Update[DomainValue] =
             that match {
-                case AByteValue | AShortValue ⇒ NoUpdate
-                case _                        ⇒ StructuralUpdate(AnIntegerValue)
-
+                case ABooleanValue | AByteValue | AShortValue ⇒
+                    NoUpdate
+                case _ ⇒
+                    StructuralUpdate(AnIntegerValue)
             }
 
+        override def abstractsOver(other: DomainValue): Boolean =
+            (other eq this) || (other eq ABooleanValue) || (other eq AByteValue)
     }
 
     case object ACharValue extends super.CharValue {
 
         override def doJoin(pc: PC, that: DomainValue): Update[DomainValue] =
             that match {
-                case ACharValue ⇒ NoUpdate
-                case _          ⇒ StructuralUpdate(AnIntegerValue)
+                case ABooleanValue | ACharValue ⇒ NoUpdate
+                case _                          ⇒ StructuralUpdate(AnIntegerValue)
             }
+
+        override def abstractsOver(other: DomainValue): Boolean =
+            (other eq this) || (other eq ABooleanValue)
     }
 
     case object AnIntegerValue extends super.IntegerValue {
@@ -113,6 +123,10 @@ trait DefaultTypeLevelIntegerValues
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             // the other value also has computational type Int
             NoUpdate
+
+        override def abstractsOver(other: DomainValue): Boolean =
+            (other ne TheIllegalValue) &&
+                other.computationalType == ComputationalTypeInt
     }
 
     override def BooleanValue(pc: PC): BooleanValue = ABooleanValue

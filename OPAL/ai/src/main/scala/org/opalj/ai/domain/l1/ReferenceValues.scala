@@ -265,6 +265,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 }
             }
         }
+
     }
 
     protected class NullValue(
@@ -315,6 +316,15 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 StructuralUpdate(that)
             else
                 StructuralUpdate(that(isNull = Unknown))
+        }
+
+        override def abstractsOver(other: DomainValue): Boolean = {
+            (this eq other) || (other match {
+                case that: NullValue ⇒
+                    true
+                case MultipleReferenceValues(values) ⇒
+                    values.forall(v ⇒ this.abstractsOver(v))
+            })
         }
 
         override def equals(other: Any): Boolean = {
@@ -485,6 +495,25 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                                 ObjectValue(this.origin, newIsNull, newUpperTypeBound))
                     }
             }
+        }
+
+        override def abstractsOver(other: DomainValue): Boolean = {
+            (this eq other) || (other match {
+                case that @ ArrayValue(thatUpperTypeBound) ⇒
+                    (!this.isPrecise || that.isPrecise) &&
+                        (this.isNull.isUnknown || that.isNull.isNo) &&
+                        domain.isSubtypeOf(
+                            that.theUpperTypeBound, this.theUpperTypeBound).isYes
+
+                case that: NullValue ⇒
+                    this.isNull.isUnknown
+
+                case MultipleReferenceValues(values) ⇒
+                    values.forall(v ⇒ this.abstractsOver(v))
+
+                case _ ⇒
+                    false
+            })
         }
 
         override def adapt(target: Domain, pc: PC): target.DomainValue =
@@ -674,6 +703,46 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             StructuralUpdate(
                                 ObjectValue(this.origin, newIsNull, newUpperTypeBound))
                     }
+            }
+        }
+
+        override def abstractsOver(other: DomainValue): Boolean = {
+            if (this eq other)
+                return true
+
+            def checkPrecisionAndNullness(that: ReferenceValue): Boolean = {
+                (!this.isPrecise || that.isPrecise) &&
+                    (this.isNull.isUnknown || that.isNull.isNo)
+            }
+
+            other match {
+
+                case that: SObjectValue ⇒
+                    checkPrecisionAndNullness(that) &&
+                        domain.isSubtypeOf(
+                            that.theUpperTypeBound, this.theUpperTypeBound).isYes
+
+                case that: NullValue ⇒
+                    this.isNull.isUnknown
+
+                case that: ArrayValue ⇒
+                    checkPrecisionAndNullness(that) &&
+                        domain.isSubtypeOf(
+                            that.theUpperTypeBound, this.theUpperTypeBound).isYes
+
+                case MultipleReferenceValues(values) ⇒
+                    values.forall(v ⇒ this.abstractsOver(v))
+
+                case that: MObjectValue ⇒
+                    checkPrecisionAndNullness(that) && {
+                        val lutb =
+                            classHierarchy.joinObjectTypes(
+                                this.theUpperTypeBound, that.upperTypeBound, true)
+                        lutb.containsOneElement && (lutb.first() eq this.theUpperTypeBound)
+                    }
+
+                case _ ⇒
+                    false
             }
         }
 
