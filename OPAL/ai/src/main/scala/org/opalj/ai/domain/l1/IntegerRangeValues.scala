@@ -38,47 +38,63 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 /**
  * This domain enables the tracking of an integer value's range. The cardinality of
  * the range can be configured to facilitate different needs with regard to the
- * desired precision. Often, a very small cardinality (e.g., between 2 and 8) may be
+ * desired precision ([[maxSizeOfIntegerRanges]]).
+ * Often, a very small cardinality (e.g., between 2 and 8) may be
  * completely sufficient and a large cardinality does not add the overall precision
  * significantly.
  *
- * This domain supports the most common math operations to facilitate the tracking
- * of adaptable domains. Additionally, it supports constraint propagation (e.g.,
- * [[#intEstablishValue]], [[#intEstablishIsLessThan]],...).
+ * This domain supports the most common math operations.
+ *
+ * ==Constraint Propagation==
+ *
+ * Additionally, it supports constraint propagation (e.g.,
+ * [[#intEstablishValue]], [[#intEstablishIsLessThan]],...) w.r.t. those values
+ * that were created at the same point in time by the same operation. For example,
+ * in case of the following sequence:
+ *  - pcA+0/t1: iadd (Stack: 1 :: AnIntegerValue :: ...; Registers: &lt;ignored&lt;)
+ *  - pcA+1/t2: dup (Stack: v(pcA/t1) :: ...; Registers: &lt;ignored&lt;)
+ *  - pcA+2/t3: iflt true:+10 (Stack: v(pcA/t1) :: v(pcA/t1) :: ...; Registers: &lt;ignored&lt;)
+ *  - pcA+3/t4: ... '''(Stack: v(pcA/t1) >= 0''' :: ...; Registers: &lt;ignored&lt;)
+ *  - pcA+12/t5: ... '''(Stack: v(pcA/t1) < 0''' :: ...; Registers: &lt;ignored&lt;)
+ * Hence, the test (iflt) of the topmost stack value constrained the second-top most
+ * stack value, because it was created at the same point in time. In case of this
+ * domain the reference of the DomainValue is used to identify those values that
+ * were created at the same point in time. This, however, requires that two integer
+ * domain values that represent the same integer value are only
  *
  * ==Origin of an IntegerRangeValue==
  *
  * IntegerRangeValues provide implicit, limited information about the origin of the value;
  * i.e., about the instruction which ''created'' the value. This information is
- * implicitly encoded by the object reference as every update and creation of an
- * `IntegerRangeValue` always creates a new instance. I.e, `IntegerRangeValue`s are
+ * implicitly encoded by the object reference as ''every update and creation of an
+ * `IntegerRangeValue` always creates a new instance''. I.e, `IntegerRangeValue`s are
  * ''explicitly not cached or reused''.
  * In case that the value was passed to the method as a parameter the origin is also
  * implicitly available since the value can be found in the registers values associated
  * with the very first instruction.
  *
  * Hence, two integer range values (`ir1`,`ir2`) are reference equal (`eq` in Scala)
- * iff both values were created by the ‘’’same instruction at the same time’’’.
+ * iff both values were created by the '''same instruction at the same time'''.
  *
  * E.g., consider the following fictitious sequence:
  *  - iconst2 ...
- *          Stack: EMPTY
- *          Locals: EMPTY
+ *    -     Stack: EMPTY
+ *    -     Locals: EMPTY
  *  - dup ...
- *          Stack: IntegerRangeValue(2,2)@123456;
- *          Locals: EMPTY
+ *    -     Stack: IntegerRangeValue(2,2)@123456;
+ *    -     Locals: EMPTY
  *  - istore_0 ...
- *          Stack: IntegerRangeValue(2,2)@123456 <- IntegerRangeValue(2,2)@123456;
- *          Locals: EMPTY
+ *    -     Stack: IntegerRangeValue(2,2)@123456 <- IntegerRangeValue(2,2)@123456;
+ *    -     Locals: EMPTY
  *  - iconst2 ...
- *          Stack: IntegerRangeValue(2,2)@123456;
- *          Locals: 0=IntegerRangeValue(2,2)@123456, 1=EMPTY
+ *    -     Stack: IntegerRangeValue(2,2)@123456;
+ *    -     Locals: 0=IntegerRangeValue(2,2)@123456, 1=EMPTY
  *  - istore_1 ...
- *          Stack: IntegerRangeValue(2,2)@654321 <- IntegerRangeValue(2,2)@123456;
- *          Locals: 0=IntegerRangeValue(2,2)@123456, 1=EMPTY
+ *    -     Stack: IntegerRangeValue(2,2)@654321 <- IntegerRangeValue(2,2)@123456;
+ *    -     Locals: 0=IntegerRangeValue(2,2)@123456, 1=EMPTY
  *  - ...
- *          Stack: IntegerRangeValue(2,2)@123456;
- *          Locals: 0=IntegerRangeValue(2,2)@123456, 1=IntegerRangeValue(2,2)@654321
+ *    -     Stack: IntegerRangeValue(2,2)@123456;
+ *    -     Locals: 0=IntegerRangeValue(2,2)@123456, 1=IntegerRangeValue(2,2)@654321
  *
  * Additionally, if the sequence would be part of a loop, the next iteration would
  * create new `IntegerRangeValue`s. Hence, to identify the instruction that
@@ -305,6 +321,12 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
         }
     }
 
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF CONSTRAINTS
+    //
+    // -----------------------------------------------------------------------------------
+
     override def intEstablishValue(
         pc: PC,
         theValue: Int,
@@ -331,9 +353,9 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
             // this basically handles the case that both are "AnIntegerValue"
             (operands, locals)
         else
-            // Given that the values are EQUAL, every subsequent 
+            // Given that the values are determined to be EQUAL, every subsequent 
             // constraint applies to both values (independent of 
-            // the origin).
+            // the implicit origin).
             value1 match {
                 case IntegerRange(lb1, ub1) ⇒
                     value2 match {

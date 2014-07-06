@@ -35,21 +35,19 @@
 //
 //import org.opalj.util.{ Answer, Yes, No, Unknown }
 //
-//import br._
+//import org.opalj.br._
 //
 ///**
 // * This domain enables the tracking of integer values using sets. The cardinality of
 // * the set can be configured to facilitate different needs with regard to the
 // * desired precision. Often, a very small cardinality (e.g., 2 or 8) may be
-// * completely sufficient and a large cardinality does not make the precision more
-// * precise.
+// * completely sufficient and a large cardinality does not significantly add to the
+// * overall precision.
 // *
 // * @author Michael Eichberg
 // */
-//trait IntegerSetValues
-//        extends Domain
-//        with ConcreteIntegerValues {
-//    this: Configuration ⇒
+//trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
+//    this: CoreDomain with Configuration ⇒
 //
 //    // -----------------------------------------------------------------------------------
 //    //
@@ -92,8 +90,14 @@
 //     */
 //    def IntegerSet(value: Int): DomainValue
 //
+//    /**
+//     * Creates a new IntegerSet value using the given set.
+//     */
 //    def IntegerSet(values: SortedSet[Int]): DomainValue
 //
+//    /**
+//     * Extractor for `IntegerSet` values.
+//     */
 //    object IntegerSet {
 //        def unapply(v: IntegerSet): Option[SortedSet[Int]] = Some(v.values)
 //    }
@@ -121,7 +125,8 @@
 //
 //    @inline final override def intValue[T](
 //        value: DomainValue)(
-//            f: Int ⇒ T)(orElse: ⇒ T): T =
+//            f: Int ⇒ T)(
+//                orElse: ⇒ T): T =
 //        value match {
 //            case IntegerSet(values) if values.size == 1 ⇒ f(values.head)
 //            case _                                      ⇒ orElse
@@ -135,7 +140,8 @@
 //
 //    @inline protected final def intValues[T](
 //        value1: DomainValue, value2: DomainValue)(
-//            f: (Int, Int) ⇒ T)(orElse: ⇒ T): T = {
+//            f: (Int, Int) ⇒ T)(
+//                orElse: ⇒ T): T = {
 //        intValue(value1) {
 //            v1 ⇒ intValue(value2) { v2 ⇒ f(v1, v2) } { orElse }
 //        } {
@@ -144,11 +150,11 @@
 //    }
 //
 //    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer = {
-//        intValue(value1) {
-//            v1 ⇒ intValue(value2) { v2 ⇒ Answer(v1 == v2) } { Unknown }
-//        } {
-//            Unknown
-//        }
+//        intValue(value1) { v1 ⇒
+//            intValue(value2) { v2 ⇒
+//                Answer(v1 == v2)
+//            } { Unknown }
+//        } { Unknown }
 //    }
 //
 //    override def intIsSomeValueInRange(
@@ -157,15 +163,12 @@
 //        upperBound: Int): Answer = {
 //        if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
 //            Yes
-//        else
-//            value match {
-//                case IntegerSet(values) ⇒
-//                    if (values.lastKey >= lowerBound && values.firstKey <= upperBound)
-//                        Yes
-//                    else
-//                        No
-//                case _ ⇒ Unknown
-//            }
+//        else value match {
+//            case IntegerSet(values) ⇒
+//                Answer(values.lastKey >= lowerBound && values.firstKey <= upperBound)
+//            case _ ⇒
+//                Unknown
+//        }
 //    }
 //
 //    override def intIsSomeValueNotInRange(
@@ -174,70 +177,65 @@
 //        upperBound: Int): Answer = {
 //        if (lowerBound == Int.MinValue && upperBound == Int.MaxValue)
 //            No
-//        else
-//            value match {
-//                case IntegerSet(values) ⇒
-//                    if (values.firstKey <= lowerBound || values.lastKey >= upperBound)
-//                        Yes
-//                    else
-//                        No
-//                case _ ⇒ Unknown
-//            }
-//    }
-//
-//    override def intIsLessThan(
-//        left: DomainValue,
-//        right: DomainValue): Answer = {
-//
-//        right match {
-//            case IntegerSet(rightValues) ⇒
-//                if (rightValues.lastKey == Int.MinValue)
-//                    No
-//                else
-//                    left match {
-//                        case IntegerSet(leftValues) ⇒
-//                            if (leftValues.lastKey < rightValues.firstKey)
-//                                Yes
-//                            else if (leftValues.firstKey > rightValues.lastKey ||
-//                                ( /*"for point sets":*/
-//                                    leftValues.size == 1 &&
-//                                    rightValues.size == 1 &&
-//                                    leftValues.head == rightValues.head))
-//                                No
-//                            else
-//                                Unknown
-//                        case _ ⇒
-//                            Unknown
-//                    }
+//        else value match {
+//            case IntegerSet(values) ⇒
+//                Answer(values.firstKey < lowerBound || values.lastKey > upperBound)
 //            case _ ⇒
 //                Unknown
 //        }
 //    }
 //
-//    override def intIsLessThanOrEqualTo(
-//        left: DomainValue,
-//        right: DomainValue): Answer = {
+//    override def intIsLessThan(left: DomainValue, right: DomainValue): Answer = {
+//        right match {
+//            case IntegerSet(rightValues) ⇒
+//                if (rightValues.lastKey == Int.MinValue)
+//                    // the right value is the smallest possible value...
+//                    No
+//                else left match {
+//                    case IntegerSet(leftValues) ⇒
+//                        if (leftValues.lastKey < rightValues.firstKey)
+//                            Yes
+//                        else if (leftValues.firstKey > rightValues.lastKey ||
+//                            ( /*"for point sets":*/
+//                                leftValues.size == 1 && rightValues.size == 1 &&
+//                                leftValues.head == rightValues.head))
+//                            No
+//                        else
+//                            Unknown
+//                    case _ ⇒
+//                        Unknown
+//                }
+//            case _ ⇒
+//                Unknown
+//        }
+//    }
 //
+//    override def intIsLessThanOrEqualTo(left: DomainValue, right: DomainValue): Answer = {
 //        right match {
 //            case IntegerSet(rightValues) ⇒
 //                if (rightValues.firstKey == Int.MaxValue)
 //                    Yes
-//                else
-//                    left match {
-//                        case IntegerSet(leftValues) ⇒
-//                            if (leftValues.lastKey <= rightValues.firstKey)
-//                                Yes
-//                            else if (leftValues.firstKey > rightValues.lastKey)
-//                                No
-//                            else
-//                                Unknown
-//                        case _ ⇒
+//                else left match {
+//                    case IntegerSet(leftValues) ⇒
+//                        if (leftValues.lastKey <= rightValues.firstKey)
+//                            Yes
+//                        else if (leftValues.firstKey > rightValues.lastKey)
+//                            No
+//                        else
 //                            Unknown
-//                    }
+//                    case _ ⇒
+//                        Unknown
+//                }
 //            case _ ⇒
 //                Unknown
 //        }
 //    }
+//
+//    // -----------------------------------------------------------------------------------
+//    //
+//    // ESTABLISH CONSTRAINTS
+//    //
+//    // -----------------------------------------------------------------------------------
 //
 //    override def intEstablishValue(
 //        pc: PC,
@@ -268,8 +266,9 @@
 //                    value2 match {
 //                        case IntegerSet(rightValues) ⇒
 //                            val newValue = IntegerSet(leftValues.intersect(rightValues))
-//                            updateIntegerSetValue(value1, newValue, operands, locals)
-//                            updateIntegerSetValue(value2, newValue, operands, locals)
+//                            val (updatedOperands, updatedLocals) =
+//                                updateIntegerSetValue(value1, newValue, operands, locals)
+//                            updateIntegerSetValue(value2, newValue, updatedOperands, updatedLocals)
 //                        case _ ⇒
 //                            // value1 is unchanged
 //                            updateIntegerSetValue(value2, value1, operands, locals)
@@ -286,22 +285,22 @@
 //        value2: DomainValue,
 //        operands: Operands,
 //        locals: Locals): (Operands, Locals) = {
-//        // Given that we cannot represent multiple ranges, our possibilities are 
-//        // severely limited w.r.t. representing values that are not equal. 
-//        // Only if one range just represents a single value
-//        // and this value is a boundary value of the other range it is possible
-//        // to establish "something"
 //        intValue(value1) { v1 ⇒
 //            value2 match {
 //                case IntegerSet(values) ⇒
-//                    updateIntegerSetValue(value2, IntegerSet(values - v1), operands, locals)
-//                case _ ⇒ (operands, locals)
+//                    updateIntegerSetValue(
+//                        value2, IntegerSet(values - v1),
+//                        operands, locals)
+//                case _ ⇒
+//                    (operands, locals)
 //            }
 //        } {
 //            intValue(value2) { v2 ⇒
 //                value1 match {
 //                    case IntegerSet(values) ⇒
-//                        updateIntegerSetValue(value1, IntegerSet(values - v2), operands, locals)
+//                        updateIntegerSetValue(
+//                            value1, IntegerSet(values - v2),
+//                            operands, locals)
 //                    case _ ⇒ (operands, locals)
 //                }
 //            } {
@@ -326,12 +325,12 @@
 //
 //        // e.g, {1,2,3,4} < { 3,4,5,6} => "unchanged"
 //        // e.g, {1,2,3,4} < { 3,4} => {1,2,3} and { 3,4}
-////        (left, right) match {
-////            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
-////                val newLeftValues = leftValues.filter(_ >= rightValues.firstKey)
-////                val newRightValues = rightValues.filter(_ >= leftValues.lastKey)
-////            case _ ⇒ IntegerValue(pc)
-////        }
+//        //        (left, right) match {
+//        //            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
+//        //                val newLeftValues = leftValues.filter(_ >= rightValues.firstKey)
+//        //                val newRightValues = rightValues.filter(_ >= leftValues.lastKey)
+//        //            case _ ⇒ IntegerValue(pc)
+//        //        }
 //    }
 //
 //    override def intEstablishIsLessThanOrEqualTo(
@@ -387,11 +386,15 @@
 //
 //    /*override*/ def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
 //        (value1, value2) match {
-//            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
-//                val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
-//                    leftValue + rightValue
-//                }
-//                IntegerSet(results)
+//            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
+//                val results =
+//                    for (leftValue ← leftValues; rightValue ← rightValues) yield {
+//                        leftValue + rightValue
+//                    }
+//                if (results.size <= maxCardinalityOfIntegerValuesSet)
+//                    IntegerSet(results)
+//                else
+//                    IntegerValue(pc)
 //            case _ ⇒
 //                // we have to create a new instance... even if we just add "0"
 //                IntegerValue(pc)
@@ -407,11 +410,14 @@
 //
 //    /*override*/ def isub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
 //        (left, right) match {
-//            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
+//            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
 //                val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
 //                    leftValue - rightValue
 //                }
-//                IntegerSet(results)
+//                if (results.size <= maxCardinalityOfIntegerValuesSet)
+//                    IntegerSet(results)
+//                else
+//                    IntegerValue(pc)
 //            case _ ⇒
 //                // we have to create a new instance... even if we just add "0"
 //                IntegerValue(pc)
@@ -421,7 +427,7 @@
 //    /*override*/ def idiv(
 //        pc: PC,
 //        numerator: DomainValue,
-//        denominator: DomainValue): IntegerLikeValueOrArithmeticException = {
+//        denominator: DomainValue): IntegerValueOrArithmeticException = {
 //        (numerator, denominator) match {
 //            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
 //                var results: SortedSet[Int] = SortedSet.empty
@@ -476,7 +482,7 @@
 //    /*override*/ def irem(
 //        pc: PC,
 //        left: DomainValue,
-//        right: DomainValue): IntegerLikeValueOrArithmeticException = {
+//        right: DomainValue): IntegerValueOrArithmeticException = {
 //
 //        (left, right) match {
 //            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
