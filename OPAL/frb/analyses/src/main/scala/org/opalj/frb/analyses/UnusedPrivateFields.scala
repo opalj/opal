@@ -37,6 +37,18 @@ import br.instructions._
 /**
  * This analysis reports `private` fields that are not used.
  *
+ * For normal fields it's enough to check whether there are any field access instructions
+ * referencing them in the class'es methods.
+ *
+ * `final` fields with a constant initializer are special cases: The Java compiler will
+ * inline accesses to them. There is no field access instruction, but only a constant
+ * load instruction. For such fields, we search for loads of constant values matching
+ * their constant initializers, and if found, assume that the field is used.
+ *
+ * Possible false-negative: The program may really have used a literal constant instead of
+ * the constant field and it just happens to be the same value and thus is misinterpreted
+ * as access to that field.
+ *
  * @author Ralf Mitschke
  * @author Daniel Klauer
  * @author Peter Spieler
@@ -45,6 +57,44 @@ class UnusedPrivateFields[Source]
         extends MultipleResultsAnalysis[Source, FieldBasedReport[Source]] {
 
     def description: String = "Reports unused private fields."
+
+    private def foreachConstantLoad(body: Code, f: ConstantValue[_] ⇒ Unit): Unit = {
+        body.instructions.foreach {
+            case ICONST_M1           ⇒ f(ConstantInteger(-1))
+            case ICONST_0            ⇒ f(ConstantInteger(0))
+            case ICONST_1            ⇒ f(ConstantInteger(1))
+            case ICONST_2            ⇒ f(ConstantInteger(2))
+            case ICONST_3            ⇒ f(ConstantInteger(3))
+            case ICONST_4            ⇒ f(ConstantInteger(4))
+            case ICONST_5            ⇒ f(ConstantInteger(5))
+            case BIPUSH(value)       ⇒ f(ConstantInteger(value))
+            case LCONST_0            ⇒ f(ConstantLong(0))
+            case LCONST_1            ⇒ f(ConstantLong(1))
+            case DCONST_0            ⇒ f(ConstantDouble(0))
+            case DCONST_1            ⇒ f(ConstantDouble(1))
+            case FCONST_0            ⇒ f(ConstantFloat(0))
+            case FCONST_1            ⇒ f(ConstantFloat(1))
+            case FCONST_2            ⇒ f(ConstantFloat(2))
+
+            // LDC
+            case LoadInt(value)      ⇒ f(ConstantInteger(value))
+            case LoadFloat(value)    ⇒ f(ConstantFloat(value))
+            case LoadClass(value)    ⇒ f(ConstantClass(value))
+            case LoadString(value)   ⇒ f(ConstantString(value))
+
+            // LDC_W
+            case LoadInt_W(value)    ⇒ f(ConstantInteger(value))
+            case LoadFloat_W(value)  ⇒ f(ConstantFloat(value))
+            case LoadClass_W(value)  ⇒ f(ConstantClass(value))
+            case LoadString_W(value) ⇒ f(ConstantString(value))
+
+            // LDC2_W
+            case LoadLong(value)     ⇒ f(ConstantLong(value))
+            case LoadDouble(value)   ⇒ f(ConstantDouble(value))
+
+            case _                   ⇒
+        }
+    }
 
     /**
      * Runs this analysis on the given project.
@@ -82,38 +132,98 @@ class UnusedPrivateFields[Source]
                 })
         }
 
-        val unusedFields = for (
-            classFile ← project.classFiles if !classFile.isInterfaceDeclaration if !project.isLibraryType(classFile)
-        ) yield {
+        var reports: List[FieldBasedReport[Source]] = List.empty
+
+        for {
+            classFile ← project.classFiles
+            if !classFile.isInterfaceDeclaration &&
+                !project.isLibraryType(classFile)
+        } {
             val declaringClass = classFile.thisType
+            val privateFields = scala.collection.mutable.Map[String, Field]()
+            val unusedConstants = scala.collection.mutable.Set[ConstantValue[_]]()
 
-            var privateFields: Map[String, (ClassFile, Field)] = Map.empty
-
+            // Collect private fields
             for {
                 field ← classFile.fields
-                if field.isPrivate
-                if !isSerialVersionUID(declaringClass, field)
+                if field.isPrivate && !isSerialVersionUID(declaringClass, field)
             } {
-                privateFields += field.name -> ((classFile, field))
+                privateFields += field.name -> field
+                if (field.isFinal && field.constantFieldValue.isDefined) {
+                    unusedConstants += field.constantFieldValue.get
+                }
             }
 
-            for {
-                method @ MethodWithBody(body) ← classFile.methods
-                FieldReadAccess(`declaringClass`, name, _) ← body.instructions
-            } {
-                privateFields -= name
+            // Check for field read accesses by name
+            // TODO: early abort if all fields known to be used
+            if (privateFields.nonEmpty) {
+                for (method @ MethodWithBody(body) ← classFile.methods) {
+                    for (FieldReadAccess(`declaringClass`, name, _) ← body.instructions) {
+                        privateFields -= name
+                    }
+                }
             }
 
-            privateFields.values
+            // Check constructors: Constant values occurring more than once indicate the
+            // corresponding field(s) to be used. (more than once because constructors
+            // initialize fields, so they will always contain at least one constant load
+            // of each field's value)
+            // Possible false-negatives: In case multiple final fields have the same
+            // constant initializer, the corresponding value will appear multiple times
+            // during constant loads in the constructor. In that case the >= 2 heuristic
+            // will cause all these fields to be treated as used.
+            if (unusedConstants.nonEmpty) {
+                val occurrences = scala.collection.mutable.Map[ConstantValue[_], Int]() ++
+                    unusedConstants.map(value ⇒ value -> 0)
+
+                for (MethodWithBody(body) ← classFile.constructors) {
+                    foreachConstantLoad(body, { value ⇒
+                        if (occurrences.contains(value)) {
+                            occurrences(value) += 1
+                        }
+                    })
+                }
+
+                // Remove constants used >= 2 times in constructors from the unused list
+                unusedConstants --= occurrences.filter {
+                    case (value, occurrenceCount) ⇒ occurrenceCount >= 2
+                }.map {
+                    case (value, occurrenceCount) ⇒ value
+                }
+            }
+
+            // Check other methods: Any occurrence indicates a use.
+            if (unusedConstants.nonEmpty) {
+                for {
+                    method @ MethodWithBody(body) ← classFile.methods
+                    if !method.isConstructor
+                } {
+                    foreachConstantLoad(body, { value ⇒
+                        unusedConstants -= value
+                    })
+                }
+            }
+
+            // Remove final constant fields from the unused list, if their constant was
+            // seen used
+            for ((name, field) ← privateFields) {
+                if (field.isFinal &&
+                    field.constantFieldValue.isDefined &&
+                    !unusedConstants.contains(field.constantFieldValue.get)) {
+                    privateFields -= name
+                }
+            }
+
+            for (field ← privateFields.values) {
+                reports = FieldBasedReport(
+                    project.source(declaringClass),
+                    Severity.Info,
+                    declaringClass,
+                    field,
+                    "Is private and unused") :: reports
+            }
         }
 
-        for ((classFile, field) ← unusedFields.flatten) yield {
-            FieldBasedReport(
-                project.source(classFile.thisType),
-                Severity.Info,
-                classFile.thisType,
-                field,
-                "Is private and unused")
-        }
+        reports
     }
 }

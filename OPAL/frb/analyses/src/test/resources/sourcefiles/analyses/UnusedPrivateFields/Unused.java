@@ -29,12 +29,22 @@
 package UnusedPrivateFields;
 
 /**
- * A Serializable class with a private serialVersionUID field. The serialVersionUID field
- * is used by Serializable, and thus it should not be reported.
+ * A class containing various unused private fields.
  * 
  * @author Daniel Klauer
  */
-class UsedPrivateSerialVersionUID implements java.io.Serializable {
+@SuppressWarnings("unused")
+public class Unused {
 
-    private static final long serialVersionUID = 1L;
+    // Normal field without initializer
+    private int a;
+
+    // Normal field with a constant initializer
+    private int b = 111;
+
+    // Final field with non-constant initializer
+    private final Unused c = new Unused();
+
+    // Final field with another constant initializer
+    private final int d = 222;
 }

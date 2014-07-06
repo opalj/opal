@@ -49,19 +49,52 @@ class TestUnusedPrivateFields extends AnalysisTest {
     behavior of "UnusedPrivateFields"
 
     it should "detect an unused private field" in {
-        val declaringClass = ObjectType("UnusedPrivateFields/UnusedPrivateField")
+        val declaringClass = ObjectType("UnusedPrivateFields/Unused")
         results should contain(FieldBasedReport(
             project.source(declaringClass),
             Severity.Info,
             declaringClass,
             Some(IntegerType),
-            "field",
+            "a",
+            "Is private and unused"))
+    }
+
+    it should "detect an unused private field with constant initializer" in {
+        val declaringClass = ObjectType("UnusedPrivateFields/Unused")
+        results should contain(FieldBasedReport(
+            project.source(declaringClass),
+            Severity.Info,
+            declaringClass,
+            Some(IntegerType),
+            "b",
+            "Is private and unused"))
+    }
+
+    it should "detect an unused private final field with non-constant initializer" in {
+        val declaringClass = ObjectType("UnusedPrivateFields/Unused")
+        results should contain(FieldBasedReport(
+            project.source(declaringClass),
+            Severity.Info,
+            declaringClass,
+            Some(declaringClass),
+            "c",
+            "Is private and unused"))
+    }
+
+    it should "detect an unused private final field with constant initializer" in {
+        val declaringClass = ObjectType("UnusedPrivateFields/Unused")
+        results should contain(FieldBasedReport(
+            project.source(declaringClass),
+            Severity.Info,
+            declaringClass,
+            Some(IntegerType),
+            "d",
             "Is private and unused"))
     }
 
     it should "detect an unused private field called 'serialVersionUID'" in {
         val declaringClass =
-            ObjectType("UnusedPrivateFields/UnusedPrivateSerialVersionUID")
+            ObjectType("UnusedPrivateFields/UnusedSerialVersionUID")
         results should contain(FieldBasedReport(
             project.source(declaringClass),
             Severity.Info,
@@ -71,8 +104,8 @@ class TestUnusedPrivateFields extends AnalysisTest {
             "Is private and unused"))
     }
 
-    it should "find only 2 issues in UnusedPrivateFields.jar" in {
-        results.size should be(2)
+    it should "find exactly 5 issues in UnusedPrivateFields.jar" in {
+        results.size should be(5)
     }
 }
 
