@@ -223,6 +223,36 @@ trait CoreDomain {
         //
 
         /**
+         * Returns `true` iff the abstract state represented by this value
+         * abstracts over the state of the given value. In other
+         * words if every possible runtime value represented by the given value
+         * is also represented by this value.
+         *
+         * The abstract state generally encompasses every information that would
+         * be considered during a [[join]] of `this` value and the `other` value and that
+         * could lead to a [[StructuralUpdate]].
+         *
+         * This method is '''not reflexive'''.
+         *
+         * [[TheIllegalValue]] only abstracts over itself.
+         * 
+         * ==Implementation==
+         * The default implementation relies on this domain value's [[join]] method.
+         *
+         * Overriding this method is, hence, primarily meaningful for performance reasons.
+         */
+        def abstractsOver(other: DomainValue): Boolean = {
+            if (this eq other)
+                return true;
+
+            val result = this.join(Int.MinValue /*Irrelevant*/ , other)
+            result.isNoUpdate ||
+                (result.isMetaInformationUpdate &&
+                    (result ne MetaInformationUpdateIllegalValue)
+                )
+        }
+
+        /**
          * Creates a summary of this value.
          *
          * In general, creating a summary of a value may be useful/required
@@ -265,33 +295,6 @@ trait CoreDomain {
         def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
             throw new DomainException("adaptation of "+this+" to "+target+" is unsupported")
 
-        /**
-         * Returns `true` iff the abstract state represented by this value
-         * abstracts over the state of the given value. In other
-         * words if every possible runtime value represented by the given value
-         * is also represented by this value.
-         *
-         * The abstract state generally encompasses every information that would
-         * be considered during a [[join]] of `this` value and the `other` value and that
-         * could lead to a [[StructuralUpdate]].
-         *
-         * This method is '''not reflexive'''.
-         *
-         * ==Implementation==
-         * The default implementation relies on this domain value's [[join]] method.
-         *
-         * Overriding this method is, hence, primarily meaningful for performance reasons.
-         */
-        def abstractsOver(other: DomainValue): Boolean = {
-            if (this eq other)
-                return true;
-
-            val result = this.join(Int.MinValue /*Irrelevant*/ , other)
-            result.isNoUpdate ||
-                (result.isMetaInformationUpdate &&
-                    (result ne MetaInformationUpdateIllegalValue)
-                )
-        }
     }
 
     /**
@@ -556,9 +559,9 @@ trait CoreDomain {
     }
 
     /**
-     * Merges the given domain value `v1` with the domain value `v2` and returns 
-     * the merged value which is `v1` if `v1` is an abstraction of `v2`, `v2` if `v2` 
-     * is an abstraction of `v1` or some other value if a new value is computed that 
+     * Merges the given domain value `v1` with the domain value `v2` and returns
+     * the merged value which is `v1` if `v1` is an abstraction of `v2`, `v2` if `v2`
+     * is an abstraction of `v1` or some other value if a new value is computed that
      * abstracts over both values.
      *
      * This operation is commutative.
