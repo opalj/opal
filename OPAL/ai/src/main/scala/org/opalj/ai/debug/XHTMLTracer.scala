@@ -137,9 +137,13 @@ trait XHTMLTracer extends AITracer {
                 xml.Unparsed("$(function() { $( \"#dialog"+entity.flowId+"\" ).dialog({autoOpen:false}); });\n")
             }
         val dialogs =
-            for (path ← inOrderFlow; flowEntity ← path) yield {
+            for {
+                pathWithColumnIndex ← inOrderFlow.zipWithIndex
+                (path, index) = pathWithColumnIndex
+                flowEntity ← path
+            } yield {
                 val dialogId = "dialog"+flowEntity.flowId
-                <div id={ dialogId } title={ flowEntity.pc + " " + flowEntity.instruction.mnemonic }>
+                <div id={ dialogId } title={ (index + 1) + " - " + flowEntity.pc + " (" + flowEntity.instruction.mnemonic + ")" }>
         	<b>Stack</b><br/>
         	{ dumpStack(flowEntity.operands)(Some(idsLookup)) }
         	<b>Locals</b><br/>
@@ -153,10 +157,11 @@ trait XHTMLTracer extends AITracer {
         		{ flowEntity.map(fe ⇒ instructionToNode(fe.flowId, pc, fe.instruction)).getOrElse(xml.Text(" ")) }
         		</td>
             }
+        val joinInstructions = code.joinInstructions
         val flowTable =
             for ((pc, rowIndex) ← pcsToRowIndex) yield {
                 <tr>
-            		<td>{ /*rowIndex + "→"*/ } <b>{ pc }</b></td>
+            		<td>{ if (joinInstructions.contains(pc)) "⇶ " else "" } <b>{ pc }</b></td>
             		{ row(pc) }
             	</tr>
             }
@@ -218,7 +223,7 @@ trait XHTMLTracer extends AITracer {
         <input type="text" name="filter" value="" id="filter" title="Use a RegExp to filter(remove) elements. E.g.,'DUP|ASTORE|ALOAD'"/> 
         <table>
         	<thead><tr>
-        	<td>PC</td>
+        	<td>PC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
         	{ (1 to inOrderFlow.size).map(index ⇒ <td>{ index }</td>) }
         	</tr></thead>
         	<tbody>
@@ -259,6 +264,8 @@ trait XHTMLTracer extends AITracer {
         </html>
     }
 
+    private var code: Code = null
+
     override def continuingInterpretation(
         code: Code,
         domain: Domain)(
@@ -267,7 +274,11 @@ trait XHTMLTracer extends AITracer {
             operandsArray: domain.OperandsArray,
             localsArray: domain.LocalsArray,
             memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]) {
-        /*ignored*/
+        if ((this.code eq code) || (this.code == null))
+            this.code = code
+        else
+            throw new IllegalStateException("this XHTMLtracer is already used; create a new one")
+
     }
 
     private[this] var continuingWithBranch = true

@@ -23,7 +23,10 @@ caption{
 	text-align: left;
 }
 div.annotations{
-	font-size: 0.8em;	
+	font-size: 0.8em;
+}
+span.unused{
+	color: #999999;
 }
 th{
 	vertical-align: top;
@@ -34,7 +37,7 @@ td{
 tr.not_evaluated td {
 	background-color: #FFDBDB;
 }
-td + td { 
+td + td {
 	border-left: 1px solid #eee;
 }
 
@@ -73,5 +76,3 @@ ol.registers li{
 td.pc{
 	background-color: #ffc;
 }
-
-

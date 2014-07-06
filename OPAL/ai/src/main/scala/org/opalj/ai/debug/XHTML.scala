@@ -305,25 +305,36 @@ object XHTML {
             localsArray: TheLocalsArray[domain.Locals])(
                 implicit ids: Option[AnyRef ⇒ Int]): Array[Node] = {
         val indexedExceptionHandlers = indexExceptionHandlers(code)
+        val joinInstructions = code.joinInstructions
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
         for (((instruction, pc), (operands, locals)) ← instrs) yield {
             var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
             if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
-            dumpInstruction(pc, instruction, Some(exceptionHandlers), domain)(
-                operands, locals)
+            dumpInstruction(
+                pc, instruction, joinInstructions.contains(pc),
+                Some(exceptionHandlers),
+                domain)(
+                    operands, locals)
         }
     }
 
     def dumpInstruction(
         pc: Int,
         instruction: Instruction,
+        isJoinInstruction: Boolean,
         exceptionHandlers: Option[String],
         domain: Domain)(
             operands: domain.Operands,
             locals: domain.Locals)(
                 implicit ids: Option[AnyRef ⇒ Int]): Node = {
+        val pcAsXHTML = Unparsed(
+            (if (isJoinInstruction) "⇶ " else "") +
+                pc.toString+
+                "<br>"+
+                exceptionHandlers.getOrElse(""))
+
         <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
-            <td class="pc">{ Unparsed(pc.toString + "<br>" + exceptionHandlers.getOrElse("")) }</td>
+            <td class="pc">{ pcAsXHTML }</td>
             <td class="instruction">{ Unparsed(instruction.toString(pc).replace("\n", "<br>")) }</td>
             <td class="stack">{ dumpStack(operands) }</td>
             <td class="locals">{ dumpLocals(locals) }</td>
@@ -344,14 +355,23 @@ object XHTML {
 
     def dumpLocals(
         locals: Locals[_ <: AnyRef /**/ ])(
-            implicit ids: Option[AnyRef ⇒ Int]): Node =
+            implicit ids: Option[AnyRef ⇒ Int]): Node = {
+
+        def mapLocal(local: AnyRef): Node = {
+            if (local eq null)
+                <span class="unused">{ "UNUSED" }</span>
+            else
+                <span>{ valueToString(local) }</span>
+        }
+
         if (locals eq null)
             <em>Information about the local variables is not available.</em>
         else {
             <ol start="0" class="registers">
-            { locals.map(l ⇒ if (l eq null) "UNUSED" else valueToString(l)).map(l ⇒ <li>{ l }</li>).iterator }
+            { locals.map { mapLocal(_) }.map(l ⇒ <li>{ l }</li>).iterator }
             </ol>
         }
+    }
 
     def valueToString(value: AnyRef)(implicit ids: Option[AnyRef ⇒ Int]): String =
         value.toString + ids.map("; #"+_.apply(value)).getOrElse("")
