@@ -147,6 +147,25 @@ trait Domain
         }
     }
 
+    /**
+     * Creates a `DomainValue` that represents a a value with the given type
+     * and whic is initialized using the JVM's default value for that type.
+     * E.g., for `IntegerValue`s the value is set to `0`. In case of a
+     * `ReferenceType` the value is the [[NullValue]].
+     */
+    final def DefaultValue(pc: PC, theType: FieldType): DomainValue =
+        theType match {
+            case BooleanType      ⇒ BooleanValue(pc, false)
+            case ByteType         ⇒ ByteValue(pc, 0)
+            case CharType         ⇒ CharValue(pc, 0)
+            case ShortType        ⇒ ShortValue(pc, 0)
+            case IntegerType      ⇒ IntegerValue(pc, 0)
+            case FloatType        ⇒ FloatValue(pc, 0.0f)
+            case LongType         ⇒ LongValue(pc, 0l)
+            case DoubleType       ⇒ DoubleValue(pc, 0.0d)
+            case _: ReferenceType ⇒ NullValue(pc)
+        }
+
     // -----------------------------------------------------------------------------------
     //
     // ABSTRACTIONS RELATED TO INSTRUCTIONS
