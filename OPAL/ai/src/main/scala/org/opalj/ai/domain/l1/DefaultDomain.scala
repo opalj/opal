@@ -66,8 +66,6 @@ class DefaultConfigurableDomain[I, Source](
 
     type Id = I
 
-    override protected def maxSizeOfIntegerRanges: Long = 25l
-
 }
 
 class DefaultDomain[Source](
