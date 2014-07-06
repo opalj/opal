@@ -31,9 +31,11 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import org.opalj.br.{ ComputationalType, ComputationalTypeLong }
+import org.opalj.ai.Domain
+import org.opalj.ai.IsLongValue
+import org.opalj.ai.domain.Configuration
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeLong
 
 /**
  * This partial `Domain` performs all computations related to primitive long

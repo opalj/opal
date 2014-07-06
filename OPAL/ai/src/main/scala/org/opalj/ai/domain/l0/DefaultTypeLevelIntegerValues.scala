@@ -31,21 +31,24 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+import org.opalj.ai.domain.Configuration
+import org.opalj.ai.domain.DefaultDomainValueBinding
+
+import org.opalj.br.ComputationalTypeInt
 
 /**
  * Base implementation of the `TypeLevelIntegerValues` trait that requires that
  * the domain`s `Value` trait is not extended. This implementation satisfies
  * the requirements of OPAL w.r.t. the domain's computational type. Additionally,
  * it collects information about a value's range, if possible.
- * 
+ *
  * This domain is highly efficient as it uses a single value domain value to represents
- * all values of the same primitive type. 
+ * all values of the same primitive type.
  *
  * =Adaptation/Reusability=
  * This domain '''does not support constraint propagation''' – due to its reuse of the
- * the same instance of a DomainValue across all potential instantiations of such values –   
- * and should not be used to implement such a domain as this requires the 
+ * the same instance of a DomainValue across all potential instantiations of such values –
+ * and should not be used to implement such a domain as this requires the
  * reimplementation of basically '''all''' methods.
  *
  * @author Michael Eichberg

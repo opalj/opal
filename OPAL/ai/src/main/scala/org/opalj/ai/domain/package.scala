@@ -40,7 +40,7 @@ package ai
  * `Domain`s that implement a specific interface (trait).  In this case, we further
  * distinguish between domains that provide a default implementation (per ''interface''
  * only one of these `Domain`s can be used to create a '''final `Domain`''') and
- * those that can be stacked and basically refine.
+ * those that can be stacked and basically refine the overall functionality.
  *
  * '''Examples'''
  *  - Domains That Define a General Interface

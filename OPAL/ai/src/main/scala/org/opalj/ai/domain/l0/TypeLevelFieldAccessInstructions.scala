@@ -31,9 +31,14 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import org.opalj.br.{ ObjectType, FieldType }
+import org.opalj.ai.Computation
+import org.opalj.ai.ComputationWithSideEffectOnly
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.Configuration
+import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
+import org.opalj.util.Unknown
+import org.opalj.util.Yes
 
 /**
  * Implements the handling of field access instructions at the type level.

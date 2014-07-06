@@ -99,9 +99,11 @@ class Project[Source] private (
     /**
      * Returns the list of all packages that contain at least one class.
      *
-     * For example, in case of Java the package "java" does not directly contain
+     * For example, in case of the JDK the package `java` does not directly contain
      * any class – only its subclasses. This package is, hence, not returned by this
-     * function.
+     * function, but the package `java.lang` is.
+     *
+     * @note This method's result is not cached.
      */
     def packages: Set[String] = {
         var packages = Set.empty[String]
@@ -126,6 +128,13 @@ class Project[Source] private (
      *  - org.opalj.ai.domain => org.opalj
      *  - org.apache.commons.io => org.apache.commons.io
      *  - java.lang => java.lang
+     *
+     * In other words the set of rootPackages can then be determined using:
+     * {{{
+     * <Project>.rootPackages().values.toSet
+     * }}}
+     *
+     * @note This method's result is not cached.
      *
      * @return a Map which contains for each package name the root package name.
      */

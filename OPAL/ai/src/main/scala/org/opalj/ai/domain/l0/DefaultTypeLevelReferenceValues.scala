@@ -31,10 +31,27 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-import org.opalj.collection.immutable.{ UIDSet, UIDSet1 }
+import scala.Iterable
 
-import br._
+import org.opalj.ai.Computation
+import org.opalj.ai.Domain
+import org.opalj.ai.DomainException
+import org.opalj.ai.IsAReferenceValue
+import org.opalj.ai.IsPrimitiveValue
+import org.opalj.ai.NoUpdate
+import org.opalj.ai.Update
+import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.ai.domain.Configuration
+import org.opalj.ai.domain.DefaultDomainValueBinding
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
+import org.opalj.util.Answer
+import org.opalj.util.No
+import org.opalj.util.Unknown
+import org.opalj.util.Yes
+import org.opalj.br.ArrayType
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 
 /**
  * Default implementation for handling reference values.

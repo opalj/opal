@@ -30,15 +30,33 @@ package org.opalj
 package ai
 package debug
 
+import scala.language.existentials
+
 import java.net.URL
 
-import scala.Console.{ err, RED, RESET }
+import scala.Console.BLUE
+import scala.Console.BOLD
+import scala.Console.CYAN
+import scala.Console.RED
+import scala.Console.RESET
 
-import org.opalj.util.PerformanceEvaluation.{ time, memory, asMB, ns2sec }
-
-import org.opalj.ai.project._
-import org.opalj.br._
-import org.opalj.br.analyses._
+import org.opalj.ai.domain
+import org.opalj.ai.project.CHACallGraphAlgorithmConfiguration
+import org.opalj.ai.project.CallGraphFactory
+import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
+import org.opalj.ai.project.ComputedCallGraph
+import org.opalj.ai.project.VTACallGraphAlgorithmConfiguration
+import org.opalj.ai.project.VTACallGraphDomain
+import org.opalj.ai.project.DefaultVTACallGraphDomain
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.analyses.Analysis
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.util.PerformanceEvaluation.ns2sec
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  *
@@ -153,8 +171,6 @@ trait CallGraphDifferenceReport {
             ).mkString(BOLD+"; "+RESET)
     }
 }
-
-import scala.language.existentials
 
 case class AdditionalCallTargets(
         project: SomeProject,

@@ -31,11 +31,21 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-import org.opalj.collection.immutable.UIDSet
+import scala.Iterable
 
-import org.opalj.br.{ Type, ObjectType, ReferenceType, ArrayType, FieldType, UpperTypeBound }
-import org.opalj.br.{ ComputationalType, ComputationalTypeReference }
+import org.opalj.br.ArrayType
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.Type
+import org.opalj.br.UpperTypeBound
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.util.Answer
+import org.opalj.util.No
+import org.opalj.util.Unknown
+import org.opalj.util.Yes
 
 /**
  * Implements the foundations for performing computations related to reference values.
@@ -212,8 +222,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
      * Abstracts over all values with computational type `reference`. I.e.,
      * abstracts over class and array values and also the `null` value.
      */
-    trait ReferenceValue
-            extends AnyRef
+    trait ReferenceValue extends AnyRef
             with Value
             with IsReferenceValue
             with ArrayAbstraction {
@@ -265,6 +274,9 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
         @throws[DomainException]("If this value is null (isNull.yes == true).")
         override def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
+        /**
+         * Basically returns `this`.
+         */
         final override def asDomainValue(
             implicit targetDomain: Domain): targetDomain.DomainValue = {
             if (targetDomain == domain)
@@ -273,11 +285,12 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
                 throw new UnsupportedOperationException(
                     "the given domain has to be equal to this value's domain")
         }
+
     }
 
     /**
-     * Represents the value `null`. Null values are basically found in the following two
-     * cases:
+     * Represents the runtime value `null`. Null values are basically found in the
+     * following two cases:
      *  1. The value `null` was pushed onto the stack using `aconst_null`.
      *  2. A reference value that is not guaranteed to be non-null is tested against
      *    `null` using `ifnull` or `ifnonnull` and we are now on the branch where
@@ -287,19 +300,13 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
 
         final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
-        /**
-         * Returns `Yes`.
-         */
+        /** Returns `Yes`. */
         final override def isNull = Yes
 
-        /**
-         * Returns `true`.
-         */
+        /** Returns `true`. */
         final override def isPrecise = true
 
-        /**
-         * Returns an empty upper type bound.
-         */
+        /** Returns an empty upper type bound. */
         final override def upperTypeBound: UpperTypeBound = UIDSet.empty
 
         final override def load(
@@ -349,7 +356,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
 
         final override def summarize(pc: PC): this.type = this
 
-        override def toString: String = "ReferenceValue("+theUpperTypeBound.toJava+")"
+        override def toString: String = theUpperTypeBound.toJava
 
     }
 
@@ -362,8 +369,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
     /**
      * Represents an array value.
      */
-    protected[this] trait ArrayValue extends ReferenceValue {
-        this: DomainArrayValue ⇒
+    protected[this] trait ArrayValue extends ReferenceValue { this: DomainArrayValue ⇒
 
         /**
          * Returns `Yes` if we can statically determine that the given value can

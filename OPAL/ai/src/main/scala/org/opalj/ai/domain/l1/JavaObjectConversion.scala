@@ -35,11 +35,9 @@ package ai
 package domain
 package l1
 
-import scala.reflect.ClassTag
-
-import br.analyses.SomeProject
-
-import br._
+import org.opalj.ai.Domain
+import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
 
 /**
  * Mixed in by domain's that support the conversation of a `DomainValue` into
@@ -47,18 +45,20 @@ import br._
  * invocations.
  *
  * ==Limitation==
- * This will generally only work reasonably iff the respective class is either in the classpath
- * of the JVM or a class loader (initialized with the project's classpath) is used.
+ * Using JavaObjectConversion will only work reasonably iff the respective class
+ * is either in the classpath of the JVM or a class loader (initialized with the
+ * project's classpath) is used.
  * The latter, however, does not work for classes on the bootclasspath (e.g.,
  * `java.lang.String`). In that case it is necessary to check that the code of the
- * analyzed application is compatible with the one on the class path. To avoid
+ * analyzed application is compatible with the one on the class path.
+ * ''To avoid accidental
  * imprecision in the analysis you should use this features only for stable classes
- * belonging to the core JDK (`java.lang...`.)
+ * belonging to the core JDK (`java.lang...`.)'''
  *
  * @author Frederik Buss-Joraschek
  * @author Michael Eichberg
  */
-trait JavaObjectConversion { this: Domain ⇒
+trait JavaObjectConversion { this: CoreDomain with ReferenceValuesDomain ⇒
 
     /**
      * Converts – if possible – a given `DomainValue` to a Java object that is
@@ -98,7 +98,7 @@ trait JavaObjectConversion { this: Domain ⇒
      * `DomainValue`. The conversion may be lossy.
      *
      * @note To convert primitive values to `DomainValue`s use the domain's
-     * 		respective factory methods. I.e., this method deliberately does not perform any 
+     * 		respective factory methods. I.e., this method deliberately does not perform any
      *   	(Un-)Boxing as it does not have the necessary information. For more
      *    	information study the implementation of the [[ReflectiveInvoker]].
      *
@@ -122,6 +122,6 @@ trait JavaObjectConversion { this: Domain ⇒
                 FieldType(fqnInBinaryNotation).asArrayType)
         } else /*if (!clazz.isPrimitive()) */ {
             InitializedObjectValue(pc, ObjectType(fqnInBinaryNotation))
-        } // else ... the case is Primitive is not possible
+        }
     }
 }

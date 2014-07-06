@@ -31,7 +31,8 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+import org.opalj.ai.Domain
+import org.opalj.ai.IsDoubleValue
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeDouble
 
@@ -69,8 +70,7 @@ trait TypeLevelDoubleValues extends Domain {
     //
     // UNARY EXPRESSIONS
     //
-    override def dneg(pc: PC, value: DomainValue): DomainValue =
-        DoubleValue(pc)
+    override def dneg(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
 
     //
     // RELATIONAL OPERATORS

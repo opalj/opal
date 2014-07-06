@@ -31,9 +31,8 @@ package ai
 package domain
 package l1
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import br._
+import org.opalj.util.No
+import org.opalj.br.ObjectType
 
 /**
  * Enables the tracing of concrete string values and can, e.g., be used to
@@ -52,6 +51,8 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
         val value: String)
             extends SObjectValue(pc, No, true, ObjectType.String) {
         this: DomainStringValue ⇒
+
+        require(value != null)
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,

@@ -36,22 +36,22 @@ package domain
 package l1
 
 import scala.collection.SortedSet
-
 import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import br._
+import org.opalj.br._
 
 /**
+ * Enables the precise tracking of arrays up to a specified size.
+ *
+ * @note Other domains that track arrays in a different way are easily imaginable.
+ *
  * @author Michael Eichberg
  */
-trait ArrayValues
-        extends l1.ReferenceValues
-        with Origin
-        with PerInstructionPostProcessing {
+trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
     domain: Configuration with ConcreteIntegerValues with ClassHierarchy ⇒
 
     // We do not refine the type DomainArrayValue any further since we also want
-    // to use the super level ArrayValue class.
+    // to use the super level ArrayValue class to represent arrays for which we have
+    // no further knowledge.
     // DO NOT: type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
 
     protected class ArrayValue(
@@ -80,7 +80,7 @@ trait ArrayValues
                 ComputedValue(values(index))
             } {
                 // This handles the case that we know that the index is not precise 
-                // but still known to be valid.
+                // but it is still known to be valid.
                 super.doLoad(loadPC, index, potentialExceptions)
             }
         }

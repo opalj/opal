@@ -35,11 +35,7 @@ package ai
 package domain
 package l1
 
-import scala.collection.SortedSet
-
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import br._
+import org.opalj.br.ArrayType
 
 /**
  * @author Michael Eichberg
@@ -47,7 +43,7 @@ import br._
 trait DefaultArrayValuesBinding
         extends l1.DefaultReferenceValuesBinding
         with ArrayValues {
-    domain: Configuration with ConcreteIntegerValues with ClassHierarchy  ⇒
+    domain: Configuration with ConcreteIntegerValues with ClassHierarchy ⇒
 
     //
     // FACTORY METHODS

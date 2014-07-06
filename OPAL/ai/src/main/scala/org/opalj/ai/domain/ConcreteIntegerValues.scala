@@ -34,8 +34,6 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.util.Answer
-
 /**
  * Provides information about an integer value's precise value, if this information
  * is available.

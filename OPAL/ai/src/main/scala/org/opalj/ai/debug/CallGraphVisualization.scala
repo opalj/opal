@@ -63,10 +63,6 @@ object CallGraphVisualization {
 
     import java.net.URL
 
-    import scala.Console.{ err, RED, RESET }
-
-    import org.opalj.util.PerformanceEvaluation.{ time, memory, asMB, ns2sec }
-
     /**
      * Traces the interpretation of a single method and prints out the results.
      *

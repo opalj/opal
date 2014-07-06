@@ -31,9 +31,17 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
+import org.opalj.ai.Domain
+import org.opalj.ai.IsBooleanValue
+import org.opalj.ai.IsByteValue
+import org.opalj.ai.IsCharValue
+import org.opalj.ai.IsIntegerValue
+import org.opalj.ai.IsShortValue
+import org.opalj.ai.domain.Configuration
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeInt
+import org.opalj.util.Answer
+import org.opalj.util.Unknown
 
 /**
  * Domain that performs computations related to integer values at the type level.
