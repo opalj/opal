@@ -332,13 +332,13 @@ object XHTML {
     }
 
     def dumpStack(
-        operands: Operands[_])(
+        operands: Operands[_ <: AnyRef])(
             implicit ids: Option[AnyRef ⇒ Int]): Node =
         if (operands eq null)
             <em>Information about operands is not available.</em>
         else {
             <ul class="Stack">
-            { operands.map(op ⇒ <li>{ op.toString() }</li>) }
+            { operands.map(op ⇒ <li>{ valueToString(op) }</li>) }
             </ul>
         }
 
