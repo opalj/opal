@@ -385,6 +385,8 @@ trait AI[D <: Domain] {
         /* 4 */ var evaluated = alreadyEvaluated
         /* 5 */ var memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
+        val joinInstructions = code.joinInstructions
+
         // -------------------------------------------------------------------------------
         //
         // Main loop of the abstract interpreter
@@ -413,8 +415,10 @@ trait AI[D <: Domain] {
             // - the main loop that processes the worklist
 
             val currentOperands = operandsArray(targetPC)
-            if (currentOperands == null /* || localsArray(targetPC) == null )*/ ) {
-                // we analyze the instruction for the first time ...
+            if (currentOperands == null /* || localsArray(targetPC) == null )*/ ||
+                !joinInstructions.contains(targetPC)               ) {
+                // We analyze the instruction for the first time ... or it is
+                // not an instruction where multiple control-flow paths join.
                 operandsArray(targetPC) = operands
                 localsArray(targetPC) = locals
                 worklist = targetPC :: worklist
