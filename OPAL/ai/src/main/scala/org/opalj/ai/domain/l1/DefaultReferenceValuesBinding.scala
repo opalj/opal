@@ -65,7 +65,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues {
         pc: PC,
         isNull: Answer,
         isPrecise: Boolean,
-        theUpperTypeBound: ObjectType): DomainObjectValue = {
+        theUpperTypeBound: ObjectType): SObjectValue = {
         new SObjectValue(pc, isNull, isPrecise, theUpperTypeBound)
     }
 

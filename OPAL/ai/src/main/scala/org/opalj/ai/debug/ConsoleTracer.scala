@@ -115,7 +115,7 @@ trait ConsoleTracer extends AITracer {
             otherLocals: domain.Locals,
             result: Update[(domain.Operands, domain.Locals)]): Unit = {
 
-        print(Console.BLUE + pc+": MERGE: ")
+        print(Console.BLUE + pc+": JOIN: ")
         result match {
             case NoUpdate ⇒ println("no changes")
             case u @ SomeUpdate((updatedOperands, updatedLocals)) ⇒
@@ -123,10 +123,19 @@ trait ConsoleTracer extends AITracer {
                 println(
                     thisOperands.
                         zip(otherOperands).
-                        map(v ⇒ "given "+correctIndent(v._1)+"\n\t\tmerge "+correctIndent(v._2)).
                         zip(updatedOperands).
-                        map(v ⇒ v._1+"\n\t\t=>    "+correctIndent(v._2)).
-                        mkString("\tOperands:\n\t\t", "\n\t\t----------------\n\t\t", "")
+                        map{v ⇒ 
+                            val ((thisOp,thatOp),updatedOp) = v
+                            val s = if (thisOp eq updatedOp)
+                                "✓ "+Console.GREEN+updatedOp.toString
+                            else {
+                                "given "+correctIndent(thisOp)+"\n\t\t join "+
+                                correctIndent(thatOp)+"\n\t\t   => "+
+                                correctIndent(updatedOp)
+                            }
+                            s + Console.RESET
+                        }.
+                        mkString("\tOperands:\n\t\t", "\n\t\t", "")
                 )
                 println(
                     thisLocals.
@@ -137,11 +146,11 @@ trait ConsoleTracer extends AITracer {
                         map(v ⇒
                             v._1 + {
                                 if (v._2 == v._3)
-                                    Console.GREEN+": ✓ "
+                                    ": ✓ "+Console.GREEN
                                 else {
-                                    Console.MAGENTA+":\n\t\tgiven "+correctIndent(v._2)+
-                                        "\n\t\tmerge "+correctIndent(v._3)+
-                                        "\n\t\t=>    "
+                                    ":\n\t\t   given "+correctIndent(v._2)+
+                                        "\n\t\t    join "+correctIndent(v._3)+
+                                        "\n\t\t      => "
                                 }
                             } +
                                 correctIndent(v._4)

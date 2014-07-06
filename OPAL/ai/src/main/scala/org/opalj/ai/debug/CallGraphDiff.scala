@@ -28,16 +28,35 @@
  */
 package org.opalj
 package ai
-package project
+package debug
+
+import scala.language.existentials
 
 import java.net.URL
 
-import scala.Console.{ err, RED, RESET }
+import scala.Console.BLUE
+import scala.Console.BOLD
+import scala.Console.CYAN
+import scala.Console.RED
+import scala.Console.RESET
 
-import org.opalj.util.PerformanceEvaluation.{ time, memory, asMB, ns2sec }
-
-import br._
-import br.analyses._
+import org.opalj.ai.domain
+import org.opalj.ai.project.CHACallGraphAlgorithmConfiguration
+import org.opalj.ai.project.CallGraphFactory
+import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
+import org.opalj.ai.project.ComputedCallGraph
+import org.opalj.ai.project.VTACallGraphAlgorithmConfiguration
+import org.opalj.ai.project.VTACallGraphDomain
+import org.opalj.ai.project.DefaultVTACallGraphDomain
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.analyses.Analysis
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.util.PerformanceEvaluation.ns2sec
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  *
@@ -59,17 +78,17 @@ object CallGraphDiff extends AnalysisExecutor {
                 CallGraphFactory.create(
                     project,
                     entryPoints,
-                                        new CHACallGraphAlgorithmConfiguration
-//                    new VTACallGraphAlgorithmConfiguration {
-//                        override def Domain[Source](
-//                            theProject: Project[Source],
-//                            cache: Cache,
-//                            classFile: ClassFile,
-//                            method: Method): VTACallGraphDomain =
-//                            new DefaultVTACallGraphDomain(
-//                                theProject, cache, classFile, method, 16
-//                            )
-//                    }
+                    new CHACallGraphAlgorithmConfiguration
+                //                                    new VTACallGraphAlgorithmConfiguration {
+                //                                        override def Domain[Source](
+                //                                            theProject: Project[Source],
+                //                                            cache: Cache,
+                //                                            classFile: ClassFile,
+                //                                            method: Method): VTACallGraphDomain =
+                //                                            new DefaultVTACallGraphDomain(
+                //                                                theProject, cache, classFile, method, 1
+                //                                            )
+                //                                    }
                 )
             } { t ⇒ println("Creating the first call graph took: "+ns2sec(t)) }
 
@@ -84,7 +103,7 @@ object CallGraphDiff extends AnalysisExecutor {
                             classFile: ClassFile,
                             method: Method): VTACallGraphDomain =
                             new DefaultVTACallGraphDomain(
-                                theProject, cache, classFile, method, 16
+                                theProject, cache, classFile, method, 4
                             ) with domain.ConstantFieldValuesResolution[Source]
                     })
             } { t ⇒ println("Creating the second call graph took: "+ns2sec(t)) }
@@ -94,7 +113,7 @@ object CallGraphDiff extends AnalysisExecutor {
                 lessPreciseCG.foreachCallingMethod { (method, allCalleesLPCG /*: Map[PC, Iterable[Method]]*/ ) ⇒
                     val allCalleesMPCG = morePreciseCG.calls(method)
 
-                    var reports: List[CGDifferenceReport] = Nil
+                    var reports: List[CallGraphDifferenceReport] = Nil
                     allCalleesLPCG foreach { callSiteLPCG ⇒
                         val (pc, calleesLPCG) = callSiteLPCG
                         val callSiteMPCGOption = allCalleesMPCG.get(pc)
@@ -116,14 +135,15 @@ object CallGraphDiff extends AnalysisExecutor {
                             reports = AdditionalCallTargets(project, method, pc, calleesLPCG) :: reports
                         }
                     }
-
-                    if (reports.nonEmpty)
-                        println(
-                            reports.mkString(
-                                "Differences for "+project.classFile(method).thisType.toJava+" - "+method.descriptor.toJava(method.name)+":\n\t",
-                                "\n\t",
-                                "\n\n")
-                        )
+                    val (unexpected, additional) = reports.partition(_.isInstanceOf[UnexpectedCallTargets])
+                    if (unexpected.nonEmpty || additional.nonEmpty) {
+                        println("Differences for "+project.classFile(method).thisType.toJava+" - "+method.descriptor.toJava(method.name))
+                        if (additional.nonEmpty)
+                            println(additional.mkString("\t", "\n\t", "\n"))
+                        if (unexpected.nonEmpty)
+                            println(unexpected.mkString("\t", "\n\t", "\n"))
+                        println("\n")
+                    }
                 }
             } { t ⇒ println("Calculting the differences took: "+ns2sec(t)) }
 
@@ -132,7 +152,7 @@ object CallGraphDiff extends AnalysisExecutor {
     }
 }
 
-trait CGDifferenceReport {
+trait CallGraphDifferenceReport {
     val differenceClassifier: String
     val project: SomeProject
     val method: Method
@@ -152,21 +172,20 @@ trait CGDifferenceReport {
     }
 }
 
-import scala.language.existentials
-
 case class AdditionalCallTargets(
         project: SomeProject,
         method: Method,
         pc: PC,
-        callTargets: Iterable[Method]) extends CGDifferenceReport {
+        callTargets: Iterable[Method]) extends CallGraphDifferenceReport {
     import Console._
     val differenceClassifier = BLUE+"[Additional] "+RESET
 }
+
 case class UnexpectedCallTargets(
         project: SomeProject,
         method: Method,
         pc: PC,
-        callTargets: Iterable[Method]) extends CGDifferenceReport {
+        callTargets: Iterable[Method]) extends CallGraphDifferenceReport {
     import Console._
     val differenceClassifier = RED+"[Unexpected] "+RESET
 }                        

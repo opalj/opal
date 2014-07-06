@@ -43,7 +43,7 @@ import org.opalj.ai.domain._
  *
  * @author Daniel Klauer
  */
-private class BitNopsDomain[I](override val id: I)
+private class BitNopsDomain
         extends Domain
         with DefaultDomainValueBinding
         with DefaultHandlingOfMethodResults
@@ -57,8 +57,6 @@ private class BitNopsDomain[I](override val id: I)
         with l0.DefaultReferenceValuesBinding
         with li.DefaultPreciseIntegerValues
         with IgnoreSynchronization {
-
-    type Id = I
     
     /**
      * We're only interested in certain specific values (0 and -1). Thus, we don't need
@@ -160,7 +158,7 @@ class BitNops[S]
                 case _          ⇒ false
             }
         } {
-            val domain = new BitNopsDomain(method)
+            val domain = new BitNopsDomain
             val results = BaseAI(classFile, method, domain)
 
             for {

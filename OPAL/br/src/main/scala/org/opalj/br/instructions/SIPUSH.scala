@@ -38,7 +38,7 @@ package instructions
 case class SIPUSH(
     override val value: Int)
         extends LoadConstantInstruction[Int] {
-
+    
     override def opcode: Opcode = SIPUSH.opcode
 
     override def mnemonic: String = "sipush"

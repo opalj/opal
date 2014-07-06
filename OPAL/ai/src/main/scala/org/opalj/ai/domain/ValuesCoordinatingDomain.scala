@@ -29,14 +29,13 @@
 package org.opalj
 package ai
 package domain
-package l0
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import org.opalj.br.{ Type, ObjectType, ReferenceType, FieldType }
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.BootstrapMethod
-import org.opalj.br.analyses.{ Project, ClassHierarchy }
+import org.opalj.br.analyses.{ Project }
 
 /**
  * A `Domain` that is intended to be used to coordinate the exchange of values between
@@ -45,6 +44,7 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
  *
  * @author Michael Eichberg
  */
+@deprecated("Will be removed soon; using the new modularization enables the construction of a precise domain.", "0.8.0M3")
 trait ValuesCoordinatingDomain
         extends Domain
         with ThrowAllPotentialExceptionsConfiguration /*ACTUALLY NOT RELEVANT*/ {

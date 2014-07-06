@@ -38,7 +38,7 @@ package instructions
 abstract class LoadLocalVariableInstruction extends Instruction {
 
     /**
-     * The index of the local variable(register) that is loaded and put on top 
+     * The index of the local variable(register) that is loaded and put on top
      * of the operand stack.
      */
     def lvIndex: Int
@@ -49,4 +49,31 @@ abstract class LoadLocalVariableInstruction extends Instruction {
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
     }
 
+}
+/**
+ * Defines a factory method for `LoadLocalVariableInstruction`s.
+ *
+ * @author Arne Lottmann
+ * @author Michael Eichberg
+ */
+object LoadLocalVariableInstruction {
+
+    /**
+     * Returns the `xLoad` instruction that puts value stored at the given index with
+     * the specified type on top of the stack.
+     */
+    def apply(
+        fieldType: FieldType,
+        lvIndex: Int): LoadLocalVariableInstruction =
+        (fieldType.id: @scala.annotation.switch) match {
+            case IntegerType.id ⇒ ILOAD(lvIndex)
+            case ByteType.id    ⇒ ILOAD(lvIndex)
+            case ShortType.id   ⇒ ILOAD(lvIndex)
+            case CharType.id    ⇒ ILOAD(lvIndex)
+            case BooleanType.id ⇒ ILOAD(lvIndex)
+            case LongType.id    ⇒ LLOAD(lvIndex)
+            case FloatType.id   ⇒ FLOAD(lvIndex)
+            case DoubleType.id  ⇒ DLOAD(lvIndex)
+            case _              ⇒ ALOAD(lvIndex)
+        }
 }

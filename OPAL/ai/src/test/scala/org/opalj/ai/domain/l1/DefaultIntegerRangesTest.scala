@@ -47,10 +47,7 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultIntegerRangesTest
-        extends FunSpec
-        with Matchers
-        with ParallelTestExecution {
+class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestExecution {
 
     class IntegerRangesTestDomain(
         override val maxSizeOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
@@ -63,17 +60,11 @@ class DefaultIntegerRangesTest
             with l0.DefaultReferenceValuesBinding
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
-            with DefaultIntegerRangeValues
+            with l1.DefaultIntegerRangeValues // <----- The one we are going to test
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
             with PredefinedClassHierarchy
-            with RecordLastReturnedValues {
-
-        type Id = String
-
-        def id = "TestDomain"
-
-    }
+            with RecordLastReturnedValues
 
     describe("central properties of domains that use IntegerRange values") {
 
@@ -166,7 +157,7 @@ class DefaultIntegerRangesTest
                 val v1 = IntegerRange(-1, 3)
                 val v2 = IntegerRange(0, 2)
 
-                v1.join(-1, v2) should be(NoUpdate)
+                v1.join(-1, v2) should be('isMetaInformationUpdate)
 
                 val result = v2.join(-1, v1)
                 result should be(StructuralUpdate(v1))
@@ -633,12 +624,13 @@ class DefaultIntegerRangesTest
         }
 
         it("it should be able to track integer values such that it is possible to potentially identify an array index out of bounds exception") {
-            val domain = new IntegerRangesTestDomain
+            val domain = new IntegerRangesTestDomain(20) // the array has a maximum size of 10
             val method = IntegerValues.findMethod("array10").get
             val result = BaseAI(IntegerValues, method, domain)
             if (domain.allReturnedValues.size != 1)
                 fail("expected one result; found: "+domain.allReturnedValues)
 
+            // we don't know the size of the array
             domain.allReturnedValues.head._2 abstractsOver (
                 domain.InitializedArrayValue(2, List(10), ArrayType(IntegerType))
             ) should be(true)
@@ -663,6 +655,84 @@ class DefaultIntegerRangesTest
             //...
             result.operandsArray(89) should be(null)
 
+        }
+
+        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v1)") {
+            val domain = new IntegerRangesTestDomain(8)
+            val method = IntegerValues.findMethod("cfDependentValues1_v1").get
+            val result = BaseAI(IntegerValues, method, domain)
+
+            if (result.operandsArray(37) != null) {
+                result.operandsArray(37).head should be(domain.AnIntegerValue)
+                result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
+            } else {
+                // OK - the code is dead, however, we cannot identify this, but the
+                // above is a safe approximation!
+            }
+        }
+
+        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v2)") {
+            val domain = new IntegerRangesTestDomain(8)
+            val method = IntegerValues.findMethod("cfDependentValues1_v2").get
+            val result = BaseAI(IntegerValues, method, domain)
+
+            if (result.operandsArray(37) != null) {
+                result.operandsArray(37).head should be(domain.AnIntegerValue)
+                result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
+            } else {
+                // OK - the code is dead, however, we cannot identify this, but the
+                // above is a safe approximation!
+            }
+        }
+
+        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v3)") {
+            val domain = new IntegerRangesTestDomain(8)
+            val method = IntegerValues.findMethod("cfDependentValues1_v3").get
+            val result = BaseAI(IntegerValues, method, domain)
+
+            if (result.operandsArray(38) != null) {
+                result.operandsArray(38).head should be(domain.AnIntegerValue)
+                result.operandsArray(42).head should be(domain.IntegerRange(0, 0))
+            } else {
+                // OK - the code is dead, however, we cannot identify this, but the
+                // above is a safe approximation!
+            }
+        }
+
+        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues2)") {
+            val domain = new IntegerRangesTestDomain(8)
+            val method = IntegerValues.findMethod("cfDependentValues2").get
+            val result = BaseAI(IntegerValues, method, domain)
+            result.operandsArray(38).head should be(domain.AnIntegerValue)
+            result.operandsArray(42).head should be(domain.IntegerRange(0, 0))
+        }
+
+        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues3)") {
+            val domain = new IntegerRangesTestDomain(8)
+            val method = IntegerValues.findMethod("cfDependentValues3").get
+            val result = BaseAI(IntegerValues, method, domain)
+            result.operandsArray(45).head should be(domain.AnIntegerValue)
+            result.operandsArray(49).head should be(domain.IntegerRange(0, 0))
+        }
+
+        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues4)") {
+            val domain = new IntegerRangesTestDomain(8)
+            val method = IntegerValues.findMethod("cfDependentValues4").get
+            val result = BaseAI(IntegerValues, method, domain)
+            result.operandsArray(46).head should be(domain.IntegerRange(2, Int.MaxValue))
+            result.operandsArray(50).head should be(domain.AnIntegerValue)
+            result.operandsArray(54).head should be(domain.AnIntegerValue)
+            if (result.operandsArray(50).head eq result.operandsArray(54).head)
+                fail("unequal values are made equal")
+        }
+
+        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues5)") {
+            val domain = new IntegerRangesTestDomain(8)
+            val method = IntegerValues.findMethod("cfDependentValues5").get
+            val result = BaseAI(IntegerValues, method, domain)
+            result.operandsArray(47).head should be(domain.IntegerRange(2, 2))
+            result.operandsArray(51).head should be(domain.IntegerRange(0, 1))
+            result.operandsArray(55).head should be(domain.AnIntegerValue)
         }
     }
 }

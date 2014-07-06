@@ -44,7 +44,7 @@ import org.opalj.br.instructions._
  * and evaluates each instruction using an exchangeable
  * [[org.opalj.ai.Domain]].
  *
- * ==Interacting with OPAL-AI==
+ * ==Interacting with OPAL's Abstract Interpreter==
  * The primary means how to make use of this framework is to perform
  * an abstract interpretation of a method using a customized `Domain`. That
  * customized domain can be used, e.g., to build a call graph or to
@@ -68,9 +68,9 @@ import org.opalj.br.instructions._
  * override the relevant methods (in particular: `isInterrupted` and `tracer`).
  *
  * @note
- *     OPAL-AI does not make assumptions about the number of domain objects that
+ *     OPAL does not make assumptions about the number of domain objects that
  *     are used. However, if a single domain object is used by multiple instances
- *     of this class and the abstract interpretation are executed concurrently, then
+ *     of this class and the abstract interpretations are executed concurrently, then
  *     the domain has to be thread-safe.
  *     The latter is trivially the case when the domain object itself does not have
  *     any state.
@@ -106,16 +106,16 @@ trait AI[D <: Domain] {
     def isInterrupted: Boolean = false
 
     /**
-     * The tracer (default: `None`) that is called by OPAL-AI while performing the abstract
+     * The tracer (default: `None`) that is called by OPAL while performing the abstract
      * interpretation of a method.
      *
-     * This method is called by OPAL-AI at various different points (see
-     * [[org.opalj.ai.AITracer]]) to report the analysis progress.
+     * This method is called at different points (see
+     * [[org.opalj.ai.AITracer]]) to report on the analysis progress.
      *
      * '''To attach a tracer to the abstract interpreter override this
      * method in subclasses''' and return some tracer object.
      *
-     * OPAL-AI enables the attachment/detachment of tracers at any time.
+     * OPAL enables the attachment/detachment of tracers at any time.
      */
     def tracer: Option[AITracer] = None
 
@@ -298,6 +298,9 @@ trait AI[D <: Domain] {
                 initialWorkList, List.empty[PC], operandsArray, localsArray, Nil)
     }
 
+    protected[ai] def joinInstructions(code: Code) : scala.collection.BitSet =
+        code.joinInstructions
+
     /**
      * Continues the interpretation of the given method (code) using the given domain.
      *
@@ -376,6 +379,7 @@ trait AI[D <: Domain] {
         type TwoValuesDomainTest = (DomainValue, DomainValue) ⇒ Answer
 
         val instructions: Array[Instruction] = code.instructions
+        val joinInstructions = this.joinInstructions(code)
 
         // The entire state of the computation is (from the perspective of the AI)
         // encapsulated by the following data-structures:
@@ -384,6 +388,7 @@ trait AI[D <: Domain] {
         /* 3 */ var worklist = initialWorkList
         /* 4 */ var evaluated = alreadyEvaluated
         /* 5 */ var memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+
 
         // -------------------------------------------------------------------------------
         //
@@ -413,8 +418,10 @@ trait AI[D <: Domain] {
             // - the main loop that processes the worklist
 
             val currentOperands = operandsArray(targetPC)
-            if (currentOperands == null /* || localsArray(targetPC) == null )*/ ) {
-                // we analyze the instruction for the first time ...
+            if (currentOperands == null /* || localsArray(targetPC) == null )*/ ||
+                !joinInstructions.contains(targetPC)) {
+                // We analyze the instruction for the first time ... or it is
+                // not an instruction where multiple control-flow paths join.
                 operandsArray(targetPC) = operands
                 localsArray(targetPC) = locals
                 worklist = targetPC :: worklist
@@ -706,7 +713,8 @@ trait AI[D <: Domain] {
                 /*
                  * Handles the control-flow when an exception was raised.
                  *
-                 * Called when an exception was (potentially) raised as a side effect of
+                 * Called when an exception was explicitly (by means of an athrow
+                 * instruction) or implicitly raised as a side effect of
                  * evaluating the current instruction. In this case the corresponding
                  * handler is searched and the control is transfered to it.
                  * If no handler is found the domain is
@@ -714,42 +722,51 @@ trait AI[D <: Domain] {
                  *
                  * @note The operand stack will only contain the raised exception.
                  *
-                 * @param exceptionValue A guaranteed non-null value that represents an instance of
+                 * @param exceptionValue A value that represents an instance of
                  *      an object that is a subtype of `java.lang.Throwable`.
                  */
-                def handleException(exceptionValue: DomainValue) {
+                def doHandleTheException(
+                    exceptionValue: ExceptionValue,
+                    establishNonNull: Boolean) {
+
+                    def gotoExceptionHandler(pc: PC, branchTarget: PC, upperBound: Option[ObjectType]) {
+                        val operands = List(exceptionValue)
+                        val memoryLayout1 @ (updatedOperands1, updatedLocals1) =
+                            if (establishNonNull)
+                                theDomain.refEstablishIsNonNull(pc, exceptionValue, operands, locals)
+                            else
+                                (operands, locals)
+
+                        val (updatedOperands2, updatedLocals2) =
+                            if (upperBound.isDefined)
+                                theDomain.refEstablishUpperBound(
+                                    branchTarget,
+                                    upperBound.get,
+                                    updatedOperands1,
+                                    updatedLocals1)
+                            else
+                                memoryLayout1
+
+                        gotoTarget(pc, branchTarget, true, updatedOperands2, updatedLocals2)
+                    }
+
                     val isHandled = code.handlersFor(pc) exists { eh ⇒
                         // find the exception handler that matches the given exception
                         val branchTarget = eh.handlerPC
                         val catchType = eh.catchType
                         if (catchType.isEmpty) { // this is a finally handler
-                            gotoTarget(pc, branchTarget, true, List(exceptionValue), locals)
+                            gotoExceptionHandler(pc, branchTarget, None)
                             true
                         } else {
-                            // TODO Do we have to handle the case that we know nothing about the exception type?
-                            val IsReferenceValue(upperBounds) =
-                                theDomain.typeOfValue(exceptionValue)
-
-                            upperBounds forall { typeBounds ⇒
-                                // as a side effect we also add the handler to the set
-                                // of targets
-                                typeBounds.isValueSubtypeOf(catchType.get) match {
-                                    case No ⇒
-                                        false
-                                    case Yes ⇒
-                                        gotoTarget(pc, branchTarget, true, List(exceptionValue), locals)
-                                        true
-                                    case Unknown ⇒
-                                        val (updatedOperands, updatedLocals) =
-                                            theDomain.refEstablishUpperBound(
-                                                branchTarget,
-                                                catchType.get,
-                                                exceptionValue,
-                                                List(exceptionValue),
-                                                locals)
-                                        gotoTarget(pc, branchTarget, true, updatedOperands, updatedLocals)
-                                        false
-                                }
+                            theDomain.isValueSubtypeOf(exceptionValue, catchType.get) match {
+                                case No ⇒
+                                    false
+                                case Yes ⇒
+                                    gotoExceptionHandler(pc, branchTarget, None)
+                                    true
+                                case Unknown ⇒
+                                    gotoExceptionHandler(pc, branchTarget, Some(catchType.get))
+                                    false
                             }
                         }
                     }
@@ -757,9 +774,32 @@ trait AI[D <: Domain] {
                     // handler caught the exception... hence this method
                     // invocation will not complete abruptly.
                     if (!isHandled)
-                        abruptMethodExecution(pc, exceptionValue)
+                        theDomain.abruptMethodExecution(pc, exceptionValue)
                 }
-                def handleExceptions(exceptions: Iterable[DomainValue]): Unit = {
+
+                def handleException(exceptionValue: DomainValue) {
+                    theDomain.typeOfValue(exceptionValue) match {
+
+                        case IsReferenceValue(Seq(exceptionValue)) ⇒
+                            val establishNonNull = exceptionValue.isNull match {
+                                case No ⇒ // just forward
+                                    doHandleTheException(exceptionValue.asDomainValue(theDomain), false)
+                                case Unknown ⇒
+                                    doHandleTheException(theDomain.NullPointerException(pc), false)
+                                    doHandleTheException(exceptionValue.asDomainValue(theDomain), true)
+                                case Yes ⇒
+                                    doHandleTheException(theDomain.NullPointerException(pc), false)
+                            }
+
+                        case IsReferenceValue(exceptionValues) ⇒
+                            handleExceptions(exceptionValues.map(_.asDomainValue(theDomain)))
+
+                        case TypeUnknown ⇒
+                            throw new AIException("the type of the exception value is unknown")
+                    }
+                }
+
+                def handleExceptions(exceptions: Traversable[DomainValue]): Unit = {
                     exceptions.foreach(handleException)
                 }
 
@@ -892,7 +932,7 @@ trait AI[D <: Domain] {
                             locals)
 
                         if (tracer.isDefined) {
-                            tracer.get.jumpToSubroutine(theDomain)(pc, branchtarget,memoryLayoutBeforeSubroutineCall.size)
+                            tracer.get.jumpToSubroutine(theDomain)(pc, branchtarget, memoryLayoutBeforeSubroutineCall.size)
                         }
 
                     case 169 /*ret*/ ⇒
@@ -1072,109 +1112,7 @@ trait AI[D <: Domain] {
                         // the exception handlers of the current method in the order that 
                         // they appear in the corresponding exception handler table.
                         val exceptionValue = operands.head
-                        val isExceptionValueNull = theDomain.refIsNull(exceptionValue)
-                        if (isExceptionValueNull.isYesOrUnknown) {
-                            // if the operand of the athrow exception is null, a new 
-                            // NullPointerException is raised by the JVM
-                            // if the operand of the athrow exception is null, a new 
-                            // NullPointerException is raised by the JVM
-                            handleException(
-                                theDomain.InitializedObjectValue(
-                                    pc, ObjectType.NullPointerException))
-                        }
-                        if (isExceptionValueNull.isNoOrUnknown) {
-                            val (updatedOperands, updatedLocals) = {
-                                val operands = List(exceptionValue)
-                                if (isExceptionValueNull.isUnknown)
-                                    theDomain.refEstablishIsNonNull(
-                                        pc, exceptionValue,
-                                        operands, locals)
-                                else
-                                    (operands, locals)
-                            }
-                            val updatedExceptionValue = updatedOperands.head
-
-                            theDomain.typeOfValue(exceptionValue) match {
-                                case TypeUnknown ⇒
-                                    code.handlersFor(pc).foreach { eh ⇒
-                                        val branchTarget = eh.handlerPC
-                                        // unless we have a "finally" handler, we can state
-                                        // a constraint
-                                        if (eh.catchType.isDefined) {
-                                            eh.catchType.map { catchType ⇒
-                                                val (updatedOperands2, updatedLocals2) =
-                                                    theDomain.refEstablishUpperBound(
-                                                        branchTarget,
-                                                        catchType,
-                                                        exceptionValue,
-                                                        updatedOperands,
-                                                        updatedLocals)
-                                                gotoTarget(
-                                                    pc, branchTarget, true,
-                                                    updatedOperands2, updatedLocals2)
-                                            }
-                                        } else
-                                            // finally handler
-                                            gotoTarget(
-                                                pc, branchTarget, true,
-                                                updatedOperands, updatedLocals)
-                                    }
-                                    abruptMethodExecution(pc, exceptionValue)
-
-                                case IsReferenceValue(referenceValues) ⇒
-                                    // TODO [issue or documentation lacking] Shouldn't it be a foreach loop in case of "throw (if(x) ExA else ExB)"
-                                    val isHandled = referenceValues.forall(referenceValue ⇒
-                                        // find the exception handler that matches the given 
-                                        // exception
-                                        code.handlersFor(pc).exists { eh ⇒
-                                            val branchTarget = eh.handlerPC
-                                            val catchType = eh.catchType
-                                            if (catchType.isEmpty) {
-                                                gotoTarget(
-                                                    pc, branchTarget, true,
-                                                    updatedOperands, updatedLocals)
-                                                // this is a finally handler
-                                                true
-                                            } else {
-                                                // a "null value" is automatically converted
-                                                // into a NullPointerException
-                                                val subtypeOfAnswer = {
-                                                    if (referenceValue.isNull.isYes)
-                                                        theDomain.isSubtypeOf(ObjectType.NullPointerException, catchType.get)
-                                                    else
-                                                        referenceValue.isValueSubtypeOf(catchType.get)
-                                                }
-                                                subtypeOfAnswer match {
-                                                    case No ⇒
-                                                        false
-                                                    case Yes ⇒
-                                                        gotoTarget(
-                                                            pc, branchTarget, true,
-                                                            updatedOperands, updatedLocals)
-                                                        true
-                                                    case Unknown ⇒
-                                                        val (updatedOperands2, updatedLocals2) =
-                                                            theDomain.refEstablishUpperBound(
-                                                                branchTarget,
-                                                                catchType.get,
-                                                                exceptionValue,
-                                                                updatedOperands,
-                                                                updatedLocals)
-                                                        gotoTarget(
-                                                            pc, branchTarget, true,
-                                                            updatedOperands2, updatedLocals2)
-                                                        false
-                                                }
-                                            }
-                                        }
-                                    )
-                                    // If "isHandled" is true, we are sure that at least one 
-                                    // handler will catch the exception(s)... hence the method
-                                    // will not complete abruptly
-                                    if (!isHandled)
-                                        abruptMethodExecution(pc, exceptionValue)
-                            }
-                        }
+                        handleException(operands.head)
 
                     //
                     // CREATE ARRAY
@@ -1915,7 +1853,7 @@ trait AI[D <: Domain] {
                                     val (newOperands, newLocals) =
                                         theDomain.refEstablishUpperBound(
                                             pc,
-                                            supertype, objectref,
+                                            supertype,
                                             operands, locals)
                                     fallThrough(newOperands, newLocals)
                             }

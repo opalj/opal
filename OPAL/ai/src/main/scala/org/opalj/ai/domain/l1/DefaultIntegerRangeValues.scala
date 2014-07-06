@@ -31,34 +31,43 @@ package ai
 package domain
 package l1
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 /**
+ * This domain implements the tracking of integer values at the level of ranges.
  *
  * @author Michael Eichberg
  */
-trait DefaultIntegerRangeValues
-        extends DefaultDomainValueBinding
-        with IntegerRangeValues {
+trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRangeValues {
     this: Configuration ⇒
 
     /**
      * @note The functionality to propagate a constraint crucially depends on
-     *      the fact two integer values created at two different places are represented
-     *      by two different instances of "AnIntegerValue"; otherwise, propagating the
+     *      the fact that two integer values created at two different places / at
+     *      one place but at two different points in time
+     *      are represented by two different instances
+     *      of "AnIntegerValue"; otherwise, propagating the
      *      constraint that some value (after some kind of check) has to have a special
      *      value may affect unrelated values!
      */
     class AnIntegerValue() extends super.AnIntegerValue {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
+        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
+            value match {
+                case _: IntegerRange ⇒
+                    MetaInformationUpdate(AnIntegerValue())
+                case _: AnIntegerValue ⇒
+                    MetaInformationUpdate(value /* this is the new value */ )
+            }
+        }
+
+        override def abstractsOver(other: DomainValue): Boolean =
+            other.isInstanceOf[IsIntegerValue]
 
         override def summarize(pc: PC): DomainValue = this
 
         override def adapt(target: Domain, pc: PC): target.DomainValue =
             target.IntegerValue(pc)
 
-        override def hashCode: Int = 101;
+        override def hashCode: Int = 101
 
         override def equals(other: Any): Boolean = {
             other match {
@@ -72,10 +81,7 @@ trait DefaultIntegerRangeValues
 
     def AnIntegerValue() = new AnIntegerValue()
 
-    class IntegerRange(
-        val lowerBound: Int,
-        val upperBound: Int)
-            extends super.IntegerRange {
+    class IntegerRange(val lowerBound: Int, val upperBound: Int) extends super.IntegerRange {
 
         def update(newValue: Int): DomainValue = {
             val newLowerBound = if (lowerBound > newValue) newValue else lowerBound
@@ -91,17 +97,38 @@ trait DefaultIntegerRangeValues
                     val newLowerBound = Math.min(this.lowerBound, otherLB)
                     val newUpperBound = Math.max(this.upperBound, otherUB)
 
-                    if (newUpperBound.toLong - newLowerBound.toLong > maxSizeOfIntegerRanges)
+                    if (newLowerBound == newUpperBound)
+                        // This is a "point-range" (a concrete value), hence there
+                        // will be NO further constraints
+                        NoUpdate
+
+                    else if (newUpperBound.toLong - newLowerBound.toLong > maxSizeOfIntegerRanges)
                         StructuralUpdate(AnIntegerValue())
 
                     else if (newLowerBound == lowerBound && newUpperBound == upperBound)
-                        NoUpdate
+                        // This is NOT a "NoUpdate" since we have to values that may
+                        // have the same range, but which can still be two different
+                        // runtime values!
+                        if (newLowerBound == otherLB && newUpperBound == otherUB)
+                            MetaInformationUpdate(other)
+                        else
+                            MetaInformationUpdate(IntegerRange(newLowerBound, newUpperBound))
+
                     else if (newLowerBound == otherLB && newUpperBound == otherUB)
                         StructuralUpdate(other)
                     else
                         StructuralUpdate(IntegerRange(newLowerBound, newUpperBound))
             }
             result
+        }
+
+        override def abstractsOver(other: DomainValue): Boolean = {
+            (this eq other) || (other match {
+                case that: IntegerRange ⇒
+                    this.lowerBound <= that.lowerBound &&
+                        this.upperBound >= that.upperBound
+                case _ ⇒ false
+            })
         }
 
         override def summarize(pc: PC): DomainValue = this
@@ -116,17 +143,6 @@ trait DefaultIntegerRangeValues
             } else {
                 targetDomain.IntegerValue(pc)
             }
-
-        override def abstractsOver(other: DomainValue): Boolean = {
-            if (this eq other)
-                return true;
-
-            other match {
-                case IntegerRange(otherLB, otherUB) ⇒
-                    this.lowerBound <= otherLB && this.upperBound >= otherUB
-                case _ ⇒ false
-            }
-        }
 
         override def hashCode = this.lowerBound * 13 + this.upperBound
 

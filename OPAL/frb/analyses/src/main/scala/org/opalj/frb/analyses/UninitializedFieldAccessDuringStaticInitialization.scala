@@ -350,22 +350,25 @@ private class FieldStatusTracingDomain[Source](
 
         if (calledMethod.isDefined) {
             val theCalledMethod = calledMethod.get
+            if (theCalledMethod.body.isDefined) {
+                // Use the current status (at this instruction) as the initial status of the
+                // called method
+                val status = getStatusAt(pc)
 
-            // Use the current status (at this instruction) as the initial status of the
-            // called method
-            val status = getStatusAt(pc)
+                val exitStatus =
+                    evaluateMethod(
+                        analyzedClass,
+                        methodStack,
+                        project.classFile(theCalledMethod),
+                        theCalledMethod,
+                        status)
 
-            val exitStatus =
-                evaluateMethod(
-                    analyzedClass,
-                    methodStack,
-                    project.classFile(theCalledMethod),
-                    theCalledMethod,
-                    status)
-
-            // And combine its results back into the status of the current instruction
-            setStatusAt(pc, status.add(exitStatus))
-
+                // And combine its results back into the status of the current instruction
+                setStatusAt(pc, status.add(exitStatus))
+            } else {
+                // Method's body is unknown (or it has none): we cannot evaluate it
+                // TODO: Same issue as below
+            }
         } else {
             // Method unknown, cannot analyze.
             // TODO: This potentially decreases the analysis' accuracy because, for
@@ -375,9 +378,7 @@ private class FieldStatusTracingDomain[Source](
 
         super.invokestatic(pc, accessClass, name, descriptor, operands)
     }
-
-    override type Id = Method
-    override def id = method
+ 
     override final type DomainProperty = FieldStatusProperty
     override final val DomainPropertyTag: reflect.ClassTag[DomainProperty] = implicitly
 

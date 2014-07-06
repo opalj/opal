@@ -31,15 +31,24 @@ package ai
 package domain
 package l0
 
-import language.implicitConversions
+import scala.language.implicitConversions
 
-import org.opalj.collection.mutable.UShortSet
-import br.ObjectType
-import org.opalj.collection.immutable.{ UIDSet0, UIDSet1, UIDSet }
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet0
+import org.opalj.collection.immutable.UIDSet1
+import org.opalj.ai.Domain
+import org.opalj.ai.DomainException
+import org.opalj.ai.IsAReferenceValue
+import org.opalj.ai.IsReferenceValue
+import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.ai.domain.MethodCallResults
+import org.opalj.ai.domain.RecordAllThrownExceptions
+import org.opalj.ai.domain.RecordLastReturnedValues
+import org.opalj.br.ObjectType
 
 /**
  * Records the results of the evaluation of the `current` method such that the results
- * can directly be adapted to the calling context and used by the caller to continue
+ * can directly be adapted to the calling context and can be used by the caller to continue
  * the abstract interpretation of the calling method.
  *
  * @author Michael Eichberg

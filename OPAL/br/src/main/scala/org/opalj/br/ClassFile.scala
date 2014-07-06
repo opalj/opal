@@ -328,7 +328,7 @@ final class ClassFile private (
             AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
             thisType.toJava+"\n"+
             superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
-            (if (interfaceTypes.nonEmpty) interfaceTypes.mkString("\t", "with", "\n") else "") +
+            (if (interfaceTypes.nonEmpty) interfaceTypes.mkString("\t\twith ", " with ", "\n") else "") +
             annotationsToJava(runtimeVisibleAnnotations, "\t", "\n") +
             annotationsToJava(runtimeInvisibleAnnotations, "\t", "\n")+
             "\t{version="+majorVersion+"."+minorVersion+"}\n)"

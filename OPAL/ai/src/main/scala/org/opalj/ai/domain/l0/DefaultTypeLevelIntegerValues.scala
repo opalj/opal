@@ -31,21 +31,24 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+import org.opalj.ai.domain.Configuration
+import org.opalj.ai.domain.DefaultDomainValueBinding
+
+import org.opalj.br.ComputationalTypeInt
 
 /**
  * Base implementation of the `TypeLevelIntegerValues` trait that requires that
  * the domain`s `Value` trait is not extended. This implementation satisfies
  * the requirements of OPAL w.r.t. the domain's computational type. Additionally,
  * it collects information about a value's range, if possible.
- * 
+ *
  * This domain is highly efficient as it uses a single value domain value to represents
- * all values of the same primitive type. 
+ * all values of the same primitive type.
  *
  * =Adaptation/Reusability=
  * This domain '''does not support constraint propagation''' – due to its reuse of the
- * the same instance of a DomainValue across all potential instantiations of such values –   
- * and should not be used to implement such a domain as this requires the 
+ * the same instance of a DomainValue across all potential instantiations of such values –
+ * and should not be used to implement such a domain as this requires the
  * reimplementation of basically '''all''' methods.
  *
  * @author Michael Eichberg
@@ -54,7 +57,7 @@ trait DefaultTypeLevelIntegerValues
         extends DefaultDomainValueBinding
         with TypeLevelIntegerValues {
     this: Configuration ⇒
-    
+
     //
     // IMPLEMENTATION NOTE
     //
@@ -63,7 +66,6 @@ trait DefaultTypeLevelIntegerValues
     // I.e., all constraints that are stated by the AI (e.g., `intHasValue`) are
     // completely ignored.
     //
-    
 
     case object ABooleanValue extends super.BooleanValue {
 
@@ -72,6 +74,8 @@ trait DefaultTypeLevelIntegerValues
                 case ABooleanValue ⇒ NoUpdate
                 case _             ⇒ StructuralUpdate(AnIntegerValue)
             }
+
+        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
 
     }
 
@@ -83,26 +87,35 @@ trait DefaultTypeLevelIntegerValues
                 case _                          ⇒ StructuralUpdate(AnIntegerValue)
             }
 
+        override def abstractsOver(other: DomainValue): Boolean =
+            (other eq this) || (other eq ABooleanValue)
+
     }
 
     case object AShortValue extends super.ShortValue {
 
         override def doJoin(pc: PC, that: DomainValue): Update[DomainValue] =
             that match {
-                case AByteValue | AShortValue ⇒ NoUpdate
-                case _                        ⇒ StructuralUpdate(AnIntegerValue)
-
+                case ABooleanValue | AByteValue | AShortValue ⇒
+                    NoUpdate
+                case _ ⇒
+                    StructuralUpdate(AnIntegerValue)
             }
 
+        override def abstractsOver(other: DomainValue): Boolean =
+            (other eq this) || (other eq ABooleanValue) || (other eq AByteValue)
     }
 
     case object ACharValue extends super.CharValue {
 
         override def doJoin(pc: PC, that: DomainValue): Update[DomainValue] =
             that match {
-                case ACharValue ⇒ NoUpdate
-                case _          ⇒ StructuralUpdate(AnIntegerValue)
+                case ABooleanValue | ACharValue ⇒ NoUpdate
+                case _                          ⇒ StructuralUpdate(AnIntegerValue)
             }
+
+        override def abstractsOver(other: DomainValue): Boolean =
+            (other eq this) || (other eq ABooleanValue)
     }
 
     case object AnIntegerValue extends super.IntegerValue {
@@ -110,6 +123,10 @@ trait DefaultTypeLevelIntegerValues
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             // the other value also has computational type Int
             NoUpdate
+
+        override def abstractsOver(other: DomainValue): Boolean =
+            (other ne TheIllegalValue) &&
+                other.computationalType == ComputationalTypeInt
     }
 
     override def BooleanValue(pc: PC): BooleanValue = ABooleanValue

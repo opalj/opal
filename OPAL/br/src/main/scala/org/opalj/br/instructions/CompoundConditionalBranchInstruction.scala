@@ -35,4 +35,10 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class CompoundConditionalBranchInstruction extends ControlTransferInstruction
+abstract class CompoundConditionalBranchInstruction extends ControlTransferInstruction {
+
+    def defaultOffset: Int
+
+    def jumpOffsets: Seq[Int]
+
+}

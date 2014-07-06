@@ -33,6 +33,8 @@ package frb
  * `FindRealBugs.analyze()` users can implement this interface in order to control the
  * analysis process.
  *
+ * Thread-safety: Implementations of this trait need to be thread safe.
+ *
  * @author Daniel Klauer
  * @author Florian Brandherm
  */

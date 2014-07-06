@@ -182,4 +182,153 @@ public class IntegerValuesFrenzy {
         return 666;
     }
 
+    static void doIt(int i) {
+    }
+
+    static int anInt() {
+        return (int) Math.random() * 10;
+    }
+
+    static void cfDependentValues1_v1() {
+        int b = 0;
+        int c = 0;
+        int i = 0;
+        while (i < 2) {
+            int a = anInt();
+            if (i == 0)
+                b = a;
+            else
+                c = 1; // c is set to "1"
+            i++;
+        }
+        if (c == 0) { // this is dead code... c is always guaranteed to be "1"
+            doIt(b);
+            doIt(c);
+        }
+    }
+
+    static void cfDependentValues1_v2() {
+        int b = 0;
+        int c = 0;
+        int i = 0;
+        while (i < 2) {
+            int a = anInt();
+            if (i == 0)
+                c = 1; // c is set to "1"
+            else
+                b = a;
+            i++;
+        }
+        if (c == 0) { // this is dead code... c is always guaranteed to be "1"
+            doIt(b);
+            doIt(c); 
+        }
+    }
+    
+    static void cfDependentValues1_v3() {
+        int b = 0;
+        int c = 0;
+        int i = 0;
+        while (i < 2) {
+            int a = anInt();
+            if (i == 1)
+                c = 1; // c is set to "1"
+            else
+                b = a;
+            i++;
+        }
+        if (c == 0) { // this is dead code... c is always guaranteed to be "1"
+            doIt(b);
+            doIt(c); 
+        }
+    }
+
+    static void cfDependentValues2() {
+        //
+        // The following is basically equivalent to
+        // b = anInt
+        // c = anInt
+        // if(c == 0) {doIt(b);doIt(0)}
+        //
+        int b = 0;
+        int c = 0;
+        int i = 0;
+        while (i < 2) {
+            int a = anInt();
+            if (i == 1)
+                b = a; // <--- b is the value returned by the second call to anInt
+            else
+                c = a; // <--- c is the value returned by the first call to anInt
+            i++;
+        }
+        if (c == 0) { // this only constraints "c" and not "b" - though both have the same
+                      // origin
+            doIt(b); // we know nothing about b here
+            doIt(c); // c is "0"
+        }
+    }
+
+    static void cfDependentValues3() {
+        int b = 0;
+        int c = 0;
+        int i = 0;
+        int j = i; // <--- j is just an alias for i
+        while (j < 2) {
+            int a = anInt();
+            if (i == 1)
+                b = a;
+            else
+                c = a;
+            i++;
+            j = i;
+        }
+        if (c == 0) { // this only constraints "c" and not "b" - though both have the same
+                      // origin
+            doIt(b); // we know nothing about b here
+            doIt(c); // c is "0"
+        }
+    }
+
+    static void cfDependentValues4() {
+        int b = 0;
+        int c = 0;
+        int i = 0;
+        int j = i; // j is just an alias for i
+        while (j < 2) {
+            int a = anInt();
+            if (i == 1)
+                b = a;
+            else
+                c = a;
+            i++;
+            j = i;
+        }
+        if (i == 2) {
+            doIt(j); // j == 2
+            doIt(b); // some value (but not "c")
+            doIt(c); // some value (but not "b")
+        }
+    }
+
+    static void cfDependentValues5() {
+        int b = 0;
+        int c = 0;
+        int i = 0;
+        int j = i; // j is just an alias for i
+        while (j < 2) {
+            int a = anInt();
+            if (a == 1)
+                b = a; // <--- the value depends on a
+            else
+                c = a; // <--- the value depends on a
+            i++;
+            j = i;
+        }
+        // b and c may refer to the same value or different values
+        if (i == 2) {
+            doIt(j); // j is "2"
+            doIt(b); // b is either "0" or "1"
+            doIt(c);
+        }
+    }
 }

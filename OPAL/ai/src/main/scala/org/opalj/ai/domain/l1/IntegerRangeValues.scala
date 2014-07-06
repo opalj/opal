@@ -38,47 +38,63 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 /**
  * This domain enables the tracking of an integer value's range. The cardinality of
  * the range can be configured to facilitate different needs with regard to the
- * desired precision. Often, a very small cardinality (e.g., between 2 and 8) may be
+ * desired precision ([[maxSizeOfIntegerRanges]]).
+ * Often, a very small cardinality (e.g., between 2 and 8) may be
  * completely sufficient and a large cardinality does not add the overall precision
  * significantly.
  *
- * This domain supports the most common math operations to facilitate the tracking
- * of adaptable domains. Additionally, it supports constraint propagation (e.g.,
- * [[#intEstablishValue]], [[#intEstablishIsLessThan]],...).
+ * This domain supports the most common math operations.
+ *
+ * ==Constraint Propagation==
+ *
+ * Additionally, it supports constraint propagation (e.g.,
+ * [[#intEstablishValue]], [[#intEstablishIsLessThan]],...) w.r.t. those values
+ * that were created at the same point in time by the same operation. For example,
+ * in case of the following sequence:
+ *  - pcA+0/t1: iadd (Stack: 1 :: AnIntegerValue :: ...; Registers: &lt;ignored&lt;)
+ *  - pcA+1/t2: dup (Stack: v(pcA/t1) :: ...; Registers: &lt;ignored&lt;)
+ *  - pcA+2/t3: iflt true:+10 (Stack: v(pcA/t1) :: v(pcA/t1) :: ...; Registers: &lt;ignored&lt;)
+ *  - pcA+3/t4: ... '''(Stack: v(pcA/t1) >= 0''' :: ...; Registers: &lt;ignored&lt;)
+ *  - pcA+12/t5: ... '''(Stack: v(pcA/t1) < 0''' :: ...; Registers: &lt;ignored&lt;)
+ * Hence, the test (iflt) of the topmost stack value constrained the second-top most
+ * stack value, because it was created at the same point in time. In case of this
+ * domain the reference of the DomainValue is used to identify those values that
+ * were created at the same point in time. This, however, requires that two integer
+ * domain values that represent the same integer value are only
  *
  * ==Origin of an IntegerRangeValue==
  *
  * IntegerRangeValues provide implicit, limited information about the origin of the value;
  * i.e., about the instruction which ''created'' the value. This information is
- * implicitly encoded by the object reference as every update and creation of an
- * `IntegerRangeValue` always creates a new instance. I.e, `IntegerRangeValue`s are
+ * implicitly encoded by the object reference as ''every update and creation of an
+ * `IntegerRangeValue` always creates a new instance''. I.e, `IntegerRangeValue`s are
  * ''explicitly not cached or reused''.
  * In case that the value was passed to the method as a parameter the origin is also
  * implicitly available since the value can be found in the registers values associated
  * with the very first instruction.
  *
  * Hence, two integer range values (`ir1`,`ir2`) are reference equal (`eq` in Scala)
- * iff both values were created by the ‘’’same instruction at the same time’’’.
+ * iff both values were created by the '''same instruction at the same time'''.
  *
  * E.g., consider the following fictitious sequence:
  *  - iconst2 ...
- *          Stack: EMPTY
- *          Locals: EMPTY
+ *    -     Stack: EMPTY
+ *    -     Locals: EMPTY
  *  - dup ...
- *          Stack: IntegerRangeValue(2,2)@123456;
- *          Locals: EMPTY
+ *    -     Stack: IntegerRangeValue(2,2)@123456;
+ *    -     Locals: EMPTY
  *  - istore_0 ...
- *          Stack: IntegerRangeValue(2,2)@123456 <- IntegerRangeValue(2,2)@123456;
- *          Locals: EMPTY
+ *    -     Stack: IntegerRangeValue(2,2)@123456 <- IntegerRangeValue(2,2)@123456;
+ *    -     Locals: EMPTY
  *  - iconst2 ...
- *          Stack: IntegerRangeValue(2,2)@123456;
- *          Locals: 0=IntegerRangeValue(2,2)@123456, 1=EMPTY
+ *    -     Stack: IntegerRangeValue(2,2)@123456;
+ *    -     Locals: 0=IntegerRangeValue(2,2)@123456, 1=EMPTY
  *  - istore_1 ...
- *          Stack: IntegerRangeValue(2,2)@654321 <- IntegerRangeValue(2,2)@123456;
- *          Locals: 0=IntegerRangeValue(2,2)@123456, 1=EMPTY
+ *    -     Stack: IntegerRangeValue(2,2)@654321 <- IntegerRangeValue(2,2)@123456;
+ *    -     Locals: 0=IntegerRangeValue(2,2)@123456, 1=EMPTY
  *  - ...
- *          Stack: IntegerRangeValue(2,2)@123456;
- *          Locals: 0=IntegerRangeValue(2,2)@123456, 1=IntegerRangeValue(2,2)@654321
+ *    -     Stack: IntegerRangeValue(2,2)@123456;
+ *    -     Locals: 0=IntegerRangeValue(2,2)@123456, 1=IntegerRangeValue(2,2)@654321
  *
  * Additionally, if the sequence would be part of a loop, the next iteration would
  * create new `IntegerRangeValue`s. Hence, to identify the instruction that
@@ -170,16 +186,6 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
     // COMPUTATIONS RELATED TO  INTEGER VALUES
     //
     // -----------------------------------------------------------------------------------
-
-    protected[this] def updateIntegerRangeValue(
-        oldValue: DomainValue,
-        newValue: DomainValue,
-        operands: Operands,
-        locals: Locals): (Operands, Locals) =
-        (
-            operands.map { operand ⇒ if (operand eq oldValue) newValue else operand },
-            locals.map { local ⇒ if (local eq oldValue) newValue else local }
-        )
 
     //
     // QUESTION'S ABOUT VALUES
@@ -315,6 +321,12 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
         }
     }
 
+    // -----------------------------------------------------------------------------------
+    //
+    // HANDLING OF CONSTRAINTS
+    //
+    // -----------------------------------------------------------------------------------
+
     override def intEstablishValue(
         pc: PC,
         theValue: Int,
@@ -325,7 +337,7 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
             case IntegerRange(`theValue`, `theValue`) ⇒
                 (operands, locals)
             case _ ⇒
-                updateIntegerRangeValue(
+                updateMemoryLayout(
                     value, IntegerRange(theValue, theValue),
                     operands, locals)
         }
@@ -341,9 +353,9 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
             // this basically handles the case that both are "AnIntegerValue"
             (operands, locals)
         else
-            // Given that the values are EQUAL, every subsequent 
+            // Given that the values are determined to be EQUAL, every subsequent 
             // constraint applies to both values (independent of 
-            // the origin).
+            // the implicit origin).
             value1 match {
                 case IntegerRange(lb1, ub1) ⇒
                     value2 match {
@@ -353,15 +365,15 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
                             val newValue = IntegerRange(lb, ub)
 
                             val (operands1, locals1) =
-                                updateIntegerRangeValue(value1, newValue, operands, locals)
-                            updateIntegerRangeValue(value2, newValue, operands1, locals1)
+                                updateMemoryLayout(value1, newValue, operands, locals)
+                            updateMemoryLayout(value2, newValue, operands1, locals1)
 
                         case _ ⇒
                             // value1 remains unchanged
-                            updateIntegerRangeValue(value2, value1, operands, locals)
+                            updateMemoryLayout(value2, value1, operands, locals)
                     }
                 case _ ⇒
-                    updateIntegerRangeValue(value1, value2, operands, locals)
+                    updateMemoryLayout(value1, value2, operands, locals)
             }
     }
 
@@ -386,16 +398,16 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
         }
         if (lb1 == ub1) {
             if (lb2 == ub1)
-                updateIntegerRangeValue(value2, IntegerRange(lb2 + 1, ub2), operands, locals)
+                updateMemoryLayout(value2, IntegerRange(lb2 + 1, ub2), operands, locals)
             else if (ub2 == lb1)
-                updateIntegerRangeValue(value2, IntegerRange(lb2, ub2 - 1), operands, locals)
+                updateMemoryLayout(value2, IntegerRange(lb2, ub2 - 1), operands, locals)
             else
                 (operands, locals)
         } else if (lb2 == ub2) {
             if (lb1 == ub2)
-                updateIntegerRangeValue(value1, IntegerRange(lb1 + 1, ub1), operands, locals)
+                updateMemoryLayout(value1, IntegerRange(lb1 + 1, ub1), operands, locals)
             else if (ub1 == lb2)
-                updateIntegerRangeValue(value1, IntegerRange(lb1, ub1 - 1), operands, locals)
+                updateMemoryLayout(value1, IntegerRange(lb1, ub1 - 1), operands, locals)
             else
                 (operands, locals)
         } else {
@@ -429,13 +441,13 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
         val ub = Math.min(ub2 - 1, ub1)
         val newMemoryLayout @ (operands1, locals1) =
             if (ub != ub1)
-                updateIntegerRangeValue(left, IntegerRange(lb1, ub), operands, locals)
+                updateMemoryLayout(left, IntegerRange(lb1, ub), operands, locals)
             else
                 (operands, locals)
 
         val lb = Math.max(lb1 + 1, lb2)
         if (lb != lb2)
-            updateIntegerRangeValue(
+            updateMemoryLayout(
                 right,
                 IntegerRange(lb, ub2),
                 operands1,
@@ -464,14 +476,14 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
         val newMemoryLayout @ (operands1, locals1) =
             if (ub != ub1) {
                 val newV1 = IntegerRange(lb1, ub)
-                updateIntegerRangeValue(left, newV1, operands, locals)
+                updateMemoryLayout(left, newV1, operands, locals)
             } else
                 (operands, locals)
 
         val lb = Math.max(lb1, lb2)
         if (lb != lb2) {
             val newV2 = IntegerRange(lb, ub2)
-            updateIntegerRangeValue(right, newV2, operands1, locals1)
+            updateMemoryLayout(right, newV2, operands1, locals1)
         } else
             newMemoryLayout
     }
@@ -552,7 +564,7 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
     override def idiv(
         pc: PC,
         numerator: DomainValue,
-        denominator: DomainValue): IntegerLikeValueOrArithmeticException = {
+        denominator: DomainValue): IntegerValueOrArithmeticException = {
         denominator match {
             case IntegerRange(lb, ub) if lb > 0 || ub < 0 ⇒
                 // no div by "0"
@@ -608,7 +620,7 @@ trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Confi
     override def irem(
         pc: PC,
         left: DomainValue,
-        right: DomainValue): IntegerLikeValueOrArithmeticException = {
+        right: DomainValue): IntegerValueOrArithmeticException = {
         right match {
             case IntegerRange(rightLB, rightUB) if rightLB > 0 || rightUB < 0 ⇒
                 // no div by "0"

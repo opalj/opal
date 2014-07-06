@@ -40,7 +40,7 @@ import reflect.ClassTag
  *
  * @author Michael Eichberg
  */
-trait DefaultDomainValueBinding extends Domain {
+trait DefaultDomainValueBinding extends CoreDomain {
 
     final type DomainValue = Value
 

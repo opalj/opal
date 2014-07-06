@@ -125,12 +125,13 @@ trait ReifiedConstraints extends Domain {
     abstract override def refEstablishUpperBound(
         pc: PC,
         bound: ReferenceType,
-        value: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        nextConstraint(ReifiedSingleValueConstraint(pc, value, "is subtype of "+bound.toJava))
-        super.refEstablishUpperBound(pc, bound, value, operands, locals)
+        nextConstraint(
+            ReifiedSingleValueConstraint(pc, operands.head, "is subtype of "+bound.toJava)
+        )
+        super.refEstablishUpperBound(pc, bound, operands, locals)
     }
 
     //

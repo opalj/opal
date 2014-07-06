@@ -44,7 +44,6 @@ import br.analyses.{ SomeProject, Project }
 import reader.Java8Framework.ClassFiles
 import l1._
 import org.opalj.ai.domain.l0.RecordMethodCallResults
-import org.opalj.ai.domain.l0.ValuesCoordinatingDomain
 
 /**
  * Tests that we can detect situations in which a method calls itself.
@@ -159,11 +158,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     def createCalledMethodsStore(theProject: Project[java.net.URL]): CalledMethodsStore { def warningIssued: Boolean } =
-        new CalledMethodsStore(
-            new BaseDomain(theProject) with ValuesCoordinatingDomain {
-                type Id = String
-                override def id = "Called Methods Store Domain"
-            }) {
+        new CalledMethodsStore(new BaseDomain(theProject) with ValuesCoordinatingDomain) {
             var warningIssued = false
             override def frequentEvalution(
                 definingClass: ClassFile,
@@ -185,10 +180,6 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             with TheMethod
             with PerformInvocationsWithRecursionDetection
             with RecordMethodCallResults {
-
-        type Id = Project[java.net.URL]
-
-        override def id = project
 
         /*ABSTRACT*/ val calledMethodsStore: CalledMethodsStore
 

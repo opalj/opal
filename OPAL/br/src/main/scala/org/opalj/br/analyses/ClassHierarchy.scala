@@ -81,29 +81,29 @@ class ClassHierarchy private (
     require(knownTypesMap.length == subinterfaceTypesMap.length)
 
     import java.util.concurrent.locks.ReentrantReadWriteLock
-
-    private[this] val objectTypesMapRWLock =
-        new ReentrantReadWriteLock();
-
     private[this] var objectTypesMap: Array[ObjectType] =
         new Array(ObjectType.objectTypesCount)
 
-    private[this] val objectTypesCreationListener =
-        (objectType: ObjectType) ⇒ {
-            val id = objectType.id
-            try {
-                objectTypesMapRWLock.writeLock().lock()
-                if (id >= objectTypesMap.length) {
-                    val newLength = Math.max(ObjectType.objectTypesCount, id) + 20
-                    val newObjectTypesMap = new Array[ObjectType](newLength)
-                    Array.copy(objectTypesMap, 0, newObjectTypesMap, 0, objectTypesMap.length)
-                    objectTypesMap = newObjectTypesMap
-                }
-                objectTypesMap(id) = objectType
-            } finally {
-                objectTypesMapRWLock.writeLock().unlock()
+    private[this] final val objectTypesMapRWLock = new ReentrantReadWriteLock()
+
+    private[this] final val objectTypesCreationListener = (objectType: ObjectType) ⇒ {
+        val id = objectType.id
+        objectTypesMapRWLock.writeLock().lock()
+        try {
+            val thisObjectTypesMap = objectTypesMap
+            if (id >= thisObjectTypesMap.length) {
+                val newLength = Math.max(ObjectType.objectTypesCount, id) + 20
+                val newObjectTypesMap = new Array[ObjectType](newLength)
+                Array.copy(thisObjectTypesMap, 0, newObjectTypesMap, 0, thisObjectTypesMap.length)
+                newObjectTypesMap(id) = objectType
+                objectTypesMap = newObjectTypesMap
+            } else {
+                thisObjectTypesMap(id) = objectType
             }
+        } finally {
+            objectTypesMapRWLock.writeLock().unlock()
         }
+    }
 
     ObjectType.setObjectTypeCreationListener(objectTypesCreationListener)
 
@@ -112,16 +112,12 @@ class ClassHierarchy private (
      * ObjectType.
      */
     final def getObjectType(objectTypeId: Int): ObjectType = {
-        require(0 <= objectTypeId)
+        objectTypesMapRWLock.readLock().lock()
         try {
-            objectTypesMapRWLock.readLock().lock()
-
-            require(objectTypeId < objectTypesMap.length)
             val ot = objectTypesMap(objectTypeId)
             if (ot == null)
-                throw new IllegalArgumentException("ObjectType invalid: "+objectTypeId)
+                throw new IllegalArgumentException("ObjectType id invalid: "+objectTypeId)
             ot
-
         } finally {
             objectTypesMapRWLock.readLock().unlock()
         }
@@ -881,10 +877,11 @@ class ClassHierarchy private (
         project: SomeProject,
         classesFilter: ObjectType ⇒ Boolean = { _ ⇒ true }): Set[Method] = {
 
+        val receiverIsInterface = isInterface(receiverType)
         // TODO [Improvement] Implement an "UnsafeListSet" that does not check for the set property if (by construction) it has to be clear that all elements are unique
         var implementingMethods: Set[Method] =
             {
-                if (isInterface(receiverType))
+                if (receiverIsInterface)
                     lookupMethodDefinition(
                         ObjectType.Object, // to handle calls such as toString on a (e.g.) "java.util.List"
                         methodName,
@@ -909,7 +906,11 @@ class ClassHierarchy private (
                 if (classesFilter(subtype)) {
                     project.classFile(subtype) foreach { classFile ⇒
                         val methodOption =
-                            classFile.findMethod(methodName, methodDescriptor)
+                            if (receiverIsInterface) {
+                                lookupMethodDefinition(subtype, methodName, methodDescriptor, project)
+                            } else {
+                                classFile.findMethod(methodName, methodDescriptor)
+                            }
                         if (methodOption.isDefined) {
                             val method = methodOption.get
                             if (!method.isAbstract)
@@ -1217,10 +1218,7 @@ class ClassHierarchy private (
             if (aIsSubtypeOfAllOfb)
                 return upperTypeBoundB
             if (newUpperTypeBound.nonEmpty) {
-                if (newUpperTypeBound.containsOneElement)
-                    Left(newUpperTypeBound.first)
-                else
-                    return newUpperTypeBound
+                return newUpperTypeBound
             }
         }
         // if we reach this point the types are in no inheritance relationship

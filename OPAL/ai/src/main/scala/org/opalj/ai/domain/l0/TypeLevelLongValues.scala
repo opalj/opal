@@ -31,15 +31,17 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+import org.opalj.ai.Domain
+import org.opalj.ai.IsLongValue
+import org.opalj.ai.domain.Configuration
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeLong
 
-import org.opalj.br.{ ComputationalType, ComputationalTypeLong }
-
-/** 
- * This partial `Domain` performs all computations related to primitive long 
+/**
+ * This partial `Domain` performs all computations related to primitive long
  * values at the type level.
- * 
- * This domain can be used as a foundation to build more complex domains.
+ *
+ * This domain can be used as a foundation for building more complex domains.
  *
  * @author Michael Eichberg
  */
@@ -51,6 +53,9 @@ trait TypeLevelLongValues extends Domain { this: Configuration ⇒
     //
     // -----------------------------------------------------------------------------------
 
+    /**
+     * Common supertrait of all `DomainValue`s that represent long values.
+     */
     trait LongValue extends Value with IsLongValue { this: DomainValue ⇒
 
         final override def computationalType: ComputationalType = ComputationalTypeLong
@@ -66,71 +71,161 @@ trait TypeLevelLongValues extends Domain { this: Configuration ⇒
     //
     // UNARY EXPRESSIONS
     //
+
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
     override def lneg(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 
     //
     // RELATIONAL OPERATORS
     //
+
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `IntegerValue(pc)`.
+     */
     override def lcmp(pc: PC, left: DomainValue, right: DomainValue): DomainValue =
         IntegerValue(pc)
 
     //
     // BINARY EXPRESSIONS
     //
+
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
     override def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
     override def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
+    /**
+     * @inheritdoc
+     *
+     * @return Either `ComputedValue(LongValue(pc))` if arithmetic exceptions should
+     *      not be thrown if nothing is known about the precise value or – if the
+     *      policy is to throw an ArithmeticException if in doubt – a
+     *      `ComputedValueOrException(LongValue(pc), ArithmeticException(pc))`
+     */
     override def ldiv(
         pc: PC,
         left: DomainValue,
-        right: DomainValue): IntegerLikeValueOrArithmeticException = {
+        right: DomainValue): LongValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(LongValue(pc), ArithmeticException(pc))
         else
             ComputedValue(LongValue(pc))
     }
 
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
     override def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
     override def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
+    /**
+     * @inheritdoc
+     *
+     * @return Either `ComputedValue(LongValue(pc))` if arithmetic exceptions should
+     *      not be thrown if nothing is known about the precise value or – if the
+     *      policy is to throw an ArithmeticException if in doubt – a
+     *      `ComputedValueOrException(LongValue(pc), ArithmeticException(pc))`
+     */
     override def lrem(
         pc: PC,
         left: DomainValue,
-        right: DomainValue): IntegerLikeValueOrArithmeticException = {
+        right: DomainValue): LongValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(LongValue(pc), ArithmeticException(pc))
         else
             ComputedValue(LongValue(pc))
     }
 
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
     override def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
     override def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
     override def lsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
     override def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
     override def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
     //
     // CONVERSION INSTRUCTIONS
     //
+
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `DoubleValue(pc)`.
+     */
     override def l2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
 
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `FloatValue(pc)`.
+     */
     override def l2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
 
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `IntegerValue(pc)`.
+     */
     override def l2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
 }
 

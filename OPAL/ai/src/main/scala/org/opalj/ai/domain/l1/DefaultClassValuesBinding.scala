@@ -31,18 +31,12 @@ package ai
 package domain
 package l1
 
-import scala.collection.SortedSet
-
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import br._
+import org.opalj.br.Type
 
 /**
  * @author Arne Lottmann
  */
-trait DefaultClassValuesBinding
-        extends l1.DefaultStringValuesBinding
-        with ClassValues {
+trait DefaultClassValuesBinding extends DefaultStringValuesBinding with ClassValues {
     domain: Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy

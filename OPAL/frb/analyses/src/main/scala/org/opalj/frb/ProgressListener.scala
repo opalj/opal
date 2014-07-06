@@ -33,12 +33,13 @@ package frb
  * `FindRealBugs.analyze()` users can implement this interface in order to obtain
  * information about the progress of the analysis process.
  *
- * TODO [Clarify/Refactor] Implementations of this trait need to be thread safe - the client cannot be effectively shielded from concurrency issues anyway and currently the responsibility is distributed.  
- * 
+ * Thread-safety: Implementations of this trait need to be thread safe.
+ *
  * @author Daniel Klauer
  * @author Florian Brandherm
  */
 trait ProgressListener {
+    import FindRealBugs._
 
     /**
      * Override this callback to be notified when a certain analysis is started.
@@ -47,27 +48,28 @@ trait ProgressListener {
      * necessarily be in order. Calls to this method may come from multiple threads.
      * However, all calls to this method are synchronized.
      *
-     * @param name The analysis' name.
+     * @param analysis The analysis.
      * @param position The analysis' start number. 1st analysis = 1, 2nd analysis = 2,
      * etc.
+     * @param total The total number of analyses that are being run.
      */
-       // TODO [Refactor/Rename] How about: "startingAnalysis"? Reason: this method does not "begin"/start an analysis. 
-    def beginAnalysis(name: String, position: Int) : Unit
+    def analysisStarted(analysis: Analysis, position: Int, total: Int): Unit
 
     /**
      * Override this callback to be notified when a certain analysis ends.
      *
-     * @see [[ProgressListener.beginAnalysis]]
+     * @see [[ProgressListener.startingAnalysis]]
      *
-     * @param name The analysis' name.
+     * @param analysis The analysis.
      * @param position The analysis' start number.
+     * @param total The total number of analyses that are being run.
      * @param seconds The time it took for this analysis to run, in seconds.
      * @param reports The reports produced by the analysis, if any.
      */
-    // TODO [Refactor/Rename] How about: "analysisCompleted"? Reason: "andAnalysis" does not end an analysis. 
-    def endAnalysis(
-        name: String,
+    def analysisCompleted(
+        analysis: Analysis,
         position: Int,
+        total: Int,
         seconds: Double,
-        reports: FindRealBugs.AnalysisReports) : Unit
+        reports: FindRealBugs.AnalysisReports): Unit
 }

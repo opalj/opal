@@ -159,6 +159,13 @@ class CodeAttributeTest
         codeOfConstructor.lineNumberTable.get.lookupLineNumber(34) should be(Some(46))
     }
 
+    behavior of "the \"Code\" attribute's joinInstructions method"
+    
+    it should "be able to correctly identify the join instructions" in {
+        codeOfPut.joinInstructions.size should be (1)
+        codeOfPut.joinInstructions should contain(15)
+    }
+
 }
 private object CodeAttributeTest {
 
@@ -170,7 +177,7 @@ private object CodeAttributeTest {
 
     val project =
         Project(
-            ClassFiles(TestSupport.locateTestResources("classfiles/Code.jar","bi"))
+            ClassFiles(TestSupport.locateTestResources("classfiles/Code.jar", "bi"))
         )
 
     val boundedBufferClass = ObjectType("code/BoundedBuffer")

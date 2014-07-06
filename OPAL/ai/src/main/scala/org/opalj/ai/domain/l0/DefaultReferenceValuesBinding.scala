@@ -31,9 +31,8 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.collection.immutable.UIDSet
-import br._
+import org.opalj.br.{ ObjectType, ArrayType }
 
 /**
  * Default implementation for handling reference values.
@@ -61,10 +60,7 @@ trait DefaultReferenceValuesBinding extends DefaultTypeLevelReferenceValues {
      */
     override def NullValue(pc: PC): DomainNullValue = TheNullValue
 
-    override def ObjectValue(
-        pc: PC,
-        objectType: ObjectType): DomainObjectValue = {
-
+    override def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
         new SObjectValue(objectType)
     }
 

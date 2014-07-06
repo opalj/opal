@@ -44,7 +44,6 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import br._
 
-
 /**
  * Tests the `DefaultPerInstructionPostProcessing`.
  *
@@ -147,13 +146,10 @@ class DefaultPerInstructionPostProcessingTest
         evaluateMethod("withFinallyAndThrows") { domain ⇒
             import domain._
             allThrownExceptions should be(
-                Map((23, Set(ObjectValue(-1, No, false, ObjectType.Throwable))),
-                    (19, Set(ObjectValue(19, No, true, ObjectType.NullPointerException))),
+                Map((19, Set(ObjectValue(19, No, true, ObjectType.NullPointerException))),
                     (23, Set(
                         ObjectValue(-1, No, false, ObjectType.Throwable),
-                        MultipleReferenceValues(SortedSet[DomainSingleOriginReferenceValue](
-                            ObjectValue(-1, No, false, ObjectType.Throwable),
-                            ObjectValue(11, No, true, ObjectType.NullPointerException))))),
+                        ObjectValue(11, No, true, ObjectType.NullPointerException))),
                     (25, Set(ObjectValue(25, No, true, ObjectType.NullPointerException)))
                 )
             )

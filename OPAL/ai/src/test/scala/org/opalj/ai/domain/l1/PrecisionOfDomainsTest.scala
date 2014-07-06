@@ -38,10 +38,9 @@ import org.scalatest.Matchers
 import org.opalj.br._
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.domain.l0.ValuesCoordinatingDomain
 
 /**
- * This system test(suite) just loads a very large number of class files and performs
+ * This integration test(suite) just loads a very large number of class files and performs
  * an abstract interpretation of all methods to test if a domain that uses more
  * precise partial domains leads to a more precise result.
  *
@@ -52,8 +51,8 @@ class PrecisionOfDomainsTest extends FlatSpec with Matchers {
 
     behavior of "a more precise domain "
 
-    ignore should "calculate a more precise result" in {
-        val project = Project(org.opalj.br.TestSupport.JREClassFiles)
+    it should "calculate a more precise result" in {
+        val project = org.opalj.br.TestSupport.JREProject
         // The following three domains are very basic domains that – given that the
         // same partial domains are used – should compute the same results.
 
@@ -118,33 +117,16 @@ class PrecisionOfDomainsTest extends FlatSpec with Matchers {
 
             r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) ⇒
                 (lOperands == null && rOperands == null) ||
-                    (lOperands != null &&
-                        (rOperands == null ||
-                            lOperands.corresponds(rOperands) { (lValue, rValue) ⇒
-                                val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                lVD.abstractsOver(rVD)
-                                if (!lVD.abstractsOver(rVD)) {
-                                    return Some(Console.RED_B+"the operand stack value "+lVD+" does not abstract over "+rVD)
-                                }
-                                true
+                    (lOperands != null && (rOperands == null ||
+                        lOperands.corresponds(rOperands) { (lValue, rValue) ⇒
+                            val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
+                            val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
+                            if (!lVD.abstractsOver(rVD)) {
+                                return Some("the operand stack value "+lValue+
+                                    " does not abstract over "+rValue+
+                                    " the result of the join was: "+lVD.join(-1, rVD))
                             }
-                        )
-                    )
-            }
-            r1.localsArray.corresponds(r2.localsArray) { (lLocals, rLocals) ⇒
-                (lLocals == null && rLocals == null) ||
-                    (lLocals != null && (rLocals == null ||
-                        lLocals.corresponds(rLocals) { (lValue, rValue) ⇒
-                            (lValue == null && rValue == null) ||
-                                (lValue != null && (rValue == null || {
-                                    val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                    val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                    if (!lVD.abstractsOver(rVD)) {
-                                        return Some(Console.YELLOW_B+"the register value "+lVD+" does not abstract over "+rVD)
-                                    }
-                                    true
-                                }))
+                            true
                         }
                     ))
             }
@@ -153,49 +135,42 @@ class PrecisionOfDomainsTest extends FlatSpec with Matchers {
 
         val failed = new java.util.concurrent.atomic.AtomicBoolean(false)
         val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
-        val jreClassFiles = org.opalj.br.TestSupport.JREClassFiles.map(_._1)
+        val jreClassFiles = project.classFiles
         val classFilesPerPackage = jreClassFiles.groupBy(cf ⇒ cf.thisType.packageName)
         val classFilesPerPackageSorted = classFilesPerPackage.toSeq.sortWith(
             (v1, v2) ⇒ v1._1 < v2._1
         )
-        for {
-            (packageName, classFiles) ← classFilesPerPackageSorted
-            theInfo = println("processing "+(if (packageName.length == 0) "<DEFAULT>" else packageName))
-            classFile ← classFiles.par
-            method ← classFile.methods
-            if method.body.isDefined
-            body = method.body.get
-        } {
-            val a1 = new SelfTerminatingAI[Domain]()
-            val r1 = a1(classFile, method, new TypeLevelDomain(body, project))
-            val a2 = new SelfTerminatingAI[Domain]() {
-                override val maxEffortInNs: Long = 330000000l
+        for ((packageName, classFiles) ← classFilesPerPackageSorted) {
+            println("Comparing the results of different domains for the classes in: "+(if (packageName.length == 0) "<DEFAULT>" else packageName))
+            for {
+                classFile ← classFiles.par
+                method @ MethodWithBody(body) ← classFile.methods
+            } {
+                val a1 = BaseAI
+                val r1 = a1(classFile, method, new TypeLevelDomain(body, project))
+                val a2 = BaseAI
+                val r2 = a2(classFile, method, new L1Domain(body, project))
+
+                def abort(ai: SelfTerminatingAI[_], r: AIResult) {
+                    fail("the abstract interpretation of "+
+                        classFile.thisType.toJava+
+                        "{ "+method.toJava+" } was aborted after "+
+                        org.opalj.util.PerformanceEvaluation.ns2sec(ai.abortedAfter)+"secs.\n "+
+                        r.stateToString)
+                }
+
+                abstractsOver(r1, r2).foreach { m ⇒
+                    failed.set(true)
+                    println(
+                        classFile.thisType.toJava+"{ "+
+                            method.toJava+"(Instructions "+method.body.get.instructions.size+")\n"+
+                            "\t// the less precise domain did not abstract over the state of the more precise domain\n"+
+                            "\t// "+Console.BOLD + m + Console.RESET+"\n"
+                    )
+                }
+
+                comparisonCount.incrementAndGet()
             }
-            val r2 = a2(classFile, method, new L1Domain(body, project))
-
-            def abort(ai: SelfTerminatingAI[_], r: AIResult) {
-                fail("the abstract interpretation of "+
-                    classFile.thisType.toJava+
-                    "{ "+method.toJava+" } was aborted after "+
-                    org.opalj.util.PerformanceEvaluation.ns2sec(ai.abortedAfter)+"secs.\n "+
-                    r.stateToString)
-            }
-
-            if (r1.wasAborted) abort(a1, r1)
-
-            if (r2.wasAborted) abort(a2, r2)
-
-            abstractsOver(r1, r2).foreach { m ⇒
-                failed.set(true)
-                println(
-                    classFile.thisType.toJava+"{ "+
-                        method.toJava+"(Instructions "+method.body.get.instructions.size+"){ \n"+
-                        "\t// the less precise domain did not abstract over the state of the more precise domain\n"+
-                        "\t// "+Console.BOLD + m + Console.RESET+"\n"
-                )
-            }
-
-            comparisonCount.incrementAndGet()
         }
 
         if (comparisonCount.get() < 2)

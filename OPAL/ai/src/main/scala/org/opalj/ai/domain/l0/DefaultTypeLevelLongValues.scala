@@ -31,12 +31,10 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 /**
  * Base implementation of the `TypeLevelLongValues` trait that requires that
  * the domain`s `Value` trait is not extended. This implementation just satisfies
- * the basic requirements of OPAL-AI w.r.t. the domain's computational type.
+ * the basic requirements of OPAL w.r.t. the domain's computational type.
  *
  * @author Michael Eichberg
  */
@@ -48,6 +46,8 @@ trait DefaultTypeLevelLongValues
     case object ALongValue extends super.LongValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
+
+        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
 
         override def summarize(pc: PC): DomainValue = this
 

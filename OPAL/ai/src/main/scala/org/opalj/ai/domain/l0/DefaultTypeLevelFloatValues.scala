@@ -31,8 +31,6 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 /**
  * Base implementation of the `TypeLevelFloatValues` trait that requires that
  * the domain`s `Value` trait is not extended. This implementation just satisfies
@@ -47,6 +45,8 @@ trait DefaultTypeLevelFloatValues
     case object AFloatValue extends super.FloatValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
+
+        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
 
         override def summarize(pc: PC): DomainValue = this
 

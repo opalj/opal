@@ -74,6 +74,71 @@ case class Code(
         }
 
     /**
+     * Returns the set of all program counters where two or more control flow
+     * paths joins.
+     *
+     * In case of exceptions handlers the sound over approximation is made that
+     * all exception handlers may be reached on multiple paths.
+     */
+    def joinInstructions: scala.collection.BitSet = {
+        val instructions = this.instructions
+        val instructionsCount = instructions.length
+        val joinInstructions = new scala.collection.mutable.BitSet(instructionsCount)
+        exceptionHandlers.foreach { eh ⇒
+            // [REFINE] For non-finally handlers, test if multiple paths
+            // can lead to the respective exception
+            joinInstructions += eh.handlerPC
+        }
+        // The algorithm determines for each instruction the successor instruction
+        // that is reached and then marks it. If an instruction was already reached in the
+        // past, it will then mark the instruction as a "join" instruction.
+        val isReached = new scala.collection.mutable.BitSet(instructionsCount)
+        isReached += 0 // the first instruction is always reached!
+        var pc = 0
+        while (pc < instructionsCount) {
+            val instruction = instructions(pc)
+            val nextPC = instruction.indexOfNextInstruction(pc, this)
+            @inline def runtimeSuccessor(pc: PC) {
+                if (isReached.contains(pc))
+                    joinInstructions += pc
+                else
+                    isReached += pc
+            }
+            (instruction.opcode: @scala.annotation.switch) match {
+                case ATHROW.opcode ⇒ /*already handled*/
+
+                case RET.opcode    ⇒ /*Nothing to do; handled by JSR*/
+                case JSR.opcode | JSR_W.opcode ⇒
+                    runtimeSuccessor(pc + instruction.asInstanceOf[JSRInstruction].branchoffset)
+                    runtimeSuccessor(nextPC)
+
+                case GOTO.opcode | GOTO_W.opcode ⇒
+                    runtimeSuccessor(pc + instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset)
+
+                case 165 | 166 | 198 | 199 |
+                    159 | 160 | 161 | 162 | 163 | 164 |
+                    153 | 154 | 155 | 156 | 157 | 158 ⇒
+                    runtimeSuccessor(pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset)
+                    runtimeSuccessor(nextPC)
+
+                case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
+                    val switchInstruction = instruction.asInstanceOf[CompoundConditionalBranchInstruction]
+                    runtimeSuccessor(pc + switchInstruction.defaultOffset)
+                    switchInstruction.jumpOffsets foreach { jumpOffset ⇒
+                        runtimeSuccessor(pc + jumpOffset)
+                    }
+
+                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒ /*Nothing to do.*/
+
+                case _ ⇒
+                    runtimeSuccessor(nextPC)
+            }
+            pc = nextPC
+        }
+        joinInstructions
+    }
+
+    /**
      * Iterates over all instructions and calls the given function `f`
      * for every instruction.
      */

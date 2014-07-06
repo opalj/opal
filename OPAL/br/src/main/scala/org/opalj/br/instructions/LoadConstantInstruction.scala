@@ -48,3 +48,29 @@ abstract class LoadConstantInstruction[T] extends Instruction {
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
     }
 }
+/**
+ * Defines factory methods for `LoadConstantInstruction`s.
+ *
+ * @author Arne Lottmann
+ * @author Michael Eichberg
+ */
+object LoadConstantInstruction {
+
+    /**
+     * Returns the instruction that puts the constant value on top of the stack
+     * that represents the default value that is used to initialize fields
+     * of the corresponding type.
+     */
+    def apply(fieldType: FieldType): LoadConstantInstruction[_] =
+        (fieldType.id: @scala.annotation.switch) match {
+            case IntegerType.id ⇒ ICONST_0
+            case ByteType.id    ⇒ ICONST_0
+            case CharType.id    ⇒ ICONST_0
+            case ShortType.id   ⇒ ICONST_0
+            case BooleanType.id ⇒ ICONST_0
+            case LongType.id    ⇒ LCONST_0
+            case FloatType.id   ⇒ FCONST_0
+            case DoubleType.id  ⇒ DCONST_0
+            case _              ⇒ ACONST_NULL
+        }
+}

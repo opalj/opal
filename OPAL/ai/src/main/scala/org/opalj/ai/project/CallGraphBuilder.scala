@@ -38,7 +38,6 @@ import org.opalj.collection.UID
 import br._
 import br.analyses.SomeProject
 
-
 /**
  * Builds a call graph by first collecting all call graph edges before the final
  * `CallGraph` is created.
@@ -80,7 +79,7 @@ class CallGraphBuilder(val project: SomeProject) {
         import concurrent.duration._
         import ExecutionContext.Implicits.global
 
-        import scala.collection.mutable.{ OpenHashMap, AnyRefMap }
+        import scala.collection.mutable.{ OpenHashMap, AnyRefMap, WrappedArray }
 
         val calledByMapFuture: Future[AnyRefMap[Method, AnyRefMap[Method, PCs]]] = Future {
             val calledByMap: AnyRefMap[Method, AnyRefMap[Method, PCs]] =
@@ -139,11 +138,11 @@ class CallGraphBuilder(val project: SomeProject) {
             if (callSite.contains(pc)) {
                 callSite.update(
                     pc,
-                    new scala.collection.mutable.WrappedArray.ofRef((callees ++ callSite(pc)).toArray))
+                    new WrappedArray.ofRef((callees ++ callSite(pc)).toArray))
             } else
                 callSite.put(
                     pc,
-                    new scala.collection.mutable.WrappedArray.ofRef(callees.toArray))
+                    new WrappedArray.ofRef(callees.toArray))
         }
 
         new CallGraph(

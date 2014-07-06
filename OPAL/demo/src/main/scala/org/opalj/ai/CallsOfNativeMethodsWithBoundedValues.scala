@@ -33,7 +33,7 @@ import java.net.URL
 
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.Method
-import org.opalj.br.{ ObjectType, IntegerType }
+import org.opalj.br.{ ReferenceType, ObjectType, IntegerType }
 
 /**
  * Demonstrates how to identify if an integer value that is passed to a native
@@ -52,7 +52,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
             with domain.l0.DefaultTypeLevelLongValues
             with domain.l0.DefaultTypeLevelFloatValues
             with domain.l0.DefaultTypeLevelDoubleValues
-            with domain.l0.DefaultReferenceValuesBinding
+            with domain.l1.DefaultReferenceValuesBinding
             with domain.l0.TypeLevelFieldAccessInstructions
             with domain.l0.TypeLevelInvokeInstructions
             with domain.l1.DefaultIntegerRangeValues
@@ -83,12 +83,12 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
                 theProject.get(project.VTACallGraphKey)
 
             println("Identify native methods with integer parameters")
-            val nativeMethods: scala.collection.parallel.ParIterable[Method] =
+            val calledNativeMethods: scala.collection.parallel.ParIterable[Method] =
                 (theProject.classFiles.par.map { classFile ⇒
                     classFile.methods.filter { m ⇒
-                        /*We want to make some comparisons*/ callGraph.calledBy(m).size > 1 &&
-                            m.isNative &&
+                        m.isNative &&
                             m.descriptor.parameterTypes.exists(_.isIntegerType) &&
+                            /*We want to make some comparisons*/ callGraph.calledBy(m).size > 0 &&
                             // let's forget about System.arraycopy... causes too much
                             // noise/completely dominates the results
                             // E.g., typical use case: System.arraycopy(A,0,B,0,...)
@@ -96,8 +96,8 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
                     }
                 }).flatten
             println(
-                nativeMethods.map(_.toJava).toList.sorted.
-                    mkString("Native Methods ("+nativeMethods.size+"):\n", "\n", ""))
+                calledNativeMethods.map(_.toJava).toList.sorted.
+                    mkString("Called Native Methods ("+calledNativeMethods.size+"):\n", "\n", ""))
 
             val mutex = new Object
             var results: List[CallWithBoundedMethodParameter] = Nil
@@ -107,12 +107,16 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
             val unboundedCalls = new java.util.concurrent.atomic.AtomicInteger(0)
 
             for {
-                nativeMethod ← nativeMethods //<= ParIterable
-                // the last argument is the top-most stack value
+                nativeMethod ← calledNativeMethods //<= ParIterable
+                // - The last argument to the method is the top-most stack value.
+                // - For this analysis, we don't care whether we call a native instance 
+                //   or native static method
                 parametersCount = nativeMethod.parameterTypes.size
                 parameterIndexes = nativeMethod.parameterTypes.zipWithIndex.collect {
-                    case (IntegerType, index) ⇒ index
+                    case (IntegerType /*| _: ReferenceType*/ , index) ⇒ index
                 }
+                // For the stack we don't distinguish between computational type
+                // one and two category values; hence, no complex mapping is required.
                 stackIndexes = parameterIndexes.map((parametersCount - 1) - _)
                 (caller, pcs) ← callGraph.calledBy(nativeMethod)
             } {

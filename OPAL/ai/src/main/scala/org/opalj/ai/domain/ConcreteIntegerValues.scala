@@ -34,8 +34,6 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.util.Answer
-
 /**
  * Provides information about an integer value's precise value, if this information
  * is available.
@@ -48,7 +46,7 @@ import org.opalj.util.Answer
  *
  * @author Michael Eichberg
  */
-trait ConcreteIntegerValues { this: Domain ⇒
+trait ConcreteIntegerValues { this: CoreDomain with IntegerValuesDomain ⇒
 
     /**
      * If the given value encapsulates a precise integer value then the function

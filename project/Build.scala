@@ -7,7 +7,7 @@ import scoverage.ScoverageSbtPlugin.instrumentSettings
 
 object OPALBuild extends Build {
 
-	// Default settings without scoverage 
+	// Default settings without scoverage
 	lazy val buildSettings =
 		Defaults.defaultSettings
 
@@ -18,19 +18,21 @@ object OPALBuild extends Build {
 	lazy val opal = Project(
 		id = "OPAL",
 		base = file("."),
-		settings = buildSettings ++ sbtunidoc.Plugin.unidocSettings
+		settings = buildSettings ++ sbtunidoc.Plugin.unidocSettings ++ Seq(
+			publishArtifact := false
+  	)
 	).
 	aggregate(
-		common, 
+		common,
 		bi,
 		br,
 		ai,
 		da,
-		de, 
-		av,		 
-		opalDeveloperTools, 
+		de,
+		av,
+		opalDeveloperTools,
 		VALIDATE,
-		demos,		
+		demos,
 		findRealBugsAnalyses,
 		findRealBugsCLI,
 		incubation)
@@ -40,12 +42,12 @@ object OPALBuild extends Build {
 	 * THE CORE PROJECTS WHICH CONSTITUTE OPAL
 	 *
  	 */
-	
+
 	lazy val common = Project(
 		id = "Common",
 		base = file("OPAL/common")
-	)	
-	
+	)
+
 	lazy val bi = Project(
 		id = "BytecodeInfrastructure",
 		base = file("OPAL/bi"),
@@ -57,7 +59,7 @@ object OPALBuild extends Build {
 		base = file("OPAL/br"),
 		settings = opalDefaultSettings
 	) dependsOn(bi)
-	
+
 	lazy val da = Project(
 		id = "BytecodeDisassembler",
 		base = file("OPAL/da"),
@@ -71,7 +73,7 @@ object OPALBuild extends Build {
 	) dependsOn(br % "test->test;compile->compile")
 
 	// The project "DependenciesExtractionLibrary" depends on
-	// the abstract interpretation framework to be able to 
+	// the abstract interpretation framework to be able to
 	// resolve calls using MethodHandle/MethodType/"invokedynamic"/...
 	lazy val de = Project(
 		id = "DependenciesExtractionLibrary",
@@ -94,19 +96,25 @@ object OPALBuild extends Build {
 	// it is not a "project" in the classical sense!
 	lazy val VALIDATE = Project(
 		id = "VALIDATE_OPAL",
-		base = file("DEVELOPING_OPAL/validate")
+		base = file("DEVELOPING_OPAL/validate"),
+		settings = opalDefaultSettings ++ Seq(
+			publishArtifact := false
+		)
 	) dependsOn(
 		opalDeveloperTools % "test->test;compile->compile",
 		av % "test->test;compile->compile")
 
 	lazy val demos = Project(
 		id = "Demos",
-		base = file("OPAL/demo")
+		base = file("OPAL/demo"),
+		settings = opalDefaultSettings ++ Seq(
+			publishArtifact := false
+		)
 	) dependsOn(av)
 
 	/*****************************************************************************
 	 *
-	 * PROJECTS BELONGING TO THE OPAL ECOSYSTEM 
+	 * PROJECTS BELONGING TO THE OPAL ECOSYSTEM
 	 *
  	 */
 
@@ -118,9 +126,9 @@ object OPALBuild extends Build {
 	lazy val findRealBugsCLI = Project(
 		id = "FindRealBugsCLI",
 		base = file("OPAL/frb/cli"),
-		settings = 
+		settings =
 			buildSettings ++
-			sbtassembly.Plugin.assemblySettings ++ 
+			sbtassembly.Plugin.assemblySettings ++
 			Seq (
 				test in assembly := {},
 				jarName in assembly := "FindREALBugs-" + version.value+".jar",
@@ -130,7 +138,10 @@ object OPALBuild extends Build {
 
 	lazy val incubation = Project(
 		id = "Incubation",
-		base = file("OPAL/incubation")
+		base = file("OPAL/incubation"),
+		settings = opalDefaultSettings ++ Seq(
+			publishArtifact := false
+		)
 	) dependsOn(
 		av % "test->test;compile->compile")
 

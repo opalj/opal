@@ -31,8 +31,6 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 /**
  * Base implementation of the `TypeLevelDoubleValues` trait that requires that
  * the domain`s `Value` trait is not extended. This implementation just satisfies
@@ -55,6 +53,8 @@ trait DefaultTypeLevelDoubleValues
             // just represents "some" double value, we can always safely return
             // NoUpdate. 
             NoUpdate
+
+        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
 
         override def summarize(pc: PC): DomainValue = this
 

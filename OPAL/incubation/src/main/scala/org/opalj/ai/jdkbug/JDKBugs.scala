@@ -164,6 +164,7 @@ object TaintAnalysisDomain {
  */
 trait TaintAnalysisDomain[Source]
         extends Domain
+        with DomainId
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with DefaultDomainValueBinding

@@ -47,7 +47,7 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
  * (Linkage related exceptions are currently generally ignored.)
  *
  * @note By ignoring potentially thrown exceptions it may be the case that not all
- *      possible paths in a program are explored and the overall analysis may not be
+ *      possible paths in a program are explored and that the overall analysis may not be
  *      sound.
  *
  * @author Michael Eichberg

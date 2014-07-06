@@ -48,8 +48,29 @@ abstract class ReturnInstruction extends Instruction {
     }
 
 }
+/**
+ * Defines common values and a factory method to create a `ReturnInstruction` based
+ * on the expected type.
+ *
+ * @author Michael Eichberg
+ * @author Arne Lottmann
+ */
 object ReturnInstruction {
 
     val runtimeExceptions = List(ObjectType.IllegalMonitorStateException)
+
+    def apply(theType: Type): ReturnInstruction =
+        (theType.id: @scala.annotation.switch) match {
+            case VoidType.id    ⇒ RETURN
+            case IntegerType.id ⇒ IRETURN
+            case ShortType.id   ⇒ IRETURN
+            case ByteType.id    ⇒ IRETURN
+            case CharType.id    ⇒ IRETURN
+            case BooleanType.id ⇒ IRETURN
+            case LongType.id    ⇒ LRETURN
+            case FloatType.id   ⇒ FRETURN
+            case DoubleType.id  ⇒ DRETURN
+            case _              ⇒ ARETURN
+        }
 
 }

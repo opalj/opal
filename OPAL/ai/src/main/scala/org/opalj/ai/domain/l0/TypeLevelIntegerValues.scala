@@ -31,12 +31,20 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
+import org.opalj.ai.Domain
+import org.opalj.ai.IsBooleanValue
+import org.opalj.ai.IsByteValue
+import org.opalj.ai.IsCharValue
+import org.opalj.ai.IsIntegerValue
+import org.opalj.ai.IsShortValue
+import org.opalj.ai.domain.Configuration
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeInt
+import org.opalj.util.Answer
+import org.opalj.util.Unknown
 
 /**
- * Domain that performs computations related to integer values at the type level. 
+ * Domain that performs computations related to integer values at the type level.
  *
  * @author Michael Eichberg
  */
@@ -134,6 +142,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     //
     // UNARY EXPRESSIONS
     //
+
     override def ineg(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
 
     //
@@ -149,7 +158,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     override def idiv(
         pc: PC,
         left: DomainValue,
-        right: DomainValue): IntegerLikeValueOrArithmeticException = {
+        right: DomainValue): IntegerValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
         else
@@ -165,7 +174,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     override def irem(
         pc: PC,
         left: DomainValue,
-        right: DomainValue): IntegerLikeValueOrArithmeticException = {
+        right: DomainValue): IntegerValueOrArithmeticException = {
         if (throwArithmeticExceptions)
             ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
         else

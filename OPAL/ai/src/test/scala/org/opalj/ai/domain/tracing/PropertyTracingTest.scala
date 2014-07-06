@@ -77,9 +77,6 @@ class PropertyTracingTest
             with l1.DefaultIntegerRangeValues
             with TheMethod {
 
-        type Id = String
-        override def id = method.toJava
-
         override def maxSizeOfIntegerRanges: Long = 16l
 
         override def code: Code = method.body.get

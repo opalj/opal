@@ -29,8 +29,8 @@
 package org.opalj
 package ai
 
-import br._
-import br.instructions._
+import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
 
 /**
  * A tracer that forwards every call to all registered tracers.
@@ -76,18 +76,16 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
 
     override def noFlow(
         domain: Domain)(
-            currentPC: PC,
-            targetPC: PC): Unit = {
+            currentPC: PC, targetPC: PC): Unit = {
         tracers foreach { _.noFlow(domain)(currentPC, targetPC) }
     }
 
     override def rescheduled(
         domain: Domain)(
-            sourcePC: PC,
-            targetPC: PC,
-            isExceptionalControlFlow: Boolean): Unit = {
-        tracers foreach { _.rescheduled(domain)(sourcePC, targetPC, isExceptionalControlFlow) }
-
+            sourcePC: PC, targetPC: PC, isExceptionalControlFlow: Boolean): Unit = {
+        tracers foreach { tracer ⇒
+            tracer.rescheduled(domain)(sourcePC, targetPC, isExceptionalControlFlow)
+        }
     }
 
     override def join(
@@ -107,8 +105,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
 
     override def abruptMethodExecution(
         domain: Domain)(
-            pc: Int,
-            exception: domain.DomainValue): Unit = {
+            pc: Int, exception: domain.DomainValue): Unit = {
         tracers foreach { _.abruptMethodExecution(domain)(pc, exception) }
     }
 
@@ -123,24 +120,17 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         }
     }
 
-    override def jumpToSubroutine(domain: Domain)(
-        pc: PC,
-        target: PC,
-        nestingLevel: Int): Unit = {
-        tracers foreach { tracer ⇒
-            tracer.jumpToSubroutine(domain)(pc, target, nestingLevel)
-        }
+    override def jumpToSubroutine(
+        domain: Domain)(
+            pc: PC, target: PC, nestingLevel: Int): Unit = {
+        tracers foreach { _.jumpToSubroutine(domain)(pc, target, nestingLevel) }
     }
 
     override def returnFromSubroutine(
         domain: Domain)(
-            pc: Int,
-            returnAddress: Int,
-            subroutineInstructions: List[Int]): Unit = {
+            pc: Int, returnAddress: Int, subroutineInstructions: List[Int]): Unit = {
         tracers foreach { tracer ⇒
-            tracer.returnFromSubroutine(domain)(
-                pc, returnAddress, subroutineInstructions
-            )
+            tracer.returnFromSubroutine(domain)(pc, returnAddress, subroutineInstructions)
         }
     }
 

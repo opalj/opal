@@ -32,6 +32,8 @@ package br
 
 import java.io.File
 
+import org.opalj.br.analyses.Project
+
 /**
  * Common functionality required by all test.
  *
@@ -47,7 +49,7 @@ object TestSupport {
      *
      * @param resourceName The name of the resource relative to the test/resources
      *      folder. The name must not begin with a "/".
-     * @param subProjectFoler The root folder of the OPAL subproject; e.g., "ext/ai".
+     * @param subProjectFoler The root folder of the OPAL subproject; e.g., "ai".
      *      (Default: "core").
      */
     def locateTestResources(resourceName: String, subProjectFolder: String): File = {
@@ -56,13 +58,13 @@ object TestSupport {
             if (file.exists()) return file
         }
         { // if the current path is set to "<SUB-PROJECT>/<BIN>"
-            var file = new File("../src/test/resources/"+resourceName)
+            var file = new File("../../"+subProjectFolder+"src/test/resources/"+resourceName)
             if (file.exists()) return file
         }
 
         {
             // if we are in the sub-project's root folder
-            var file = new File("src/test/resources/"+resourceName)
+            var file = new File("../"+subProjectFolder+"/src/test/resources/"+resourceName)
             if (file.exists()) return file
         }
         {
@@ -106,8 +108,12 @@ object TestSupport {
         val classFiles = org.opalj.br.reader.Java8Framework.ClassFiles(JRELibraryFolder)
         if (classFiles.isEmpty)
             sys.error("Loading the JRE failed.")
-            
+
         classFiles.toSeq
+    }
+
+    lazy val JREProject: Project[java.net.URL] = {
+        Project(JREClassFiles)
     }
 
 }

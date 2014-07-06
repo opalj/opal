@@ -41,9 +41,11 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import br._
+import org.opalj.br.ObjectType
+import org.opalj.ai.util.Locals
 import org.opalj.br.reader.Java8Framework.ClassFiles
+
+import org.opalj.br.TestSupport
 
 /**
  * This test(suite) just loads a very large number of class files and performs
@@ -122,12 +124,12 @@ class DefaultPreciseReferenceValuesTest
         val theObject = ObjectValue(-1, No, false, ObjectType.Object)
         val theFile = ObjectValue(-1, No, false, File)
 
-        val update1 = theObject.refineUpperTypeBound(-1, File)
-        update1.upperTypeBound.first should be(File)
-        val update2 = theFile.refineUpperTypeBound(-1, File)
-        update2.upperTypeBound.first should be(File)
-        val update3 = theFile.refineUpperTypeBound(-1, ObjectType.Object)
-        update3.upperTypeBound.first should be(File)
+        val (update1, _) = theObject.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
+        update1.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
+        val (update2, _) = theFile.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
+        update2.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
+        val (update3, _) = theFile.refineUpperTypeBound(-1, ObjectType.Object, List(theFile), Locals.empty)
+        update3.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
     }
 
     it should ("be able to create an ObjectValue with the expected values") in {
