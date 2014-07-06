@@ -94,12 +94,23 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
             if (potentialExceptions.nonEmpty) {
                 // In both of the following cases, we are no longer able to trace
                 // the contents of the array.
-
                 // - if an ArrayIndexOutOfBoundsException may be thrown then we certainly
-                //   do not have enough information about the index...
+                //   do not have enough information about the index, hence we don't
+                //   know which value may have changed.
                 // - if an ArrayStoreException may be thrown, we are totally lost..
-                // TODO [BUG] Mark array as dead
-                return ThrowsException(potentialExceptions)
+
+                // When an exception is thrown the array remains untouched,
+                // however, if no exception is thrown, we are no longer able to
+                // approximate the state of the array's values; some value was changed
+                // somewhere...
+                val abstractArrayValue = ArrayValue(vo, No, true, theUpperTypeBound)
+                registerOnRegularControlFlowUpdater(domainValue ⇒
+                    domainValue match {
+                        case that: ArrayValue if that eq this ⇒ abstractArrayValue
+                        case _                                ⇒ domainValue
+                    }
+                )
+                return ComputationWithSideEffectOrException(potentialExceptions)
             }
 
             // If we reach this point none of the given exceptions is guaranteed to be thrown
@@ -187,6 +198,14 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
                         vo, theUpperTypeBound, adaptedValues).
                         asInstanceOf[target.DomainValue]
 
+                case thatDomain: l1.ReferenceValues ⇒
+                    thatDomain.ArrayValue(vo, No, true, theUpperTypeBound).
+                        asInstanceOf[target.DomainValue]
+
+                case thatDomain: l0.TypeLevelReferenceValues ⇒
+                    thatDomain.InitializedArrayValue(vo, List(values.size), theUpperTypeBound).
+                        asInstanceOf[target.DomainValue]
+
                 case _ ⇒ super.adapt(target, vo)
             }
 
@@ -207,25 +226,30 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
 
         protected def canEqual(other: ArrayValue): Boolean = true
 
-        override def hashCode: Int =
-            ((vo) * 41 + values.hashCode) * 79 + upperTypeBound.hashCode
+        override def hashCode: Int = vo * 79 + upperTypeBound.hashCode
 
         override def toString() = {
-            var description = theUpperTypeBound.toJava+"(origin="+vo+", values#"+values.size+"="
-            description += values.mkString("(", ",", ")")
-            description += ")"+"###"+System.identityHashCode(this)
-            description
+            values.mkString(
+                theUpperTypeBound.toJava+"(origin="+vo+", size"+values.size+"=(",
+                ",",
+                "))"+";SystemID="+System.identityHashCode(this))
         }
     }
 
     /**
      * Returns `true` if the specified array should be reified and precisely tracked.
-     * By default `true` is returned.
      *
      * '''This method is intended to be overwritten by subclasses to configure which
-     * arrays are reified.''' Depending on the analysis task it is in general only
-     * useful to only track selected arrays (e.g, arrays of certain types of values
-     * or up to a specific length).
+     * arrays will be reified.''' Depending on the analysis task it is in general only
+     * useful to track selected arrays (e.g, arrays of certain types of values
+     * or up to a specific length). For example, to facilitate the the resolution
+     * of reflectively called methods, it might be interesting to track arrays
+     * that contain string values.
+     *
+     * @note Tracking the content of arrays generally has a significant performance
+     *      impact and should be limited to cases where it is absolutely necessary.
+     *      "Just tracking the contents of arrays" to improve the overall precision
+     *      is in most cases not helpful.
      *
      * By default only arrays up to a size of 16 (this value is more or less
      * arbitrary) are reified.
@@ -234,29 +258,34 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
         count <= 16
     }
 
-    override def NewArray(pc: PC, count: DomainValue, arrayType: ArrayType): DomainArrayValue = {
-        intValueOption(count) foreach { count ⇒
-            if (reifyArray(pc, count, arrayType)) {
-                val defaultValue = arrayType.componentType match {
-                    case BooleanType      ⇒ BooleanValue(pc, false)
-                    case ByteType         ⇒ ByteValue(pc, 0)
-                    case CharType         ⇒ CharValue(pc, 0)
-                    case ShortType        ⇒ ShortValue(pc, 0)
-                    case IntegerType      ⇒ IntegerValue(pc, 0)
-                    case FloatType        ⇒ FloatValue(pc, 0.0f)
-                    case LongType         ⇒ LongValue(pc, 0l)
-                    case DoubleType       ⇒ DoubleValue(pc, 0.0d)
-                    case _: ReferenceType ⇒ NullValue(pc)
-                }
-                return ArrayValue(pc, arrayType, Array.fill(count)(defaultValue))
-            }
-        }
+    override def NewArray(
+        pc: PC,
+        count: DomainValue,
+        arrayType: ArrayType): DomainArrayValue = {
+        val intValue = intValueOption(count)
+        if (intValue.isDefined && reifyArray(pc, intValue.get, arrayType)) {
+            val count = intValue.get
+            if (count >= 1024)
+                println("[warn] tracking arrays ("+arrayType.toJava+
+                    ") with more than 1024 ("+count+
+                    ") elements is not officially supported")
+            var virtualPC = 65536 + pc * 1024
 
-        ArrayValue(pc, No, true, arrayType)
+            val array: Array[DomainValue] = new Array[DomainValue](count)
+            var i = 0; while (i < count) {
+                // we initialize each element with a new instance and also
+                // assign each value with a unique PC
+                array(i) = DefaultValue(virtualPC + i, arrayType.componentType)
+                i += 1
+            }
+            ArrayValue(pc, arrayType, array)
+        } else {
+            ArrayValue(pc, No, true, arrayType)
+        }
     }
 
     //
-    // DECLARATION OF ADDITIONAL DOMAIN VALUE FACTORY METHODS
+    // DECLARATION OF ADDITIONAL FACTORY METHODS
     //
 
     protected def ArrayValue( // for ArrayValue
