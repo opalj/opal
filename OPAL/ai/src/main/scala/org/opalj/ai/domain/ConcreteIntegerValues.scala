@@ -46,7 +46,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait ConcreteIntegerValues { this: Domain ⇒
+trait ConcreteIntegerValues { this: CoreDomain with IntegerValuesDomain ⇒
 
     /**
      * If the given value encapsulates a precise integer value then the function

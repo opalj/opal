@@ -39,10 +39,10 @@ import org.opalj.br.{ Method, ClassFile }
  * a configurable identifier.
  *
  * @note This domain is intended to be used for '''demo purposes only'''.
- *      Tests should create their own domains to make sure that
+ *      '''Tests should create their own domains to make sure that
  *      the test results remain stable. The configuration of this
  *      domain just reflects a reasonable configuration that may
- *      change without further notice.
+ *      change without further notice.'''
  *
  * @author Michael Eichberg
  */
@@ -57,14 +57,15 @@ class BaseConfigurableDomain[I, Source](
         with IgnoreSynchronization
         with ProjectBasedClassHierarchy
         with TheProject[Source]
-        with TheMethod {
+        with TheMethod
+        with DomainId {
 
     type Id = I
 }
 
 /**
  * This is a ready to use domain which sets the domain identifier
- * to a string that indentifies the method that is analyzed.
+ * to a string that identifies the method that is analyzed.
  *
  * This domain is primarily useful for demonstration purposes.
  *

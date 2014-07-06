@@ -44,6 +44,7 @@ import org.opalj.br.analyses.{ Project }
  *
  * @author Michael Eichberg
  */
+@deprecated("Will be removed soon; using the new modularization enables the construction of a precise domain.", "0.8.0M3")
 trait ValuesCoordinatingDomain
         extends Domain
         with ThrowAllPotentialExceptionsConfiguration /*ACTUALLY NOT RELEVANT*/ {
