@@ -298,6 +298,9 @@ trait AI[D <: Domain] {
                 initialWorkList, List.empty[PC], operandsArray, localsArray, Nil)
     }
 
+    protected[ai] def joinInstructions(code: Code) : scala.collection.BitSet =
+        code.joinInstructions
+
     /**
      * Continues the interpretation of the given method (code) using the given domain.
      *
@@ -376,6 +379,7 @@ trait AI[D <: Domain] {
         type TwoValuesDomainTest = (DomainValue, DomainValue) ⇒ Answer
 
         val instructions: Array[Instruction] = code.instructions
+        val joinInstructions = this.joinInstructions(code)
 
         // The entire state of the computation is (from the perspective of the AI)
         // encapsulated by the following data-structures:
@@ -385,7 +389,6 @@ trait AI[D <: Domain] {
         /* 4 */ var evaluated = alreadyEvaluated
         /* 5 */ var memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
-        val joinInstructions = code.joinInstructions
 
         // -------------------------------------------------------------------------------
         //
@@ -416,7 +419,7 @@ trait AI[D <: Domain] {
 
             val currentOperands = operandsArray(targetPC)
             if (currentOperands == null /* || localsArray(targetPC) == null )*/ ||
-                !joinInstructions.contains(targetPC)               ) {
+                !joinInstructions.contains(targetPC)) {
                 // We analyze the instruction for the first time ... or it is
                 // not an instruction where multiple control-flow paths join.
                 operandsArray(targetPC) = operands
