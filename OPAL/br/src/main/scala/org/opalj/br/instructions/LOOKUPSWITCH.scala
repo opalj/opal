@@ -39,12 +39,14 @@ package instructions
  */
 case class LOOKUPSWITCH(
     defaultOffset: Int,
-    npairs: IndexedSeq[(Int, PC)])
+    npairs: IndexedSeq[(Int, Int)])
         extends CompoundConditionalBranchInstruction {
 
-    override def opcode: Opcode = LOOKUPSWITCH.opcode
+    final override def opcode: Opcode = LOOKUPSWITCH.opcode
 
-    def mnemonic: String = "lookupswitch"
+    final override def mnemonic: String = "lookupswitch"
+
+    def jumpOffsets = npairs.map(_._2) // TODO Do we want to use a stream here?
 
     final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
         currentPC + 1 + (3 - (currentPC % 4)) + 8 + npairs.size * 8
