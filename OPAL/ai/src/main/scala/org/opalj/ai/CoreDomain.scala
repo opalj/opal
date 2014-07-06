@@ -235,7 +235,7 @@ trait CoreDomain {
          * This method is '''not reflexive'''.
          *
          * [[TheIllegalValue]] only abstracts over itself.
-         * 
+         *
          * ==Implementation==
          * The default implementation relies on this domain value's [[join]] method.
          *
@@ -607,6 +607,7 @@ trait CoreDomain {
         thisLocals: Locals,
         otherOperands: Operands,
         otherLocals: Locals): Update[(Operands, Locals)] = {
+        beforeJoin(pc)
 
         var operandsUpdated: UpdateType = NoUpdateType
         val newOperands: Operands =
@@ -627,13 +628,11 @@ trait CoreDomain {
                         if (thisOperand eq otherOperand) {
                             thisOperand
                         } else {
-                            val updatedOperand = thisOperand.join(pc, otherOperand)
+                            val updatedOperand = joinValues(pc, thisOperand, otherOperand)
                             val newOperand = updatedOperand match {
                                 case NoUpdate   ⇒ thisOperand
                                 case someUpdate ⇒ someUpdate.value
                             }
-                            assume(newOperand ne TheIllegalValue,
-                                "an operand stack value must never be an illegal value")
                             operandsUpdated = operandsUpdated &: updatedOperand
                             newOperand
                         }
@@ -659,7 +658,7 @@ trait CoreDomain {
                                 localsUpdated = localsUpdated &: MetaInformationUpdateType
                                 TheIllegalValue
                             } else {
-                                val updatedLocal = thisLocal.join(pc, otherLocal)
+                                val updatedLocal = joinValues(pc, thisLocal, otherLocal)
                                 if (updatedLocal eq NoUpdate) {
                                     thisLocal
                                 } else {
@@ -676,8 +675,19 @@ trait CoreDomain {
 
             }
 
+        afterJoin(pc)
         (operandsUpdated &: localsUpdated)((newOperands, newLocals))
     }
+
+    protected[this] def joinValues(
+        pc: PC,
+        left: DomainValue, right: DomainValue): Update[DomainValue] = {
+        left.join(pc, right) 
+    }
+
+    protected[this] def beforeJoin(pc: PC): Unit = {}
+
+    protected[this] def afterJoin(pc: PC): Unit = {}
 
     /**
      * ''Called by the framework after performing a computation''. That is, after

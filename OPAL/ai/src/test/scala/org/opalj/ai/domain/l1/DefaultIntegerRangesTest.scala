@@ -719,7 +719,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             val domain = new IntegerRangesTestDomain(8)
             val method = IntegerValues.findMethod("cfDependentValues4").get
             val result = BaseAI(IntegerValues, method, domain)
-            result.operandsArray(46).head should be(domain.IntegerRange(2, Int.MaxValue))
+            result.operandsArray(46).head should be(domain.IntegerRange(2, 2))
             result.operandsArray(50).head should be(domain.AnIntegerValue)
             result.operandsArray(54).head should be(domain.AnIntegerValue)
             if (result.operandsArray(50).head eq result.operandsArray(54).head)

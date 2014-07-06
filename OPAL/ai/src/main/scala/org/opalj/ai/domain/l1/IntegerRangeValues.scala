@@ -119,7 +119,10 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  *
  * @author Michael Eichberg
  */
-trait IntegerRangeValues extends Domain with ConcreteIntegerValues { this: Configuration ⇒
+trait IntegerRangeValues
+        extends CoreDomainWithJoinStabilization
+        with Domain
+        with ConcreteIntegerValues { this: Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
