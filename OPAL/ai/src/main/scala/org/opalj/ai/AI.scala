@@ -418,16 +418,25 @@ trait AI[D <: Domain] {
             // - the main loop that processes the worklist
 
             val currentOperands = operandsArray(targetPC)
-            if (currentOperands == null /* || localsArray(targetPC) == null )*/ ||
-                !joinInstructions.contains(targetPC)) {
-                // We analyze the instruction for the first time ... or it is
-                // not an instruction where multiple control-flow paths join.
+            if (currentOperands == null ) {
+                // we analyze the instruction for the first time 
                 operandsArray(targetPC) = operands
                 localsArray(targetPC) = locals
                 worklist = targetPC :: worklist
                 if (tracer.isDefined)
                     tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
-            } else {
+            } 
+            else if (!joinInstructions.contains(targetPC)) {
+                // the instructions is not an instruction where multiple control-flow 
+                // paths join; however, we may have a dangling computation...
+                operandsArray(targetPC) = operands
+                localsArray(targetPC) = locals
+//                if (worklist.contains(elem) )
+                worklist = targetPC :: worklist
+                if (tracer.isDefined)
+                    tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
+            } 
+            else {
                 // we already evaluated the target instruction ... 
                 val currentLocals = localsArray(targetPC)
                 val mergeResult =
