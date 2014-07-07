@@ -43,7 +43,7 @@ import org.opalj.ai.domain.ValuesCoordinatingDomain
  */
 trait NaiveSolver[Source] extends DataFlowProblemSolver[Source] {
 
-    val theDomain: Domain = new BaseDomain[Source](project) with ValuesCoordinatingDomain
+    lazy val theDomain: Domain = new BaseDomain[Source](project) with ValuesCoordinatingDomain
 
 }
 
@@ -61,10 +61,6 @@ abstract class BaseDomain[Source](val project: Project[Source])
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
         with domain.l1.DefaultIntegerRangeValues {
-
-    type Id = String
-
-    def id = "Domain of the Naive Solver"
 
     override protected def maxSizeOfIntegerRanges: Long = 25l
 
