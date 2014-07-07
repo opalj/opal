@@ -298,7 +298,7 @@ trait AI[D <: Domain] {
                 initialWorkList, List.empty[PC], operandsArray, localsArray, Nil)
     }
 
-    protected[ai] def joinInstructions(code: Code) : scala.collection.BitSet =
+    protected[ai] def joinInstructions(code: Code): scala.collection.BitSet =
         code.joinInstructions
 
     /**
@@ -389,7 +389,6 @@ trait AI[D <: Domain] {
         /* 4 */ var evaluated = alreadyEvaluated
         /* 5 */ var memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
-
         // -------------------------------------------------------------------------------
         //
         // Main loop of the abstract interpreter
@@ -418,25 +417,23 @@ trait AI[D <: Domain] {
             // - the main loop that processes the worklist
 
             val currentOperands = operandsArray(targetPC)
-            if (currentOperands == null ) {
+            if (currentOperands == null) {
                 // we analyze the instruction for the first time 
                 operandsArray(targetPC) = operands
                 localsArray(targetPC) = locals
                 worklist = targetPC :: worklist
                 if (tracer.isDefined)
                     tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
-            } 
-            else if (!joinInstructions.contains(targetPC)) {
+            } else if (!joinInstructions.contains(targetPC)) {
                 // the instructions is not an instruction where multiple control-flow 
                 // paths join; however, we may have a dangling computation...
                 operandsArray(targetPC) = operands
                 localsArray(targetPC) = locals
-//                if (worklist.contains(elem) )
-                worklist = targetPC :: worklist
+                if (!worklist.contains(targetPC))
+                    worklist = targetPC :: worklist
                 if (tracer.isDefined)
                     tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
-            } 
-            else {
+            } else {
                 // we already evaluated the target instruction ... 
                 val currentLocals = localsArray(targetPC)
                 val mergeResult =
