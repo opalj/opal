@@ -45,9 +45,9 @@ import br.MethodDescriptor
  *
  * =Usage Scenario=
  *  - We want to avoid that information is stored in the database/processed by the
- *  backend without being sanitized.
+ *      backend without being sanitized.
  *  -  We want to specify that certain information is not allowed to flow from
- *  *one module* to *another* module
+ *      ''one module'' to ''another'' module
  *
  * =Concept=
  *
@@ -81,28 +81,6 @@ import br.MethodDescriptor
 package object dataflow {
 
     type AValueLocationMatcher = Function1[SomeProject, Map[Method, Set[PC]]]
-
-    // Calculates the initial "PC" associated with a method's parameter.
-    def parameterToValueIndex(
-        isStatic: Boolean,
-        descriptor: MethodDescriptor,
-        parameterIndex: Int): Int = {
-
-        def origin(localVariableIndex: Int) = -localVariableIndex - 1
-
-        var localVariableIndex = 0
-
-        if (!isStatic) {
-            localVariableIndex += 1 /*=="this".computationalType.operandSize*/
-        }
-        val parameterTypes = descriptor.parameterTypes
-        var currentIndex = 0
-        while (currentIndex < parameterIndex) {
-            localVariableIndex += parameterTypes(currentIndex).computationalType.operandSize
-            currentIndex += 1
-        }
-        origin(localVariableIndex)
-    }
 
 }
 

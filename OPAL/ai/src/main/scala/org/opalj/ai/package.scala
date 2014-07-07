@@ -169,4 +169,28 @@ package object ai {
             }
         ).mkString("Operands and Locals: \n", "\n", "\n")
     }
+
+    /**
+     * Calculates the initial "PC" associated with a method's parameter.
+     */
+    def parameterToValueIndex(
+        isStatic: Boolean,
+        descriptor: MethodDescriptor,
+        parameterIndex: Int): Int = {
+
+        def origin(localVariableIndex: Int) = -localVariableIndex - 1
+
+        var localVariableIndex = 0
+
+        if (!isStatic) {
+            localVariableIndex += 1 /*=="this".computationalType.operandSize*/
+        }
+        val parameterTypes = descriptor.parameterTypes
+        var currentIndex = 0
+        while (currentIndex < parameterIndex) {
+            localVariableIndex += parameterTypes(currentIndex).computationalType.operandSize
+            currentIndex += 1
+        }
+        origin(localVariableIndex)
+    }
 }
