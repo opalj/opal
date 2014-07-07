@@ -392,6 +392,20 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
         }
 
+        describe("the behavior of the cast operators") {
+
+            it("(byte)AnIntegerValue => [-128,+127]") {
+                val v1 = AnIntegerValue
+                i2b(-1, v1) should be(IntegerRange(-128, +127))
+            }
+
+            it("(byte)[0,129] => [-128,+127]") {
+                val v1 = IntegerRange(0, 129)
+                i2b(-1, v1) should be(IntegerRange(-128, +127))
+            }
+
+        }
+
         describe("the behavior of the relational operators") {
 
             describe("the behavior of the greater or equal than (>=) operator") {
@@ -733,6 +747,13 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             result.operandsArray(47).head should be(domain.IntegerRange(2, 2))
             result.operandsArray(51).head should be(domain.IntegerRange(0, 1))
             result.operandsArray(55).head should be(domain.AnIntegerValue)
+        }
+        
+        it("it should handle casts correctly") {
+            val domain = new IntegerRangesTestDomain(8)
+            val method = IntegerValues.findMethod("casts").get
+            val result = BaseAI(IntegerValues, method, domain)
+            result.operandsArray(26).head should be(domain.IntegerRange(-128, 126))
         }
     }
 }

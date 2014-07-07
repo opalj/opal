@@ -661,57 +661,24 @@ trait IntegerRangeValues
 
     override def i2b(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case IntegerRange(lb, ub) ⇒
-                val newLB =
-                    if (lb < Byte.MinValue) Byte.MinValue
-                    else if (lb > Byte.MaxValue) Byte.MaxValue
-                    else lb
-                val newUB =
-                    if (ub > Byte.MaxValue) Byte.MaxValue
-                    else if (ub < Byte.MinValue) Byte.MinValue
-                    else ub
-                if (newLB != lb || newUB != ub)
-                    IntegerRange(newLB, newUB)
-                else
-                    value
+            case IntegerRange(lb, ub) if lb >= Byte.MinValue && ub <= Byte.MaxValue ⇒
+                value
             case _ ⇒
                 IntegerRange(Byte.MinValue, Byte.MaxValue)
         }
 
     override def i2c(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case IntegerRange(lb, ub) ⇒
-                val newLB =
-                    if (lb < Char.MinValue) Char.MinValue
-                    else if (lb > Char.MaxValue) Char.MaxValue
-                    else lb
-                val newUB =
-                    if (ub > Char.MaxValue) Char.MaxValue
-                    else if (ub < Char.MinValue) Char.MinValue
-                    else ub
-                if (newLB != lb || newUB != ub)
-                    IntegerRange(newLB, newUB)
-                else
-                    value
+            case IntegerRange(lb, ub) if lb >= Char.MinValue && ub <= Char.MaxValue ⇒
+                value
             case _ ⇒
                 IntegerRange(Char.MinValue, Char.MaxValue)
         }
 
     override def i2s(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case IntegerRange(lb, ub) ⇒
-                val newLB =
-                    if (lb < Short.MinValue) Short.MinValue
-                    else if (lb > Short.MaxValue) Short.MaxValue
-                    else lb
-                val newUB =
-                    if (ub > Short.MaxValue) Short.MaxValue
-                    else if (ub < Short.MinValue) Short.MinValue
-                    else ub
-                if (newLB != lb || newUB != ub)
-                    IntegerRange(newLB, newUB)
-                else
-                    value
+            case IntegerRange(lb, ub) if lb >= Short.MinValue && ub <= Short.MaxValue ⇒
+                value
             case _ ⇒
                 IntegerRange(Short.MinValue, Short.MaxValue)
         }
@@ -719,7 +686,7 @@ trait IntegerRangeValues
     override def i2d(pc: PC, value: DomainValue): DomainValue =
         value match {
             case IntegerRange(lb, ub) if lb == ub ⇒
-                DoubleValue(pc, lb)
+                DoubleValue(pc, lb /*or ub*/ )
             case _ ⇒
                 DoubleValue(pc)
         }
@@ -727,7 +694,7 @@ trait IntegerRangeValues
     override def i2f(pc: PC, value: DomainValue): DomainValue =
         value match {
             case IntegerRange(lb, ub) if lb == ub ⇒
-                FloatValue(pc, lb)
+                FloatValue(pc, lb /*or ub*/ )
             case _ ⇒
                 FloatValue(pc)
         }
@@ -735,7 +702,7 @@ trait IntegerRangeValues
     override def i2l(pc: PC, value: DomainValue): DomainValue =
         value match {
             case IntegerRange(lb, ub) if lb == ub ⇒
-                LongValue(pc, lb)
+                LongValue(pc, lb /*or ub*/ )
             case _ ⇒
                 LongValue(pc)
         }
