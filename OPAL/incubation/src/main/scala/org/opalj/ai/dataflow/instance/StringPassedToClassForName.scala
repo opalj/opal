@@ -31,12 +31,12 @@ package ai
 package dataflow
 package instance
 
-import bi.AccessFlagsMatcher._
-import br._
-import br.instructions._
-import br.analyses._
-import domain._
-import domain.l0._
+import org.opalj.bi.AccessFlagsMatcher._
+import org.opalj.br._
+import org.opalj.br.instructions._
+import org.opalj.br.analyses._
+import org.opalj.ai.domain._
+import org.opalj.ai.domain.l0._
 
 import spec._
 
