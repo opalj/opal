@@ -100,7 +100,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 108)
+    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 111)
     @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 112)
     void callVirtualMethodInFinally() {
         try {
@@ -264,8 +264,8 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 256),
-            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 258) })
+            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 273),
+            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 275) })
     void callMethodBasedOnThrowableTypePartly() {
         try {
             throwThrowablePartly();
@@ -293,8 +293,8 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 290),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 291) })
+            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 302),
+            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 303) })
     void possibleNullPointerExceptionCatchOtherExceptions(Object o) {
         try {
             canThrowNullPointerException(o);
