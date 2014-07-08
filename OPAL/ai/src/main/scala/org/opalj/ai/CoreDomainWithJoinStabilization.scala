@@ -35,6 +35,9 @@ import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 
 /**
+ * Using join stabilization is necessary (makes sense) if constraints are propagated
+ * or if the merge of domain values is expensive.
+ *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait CoreDomainWithJoinStabilization extends CoreDomain {
