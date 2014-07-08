@@ -48,29 +48,30 @@ trait ValueLocationMatcher extends AValueLocationMatcher {
 
 }
 
-case class Methods(
-        properties: PartialFunction[Method, Boolean] = { case m: Method ⇒ true },
-        parameters: PartialFunction[(Int, FieldType), Boolean]) extends ValueLocationMatcher {
-
-    def apply(project: SomeProject): Map[Method, Set[PC]] = {
-        import scala.collection.mutable.{ HashMap, HashSet }
-
-        var result = HashMap.empty[Method, HashSet[PC]]
-        for {
-            classFile ← project.classFiles
-            method @ MethodWithBody(body) ← classFile.methods
-            true ← properties.lift(method)
-            (parameterType, index) ← method.descriptor.parameterTypes.zipWithIndex
-        } {
-            val methodParameterShift = if (method.isStatic) -1 else -2
-            val parameter = (index, parameterType)
-            if (parameters.isDefinedAt(parameter) && parameters(parameter)) {
-                result.getOrElseUpdate(method, HashSet.empty) += (-index + methodParameterShift)
-            }
-        }
-        result
-    }
-}
+//case class Methods(
+//        properties: PartialFunction[Method, Boolean] = { case m: Method ⇒ true },
+//        parameters: PartialFunction[(Int, FieldType), Boolean]) extends ValueLocationMatcher {
+//
+//    def apply(project: SomeProject): Map[Method, Set[PC]] = {
+//        import scala.collection.mutable.{ HashMap, HashSet }
+//
+//        var result = HashMap.empty[Method, HashSet[PC]]
+//        for {
+//            classFile ← project.classFiles
+//            method @ MethodWithBody(body) ← classFile.methods
+//            true ← properties.lift(method)
+//            (parameterType, index) ← method.descriptor.parameterTypes.zipWithIndex
+//        } {
+//            val methodParameterShift = if (method.isStatic) -1 else -2
+//            val parameter = (index, parameterType)
+//            if (parameters.isDefinedAt(parameter) && parameters(parameter)) {
+//                // FIXME
+//                result.getOrElseUpdate(method, HashSet.empty) += (-index + methodParameterShift)
+//            }
+//        }
+//        result
+//    }
+//}
 
 case class Calls(
         properties: PartialFunction[(ReferenceType, String, MethodDescriptor), Boolean]) extends ValueLocationMatcher {
@@ -91,5 +92,6 @@ case class Calls(
         }
         result
     }
+
 }
 

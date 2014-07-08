@@ -80,7 +80,7 @@ import br.MethodDescriptor
  */
 package object dataflow {
 
-    type AValueLocationMatcher = Function1[SomeProject, Map[Method, Set[PC]]]
+    type AValueLocationMatcher = Function1[SomeProject, Map[Method, Set[ValueOrigin]]]
 
 }
 

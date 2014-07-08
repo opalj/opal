@@ -55,25 +55,27 @@ trait SourcesAndSinks {
     private[this] var sourceMatchers: List[AValueLocationMatcher] = Nil
     def sources(vlm: AValueLocationMatcher): Unit = sourceMatchers = vlm :: sourceMatchers
 
-    private[this] var theSourceValues: Map[Method, Set[PC]] = _
-    def sourceValues: Map[Method, Set[PC]] = theSourceValues
+    private[this] var theSourceValues: Map[Method, Set[ValueOrigin]] = _
+    def sourceValues: Map[Method, Set[ValueOrigin]] = theSourceValues
 
     def sources(
         filter: Function[ClassFile, Boolean],
-        matcher: PartialFunction[Method, Set[Int]]): Unit = {
+        matcher: PartialFunction[Method, Set[ValueOrigin]]): Unit = {
 
         sourceMatchers =
             new AValueLocationMatcher {
 
                 def apply(project: SomeProject) = {
-                    var map = scala.collection.mutable.AnyRefMap.empty[Method, Set[Int]]
+                    var map = scala.collection.mutable.AnyRefMap.empty[Method, Set[ValueOrigin]]
                     for {
                         classFile ← project.classFiles
                         if filter(classFile)
                         method @ MethodWithBody(_) ← classFile.methods
                     } {
                         if (matcher.isDefinedAt(method)) {
-                            map.update(method, matcher(method))
+                            val matchedValues = matcher(method)
+                            if (matchedValues.nonEmpty)
+                                map.update(method, matchedValues)
                         }
                     }
                     map.repack
@@ -99,7 +101,7 @@ trait SourcesAndSinks {
         import scala.collection.immutable.HashMap
 
         val sources = sourceMatchers map ((m: AValueLocationMatcher) ⇒ m(project))
-        this.theSourceValues = sources.foldLeft(HashMap.empty[Method, Set[PC]])(_ ++ _)
+        this.theSourceValues = sources.foldLeft(HashMap.empty[Method, Set[ValueOrigin]])(_ ++ _)
 
         val sinks = sinkMatchers map ((m: AValueLocationMatcher) ⇒ m(project))
         this.theSinkInstructions = sinks.foldLeft(HashMap.empty[Method, Set[PC]])(_ ++ _)

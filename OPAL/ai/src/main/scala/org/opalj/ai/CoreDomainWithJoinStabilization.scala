@@ -28,33 +28,50 @@
  */
 package org.opalj
 package ai
-package dataflow
-package spec
 
-import scala.collection.{ Map, Set }
+import scala.reflect.ClassTag
 
-import bi.AccessFlagsMatcher
-
-import br._
-import br.analyses._
-import br.instructions._
-
-import domain._
-import domain.l0._
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeReturnAddress
 
 /**
- * Support methods to facilitate the definition of data-flow constraints.
+ * Using join stabilization is necessary (makes sense) if constraints are propagated
+ * or if the merge of domain values is expensive.
  *
- * @author Michael Eichberg and Ben Hermann
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-abstract class DataFlowProblemSpecification[Source, P]
-        extends DataFlowProblem[Source, P]
-        with SourcesAndSinks {
+trait CoreDomainWithJoinStabilization extends CoreDomain {
 
-    override def initializeSourcesAndSinks(): Unit = {
-        initializeSourcesAndSinks(project)
+    import java.util.{ IdentityHashMap ⇒ IDMap }
+
+    private[this] val leftValues =
+        new IDMap[DomainValue, IDMap[DomainValue, Update[DomainValue]]]()
+
+    abstract override protected[this] def joinValues(
+        pc: PC,
+        left: DomainValue, right: DomainValue): Update[DomainValue] = {
+        val rightMap = leftValues.get(left)
+        if (rightMap == null) {
+            val rightMap = new IDMap[DomainValue, Update[DomainValue]]()
+            val joinedValue = super.joinValues(pc, left, right)
+            rightMap.put(right, joinedValue)
+            leftValues.put(left, rightMap)
+            joinedValue
+        } else {
+            val cachedValue = rightMap.get(right)
+            if (cachedValue == null) {
+                val joinedValue = super.joinValues(pc, left, right)
+                rightMap.put(right, joinedValue)
+                joinedValue
+            } else {
+                cachedValue
+            }
+        }
+    }
+
+    abstract override protected[this] def afterJoin(pc: PC): Unit = {
+        super.afterJoin(pc)
+        leftValues.clear()
     }
 
 }
-
-

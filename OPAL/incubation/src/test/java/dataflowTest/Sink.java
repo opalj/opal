@@ -26,49 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
+package dataflowTest;
 
-import scala.reflect.ClassTag
-
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeReturnAddress
-
-/**
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- */
-trait CoreDomainWithJoinStabilization extends CoreDomain {
-
-    import java.util.{ IdentityHashMap ⇒ IDMap }
-
-    private[this] val leftValues =
-        new IDMap[DomainValue, IDMap[DomainValue, Update[DomainValue]]]()
-
-    abstract override protected[this] def joinValues(
-        pc: PC,
-        left: DomainValue, right: DomainValue): Update[DomainValue] = {
-        val rightMap = leftValues.get(left)
-        if (rightMap == null) {
-            val rightMap = new IDMap[DomainValue, Update[DomainValue]]()
-            val joinedValue = super.joinValues(pc, left, right)
-            rightMap.put(right, joinedValue)
-            leftValues.put(left, rightMap)
-            joinedValue
-        } else {
-            val cachedValue = rightMap.get(right)
-            if (cachedValue == null) {
-                val joinedValue = super.joinValues(pc, left, right)
-                rightMap.put(right, joinedValue)
-                joinedValue
-            } else {
-                cachedValue
-            }
-        }
-    }
-
-    abstract override protected[this] def afterJoin(pc: PC): Unit = {
-        super.afterJoin(pc)
-        leftValues.clear()
-    }
+public @interface Sink {
 
 }

@@ -64,7 +64,7 @@ object JDKTaintAnalysis
 
     var javaSecurityFile: String = _
 
-    override def analysisParametersDescription: String =
+    override def analysisSpecificParametersDescription: String =
         javaSecurityParameter+"<JRE/JDK Security Policy File>"
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =

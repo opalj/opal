@@ -36,7 +36,8 @@ import org.opalj.br.ComputationalTypeReturnAddress
 
 /**
  * Defines the core functionality that is shared across all [[Domain]]s that implement
- * the operations related to different kinds of values and instructions.
+ * the operations related to different kinds of values and instructions. It primarily
+ * defines the abstraction for DomainValues.
  *
  * @note This domain only defines concrete methods to facilitate the unit testing of
  *      partial domains that build on top of this `CoreDomain` such as the

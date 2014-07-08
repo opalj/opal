@@ -80,7 +80,7 @@ trait AnalysisExecutor {
      * @note The parameter `-cp=` is already predefined (see general documentation).
      * @note The parameter `-library=` is already predefined (see general documentation).
      */
-    def analysisParametersDescription: String = ""
+    def analysisSpecificParametersDescription: String = ""
 
     /**
      * Checks if the (additional) parameters are understood by
@@ -103,7 +103,7 @@ trait AnalysisExecutor {
             this.getClass().getName()+"\n"+
             "[-cp=<Directories or JAR files containing class files> (If no class path is specified the current folder is used.)]\n"+
             "[-libcp=<Directories or JAR files containing class files>]\n"+
-            analysisParametersDescription)
+            analysisSpecificParametersDescription)
         println(analysis.description)
         println(analysis.copyright)
     }

@@ -47,8 +47,8 @@ import domain.l0._
  *
  * I.e., tries to find paths from the identified sources to the identified sinks.
  *
- * ==Initialization==
- * Initialization is done in multiple steps.
+ * ==Overall Initialization==
+ * Overall initialization is done in multiple steps.
  *
  *  1. The parameters are checked.
  *  1. The parameters of the analysis are set.
@@ -60,39 +60,12 @@ import domain.l0._
  *
  * @author Michael Eichberg and Ben Hermann
  */
-trait DataFlowProblem[Source] {
+trait DataFlowProblem[Source, P] {
 
-    def description: String =
-        "Finds instances of the specified dataflow problem (see documentation for details)."
+    val p: P // type of the parameters/parameter
 
-    // __________________________________________________________________________________
-    //
-    // Specify and access the analysis' configuration 
-    //
-    //
+    val project: Project[Source]
 
-    /**
-     * Describes the analysis specific parameters. An analysis specific parameter
-     * has to start with a dash ("-") and has to contain an equals sign ("=").
-     *
-     * @note The parameter `-cp=` is already predefined (see general documentation).
-     * @note The parameter `-library=` is already predefined (see general documentation).
-     */
-    def analysisParametersDescription: String = ""
-
-    /**
-     * Checks if the (additional) parameters are understood by
-     * the analysis.
-     *
-     * This method **must be** overridden if the analysis defines additional
-     * parameters. A method that overrides this method should return false if it can't
-     * validate all arguments.
-     * The default behavior is to check that there are no additional parameters.
-     */
-    def checkAnalysisParameters(parameters: Seq[String]): Boolean =
-        parameters.isEmpty
-
-    def processAnalysisParameters(parameters: Seq[String]): Unit
 
     // __________________________________________________________________________________
     //
@@ -190,18 +163,6 @@ trait DataFlowProblem[Source] {
     //
     //
 
-    private[this] var theProject: Project[Source] = null
-    def project = theProject
-    def project_=(project: Project[Source]): Unit = {
-
-        if (this.theProject != null)
-            throw new IllegalStateException("the project is already set")
-        this.theProject = project
-
-        initializeSourcesAndSinks()
-    }
-
-    protected[this] def initializeSourcesAndSinks(): Unit
 
     /**
      * Identifies the values that we want to track (by means of the origin of the
@@ -239,17 +200,18 @@ trait DataFlowProblem[Source] {
         }
     }
 
+    def initializeSourcesAndSinks(): Unit
+    
     /**
      * Tries to find paths from the sources to the sinks.
      */
     def solve(): String = {
-        if (project == null)
-            throw new IllegalStateException("the project needs to be initialized first")
 
         analyzeFeasability()
 
-        "Solved :-)"
+        doSolve()
     }
-}
 
+    /*abstract*/ def doSolve(): String
+}
 

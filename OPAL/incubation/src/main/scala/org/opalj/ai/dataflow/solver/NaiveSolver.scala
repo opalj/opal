@@ -41,10 +41,13 @@ import org.opalj.ai.domain.ValuesCoordinatingDomain
  *
  * @author Michael Eichberg and Ben Hermann
  */
-trait NaiveSolver[Source] extends DataFlowProblemSolver[Source] {
+trait NaiveSolver[Source, Params] extends DataFlowProblemSolver[Source, Params] {
 
     lazy val theDomain: Domain = new BaseDomain[Source](project) with ValuesCoordinatingDomain
 
+    def doSolve() : String = {
+        "solved"
+    }
 }
 
 abstract class BaseDomain[Source](val project: Project[Source])
