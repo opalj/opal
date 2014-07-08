@@ -65,10 +65,6 @@ object DeadCode extends AnalysisExecutor {
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy {
 
-        type Id = String
-
-        def id = "Dead Code Analysis Domain"
-
         override protected def maxSizeOfIntegerRanges: Long = 64l
     }
 
