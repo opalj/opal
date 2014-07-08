@@ -748,8 +748,21 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             result.operandsArray(51).head should be(domain.IntegerRange(0, 1))
             result.operandsArray(55).head should be(domain.AnIntegerValue)
         }
-        
-        it("it should handle casts correctly") {
+
+        it("it should not perform useless evaluations") {
+            val domain = new IntegerRangesTestDomain(8)
+            val method = IntegerValues.findMethod("complexLoop").get
+            val result = BaseAI(IntegerValues, method, domain)
+            result.operandsArray(35).head should be(domain.IntegerRange(0, 2))
+            // when we perform a depth-first evaluation we do not want to 
+            // evaluate the same instruction with the same abstract state
+            // multiple times
+            result.evaluated.head should be(24)
+            result.evaluated.tail.head should be(23)
+            result.evaluated.tail.tail.head should be(20)
+        }
+
+        it("it should handle casts (i2b) correctly") {
             val domain = new IntegerRangesTestDomain(8)
             val method = IntegerValues.findMethod("casts").get
             val result = BaseAI(IntegerValues, method, domain)
