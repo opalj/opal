@@ -80,9 +80,9 @@ import br.MethodDescriptor
  */
 package object dataflow {
 
-    type AValueLocationMatcher = Function1[SomeProject, Map[Method, Set[PC]]]
+    type AValueLocationMatcher = Function1[SomeProject, Map[Method, Set[ValueOrigin]]]
 
-    // Calculates the initial "PC" associated with a method's parameter.
+    // Calculates the initial "ValueOrigin" associated with a method's parameter.
     def parameterToValueIndex(
         isStatic: Boolean,
         descriptor: MethodDescriptor,

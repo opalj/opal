@@ -52,20 +52,16 @@ import domain.l0._
  *
  * @author Michael Eichberg and Ben Hermann
  */
-class DataFlowProblemRunner(
-    val dataFlowProblem: DataFlowProblemSolver[URL])
-        extends AnalysisExecutor {
-
-    final override def analysisParametersDescription: String =
-        dataFlowProblem.analysisParametersDescription
-
-    final override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
-        dataFlowProblem.checkAnalysisParameters(parameters)
+trait DataFlowProblemRunner extends AnalysisExecutor {
+    dataFlowProblemFactory: DataFlowProblemFactory ⇒
 
     final override val analysis = new Analysis[URL, ReportableAnalysisResult] {
 
+        override def title: String =
+            dataFlowProblemFactory.title
+
         override def description: String =
-            dataFlowProblem.description
+            dataFlowProblemFactory.description
 
         override def analyze(
             project: Project[URL],
@@ -73,8 +69,11 @@ class DataFlowProblemRunner(
             import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
             val initializedDataFlowProblem = time {
-                dataFlowProblem.processAnalysisParameters(parameters)
-                dataFlowProblem.project = project
+                val params = dataFlowProblemFactory.processAnalysisParameters(parameters)
+                val dataFlowProblem = dataFlowProblemFactory.create(project, params)
+                dataFlowProblem.initializeSourcesAndSinks
+                println(f"[info] Number of source values: ${dataFlowProblem.sourceValues.size}.")
+                println(f"[info] Number of sinks: ${dataFlowProblem.sinkInstructions.size}.")
                 dataFlowProblem
             } { t ⇒
                 println(f"[info] Setup of the data-flow problem took ${ns2sec(t)}%.4f seconds.")

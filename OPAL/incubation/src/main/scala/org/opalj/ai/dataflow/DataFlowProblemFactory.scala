@@ -29,32 +29,29 @@
 package org.opalj
 package ai
 package dataflow
-package spec
 
 import scala.collection.{ Map, Set }
 
 import bi.AccessFlagsMatcher
 
 import br._
-import br.analyses._
 import br.instructions._
+import br.analyses._
 
 import domain._
 import domain.l0._
 
-/**
- * Support methods to facilitate the definition of data-flow constraints.
- *
- * @author Michael Eichberg and Ben Hermann
- */
-abstract class DataFlowProblemSpecification[Source, P]
-        extends DataFlowProblem[Source, P]
-        with SourcesAndSinks {
+trait DataFlowProblemFactory {
 
-    override def initializeSourcesAndSinks(): Unit = {
-        initializeSourcesAndSinks(project)
-    }
+    /*abstract*/ type P
 
+    /*abstract*/ def description: String
+
+    /*abstract*/ def title: String
+
+    /*abstract*/ def processAnalysisParameters(parameters: Seq[String]): P
+
+    /*abstract*/ def create[Source](
+        project: Project[Source],
+        p: P): DataFlowProblem[Source, P]
 }
-
-
