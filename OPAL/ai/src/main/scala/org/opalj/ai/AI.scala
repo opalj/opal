@@ -132,7 +132,8 @@ trait AI[D <: Domain] {
     def apply(
         classFile: ClassFile,
         method: Method,
-        domain: D) = perform(classFile, method, domain)(None)
+        theDomain: D) : AIResult{val domain : theDomain.type} = 
+            perform(classFile, method, theDomain)(None)
 
     /**
      * Returns the initial set of operands that will be used for for the abstract
