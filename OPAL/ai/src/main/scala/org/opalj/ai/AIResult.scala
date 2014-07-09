@@ -126,6 +126,11 @@ sealed abstract class AIAborted extends AIResult {
         "The abstract interpretation was aborted:\n"+super.stateToString
 }
 
+object AICompleted {
+    def unapply(result: AICompleted): Some[(result.domain.type, result.operandsArray.type, result.localsArray.type)] =
+        Some((result.domain, result.operandsArray, result.localsArray))
+}
+
 /**
  * Encapsulates the final result of the successful abstract interpretation of a method.
  */
