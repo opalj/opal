@@ -1,0 +1,229 @@
+<html>
+    <head>
+		<title> <%TITLE%> </title>
+		<meta charset="utf-8"/>
+		<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+		<link rel="stylesheet" href="http://opal-project.de/css/main.css">
+    </head>
+    <body>
+		<style type="text/css">
+		<!--
+
+		#circle circle {
+		  fill: none;
+		  pointer-events: all;
+		}
+
+		.group path {
+		  fill-opacity: .5;
+		}
+
+		path.chord {
+		  stroke: #000;
+		  stroke-width: .25px;
+		}
+
+		#circle:hover path.fade {
+		  display: none;
+		}
+
+		-->
+		</style>
+		
+		
+		<div class="main-content">
+			<section style="height: 65px;">
+				<div class="left" style="width: 200px;float:left">
+					<a href="http://www.stg.tu-darmstadt.de">
+						<img src="http://opal-project.de/img/stg-logo.jpg" alt="Software Technology Group" height="65px"/>
+					</a>
+				</div>
+				<div class="right" style="width: 200px;float:right;text-align: right;">
+					<a href="http://www.tu-darmstadt.de">
+						<img src="http://opal-project.de/img/athene.png" alt="Technische Universität Darmstadt" height="65px" />
+					</a>
+				</div>
+			</section>
+			
+			<section style="height: 1024px;">
+				<div id="opal-visualization" class="left" style="width: 720px;float:left"> </div>
+				<div id="opal-more-output" class="right" style="width: 720px;float:right;text-align: left;"> 
+					<%ADDITIONAL_OUTPUT%>
+				</div>
+			</section>
+		</div>	
+		<script>
+		
+		var data = <%DATA%>;
+
+		var packages = <%PACKAGES%>;
+		
+		var width = 720,
+			height = 720,
+			// as overflow on svg seems not to work
+			border = 200,
+			rx = (width+border) / 2,
+			ry = (height+border) / 2,
+			rotate = 0,
+			m0,
+			outerRadius = Math.min(width, height) / 2 - 10,
+			innerRadius = outerRadius - 24;
+
+		var formatPercent = d3.format(".1%");
+
+		var arc = d3.svg.arc()
+			.innerRadius(innerRadius)
+			.outerRadius(outerRadius);
+
+		var layout = d3.layout.chord()
+			.padding(.04)
+			.sortSubgroups(d3.descending)
+			.sortChords(d3.ascending);
+
+		var path = d3.svg.chord()
+			.radius(innerRadius);
+
+		var svg = d3.select("#opal-visualization").append("svg")
+			.attr("width", width+border)
+			.attr("height", height+border)
+		  .append("g")
+			.attr("id", "circle")
+			.attr("transform", "translate(" + (width/2 + border/2) + "," + (height/2 + border/2) + ")")
+		  .on("mousedown", mousedown);
+		  
+		svg.append("circle")
+			.attr("r", outerRadius);
+
+		layout.matrix(data);
+
+		var group = svg.selectAll(".group")
+			.data(layout.groups)
+		  .enter().append("g")
+			.attr("class", "group")
+			.on("mouseover", mouseover);
+
+		group.append("title").text(function(d, i) {
+			packages[i].percentage = d.value;
+			return packages[i].name + ": " + formatPercent(d.value) + " of all inter-package dependencies";
+		});
+
+		var groupPath = group.append("path")
+			.attr("id", function(d, i) { return "group" + i; })
+			.attr("d", arc)
+			.style("fill", function(d, i) { return packages[i].color; });
+
+		var groupText = group.append("svg:text")
+			.each(function(d) { d.angle = (d.startAngle + d.endAngle) / 2; })
+			.attr("dy", ".35em")
+			.attr("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+			.attr("transform", function(d) {
+				return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")" +
+					"translate(" + (innerRadius + 26) + ")" +
+					(d.angle > Math.PI ? "rotate(180)" : "");
+			})
+			.text(function(d) { return packages[d.index].name; });	
+
+		var chord = svg.selectAll(".chord")
+			.data(layout.chords)
+		  .enter().append("path")
+			.attr("class", "chord")
+			.style("fill", function(d) { return packages[d.source.index].color; })
+			.attr("d", path);
+
+		chord.append("title").text(function(d) {
+		  return packages[d.source.index].name
+			  + " → " + packages[d.target.index].name
+			  + ": " + formatPercent((d.source.value)/packages[d.source.index].percentage)
+			  + "\n" + packages[d.target.index].name
+			  + " → " + packages[d.source.index].name
+			  + ": " + formatPercent((d.target.value)/packages[d.target.index].percentage)
+		});
+		
+		d3.select(window)
+			.on("mousemove", mousemove)
+			.on("mouseup", mouseup);
+
+		function mouse(e) {
+		  return [e.pageX - rx, e.pageY - ry];
+		}
+
+		function mousedown() {
+		  m0 = mouse(d3.event);
+		  d3.event.preventDefault();
+		}
+
+		function mousemove() {
+		  if (m0) {
+			var m1 = mouse(d3.event),
+				dm = Math.atan2(cross(m0, m1), dot(m0, m1)) * 180 / Math.PI;
+			svg.style("-webkit-transform", "translateY("+(ry)+"px)translateX("+(rx)+"px)rotate(" + (dm+rotate) + "deg)");
+		  }
+		}
+
+		function mouseup() {
+		  if (m0) {
+			var m1 = mouse(d3.event),
+				dm = Math.atan2(cross(m0, m1), dot(m0, m1)) * 180 / Math.PI;
+
+			rotate += dm;
+			if (rotate > 360) rotate -= 360;
+			else if (rotate < 0) rotate += 360;
+			m0 = null;
+
+			svg.style("-webkit-transform", null);
+
+            var rotateAngle = (rotate*Math.PI/180)
+            
+			svg
+				.attr("transform", "translate(" + (rx) + "," + (ry) + ")rotate(" + rotate + ")")
+				.selectAll("g.group text")
+                .each(function(d) { d.rotatedAngle = (d.angle + rotateAngle);
+                                                      if (d.rotatedAngle > (2*Math.PI)) d.rotatedAngle -= 2*Math.PI;
+                                                      else if (d.rotatedAngle < 0) d.rotatedAngle += 2*Math.PI; })
+                .attr("text-anchor", function(d) { return d.rotatedAngle > Math.PI ? "end" : "start"; })
+                .attr("transform", function(d) {
+                    return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")" +
+                        "translate(" + (innerRadius + 26) + ")" +
+                        (d.rotatedAngle > Math.PI ? "rotate(180)" : "");
+			})
+		  }
+		}
+		function cross(a, b) {
+		  return a[0] * b[1] - a[1] * b[0];
+		}
+
+		function dot(a, b) {
+		  return a[0] * b[0] + a[1] * b[1];
+		}
+		
+		function mouseover(d, i) {
+		  chord.classed("fade", function(p) {
+			return p.source.index != i
+				&& p.target.index != i;
+		  });
+		}
+
+		</script>
+		<div class="footer">
+			<div class="box">
+				<h1>Site</h1>
+			    <a href="http://opal-project.de/index.php">Home</a> <br />
+			    <a href="http://opal-project.de/articles/index.php">Articles</a> <br />
+			</div>
+			<div class="box">
+			    <h1>Resources</h1>
+				<a href="http://bitbucket.org/delors/opal">Sourcecode repository</a><br />		
+				<a href="http://opal-project.de/library/api/SNAPSHOT">API Documentation</a><br />	
+				<a href="http://opal-project.de/license.php">Sourcecode License</a> <br />	
+				<br />
+				<a href="https://trello.com/theopalproject">Project Plan</a>
+			</div>
+			<div class="box">
+				<h1>People</h1>
+			
+				<a href="mailto:eichberg@informatik.tu-darmstadt.de">Michael Eichberg (project lead)</a><br />
+				<a href="http://opal-project.de/members.php"> Further Members</a>
+			</div>
+		</div>
+	</body>
+</html>
