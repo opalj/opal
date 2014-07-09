@@ -41,7 +41,6 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait StringValues extends ReferenceValues with JavaObjectConversion {
-
     domain: Configuration with ClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
@@ -59,11 +58,11 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
             other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case that: StringValue if (this.value eq that.value) ⇒
+                case that: StringValue if (this.value == that.value) ⇒
                     NoUpdate
                 case _ ⇒
                     val answer = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
-                    if (answer == NoUpdate) {
+                    if (answer.isNoUpdate) {
                         // => This string value and the other value have a corresponding
                         //    abstract representation (w.r.t. the next abstraction level!)
                         //    but we still need to drop the concrete information...
@@ -75,6 +74,8 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
         }
 
         override def adapt(target: Domain, pc: Int): target.DomainValue =
+            // The following method is provided by `CoreDomain` and, hence,
+            // all possible target domains are automatically supported.
             target.StringValue(pc, this.value)
 
         override def equals(other: Any): Boolean = {
