@@ -52,7 +52,7 @@ object DependencyAnalysis extends AnalysisExecutor {
 		parameters4.isEmpty
 	}
 
-	override def analysisParametersDescription: String = "" +
+	override def analysisSpecificParametersDescription: String = "" +
 		"[-mp=<Package-Name> (Main Package, won't be clustered. default: \"\")]\n" +
 		"[-debug=<Boolean> (true, if there should be additional output. default: false)]\n" +
 		"[-inverse=<Boolean> (true, if incoming and outgoing dependencies should be switched. default: false)]\n" +
