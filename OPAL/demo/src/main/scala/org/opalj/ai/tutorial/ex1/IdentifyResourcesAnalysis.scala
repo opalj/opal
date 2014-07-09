@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.ai.tutorial.base
+package org.opalj.ai.tutorial.ex1
 
 import java.net.URL
 import org.opalj._
@@ -40,57 +40,62 @@ import org.opalj.ai._
  */
 object IdentifyResourcesAnalysis extends AnalysisExecutor {
 
+    class AnalysisDomain(
+        override val project: Project[URL],
+        val method: Method)
+            extends Domain
+            with domain.DefaultDomainValueBinding
+            with domain.ThrowAllPotentialExceptionsConfiguration
+            with domain.l0.DefaultTypeLevelIntegerValues
+            with domain.l0.DefaultTypeLevelLongValues
+            with domain.l0.DefaultTypeLevelFloatValues
+            with domain.l0.DefaultTypeLevelDoubleValues
+            with domain.l0.TypeLevelFieldAccessInstructions
+            with domain.l0.TypeLevelInvokeInstructions
+            // NOT NEEDED: with domain.l1.DefaultReferenceValuesBinding
+            with domain.l1.DefaultStringValuesBinding
+            with domain.DefaultHandlingOfMethodResults
+            with domain.IgnoreSynchronization
+            with domain.TheProject[URL]
+            with domain.TheMethod
+            with domain.ProjectBasedClassHierarchy
+
     val analysis = new Analysis[URL, BasicReport] {
 
-        override def title: String = "File object creation using constant strings"
+        override def title: String = "Identifies Resources"
 
         override def description: String =
             "Identifies java.io.File object instantiations using constant strings."
 
         override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
+            import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
+
             // Step 1
             // Find all methods that create "java.io.File(<String>)" objects.
-            val callSites = (for {
-                cf ← theProject.classFiles.par
-                m @ MethodWithBody(body) ← cf.methods
-            } yield {
-                val pcs = for {
-                    pc ← body.collectWithIndex {
-                        case (
-                            pc,
-                            INVOKESPECIAL(
-                                ObjectType("java/io/File"),
-                                "<init>",
-                                SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
-                            ) ⇒ pc
-                    }
-                } yield pc
-                (cf, m, pcs)
-            }).filter(_._3.size > 0)
+            val callSites = time {
+                (for {
+                    cf ← theProject.classFiles.par
+                    m @ MethodWithBody(body) ← cf.methods
+                } yield {
+                    val pcs = for {
+                        pc ← body.collectWithIndex {
+                            case (
+                                pc,
+                                INVOKESPECIAL(
+                                    ObjectType("java/io/File"),
+                                    "<init>",
+                                    SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
+                                ) ⇒ pc
+                        }
+                    } yield pc
+                    (cf, m, pcs)
+                }).filter(_._3.size > 0)
+            } { t ⇒ println(f"Finding candidates took: ${ns2sec(t)}%2.2f seconds.") }
 
             // Step 2
             // Perform a simple abstract interpretation to check if there is some
             // method that pass a constant string to a method
-            class AnalysisDomain(
-                override val project: Project[URL],
-                val method: Method)
-                    extends Domain
-                    with domain.TheProject[URL]
-                    with domain.TheMethod
-                    with domain.DefaultDomainValueBinding
-                    with domain.ThrowAllPotentialExceptionsConfiguration
-                    with domain.l0.DefaultTypeLevelIntegerValues
-                    with domain.l0.DefaultTypeLevelLongValues
-                    with domain.l0.DefaultTypeLevelFloatValues
-                    with domain.l0.DefaultTypeLevelDoubleValues
-                    with domain.l0.TypeLevelFieldAccessInstructions
-                    with domain.l0.TypeLevelInvokeInstructions
-                    with domain.l1.DefaultStringValuesBinding
-                    with domain.DefaultHandlingOfMethodResults
-                    with domain.IgnoreSynchronization
-                    with domain.ProjectBasedClassHierarchy
-
-            val callSitesWithConstantStringParameter =
+            val callSitesWithConstantStringParameter = time {
                 for {
                     (cf, m, pcs) ← callSites
                     result = BaseAI(cf, m, new AnalysisDomain(theProject, m))
@@ -98,15 +103,21 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
                         case (pc, result.domain.StringValue(value) :: _) ⇒ (pc, value)
                     }
                 } yield (cf, m, pc, value)
+            } { t ⇒ println(f"Performing the abstract interpretations took: ${ns2sec(t)}%2.2f seconds.") }
 
             def callSiteToString(callSite: (ClassFile, Method, PC, String)): String = {
                 val (cf, m, pc, v) = callSite
-                cf.thisType.toJava+"{ "+m.toJava+"{"+pc+": \""+v+"\" } }"
+                cf.thisType.toJava+
+                    "{ "+m.toJava+
+                    "{"+pc+": \""+v+"\" } }"
             }
 
             BasicReport(
-                callSitesWithConstantStringParameter.map(callSiteToString(_)).
-                    mkString("Methods:\n", "\n", ".\n"))
+                if (callSitesWithConstantStringParameter.isEmpty)
+                    "Only found "+callSites.size+" candidates."
+                else
+                    callSitesWithConstantStringParameter.map(callSiteToString(_)).
+                        mkString("Methods:\n", "\n", ".\n"))
         }
     }
 }
