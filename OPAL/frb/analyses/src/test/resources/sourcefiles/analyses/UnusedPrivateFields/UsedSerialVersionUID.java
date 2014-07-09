@@ -22,39 +22,19 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package dataflow
-package spec
-
-import scala.collection.{ Map, Set }
-
-import bi.AccessFlagsMatcher
-
-import br._
-import br.analyses._
-import br.instructions._
-
-import domain._
-import domain.l0._
+package UnusedPrivateFields;
 
 /**
- * Support methods to facilitate the definition of data-flow constraints.
- *
- * @author Michael Eichberg and Ben Hermann
+ * A Serializable class with a private serialVersionUID field. The serialVersionUID field
+ * is used by Serializable, and thus it should not be reported.
+ * 
+ * @author Daniel Klauer
  */
-abstract class DataFlowProblemSpecification[Source, P]
-        extends DataFlowProblem[Source, P]
-        with SourcesAndSinks {
+class UsedSerialVersionUID implements java.io.Serializable {
 
-    override def initializeSourcesAndSinks(): Unit = {
-        initializeSourcesAndSinks(project)
-    }
-
+    private static final long serialVersionUID = 1L;
 }
-
-

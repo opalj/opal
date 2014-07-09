@@ -29,20 +29,22 @@
 package UnusedPrivateFields;
 
 /**
- * Class with a private field that is not unused, and thus should not be reported.
+ * A class containing various unused private fields.
  * 
- * @author Roberts Kolosovs
  * @author Daniel Klauer
  */
-public class UsedPrivateField {
+@SuppressWarnings("unused")
+public class Unused {
 
-    private int test;
+    // Normal field without initializer
+    private int a;
 
-    public void setTest(int val) {
-        test = val;
-    }
+    // Normal field with a constant initializer
+    private int b = 111;
 
-    public int getTest() {
-        return test;
-    }
+    // Final field with non-constant initializer
+    private final Unused c = new Unused();
+
+    // Final field with another constant initializer
+    private final int d = 222;
 }

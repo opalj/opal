@@ -29,12 +29,13 @@
 package UnusedPrivateFields;
 
 /**
- * A class containing an unused private field.
+ * Class with an unused private serialVersionUID field. serialVersionUID is not special
+ * here, because this class is not Serializable, thus it should be reported.
  * 
- * @author Roberts Kolosovs
+ * @author Daniel Klauer
  */
-public class UnusedPrivateField {
+public class UnusedSerialVersionUID {
 
     @SuppressWarnings("unused")
-    private int field = 0;
+    private static final long serialVersionUID = 1L;
 }

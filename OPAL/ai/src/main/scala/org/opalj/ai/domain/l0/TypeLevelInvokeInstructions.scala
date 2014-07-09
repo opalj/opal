@@ -45,44 +45,56 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
  *
  * (Linkage related exceptions are currently generally ignored.)
  *
- * @note By ignoring potentially thrown exceptions it may be the case that not all
- *      possible paths in a program are explored and the overall analysis may not be
- *      sound.
- *
  * @author Michael Eichberg
  */
 trait TypeLevelInvokeInstructions { this: Domain with Configuration with TheCode ⇒
 
-    def getExceptions(pc: PC): ExceptionValues = {
-        var exceptionTypes: Set[ObjectType] = Set.empty
+    protected[this] def getExceptions(pc: PC): Set[ExceptionValue] = {
+        var exceptionTypes: Set[ExceptionValue] = Set.empty
         code.handlersFor(pc) foreach { h ⇒
-            exceptionTypes += h.catchType.getOrElse(ObjectType.Throwable)
+            exceptionTypes +=
+                (h.catchType match {
+                    // We don't know the true type of the exception, we just
+                    // know the upper bound!
+                    case None     ⇒ NonNullObjectValue(pc, ObjectType.Throwable) 
+                    case Some(ex) ⇒ NonNullObjectValue(pc, ex)
+                })
         }
-        exceptionTypes.map(ex ⇒ InitializedObjectValue(pc, ex))
+        exceptionTypes
     }
 
     protected[this] def handleInstanceBasedInvoke(
         pc: PC,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult =
-        refIsNull(operands.last) match {
+        operands: Operands): MethodCallResult = {
+        val exceptions = refIsNull(operands.last) match {
             case Yes ⇒
-                justThrows(NullPointerException(pc))
+                return justThrows(NullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnMethodCall ⇒
-                val returnType = methodDescriptor.returnType
-                if (returnType.isVoidType)
-                    ComputationWithSideEffectOrException(Set(NullPointerException(pc)))
-                else
-                    ComputedValueOrException(
-                        TypedValue(pc, returnType),
-                        Set(NullPointerException(pc)))
+                getExceptions(pc) + NullPointerException(pc)
             case /*No or Unknown & DoNotThrowNullPointerException*/ _ ⇒
-                val returnType = methodDescriptor.returnType
-                if (returnType.isVoidType)
-                    ComputationWithSideEffectOnly
-                else
-                    ComputedValue(TypedValue(pc, returnType))
+                getExceptions(pc)
         }
+        val returnType = methodDescriptor.returnType
+        handleInvoke(pc, returnType, exceptions)
+    }
+
+    protected[this] def handleInvoke(
+        pc: PC,
+        returnType: Type,
+        exceptions: Set[ExceptionValue]): MethodCallResult = {
+        if (returnType.isVoidType) {
+            if (exceptions.isEmpty)
+                ComputationWithSideEffectOnly
+            else
+                ComputationWithSideEffectOrException(exceptions)
+        } else {
+            if (exceptions.isEmpty)
+                ComputedValue(TypedValue(pc, returnType))
+            else
+                ComputedValueOrException(TypedValue(pc, returnType), exceptions)
+        }
+    }
 
     /*override*/ def invokevirtual(
         pc: PC,
@@ -115,10 +127,7 @@ trait TypeLevelInvokeInstructions { this: Domain with Configuration with TheCode
         methodDescriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
         val returnType = methodDescriptor.returnType
-        if (returnType.isVoidType)
-            ComputationWithSideEffectOnly
-        else
-            ComputedValue(TypedValue(pc, returnType))
+        handleInvoke(pc, returnType, getExceptions(pc))
     }
 
     /*override*/ def invokedynamic(
@@ -128,10 +137,7 @@ trait TypeLevelInvokeInstructions { this: Domain with Configuration with TheCode
         methodDescriptor: MethodDescriptor,
         operands: Operands): Computation[DomainValue, ExceptionValues] = {
         val returnType = methodDescriptor.returnType
-        if (returnType.isVoidType)
-            ComputationWithSideEffectOnly
-        else
-            ComputedValue(TypedValue(pc, returnType))
+        handleInvoke(pc, returnType, getExceptions(pc))
     }
 }
 

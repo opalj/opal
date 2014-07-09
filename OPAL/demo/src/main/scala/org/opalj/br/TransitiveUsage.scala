@@ -87,7 +87,7 @@ object TransitiveUsage extends AnalysisExecutor {
 
     val dependencyCollector = new DependencyExtractor(TypesCollector)
 
-    override def analysisParametersDescription: String =
+    override def analysisSpecificParametersDescription: String =
         "-class=<The class for which the transitive closure of used classes is determined>"
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =

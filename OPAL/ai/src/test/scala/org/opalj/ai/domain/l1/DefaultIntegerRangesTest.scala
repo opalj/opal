@@ -392,6 +392,20 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
         }
 
+        describe("the behavior of the cast operators") {
+
+            it("(byte)AnIntegerValue => [-128,+127]") {
+                val v1 = AnIntegerValue
+                i2b(-1, v1) should be(IntegerRange(-128, +127))
+            }
+
+            it("(byte)[0,129] => [-128,+127]") {
+                val v1 = IntegerRange(0, 129)
+                i2b(-1, v1) should be(IntegerRange(-128, +127))
+            }
+
+        }
+
         describe("the behavior of the relational operators") {
 
             describe("the behavior of the greater or equal than (>=) operator") {
@@ -719,7 +733,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             val domain = new IntegerRangesTestDomain(8)
             val method = IntegerValues.findMethod("cfDependentValues4").get
             val result = BaseAI(IntegerValues, method, domain)
-            result.operandsArray(46).head should be(domain.IntegerRange(2, Int.MaxValue))
+            result.operandsArray(46).head should be(domain.IntegerRange(2, 2))
             result.operandsArray(50).head should be(domain.AnIntegerValue)
             result.operandsArray(54).head should be(domain.AnIntegerValue)
             if (result.operandsArray(50).head eq result.operandsArray(54).head)
@@ -733,6 +747,26 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             result.operandsArray(47).head should be(domain.IntegerRange(2, 2))
             result.operandsArray(51).head should be(domain.IntegerRange(0, 1))
             result.operandsArray(55).head should be(domain.AnIntegerValue)
+        }
+
+        it("it should not perform useless evaluations") {
+            val domain = new IntegerRangesTestDomain(8)
+            val method = IntegerValues.findMethod("complexLoop").get
+            val result = BaseAI(IntegerValues, method, domain)
+            result.operandsArray(35).head should be(domain.IntegerRange(0, 2))
+            // when we perform a depth-first evaluation we do not want to 
+            // evaluate the same instruction with the same abstract state
+            // multiple times
+            result.evaluated.head should be(24)
+            result.evaluated.tail.head should be(23)
+            result.evaluated.tail.tail.head should be(20)
+        }
+
+        it("it should handle casts (i2b) correctly") {
+            val domain = new IntegerRangesTestDomain(8)
+            val method = IntegerValues.findMethod("casts").get
+            val result = BaseAI(IntegerValues, method, domain)
+            result.operandsArray(26).head should be(domain.IntegerRange(-128, 126))
         }
     }
 }

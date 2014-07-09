@@ -183,6 +183,7 @@ public class IntegerValuesFrenzy {
     }
 
     static void doIt(int i) {
+        /* NOTHING TO DO */
     }
 
     static int anInt() {
@@ -221,10 +222,10 @@ public class IntegerValuesFrenzy {
         }
         if (c == 0) { // this is dead code... c is always guaranteed to be "1"
             doIt(b);
-            doIt(c); 
+            doIt(c);
         }
     }
-    
+
     static void cfDependentValues1_v3() {
         int b = 0;
         int c = 0;
@@ -239,7 +240,7 @@ public class IntegerValuesFrenzy {
         }
         if (c == 0) { // this is dead code... c is always guaranteed to be "1"
             doIt(b);
-            doIt(c); 
+            doIt(c);
         }
     }
 
@@ -329,6 +330,75 @@ public class IntegerValuesFrenzy {
             doIt(j); // j is "2"
             doIt(b); // b is either "0" or "1"
             doIt(c);
+        }
+    }
+
+    static void complexConditions1(int c) {
+        int i = 0;
+        if (c == 0)
+            i = 1;
+        else if (c == 1)
+            i = 2;
+        else
+            i = -1;
+        // here is the join...
+        doIt(i); // i is either 1, 2 or -1
+    }
+
+    static void complexConditions2(int c, int d) {
+        int i = 0;
+        if (c == 0)
+            i = 1;
+        if (d == 1)
+            i = 2;
+
+        // here is the join...
+        doIt(i); // i either 0,1 or 2 value (we now nothing about c and d)
+    }
+
+    static void complexConditions3(int c, int d) {
+        int i = 0;
+        if (c == 0) {
+            i = 1;
+            if (d == 1) {
+                i += 1;
+            }
+            doIt(i); // i is either 1 or 2
+        }
+
+        // here is the join...
+        doIt(i); // i either 0,1 or 2 value (we now nothing about c and d)
+    }
+
+    static void complexLoop(int c, int d) {
+        int i = 0;
+        t: while (true) {
+            if (c * d > 100)
+                break t;
+            if (c == 1)
+                i = 1;
+            else
+                i = 2;
+            c += 1;
+            d += 1;
+        }
+
+        // we know nothing about c and d
+        doIt(i); // i is either 0,1 or 2
+    }
+
+    static void casts() {
+
+        int read = 0;
+        while ((read = anInt()) > 0) {
+            byte readed = (byte) read;
+            if (readed == (byte) -1) {
+                continue;
+            }
+            if (readed == (byte) 127) {
+                break;
+            }
+            doIt(readed); // a value in the range [-128,126] except -1 (cannot be captured) and 127
         }
     }
 }

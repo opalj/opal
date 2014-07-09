@@ -46,7 +46,7 @@ import domain.l0._
  *
  * @author Michael Eichberg and Ben Hermann
  */
-trait DataFlowProblemSolver[Source] extends DataFlowProblem[Source] { solver ⇒
+trait DataFlowProblemSolver[Source, Params] extends DataFlowProblem[Source, Params] { solver ⇒
 
     /* ABSTRACT */ val theDomain: Domain
 

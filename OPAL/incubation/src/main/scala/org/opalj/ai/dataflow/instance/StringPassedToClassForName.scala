@@ -31,12 +31,12 @@ package ai
 package dataflow
 package instance
 
-import bi.AccessFlagsMatcher._
-import br._
-import br.instructions._
-import br.analyses._
-import domain._
-import domain.l0._
+import org.opalj.bi.AccessFlagsMatcher._
+import org.opalj.br._
+import org.opalj.br.instructions._
+import org.opalj.br.analyses._
+import org.opalj.ai.domain._
+import org.opalj.ai.domain.l0._
 
 import spec._
 
@@ -48,41 +48,10 @@ import solver.NaiveSolver
  * @author Michael Eichberg and Ben Hermann
  */
 abstract class StringPassedToClassForName[Source]
-        extends DataFlowProblemSpecification[Source] {
+        extends DataFlowProblemSpecification[Source, (String) ⇒ Boolean] {
 
-    //
-    // Handling for the specified "java.security" file.
-    //
-
-    final val javaSecurityParameter = "-java.security="
-
-    protected[this] var restrictedPackages: Seq[String] = null
-
-    override def analysisParametersDescription: String =
-        javaSecurityParameter+"<JRE/JDK Security Policy File>"
-
-    override def checkAnalysisParameters(parameters: Seq[String]): Boolean = {
-        parameters.size == 1 && {
-            val securityFileParameter = parameters.head
-            securityFileParameter.startsWith(javaSecurityParameter) &&
-                new java.io.File(securityFileParameter.substring(javaSecurityParameter.length())).exists()
-        }
-    }
-
-    override def processAnalysisParameters(parameters: Seq[String]): Unit = {
-        val javaSecurityFile = parameters.head.substring(javaSecurityParameter.length())
-
-        restrictedPackages = process(new java.io.FileInputStream(javaSecurityFile)) { in ⇒
-            val properties = new java.util.Properties()
-            properties.load(in)
-            properties.getProperty("package.access", "").
-                split(",").
-                map(_.trim.replace('.', '/'))
-        }
-    }
-
-    private[this] def definedInRestrictedPackage(packageName: String): Boolean =
-        restrictedPackages.exists(packageName.startsWith(_))
+    type P = (String) ⇒ Boolean
+    val definedInRestrictedPackage = p
 
     //
     // Specification of the sources and sinks
@@ -103,9 +72,16 @@ abstract class StringPassedToClassForName[Source]
         }
     )
 
-    sinks(Calls(
-        { case (ObjectType.Class, "forName", SingleArgumentMethodDescriptor((ObjectType.String, ObjectType.Object))) ⇒ true }
-    ))
+    sinks(
+        Calls(
+            {
+                case (
+                    ObjectType.Class, "forName",
+                    SingleArgumentMethodDescriptor((ObjectType.String, ObjectType.Class))
+                    ) ⇒ true
+            }
+        )
+    )
 
     // Scenario: ... s.subString(...)
     call {
@@ -141,6 +117,60 @@ abstract class StringPassedToClassForName[Source]
 
 }
 
-object StringPassedToClassForName extends DataFlowProblemRunner(
-    new StringPassedToClassForName[java.net.URL] with NaiveSolver[java.net.URL]
-)
+object StringPassedToClassForName extends DataFlowProblemFactory with DataFlowProblemRunner {
+
+    type P = (String) ⇒ Boolean
+
+    //
+    // Handling for the specified "java.security" file.
+    //
+
+    override def title = "StringPassedToClassForName"
+
+    override def description = "Finds calls to Class.forName from non-privliged code"
+
+    final val javaSecurityParameter = "-java.security="
+
+    override def analysisSpecificParametersDescription: String =
+        javaSecurityParameter+"<JRE/JDK Security Policy File>"
+
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean = {
+        parameters.size == 1 && {
+            val securityFileParameter = parameters.head
+            securityFileParameter.startsWith(javaSecurityParameter) &&
+                new java.io.File(securityFileParameter.substring(javaSecurityParameter.length())).exists()
+        }
+    }
+
+    override def processAnalysisParameters(parameters: Seq[String]): P = {
+        val javaSecurityFile = parameters.head.substring(javaSecurityParameter.length())
+
+        val restrictedPackages = process(new java.io.FileInputStream(javaSecurityFile)) { in ⇒
+            val properties = new java.util.Properties()
+            properties.load(in)
+            properties.getProperty("package.access", "").
+                split(",").
+                map(_.trim.replace('.', '/'))
+        }
+        def definedInRestrictedPackage(packageName: String): Boolean =
+            restrictedPackages.exists(packageName.startsWith(_))
+
+        definedInRestrictedPackage
+    }
+
+    //
+    // Factory method
+    //
+
+    override def create[Source](
+        theProject: Project[Source],
+        theP: P): DataFlowProblem[Source, P] = {
+        object StringPassedToClassForNameWithSimpleSolver extends {
+            // early definition block
+            final val project = theProject
+            final val p = theP
+        } with StringPassedToClassForName[Source] with NaiveSolver[Source, P]
+        StringPassedToClassForNameWithSimpleSolver
+    }
+
+}

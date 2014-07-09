@@ -58,9 +58,6 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class DomainIndependenceTest extends FlatSpec with Matchers {
 
-    // The following three domains are very basic domains that – given that the
-    // same partial domains are used – should compute the same results.
-
     // We use this domain for the comparison of the values; it has the same
     // expressive power as the other domains.
     private object ValuesDomain
@@ -74,6 +71,11 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         type Id = String
         def id = "Values Domain"
     }
+
+    //
+    // The following three domains are very basic domains that – given that the
+    // same partial domains are used – should compute the same results.
+    // 
 
     private class Domain1(val id: Code)
             extends Domain
@@ -96,7 +98,6 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
 
     private class Domain2(val id: Code)
             extends Domain
-            with Configuration
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
             with ThrowAllPotentialExceptionsConfiguration
@@ -136,7 +137,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
 
     it should "always calculate the same result" in {
 
-        def corresponds(r1: AIResult, r2: AIResult): Boolean = {
+        def corresponds(r1: AIResult, r2: AIResult): Option[String] = {
             val codeSize = r1.operandsArray.length
 
             r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) ⇒
@@ -145,10 +146,15 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                         lOperands.corresponds(rOperands) { (lValue, rValue) ⇒
                             val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                             val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                            lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)
+                            if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
+                                return Some(Console.RED_B+"the operand stack value "+lVD+" and "+rVD+" do not correspond ")
+                            else
+                                true
                         }
                     )
-            } && r1.localsArray.corresponds(r2.localsArray) { (lLocals, rLocals) ⇒
+            }
+
+            r1.localsArray.corresponds(r2.localsArray) { (lLocals, rLocals) ⇒
                 (lLocals == null && rLocals == null) ||
                     (lLocals != null && rLocals != null &&
                         lLocals.corresponds(rLocals) { (lValue, rValue) ⇒
@@ -156,15 +162,20 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                                 lValue != null && rValue != null && {
                                     val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                                     val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                    lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)
+                                    if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
+                                        return Some(Console.YELLOW_B+"the register value "+lVD+" does not correspond with "+rVD)
+                                    else
+                                        true
                                 }
                             )
                         }
                     )
             }
+
+            None
         }
 
-        val failed = new java.util.concurrent.atomic.AtomicBoolean(false)
+        val failed = new java.util.concurrent.atomic.AtomicInteger(0)
         val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
         for {
@@ -197,30 +208,47 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
             if (r2.wasAborted) abort(a2, r1)
             if (r3.wasAborted) abort(a3, r1)
 
-            if (!corresponds(r1, r2)) {
-
-                failed.set(true)
-                info("the results of the domain r1 and r2 do not equal\n"+
-                    "________________________________________________\n"+
-                    r1.stateToString+
-                    "\n -------- does not equal -------- \n"+
-                    r2.stateToString)
+            corresponds(r1, r2).foreach { m ⇒
+                failed.incrementAndGet()
+                // let's test if r1 is stable....
+                val a1_2 = TheAI()
+                val r1_2 = a1_2(classFile, method, new Domain1(body))
+                if (corresponds(r1, r1_2).nonEmpty) {
+                    failed.incrementAndGet()
+                    println(
+                        classFile.thisType.toJava+"{ "+
+                            method.toJava+"(Instructions "+method.body.get.instructions.size+")} \n"+
+                            Console.BLUE+"\t// the domain r1 is not deterministic (concurrency bug?)\n"+
+                            Console.RESET
+                    )
+                } else
+                    println(
+                        classFile.thisType.toJava+"{ "+
+                            method.toJava+"(Instructions "+method.body.get.instructions.size+")} \n"+
+                            "\t// the results of r1 and r2 do not correspond\n"+
+                            "\t// "+Console.BOLD + m + Console.RESET+"\n"
+                    )
+                comparisonCount.incrementAndGet()
             }
-            if (!corresponds(r2, r3)) {
-                failed.set(true)
-                info("the results of the domain r2 and r3 do not equal\n"+
-                    "________________________________________________\n"+
-                    r2.stateToString+
-                    "\n -------- does not equal -------- \n"+
-                    r3.stateToString)
+            comparisonCount.incrementAndGet()
+
+            corresponds(r2, r3).foreach { m ⇒
+                failed.incrementAndGet()
+                println(
+                    classFile.thisType.toJava+"{ "+
+                        method.toJava+"(Instructions "+method.body.get.instructions.size+")} \n"+
+                        "\t// the results of r2 and r3 do not correspond\n"+
+                        "\t// "+Console.BOLD + m + Console.RESET+"\n"
+                )
             }
             comparisonCount.incrementAndGet()
         }
 
         if (comparisonCount.get() < 2)
             fail("did not find any class files/method to analyze")
-        if (failed.get()) {
-            fail("the domains computed different results")
+        if (failed.get() > 0) {
+            fail("the domains computed different results in "+
+                failed.get()+" cases out of "+comparisonCount.get)
         }
         info(
             "successfully compared the results of "+

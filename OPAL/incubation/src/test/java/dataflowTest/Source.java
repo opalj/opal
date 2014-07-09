@@ -26,35 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package dataflow
-package spec
+package dataflowTest;
 
-import scala.collection.{ Map, Set }
-
-import bi.AccessFlagsMatcher
-
-import br._
-import br.analyses._
-import br.instructions._
-
-import domain._
-import domain.l0._
-
-/**
- * Support methods to facilitate the definition of data-flow constraints.
- *
- * @author Michael Eichberg and Ben Hermann
- */
-abstract class DataFlowProblemSpecification[Source, P]
-        extends DataFlowProblem[Source, P]
-        with SourcesAndSinks {
-
-    override def initializeSourcesAndSinks(): Unit = {
-        initializeSourcesAndSinks(project)
-    }
+public @interface Source {
 
 }
-
-

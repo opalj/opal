@@ -53,7 +53,7 @@ import org.opalj.br.analyses._
  */
 object InterpretMethods extends AnalysisExecutor {
 
-    override def analysisParametersDescription: String =
+    override def analysisSpecificParametersDescription: String =
         "[-domain=<Class of the domain that should be used for the abstract interpretation>]\n"+
             "[-verbose={true,false} If true, extensive information is shown.]\n"
 
