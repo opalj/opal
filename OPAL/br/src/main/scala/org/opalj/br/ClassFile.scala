@@ -30,7 +30,6 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-
 import bi.ACC_ABSTRACT
 import bi.ACC_ANNOTATION
 import bi.ACC_INTERFACE
@@ -39,6 +38,7 @@ import bi.ACC_FINAL
 import bi.ACC_PUBLIC
 import bi.AccessFlagsContexts
 import bi.AccessFlags
+import scala.util.control.ControlThrowable
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -170,7 +170,7 @@ final class ClassFile private (
      * at most one `SourceDebugExtension` attribute. The data (which is modified UTF8
      * String may, however, not be representable using a String object (see the
      * spec. for further details.)
-     * 
+     *
      * The returned Array must not be mutated.
      */
     def sourceDebugExtension: Option[Array[Byte]] =
@@ -324,14 +324,22 @@ final class ClassFile private (
         }
 
     override def toString: String = {
-        "ClassFile(\n\t"+
-            AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
-            thisType.toJava+"\n"+
-            superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
-            (if (interfaceTypes.nonEmpty) interfaceTypes.mkString("\t\twith ", " with ", "\n") else "") +
-            annotationsToJava(runtimeVisibleAnnotations, "\t", "\n") +
-            annotationsToJava(runtimeInvisibleAnnotations, "\t", "\n")+
-            "\t{version="+majorVersion+"."+minorVersion+"}\n)"
+        try {
+            "ClassFile(\n\t"+
+                AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
+                thisType.toJava+"\n"+
+                superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
+                (if (interfaceTypes.nonEmpty) interfaceTypes.mkString("\t\twith ", " with ", "\n") else "") +
+                annotationsToJava(runtimeVisibleAnnotations, "\t", "\n") +
+                annotationsToJava(runtimeInvisibleAnnotations, "\t", "\n")+
+                "\t{version="+majorVersion+"."+minorVersion+"}\n)"
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct
+            case e: Exception ⇒
+                throw new RuntimeException(
+                    "creating a string representation for "+thisType.toJava+" failed",
+                    e)
+        }
     }
 
     protected[br] def updateAttributes(newAttributes: Attributes): ClassFile = {

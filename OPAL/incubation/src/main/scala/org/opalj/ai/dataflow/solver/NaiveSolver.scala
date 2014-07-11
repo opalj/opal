@@ -45,7 +45,7 @@ trait NaiveSolver[Source, Params] extends DataFlowProblemSolver[Source, Params] 
 
     lazy val theDomain: Domain = new BaseDomain[Source](project) with ValuesCoordinatingDomain
 
-    def doSolve() : String = {
+    def doSolve(): String = {
         "solved"
     }
 }
@@ -63,7 +63,8 @@ abstract class BaseDomain[Source](val project: Project[Source])
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-        with domain.l1.DefaultIntegerRangeValues {
+        with domain.l1.DefaultIntegerRangeValues
+        with domain.l0.DefaultPrimitiveTypeConversions {
 
     override protected def maxSizeOfIntegerRanges: Long = 25l
 

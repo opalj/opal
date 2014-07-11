@@ -59,56 +59,50 @@ class PrecisionOfDomainsTest extends FlatSpec with Matchers {
         // We use this domain for the comparison of the values; it has the same
         // expressive power as the other domains.
         class TheValuesDomain(val project: Project[java.net.URL])
-                extends ValuesCoordinatingDomain
-                with l0.DefaultTypeLevelLongValues
-                with l0.DefaultTypeLevelFloatValues
-                with l0.DefaultTypeLevelDoubleValues
-                with l1.DefaultReferenceValuesBinding
-                with l1.DefaultIntegerRangeValues
-                with ProjectBasedClassHierarchy
-                with TheProject[java.net.URL] {
-            type Id = String
-            def id = "Values Domain"
-        }
+            extends ValuesCoordinatingDomain
+            with l0.DefaultTypeLevelLongValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l1.DefaultReferenceValuesBinding
+            with l1.DefaultIntegerRangeValues
+            with l0.DefaultPrimitiveTypeConversions
+            with ProjectBasedClassHierarchy
+            with TheProject[java.net.URL]
 
-        class TypeLevelDomain(val id: Code, val project: Project[java.net.URL])
-                extends Domain
-                with TheProject[java.net.URL]
-                with TheCode
-                with DefaultHandlingOfMethodResults
-                with IgnoreSynchronization
-                with DefaultDomainValueBinding
-                with ThrowAllPotentialExceptionsConfiguration
-                with l0.DefaultReferenceValuesBinding
-                with l0.DefaultTypeLevelIntegerValues
-                with l0.DefaultTypeLevelLongValues
-                with l0.DefaultTypeLevelFloatValues
-                with l0.DefaultTypeLevelDoubleValues
-                with l0.TypeLevelFieldAccessInstructions
-                with l0.TypeLevelInvokeInstructions
-                with ProjectBasedClassHierarchy {
-            type Id = Code
-            def code: Code = id
-        }
+        class TypeLevelDomain(val code: Code, val project: Project[java.net.URL])
+            extends Domain
+            with TheProject[java.net.URL]
+            with TheCode
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with l0.DefaultReferenceValuesBinding
+            with l0.DefaultTypeLevelIntegerValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultPrimitiveTypeConversions
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelInvokeInstructions
+            with ProjectBasedClassHierarchy
 
-        class L1Domain[I](val id: Code, val project: Project[java.net.URL])
-                extends Domain
-                with ThrowAllPotentialExceptionsConfiguration
-                with DefaultHandlingOfMethodResults
-                with IgnoreSynchronization
-                with l1.DefaultReferenceValuesBinding
-                with l1.DefaultIntegerRangeValues
-                with l0.DefaultTypeLevelLongValues
-                with l0.DefaultTypeLevelFloatValues
-                with l0.DefaultTypeLevelDoubleValues
-                with l0.TypeLevelInvokeInstructions
-                with l0.TypeLevelFieldAccessInstructions
-                with ProjectBasedClassHierarchy
-                with TheProject[java.net.URL]
-                with TheCode {
-            type Id = Code
-            def code: Code = id
-        }
+        class L1Domain[I](val code: Code, val project: Project[java.net.URL])
+            extends Domain
+            with ThrowAllPotentialExceptionsConfiguration
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with l1.DefaultReferenceValuesBinding
+            with l1.DefaultIntegerRangeValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultPrimitiveTypeConversions
+            with l0.TypeLevelInvokeInstructions
+            with l0.TypeLevelFieldAccessInstructions
+            with ProjectBasedClassHierarchy
+            with TheProject[java.net.URL]
+            with TheCode
 
         val ValuesDomain = new TheValuesDomain(project)
 

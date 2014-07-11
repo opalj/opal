@@ -64,6 +64,7 @@ class DefaultPreciseLongValuesTest
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with li.DefaultPreciseLongValues
+        with l0.DefaultPrimitiveTypeConversions
         with PredefinedClassHierarchy
         with DefaultHandlingOfMethodResults
         with RecordLastReturnedValues

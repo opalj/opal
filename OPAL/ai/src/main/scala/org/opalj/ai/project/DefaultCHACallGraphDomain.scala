@@ -65,14 +65,8 @@ class DefaultCHACallGraphDomain[Source](
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with CHACallGraphDomain {
-
-    type Id = String
-
-    def id = classFile.thisType.toJava+"{ "+method.toJava+" }"
-
-}
-
+        with l0.DefaultPrimitiveTypeConversions
+        with CHACallGraphDomain 
 
 
 

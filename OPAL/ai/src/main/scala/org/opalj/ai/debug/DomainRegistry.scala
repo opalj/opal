@@ -143,7 +143,7 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultDomain] This domain performs some partical concrete evaluation.",
+        "[l1.DefaultDomain] This domain performs some partial concrete evaluation.",
         classOf[domain.li.DefaultDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.li.DefaultDomain(project, classFile, method)

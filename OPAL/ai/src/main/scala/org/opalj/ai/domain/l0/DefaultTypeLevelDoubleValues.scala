@@ -43,7 +43,7 @@ trait DefaultTypeLevelDoubleValues
         with TypeLevelDoubleValues {
 
     /**
-     * Represents a specific, but unknown double value.
+     * Represents an unknown double value.
      */
     case object ADoubleValue extends super.DoubleValue {
 
@@ -58,14 +58,16 @@ trait DefaultTypeLevelDoubleValues
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
-            target.DoubleValue(pc)
+        override def adapt(target: Domain, valueOrigin: ValueOrigin): target.DomainValue =
+            target.DoubleValue(valueOrigin)
 
     }
 
-    final override def DoubleValue(pc: PC): DoubleValue = ADoubleValue
+    final override def DoubleValue(valueOrigin: ValueOrigin): DoubleValue =
+        ADoubleValue
 
-    final override def DoubleValue(pc: PC, value: Double): DoubleValue = ADoubleValue
+    final override def DoubleValue(valueOrigin: ValueOrigin, value: Double): DoubleValue =
+        ADoubleValue
 }
 
 

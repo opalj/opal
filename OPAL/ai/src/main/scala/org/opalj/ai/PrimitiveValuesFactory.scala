@@ -28,37 +28,18 @@
  */
 package org.opalj
 package ai
-package domain
-package l0
+
+import org.opalj.util.{ Answer }
 
 /**
- * Base implementation of the `TypeLevelFloatValues` trait that requires that
- * the domain`s `Value` trait is not extended. This implementation just satisfies
- * the basic requirements of OPAL w.r.t. the domain's computational type.
+ * The primary factory methods to create primitive domain values.
  *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait DefaultTypeLevelFloatValues
-        extends DefaultDomainValueBinding
-        with TypeLevelFloatValues {
+trait PrimitiveValuesFactory
+        extends IntegerValuesFactory
+        with FloatValuesFactory
+        with DoubleValuesFactory
+        with LongValuesFactory { this: CoreDomain ⇒
 
-    case object AFloatValue extends super.FloatValue {
-
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
-
-        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
-
-        override def summarize(pc: PC): DomainValue = this
-
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
-            target.FloatValue(pc)
-    }
-
-    override def FloatValue(valueOrigin: ValueOrigin): FloatValue =
-        AFloatValue
-
-    override def FloatValue(valueOrigin: ValueOrigin, value: Float): FloatValue =
-        AFloatValue
 }
-
-

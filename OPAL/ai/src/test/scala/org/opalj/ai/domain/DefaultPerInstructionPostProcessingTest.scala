@@ -77,7 +77,8 @@ class DefaultPerInstructionPostProcessingTest
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultReferenceValuesBinding
-            with l1.DefaultIntegerRangeValues {
+            with l1.DefaultIntegerRangeValues
+            with l0.DefaultPrimitiveTypeConversions {
 
         type Id = I
 

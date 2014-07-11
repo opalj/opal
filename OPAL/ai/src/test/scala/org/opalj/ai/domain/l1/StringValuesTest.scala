@@ -72,7 +72,8 @@ class StringValuesTest
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultStringValuesBinding
-            with l1.DefaultIntegerRangeValues {
+            with l1.DefaultIntegerRangeValues
+            with l0.DefaultPrimitiveTypeConversions {
 
         type Id = String
         def id = "Domain which tracks String Values"

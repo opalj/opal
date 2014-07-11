@@ -38,7 +38,7 @@ import org.opalj.br.instructions._
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode
- * that relies on OPAL's resolved representation of Java bytecode.
+ * that relies on OPAL's resolved representation ([[org.opalj.br]]) of Java bytecode.
  *
  * This framework basically traverses all instructions of a method in depth-first order
  * and evaluates each instruction using an exchangeable
@@ -90,7 +90,7 @@ trait AI[D <: Domain] {
      * is not sufficiently precise enough/if additional information is needed to
      * continue with the analysis.
      *
-     * Called by OPAL-AI during the abstract interpretation of a method to determine whether
+     * Called during the abstract interpretation of a method to determine whether
      * the computation should be aborted. This method is ''always called directly before
      * the evaluation of the first/next instruction''. I.e., after the evaluation of an
      * instruction and the update of the memory as well as stating all constraints.
@@ -109,13 +109,13 @@ trait AI[D <: Domain] {
      * The tracer (default: `None`) that is called by OPAL while performing the abstract
      * interpretation of a method.
      *
-     * This method is called at different points (see
-     * [[org.opalj.ai.AITracer]]) to report on the analysis progress.
+     * This method is called at different points  to report on the analysis progress (see
+     * [[org.opalj.ai.AITracer]] for further details)
      *
      * '''To attach a tracer to the abstract interpreter override this
      * method in subclasses''' and return some tracer object.
      *
-     * OPAL enables the attachment/detachment of tracers at any time.
+     * It is possible to attach/detach a tracer at any time.
      */
     def tracer: Option[AITracer] = None
 
@@ -132,14 +132,14 @@ trait AI[D <: Domain] {
     def apply(
         classFile: ClassFile,
         method: Method,
-        theDomain: D) : AIResult{val domain : theDomain.type} = 
-            perform(classFile, method, theDomain)(None)
+        theDomain: D): AIResult { val domain: theDomain.type } =
+        perform(classFile, method, theDomain)(None)
 
     /**
-     * Returns the initial set of operands that will be used for for the abstract
+     * Returns the initial set of operands that will be used for the abstract
      * interpretation of the given method.
      *
-     * In general, an empty set is returned as the JVM specification mandates
+     * In general, an empty list is returned as the JVM specification mandates
      * that the operand stack is empty at the very beginning of a method.
      *
      * This method is called by the `perform` method with the same signature. It
@@ -148,16 +148,15 @@ trait AI[D <: Domain] {
     protected def initialOperands(
         classFile: ClassFile,
         method: Method,
-        domain: D): domain.Operands =
-        List.empty[domain.DomainValue]
+        domain: D): domain.Operands = Nil
 
     /**
-     * Returns the initial register assignment that is used when analyzing a new
-     * method.
+     * Returns the initial register assignment (the initialized locals) that is
+     * used when analyzing a new method.
      *
      * Initially, only the registers that contain the method's parameters (including
      * the self reference (`this`)) are used.  If no initial assignment is provided
-     * (`someLocals == None`) OPAL-AI will automatically create a valid assignment using
+     * (`someLocals == None`) a valid assignment is automatically created using
      * the domain. See `perform(...)` for further details regarding the initial
      * register assignment.
      *
@@ -168,7 +167,7 @@ trait AI[D <: Domain] {
      *
      * @param classFile The class file which defines the given method.
      * @param method A non-native, non-abstract method. I.e., a method that has an
-     *      implementation in Java bytecode.
+     *      implementation in Java bytecode (e.g., `method.body.isDefined === true`).
      * @param domain The domain that will be used to perform computations related
      *  	to values.
      */
@@ -299,6 +298,12 @@ trait AI[D <: Domain] {
                 initialWorkList, List.empty[PC], operandsArray, localsArray, Nil)
     }
 
+    /**
+     * Returns the set of instructions that are join instructions. I.e.,
+     * those instructions where multiple control-flow paths merge.
+     * 
+     * @see [[org.opalj.br.Code#joinInstructions]]
+     */
     protected[ai] def joinInstructions(code: Code): scala.collection.BitSet =
         code.joinInstructions
 

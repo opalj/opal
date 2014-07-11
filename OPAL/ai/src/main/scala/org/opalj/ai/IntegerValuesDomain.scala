@@ -32,16 +32,55 @@ package ai
 import org.opalj.util.{ Answer }
 
 /**
+ * Defines the primary factory methods to create `Integer` values.
+ *
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ */
+trait IntegerValuesFactory { this: CoreDomain ⇒
+
+    /**
+     * Factory method to create a representation of the integer constant value 0.
+     *
+     * OPAL in particular uses this special value for performing subsequent
+     * computations against the fixed value 0 (e.g., for if_XX instructions).
+     *
+     * (The origin ([[ValueOrigin]]) that should be used should be the
+     * [[ConstantValueOrigin]] to signify that this value was not created by the program.)
+     *
+     * The domain may ignore the information about the value.
+     */
+    final def IntegerConstant0: DomainValue = IntegerValue(ConstantValueOrigin, 0)
+
+    /**
+     * Factory method to create a `DomainValue` that was created (explicitly or
+     * implicitly) by the instruction with the specified program counter.
+     *
+     * The domain may ignore the information about the origin (`vo`).
+     */
+    def IntegerValue(vo: ValueOrigin): DomainValue
+
+    /**
+     * Factory method to create a `DomainValue` that represents the given integer value
+     * and that was created (explicitly or implicitly) by the instruction with the
+     * specified program counter.
+     *
+     * The domain may ignore the information about the value and the origin (`vo`).
+     */
+    def IntegerValue(vo: ValueOrigin, value: Int): DomainValue
+
+}
+
+/**
  * Defines the public interface between the abstract interpreter and the domain
  * that implements the functionality related to the handling of integer values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait IntegerValuesDomain { this: CoreDomain ⇒
+trait IntegerValuesDomain extends IntegerValuesFactory { this: CoreDomain ⇒
 
     // -----------------------------------------------------------------------------------
     //
-    // FACTORY METHODS TO CREATE INTEGER VALUES
+    // FACTORY METHODS TO CREATE "OTHER" INTEGER VALUES
     //
     // -----------------------------------------------------------------------------------
 
@@ -107,36 +146,6 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
      * specified program counter.
      */
     def CharValue(vo: ValueOrigin, value: Char): DomainValue
-
-    /**
-     * Factory method to create a representation of the integer constant value 0.
-     *
-     * OPAL in particular uses this special value for performing subsequent
-     * computations against the fixed value 0 (e.g., for if_XX instructions).
-     *
-     * (The origin ([[ValueOrigin]]) that should be used should be the
-     * [[ConstantValueOrigin]] to signify that this value was not created by the program.)
-     *
-     * The domain may ignore the information about the value.
-     */
-    def IntegerConstant0: DomainValue = IntegerValue(ConstantValueOrigin, 0)
-
-    /**
-     * Factory method to create a `DomainValue` that was created (explicitly or
-     * implicitly) by the instruction with the specified program counter.
-     *
-     * The domain may ignore the information about the origin (`vo`).
-     */
-    def IntegerValue(vo: ValueOrigin): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that represents the given integer value
-     * and that was created (explicitly or implicitly) by the instruction with the
-     * specified program counter.
-     *
-     * The domain may ignore the information about the value and the origin (`vo`).
-     */
-    def IntegerValue(vo: ValueOrigin, value: Int): DomainValue
 
     /**
      * Returns `Yes` iff at least one possible extension of the given

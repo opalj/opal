@@ -1007,6 +1007,7 @@ private object MethodsPlainTest {
             with DefaultTypeLevelLongValues
             with DefaultTypeLevelFloatValues
             with DefaultTypeLevelDoubleValues
+            with DefaultPrimitiveTypeConversions
             with TypeLevelFieldAccessInstructions
             with SimpleTypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration

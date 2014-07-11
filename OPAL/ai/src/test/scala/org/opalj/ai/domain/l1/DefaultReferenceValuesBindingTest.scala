@@ -54,11 +54,10 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultPrimitiveTypeConversions
             with l1.DefaultReferenceValuesBinding
             with TheProject[java.net.URL]
             with ProjectBasedClassHierarchy {
-        type Id = String
-        def id = "Values Domain"
 
         def project: Project[java.net.URL] = TestSupport.JREProject
     }

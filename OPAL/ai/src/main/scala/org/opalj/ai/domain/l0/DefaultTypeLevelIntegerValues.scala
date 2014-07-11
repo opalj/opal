@@ -129,19 +129,19 @@ trait DefaultTypeLevelIntegerValues
                 other.computationalType == ComputationalTypeInt
     }
 
-    override def BooleanValue(pc: PC): BooleanValue = ABooleanValue
-    override def BooleanValue(pc: PC, value: Boolean): BooleanValue = ABooleanValue
+    override def BooleanValue(valueOrigin: ValueOrigin): BooleanValue = ABooleanValue
+    override def BooleanValue(valueOrigin: ValueOrigin, value: Boolean): BooleanValue = ABooleanValue
 
-    override def ByteValue(pc: PC): ByteValue = AByteValue
-    override def ByteValue(pc: PC, value: Byte): ByteValue = AByteValue
+    override def ByteValue(valueOrigin: ValueOrigin): ByteValue = AByteValue
+    override def ByteValue(valueOrigin: ValueOrigin, value: Byte): ByteValue = AByteValue
 
-    override def ShortValue(pc: PC): ShortValue = AShortValue
-    override def ShortValue(pc: PC, value: Short): ShortValue = AShortValue
+    override def ShortValue(valueOrigin: ValueOrigin): ShortValue = AShortValue
+    override def ShortValue(valueOrigin: ValueOrigin, value: Short): ShortValue = AShortValue
 
-    override def CharValue(pc: PC): CharValue = ACharValue
-    override def CharValue(pc: PC, value: Char): CharValue = ACharValue
+    override def CharValue(valueOrigin: ValueOrigin): CharValue = ACharValue
+    override def CharValue(valueOrigin: ValueOrigin, value: Char): CharValue = ACharValue
 
-    override def IntegerValue(pc: PC): IntegerValue = AnIntegerValue
-    override def IntegerValue(pc: PC, value: Int): IntegerValue = AnIntegerValue
+    override def IntegerValue(valueOrigin: ValueOrigin): IntegerValue = AnIntegerValue
+    override def IntegerValue(valueOrigin: ValueOrigin, value: Int): IntegerValue = AnIntegerValue
 }
 

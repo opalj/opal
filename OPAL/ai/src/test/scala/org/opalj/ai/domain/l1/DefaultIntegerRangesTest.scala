@@ -61,6 +61,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultIntegerRangeValues // <----- The one we are going to test
+            with l0.DefaultPrimitiveTypeConversions
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
             with PredefinedClassHierarchy

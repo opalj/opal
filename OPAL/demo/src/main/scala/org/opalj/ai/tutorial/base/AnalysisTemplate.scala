@@ -26,39 +26,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package domain
-package l0
+package org.opalj.ai.tutorial.base
 
-/**
- * Base implementation of the `TypeLevelFloatValues` trait that requires that
- * the domain`s `Value` trait is not extended. This implementation just satisfies
- * the basic requirements of OPAL w.r.t. the domain's computational type.
- *
- * @author Michael Eichberg
- */
-trait DefaultTypeLevelFloatValues
-        extends DefaultDomainValueBinding
-        with TypeLevelFloatValues {
+import java.net.URL
+import org.opalj._
+import org.opalj.br._
+import org.opalj.br.analyses._
+import org.opalj.br.instructions._
+import org.opalj.ai._
 
-    case object AFloatValue extends super.FloatValue {
+object AnalysisTemplate extends AnalysisExecutor {
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
+    val analysis = new Analysis[URL, BasicReport] {
 
-        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
+        override def title: String = "My Analysis"
 
-        override def summarize(pc: PC): DomainValue = this
+        override def description: String = "A cool analysis."
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
-            target.FloatValue(pc)
+        override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
+            BasicReport(theProject.statistics.mkString("\n"))
+        }
     }
-
-    override def FloatValue(valueOrigin: ValueOrigin): FloatValue =
-        AFloatValue
-
-    override def FloatValue(valueOrigin: ValueOrigin, value: Float): FloatValue =
-        AFloatValue
 }
+
 
 

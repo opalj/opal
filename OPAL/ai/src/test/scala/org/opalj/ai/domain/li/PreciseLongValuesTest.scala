@@ -64,6 +64,7 @@ class PreciseLongValuesTest
             with l0.DefaultReferenceValuesBinding
             with li.DefaultPreciseLongValues
             with li.DefaultPreciseIntegerValues
+            with l0.DefaultPrimitiveTypeConversions
             with PredefinedClassHierarchy
             with DefaultHandlingOfMethodResults
             with RecordLastReturnedValues

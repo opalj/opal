@@ -30,19 +30,12 @@ package org.opalj
 package ai
 
 /**
- * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of double values.
+ * Defines the primary factory methods for Double values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait DoubleValuesDomain { this: CoreDomain ⇒
-
-    // -----------------------------------------------------------------------------------
-    //
-    // FACTORY METHODS TO CREATE DOMAIN VALUES
-    //
-    // -----------------------------------------------------------------------------------
+trait DoubleValuesFactory { this: CoreDomain ⇒
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
@@ -60,6 +53,16 @@ trait DoubleValuesDomain { this: CoreDomain ⇒
      * The domain may ignore the information about the value and the origin (`vo`).
      */
     def DoubleValue(vo: ValueOrigin, value: Double): DomainValue
+}
+
+/**
+ * Defines the public interface between the abstract interpreter and the domain
+ * that implements the functionality related to the handling of double values.
+ *
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Dennis Siebert
+ */
+trait DoubleValuesDomain extends DoubleValuesFactory { this: CoreDomain ⇒
 
     // -----------------------------------------------------------------------------------
     //

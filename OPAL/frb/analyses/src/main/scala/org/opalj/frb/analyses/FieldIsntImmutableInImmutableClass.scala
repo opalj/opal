@@ -48,24 +48,25 @@ import org.opalj.ai.domain.l1._
  * @author Roberts Kolosovs
  * @author Peter Spieler
  */
-private class ImmutabilityAnalysisDomain[I](val id: I)
+private class ImmutabilityAnalysisDomain[Source](
+    val project: Project[Source],
+    val method: Method)
         extends Domain
+        with TheProject[Source]
+        with TheMethod
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with l0.TypeLevelFieldAccessInstructions
-        with l0.SimpleTypeLevelInvokeInstructions // FIXME We should use the regular TypeLevel....
+        with l0.TypeLevelInvokeInstructions
+        with l0.DefaultPrimitiveTypeConversions
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l0.DefaultTypeLevelIntegerValues
         with DefaultReferenceValuesBinding
-        with PredefinedClassHierarchy // FIXME This will not give sufficient information.
+        with ProjectBasedClassHierarchy // FIXME This will not give sufficient information.
         with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization {
-
-    type Id = I
-
-}
+        with IgnoreSynchronization
 
 /**
  * Classes annotated with `@Immutable` should be unchanging once constructed in order to
@@ -318,7 +319,7 @@ class FieldIsntImmutableInImmutableClass[Source]
                 PUTFIELD(`thisType`, `fieldName`, `fieldType`) ← body.instructions
             } yield {
                 // Run AI
-                val domain = new ImmutabilityAnalysisDomain((declaringClass, field))
+                val domain = new ImmutabilityAnalysisDomain(project, method)
                 val results = BaseAI(declaringClass, method, domain)
 
                 // For each PUTFIELD of this field, check whether
@@ -363,7 +364,7 @@ class FieldIsntImmutableInImmutableClass[Source]
                     method @ MethodWithBody(body) ← declaringClass.methods
                     GETFIELD(`thisType`, `fieldName`, `fieldType`) ← body.instructions
                 } yield {
-                    val domain = new ImmutabilityAnalysisDomain(declaringClass, field)
+                    val domain = new ImmutabilityAnalysisDomain(project, method)
                     val results = BaseAI(declaringClass, method, domain)
                     val codeWithIndex = results.code.associateWithIndex
                     for {

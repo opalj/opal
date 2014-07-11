@@ -31,55 +31,20 @@ package ai
 package domain
 package l0
 
-import org.opalj.br.analyses.Project
-import org.opalj.br.{ Method, ClassFile }
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeDouble
 
 /**
- * A complete domain that performs all computations at the type level and which has
- * a configurable identifier.
- *
- * @note This domain is intended to be used for '''demo purposes only'''.
- *      '''Tests should create their own domains to make sure that
- *      the test results remain stable. The configuration of this
- *      domain just reflects a reasonable configuration that may
- *      change without further notice.'''
- *
  * @author Michael Eichberg
  */
-class BaseConfigurableDomain[I, Source](
-    val id: I,
-    val project: Project[Source],
-    val classFile: ClassFile,
-    val method: Method)
-        extends TypeLevelDomain
-        with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
-        with DefaultPrimitiveTypeConversions
-        with IgnoreSynchronization
-        with ProjectBasedClassHierarchy
-        with TheProject[Source]
-        with TheMethod
-        with DomainId {
+trait DefaultPrimitiveTypeConversions
+        extends PrimitiveTypeConversionsDomain
+        with PrimitiveValuesFactory { this: CoreDomain ⇒
 
-    type Id = I
+    override def d2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
+    override def d2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
+    override def d2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 }
 
-/**
- * This is a ready to use domain which sets the domain identifier
- * to a string that identifies the method that is analyzed.
- *
- * This domain is primarily useful for demonstration purposes.
- *
- * @author Michael Eichberg
- */
-class BaseDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends BaseConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)
 
 

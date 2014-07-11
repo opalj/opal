@@ -28,37 +28,38 @@
  */
 package org.opalj
 package ai
-package domain
-package l0
+
+import scala.reflect.ClassTag
+
+import org.opalj.util.{ Answer, Yes, No, Unknown }
+
+import br._
 
 /**
- * Base implementation of the `TypeLevelFloatValues` trait that requires that
- * the domain`s `Value` trait is not extended. This implementation just satisfies
- * the basic requirements of OPAL w.r.t. the domain's computational type.
- *
- * @author Michael Eichberg
+ * Defines the methods that performs type conversions between primitive values.
+ * 
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Dennis Siebert
  */
-trait DefaultTypeLevelFloatValues
-        extends DefaultDomainValueBinding
-        with TypeLevelFloatValues {
+trait PrimitiveTypeConversionsDomain extends CoreDomain {
 
-    case object AFloatValue extends super.FloatValue {
+    def i2d(pc: PC, value: DomainValue): DomainValue
+    def i2f(pc: PC, value: DomainValue): DomainValue
+    def i2l(pc: PC, value: DomainValue): DomainValue
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
+    /** Conversion of the given long value to a double value. */
+    def l2d(pc: PC, value: DomainValue): DomainValue
+    /** Conversion of the given long value to a float value. */
+    def l2f(pc: PC, value: DomainValue): DomainValue
+    /** Conversion of the given long value to an integer value. */
+    def l2i(pc: PC, value: DomainValue): DomainValue
 
-        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
+    def f2d(pc: PC, value: DomainValue): DomainValue
+    def f2i(pc: PC, value: DomainValue): DomainValue
+    def f2l(pc: PC, value: DomainValue): DomainValue
 
-        override def summarize(pc: PC): DomainValue = this
+    def d2f(pc: PC, value: DomainValue): DomainValue
+    def d2i(pc: PC, value: DomainValue): DomainValue
+    def d2l(pc: PC, value: DomainValue): DomainValue
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
-            target.FloatValue(pc)
-    }
-
-    override def FloatValue(valueOrigin: ValueOrigin): FloatValue =
-        AFloatValue
-
-    override def FloatValue(valueOrigin: ValueOrigin, value: Float): FloatValue =
-        AFloatValue
 }
-
-

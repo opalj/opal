@@ -55,9 +55,9 @@ trait DefaultTypeLevelLongValues
             target.LongValue(pc)
     }
 
-    override def LongValue(pc: PC): LongValue = ALongValue
+    override def LongValue(valueOrigin: ValueOrigin): LongValue = ALongValue
 
-    override def LongValue(pc: PC, value: Long): LongValue = ALongValue
+    override def LongValue(valueOrigin: ValueOrigin, value: Long): LongValue = ALongValue
 }
 
 

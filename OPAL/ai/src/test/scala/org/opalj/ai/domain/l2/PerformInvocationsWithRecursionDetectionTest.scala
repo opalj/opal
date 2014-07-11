@@ -153,7 +153,8 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l1.DefaultReferenceValuesBinding
-            with li.DefaultPreciseIntegerValues {
+            with li.DefaultPreciseIntegerValues
+            with l0.DefaultPrimitiveTypeConversions {
         override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
     }
 

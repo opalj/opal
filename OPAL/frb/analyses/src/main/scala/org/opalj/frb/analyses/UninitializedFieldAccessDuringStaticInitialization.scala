@@ -224,6 +224,7 @@ private class FieldStatusTracingDomain[Source](
         with l0.TypeLevelInvokeInstructions
         with l1.DefaultReferenceValuesBinding
         with l1.DefaultIntegerRangeValues
+        with l0.DefaultPrimitiveTypeConversions
         with PropertyTracing
         with RecordReturnFromMethodInstructions {
 
@@ -378,7 +379,7 @@ private class FieldStatusTracingDomain[Source](
 
         super.invokestatic(pc, accessClass, name, descriptor, operands)
     }
- 
+
     override final type DomainProperty = FieldStatusProperty
     override final val DomainPropertyTag: reflect.ClassTag[DomainProperty] = implicitly
 

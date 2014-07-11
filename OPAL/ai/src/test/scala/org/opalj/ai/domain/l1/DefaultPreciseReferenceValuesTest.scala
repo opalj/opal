@@ -76,11 +76,8 @@ class DefaultPreciseReferenceValuesTest
             // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
             // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
             // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-            with l1.DefaultIntegerRangeValues {
-
-        type Id = String
-
-        def id = "Reference Values Tests"
+            with l1.DefaultIntegerRangeValues
+            with l0.DefaultPrimitiveTypeConversions {
 
         override protected def maxSizeOfIntegerRanges: Long = 25l
     }

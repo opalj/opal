@@ -181,7 +181,10 @@ object MoreCheckers {
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
                 if !method.isAbstract
                 if !method.body.get.instructions.exists {
-                    case INVOKESPECIAL(`superClass`, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
+                    case INVOKESPECIAL(
+                        `superClass`,
+                        "clone",
+                        MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true;
                     case _ ⇒ false;
                 }
             } yield (classFile /*.thisClass.className*/ , method /*.name*/ )

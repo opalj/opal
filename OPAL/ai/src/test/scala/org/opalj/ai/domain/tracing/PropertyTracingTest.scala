@@ -71,10 +71,11 @@ class PropertyTracingTest
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultTypeLevelLongValues
+            with l1.DefaultIntegerRangeValues
+            with l0.DefaultPrimitiveTypeConversions
+            with l1.DefaultReferenceValuesBinding
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions
-            with l1.DefaultReferenceValuesBinding
-            with l1.DefaultIntegerRangeValues
             with TheMethod {
 
         override def maxSizeOfIntegerRanges: Long = 16l

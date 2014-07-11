@@ -46,6 +46,7 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
             extends Domain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
+            with domain.l0.DefaultPrimitiveTypeConversions
             with domain.l0.DefaultTypeLevelIntegerValues
             with domain.l0.DefaultTypeLevelLongValues
             with domain.l0.DefaultTypeLevelFloatValues

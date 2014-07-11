@@ -192,6 +192,7 @@ object PerformInvocationsTestFixture {
             with l1.DefaultReferenceValuesBinding
             with li.DefaultPreciseIntegerValues
             with li.DefaultPreciseLongValues
+            with l0.DefaultPrimitiveTypeConversions
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions
             with ProjectBasedClassHierarchy

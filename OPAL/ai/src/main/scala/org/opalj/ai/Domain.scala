@@ -100,7 +100,8 @@ trait Domain
         with DoubleValuesDomain
         with ReferenceValuesDomain
         with FieldAccessesDomain
-        with MethodCallsDomain {
+        with MethodCallsDomain
+        with PrimitiveTypeConversionsDomain {
 
     // -----------------------------------------------------------------------------------
     //
@@ -171,28 +172,6 @@ trait Domain
     // ABSTRACTIONS RELATED TO INSTRUCTIONS
     //
     // -----------------------------------------------------------------------------------
-
-    //
-    // INTER-TYPE CONVERSIONS
-    //
-    def i2d(pc: PC, value: DomainValue): DomainValue
-    def i2f(pc: PC, value: DomainValue): DomainValue
-    def i2l(pc: PC, value: DomainValue): DomainValue
-
-    /** Conversion of the given long value to a double value. */
-    def l2d(pc: PC, value: DomainValue): DomainValue
-    /** Conversion of the given long value to a float value. */
-    def l2f(pc: PC, value: DomainValue): DomainValue
-    /** Conversion of the given long value to an integer value. */
-    def l2i(pc: PC, value: DomainValue): DomainValue
-
-    def f2d(pc: PC, value: DomainValue): DomainValue
-    def f2i(pc: PC, value: DomainValue): DomainValue
-    def f2l(pc: PC, value: DomainValue): DomainValue
-
-    def d2f(pc: PC, value: DomainValue): DomainValue
-    def d2i(pc: PC, value: DomainValue): DomainValue
-    def d2l(pc: PC, value: DomainValue): DomainValue
 
     //
     // RETURN FROM METHOD
