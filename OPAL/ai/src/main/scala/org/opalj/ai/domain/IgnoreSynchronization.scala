@@ -37,7 +37,8 @@ import org.opalj.util.{ Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait IgnoreSynchronization { this: Domain with Configuration ⇒
+trait IgnoreSynchronization {
+    this: CoreDomain with ReferenceValuesDomain with VMLevelExceptionsFactory with Configuration ⇒
 
     protected[this] def sideEffectOnlyOrNullPointerException(
         pc: PC,

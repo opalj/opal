@@ -45,7 +45,8 @@ import org.opalj.br.ComputationalTypeLong
  *
  * @author Michael Eichberg
  */
-trait TypeLevelLongValues extends Domain { this: Configuration ⇒
+trait TypeLevelLongValues extends LongValuesDomain {
+    this: CoreDomain with IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -203,30 +204,6 @@ trait TypeLevelLongValues extends Domain { this: Configuration ⇒
     override def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
-    //
-    // CONVERSION INSTRUCTIONS
-    //
-
-    /**
-     * @inheritdoc
-     *
-     * @return The result of calling `DoubleValue(pc)`.
-     */
-    override def l2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
-
-    /**
-     * @inheritdoc
-     *
-     * @return The result of calling `FloatValue(pc)`.
-     */
-    override def l2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
-
-    /**
-     * @inheritdoc
-     *
-     * @return The result of calling `IntegerValue(pc)`.
-     */
-    override def l2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
 }
 
 

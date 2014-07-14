@@ -33,7 +33,7 @@ import scala.reflect.ClassTag
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
+import org.opalj.br._
 
 /**
  *
@@ -236,27 +236,6 @@ trait ReferenceValuesDomain { this: CoreDomain ⇒
      */
     def MethodType(pc: PC, descriptor: MethodDescriptor): DomainValue =
         InitializedObjectValue(pc, ObjectType.MethodType)
-
-    def Throwable(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.Throwable)
-
-    def ClassCastException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.ClassCastException)
-
-    def NullPointerException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.NullPointerException)
-
-    def NegativeArraySizeException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.NegativeArraySizeException)
-
-    def ArrayIndexOutOfBoundsException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.ArrayIndexOutOfBoundsException)
-
-    def ArrayStoreException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.ArrayStoreException)
-
-    def ArithmeticException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.ArithmeticException)
 
     // -----------------------------------------------------------------------------------
     //

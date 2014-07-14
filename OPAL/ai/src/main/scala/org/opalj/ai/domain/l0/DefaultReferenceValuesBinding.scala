@@ -39,7 +39,9 @@ import org.opalj.br.{ ObjectType, ArrayType }
  *
  * @author Michael Eichberg
  */
-trait DefaultReferenceValuesBinding extends DefaultTypeLevelReferenceValues {
+trait DefaultReferenceValuesBinding
+        extends DefaultTypeLevelReferenceValues
+        with DefaultVMLevelExceptionsFactory {
     domain: Configuration with ClassHierarchy ⇒
 
     type DomainReferenceValue = ReferenceValue

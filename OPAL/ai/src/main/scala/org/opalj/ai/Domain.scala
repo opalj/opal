@@ -101,7 +101,8 @@ trait Domain
         with ReferenceValuesDomain
         with FieldAccessesDomain
         with MethodCallsDomain
-        with PrimitiveTypeConversionsDomain {
+        with PrimitiveTypeConversionsDomain
+        with VMLevelExceptionsFactory {
 
     // -----------------------------------------------------------------------------------
     //

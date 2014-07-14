@@ -42,8 +42,8 @@ import org.opalj.br.ComputationalTypeDouble
  *
  * @author Michael Eichberg
  */
-trait TypeLevelDoubleValues extends DoubleValuesDomain with IntegerValuesFactory {
-    this: CoreDomain ⇒
+trait TypeLevelDoubleValues extends DoubleValuesDomain  {
+    this: CoreDomain with IntegerValuesFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //

@@ -28,18 +28,36 @@
  */
 package org.opalj
 package ai
+package domain
 
-import org.opalj.util.{ Answer }
+import org.opalj.br.ObjectType
 
 /**
- * The primary factory methods to create primitive domain values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait PrimitiveValuesFactory
-        extends IntegerValuesFactory
-        with FloatValuesFactory
-        with DoubleValuesFactory
-        with LongValuesFactory { this: CoreDomain ⇒
+trait DefaultVMLevelExceptionsFactory extends VMLevelExceptionsFactory {
+    this: CoreDomain with ReferenceValuesDomain ⇒
+
+    final override def Throwable(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.Throwable)
+
+    final override def ClassCastException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.ClassCastException)
+
+    final override def NullPointerException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.NullPointerException)
+
+    final override def NegativeArraySizeException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.NegativeArraySizeException)
+
+    final override def ArrayIndexOutOfBoundsException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.ArrayIndexOutOfBoundsException)
+
+    final override def ArrayStoreException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.ArrayStoreException)
+
+    final override def ArithmeticException(pc: PC): ExceptionValue =
+        InitializedObjectValue(pc, ObjectType.ArithmeticException)
 
 }

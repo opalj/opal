@@ -41,7 +41,9 @@ import br._
 /**
  * @author Michael Eichberg
  */
-trait DefaultReferenceValuesBinding extends l1.ReferenceValues {
+trait DefaultReferenceValuesBinding
+        extends l1.ReferenceValues
+        with DefaultVMLevelExceptionsFactory {
     domain: Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy

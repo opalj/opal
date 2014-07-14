@@ -28,47 +28,27 @@
  */
 package org.opalj
 package ai
-package domain
-package l0
 
 /**
- * Base implementation of the `TypeLevelDoubleValues` trait that requires that
- * the domain`s `Value` trait is not extended. This implementation just satisfies
- * the basic requirements of OPAL w.r.t. the domain's computational type.
+ * Defines factory methods for those exceptions that are (also) created by the JVM
+ * when the execution of a bytecode instruction fails.
  *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait DefaultTypeLevelDoubleValues
-        extends DefaultDomainValueBinding
-        with TypeLevelDoubleValues {
-    this: IntegerValuesFactory ⇒
+trait VMLevelExceptionsFactory { this: CoreDomain ⇒
 
-    /**
-     * Represents an unknown double value.
-     */
-    case object ADoubleValue extends super.DoubleValue {
+    def Throwable(pc: PC): ExceptionValue
 
-        override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
-            // Since `value` is guaranteed to have computational type double and we 
-            // don't care about the precise value, as this DomainValue already 
-            // just represents "some" double value, we can always safely return
-            // NoUpdate. 
-            NoUpdate
+    def ClassCastException(pc: PC): ExceptionValue
 
-        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
+    def NullPointerException(pc: PC): ExceptionValue
 
-        override def summarize(pc: PC): DomainValue = this
+    def NegativeArraySizeException(pc: PC): ExceptionValue
 
-        override def adapt(target: Domain, valueOrigin: ValueOrigin): target.DomainValue =
-            target.DoubleValue(valueOrigin)
+    def ArrayIndexOutOfBoundsException(pc: PC): ExceptionValue
 
-    }
+    def ArrayStoreException(pc: PC): ExceptionValue
 
-    final override def DoubleValue(valueOrigin: ValueOrigin): DoubleValue =
-        ADoubleValue
+    def ArithmeticException(pc: PC): ExceptionValue
 
-    final override def DoubleValue(valueOrigin: ValueOrigin, value: Double): DoubleValue =
-        ADoubleValue
 }
-
-
