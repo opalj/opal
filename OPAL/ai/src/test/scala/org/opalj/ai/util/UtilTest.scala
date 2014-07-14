@@ -42,12 +42,7 @@ import org.junit.runner.RunWith
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class packageTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
-
-    import org.opalj.ai.util._
+class UtilTest extends FlatSpec with Matchers with ParallelTestExecution {
 
     behavior of "the function removeFirstWhile"
 
@@ -82,7 +77,7 @@ class packageTest
     }
 
     it should ("return the list without it's last element if that element matches") in {
-        val newList = removeFirstUnless(shortList, 4)(_ >=1000)
+        val newList = removeFirstUnless(shortList, 4)(_ >= 1000)
         newList should be(List(1, 5))
     }
 }
