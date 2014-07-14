@@ -8,8 +8,30 @@ scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Abstract Interpretati
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.1"
 
-// We want to use different VM settings for OPAL
+////////////////////// "run" Configuration
+
 fork in run := true
 
-//javaOptions in run := Seq("-Xmx8G", "-Xms1014m", "-XX:CompileThreshold=100", "-XX:NewRatio=4", "-XX:+UseParallelGC", "-XX:+AggressiveOpts", "-Xnoclassgc", "-XX:InlineSmallCode=1500", "-XX:MaxInlineSize=52")
-javaOptions in run := Seq("-Xmx8G", "-Xms1024m", "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts", "-Xnoclassgc")
+javaOptions in run := Seq("-Xmx3G", "-Xms1024m", "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts", "-Xnoclassgc")
+
+
+////////////////////// (Unit) Tests
+
+parallelExecution in Test := true
+
+fork in Test := false
+
+
+////////////////////// Integration Tests
+
+parallelExecution in IntegrationTest := false
+
+logBuffered in IntegrationTest := false
+
+//javaOptions in IntegrationTest := Seq("-Xmx3G", "-ea", "-Xrs", "-esa", "-Xshare:off", "-XstartOnFirstThread", "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts")
+
+//outputStrategy in IntegrationTest := Some(StdoutOutput)
+
+//connectInput in IntegrationTest := false
+
+//fork in IntegrationTest := true
