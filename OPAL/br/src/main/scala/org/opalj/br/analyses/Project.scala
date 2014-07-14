@@ -461,7 +461,7 @@ object Project {
 
     def defaultHandlerForInconsistentProject(ex: InconsistentProjectException): Unit = {
         import Console._
-        println(RED+"[warning] "+ex.message + RESET)
+        println(RED+"[warn] "+ex.message + RESET)
     }
 
     /**
