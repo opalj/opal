@@ -5,6 +5,8 @@ import sbtassembly.Plugin.AssemblyKeys._
 
 import scoverage.ScoverageSbtPlugin.instrumentSettings
 
+import com.typesafe.sbteclipse.plugin.EclipsePlugin._
+
 object OPALBuild extends Build {
 
 	// Default settings without scoverage
@@ -13,7 +15,8 @@ object OPALBuild extends Build {
 
 	// Includes scoverage scope
 	lazy val opalDefaultSettings =
-		Defaults.defaultSettings ++ instrumentSettings
+		Defaults.defaultSettings ++
+			instrumentSettings
 
 	lazy val opal = Project(
 		id = "OPAL",
@@ -69,8 +72,11 @@ object OPALBuild extends Build {
 	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",
 		base = file("OPAL/ai"),
-		settings = opalDefaultSettings
-	) dependsOn(br % "test->test;compile->compile")
+		settings = opalDefaultSettings ++
+			Seq(Defaults.itSettings : _*) ++
+			Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest))
+	).dependsOn(br % "test->test;compile->compile;it->test")
+	 .configs(IntegrationTest)
 
 	// The project "DependenciesExtractionLibrary" depends on
 	// the abstract interpretation framework to be able to
