@@ -29,17 +29,14 @@
 package org.opalj
 package ai
 package domain
-package l0
 
 import org.junit.runner.RunWith
-
 import org.scalatest.junit.JUnitRunner
+
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
 import org.opalj.br.Code
-import org.opalj.bi.reader.ClassFileReader
-import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
