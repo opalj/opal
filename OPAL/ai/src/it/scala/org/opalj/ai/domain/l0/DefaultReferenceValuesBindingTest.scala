@@ -29,17 +29,18 @@
 package org.opalj
 package ai
 package domain
-package l1
+package l0
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport
-import org.opalj.util.{ No, Unknown }
+import org.opalj.ai.domain.ProjectBasedClassHierarchy
+import org.opalj.ai.domain.TheProject
+import org.opalj.ai.domain.ValuesCoordinatingDomain
 
 /**
  *
@@ -55,16 +56,19 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultPrimitiveTypeConversions
-            with l1.DefaultReferenceValuesBinding
+            with l0.DefaultReferenceValuesBinding
             with TheProject[java.net.URL]
             with ProjectBasedClassHierarchy {
+        type Id = String
+        def id = "Values Domain"
 
         def project: Project[java.net.URL] = TestSupport.JREProject
     }
 
     behavior of "instances of domains of type DomainReferenceValuesBinding"
 
-    it should "be able to determine that a value with a single interface as its upper bound abstracts over a value that implements multiple interfaces that includes the previous one" in {
+    it should "be able to join a value with a single interface with one with multiple interfaces" in {
+        // the operand stack value org.omg.CORBA.Object(origin=-1;maybeNull;isUpperBound) does not abstract over org.omg.CORBA.Object with java.rmi.Remote(origin=-1; isUpperBound)
         val t1 = ObjectType("org/omg/CORBA/Object")
         val t2 = ObjectType("java.rmi.Remote")
         val domain = ValuesDomain
@@ -73,42 +77,6 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
 
         stValue.abstractsOver(mtValue) should be(true)
 
-    }
-
-    it should "be able to determine that a value with a single interface as its upper bound abstracts over a value that is non-null and that implements multiple interfaces that includes the previous one" in {
-        val t1 = ObjectType("org/omg/CORBA/Object")
-        val t2 = ObjectType("java.rmi.Remote")
-        val domain = ValuesDomain
-        val stValue = domain.ReferenceValue(-1, Unknown, false, t1)
-        val mtValue = domain.ObjectValue(-1, No, UIDSet(t1, t2))
-
-        if (!stValue.abstractsOver(mtValue))
-            fail(stValue+" does not abstract over "+mtValue+" (Result of the join was: "+stValue.join(-1, mtValue)+")")
-
-    }
-
-    it should "be able to join a value which implements multiple interfaces with a value that implementes just one interface that is a subtype of one of the previous interfaces" in {
-        val l1 = ObjectType("com/sun/org/apache/xml/internal/utils/PrefixResolver")
-        val l2 = ObjectType("org/w3c/dom/xpath/XPathNSResolver")
-        val r = ObjectType("com/sun/org/apache/xpath/internal/domapi/XPathEvaluatorImpl$DummyPrefixResolver")
-        val domain = ValuesDomain
-        val lValue = domain.ObjectValue(-1, No, UIDSet(l1, l2))
-        val rValue = domain.ReferenceValue(-1, r)
-
-        val expectedValue = domain.ReferenceValue(-1, l1)
-        val joinedValue = lValue.join(-1, rValue).value
-        if (joinedValue != expectedValue)
-            fail(lValue+" join "+rValue+" was "+joinedValue+" expected "+expectedValue)
-    }
-
-    it should "be able to calculate the correct least upper type bound if one of the types of a MultipleReferenceValues already defines that bound" in {
-        val l = ObjectType("java/util/AbstractCollection")
-        val r = ObjectType("java/util/ArrayList")
-        val lValue = ValuesDomain.ObjectValue(-1, l)
-        val rValue = ValuesDomain.ObjectValue(-2, r)
-        val value = ValuesDomain.MultipleReferenceValues(scala.collection.SortedSet(lValue, rValue))
-        if (value.upperTypeBound.first != l)
-            fail("unexpected upper type bound:"+value.upperTypeBound+" expected "+l.toJava)
     }
 
 }
