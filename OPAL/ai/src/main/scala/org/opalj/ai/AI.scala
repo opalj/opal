@@ -41,8 +41,7 @@ import org.opalj.br.instructions._
  * that relies on OPAL's resolved representation ([[org.opalj.br]]) of Java bytecode.
  *
  * This framework basically traverses all instructions of a method in depth-first order
- * and evaluates each instruction using an exchangeable
- * [[org.opalj.ai.Domain]].
+ * and evaluates each instruction using a given [[org.opalj.ai.Domain]].
  *
  * ==Interacting with OPAL's Abstract Interpreter==
  * The primary means how to make use of this framework is to perform
@@ -54,7 +53,7 @@ import org.opalj.br.instructions._
  * ==Thread Safety==
  * This class is thread-safe. However, to make it possible to use one abstract
  * interpreter instance for the concurrent abstract interpretation of independent
- * methods, the `AITracer` (if any) has to be thread-safe to.
+ * methods, the [[AITracer]] (if any) has to be thread-safe too.
  *
  * Hence, it is possible to use a single instance to analyze multiple methods in parallel.
  * However, if you want to be able to selectively abort the abstract interpretation
@@ -63,10 +62,6 @@ import org.opalj.br.instructions._
  * Creating new instances is extremely cheap as this class
  * does not have any significant associated state.
  *
- * ==Customizing the Abstract Interpretation Framework==
- * Customization of the abstract interpreter is done by creating new subclasses that
- * override the relevant methods (in particular: `isInterrupted` and `tracer`).
- *
  * @note
  *     OPAL does not make assumptions about the number of domain objects that
  *     are used. However, if a single domain object is used by multiple instances
@@ -74,6 +69,10 @@ import org.opalj.br.instructions._
  *     the domain has to be thread-safe.
  *     The latter is trivially the case when the domain object itself does not have
  *     any state.
+ *
+ * ==Customizing the Abstract Interpretation Framework==
+ * Customization of the abstract interpreter is done by creating new subclasses that
+ * override the relevant methods (in particular: [[isInterrupted]] and [[tracer]]).
  *
  * @author Michael Eichberg
  */
@@ -301,7 +300,7 @@ trait AI[D <: Domain] {
     /**
      * Returns the set of instructions that are join instructions. I.e.,
      * those instructions where multiple control-flow paths merge.
-     * 
+     *
      * @see [[org.opalj.br.Code#joinInstructions]]
      */
     protected[ai] def joinInstructions(code: Code): scala.collection.BitSet =

@@ -29,14 +29,12 @@
 package org.opalj
 package ai
 
-import scala.reflect.ClassTag
-
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeReturnAddress
-
 /**
  * Using join stabilization is necessary (makes sense) if constraints are propagated
  * or if the merge of domain values is expensive.
+ *
+ * @note Join stabilization is always done for all domain values once this domain is
+ *      used.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
