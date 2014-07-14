@@ -82,23 +82,20 @@ class MethodsWithLoopsTest
     it should "be able to analyze a method that never terminates" in {
 
         object MostBasicDomain
-                extends Domain
-                with DefaultDomainValueBinding
-                with ThrowAllPotentialExceptionsConfiguration
-                with l0.DefaultReferenceValuesBinding
-                with l0.DefaultTypeLevelIntegerValues
-                with l0.DefaultTypeLevelLongValues
-                with l0.DefaultTypeLevelFloatValues
-                with l0.DefaultTypeLevelDoubleValues
-                with l0.DefaultPrimitiveTypeConversions
-                with l0.TypeLevelFieldAccessInstructions
-                with l0.SimpleTypeLevelInvokeInstructions
-                with PredefinedClassHierarchy
-                with DefaultHandlingOfMethodResults
-                with IgnoreSynchronization {
-            type Id = String
-            def id = "Most Basic Domain"
-        }
+            extends Domain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with l0.DefaultReferenceValuesBinding
+            with l0.DefaultTypeLevelIntegerValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultPrimitiveTypeConversions
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
+            with PredefinedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
 
         val method = findMethod("endless")
         val result = BaseAI(classFile, method, MostBasicDomain)

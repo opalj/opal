@@ -63,7 +63,7 @@ class MethodsWithExceptionsTest
     import MethodsWithExceptionsTest._
     import org.opalj.collection.mutable.UShortSet
 
-    class DefaultRecordingDomain[I](val id: I)
+    class DefaultRecordingDomain(val id: String)
             extends Domain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
@@ -80,11 +80,9 @@ class MethodsWithExceptionsTest
             with l1.DefaultReferenceValuesBinding
             /* => */ with RecordLastReturnedValues
             /* => */ with RecordAllThrownExceptions
-            /* => */ with RecordVoidReturns {
-        type Id = I
-    }
+            /* => */ with RecordVoidReturns 
 
-    private def evaluateMethod(name: String)(f: DefaultRecordingDomain[String] ⇒ Unit) {
+    private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit) {
         val domain = new DefaultRecordingDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
