@@ -1,3 +1,4 @@
+reset_minion: true
 language: scala
 scala:
    - 2.11.1
