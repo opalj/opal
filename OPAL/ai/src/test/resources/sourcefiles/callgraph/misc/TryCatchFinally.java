@@ -325,7 +325,7 @@ public class TryCatchFinally {
             @InvokedMethod(receiverType = TryCatchFinally.class, name = "mayThrowException", lineNumber = 331),
             @InvokedMethod(receiverType = TryCatchFinally.class, name = "alwaysThrowsException", lineNumber = 332),
             @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 334),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 336) })
+            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 336) })
     void callMultipleMethodsInTry(Object o) {
         try {
             mayThrowException();
@@ -340,7 +340,7 @@ public class TryCatchFinally {
     @InvokedMethods({
             @InvokedMethod(receiverType = TryCatchFinally.class, name = "alwaysThrowsException", lineNumber = 346),
             @InvokedMethod(receiverType = TryCatchFinally.class, name = "mayThrowException", lineNumber = 347),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 349) })
+            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 349) })
     void callMultipleMethodsInTryAlternateOrder(Object o) {
         try {
             alwaysThrowsException();
