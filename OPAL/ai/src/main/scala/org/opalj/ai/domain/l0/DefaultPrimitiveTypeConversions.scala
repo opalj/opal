@@ -37,8 +37,7 @@ import org.opalj.br.ComputationalTypeDouble
 /**
  * @author Michael Eichberg
  */
-trait DefaultPrimitiveTypeConversions
-        extends PrimitiveTypeConversionsDomain {
+trait DefaultPrimitiveTypeConversions extends PrimitiveTypeConversionsDomain {
     this: CoreDomain with IntegerValuesFactory with FloatValuesFactory with DoubleValuesFactory with LongValuesFactory ⇒
 
     override def d2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
@@ -51,20 +50,22 @@ trait DefaultPrimitiveTypeConversions
      * @return The result of calling `DoubleValue(pc)`.
      */
     override def l2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
-
     /**
      * @inheritdoc
      *
      * @return The result of calling `FloatValue(pc)`.
      */
     override def l2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
-
     /**
      * @inheritdoc
      *
      * @return The result of calling `IntegerValue(pc)`.
      */
     override def l2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
+
+    override def i2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
+    override def i2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
+    override def i2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 }
 
 

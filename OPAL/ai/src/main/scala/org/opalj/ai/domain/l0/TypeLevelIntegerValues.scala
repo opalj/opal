@@ -31,13 +31,6 @@ package ai
 package domain
 package l0
 
-import org.opalj.ai.Domain
-import org.opalj.ai.IsBooleanValue
-import org.opalj.ai.IsByteValue
-import org.opalj.ai.IsCharValue
-import org.opalj.ai.IsIntegerValue
-import org.opalj.ai.IsShortValue
-import org.opalj.ai.domain.Configuration
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.util.Answer
@@ -206,13 +199,9 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
 
     override def i2c(pc: PC, value: DomainValue): DomainValue = CharValue(pc)
 
-    override def i2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
-
-    override def i2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
-
-    override def i2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
-
     override def i2s(pc: PC, value: DomainValue): DomainValue = ShortValue(pc)
+
+
 
 }
 
