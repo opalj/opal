@@ -31,8 +31,6 @@ package ai
 package domain
 package l0
 
-import scala.Iterable
-
 import org.opalj.br.ArrayType
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
