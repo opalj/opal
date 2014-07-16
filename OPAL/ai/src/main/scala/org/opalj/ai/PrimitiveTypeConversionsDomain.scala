@@ -29,15 +29,9 @@
 package org.opalj
 package ai
 
-import scala.reflect.ClassTag
-
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import br._
-
 /**
  * Defines the methods that performs type conversions between primitive values.
- * 
+ *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */

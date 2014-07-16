@@ -28,9 +28,9 @@
  */
 package org.opalj
 
-import org.opalj.collection.immutable.UIDSet
+import scala.language.existentials
 
-import br._
+import org.opalj.br.MethodDescriptor
 
 /**
  * Implementation of an abstract interpretation framework – also referred to as OPAL.
@@ -57,8 +57,6 @@ import br._
  * @author Michael Eichberg
  */
 package object ai {
-
-    import language.existentials
 
     /**
      * Type alias that can be used if the AI can use all kinds of domains.

@@ -29,8 +29,8 @@
 package org.opalj
 package ai
 
-import org.opalj.br._
-import org.opalj.br.instructions._
+import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
 
 /**
  * Defines the interface between the abstract interpreter and a module for tracing and

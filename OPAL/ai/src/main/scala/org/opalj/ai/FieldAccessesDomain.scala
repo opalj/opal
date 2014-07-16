@@ -29,11 +29,8 @@
 package org.opalj
 package ai
 
-import scala.reflect.ClassTag
-
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import br._
+import org.opalj.br.ObjectType
+import org.opalj.br.FieldType
 
 /**
  *

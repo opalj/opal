@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 
-import org.opalj.util.{ Answer }
+import org.opalj.util.Answer
 
 /**
  * Defines the primary factory methods to create `Integer` values.

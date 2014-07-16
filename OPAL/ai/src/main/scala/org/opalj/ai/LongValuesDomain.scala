@@ -29,12 +29,6 @@
 package org.opalj
 package ai
 
-import scala.reflect.ClassTag
-
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import org.opalj.br._
-
 /**
  * Defines the primary factory methods to create Long values.
  *

@@ -29,13 +29,12 @@
 package org.opalj
 package ai
 
-import scala.reflect.ClassTag
-
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import org.opalj.br._
+import org.opalj.util.Answer
+import org.opalj.br.{ Type, ReferenceType, ArrayType, ObjectType, FieldType }
+import org.opalj.br.{ MethodDescriptor, MethodHandle }
 
 /**
+ * Domain that defines all methods that perform computations related to `RefernceValues`.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */

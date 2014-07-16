@@ -30,7 +30,7 @@ package org.opalj
 package ai
 
 /**
- * A domain that can be interrupted by calling the `interrupt` method.
+ * An abstract interpreter that can be interrupted by calling the `interrupt` method.
  *
  * @author Michael Eichberg
  */

@@ -33,8 +33,8 @@ package ai
  * A abstract interpreter that interrupts itself after some configurable
  * ([[maxEffortInNs]]) time has passed.
  *
- * @param maxEffortInNs  The number of nanoseconds after which the abstract interpretation is
- * aborted. The default value is 150 milliseconds.
+ * @param maxEffortInNs  The number of nanoseconds after which the abstract 
+ *      interpretation is aborted. The default value is 150 milliseconds.
  *
  * @author Michael Eichberg
  */

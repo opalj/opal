@@ -71,5 +71,4 @@ trait CoreDomainWithJoinStabilization extends CoreDomain {
         super.afterJoin(pc)
         leftValues.clear()
     }
-
 }

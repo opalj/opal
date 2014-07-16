@@ -31,18 +31,6 @@ package ai
 package domain
 package l0
 
-import scala.Iterable
-
-import org.opalj.ai.Computation
-import org.opalj.ai.Domain
-import org.opalj.ai.DomainException
-import org.opalj.ai.IsAReferenceValue
-import org.opalj.ai.IsPrimitiveValue
-import org.opalj.ai.NoUpdate
-import org.opalj.ai.Update
-import org.opalj.ai.domain.ClassHierarchy
-import org.opalj.ai.domain.Configuration
-import org.opalj.ai.domain.DefaultDomainValueBinding
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.util.Answer

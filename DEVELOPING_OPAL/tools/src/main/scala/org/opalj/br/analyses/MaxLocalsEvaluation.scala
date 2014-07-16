@@ -43,7 +43,7 @@ object MaxLocalsEvaluation extends AnalysisExecutor {
             "Collects information about the maxium number of registers required per method."
 
         def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
-            import scala.collection.immutable.TreeMap// <= Sorted...
+            import scala.collection.immutable.TreeMap // <= Sorted...
             var methodParametersDistribution: Map[Int, Int] = TreeMap.empty
             var maxLocalsDistrbution: Map[Int, Int] = TreeMap.empty
 
@@ -53,7 +53,7 @@ object MaxLocalsEvaluation extends AnalysisExecutor {
             } {
                 val parametersCount = method.descriptor.parametersCount + (if (method.isStatic) 0 else 1)
                 require(body.maxLocals >= parametersCount)
-                
+
                 methodParametersDistribution = methodParametersDistribution.updated(
                     parametersCount,
                     methodParametersDistribution.getOrElse(parametersCount, 0) + 1

@@ -30,8 +30,9 @@ package org.opalj
 package ai
 package project
 
-import br._
-import br.analyses.{ Project, ReportableAnalysisResult }
+import org.opalj.br.Method
+import org.opalj.br.ClassFile
+import org.opalj.br.analyses.{ Project, ReportableAnalysisResult }
 
 /**
  * Template class for analyzing complete Java projects that use the abstract interpreter.
@@ -64,10 +65,7 @@ trait AIProject[Source, D <: Domain with Report] {
      * The analysis of all entry points may happen concurrently unless
      * [[analyzeInParallel]] is `false.
      */
-    def domain(
-        project: Project[Source],
-        classFile: ClassFile,
-        method: Method): D
+    def domain(project: Project[Source], classFile: ClassFile, method: Method): D
 
     /**
      * A project's entry points.
