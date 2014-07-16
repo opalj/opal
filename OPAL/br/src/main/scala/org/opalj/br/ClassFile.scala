@@ -149,7 +149,9 @@ final class ClassFile private (
         attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
 
     /**
-     * Returns the set of immediate nested classes of this class.
+     * Returns the set of all immediate nested classes of this class. I.e., returns those
+     * nested classes that are not defined in the scope of a nestes class of this
+     * class.
      */
     def nestedClasses: Seq[ObjectType] = {
         // From the specification:
@@ -175,6 +177,12 @@ final class ClassFile private (
 
     /**
      * Iterates over '''all ''direct'' and ''indirect'' nested classes''' of this class file.
+     *
+     * @example To collect all nested types:
+     * {{{
+     *   var allNestedTypes: Set[ObjectType] = Set.empty
+     *   foreachNestedClasses(innerclassesProject, { nc ⇒ allNestedTypes += nc.thisType })
+     * }}}
      */
     def foreachNestedClasses(
         classFileRepository: ClassFileRepository,
@@ -188,7 +196,9 @@ final class ClassFile private (
     }
 
     /**
-     * Each class has at most one explicit, direct outer type.
+     * Each class has at most one explicit, direct outer type. Note that a local
+     * class (a class defined in the scope of a method) or an anonymous class
+     * do not specify an outer type.
      *
      * @return The object type of the outer type as well as the access flags of this
      *      inner class.
