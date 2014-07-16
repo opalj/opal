@@ -29,13 +29,18 @@
 package org.opalj
 package br
 
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
+
+import org.opalj.br.analyses.Analysis
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 
 /**
  * Shows the inner classes attributes of given class files.
  *
  * @author Daniel Klauer
+ * @author Michael Eichberg
  */
 object ShowInnerClassesAttribute extends AnalysisExecutor {
     val analysis = new Analysis[URL, BasicReport] {
@@ -49,8 +54,9 @@ object ShowInnerClassesAttribute extends AnalysisExecutor {
                 for {
                     classFile ← project.classFiles
                     if classFile.innerClasses.isDefined
-                    innerClass ← classFile.innerClasses.get
-                } yield classFile.fqn+": "+innerClass.innerName.getOrElse("(none)")
+                } yield {
+                    classFile.innerClasses.get.mkString(classFile.fqn+":\n\t", "\n\t", "\n")
+                }
 
             BasicReport(messages.mkString("\n"))
         }
