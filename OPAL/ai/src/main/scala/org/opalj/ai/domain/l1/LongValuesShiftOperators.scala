@@ -31,51 +31,44 @@ package ai
 package domain
 package l1
 
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.analyses.Project
+import org.opalj.ai.Domain
+import org.opalj.ai.IsLongValue
+import org.opalj.ai.domain.Configuration
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeLong
 
 /**
- * This domain uses the l1 level ''stable'', partial domains.
+ * Implements the shift operators for long values.
  *
  * @author Michael Eichberg
+ * @author Riadh Chtara
  */
-class DefaultConfigurableDomain[I, Source](
-    val id: I,
-    val project: Project[Source],
-    val classFile: ClassFile,
-    val method: Method)
-        extends Domain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with ProjectBasedClassHierarchy
-        with TheProject[Source]
-        with TheMethod
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with l1.DefaultReferenceValuesBinding
-        // [NOT YET NEEDED] with PerInstructionPostProcessing
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-        with l1.DefaultIntegerRangeValues
-        with l1.DefaultLongValues
-        with l1.LongValuesShiftOperators
-        with l0.DefaultPrimitiveTypeConversions {
+trait LongValuesShiftOperators extends LongValuesDomain {
+    this: CoreDomain with ConcreteLongValues with ConcreteIntegerValues ⇒
 
-    type Id = I
+    override def lshl(pc: PC, longValue: DomainValue, shift: DomainValue): DomainValue = {
+        this.longValue(longValue) { v ⇒
+            this.intValue(shift)(s ⇒ LongValue(pc, v << s)) { LongValue(pc) }
+        } {
+            LongValue(pc)
+        }
+    }
 
+    override def lshr(pc: PC, longValue: DomainValue, shift: DomainValue): DomainValue = {
+        this.longValue(longValue) { v ⇒
+            this.intValue(shift)(s ⇒ LongValue(pc, v >> s)) { LongValue(pc) }
+        } {
+            LongValue(pc)
+        }
+    }
+
+    override def lushr(pc: PC, longValue: DomainValue, shift: DomainValue): DomainValue = {
+        this.longValue(longValue) { v ⇒
+            this.intValue(shift)(s ⇒ LongValue(pc, v >>> s)) { LongValue(pc) }
+        } {
+            LongValue(pc)
+        }
+    }
 }
 
-class DefaultDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends DefaultConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)
+
