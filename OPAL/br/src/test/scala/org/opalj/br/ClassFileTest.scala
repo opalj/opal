@@ -112,7 +112,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
         boundedBuffer.findField("size") should be('defined)
         boundedBuffer.findField("numberInBuffer") should be('defined)
     }
-    
+
     test("that findField does not find non-existing fields") {
         if (boundedBuffer.fields.size != 5)
             fail("expected five fields; found: "+boundedBuffer.fields)
@@ -124,4 +124,52 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
         boundedBuffer.findField("AnumberInBuffers") should be(None)
     }
 
+    val innerclassesJARFile = TestSupport.locateTestResources("classfiles/Innerclasses.jar", "bi")
+    val innerclassesProject = analyses.Project(innerclassesJARFile)
+    val outerClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass.class")
+    val innerPrinterOfXClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass$InnerPrinterOfX.class")
+    val formatterClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass$Formatter.class")
+
+    test("that all direct nested classes of a top-level class are correctly identified") {
+        outerClass.nestedClasses.toSet should be(Set(
+            ObjectType("innerclasses/MyRootClass$1"),
+            ObjectType("innerclasses/MyRootClass$1MyInnerPrinter"),
+            ObjectType("innerclasses/MyRootClass$2"),
+            ObjectType("innerclasses/MyRootClass$Formatter"),
+            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX")
+        ))
+    }
+
+    test("that all direct nested classes of a member class are correctly identified") {
+        innerPrinterOfXClass.nestedClasses.toSet should be(Set(
+            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$1"),
+            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$InnerPrettyPrinter")
+        ))
+    }
+
+    test("that no supertype information is extracted") {
+        formatterClass.nestedClasses.toSet should be(Set.empty)
+    }
+
+    test("that all direct and indirect nested classes of a top-level class are correctly identified") {
+        val expectedNestedTypes = Set(
+            ObjectType("innerclasses/MyRootClass$1"),
+            ObjectType("innerclasses/MyRootClass$1MyInnerPrinter"),
+            ObjectType("innerclasses/MyRootClass$2"),
+            ObjectType("innerclasses/MyRootClass$Formatter"),
+            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX"),
+            ObjectType("innerclasses/MyRootClass$1$1"),
+            ObjectType("innerclasses/MyRootClass$1$1$1"),
+            ObjectType("innerclasses/MyRootClass$1$InnerPrinterOfAnonymousClass"),
+            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$InnerPrettyPrinter"),
+            ObjectType("innerclasses/MyRootClass$2"),
+            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$1")
+        )
+
+        var foundNestedTypes: Set[ObjectType] = Set.empty
+        outerClass.foreachNestedClasses(innerclassesProject, { nc ⇒ foundNestedTypes += nc.thisType })
+
+        foundNestedTypes.size should be(expectedNestedTypes.size)
+        foundNestedTypes should be(expectedNestedTypes)
+    }
 }

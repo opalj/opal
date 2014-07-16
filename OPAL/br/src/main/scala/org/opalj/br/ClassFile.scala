@@ -135,8 +135,57 @@ final class ClassFile private (
     def enclosingMethod: Option[EnclosingMethod] =
         attributes collectFirst { case em: EnclosingMethod ⇒ em }
 
+    /**
+     * Returns the `inner classes attribute`, if defined.
+     *
+     * @note The inner classes attribute contains (for inner classes) also a reference
+     *      to its outer class. Furthermore, it contains references to other inner
+     *      classes that are not an inner class of this class.
+     *      If you are just interested in the inner classes
+     *      of this class, use the method nested classes.
+     * @see [[nestedClasses]]
+     */
     def innerClasses: Option[InnerClasses] =
         attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
+
+    /**
+     * Returns the set of immediate nested classes of this class.
+     */
+    def nestedClasses: Seq[ObjectType] = {
+        // From the specification:
+        // - every inner class must have an inner class attribute (at least for itself)
+        // - every class that has inner classes must have an innerclasses attribute
+        //   and the nner classes array must contain an entry
+        // - the InnerClasses attribute only encodes information about its immediate
+        //   inner classes
+
+        innerClasses.map { innerClasses ⇒
+            innerClasses.filter(innerClass ⇒
+                // it does not describe this class:
+                (innerClass.innerClassType ne thisType) &&
+                    // it does not give information about an outer class:     
+                    (!this.fqn.startsWith(innerClass.innerClassType.fqn)) &&
+                    // it does not give information about some other inner class:
+                    (innerClass.outerClassType.isEmpty || (innerClass.outerClassType.get eq thisType))
+            ).map(_.innerClassType)
+        }.getOrElse {
+            Nil
+        }
+    }
+
+    /**
+     * Iterates over '''all ''direct'' and ''indirect'' nested classes''' of this class file.
+     */
+    def foreachNestedClasses(
+        classFileRepository: ClassFileRepository,
+        f: (ClassFile) ⇒ Unit): Unit = {
+        nestedClasses.foreach { nestedType ⇒
+            classFileRepository.classFile(nestedType).map { nestedClassFile ⇒
+                f(nestedClassFile)
+                nestedClassFile.foreachNestedClasses(classFileRepository, f)
+            }
+        }
+    }
 
     /**
      * Each class has at most one explicit, direct outer type.
