@@ -72,11 +72,9 @@ object DeadCode extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        override def title: String =
-            "Identifies Dead Code"
+        override def title: String = "Identifies Dead Code"
 
-        override def description: String =
-            "Identifies dead code."
+        override def description: String = "Identifies dead code using abstract interpretation."
 
         override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
             import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }

@@ -31,8 +31,8 @@ package ai
 package domain
 package l2
 
-import br.Method
-import br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.ClassFile
 
 trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
     rootDomain: TheProject[_] with Configuration with TheCode ⇒
@@ -52,65 +52,6 @@ trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
             val calledMethodsStore: rootDomain.calledMethodsStore.type
         }
 
-    }
-}
-
-class CalledMethodsStore(val domain: Domain) {
-
-    /**
-     * Determines when we issue a frequent evaluation warning.
-     */
-    val frequentEvaluationWarningLevel = 10
-
-    private[this] val calledMethods = scala.collection.mutable.HashMap.empty[Method, List[domain.Operands]]
-
-    def isRecursive(
-        definingClass: ClassFile,
-        method: Method,
-        operands: Domain#Operands): Boolean = {
-        val adaptedOperands = operands.map(_.adapt(domain, -1))
-        calledMethods.get(method) match {
-            case None ⇒
-                calledMethods.update(method, List(adaptedOperands))
-                false
-            case Some(previousOperandsList) ⇒
-                for (previousOperands ← previousOperandsList) {
-                    import scala.util.control.Breaks.{ breakable, break }
-
-                    val previousOperandsIterator = previousOperands.iterator
-                    val operandsIterator = adaptedOperands.iterator
-                    breakable {
-                        while (previousOperandsIterator.hasNext) {
-                            val previousOperand = previousOperandsIterator.next
-                            val operand = operandsIterator.next
-                            if (!previousOperand.abstractsOver(operand))
-                                break
-                        }
-                        // we completely abstract over a previous computation
-                        return true
-                    }
-                }
-                val newOperandsList = adaptedOperands :: previousOperandsList
-
-                if (((previousOperandsList.size + 1) % frequentEvaluationWarningLevel) == 0)
-                    frequentEvalution(definingClass, method, newOperandsList)
-
-                calledMethods.update(method, newOperandsList)
-                false
-        }
-    }
-
-    def frequentEvalution(
-        definingClass: ClassFile,
-        method: Method,
-        operandsSet: List[domain.Operands]): Unit = {
-        println(
-            "[info] the method "+
-                definingClass.thisType.toJava+
-                "{ "+method.toJava+" } "+
-                "is frequently evaluated using different operands ("+operandsSet.size+"): "+
-                operandsSet.map(_.mkString("[", ",", "]")).mkString("( ", " ; ", " )")
-        )
     }
 }
 

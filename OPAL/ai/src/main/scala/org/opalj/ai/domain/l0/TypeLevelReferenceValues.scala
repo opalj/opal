@@ -66,12 +66,12 @@ import org.opalj.util.Yes
  *
  * @author Michael Eichberg
  */
-trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
-    domain: Configuration with ClassHierarchy ⇒
+trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
+    domain: CoreDomain with IntegerValuesDomain with Configuration with ClassHierarchy ⇒
 
     /**
      * Merges those exceptions that have the same upper type bound. This ensures
-     * that per upper type bound only one [[DomainValue]] (which may be a
+     * that per upper type bound only one [[CoreDomain.DomainValue]] (which may be a
      * `MultipleReferenceValues`) is used.
      */
     def mergeMultipleExceptionValues(
@@ -333,7 +333,7 @@ trait TypeLevelReferenceValues extends Domain with GeneralizedArrayHandling {
 
         override def summarize(pc: PC): this.type = this
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.NullValue(pc)
 
         override def toString: String = "ReferenceValue(null)"

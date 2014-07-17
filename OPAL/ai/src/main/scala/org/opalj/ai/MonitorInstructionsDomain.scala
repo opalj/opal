@@ -28,21 +28,22 @@
  */
 package org.opalj
 package ai
-package domain
-
-import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy, Project }
 
 /**
- * Delegates type hierarchy related queries to the project's class hierarchy.
+ * Domain that defines all methods related to monitor instructions.
  *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait ProjectBasedClassHierarchy extends ClassHierarchy { 
-    domain: TheProject[_] ⇒
+trait MonitorInstructionsDomain { this: CoreDomain ⇒
 
     /**
-     * Returns the project's class hierarchy.
+     * Handles a `monitorenter` instruction.
      */
-    final override val classHierarchy: TheClassHierarchy = project.classHierarchy
+    def monitorenter(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
+
+    /**
+     * Handles a `monitorexit` instruction.
+     */
+    def monitorexit(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
 }

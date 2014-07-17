@@ -119,10 +119,8 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  *
  * @author Michael Eichberg
  */
-trait IntegerRangeValues
-        extends CoreDomainWithJoinStabilization
-        with Domain
-        with ConcreteIntegerValues { this: Configuration ⇒
+trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues {
+    domain: JoinStabilization with Configuration with IntegerValuesFactory with VMLevelExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -681,30 +679,6 @@ trait IntegerRangeValues
                 value
             case _ ⇒
                 IntegerRange(Short.MinValue, Short.MaxValue)
-        }
-
-    override def i2d(pc: PC, value: DomainValue): DomainValue =
-        value match {
-            case IntegerRange(lb, ub) if lb == ub ⇒
-                DoubleValue(pc, lb /*or ub*/ )
-            case _ ⇒
-                DoubleValue(pc)
-        }
-
-    override def i2f(pc: PC, value: DomainValue): DomainValue =
-        value match {
-            case IntegerRange(lb, ub) if lb == ub ⇒
-                FloatValue(pc, lb /*or ub*/ )
-            case _ ⇒
-                FloatValue(pc)
-        }
-
-    override def i2l(pc: PC, value: DomainValue): DomainValue =
-        value match {
-            case IntegerRange(lb, ub) if lb == ub ⇒
-                LongValue(pc, lb /*or ub*/ )
-            case _ ⇒
-                LongValue(pc)
         }
 }
 

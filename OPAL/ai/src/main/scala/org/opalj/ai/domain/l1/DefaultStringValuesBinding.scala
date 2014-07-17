@@ -41,7 +41,7 @@ import scala.collection.SortedSet
 trait DefaultStringValuesBinding
         extends l1.DefaultReferenceValuesBinding
         with StringValues {
-    domain: Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
     type DomainStringValue = StringValue

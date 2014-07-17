@@ -36,7 +36,8 @@ import scala.collection.SortedSet
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.collection.immutable.UIDSet
 
-import br._
+import org.opalj.br.ObjectType
+import org.opalj.br.ArrayType
 
 /**
  * @author Michael Eichberg
@@ -44,7 +45,7 @@ import br._
 trait DefaultReferenceValuesBinding
         extends l1.ReferenceValues
         with DefaultVMLevelExceptionsFactory {
-    domain: Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
 

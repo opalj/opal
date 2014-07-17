@@ -66,6 +66,10 @@ trait DefaultPrimitiveTypeConversions extends PrimitiveTypeConversionsDomain {
     override def i2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
     override def i2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
     override def i2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
+
+    override def f2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
+    override def f2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
+    override def f2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 }
 
 

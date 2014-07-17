@@ -68,22 +68,6 @@ trait IntegerValuesFactory { this: CoreDomain ⇒
      */
     def IntegerValue(vo: ValueOrigin, value: Int): DomainValue
 
-}
-
-/**
- * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of integer values.
- *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- */
-trait IntegerValuesDomain extends IntegerValuesFactory { this: CoreDomain ⇒
-
-    // -----------------------------------------------------------------------------------
-    //
-    // FACTORY METHODS TO CREATE "OTHER" INTEGER VALUES
-    //
-    // -----------------------------------------------------------------------------------
-
     /**
      * Factory method to create a representation of a boolean value if we know the
      * origin of the value.
@@ -146,6 +130,21 @@ trait IntegerValuesDomain extends IntegerValuesFactory { this: CoreDomain ⇒
      * specified program counter.
      */
     def CharValue(vo: ValueOrigin, value: Char): DomainValue
+}
+
+/**
+ * Defines the public interface between the abstract interpreter and the domain
+ * that implements the functionality related to the handling of integer values.
+ *
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ */
+trait IntegerValuesDomain extends IntegerValuesFactory { this: CoreDomain ⇒
+
+    // -----------------------------------------------------------------------------------
+    //
+    // QUERY METHODS
+    //
+    // -----------------------------------------------------------------------------------
 
     /**
      * Returns `Yes` iff at least one possible extension of the given

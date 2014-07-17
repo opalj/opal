@@ -30,8 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
+import org.opalj.util.Answer
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.{ ClassHierarchy ⇒ DefaultClassHierarchy }
 
@@ -44,7 +43,7 @@ import org.opalj.br.analyses.{ ClassHierarchy ⇒ DefaultClassHierarchy }
  *
  * @author Michael Eichberg
  */
-trait ClassHierarchy { this: Domain ⇒
+trait ClassHierarchy {
 
     /**
      * This project's class hierarchy.

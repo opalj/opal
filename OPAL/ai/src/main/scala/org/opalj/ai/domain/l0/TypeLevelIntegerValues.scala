@@ -64,7 +64,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait BooleanValue extends ComputationalTypeIntegerValue with IsBooleanValue {
         this: DomainValue ⇒
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.BooleanValue(vo)
 
     }
@@ -72,7 +72,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait ByteValue extends ComputationalTypeIntegerValue with IsByteValue {
         this: DomainValue ⇒
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.ByteValue(vo)
 
     }
@@ -80,7 +80,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait CharValue extends ComputationalTypeIntegerValue with IsCharValue {
         this: DomainValue ⇒
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.CharValue(vo)
 
     }
@@ -88,7 +88,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait ShortValue extends ComputationalTypeIntegerValue with IsShortValue {
         this: DomainValue ⇒
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.ShortValue(vo)
 
     }
@@ -96,7 +96,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait IntegerValue extends ComputationalTypeIntegerValue with IsIntegerValue {
         this: DomainValue ⇒
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.IntegerValue(vo)
 
     }

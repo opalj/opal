@@ -50,6 +50,8 @@ import org.opalj.br.ComputationalTypeReturnAddress
  */
 trait CoreDomain {
 
+    type TargetDomain = CoreDomain with ReferenceValuesDomain with IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
+
     // -----------------------------------------------------------------------------------
     //
     // REPRESENTATION OF VALUES
@@ -293,7 +295,7 @@ trait CoreDomain {
          *      analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
-        def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             throw new DomainException("adaptation of "+this+" to "+target+" is unsupported")
 
     }
@@ -377,7 +379,7 @@ trait CoreDomain {
         override def summarize(pc: PC): DomainValue =
             throw DomainException("creating a summary of an illegal value is meaningless")
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.TheIllegalValue
 
         override def toString: String = "IllegalValue"
@@ -455,7 +457,7 @@ trait CoreDomain {
             throw DomainException("summarizing return address values is meaningless")
 
         // Adaptation is supported to support on-the-fly domain up-/downcasts.
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.ReturnAddressValue(address)
 
         override def toString = "ReturnAddress("+address+")"
@@ -683,7 +685,7 @@ trait CoreDomain {
     protected[this] def joinValues(
         pc: PC,
         left: DomainValue, right: DomainValue): Update[DomainValue] = {
-        left.join(pc, right) 
+        left.join(pc, right)
     }
 
     protected[this] def beforeJoin(pc: PC): Unit = {}

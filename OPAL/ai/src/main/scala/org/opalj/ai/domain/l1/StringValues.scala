@@ -41,7 +41,7 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait StringValues extends ReferenceValues with JavaObjectConversion {
-    domain: Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
 
@@ -73,10 +73,10 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
             }
         }
 
-        override def adapt(target: Domain, pc: Int): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             // The following method is provided by `CoreDomain` and, hence,
             // all possible target domains are automatically supported.
-            target.StringValue(pc, this.value)
+            target.StringValue(vo, this.value)
 
         override def equals(other: Any): Boolean = {
             other match {

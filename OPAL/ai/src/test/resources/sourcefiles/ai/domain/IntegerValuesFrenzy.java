@@ -398,7 +398,19 @@ public class IntegerValuesFrenzy {
             if (readed == (byte) 127) {
                 break;
             }
-            doIt(readed); // a value in the range [-128,126] except -1 (cannot be captured) and 127
+            doIt(readed); // a value in the range [-128,126] except -1 (cannot be
+                          // captured) and 127
         }
+    }
+
+    static int countingLoop(int k) {
+        int i = 0;
+        int j = 1;
+        while (i < 5 && k < 10) {
+            j += 1;
+            i += 1;
+            k += 1;
+        }
+        return j;
     }
 }

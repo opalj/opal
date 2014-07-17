@@ -145,6 +145,9 @@ package object ai {
     type ALocalsArray[T >: Null <: CoreDomain#DomainValue] = Array[Locals[T]]
     type TheLocalsArray[T >: Null <: (CoreDomain with Singleton)#Locals] = Array[T]
 
+    /**
+     * Creates a human-readable textual representation of the current memory layout.
+     */
     def memoryLayoutToText(
         domain: Domain)(
             operandsArray: domain.OperandsArray,

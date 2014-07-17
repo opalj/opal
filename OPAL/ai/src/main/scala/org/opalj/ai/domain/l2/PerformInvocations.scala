@@ -33,9 +33,9 @@ package l2
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
-import br.instructions._
-import br.analyses.{ Project, ClassHierarchy }
+import org.opalj.br._
+import org.opalj.br.instructions._
+import org.opalj.br.analyses.{ Project, ClassHierarchy }
 
 import org.opalj.ai.util.Locals
 
@@ -48,8 +48,8 @@ import org.opalj.ai.util.Locals
 trait PerformInvocations
         extends Domain
         with l0.TypeLevelInvokeInstructions
-        with ProjectBasedClassHierarchy { 
-    callingDomain: TheProject[_] with Configuration with TheCode ⇒
+        with ProjectBasedClassHierarchy {
+    callingDomain: TheProject[_] with TheCode with Configuration ⇒
 
     /**
      * Identifies recursive calls.
@@ -89,10 +89,11 @@ trait PerformInvocations
             pc: PC,
             definingClass: ClassFile,
             method: Method,
-            parameters: org.opalj.ai.util.Locals[domain.DomainValue]): MethodCallResult = {
+            parameters: domain.Locals): MethodCallResult = {
 
             val aiResult =
-                ai.perform(method.body.get, domain)(List.empty[domain.DomainValue], parameters)
+                ai.perform(method.body.get, domain)(
+                    List.empty[domain.DomainValue], parameters)
             transformResult(pc, method, aiResult)
         }
 

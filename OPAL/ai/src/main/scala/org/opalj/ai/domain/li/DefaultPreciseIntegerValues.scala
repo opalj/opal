@@ -57,7 +57,7 @@ trait DefaultPreciseIntegerValues
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.IntegerValue(pc)
     }
 
@@ -89,14 +89,14 @@ trait DefaultPreciseIntegerValues
         override def summarize(pc: PC): DomainValue = this
 
         override def adapt(
-            targetDomain: Domain,
-            pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues]
+            target: TargetDomain,
+            pc: PC): target.DomainValue =
+            if (target.isInstanceOf[DefaultPreciseIntegerValues]) {
+                val thatDomain = target.asInstanceOf[DefaultPreciseIntegerValues]
                 thatDomain.TheIntegerValue(this.value, this.updateCount).
-                    asInstanceOf[targetDomain.DomainValue]
+                    asInstanceOf[target.DomainValue]
             } else {
-                super.adapt(targetDomain, pc)
+                super.adapt(target, pc)
             }
 
         override def abstractsOver(other: DomainValue): Boolean = {

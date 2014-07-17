@@ -188,7 +188,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
             }
         }
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target match {
 
                 case thatDomain: l1.ArrayValues ⇒

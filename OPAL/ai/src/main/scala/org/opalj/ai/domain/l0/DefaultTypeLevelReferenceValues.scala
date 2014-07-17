@@ -49,7 +49,7 @@ import org.opalj.br.ReferenceType
 trait DefaultTypeLevelReferenceValues
         extends DefaultDomainValueBinding
         with TypeLevelReferenceValues {
-    domain: Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -194,7 +194,7 @@ trait DefaultTypeLevelReferenceValues
             }
         }
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.ReferenceValue(pc, theUpperTypeBound)
     }
 
@@ -325,7 +325,7 @@ trait DefaultTypeLevelReferenceValues
             }
         }
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.ReferenceValue(pc, theUpperTypeBound)
 
     }
@@ -427,7 +427,7 @@ trait DefaultTypeLevelReferenceValues
             }
         }
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target match {
                 case td: TypeLevelReferenceValues ⇒
                     td.ObjectValue(pc, upperTypeBound).asInstanceOf[target.DomainValue]

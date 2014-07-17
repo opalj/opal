@@ -54,8 +54,8 @@ trait DefaultPreciseLongValues
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(targetDomain: Domain, pc: PC): targetDomain.DomainValue =
-            targetDomain.LongValue(pc)
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
+            target.LongValue(pc)
     }
 
     case class LongRange(
@@ -96,7 +96,7 @@ trait DefaultPreciseLongValues
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             if (target.isInstanceOf[DefaultPreciseLongValues]) {
                 val thatDomain = target.asInstanceOf[DefaultPreciseLongValues]
                 thatDomain.LongRange(this.initial, this.value).

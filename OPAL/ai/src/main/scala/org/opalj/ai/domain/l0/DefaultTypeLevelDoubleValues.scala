@@ -59,7 +59,7 @@ trait DefaultTypeLevelDoubleValues
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: Domain, valueOrigin: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, valueOrigin: ValueOrigin): target.DomainValue =
             target.DoubleValue(valueOrigin)
 
     }

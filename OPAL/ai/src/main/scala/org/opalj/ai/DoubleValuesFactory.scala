@@ -27,49 +27,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package frb
+package ai
 
 /**
- * `FindRealBugs.analyze()` users can implement this interface in order to obtain
- * information about the progress of the analysis process.
+ * Defines the primary factory methods for Double values.
  *
- * Thread-safety: Implementations of this trait need to be thread safe.
- *
- * @author Daniel Klauer
- * @author Florian Brandherm
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Dennis Siebert
  */
-trait ProgressListener {
-    import FindRealBugs._
+trait DoubleValuesFactory { this: CoreDomain ⇒
 
     /**
-     * Override this callback to be notified when a certain analysis is started.
+     * Factory method to create a `DomainValue` that was created (explicitly or
+     * implicitly) by the instruction with the specified program counter.
      *
-     * @note Since the analyses are executed in parallel, begin/end events may not
-     *      necessarily be in order. Calls to this method may come from multiple threads.
-     *      However, all calls to this method are synchronized.
-     *
-     * @param analysis The analysis.
-     * @param position The analysis' start number. 1st analysis = 1, 2nd analysis = 2,
-     * etc.
-     * @param total The total number of analyses that are being run.
+     * The domain may ignore the information about the origin (`vo`).
      */
-    def analysisStarted(analysis: Analysis, position: Int, total: Int): Unit
+    def DoubleValue(vo: ValueOrigin): DomainValue
 
     /**
-     * Override this callback to be notified when a certain analysis ends.
+     * Factory method to create a `DomainValue` that represents the given double value
+     * and that was created (explicitly or implicitly) by the instruction with the
+     * specified program counter.
      *
-     * @see [[ProgressListener.analysisStarted]]
-     *
-     * @param analysis The analysis.
-     * @param position The analysis' start number.
-     * @param total The total number of analyses that are being run.
-     * @param seconds The time it took for this analysis to run, in seconds.
-     * @param reports The reports produced by the analysis, if any.
+     * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def analysisCompleted(
-        analysis: Analysis,
-        position: Int,
-        total: Int,
-        seconds: Double,
-        reports: FindRealBugs.AnalysisReports): Unit
+    def DoubleValue(vo: ValueOrigin, value: Double): DomainValue
 }

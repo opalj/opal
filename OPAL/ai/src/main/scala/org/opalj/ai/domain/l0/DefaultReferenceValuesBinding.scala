@@ -42,7 +42,7 @@ import org.opalj.br.{ ObjectType, ArrayType }
 trait DefaultReferenceValuesBinding
         extends DefaultTypeLevelReferenceValues
         with DefaultVMLevelExceptionsFactory {
-    domain: Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type DomainReferenceValue = ReferenceValue
     type DomainNullValue = NullValue

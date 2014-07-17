@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy, Project }
+import org.opalj.br.analyses.Project
 
 /**
  * Provides information about the underlying project.
@@ -51,7 +51,7 @@ import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy, Project }
  *
  * @author Michael Eichberg
  */
-trait TheProject[Source] { this: Domain ⇒
+trait TheProject[Source] {
 
     /**
      * Returns the project that is currently analyzed.

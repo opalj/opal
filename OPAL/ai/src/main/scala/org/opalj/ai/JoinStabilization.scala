@@ -28,21 +28,47 @@
  */
 package org.opalj
 package ai
-package domain
-
-import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy, Project }
 
 /**
- * Delegates type hierarchy related queries to the project's class hierarchy.
+ * Using join stabilization is necessary (makes sense) if constraints are propagated
+ * or if the merge of domain values is expensive.
  *
- * @author Michael Eichberg
+ * @note Join stabilization is always done for all domain values once this domain is
+ *      used.
+ *
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait ProjectBasedClassHierarchy extends ClassHierarchy { 
-    domain: TheProject[_] ⇒
+trait JoinStabilization extends CoreDomain {
 
-    /**
-     * Returns the project's class hierarchy.
-     */
-    final override val classHierarchy: TheClassHierarchy = project.classHierarchy
+    import java.util.{ IdentityHashMap ⇒ IDMap }
 
+    private[this] val leftValues =
+        new IDMap[DomainValue, IDMap[DomainValue, Update[DomainValue]]]()
+
+    abstract override protected[this] def joinValues(
+        pc: PC,
+        left: DomainValue, right: DomainValue): Update[DomainValue] = {
+        val rightMap = leftValues.get(left)
+        if (rightMap == null) {
+            val rightMap = new IDMap[DomainValue, Update[DomainValue]]()
+            val joinedValue = super.joinValues(pc, left, right)
+            rightMap.put(right, joinedValue)
+            leftValues.put(left, rightMap)
+            joinedValue
+        } else {
+            val cachedValue = rightMap.get(right)
+            if (cachedValue == null) {
+                val joinedValue = super.joinValues(pc, left, right)
+                rightMap.put(right, joinedValue)
+                joinedValue
+            } else {
+                cachedValue
+            }
+        }
+    }
+
+    abstract override protected[this] def afterJoin(pc: PC): Unit = {
+        super.afterJoin(pc)
+        leftValues.clear()
+    }
 }

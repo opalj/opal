@@ -63,10 +63,6 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy {
 
-        type Id = String
-
-        def id = "Domain used by the anaylsis CallsOfNativeMethodsWithBoundedValues"
-
         override def maxSizeOfIntegerRanges: Long = 128l
     }
 

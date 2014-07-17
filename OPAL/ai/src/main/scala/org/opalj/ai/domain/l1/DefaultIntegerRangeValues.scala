@@ -36,8 +36,11 @@ package l1
  *
  * @author Michael Eichberg
  */
-trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRangeValues {
-    this: Configuration ⇒
+trait DefaultIntegerRangeValues
+        extends DefaultDomainValueBinding
+        with JoinStabilization
+        with IntegerRangeValues {
+    domain: Configuration with VMLevelExceptionsFactory ⇒
 
     /**
      * @note The functionality to propagate a constraint crucially depends on
@@ -64,7 +67,7 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.IntegerValue(pc)
 
         override def hashCode: Int = 101
@@ -133,15 +136,13 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(
-            targetDomain: Domain,
-            pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultIntegerRangeValues]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultIntegerRangeValues]
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
+            if (target.isInstanceOf[IntegerRangeValues]) {
+                val thatDomain = target.asInstanceOf[DefaultIntegerRangeValues]
                 thatDomain.IntegerRange(this.lowerBound, this.upperBound).
-                    asInstanceOf[targetDomain.DomainValue]
+                    asInstanceOf[target.DomainValue]
             } else {
-                targetDomain.IntegerValue(pc)
+                target.IntegerValue(pc)
             }
 
         override def hashCode = this.lowerBound * 13 + this.upperBound

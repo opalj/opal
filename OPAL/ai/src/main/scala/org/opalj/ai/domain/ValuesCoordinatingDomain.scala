@@ -46,7 +46,7 @@ import org.opalj.br.analyses.{ Project }
  */
 @deprecated("Will be removed soon; using the new modularization enables the construction of a precise domain.", "0.8.0M3")
 trait ValuesCoordinatingDomain
-        extends Domain
+        extends Domain with JoinStabilization
         with ThrowAllPotentialExceptionsConfiguration /*ACTUALLY NOT RELEVANT*/ {
 
     /*override*/ def invokevirtual(

@@ -30,15 +30,13 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 /**
  * This (partial-)domain abstracts over the concrete methods for performing
  * array operations and provides an interface at a higher abstraction level.
  *
  * @author Michael Eichberg
  */
-trait GeneralizedArrayHandling { this: Domain ⇒
+trait GeneralizedArrayHandling extends ReferenceValuesDomain { this: CoreDomain ⇒
 
     //
     // NEW INTERFACE
