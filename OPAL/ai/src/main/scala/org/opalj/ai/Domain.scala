@@ -92,8 +92,7 @@ import br._
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait Domain
-        extends CoreDomain
+trait Domain extends CoreDomain
         with IntegerValuesDomain
         with LongValuesDomain
         with FloatValuesDomain
@@ -103,8 +102,8 @@ trait Domain
         with MethodCallsDomain
         with MonitorInstructionsDomain
         with PrimitiveTypeConversionsDomain
-        with VMLevelExceptionsFactory
-        with TypedValuesFactory {
+        with TypedValuesFactory
+        with VMLevelExceptionsFactory {
 
     // -----------------------------------------------------------------------------------
     //
