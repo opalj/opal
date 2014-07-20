@@ -392,7 +392,12 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
 
             val isIndexValid =
                 length.map((l: Int) ⇒ intIsSomeValueInRange(index, 0, l - 1)).
-                    getOrElse(intIsLessThan0(index).negate)
+                    getOrElse(
+                        if (intIsLessThan0(index).isYes)
+                            No
+                        else
+                            Unknown // the index may be too large...
+                    )
             if (isIndexValid.isNo)
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
 
@@ -426,7 +431,12 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
 
             val isIndexValid =
                 length.map((l: Int) ⇒ intIsSomeValueInRange(index, 0, l - 1)).
-                    getOrElse(intIsLessThan0(index).negate)
+                    getOrElse(
+                        if (intIsLessThan0(index).isYes)
+                            No
+                        else
+                            Unknown
+                    )
             if (isIndexValid.isNo)
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
 
