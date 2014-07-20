@@ -144,14 +144,6 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                     val a2 = BaseAI
                     val r2 = a2(classFile, method, new L1Domain(body, project))
 
-                    def abort(ai: SelfTerminatingAI[_], r: AIResult) {
-                        fail("the abstract interpretation of "+
-                            classFile.thisType.toJava+
-                            "{ "+method.toJava+" } was aborted after "+
-                            org.opalj.util.PerformanceEvaluation.ns2sec(ai.abortedAfter)+"secs.\n "+
-                            r.stateToString)
-                    }
-
                     abstractsOver(r1, r2).foreach { m ⇒
                         failed.set(true)
                         println(
