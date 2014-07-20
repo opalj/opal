@@ -48,9 +48,9 @@ object InterpretMethod {
         override def isInterrupted = Thread.interrupted()
 
         override val tracer =
-        //    Some(new ConsoleTracer {})
-        //Some(new ConsoleEvaluationTracer {})
-        Some(new MultiTracer(new ConsoleTracer {}, new XHTMLTracer {}))
+            //    Some(new ConsoleTracer {})
+            //Some(new ConsoleEvaluationTracer {})
+            Some(new MultiTracer(new ConsoleTracer {}, new XHTMLTracer {}))
     }
 
     /**
@@ -66,22 +66,42 @@ object InterpretMethod {
         import Console.{ RED, RESET }
         import language.existentials
 
-        if (args.size < 3 || args.size > 4) {
+        def printUsage() {
             println("You have to specify the method that should be analyzed.")
             println("\t1: a jar/class file or a directory containing jar/class files.")
             println("\t2: the name of a class.")
             println("\t3: the simple name or signature of a method of the class.")
             println("\t4[Optional]: -domain=CLASS the name of class of the configurable domain to use.")
+            println("\t5[Optional]: -trace={true,false}default:true")
+        }
+
+        if (args.size < 3 || args.size > 5) {
+            printUsage()
             return ;
         }
-        val fileName = args(0)
-        val className = args(1)
-        val methodName = args(2)
+        var remainingArgs = args.toList
+        val fileName = remainingArgs.head; remainingArgs = remainingArgs.tail
+        val className = remainingArgs.head; remainingArgs = remainingArgs.tail
+        val methodName = remainingArgs.head; remainingArgs = remainingArgs.tail
         val domainClass = {
-            if (args.length > 3)
-                Class.forName(args(3).substring(8)).asInstanceOf[Class[_ <: Domain]]
-            else // default domain
+            if (remainingArgs.nonEmpty && remainingArgs.head.startsWith("-domain=")) {
+                val clazz = Class.forName(remainingArgs.head.substring(8)).asInstanceOf[Class[_ <: Domain]]
+                remainingArgs = remainingArgs.tail
+                clazz
+            } else // default domain
                 classOf[BaseDomain[java.net.URL]]
+        }
+        val doTrace = {
+            if (remainingArgs.nonEmpty && remainingArgs.head.startsWith("-trace=")) {
+                val result = (remainingArgs.head == "-trace=true" || remainingArgs.head == "-trace=1")
+                remainingArgs = remainingArgs.tail
+                result
+            } else // default domain
+                true
+        }
+        if (remainingArgs.nonEmpty) {
+            printUsage()
+            return ;
         }
 
         def createDomain[Source: reflect.ClassTag](
@@ -155,7 +175,10 @@ object InterpretMethod {
 
         try {
             val result =
-                AI(classFile, method, createDomain(project, classFile, method))
+                if (doTrace)
+                    AI(classFile, method, createDomain(project, classFile, method))
+                else
+                    BaseAI(classFile, method, createDomain(project, classFile, method))
             val domain = result.domain
             writeAndOpenDump(dump(
                 Some(
