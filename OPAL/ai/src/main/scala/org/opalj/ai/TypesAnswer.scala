@@ -177,13 +177,13 @@ trait IsAReferenceValue {
     def isValueSubtypeOf(referenceType: ReferenceType): Answer
 
     /**
-     * Returns this reference value as a DomainValue.
+     * Returns this reference value as a `DomainValue` of its original domain.
      *
      * @param domain The domain that was used to create this object can be used
      *      to get/create a DomainValue.
      */
     @throws[UnsupportedOperationException](
-        "the given domain has to be equal to the domain that created this object"
+        "the given domain has to be equal to the domain that was used to creat this object"
     )
     def asDomainValue(implicit domain: Domain): domain.DomainValue
 }
