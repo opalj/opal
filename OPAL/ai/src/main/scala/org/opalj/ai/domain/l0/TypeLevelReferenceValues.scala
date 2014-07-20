@@ -56,8 +56,8 @@ import org.opalj.util.Yes
  *    reference values are never equal. However, subclasses may implement their
  *    own strategy.
  *  - Instances of `DomainValue`s are always immutable or are at least considered and
- *    treated as immutable. Every
- *    update of a value's properties creates a new value. This is a general design
+ *    treated as immutable.
+ *    Every update of a value's properties creates a new value. This is a general design
  *    decision underlying OPAL and should not be changed.
  *  - A new instance of a `DomainValue` is always exclusively created by one of the
  *    factory methods. (The factory methods generally start with a capital letter
@@ -265,7 +265,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
          * it may be better to just return `Unknown` in case that this type and the
          * given type are not in a direct inheritance relationship.
          *
-         * @note If this value represents the `null` value this method is not supported.
+         * @note If this value represents `null` this method is not supported.
          *
          * @return The default implementation always returns `Unknown`.
          */
@@ -283,6 +283,24 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
                 throw new UnsupportedOperationException(
                     "the given domain has to be equal to this value's domain")
         }
+
+    }
+
+    /**
+     * A reference value that has a single (upper) type (bound).
+     */
+    protected[this] trait SReferenceValue[T <: ReferenceType] {
+        this: DomainReferenceValue ⇒
+
+        val theUpperTypeBound: T
+
+        final override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
+
+        final override def upperTypeBound: UpperTypeBound = UIDSet(theUpperTypeBound)
+
+        final override def summarize(pc: PC): this.type = this
+
+        override def toString: String = theUpperTypeBound.toJava
 
     }
 
@@ -307,9 +325,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         /** Returns an empty upper type bound. */
         final override def upperTypeBound: UpperTypeBound = UIDSet.empty
 
-        final override def load(
-            pc: PC,
-            index: DomainValue): ArrayLoadResult =
+        final override def load(pc: PC, index: DomainValue): ArrayLoadResult =
             justThrows(NullPointerException(pc))
 
         final override def store(
@@ -337,25 +353,6 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             target.NullValue(pc)
 
         override def toString: String = "ReferenceValue(null)"
-    }
-
-    /**
-     * A reference value that has a single (upper) type (bound).
-     */
-    protected[this] trait SReferenceValue[T <: ReferenceType] {
-        this: DomainReferenceValue ⇒
-
-        val theUpperTypeBound: T
-
-        final override def referenceValues: Iterable[IsAReferenceValue] =
-            Iterable(this)
-
-        final override def upperTypeBound: UpperTypeBound = UIDSet(theUpperTypeBound)
-
-        final override def summarize(pc: PC): this.type = this
-
-        override def toString: String = theUpperTypeBound.toJava
-
     }
 
     /**
