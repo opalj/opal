@@ -44,10 +44,21 @@ import org.opalj.br.analyses.{ Project }
  *
  * @author Michael Eichberg
  */
-@deprecated("Will be removed soon; using the new modularization enables the construction of a precise domain.", "0.8.0M3")
-trait ValuesCoordinatingDomain
-        extends Domain with JoinStabilization
-        with ThrowAllPotentialExceptionsConfiguration /*ACTUALLY NOT RELEVANT*/ {
+trait ValuesCoordinatingDomain extends Domain with JoinStabilization
+        with Configuration {
+
+    def throwAllHandledExceptionsOnMethodCall: Boolean = true
+    def throwNullPointerExceptionOnMethodCall: Boolean = true
+    def throwNullPointerExceptionOnFieldAccess: Boolean = true
+    def throwArithmeticExceptions: Boolean = true
+    def throwNullPointerExceptionOnMonitorAccess: Boolean = true
+    def throwIllegalMonitorStateException: Boolean = true
+    def throwNullPointerExceptionOnArrayAccess: Boolean = true
+    def throwArrayIndexOutOfBoundsException: Boolean = true
+    def throwArrayStoreException: Boolean = true
+    def throwNegativeArraySizeException: Boolean = true
+    def throwClassCastException: Boolean = true
+    def throwClassNotFoundException: Boolean = true
 
     /*override*/ def invokevirtual(
         pc: PC,
