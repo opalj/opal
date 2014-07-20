@@ -407,8 +407,8 @@ object XHTML {
     }
 
     def evaluatedInstructionsToXHTML(evaluated: List[PC]) = {
-        val header = "Evaluated instructions:<div style=\"margin-left:2em;\">"
-        val footer = "</div>"
+        val header = "Evaluated instructions: "+evaluated.filter(_ >= 0).size
+        val footer = ""
         val subroutineStart = "<details><summary>Subroutine</summary><div style=\"margin-left:2em;\">"
         val subroutineEnd = "</div></details>"
 
@@ -425,8 +425,8 @@ object XHTML {
             }
         }
 
-        header +
-            asStrings.mkString("") +
+        header+"<div style=\"margin-left:2em;\">"+
+        asStrings.mkString("") +
             (
                 if (openSubroutines > 0) {
                     var missingSubroutineEnds = subroutineEnd
@@ -439,7 +439,7 @@ object XHTML {
                 } else
                     ""
             ) +
-                footer
+                footer+"</div>"
     }
 }
 
