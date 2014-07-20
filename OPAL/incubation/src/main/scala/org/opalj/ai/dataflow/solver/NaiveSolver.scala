@@ -35,6 +35,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.ValuesCoordinatingDomain
+import org.opalj.ai.domain.Configuration
 
 /**
  * Implements the infrastructure for solving a data-flow problem.
@@ -53,7 +54,6 @@ trait NaiveSolver[Source, Params] extends DataFlowProblemSolver[Source, Params] 
 abstract class BaseDomain[Source](val project: Project[Source])
         extends Domain
         with domain.DefaultDomainValueBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
         with domain.ProjectBasedClassHierarchy
         with domain.TheProject[Source]
         with domain.l0.DefaultTypeLevelFloatValues
@@ -65,6 +65,7 @@ abstract class BaseDomain[Source](val project: Project[Source])
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
         with domain.l1.DefaultIntegerRangeValues
         with domain.l0.DefaultPrimitiveTypeConversions {
+    domain : Configuration =>
 
     override protected def maxSizeOfIntegerRanges: Long = 25l
 

@@ -32,12 +32,14 @@ package domain
 package l2
 
 import scala.language.reflectiveCalls
+
 import org.junit.runner.RunWith
 import org.junit.Ignore
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
+
 import org.opalj.util._
 import br._
 import br.analyses.{ SomeProject, Project }
@@ -148,13 +150,14 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             with DefaultDomainValueBinding
             with TheProject[java.net.URL]
             with ProjectBasedClassHierarchy
-            with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l1.DefaultReferenceValuesBinding
             with li.DefaultPreciseIntegerValues
             with l0.DefaultPrimitiveTypeConversions {
+        domain: Configuration ⇒
+        
         override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
     }
 
@@ -175,6 +178,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
         val method: Method)
             extends BaseDomain(project)
             with l0.TypeLevelInvokeInstructions
+            with ThrowAllPotentialExceptionsConfiguration
             with l0.TypeLevelFieldAccessInstructions
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
