@@ -54,7 +54,7 @@ class DefaultDomainTest extends FlatSpec with Matchers {
     it should ("be able to perform an abstract interpretation of the JRE's classes") in {
         val project = Project(org.opalj.br.TestSupport.JREClassFiles)
 
-        val (message, source) = interpret(project, classOf[DefaultDomain[_]], false)
+        val (message, source) = interpret(project, classOf[DefaultDomain[_]], false, 10)
 
         if (source.nonEmpty)
             fail(message+" (details: "+source+")")
