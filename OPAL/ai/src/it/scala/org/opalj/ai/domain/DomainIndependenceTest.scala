@@ -37,6 +37,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
 import org.opalj.br.Code
+import org.opalj.br.MethodWithBody
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
@@ -58,81 +59,69 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
     // We use this domain for the comparison of the values; it has the same
     // expressive power as the other domains.
     private object ValuesDomain
-            extends ValuesCoordinatingDomain
-            with l0.DefaultTypeLevelIntegerValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultPrimitiveTypeConversions
-            with l0.DefaultReferenceValuesBinding
-            with PredefinedClassHierarchy {
-        type Id = String
-        def id = "Values Domain"
-    }
+        extends ValuesCoordinatingDomain
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultPrimitiveTypeConversions
+        with l0.DefaultReferenceValuesBinding
+        with PredefinedClassHierarchy
 
     //
     // The following three domains are very basic domains that – given that the
     // same partial domains are used – should compute the same results.
     // 
 
-    private class Domain1(val id: Code)
-            extends Domain
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.DefaultReferenceValuesBinding
-            with l0.DefaultTypeLevelIntegerValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultPrimitiveTypeConversions
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.TypeLevelInvokeInstructions
-            with PredefinedClassHierarchy
-            with TheCode {
-        type Id = Code
-        def code: Code = id
-    }
+    private class Domain1(val code: Code)
+        extends Domain
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.DefaultReferenceValuesBinding
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultPrimitiveTypeConversions
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with PredefinedClassHierarchy
+        with TheCode
 
-    private class Domain2(val id: Code)
-            extends Domain
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.TypeLevelInvokeInstructions
-            with l0.TypeLevelFieldAccessInstructions
-            with PredefinedClassHierarchy
-            with DefaultDomainValueBinding
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultTypeLevelIntegerValues
-            with l0.DefaultReferenceValuesBinding
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelLongValues
-            with TheCode
-            with l0.DefaultPrimitiveTypeConversions {
-        type Id = Code
-        def code: Code = id
-    }
+    private class Domain2(val code: Code)
+        extends Domain
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.TypeLevelInvokeInstructions
+        with l0.TypeLevelFieldAccessInstructions
+        with PredefinedClassHierarchy
+        with DefaultDomainValueBinding
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultReferenceValuesBinding
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelLongValues
+        with TheCode
+        with l0.DefaultPrimitiveTypeConversions
 
-    private class Domain3(val id: Code)
-            extends Domain
-            with l0.DefaultPrimitiveTypeConversions
-            with l0.DefaultReferenceValuesBinding
-            with l0.DefaultTypeLevelIntegerValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.TypeLevelInvokeInstructions
-            with l0.TypeLevelFieldAccessInstructions
-            with PredefinedClassHierarchy
-            with IgnoreSynchronization
-            with DefaultHandlingOfMethodResults
-            with ThrowAllPotentialExceptionsConfiguration
-            with TheCode {
-        type Id = Code
-        def code: org.opalj.br.Code = id
-    }
+    private class Domain3(val code: Code)
+        extends Domain
+        with l0.DefaultPrimitiveTypeConversions
+        with l0.DefaultReferenceValuesBinding
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.TypeLevelInvokeInstructions
+        with l0.TypeLevelFieldAccessInstructions
+        with PredefinedClassHierarchy
+        with IgnoreSynchronization
+        with DefaultHandlingOfMethodResults
+        with ThrowAllPotentialExceptionsConfiguration
+        with TheCode
 
     behavior of "a final domain composed of \"independent\" partial domains"
 
@@ -181,14 +170,9 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
 
         for {
             (classFile, source) ← org.opalj.br.TestSupport.JREClassFiles.par
-            method ← classFile.methods
-            if method.body.isDefined
-            body = method.body.get
+            method @ MethodWithBody(body) ← classFile.methods
         } {
-
-            def TheAI() = new SelfTerminatingAI[Domain]() {
-                override val maxEffortInNs: Long = 15000l /*ms*/ * 1000l * 1000l
-            }
+            def TheAI() = new InstructionCountBoundedAI[Domain](body, 10)
 
             val a1 = TheAI()
             val r1 = a1(classFile, method, new Domain1(body))
@@ -197,11 +181,11 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
             val a3 = TheAI()
             val r3 = a3(classFile, method, new Domain3(body))
 
-            def abort(ai: SelfTerminatingAI[_], r: AIResult) {
+            def abort(ai: InstructionCountBoundedAI[_], r: AIResult) {
                 fail("the abstract interpretation of "+
                     classFile.thisType.toJava+
-                    "{ "+method.toJava+" } was aborted after "+
-                    org.opalj.util.PerformanceEvaluation.ns2sec(ai.abortedAfter)+"secs.\n "+
+                    "{ "+method.toJava+" } was aborted after evaluating "+
+                    ai.currentEvaluationCount+" instructions.\n "+
                     r.stateToString)
             }
 
