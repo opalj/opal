@@ -738,7 +738,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         val lutb =
                             classHierarchy.joinObjectTypes(
                                 this.theUpperTypeBound, that.upperTypeBound, true)
-                        lutb.containsOneElement && (lutb.first() eq this.theUpperTypeBound)
+                        lutb.consistsOfOneElement && (lutb.first() eq this.theUpperTypeBound)
                     }
 
                 case _ ⇒
@@ -976,7 +976,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 var overallUTB = values.head.upperTypeBound
 
                 def currentUTBisUTBForArrays: Boolean =
-                    overallUTB.containsOneElement && overallUTB.first.isArrayType
+                    overallUTB.consistsOfOneElement && overallUTB.first.isArrayType
 
                 def asUTBForArrays: ArrayType =
                     overallUTB.first.asArrayType

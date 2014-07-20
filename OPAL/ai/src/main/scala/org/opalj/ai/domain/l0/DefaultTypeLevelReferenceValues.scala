@@ -78,8 +78,7 @@ trait DefaultTypeLevelReferenceValues
         }
     }
 
-    protected[this] class ArrayValue(
-        override val theUpperTypeBound: ArrayType)
+    protected[this] class ArrayValue(override val theUpperTypeBound: ArrayType)
             extends super.ArrayValue with SReferenceValue[ArrayType] {
         this: DomainArrayValue ⇒
 
@@ -99,7 +98,7 @@ trait DefaultTypeLevelReferenceValues
             typeOfValue(value) match {
 
                 case IsPrimitiveValue(primitiveType) ⇒
-                    // The following is an overapproximation that makes it theoretically 
+                    // The following is an over approximation that makes it theoretically 
                     // possible to store an int value in a byte array. However, 
                     // such bytecode is illegal
                     Answer(
@@ -321,7 +320,7 @@ trait DefaultTypeLevelReferenceValues
                     val lutb =
                         classHierarchy.joinObjectTypes(
                             this.theUpperTypeBound, thatUpperTypeBound, true)
-                    lutb.containsOneElement && (lutb.first() eq this.theUpperTypeBound)
+                    lutb.consistsOfOneElement && (lutb.first() eq this.theUpperTypeBound)
             }
         }
 
@@ -435,7 +434,7 @@ trait DefaultTypeLevelReferenceValues
                     super.adapt(target, pc)
             }
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: PC): this.type = this
 
         override def toString() =
             "ReferenceValue("+upperTypeBound.map(_.toJava).mkString(" with ")+")"

@@ -84,7 +84,7 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
         // there may be additional calls
         if (isNull.isNoOrUnknown) {
             val upperTypeBound = value.upperTypeBound
-            if (upperTypeBound.containsOneElement) {
+            if (upperTypeBound.consistsOfOneElement) {
                 val theType = upperTypeBound.first
                 if (theType.isArrayType)
                     resolvedCall(pc, ObjectType.Object, name, descriptor, true, operands)

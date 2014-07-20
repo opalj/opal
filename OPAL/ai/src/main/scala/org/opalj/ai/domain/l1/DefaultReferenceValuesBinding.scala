@@ -77,7 +77,7 @@ trait DefaultReferenceValuesBinding
         isNull: Answer,
         upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
 
-        if (upperTypeBound.containsOneElement)
+        if (upperTypeBound.consistsOfOneElement)
             ObjectValue(pc, isNull, false, upperTypeBound.first)
         else
             new MObjectValue(pc, isNull, upperTypeBound)
