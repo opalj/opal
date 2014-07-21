@@ -9,10 +9,10 @@ digraph OPALDomains {
 	rankdir = RL;
 
 	subgraph cluster_base_domains {
-		//rankdir = RL;
 		style=filled;
     color=lightgrey;
-		//shape=rectangle;
+		fontsize=10;
+
 		//{rank=sink; CoreDomain;}
 		//{rank=source; Domain;}
 		IntegerValuesDomain -> IntegerValuesFactory -> CoreDomain;
@@ -21,14 +21,14 @@ digraph OPALDomains {
 		DoubleValuesDomain -> DoubleValuesFactory -> CoreDomain;
 		ReferenceValuesDomain -> ReferenceValuesFactory -> VMLevelExceptionsFactory -> CoreDomain;
 
-		PrimitiveValuesFactory -> IntegerValuesFactory [style=dotted];
-		PrimitiveValuesFactory -> LongValuesFactory [style=dotted];
-		PrimitiveValuesFactory -> FloatValuesFactory [style=dotted];
-		PrimitiveValuesFactory -> DoubleValuesFactory [style=dotted];
+		PrimitiveValuesFactory -> IntegerValuesFactory [style=dotted,arrowhead=onormal];
+		PrimitiveValuesFactory -> LongValuesFactory [style=dotted,arrowhead=onormal];
+		PrimitiveValuesFactory -> FloatValuesFactory [style=dotted,arrowhead=onormal];
+		PrimitiveValuesFactory -> DoubleValuesFactory [style=dotted,arrowhead=onormal];
 		PrimitiveValuesFactory [style=filled,fillcolor=mintcream,shape=rectangle];
 
 		JoinStabilization -> CoreDomain;
-		JoinStabilization [style=filled,fillcolor=antiquewhite,shape=rectangle];
+		JoinStabilization [style=filled,fillcolor=crimson,shape=rectangle];
 
 		Domain -> IntegerValuesDomain;
 		Domain -> LongValuesDomain;
@@ -71,24 +71,38 @@ digraph OPALDomains {
 		label="Base Domains";
 		labeljust=l;
 	}
-/*
-	subgraph helper_domains {
-		ClassHierarchy;
+
+	subgraph cluster_helper_domains {
+		style=filled;
+		color=antiquewhite;
+		fontsize=10;
+
+		ConcreteIntegerValues -> CoreDomain [style=dashed,arrowhead=vee];
+		ConcreteLongValues -> CoreDomain [style=dashed,arrowhead=vee];
+		Origin -> CoreDomain [style=dashed,arrowhead=vee];
+		ProjectBasedClassHierarchy -> ClassHierarchy;
+		ProjectBasedClassHierarchy -> TheProject [style=dashed,arrowhead=vee];
 		TheProject;
 		TheMethod -> TheCode ;
-		ConcreteIntegerValues -> CoreDomain;
-		Origin -> CoreDomain;
 		Configuration;
 
+	{rank=same;
+		TheCode;
+		Origin;
+		ClassHierarchy;
+		TheProject;
+		ConcreteIntegerValues;
+		ConcreteLongValues;
+		Configuration;
+	}
+
 		label="General Support";
+		labeljust=l;
 	}
 
 	subgraph l0_domains {
 
 	}
-
-	{rank=same; CoreDomain; ClassHierarchy; TheProject; TheCode; Configuration}
-*/
 
 	DefaultDomainValueBinding -> CoreDomain;
 
