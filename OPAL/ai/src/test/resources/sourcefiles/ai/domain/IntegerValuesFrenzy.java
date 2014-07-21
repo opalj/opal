@@ -358,22 +358,22 @@ public class IntegerValuesFrenzy {
             }
         }
         if (a == 0) {
-            doIt("a: a===0", a);
-            doIt("a: b.is0.isUnknown", b);
-            doIt("a: c.is0.isUnknown", c);
-            doIt("a: d===null", d);
+            doIt(/*"a: a===0",*/ a);
+            doIt(/*"a: b.is0.isUnknown",*/ b);
+            doIt(/*"a: c.is0.isUnknown",*/ c);
+            doIt(/*"a: d===null",*/ d);
         }
         if (b == 0) {
-            doIt("b: a.is0.isUnknown", a);
-            doIt("b: b===0", b);
-            doIt("b: c.is0.isUnknown", c);
-            doIt("b: d===0", d);
+            doIt(/*"b: a.is0.isUnknown",*/ a);
+            doIt(/*"b: b===0",*/ b);
+            doIt(/*"b: c.is0.isUnknown",*/ c);
+            doIt(/*"b: d===0",*/ d);
         }
         if (c == 0) {
-            doIt("c: a.is0.isUnknown", a);
-            doIt("c: b.is0.isUnknown", b);
-            doIt("c: c===0", c);
-            doIt("c: d===0", d);
+            doIt(/*"c: a.is0.isUnknown",*/ a);
+            doIt(/*"c: b.is0.isUnknown",*/ b);
+            doIt(/*"c: c===0",*/ c);
+            doIt(/*"c: d===0",*/ d);
         }
 
     }
