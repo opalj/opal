@@ -29,35 +29,45 @@
 package org.opalj
 package ai
 package domain
-package l1
+package l0
 
-trait DefaultIntegerRangeValuesWithTypeConversions
-        extends DefaultIntegerRangeValues
-        with l0.DefaultPrimitiveTypeConversions {
-    domain: JoinStabilization with Configuration with FloatValuesFactory with DoubleValuesFactory with LongValuesFactory with VMLevelExceptionsFactory ⇒
+/**
+ * @author Michael Eichberg
+ */
+trait DefaultPrimitiveValuesConversions extends PrimitiveValuesConversionsDomain {
+    this: CoreDomain with PrimitiveValuesFactory ⇒
 
-    override def i2d(pc: PC, value: DomainValue): DomainValue =
-        value match {
-            case IntegerRange(lb, ub) if lb == ub ⇒
-                DoubleValue(pc, lb /*or ub*/ )
-            case _ ⇒
-                DoubleValue(pc)
-        }
+    override def d2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
+    override def d2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
+    override def d2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 
-    override def i2f(pc: PC, value: DomainValue): DomainValue =
-        value match {
-            case IntegerRange(lb, ub) if lb == ub ⇒
-                FloatValue(pc, lb /*or ub*/ )
-            case _ ⇒
-                FloatValue(pc)
-        }
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `DoubleValue(pc)`.
+     */
+    override def l2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `FloatValue(pc)`.
+     */
+    override def l2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `IntegerValue(pc)`.
+     */
+    override def l2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
 
-    override def i2l(pc: PC, value: DomainValue): DomainValue =
-        value match {
-            case IntegerRange(lb, ub) if lb == ub ⇒
-                LongValue(pc, lb /*or ub*/ )
-            case _ ⇒
-                LongValue(pc)
-        }
+    override def i2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
+    override def i2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
+    override def i2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
+
+    override def f2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
+    override def f2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
+    override def f2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 }
+
+
 

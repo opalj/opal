@@ -66,6 +66,10 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
     def asVirtualMethod: VirtualMethod =
         VirtualMethod(declaringClass, name, methodDescriptor)
 
+    /**
+     * Returns `true` if the called method is an instance method/if the called method
+     * is not static.
+     */
     def isVirtualMethodCall: Boolean
 
     override def toString: String =

@@ -64,7 +64,7 @@ class ConstantFieldValuesResolutionTest
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultIntegerRangeValues
-                        with l0.DefaultPrimitiveTypeConversions
+            with l0.DefaultPrimitiveValuesConversions
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
             with ProjectBasedClassHierarchy

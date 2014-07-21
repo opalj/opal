@@ -101,6 +101,10 @@ package object ai {
      */
     type ValueOrigin = Int
 
+    type PrimitiveValuesFactory = IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
+    type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with VMLevelExceptionsFactory with TypedValuesFactory
+    type TargetDomain = CoreDomain with ValuesFactory
+
     /**
      * Special value that is added to the work list/list of evaluated instructions
      * before the program counter of the first

@@ -67,7 +67,7 @@ class MethodsWithBranchesTest
             with DefaultTypeLevelLongValues
             with DefaultTypeLevelFloatValues
             with DefaultTypeLevelDoubleValues
-            with DefaultPrimitiveTypeConversions
+            with DefaultPrimitiveValuesConversions
             with TypeLevelFieldAccessInstructions
             with SimpleTypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration

@@ -101,9 +101,9 @@ trait Domain extends CoreDomain
         with FieldAccessesDomain
         with MethodCallsDomain
         with MonitorInstructionsDomain
-        with PrimitiveTypeConversionsDomain
-        with TypedValuesFactory
-        with VMLevelExceptionsFactory {
+        with ReturnInstructionsDomain
+        with PrimitiveValuesConversionsDomain
+        with TypedValuesFactory {
 
     // -----------------------------------------------------------------------------------
     //
@@ -142,75 +142,5 @@ trait Domain extends CoreDomain
             case DoubleType       ⇒ DoubleValue(pc, 0.0d)
             case _: ReferenceType ⇒ NullValue(pc)
         }
-
-    // -----------------------------------------------------------------------------------
-    //
-    // ABSTRACTIONS RELATED TO INSTRUCTIONS
-    //
-    // -----------------------------------------------------------------------------------
-
-    //
-    // RETURN FROM METHOD
-    //
-    /**
-     * Called by OPAL-AI when a return instruction with the given `pc` is reached.
-     * In other words, when the method returns normally.
-     */
-    def returnVoid(pc: PC): Unit
-
-    /**
-     * The given `value`, which is a value with ''computational type integer'', is returned
-     * by the return instruction with the given `pc`.
-     */
-    def ireturn(pc: PC, value: DomainValue): Unit
-
-    /**
-     * The given `value`, which is a value with ''computational type long'', is returned
-     * by the return instruction with the given `pc`.
-     */
-    def lreturn(pc: PC, value: DomainValue): Unit
-
-    /**
-     * The given `value`, which is a value with ''computational type float'', is returned
-     * by the return instruction with the given `pc`.
-     */
-    def freturn(pc: PC, value: DomainValue): Unit
-
-    /**
-     * The given `value`, which is a value with ''computational type double'', is returned
-     * by the return instruction with the given `pc`.
-     */
-    def dreturn(pc: PC, value: DomainValue): Unit
-
-    /**
-     * The given `value`, which is a value with ''computational type reference'', is returned
-     * by the return instruction with the given `pc`.
-     */
-    def areturn(pc: PC, value: DomainValue): Unit
-
-    /**
-     * Called by the abstract interpreter when an exception is thrown that is not
-     * (guaranteed to be) handled within the same method.
-     *
-     * @note If the original exception value is `null` (`/*E.g.*/throw null;`), then
-     *      the exception that is actually thrown is a new `NullPointerException`. This
-     *      situation is, however, completely handled by OPAL and the exception value
-     *      is hence never `null`.
-     */
-    def abruptMethodExecution(pc: PC, exceptionValue: ExceptionValue): Unit
-
-    //
-    // "OTHER" INSTRUCTIONS
-    //
-
-    /**
-     * Handles a `monitorenter` instruction.
-     */
-    def monitorenter(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
-
-    /**
-     * Handles a `monitorexit` instruction.
-     */
-    def monitorexit(pc: PC, value: DomainValue): Computation[Nothing, ExceptionValue]
 
 }

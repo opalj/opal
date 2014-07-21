@@ -38,31 +38,27 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait DefaultHandlingForReturnInstructions { this: Domain ⇒
+trait DefaultHandlingForReturnInstructions extends ReturnInstructionsDomain { 
+    domain: CoreDomain ⇒
 
-    /*override*/ def areturn(pc: PC, value: DomainValue): Unit = {
+    /*base impl.*/ def areturn(pc: PC, value: DomainValue): Unit = {
         /* Nothing to do. */
     }
 
-    /*override*/ def dreturn(pc: PC, value: DomainValue): Unit = {
+    /*base impl.*/ def dreturn(pc: PC, value: DomainValue): Unit = {
         /* Nothing to do. */
     }
 
-    /*override*/ def freturn(pc: PC, value: DomainValue): Unit = {
+    /*base impl.*/ def freturn(pc: PC, value: DomainValue): Unit = {
         /* Nothing to do. */
     }
 
-    /*override*/ def ireturn(pc: PC, value: DomainValue): Unit = {
+    /*base impl.*/ def ireturn(pc: PC, value: DomainValue): Unit = {
         /* Nothing to do. */
     }
 
-    /*override*/ def lreturn(pc: PC, value: DomainValue): Unit = {
+    /*base impl.*/ def lreturn(pc: PC, value: DomainValue): Unit = {
         /* Nothing to do. */
     }
 
 }
-
-
-
-
-

@@ -82,11 +82,11 @@ trait UShortSet {
     }
 
     def filter(f: UShort ⇒ Boolean): UShortSet = {
-        var result: mutable.UShortSet = mutable.UShortSet.empty 
+        var result: mutable.UShortSet = mutable.UShortSet.empty
         foreach(v ⇒ if (f(v)) result = v +≈: result)
         result
     }
-    
+
     /**
      * Returns a new `Iterator`. The iterator is primarily defined to facilitate
      * the integration with Scala's standard collections API.

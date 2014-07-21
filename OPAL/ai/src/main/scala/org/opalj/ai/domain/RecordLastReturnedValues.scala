@@ -40,6 +40,7 @@ package domain
  * @author Michael Eichberg
  */
 trait RecordLastReturnedValues extends RecordReturnedValues {
+    domain: CoreDomain ⇒
 
     type ReturnedValue = DomainValue
 

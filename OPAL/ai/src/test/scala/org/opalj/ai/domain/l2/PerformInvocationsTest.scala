@@ -192,7 +192,7 @@ object PerformInvocationsTestFixture {
             with l1.DefaultReferenceValuesBinding
             with li.DefaultPreciseIntegerValues
             with li.DefaultPreciseLongValues
-            with l0.DefaultPrimitiveTypeConversions
+            with l0.DefaultPrimitiveValuesConversions
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions
             with ProjectBasedClassHierarchy
@@ -213,6 +213,10 @@ object PerformInvocationsTestFixture {
             definingClass: ClassFile,
             method: Method,
             operands: Operands): Boolean = false
+
+        def shouldInvocationBePerformed(
+            definingClass: ClassFile,
+            method: Method): Boolean = true
 
         def invokeExecutionHandler(
             pc: PC,

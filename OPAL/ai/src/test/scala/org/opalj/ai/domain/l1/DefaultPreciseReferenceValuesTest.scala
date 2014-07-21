@@ -77,7 +77,7 @@ class DefaultPreciseReferenceValuesTest
             // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
             // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
             with l1.DefaultIntegerRangeValues
-            with l0.DefaultPrimitiveTypeConversions {
+            with l0.DefaultPrimitiveValuesConversions {
 
         override protected def maxSizeOfIntegerRanges: Long = 25l
     }

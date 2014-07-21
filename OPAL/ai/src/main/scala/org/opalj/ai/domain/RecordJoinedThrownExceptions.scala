@@ -39,10 +39,11 @@ import language.implicitConversions
  *
  * This trait can be used to record the thrown exceptions independently of the
  * precision of the domain.
-
+ *
  * @author Michael Eichberg
  */
 trait RecordJoinedThrownExceptions extends RecordThrownExceptions {
+    domain: CoreDomain ⇒
 
     type ThrownException = ExceptionValue
 

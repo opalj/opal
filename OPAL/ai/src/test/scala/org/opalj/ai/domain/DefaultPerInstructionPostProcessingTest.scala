@@ -78,7 +78,7 @@ class DefaultPerInstructionPostProcessingTest
             with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultReferenceValuesBinding
             with l1.DefaultIntegerRangeValues
-            with l0.DefaultPrimitiveTypeConversions {
+            with l0.DefaultPrimitiveValuesConversions {
 
         override protected def maxSizeOfIntegerRanges: Long = 25l
     }

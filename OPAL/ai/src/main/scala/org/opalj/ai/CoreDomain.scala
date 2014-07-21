@@ -50,8 +50,6 @@ import org.opalj.br.ComputationalTypeReturnAddress
  */
 trait CoreDomain {
 
-    type TargetDomain = CoreDomain with ReferenceValuesDomain with IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
-
     // -----------------------------------------------------------------------------------
     //
     // REPRESENTATION OF VALUES

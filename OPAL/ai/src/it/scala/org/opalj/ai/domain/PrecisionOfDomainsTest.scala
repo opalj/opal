@@ -64,7 +64,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.DefaultTypeLevelDoubleValues
                 with l1.DefaultReferenceValuesBinding
                 with l1.DefaultIntegerRangeValues
-                with l0.DefaultPrimitiveTypeConversions
+                with l0.DefaultPrimitiveValuesConversions
                 with ProjectBasedClassHierarchy
                 with TheProject[java.net.URL]
 
@@ -81,7 +81,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.DefaultTypeLevelLongValues
                 with l0.DefaultTypeLevelFloatValues
                 with l0.DefaultTypeLevelDoubleValues
-                with l0.DefaultPrimitiveTypeConversions
+                with l0.DefaultPrimitiveValuesConversions
                 with l0.TypeLevelFieldAccessInstructions
                 with l0.TypeLevelInvokeInstructions
                 with ProjectBasedClassHierarchy
@@ -96,7 +96,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.DefaultTypeLevelLongValues
                 with l0.DefaultTypeLevelFloatValues
                 with l0.DefaultTypeLevelDoubleValues
-                with l0.DefaultPrimitiveTypeConversions
+                with l0.DefaultPrimitiveValuesConversions
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelFieldAccessInstructions
                 with ProjectBasedClassHierarchy

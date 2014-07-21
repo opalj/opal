@@ -52,7 +52,7 @@ object DeadCode extends AnalysisExecutor {
             extends Domain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultPrimitiveTypeConversions
+            with domain.l0.DefaultPrimitiveValuesConversions
             with domain.l0.DefaultTypeLevelFloatValues
             with domain.l0.DefaultTypeLevelDoubleValues
             with domain.l0.TypeLevelFieldAccessInstructions

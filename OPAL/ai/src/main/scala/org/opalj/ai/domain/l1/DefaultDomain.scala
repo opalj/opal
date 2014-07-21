@@ -64,7 +64,7 @@ class DefaultConfigurableDomain[I, Source](
         with l1.DefaultIntegerRangeValues
         with l1.DefaultLongValues
         with l1.LongValuesShiftOperators
-        with l0.DefaultPrimitiveTypeConversions {
+        with l1.DefaultConcretePrimitiveValuesConversions {
 
     type Id = I
 

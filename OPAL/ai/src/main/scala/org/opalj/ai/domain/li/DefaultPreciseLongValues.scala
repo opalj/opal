@@ -39,9 +39,8 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
  *
  * @author Riadh Chtara
  */
-trait DefaultPreciseLongValues
-        extends DefaultDomainValueBinding
-        with PreciseLongValues { this: Configuration ⇒
+trait DefaultPreciseLongValues extends DefaultDomainValueBinding with PreciseLongValues {
+    domain: CoreDomain with ValuesFactory with Configuration ⇒
 
     // ATTENTION: The functionality to propagate a constraint crucially depends on
     // the fact two long values created at two different places are represented

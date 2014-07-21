@@ -45,11 +45,8 @@ import org.opalj.ai.util.Locals
  *
  * @author Michael Eichberg
  */
-trait PerformInvocations
-        extends Domain
-        with l0.TypeLevelInvokeInstructions
-        with ProjectBasedClassHierarchy {
-    callingDomain: TheProject[_] with TheCode with Configuration ⇒
+trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
+    callingDomain: CoreDomain with ValuesFactory with ReferenceValuesDomain with MethodCallsDomain with Configuration with TheProject[_] with TheCode with domain.ClassHierarchy ⇒
 
     /**
      * Identifies recursive calls.
@@ -65,6 +62,10 @@ trait PerformInvocations
         method: Method,
         operands: Operands): Boolean
 
+    def shouldInvocationBePerformed(
+        definingClass: ClassFile,
+        method: Method): Boolean
+
     /**
      * Encapsulates the information required to perform the invocation of the target
      * method.
@@ -78,7 +79,7 @@ trait PerformInvocations
          * In general, explicit support is required to identify recursive calls
          * if the domain also follows method invocations,
          */
-        val domain: Domain with MethodCallResults
+        val domain: TargetDomain with MethodCallResults
 
         /**
          *  The abstract interpreter that will be used for the abstract interpretation.
@@ -186,7 +187,8 @@ trait PerformInvocations
             project) match {
                 case Some(method) if !method.isNative ⇒
                     val classFile = project.classFile(method)
-                    if (isRecursive(classFile, method, operands))
+                    if (!shouldInvocationBePerformed(classFile, method) ||
+                        isRecursive(classFile, method, operands))
                         fallback()
                     else
                         invokestatic(pc, classFile, method, operands)

@@ -34,22 +34,27 @@ package l2
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
 
+/**
+ * Enables to perform invocations.
+ *
+ * @author Michael Eichberg
+ */
 trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
-    rootDomain: TheProject[_] with Configuration with TheCode ⇒
+    callingDomain: CoreDomain with ValuesFactory with ReferenceValuesDomain with MethodCallsDomain with domain.ClassHierarchy with Configuration with TheProject[_] with TheCode ⇒
 
     val calledMethodsStore: CalledMethodsStore
 
     def isRecursive(
         definingClass: ClassFile,
-        method: Method,
+        calledMethod: Method,
         operands: Operands): Boolean =
-        calledMethodsStore.isRecursive(definingClass, method, operands)
+        calledMethodsStore.isRecursive(definingClass, calledMethod, operands)
 
     trait InvokeExecutionHandler extends super.InvokeExecutionHandler {
 
         override val domain: Domain with MethodCallResults with PerformInvocationsWithRecursionDetection {
             // we want to make sure that all instances use the same CalledMethodsStore
-            val calledMethodsStore: rootDomain.calledMethodsStore.type
+            val calledMethodsStore: callingDomain.calledMethodsStore.type
         }
 
     }

@@ -54,7 +54,7 @@ class BaseConfigurableDomain[I, Source](
         extends TypeLevelDomain
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
-        with DefaultPrimitiveTypeConversions
+        with DefaultPrimitiveValuesConversions
         with IgnoreSynchronization
         with ProjectBasedClassHierarchy
         with TheProject[Source]

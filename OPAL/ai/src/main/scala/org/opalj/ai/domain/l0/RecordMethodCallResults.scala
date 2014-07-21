@@ -57,7 +57,7 @@ trait RecordMethodCallResults
         extends MethodCallResults
         with RecordLastReturnedValues
         with RecordAllThrownExceptions {
-    this: TypeLevelReferenceValues with ClassHierarchy ⇒
+    this: CoreDomain with ClassHierarchy  ⇒
 
     private[this] var hasReturnedNormally: Boolean = false
 
@@ -68,7 +68,7 @@ trait RecordMethodCallResults
 
     def returnedNormally: Boolean = hasReturnedNormally || allReturnedValues.nonEmpty
 
-    def returnedValue(target: Domain, callerPC: PC): Option[target.DomainValue] = {
+    def returnedValue(target: TargetDomain, callerPC: PC): Option[target.DomainValue] = {
         if (allReturnedValues.isEmpty)
             None
         else {
@@ -76,7 +76,7 @@ trait RecordMethodCallResults
         }
     }
 
-    def thrownExceptions(target: Domain, callerPC: PC): target.ExceptionValues = {
+    def thrownExceptions(target: TargetDomain, callerPC: PC): target.ExceptionValues = {
         val allThrownExceptions = this.allThrownExceptions //: Map[PC, ThrownException] 
         if (allThrownExceptions.isEmpty) {
             Iterable.empty

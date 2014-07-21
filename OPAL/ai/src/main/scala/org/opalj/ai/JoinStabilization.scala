@@ -30,8 +30,8 @@ package org.opalj
 package ai
 
 /**
- * Using join stabilization is necessary (makes sense) if constraints are propagated
- * or if the merge of domain values is expensive.
+ * Using join stabilization is necessary if constraints are propagated
+ * or (makes sense) if the merge of domain values is expensive.
  *
  * @note Join stabilization is always done for all domain values once this domain is
  *      used.

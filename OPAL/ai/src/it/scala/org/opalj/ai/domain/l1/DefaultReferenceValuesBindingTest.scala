@@ -59,7 +59,7 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultPrimitiveTypeConversions
+            with l0.DefaultPrimitiveValuesConversions
             with l1.DefaultReferenceValuesBinding
             with TheProject[java.net.URL]
             with ProjectBasedClassHierarchy {

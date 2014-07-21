@@ -29,48 +29,55 @@
 package org.opalj
 package ai
 package domain
-package l0
-
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeDouble
 
 /**
+ * Infrastructure to record returned values.
+ *
  * @author Michael Eichberg
  */
-trait DefaultPrimitiveTypeConversions extends PrimitiveTypeConversionsDomain {
-    this: CoreDomain with IntegerValuesFactory with FloatValuesFactory with DoubleValuesFactory with LongValuesFactory ⇒
-
-    override def d2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
-    override def d2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
-    override def d2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
+trait RecordReturnedValuesInfrastructure extends ReturnInstructionsDomain {
+    domain: CoreDomain ⇒
 
     /**
-     * @inheritdoc
+     * This type determines in which way the returned values are recorded.
      *
-     * @return The result of calling `DoubleValue(pc)`.
-     */
-    override def l2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
-    /**
-     * @inheritdoc
+     * For example, if it is sufficient to just record the last value that was
+     * returned by a specific return instruction, then the type could be `DomainValue`
+     * and the implementation of `joinReturnedValues(...)` would just return the last
+     * given value. Furthermore, `returnedValue` would be the identity function.
      *
-     * @return The result of calling `FloatValue(pc)`.
+     * However, if you have a (more) precise domain you may want to collect all
+     * returned values. In this case the type of `ReturnedValue` could be Set[DomainValue].
      */
-    override def l2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
-    /**
-     * @inheritdoc
-     *
-     * @return The result of calling `IntegerValue(pc)`.
-     */
-    override def l2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
+    type ReturnedValue <: AnyRef
 
-    override def i2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
-    override def i2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
-    override def i2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
+    protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit
 
-    override def f2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
-    override def f2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
-    override def f2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
+    abstract override def areturn(pc: PC, value: DomainValue) {
+        doRecordReturnedValue(pc, value)
+        super.areturn(pc, value)
+    }
+
+    abstract override def dreturn(pc: PC, value: DomainValue) {
+        doRecordReturnedValue(pc, value)
+        super.dreturn(pc, value)
+    }
+
+    abstract override def freturn(pc: PC, value: DomainValue) {
+        doRecordReturnedValue(pc, value)
+        super.freturn(pc, value)
+    }
+
+    abstract override def ireturn(pc: PC, value: DomainValue) {
+        doRecordReturnedValue(pc, value)
+        super.ireturn(pc, value)
+    }
+
+    abstract override def lreturn(pc: PC, value: DomainValue) {
+        doRecordReturnedValue(pc, value)
+        super.lreturn(pc, value)
+    }
+
 }
-
 
 

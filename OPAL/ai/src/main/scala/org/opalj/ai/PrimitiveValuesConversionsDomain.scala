@@ -28,44 +28,32 @@
  */
 package org.opalj
 package ai
-package project
-
-import scala.collection.Set
-import scala.collection.Map
-
-import br._
-import br.analyses._
-
-import domain._
-import domain.l0
-import domain.l1
 
 /**
- * Domain object which is used to calculate the call graph using variable type analysis.
+ * Defines the methods that performs type conversions between primitive values.
  *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Dennis Siebert
  */
-class DefaultVTACallGraphDomain[Source](
-    val project: Project[Source],
-    val cache: CallGraphCache[MethodSignature, Set[Method]],
-    val classFile: ClassFile,
-    val method: Method,
-    override val maxSizeOfIntegerRanges: Long)
-        extends DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with TheProject[Source]
-        with ProjectBasedClassHierarchy
-        with TheMethod
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.TypeLevelInvokeInstructions
-        with l0.DefaultTypeLevelLongValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l1.DefaultIntegerRangeValues
-        with l1.DefaultReferenceValuesBinding
-        with l0.DefaultPrimitiveValuesConversions
-        with VTACallGraphDomain 
+trait PrimitiveValuesConversionsDomain { domain: CoreDomain ⇒
 
+    def i2d(pc: PC, value: DomainValue): DomainValue
+    def i2f(pc: PC, value: DomainValue): DomainValue
+    def i2l(pc: PC, value: DomainValue): DomainValue
 
+    /** Conversion of the given long value to a double value. */
+    def l2d(pc: PC, value: DomainValue): DomainValue
+    /** Conversion of the given long value to a float value. */
+    def l2f(pc: PC, value: DomainValue): DomainValue
+    /** Conversion of the given long value to an integer value. */
+    def l2i(pc: PC, value: DomainValue): DomainValue
+
+    def f2d(pc: PC, value: DomainValue): DomainValue
+    def f2i(pc: PC, value: DomainValue): DomainValue
+    def f2l(pc: PC, value: DomainValue): DomainValue
+
+    def d2f(pc: PC, value: DomainValue): DomainValue
+    def d2i(pc: PC, value: DomainValue): DomainValue
+    def d2l(pc: PC, value: DomainValue): DomainValue
+
+}

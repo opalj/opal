@@ -37,7 +37,7 @@ import org.opalj.br.Code
  *
  * @author Michael Eichberg
  */
-trait TheCode { this: Domain ⇒
+trait TheCode {
 
     /**
      * Returns the code block that is currently analyzed.

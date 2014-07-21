@@ -42,7 +42,7 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 trait DefaultPreciseIntegerValues
         extends DefaultDomainValueBinding
         with PreciseIntegerValues {
-    this: Configuration ⇒
+    domain: IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
 
     /**
      * @note The functionality to propagate a constraint crucially depends on
@@ -78,7 +78,7 @@ trait DefaultPreciseIntegerValues
                         else
                             MetaInformationUpdate(TheIntegerValue(otherValue, Math.max(this.updateCount, otherUpdateCount)))
                     } else {
-                        val newUpdateCount = Math.max(this.updateCount, otherUpdateCount)+1
+                        val newUpdateCount = Math.max(this.updateCount, otherUpdateCount) + 1
                         if (newUpdateCount < maxUpdatesForIntegerValues)
                             StructuralUpdate(TheIntegerValue(otherValue, newUpdateCount))
                         else

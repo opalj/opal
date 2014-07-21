@@ -47,7 +47,8 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelInvokeInstructions { this: Domain with Configuration with TheCode ⇒
+trait TypeLevelInvokeInstructions extends MethodCallsDomain {
+    domain: CoreDomain with ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode ⇒
 
     protected[this] def getExceptions(pc: PC): Set[ExceptionValue] = {
         var exceptionTypes: Set[ExceptionValue] = Set.empty
@@ -56,7 +57,7 @@ trait TypeLevelInvokeInstructions { this: Domain with Configuration with TheCode
                 (h.catchType match {
                     // We don't know the true type of the exception, we just
                     // know the upper bound!
-                    case None     ⇒ NonNullObjectValue(pc, ObjectType.Throwable) 
+                    case None     ⇒ NonNullObjectValue(pc, ObjectType.Throwable)
                     case Some(ex) ⇒ NonNullObjectValue(pc, ex)
                 })
         }

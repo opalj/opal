@@ -33,7 +33,7 @@ package li
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
+import org.opalj.br._
 
 /**
  * Domain to track long values at a configurable level of precision.
@@ -43,7 +43,8 @@ import br._
  * @author Riadh Chtara
  * @author Michael Eichberg
  */
-trait PreciseLongValues extends Domain { this: Configuration ⇒
+trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
+    domain: CoreDomain with IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -102,18 +103,24 @@ trait PreciseLongValues extends Domain { this: Configuration ⇒
     // QUESTION'S ABOUT VALUES
     //
 
-    def withLongValueOrElse[T](value: DomainValue)(f: Long ⇒ T)(orElse: ⇒ T): T =
+    def longValue[T](value: DomainValue)(f: Long ⇒ T)(orElse: ⇒ T): T =
         value match {
             case v: LongValue ⇒ f(v.value)
             case _            ⇒ orElse
+        }
+
+    def longValueOption(value: DomainValue): Option[Long] =
+        value match {
+            case v: LongValue ⇒ Some(v.value)
+            case _            ⇒ None
         }
 
     def withLongValuesOrElse[T](
         value1: DomainValue,
         value2: DomainValue)(
             f: (Long, Long) ⇒ T)(orElse: ⇒ T): T =
-        withLongValueOrElse(value1) { v1 ⇒
-            withLongValueOrElse(value2) { v2 ⇒
+        longValue(value1) { v1 ⇒
+            longValue(value2) { v2 ⇒
                 f(v1, v2)
             } {
                 orElse
@@ -126,7 +133,7 @@ trait PreciseLongValues extends Domain { this: Configuration ⇒
         value: DomainValue,
         lowerBound: Long,
         upperBound: Long): Boolean =
-        withLongValueOrElse(value) {
+        longValue(value) {
             v ⇒ lowerBound <= v && v <= upperBound
         } {
             true
@@ -136,7 +143,7 @@ trait PreciseLongValues extends Domain { this: Configuration ⇒
         value: DomainValue,
         lowerBound: Long,
         upperBound: Long): Boolean =
-        withLongValueOrElse(value) { v ⇒
+        longValue(value) { v ⇒
             v < lowerBound || v > upperBound
         } {
             !(lowerBound == Long.MinValue && upperBound == Long.MaxValue)
@@ -195,7 +202,7 @@ trait PreciseLongValues extends Domain { this: Configuration ⇒
     //
 
     override def lneg(pc: PC, value: DomainValue) =
-        withLongValueOrElse(value) { v ⇒
+        longValue(value) { v ⇒
             LongValue(pc, -v)
         } {
             LongValue(pc)
@@ -206,7 +213,7 @@ trait PreciseLongValues extends Domain { this: Configuration ⇒
     //
 
     def linc(pc: PC, value: DomainValue, increment: Long) =
-        withLongValueOrElse(value) { v ⇒
+        longValue(value) { v ⇒
             LongValue(pc, v + increment)
         } {
             LongValue(pc)
@@ -216,11 +223,11 @@ trait PreciseLongValues extends Domain { this: Configuration ⇒
         pc: PC,
         value1: DomainValue,
         value2: DomainValue): LongValueOrArithmeticException = {
-        withLongValueOrElse(value2) { v2 ⇒
+        longValue(value2) { v2 ⇒
             if (v2 == 0)
-                ThrowsException(InitializedObjectValue(pc, ObjectType.ArithmeticException))
+                ThrowsException(ArithmeticException(pc))
             else {
-                withLongValueOrElse(value1) { v1 ⇒
+                longValue(value1) { v1 ⇒
                     ComputedValue(LongValue(pc, v1 / v2))
                 } {
                     ComputedValue(LongValue(pc))
@@ -228,9 +235,7 @@ trait PreciseLongValues extends Domain { this: Configuration ⇒
             }
         } {
             if (throwArithmeticExceptions)
-                ComputedValueOrException(
-                    LongValue(pc),
-                    InitializedObjectValue(pc, ObjectType.ArithmeticException))
+                ComputedValueOrException(LongValue(pc), ArithmeticException(pc))
             else
                 ComputedValue(LongValue(pc))
         }
@@ -268,11 +273,11 @@ trait PreciseLongValues extends Domain { this: Configuration ⇒
         pc: PC,
         value1: DomainValue,
         value2: DomainValue): LongValueOrArithmeticException =
-        withLongValueOrElse(value2) { v2 ⇒
+        longValue(value2) { v2 ⇒
             if (v2 == 0l)
-                ThrowsException(InitializedObjectValue(pc, ObjectType.ArithmeticException))
+                ThrowsException(ArithmeticException(pc))
             else {
-                withLongValueOrElse(value1) { v1 ⇒
+                longValue(value1) { v1 ⇒
                     ComputedValue(LongValue(pc, v1 % v2))
                 } {
                     ComputedValue(LongValue(pc))
@@ -280,9 +285,7 @@ trait PreciseLongValues extends Domain { this: Configuration ⇒
             }
         } {
             if (throwArithmeticExceptions)
-                ComputedValueOrException(
-                    LongValue(pc),
-                    InitializedObjectValue(pc, ObjectType.ArithmeticException))
+                ComputedValueOrException(LongValue(pc), ArithmeticException(pc))
             else
                 ComputedValue(LongValue(pc))
         }
@@ -320,17 +323,5 @@ trait PreciseLongValues extends Domain { this: Configuration ⇒
             LongValue(pc)
         }
 
-    //
-    // TYPE CONVERSION INSTRUCTIONS
-    //
-
-    override def l2d(pc: PC, value: DomainValue): DomainValue =
-        withLongValueOrElse(value) { v ⇒ DoubleValue(pc, v.toDouble) } { DoubleValue(pc) }
-
-    override def l2f(pc: PC, value: DomainValue): DomainValue =
-        withLongValueOrElse(value) { v ⇒ FloatValue(pc, v.toFloat) } { FloatValue(pc) }
-
-    override def l2i(pc: PC, value: DomainValue): DomainValue =
-        withLongValueOrElse(value) { v ⇒ IntegerValue(pc, v.toInt) } { IntegerValue(pc) }
 }
 

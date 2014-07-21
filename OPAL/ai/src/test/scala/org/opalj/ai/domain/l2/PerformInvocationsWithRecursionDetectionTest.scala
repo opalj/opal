@@ -145,24 +145,23 @@ class PerformInvocationsWithRecursionDetectionTest
 
 object PerformInvocationsWithRecursionDetectionTestFixture {
 
-    abstract class BaseDomain(
-        override val project: Project[java.net.URL]) extends Domain
+    class BaseDomain(val project: Project[java.net.URL]) extends CoreDomain
             with DefaultDomainValueBinding
             with TheProject[java.net.URL]
             with ProjectBasedClassHierarchy
+            with TypedValuesFactory
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l1.DefaultReferenceValuesBinding
             with li.DefaultPreciseIntegerValues
-            with l0.DefaultPrimitiveTypeConversions {
+            with l0.DefaultPrimitiveValuesConversions {
         domain: Configuration ⇒
-        
         override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
     }
 
     def createCalledMethodsStore(theProject: Project[java.net.URL]): CalledMethodsStore { def warningIssued: Boolean } =
-        new CalledMethodsStore(new BaseDomain(theProject) with ValuesCoordinatingDomain) {
+        new CalledMethodsStore(new BaseDomain(theProject)) {
             var warningIssued = false
             override def frequentEvalution(
                 definingClass: ClassFile,
@@ -173,20 +172,21 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             }
         }
 
-    abstract class InvocationDomain(
-        project: Project[java.net.URL],
-        val method: Method)
-            extends BaseDomain(project)
+    abstract class InvocationDomain(project: Project[java.net.URL], val method: Method)
+            extends BaseDomain(project) with Domain
+            with TheMethod
             with l0.TypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
             with l0.TypeLevelFieldAccessInstructions
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
-            with TheMethod
             with PerformInvocationsWithRecursionDetection
             with RecordMethodCallResults {
+        callingDomain ⇒
 
-        /*ABSTRACT*/ val calledMethodsStore: CalledMethodsStore
+        def shouldInvocationBePerformed(
+            definingClass: ClassFile,
+            method: Method): Boolean = true
 
         def invokeExecutionHandler(
             pc: PC,
@@ -200,7 +200,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
                         InvocationDomain.this.calledMethodsStore
                 }
 
-                def ai: AI[_ >: domain.type] = BaseAI
+                def ai: AI[_ >: this.domain.type] = BaseAI
             }
     }
 

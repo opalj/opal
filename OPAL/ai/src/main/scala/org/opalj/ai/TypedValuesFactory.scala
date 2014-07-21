@@ -47,7 +47,7 @@ import org.opalj.br.VoidType
  * @author Michael Eichberg
  */
 trait TypedValuesFactory {
-    domain: CoreDomain with ReferenceValuesFactory with IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory ⇒
+    domain: CoreDomain with ReferenceValuesFactory with PrimitiveValuesFactory ⇒
 
     /**
      * Factory method to create domain values with a specific type. I.e., values for

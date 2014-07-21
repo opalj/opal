@@ -37,12 +37,12 @@ import org.opalj.br.{ Method, Code }
  *
  * @author Michael Eichberg
  */
-trait TheMethod extends TheCode { this: Domain ⇒
+trait TheMethod extends TheCode {
 
     /**
      * Returns the code block that is currently analyzed.
      */
-    /*override*/ def code: Code = method.body.get
+    final /*override*/ def code: Code = method.body.get
 
     /**
      * Returns the method that is currently analyzed.

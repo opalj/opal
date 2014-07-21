@@ -167,7 +167,7 @@ trait TaintAnalysisDomain[Source]
         with DomainId
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        with DefaultPrimitiveTypeConversions
+        with DefaultPrimitiveValuesConversions
         with DefaultDomainValueBinding
         with DefaultTypeLevelLongValues
         with DefaultTypeLevelFloatValues

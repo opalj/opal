@@ -47,7 +47,8 @@ import org.opalj.util.Yes
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait TypeLevelFieldAccessInstructions { this: Domain with Configuration ⇒
+trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
+    domain: CoreDomain with ReferenceValuesDomain with TypedValuesFactory with Configuration ⇒
 
     /*override*/ def getfield(
         pc: PC,

@@ -28,32 +28,33 @@
  */
 package org.opalj
 package ai
+package domain
+package l1
 
 /**
- * Defines the methods that performs type conversions between primitive values.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
+ * @author Riadh Chtara
+ * @author Michael Eichberg
  */
-trait PrimitiveTypeConversionsDomain extends CoreDomain {
+trait DefaultConcretePrimitiveValuesConversions extends l0.DefaultPrimitiveValuesConversions {
+    domain: CoreDomain with ConcreteLongValues with ConcreteIntegerValues with PrimitiveValuesFactory with Configuration ⇒
 
-    def i2d(pc: PC, value: DomainValue): DomainValue
-    def i2f(pc: PC, value: DomainValue): DomainValue
-    def i2l(pc: PC, value: DomainValue): DomainValue
+    override def i2d(pc: PC, value: DomainValue): DomainValue =
+        intValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
 
-    /** Conversion of the given long value to a double value. */
-    def l2d(pc: PC, value: DomainValue): DomainValue
-    /** Conversion of the given long value to a float value. */
-    def l2f(pc: PC, value: DomainValue): DomainValue
-    /** Conversion of the given long value to an integer value. */
-    def l2i(pc: PC, value: DomainValue): DomainValue
+    override def i2f(pc: PC, value: DomainValue): DomainValue =
+        intValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
 
-    def f2d(pc: PC, value: DomainValue): DomainValue
-    def f2i(pc: PC, value: DomainValue): DomainValue
-    def f2l(pc: PC, value: DomainValue): DomainValue
+    override def i2l(pc: PC, value: DomainValue): DomainValue =
+        intValue(value)(v ⇒ LongValue(pc, v.toLong))(LongValue(pc))
 
-    def d2f(pc: PC, value: DomainValue): DomainValue
-    def d2i(pc: PC, value: DomainValue): DomainValue
-    def d2l(pc: PC, value: DomainValue): DomainValue
+    override def l2d(pc: PC, value: DomainValue): DomainValue =
+        longValue(value) { v ⇒ DoubleValue(pc, v.toDouble) } { DoubleValue(pc) }
 
+    override def l2f(pc: PC, value: DomainValue): DomainValue =
+        longValue(value) { v ⇒ FloatValue(pc, v.toFloat) } { FloatValue(pc) }
+
+    override def l2i(pc: PC, value: DomainValue): DomainValue =
+        longValue(value) { v ⇒ IntegerValue(pc, v.toInt) } { IntegerValue(pc) }
 }
+

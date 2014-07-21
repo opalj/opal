@@ -73,7 +73,7 @@ class StringValuesTest
             with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultStringValuesBinding
             with l1.DefaultIntegerRangeValues
-            with l0.DefaultPrimitiveTypeConversions {
+            with l0.DefaultPrimitiveValuesConversions {
 
         type Id = String
         def id = "Domain which tracks String Values"

@@ -1,0 +1,97 @@
+digraph OPALDomains {
+	compound=true;
+	concentrate=true;
+	fontname=Helvetica;
+	dpi=50;
+	node [fontname=Helvetica,shape=plaintext,margin="0.05,0.05",height=0];
+	edge [fontname=Helvetica];
+
+	rankdir = RL;
+
+	subgraph cluster_base_domains {
+		//rankdir = RL;
+		style=filled;
+    color=lightgrey;
+		//shape=rectangle;
+		//{rank=sink; CoreDomain;}
+		//{rank=source; Domain;}
+		IntegerValuesDomain -> IntegerValuesFactory -> CoreDomain;
+		LongValuesDomain -> LongValuesFactory -> CoreDomain;
+		FloatValuesDomain -> FloatValuesFactory -> CoreDomain;
+		DoubleValuesDomain -> DoubleValuesFactory -> CoreDomain;
+		ReferenceValuesDomain -> ReferenceValuesFactory -> VMLevelExceptionsFactory -> CoreDomain;
+
+		PrimitiveValuesFactory -> IntegerValuesFactory [style=dotted];
+		PrimitiveValuesFactory -> LongValuesFactory [style=dotted];
+		PrimitiveValuesFactory -> FloatValuesFactory [style=dotted];
+		PrimitiveValuesFactory -> DoubleValuesFactory [style=dotted];
+		PrimitiveValuesFactory [style=filled,fillcolor=mintcream,shape=rectangle];
+
+		JoinStabilization -> CoreDomain;
+		JoinStabilization [style=filled,fillcolor=antiquewhite,shape=rectangle];
+
+		Domain -> IntegerValuesDomain;
+		Domain -> LongValuesDomain;
+		Domain -> FloatValuesDomain;
+		Domain -> DoubleValuesDomain;
+		Domain -> ReferenceValuesDomain;
+		Domain -> FieldAccessesDomain -> CoreDomain;
+		Domain -> MethodCallsDomain -> CoreDomain;
+		Domain -> MonitorInstructionsDomain -> CoreDomain;
+		Domain -> ReturnInstructionsDomain -> CoreDomain;
+		Domain -> PrimitiveValuesConversionsDomain -> CoreDomain;
+		Domain -> TypedValuesFactory -> { PrimitiveValuesFactory; ReferenceValuesFactory;};
+
+		{rank=same;
+			MethodCallsDomain;
+			FieldAccessesDomain;
+			MonitorInstructionsDomain;
+			ReturnInstructionsDomain;
+			PrimitiveValuesConversionsDomain;
+			ReferenceValuesDomain;
+			IntegerValuesDomain;
+			LongValuesDomain;
+			FloatValuesDomain;
+			DoubleValuesDomain;
+		}
+		{rank=same;
+			ReferenceValuesFactory;
+			VMLevelExceptionsFactory;
+			PrimitiveValuesFactory;
+			IntegerValuesFactory;
+			LongValuesFactory;
+			FloatValuesFactory;
+			DoubleValuesFactory;
+		}
+	  {rank=same;
+			CoreDomain;
+			JoinStabilization;
+		}
+
+		label="Base Domains";
+		labeljust=l;
+	}
+/*
+	subgraph helper_domains {
+		ClassHierarchy;
+		TheProject;
+		TheMethod -> TheCode ;
+		ConcreteIntegerValues -> CoreDomain;
+		Origin -> CoreDomain;
+		Configuration;
+
+		label="General Support";
+	}
+
+	subgraph l0_domains {
+
+	}
+
+	{rank=same; CoreDomain; ClassHierarchy; TheProject; TheCode; Configuration}
+*/
+
+	DefaultDomainValueBinding -> CoreDomain;
+
+	label = "OPAL Inheritance Relationships of Core Domains";
+	labelloc = "t";
+ }

@@ -40,8 +40,8 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  *
  * @author Michael Eichberg
  */
-trait PreciseIntegerValues extends Domain with ConcreteIntegerValues {
-    this: Configuration ⇒
+trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
+    this: CoreDomain with VMLevelExceptionsFactory with Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -356,13 +356,5 @@ trait PreciseIntegerValues extends Domain with ConcreteIntegerValues {
     override def i2s(pc: PC, value: DomainValue): DomainValue =
         intValue(value)(v ⇒ ShortValue(pc, v.toShort))(ShortValue(pc))
 
-    override def i2d(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
-
-    override def i2f(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
-
-    override def i2l(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ LongValue(pc, v.toLong))(LongValue(pc))
 }
 

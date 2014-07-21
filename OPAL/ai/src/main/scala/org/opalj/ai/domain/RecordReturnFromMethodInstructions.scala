@@ -52,7 +52,8 @@ import collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-trait RecordReturnFromMethodInstructions extends Domain {
+trait RecordReturnFromMethodInstructions extends ReturnInstructionsDomain {
+    domain: CoreDomain ⇒
 
     @volatile private[this] var returnFromMethodInstructions: UShortSet = UShortSet.empty
 
