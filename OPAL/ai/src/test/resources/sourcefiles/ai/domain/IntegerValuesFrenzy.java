@@ -186,6 +186,10 @@ public class IntegerValuesFrenzy {
         /* NOTHING TO DO */
     }
 
+    static void doIt(String what, int i) {
+        /* NOTHING TO DO */
+    }
+
     static int anInt() {
         return (int) Math.random() * 10;
     }
@@ -333,6 +337,47 @@ public class IntegerValuesFrenzy {
         }
     }
 
+    static void cfDependentValues6() {
+        int a = 0;
+        int b = 0;
+        int c = 0;
+        int d = 0;
+
+        for (int i = 0; i < 3; i++) {
+            int o = anInt();
+            switch (i) {
+            case 0:
+                a = o;
+                break;
+            case 1:
+                b = o;
+                break;
+            case 2:
+                c = o;
+                break;
+            }
+        }
+        if (a == 0) {
+            doIt("a: a===0", a);
+            doIt("a: b.is0.isUnknown", b);
+            doIt("a: c.is0.isUnknown", c);
+            doIt("a: d===null", d);
+        }
+        if (b == 0) {
+            doIt("b: a.is0.isUnknown", a);
+            doIt("b: b===0", b);
+            doIt("b: c.is0.isUnknown", c);
+            doIt("b: d===0", d);
+        }
+        if (c == 0) {
+            doIt("c: a.is0.isUnknown", a);
+            doIt("c: b.is0.isUnknown", b);
+            doIt("c: c===0", c);
+            doIt("c: d===0", d);
+        }
+
+    }
+
     static void complexConditions1(int c) {
         int i = 0;
         if (c == 0)
@@ -370,6 +415,7 @@ public class IntegerValuesFrenzy {
         doIt(i); // i either 0,1 or 2 value (we now nothing about c and d)
     }
 
+    @SuppressWarnings("all")
     static void complexLoop(int c, int d) {
         int i = 0;
         t: while (true) {
@@ -403,6 +449,7 @@ public class IntegerValuesFrenzy {
         }
     }
 
+    @SuppressWarnings("all")
     static int countingLoop(int k) {
         int i = 0;
         int j = 1;
