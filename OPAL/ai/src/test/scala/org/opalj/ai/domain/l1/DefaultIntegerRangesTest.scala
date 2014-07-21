@@ -393,16 +393,39 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
         }
 
-        describe("the behavior of the cast operators") {
+        describe("the behavior of the i2b cast operator") {
 
             it("(byte)AnIntegerValue => [-128,+127]") {
                 val v1 = AnIntegerValue
                 i2b(-1, v1) should be(IntegerRange(-128, +127))
             }
 
+            it("(byte)[-10,19] => [-10,+19]") {
+                val v1 = IntegerRange(-10, 19)
+                i2b(-1, v1) should be(IntegerRange(-10, +19))
+            }
+
             it("(byte)[0,129] => [-128,+127]") {
                 val v1 = IntegerRange(0, 129)
                 i2b(-1, v1) should be(IntegerRange(-128, +127))
+            }
+        }
+
+        describe("the behavior of the i2s cast operator") {
+
+            it("(short)AnIntegerValue => [-Short.MinValue,Short.MaxValue]") {
+                val v1 = AnIntegerValue
+                i2s(-1, v1) should be(IntegerRange(Short.MinValue, Short.MaxValue))
+            }
+
+            it("(short)[0,129] => [0,129]") {
+                val v1 = IntegerRange(0, 129)
+                i2s(-1, v1) should be(IntegerRange(0, 129))
+            }
+
+            it("(short)[-128,+129000] => [-Short.MinValue,Short.MaxValue]") {
+                val v1 = IntegerRange(-128, +129000)
+                i2s(-1, v1) should be(IntegerRange(Short.MinValue, Short.MaxValue))
             }
 
         }
@@ -672,7 +695,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         }
 
-        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v1)") {
+        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v1)") {
             val domain = new IntegerRangesTestDomain(8)
             val method = IntegerValues.findMethod("cfDependentValues1_v1").get
             val result = BaseAI(IntegerValues, method, domain)
@@ -686,7 +709,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
         }
 
-        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v2)") {
+        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v2)") {
             val domain = new IntegerRangesTestDomain(8)
             val method = IntegerValues.findMethod("cfDependentValues1_v2").get
             val result = BaseAI(IntegerValues, method, domain)
@@ -700,7 +723,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
         }
 
-        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v3)") {
+        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v3)") {
             val domain = new IntegerRangesTestDomain(8)
             val method = IntegerValues.findMethod("cfDependentValues1_v3").get
             val result = BaseAI(IntegerValues, method, domain)
@@ -714,7 +737,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
         }
 
-        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues2)") {
+        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues2)") {
             val domain = new IntegerRangesTestDomain(8)
             val method = IntegerValues.findMethod("cfDependentValues2").get
             val result = BaseAI(IntegerValues, method, domain)
@@ -722,7 +745,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             result.operandsArray(42).head should be(domain.IntegerRange(0, 0))
         }
 
-        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues3)") {
+        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues3)") {
             val domain = new IntegerRangesTestDomain(8)
             val method = IntegerValues.findMethod("cfDependentValues3").get
             val result = BaseAI(IntegerValues, method, domain)
@@ -730,7 +753,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             result.operandsArray(49).head should be(domain.IntegerRange(0, 0))
         }
 
-        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues4)") {
+        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues4)") {
             val domain = new IntegerRangesTestDomain(8)
             val method = IntegerValues.findMethod("cfDependentValues4").get
             val result = BaseAI(IntegerValues, method, domain)
@@ -741,13 +764,34 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 fail("unequal values are made equal")
         }
 
-        it("it should not happen that a constraint affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues5)") {
+        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues5)") {
             val domain = new IntegerRangesTestDomain(8)
             val method = IntegerValues.findMethod("cfDependentValues5").get
             val result = BaseAI(IntegerValues, method, domain)
             result.operandsArray(47).head should be(domain.IntegerRange(2, 2))
             result.operandsArray(51).head should be(domain.IntegerRange(0, 1))
             result.operandsArray(55).head should be(domain.AnIntegerValue)
+        }
+
+        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues6)") {
+            val domain = new IntegerRangesTestDomain(8)
+            val method = IntegerValues.findMethod("cfDependentValues6").get
+            val result = BaseAI(IntegerValues, method, domain)
+
+            result.operandsArray(77).head should be(domain.IntegerRange(0, 0))
+            result.operandsArray(81).head should be(domain.AnIntegerValue)
+            result.operandsArray(85).head should be(domain.AnIntegerValue)
+            result.operandsArray(89).head should be(domain.IntegerRange(0, 0))
+
+            result.operandsArray(97).head should be(domain.AnIntegerValue)
+            result.operandsArray(101).head should be(domain.IntegerRange(0, 0))
+            result.operandsArray(105).head should be(domain.AnIntegerValue)
+            result.operandsArray(109).head should be(domain.IntegerRange(0, 0))
+
+            result.operandsArray(117).head should be(domain.AnIntegerValue)
+            result.operandsArray(121).head should be(domain.AnIntegerValue)
+            result.operandsArray(125).head should be(domain.IntegerRange(0, 0))
+            result.operandsArray(129).head should be(domain.IntegerRange(0, 0))
         }
 
         it("it should not perform useless evaluations") {
@@ -763,10 +807,11 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             result.evaluated.tail.tail.head should be(20)
         }
 
-        it("it should handle casts (i2b) correctly") {
+        it("it should handle casts correctly") {
             val domain = new IntegerRangesTestDomain(8)
             val method = IntegerValues.findMethod("casts").get
             val result = BaseAI(IntegerValues, method, domain)
+            // we primarily test that the top-level domain value is updated 
             result.operandsArray(26).head should be(domain.IntegerRange(-128, 126))
         }
     }
