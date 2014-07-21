@@ -311,7 +311,7 @@ object XHTML {
             var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
             if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
             dumpInstruction(
-                pc, instruction, joinInstructions.contains(pc),
+                pc, code.lineNumber(pc), instruction, joinInstructions.contains(pc),
                 Some(exceptionHandlers),
                 domain)(
                     operands, locals)
@@ -320,6 +320,7 @@ object XHTML {
 
     def dumpInstruction(
         pc: Int,
+        lineNumber: Option[Int],
         instruction: Instruction,
         isJoinInstruction: Boolean,
         exceptionHandlers: Option[String],
@@ -329,9 +330,9 @@ object XHTML {
                 implicit ids: Option[AnyRef ⇒ Int]): Node = {
         val pcAsXHTML = Unparsed(
             (if (isJoinInstruction) "⇶ " else "") +
-                pc.toString+
-                "<br>"+
-                exceptionHandlers.getOrElse(""))
+                pc.toString +
+                exceptionHandlers.map("<br>"+_).getOrElse("") +
+                lineNumber.map("<br><i>l="+_+"</i>").getOrElse(""))
 
         <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
             <td class="pc">{ pcAsXHTML }</td>
@@ -426,7 +427,7 @@ object XHTML {
         }
 
         header+"<div style=\"margin-left:2em;\">"+
-        asStrings.mkString("") +
+            asStrings.mkString("") +
             (
                 if (openSubroutines > 0) {
                     var missingSubroutineEnds = subroutineEnd
