@@ -39,12 +39,26 @@ import br.analyses._
 trait FindRealBugsAnalysis[Source]
         extends MultipleResultsAnalysis[Source, SourceLocationBasedReport[Source]] {
 
-    // TODO(future): Read the Wiki URL from a config file
-    private val wikiUrlPrefix = "https://bitbucket.org/delors/opal/wiki/FindREALBugs/"
+    import FindRealBugsAnalysis._
 
     /**
      * The documentation URL for all of FindRealBugs' built-in analyses. They should all
      * be documented at the same wiki website, so they share a common URL prefix.
      */
     override def documentationUrl: Option[String] = Some(wikiUrlPrefix + title)
+}
+
+/**
+ * Companion object containing common data
+ */
+object FindRealBugsAnalysis {
+    private def readResourceTextFile(fileName: String): String = {
+        val stream = classOf[FindRealBugsAnalysis[_]].getResourceAsStream(fileName)
+        scala.io.Source.fromInputStream(stream).mkString.trim
+    }
+
+    /**
+     * The FindRealBugs Wiki URL, retrieved from a text file (so it is configurable).
+     */
+    val wikiUrlPrefix = readResourceTextFile("findrealbugs-wiki-url.txt")
 }
