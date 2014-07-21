@@ -161,7 +161,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     def createCalledMethodsStore(theProject: Project[java.net.URL]): CalledMethodsStore { def warningIssued: Boolean } =
-        new CalledMethodsStore(new BaseDomain(theProject)) {
+        new CalledMethodsStore(new BaseDomain(theProject) with ValuesCoordinatingDomain) {
             var warningIssued = false
             override def frequentEvalution(
                 definingClass: ClassFile,

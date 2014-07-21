@@ -54,12 +54,9 @@ import org.opalj.br.TestSupport
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultPreciseReferenceValuesTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class DefaultReferenceValuesTest extends FlatSpec with Matchers with ParallelTestExecution {
 
-    object DefaultPreciseReferenceValuesDomain
+    object DefaultReferenceValuesDomain
             extends Domain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
@@ -72,7 +69,7 @@ class DefaultPreciseReferenceValuesTest
             with l0.DefaultTypeLevelLongValues
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultReferenceValuesBinding
+            with l1.DefaultReferenceValuesBinding // <- PRIMARY GOAL!
             // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
             // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
             // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
@@ -82,7 +79,7 @@ class DefaultPreciseReferenceValuesTest
         override protected def maxSizeOfIntegerRanges: Long = 25l
     }
 
-    import DefaultPreciseReferenceValuesDomain._
+    import DefaultReferenceValuesDomain._
 
     val File = ObjectType("java/io/File")
 
