@@ -44,6 +44,7 @@ import org.opalj.br.ArrayType
  */
 trait DefaultReferenceValuesBinding
         extends l1.ReferenceValues
+        with JoinStabilization
         with DefaultVMLevelExceptionsFactory {
     domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
