@@ -29,11 +29,12 @@
 package org.opalj
 package ai
 
-import scala.reflect.ClassTag
-
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import br._
+import org.opalj.br.ConstantFieldValue
+import org.opalj.br.ConstantInteger
+import org.opalj.br.ConstantLong
+import org.opalj.br.ConstantFloat
+import org.opalj.br.ConstantDouble
+import org.opalj.br.ConstantString
 
 /**
  * A domain is the fundamental abstraction mechanism in OPAL that enables the customization
@@ -123,24 +124,4 @@ trait Domain extends CoreDomain
             case ConstantString.KindId  ⇒ StringValue(pc, cv.toUTF8)
         }
     }
-
-    /**
-     * Creates a `DomainValue` that represents a a value with the given type
-     * and whic is initialized using the JVM's default value for that type.
-     * E.g., for `IntegerValue`s the value is set to `0`. In case of a
-     * `ReferenceType` the value is the [[NullValue]].
-     */
-    final def DefaultValue(pc: PC, theType: FieldType): DomainValue =
-        theType match {
-            case BooleanType      ⇒ BooleanValue(pc, false)
-            case ByteType         ⇒ ByteValue(pc, 0)
-            case CharType         ⇒ CharValue(pc, 0)
-            case ShortType        ⇒ ShortValue(pc, 0)
-            case IntegerType      ⇒ IntegerValue(pc, 0)
-            case FloatType        ⇒ FloatValue(pc, 0.0f)
-            case LongType         ⇒ LongValue(pc, 0l)
-            case DoubleType       ⇒ DoubleValue(pc, 0.0d)
-            case _: ReferenceType ⇒ NullValue(pc)
-        }
-
 }

@@ -47,7 +47,7 @@ import org.opalj.br._
  * @author Michael Eichberg
  */
 trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
-    domain: Configuration with ConcreteIntegerValues with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // We do not refine the type DomainArrayValue any further since we also want
     // to use the super level ArrayValue class to represent arrays for which we have

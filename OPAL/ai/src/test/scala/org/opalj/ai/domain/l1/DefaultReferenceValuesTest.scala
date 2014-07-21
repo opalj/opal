@@ -48,15 +48,12 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.TestSupport
 
 /**
- * This test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of the methods.
- *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
 class DefaultReferenceValuesTest extends FlatSpec with Matchers with ParallelTestExecution {
 
-    object DefaultReferenceValuesDomain
+    object TestDomain
             extends Domain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
@@ -79,7 +76,7 @@ class DefaultReferenceValuesTest extends FlatSpec with Matchers with ParallelTes
         override protected def maxSizeOfIntegerRanges: Long = 25l
     }
 
-    import DefaultReferenceValuesDomain._
+    import TestDomain._
 
     val File = ObjectType("java/io/File")
 
@@ -138,7 +135,7 @@ class DefaultReferenceValuesTest extends FlatSpec with Matchers with ParallelTes
         ref1.join(-1, ref1Alt) should be(NoUpdate)
     }
 
-    it should ("represent both values after a merge of two independent value") in {
+    it should ("represent both values after a merge of two independent values") in {
         val IsReferenceValue(values) = typeOfValue(ref1MergeRef2)
         values.exists(_ == ref1) should be(true)
         values.exists(_ == ref2) should be(true)
@@ -177,9 +174,9 @@ class DefaultReferenceValuesTest extends FlatSpec with Matchers with ParallelTes
         val classFile = classFiles.find(_._1.thisType.fqn == "cornercases/ThrowsNullValue").get._1
         val method = classFile.methods.find(_.name == "main").get
 
-        val result = BaseAI(classFile, method, DefaultPreciseReferenceValuesDomain)
+        val result = BaseAI(classFile, method, TestDomain)
         val exception = result.operandsArray(20)
-        DefaultPreciseReferenceValuesDomain.refIsNull(exception.head) should be(No)
+        TestDomain.refIsNull(exception.head) should be(No)
     }
 
 }

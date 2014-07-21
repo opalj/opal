@@ -43,8 +43,7 @@ import org.opalj.br.ArrayType
 trait DefaultArrayValuesBinding
         extends l1.DefaultReferenceValuesBinding
         with ArrayValues {
-    domain: Configuration with ConcreteIntegerValues with ClassHierarchy ⇒
-
+    domain: IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy ⇒
     //
     // FACTORY METHODS
     //
