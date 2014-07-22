@@ -52,7 +52,6 @@ object DeadCode extends AnalysisExecutor {
             extends Domain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultPrimitiveValuesConversions
             with domain.l0.DefaultTypeLevelFloatValues
             with domain.l0.DefaultTypeLevelDoubleValues
             with domain.l0.TypeLevelFieldAccessInstructions
@@ -61,6 +60,7 @@ object DeadCode extends AnalysisExecutor {
             with domain.l1.DefaultIntegerRangeValues
             with domain.l1.DefaultLongValues
             with domain.l1.LongValuesShiftOperators
+            with domain.l1.DefaultConcretePrimitiveValuesConversions
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
             with domain.TheProject[java.net.URL]
