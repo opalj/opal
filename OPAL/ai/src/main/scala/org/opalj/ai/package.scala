@@ -31,6 +31,8 @@ package org.opalj
 import scala.language.existentials
 
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
 
 /**
  * Implementation of an abstract interpretation framework – also referred to as OPAL.
@@ -197,5 +199,27 @@ package object ai {
             currentIndex += 1
         }
         origin(localVariableIndex)
+    }
+
+    def collectWithOperandsAndIndex[B](
+        domain: Domain)(
+            code: Code, operandsArray: domain.OperandsArray)(
+                f: PartialFunction[(PC, Instruction, domain.Operands), B]): Seq[B] = {
+        val instructions = code.instructions
+        val max_pc = instructions.size
+        var pc = 0
+        var result: List[B] = List.empty
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            val operands = operandsArray(pc)
+            if ((instruction ne null) && (operands ne null)) {
+                val params = (pc, instruction, operands)
+                if (f.isDefinedAt(params)) {
+                    result = f(params) :: result
+                }
+            }
+            pc += 1
+        }
+        result.reverse
     }
 }
