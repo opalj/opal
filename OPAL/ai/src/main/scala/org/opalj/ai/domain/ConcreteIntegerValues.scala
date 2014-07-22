@@ -61,4 +61,8 @@ trait ConcreteIntegerValues { this: CoreDomain ⇒
      */
     def intValueOption(value: DomainValue): Option[Int]
 
+    object ConcreteIntegerValue {
+        def unapply(value: DomainValue): Option[Int] = intValueOption(value)
+    }
+
 }

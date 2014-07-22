@@ -286,6 +286,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
 
     }
 
+    object ReferenceValue {
+        def unapply(value: ReferenceValue): Some[ReferenceValue] = Some(value)
+    }
+
     /**
      * A reference value that has a single (upper) type (bound).
      */
