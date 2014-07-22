@@ -39,10 +39,11 @@ import org.opalj.br.ReferenceType
  * This is particularly useful for testing and debugging purposes.
  *
  * ==Core Properties==
- *  - Needs to be stacked upon a base implementation of the [[IntegerValuesDomain]] 
- *    and the [[ReferenceValuesDomain]]]
+ *  - Needs to be stacked upon a base implementation of the domains: [[IntegerValuesDomain]] 
+ *    and [[ReferenceValuesDomain]]].
  *  - Collects state directly associated with the analyzed code block.  
- *  - Not thread-safe.
+ *  - '''Not''' thread-safe.
+ *  - '''Not''' reusable.
  *
  * @author Michael Eichberg
  */

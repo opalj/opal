@@ -54,6 +54,7 @@ import org.opalj.br.analyses.{ Project }
  *      - [[FieldAccessesDomain]]
  *      - [[MonitorInstructionsDomain]]
  *  - Thread safe.
+ *  - Reusable.
  *
  * @author Michael Eichberg
  */
