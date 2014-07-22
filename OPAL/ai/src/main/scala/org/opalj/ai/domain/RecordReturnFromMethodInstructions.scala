@@ -30,9 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import language.implicitConversions
-
-import collection.mutable.UShortSet
+import org.opalj.collection.mutable.UShortSet
 
 /**
  * Records the program counters of all instructions that lead to a (ab)normal
