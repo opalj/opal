@@ -38,8 +38,9 @@ package domain
  * @author Michael Eichberg
  */
 trait RecordConstraints extends ReifiedConstraints {
+    domain: CoreDomain ⇒
 
-    @volatile private[this] var constraints: Set[ReifiedConstraint] = Set.empty
+    private[this] var constraints: Set[ReifiedConstraint] = Set.empty
 
     def allConstraints: Set[ReifiedConstraint] = constraints
 

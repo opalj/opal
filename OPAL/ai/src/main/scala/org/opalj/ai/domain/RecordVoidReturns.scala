@@ -44,7 +44,7 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-trait RecordVoidReturns extends Domain {
+trait RecordVoidReturns extends ReturnInstructionsDomain { domain: CoreDomain ⇒
 
     @volatile private[this] var returnVoidInstructions: UShortSet = UShortSet.empty
 

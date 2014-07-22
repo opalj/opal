@@ -41,8 +41,9 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
 /**
  * Most basic handling of method invocations that determines the value that is
  * put onto the operand stack/returned by a method call based on the called method's
- * return type. '''This implementation completely ignores exceptions and/or errors
- * thrown by the method.'''
+ * return type.
+ *
+ * '''This implementation completely ignores exceptions and/or errors thrown by the method.'''
  *
  * (Linkage related exceptions are currently generally ignored.)
  *
@@ -52,7 +53,8 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
  *
  * @author Michael Eichberg
  */
-trait SimpleTypeLevelInvokeInstructions { this: Domain with Configuration ⇒
+trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
+    domain: CoreDomain with ReferenceValuesDomain with ValuesFactory with Configuration ⇒
 
     protected[this] def handleInstanceBasedInvoke(
         pc: PC,

@@ -41,7 +41,7 @@ package l0
 trait DefaultTypeLevelLongValues
         extends DefaultDomainValueBinding
         with TypeLevelLongValues {
-    this: CoreDomain with IntegerValuesFactory with FloatValuesFactory with DoubleValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
+    this: CoreDomain with PrimitiveValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
 
     case object ALongValue extends super.LongValue {
 

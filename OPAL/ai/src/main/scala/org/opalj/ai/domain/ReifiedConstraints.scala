@@ -40,7 +40,8 @@ import br._
  *
  * @author Michael Eichberg
  */
-trait ReifiedConstraints extends Domain {
+trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain {
+    domain: CoreDomain ⇒
 
     /**
      * (Indirectly) called by OPAL-AI for a new value-based constraint.

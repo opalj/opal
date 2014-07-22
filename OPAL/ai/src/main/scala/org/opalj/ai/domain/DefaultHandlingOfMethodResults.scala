@@ -42,7 +42,8 @@ package domain
 trait DefaultHandlingOfMethodResults
         extends DefaultHandlingOfVoidReturns
         with DefaultHandlingForThrownExceptions
-        with DefaultHandlingForReturnInstructions { this: CoreDomain ⇒
+        with DefaultHandlingForReturnInstructions {
+    domain: CoreDomain ⇒
 
 }
 
