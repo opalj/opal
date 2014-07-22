@@ -37,7 +37,7 @@ package instructions
  */
 case class IF_ICMPLE(
     branchoffset: Int)
-        extends ConditionalBranchInstruction {
+        extends IFICMPConditionalBranchInstruction {
 
     final override def opcode: Opcode = IF_ICMPLE.opcode
 

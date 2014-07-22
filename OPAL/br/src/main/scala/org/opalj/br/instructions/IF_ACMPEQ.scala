@@ -37,7 +37,7 @@ package instructions
  */
 case class IF_ACMPEQ(
     branchoffset: Int)
-        extends ConditionalBranchInstruction {
+        extends IFACMPConditionalBranchInstruction {
 
     final override def opcode: Opcode = IF_ACMPEQ.opcode
 

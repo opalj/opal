@@ -37,7 +37,7 @@ package instructions
  */
 case class IF_ICMPGT(
     branchoffset: Int)
-        extends ConditionalBranchInstruction {
+        extends IFICMPConditionalBranchInstruction {
 
     final override def opcode: Opcode = IF_ICMPGT.opcode
 

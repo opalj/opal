@@ -53,3 +53,12 @@ abstract class ConditionalBranchInstruction extends ControlTransferInstruction {
             "(true="+(currentPC + branchoffset) + (if (branchoffset >= 0) "↓" else "↑")+
             ", false=↓)"
 }
+
+abstract class IF0ConditionalBranchInstruction extends ConditionalBranchInstruction 
+
+abstract class IFICMPConditionalBranchInstruction extends ConditionalBranchInstruction
+
+abstract class IFACMPConditionalBranchInstruction extends ConditionalBranchInstruction
+
+abstract class IFXNullConditionalBranchInstruction extends ConditionalBranchInstruction
+

@@ -37,7 +37,7 @@ package instructions
  */
 case class IFNULL(
     branchoffset: Int)
-        extends ConditionalBranchInstruction {
+        extends IFXNullConditionalBranchInstruction {
 
     final override def opcode: Opcode = IFNULL.opcode
 
