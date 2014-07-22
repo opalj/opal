@@ -30,8 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 /**
  * Centralizes all configuration options related to how a domain should handle
  * situations in which the information about a value is not completely available and

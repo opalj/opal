@@ -30,8 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import language.implicitConversions
-
 /**
  * Records the exception that is thrown by an instruction. If an instruction throws
  * multiple exceptions. The exceptions are `join`ed using the [[Domain#DomainValue]]'s

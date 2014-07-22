@@ -30,8 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import org.opalj.br.{ ObjectType, FieldType }
 
 /**
