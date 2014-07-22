@@ -44,7 +44,6 @@ import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
  * 
- * 
  * -->
  *
  * @author Arne Lottmann
@@ -54,11 +53,12 @@ public class OtherObject {
 	
 	private final SameObject thisArgument = new SameObject();
 	
-	public void noArgumentsPublic() {}
+	public void noArgumentsPublic() {/*empty*/}
 	
-	protected void noArgumentsProtected() {}
+	protected void noArgumentsProtected() {/*empty*/}
 	
-	private void noArgumentsPrivate() {}
+	@SuppressWarnings("all")
+	private void noArgumentsPrivate() {/*empty*/}
 	
 	@InvokedMethods({
 		@InvokedMethod(receiverType = SameObject.class, name = "noArgumentsPublic", isReflective = true, lineNumber = 71),
@@ -75,7 +75,7 @@ public class OtherObject {
 		privateHandle.invokeExact(thisArgument);
 	}
 	
-	public void primitive(int i) {}
+	public void primitive(int i) {/*empty*/}
 	
 	public int primitiveReturn(int i) { return i; }
 	
@@ -92,7 +92,7 @@ public class OtherObject {
 		returnHandle.invokeExact(thisArgument, 1);
 	}
 	
-	public void object(Object o) {}
+	public void object(Object o) {/*empty*/}
 	
 	public Object objectReturn(Object o) { return o; }
 	
@@ -109,7 +109,7 @@ public class OtherObject {
 		returnHandle.invokeExact(thisArgument, new Object());
 	}
 	
-	public void array(int[] array) {}
+	public void array(int[] array) {/*empty*/}
 	
 	public int[] arrayReturn(int[] array) { return array; }
 	
