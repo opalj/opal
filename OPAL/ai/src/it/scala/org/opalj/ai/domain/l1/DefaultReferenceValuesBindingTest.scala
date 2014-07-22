@@ -71,7 +71,7 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
 
     it should "be able to determine that a value with a single interface as its upper bound abstracts over a value that implements multiple interfaces that includes the previous one" in {
         val t1 = ObjectType("org/omg/CORBA/Object")
-        val t2 = ObjectType("java.rmi.Remote")
+        val t2 = ObjectType("java/rmi/Remote")
         val domain = ValuesDomain
         val stValue = domain.ReferenceValue(-1, t1)
         val mtValue = domain.ObjectValue(-1, UIDSet(t1, t2))
@@ -82,7 +82,7 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
 
     it should "be able to determine that a value with a single interface as its upper bound abstracts over a value that is non-null and that implements multiple interfaces that includes the previous one" in {
         val t1 = ObjectType("org/omg/CORBA/Object")
-        val t2 = ObjectType("java.rmi.Remote")
+        val t2 = ObjectType("java/rmi/Remote")
         val domain = ValuesDomain
         val stValue = domain.ReferenceValue(-1, Unknown, false, t1)
         val mtValue = domain.ObjectValue(-1, No, UIDSet(t1, t2))
