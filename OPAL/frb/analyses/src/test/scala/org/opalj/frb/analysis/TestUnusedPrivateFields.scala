@@ -104,8 +104,20 @@ class TestUnusedPrivateFields extends AnalysisTest {
             "Is private and unused"))
     }
 
-    it should "find exactly 5 issues in UnusedPrivateFields.jar" in {
-        results.size should be(5)
+    it should "detect an unused private field in the presence of inner classes" in {
+        val declaringClass =
+            ObjectType("UnusedPrivateFields/UsedInInnerClass")
+        results should contain(FieldBasedReport(
+            project.source(declaringClass),
+            Severity.Info,
+            declaringClass,
+            Some(ObjectType.String),
+            "reallyUnused",
+            "Is private and unused"))
+    }
+
+    it should "find exactly 6 issues in UnusedPrivateFields.jar" in {
+        results.size should be(6)
     }
 }
 

@@ -154,10 +154,21 @@ class UnusedPrivateFields[Source]
                 }
             }
 
+            // Since we're looking for `private` fields we only have to analyze their
+            // class'es methods - and the methods of any inner classes.
+            val classFiles = scala.collection.mutable.Set[ClassFile]() + classFile
+            classFile.foreachNestedClasses(project, { nestedClass ⇒
+                classFiles += nestedClass
+            })
+
+            val methods = classFiles.map(_.methods).flatten
+            val constructors = classFiles.map(_.constructors).flatten
+            val nonConstructors = methods.diff(constructors)
+
             // Check for field read accesses by name
             // TODO: early abort if all fields known to be used
             if (privateFields.nonEmpty) {
-                for (method @ MethodWithBody(body) ← classFile.methods) {
+                for (method @ MethodWithBody(body) ← methods) {
                     for (FieldReadAccess(`declaringClass`, name, _) ← body.instructions) {
                         privateFields -= name
                     }
@@ -176,7 +187,7 @@ class UnusedPrivateFields[Source]
                 val occurrences = scala.collection.mutable.Map[ConstantValue[_], Int]() ++
                     unusedConstants.map(value ⇒ value -> 0)
 
-                for (MethodWithBody(body) ← classFile.constructors) {
+                for (MethodWithBody(body) ← constructors) {
                     foreachConstantLoad(body, { value ⇒
                         if (occurrences.contains(value)) {
                             occurrences(value) += 1
@@ -194,10 +205,7 @@ class UnusedPrivateFields[Source]
 
             // Check other methods: Any occurrence indicates a use.
             if (unusedConstants.nonEmpty) {
-                for {
-                    method @ MethodWithBody(body) ← classFile.methods
-                    if !method.isConstructor
-                } {
+                for (method @ MethodWithBody(body) ← nonConstructors) {
                     foreachConstantLoad(body, { value ⇒
                         unusedConstants -= value
                     })
