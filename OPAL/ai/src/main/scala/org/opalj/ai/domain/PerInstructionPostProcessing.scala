@@ -39,7 +39,7 @@ package domain
  * and locals associated with an instruction that will be evaluated "next".
  * For example, let's assume that we are currently processing instruction X and that
  * instruction Y is the successor instruction. In this case, the framework will first
- * determine the effect of function X on the stack/locals. After that all registered
+ * determine the effect of function X on the stack/locals. After that, all registered
  * updaters will be called. All registered updaters will be discarded as soon the
  * evaluation of instruction X has completed.
  *

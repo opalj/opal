@@ -38,14 +38,26 @@ import org.opalj.br.BootstrapMethod
 import org.opalj.br.analyses.{ Project }
 
 /**
- * A `Domain` that is intended to be used to coordinate the exchange of values between
- * different domains. This domain does not prescribe the semantics of any values, but
+ * Can be mixed in to create a `Domain` that is intended to be used to coordinate the
+ * exchange of values between different domains.
+ *
+ * This domain does not prescribe the semantics of any values, but
  * instead implements all methods that perform computations.
+ *
+ * This domain directly inherits from [[Domain]] and can, thus, directly be used
+ * to create a final domain.
+ *
+ * ==Core Properties==
+ *  - Concrete base implementation of the following domains:
+ *      - [[Configuration]]
+ *      - [[MethodCallsDomain]]
+ *      - [[FieldAccessesDomain]]
+ *      - [[MonitorInstructionsDomain]]
+ *  - Thread safe.
  *
  * @author Michael Eichberg
  */
-trait ValuesCoordinatingDomain extends Domain with JoinStabilization
-        with Configuration {
+trait ValuesCoordinatingDomain extends Domain with JoinStabilization with Configuration {
 
     def throwAllHandledExceptionsOnMethodCall: Boolean = true
     def throwNullPointerExceptionOnMethodCall: Boolean = true

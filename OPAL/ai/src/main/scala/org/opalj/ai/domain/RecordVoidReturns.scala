@@ -36,17 +36,24 @@ import org.opalj.collection.mutable.UShortSet
  * Records the program counters of all return (void) instructions that are reached.
  *
  * ==Usage==
- * This domain can be stacked on top of other domains that process `return` `void` instructions.
+ * Typical usage:
  * {{{
  * class MyDomain extends ...DefaultHandlingOfVoidReturns with RecordVoidReturns
  * }}}
- * It forwards all instruction evaluation calls to the super trait.
+ *
+ * This domain forwards all instruction evaluation calls to the super trait.
+ *
+ * ==Core Properties==
+ *  - Needs to be stacked upon a base implementation of the domain 
+ *    [[ReturnInstructionsDomain]].
+ *  - Collects information directly associated with the analyzed code block.
+ *  - Not thread-safe.
  *
  * @author Michael Eichberg
  */
 trait RecordVoidReturns extends ReturnInstructionsDomain { domain: CoreDomain ⇒
 
-    @volatile private[this] var returnVoidInstructions: UShortSet = UShortSet.empty
+    private[this] var returnVoidInstructions: UShortSet = UShortSet.empty
 
     def allReturnVoidInstructions: PCs = returnVoidInstructions
 
