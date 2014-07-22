@@ -41,8 +41,7 @@ import br.analyses._
  * @author Ralf Mitschke
  * @author Daniel Klauer
  */
-class SerializableNoSuitableConstructor[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
+class SerializableNoSuitableConstructor[Source] extends FindRealBugsAnalysis[Source] {
 
     def description: String =
         "Reports superclasses of Serializable classes without zero-arguments constructor."

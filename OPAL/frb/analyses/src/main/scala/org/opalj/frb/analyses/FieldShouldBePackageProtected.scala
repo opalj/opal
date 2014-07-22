@@ -48,8 +48,7 @@ import br.instructions._
  * @author Ralf Mitschke
  * @author Daniel Klauer
  */
-class FieldShouldBePackageProtected[Source]
-        extends MultipleResultsAnalysis[Source, FieldBasedReport[Source]] {
+class FieldShouldBePackageProtected[Source] extends FindRealBugsAnalysis[Source] {
 
     /**
      * Returns a description text for this analysis.

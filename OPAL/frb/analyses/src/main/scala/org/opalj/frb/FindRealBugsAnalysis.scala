@@ -22,56 +22,21 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 package frb
-package analyses
 
-import bi.ACC_PUBLIC
-
-import br._
 import br.analyses._
 
 /**
- * This analysis reports `finalize()` methods that are `public` instead of `protected`.
- * `finalize()` should never be `public` as it is not intended to be called manually by
- * outside code.
+ * Common trait that should be implemented by all of FindRealBugs' built-in analyses.
  *
- * @author Ralf Mitschke
- * @author Michael Eichberg
  * @author Daniel Klauer
  */
-class PublicFinalizeMethodShouldBeProtected[Source] extends FindRealBugsAnalysis[Source] {
+trait FindRealBugsAnalysis[Source]
+        extends MultipleResultsAnalysis[Source, SourceLocationBasedReport[Source]] {
 
-    def description: String = "Reports finalize() methods that are not protected."
-
-    /**
-     * Runs this analysis on the given project.
-     *
-     * @param project The project to analyze.
-     * @param parameters Options for the analysis. Currently unused.
-     * @return A list of reports, or an empty list.
-     */
-    def analyze(
-        project: Project[Source],
-        parameters: Seq[String] = List.empty): Iterable[MethodBasedReport[Source]] = {
-
-        // For all public finalize() methods...
-        for {
-            classFile ← project.classFiles
-            if !project.isLibraryType(classFile)
-            method @ Method(ACC_PUBLIC(), "finalize",
-                MethodDescriptor.NoArgsAndReturnVoid) ← classFile.methods
-        } yield {
-            MethodBasedReport(
-                project.source(classFile.thisType),
-                Severity.Info,
-                classFile.thisType,
-                method,
-                "Should be protected")
-        }
-    }
 }

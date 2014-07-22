@@ -53,8 +53,7 @@ import br.instructions._
  * @author Daniel Klauer
  * @author Peter Spieler
  */
-class UnusedPrivateFields[Source]
-        extends MultipleResultsAnalysis[Source, FieldBasedReport[Source]] {
+class UnusedPrivateFields[Source] extends FindRealBugsAnalysis[Source] {
 
     def description: String = "Reports unused private fields."
 

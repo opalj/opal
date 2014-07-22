@@ -42,8 +42,7 @@ import br.instructions._
  * @author Michael Eichberg
  * @author Daniel Klauer
  */
-class FinalizeUseless[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
+class FinalizeUseless[Source] extends FindRealBugsAnalysis[Source] {
 
     /**
      * Returns a description text for this analysis.

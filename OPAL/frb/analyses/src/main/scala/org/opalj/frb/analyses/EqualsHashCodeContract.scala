@@ -40,8 +40,7 @@ import br.instructions._
  *
  * @author Michael Eichberg
  */
-class EqualsHashCodeContract[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
+class EqualsHashCodeContract[Source] extends FindRealBugsAnalysis[Source] {
 
     /**
      * Returns a description text for this analysis.
