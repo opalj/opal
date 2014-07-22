@@ -47,12 +47,7 @@ import br._
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ReflectiveInvokerTest
-        extends FlatSpec
-        with Matchers //with ParallelTestExecution 
-        {
-
-    behavior of "the RefleciveInvoker trait"
+class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestExecution*/ {
 
     private[this] val IrrelevantPC = Int.MinValue
 
@@ -78,10 +73,6 @@ class ReflectiveInvokerTest
             with RecordVoidReturns
             with IgnoreSynchronization
             with ReflectiveInvoker {
-
-        type Id = String
-
-        def id = "ReflectiveInvokerTestDomain"
 
         override protected def maxUpdatesForIntegerValues = 25
 
@@ -109,6 +100,8 @@ class ReflectiveInvokerTest
     }
 
     def createDomain() = new ReflectiveInvokerTestDomain
+
+    behavior of "the RefleciveInvoker trait"
 
     it should ("be able to call a static method") in {
         val domain = createDomain()
