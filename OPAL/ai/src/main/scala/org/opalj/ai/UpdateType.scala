@@ -41,7 +41,7 @@ package ai
  * val updateType : UpdateType = ...
  * val update : Update = updateType(<someValue>)
  * }}}
- * 
+ *
  * @author Michael Eichberg
  */
 sealed abstract class UpdateType {
@@ -55,6 +55,11 @@ sealed abstract class UpdateType {
      * Returns `true` if `this` `UpdateType` represents the `NoUpdateType`.
      */
     def noUpdate: Boolean
+
+    /**
+     * Returns `true` if `this` `UpdateType` is a [[MetaInformationUpdateType]].
+     */
+    def isMetaInformationUpdate: Boolean
 
     /**
      * Merges this `UpdateType` with the given one. That is, it is determined which
@@ -77,6 +82,8 @@ case object NoUpdateType extends UpdateType {
 
     override def noUpdate: Boolean = true
 
+    override def isMetaInformationUpdate: Boolean = false
+
     override def &:(updateType: UpdateType): UpdateType = updateType
 
     override def &:(update: Update[_]): UpdateType = update.updateType
@@ -88,6 +95,8 @@ case object MetaInformationUpdateType extends UpdateType {
     override def apply[V](value: ⇒ V): Update[V] = MetaInformationUpdate(value)
 
     override def noUpdate: Boolean = false
+
+    override def isMetaInformationUpdate: Boolean = true
 
     override def &:(updateType: UpdateType): UpdateType =
         if (updateType == StructuralUpdateType)
@@ -103,6 +112,8 @@ case object StructuralUpdateType extends UpdateType {
     override def apply[V](value: ⇒ V): Update[V] = StructuralUpdate(value)
 
     override def noUpdate: Boolean = false
+
+    override def isMetaInformationUpdate: Boolean = false
 
     override def &:(updateType: UpdateType): UpdateType = StructuralUpdateType
 
