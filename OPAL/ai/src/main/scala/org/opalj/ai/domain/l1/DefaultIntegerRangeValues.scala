@@ -54,12 +54,9 @@ trait DefaultIntegerRangeValues
     class AnIntegerValue() extends super.AnIntegerValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
-            value match {
-                case _: IntegerRange ⇒
-                    MetaInformationUpdate(AnIntegerValue())
-                case _: AnIntegerValue ⇒
-                    MetaInformationUpdate(value /* this is the new value */ )
-            }
+            // we are not joining the "same" value; the join stabilization trait
+            // takes care of handling potential aliases
+            MetaInformationUpdate(AnIntegerValue())
         }
 
         override def abstractsOver(other: DomainValue): Boolean =
@@ -95,7 +92,7 @@ trait DefaultIntegerRangeValues
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             val result = other match {
-                case that: AnIntegerValue ⇒ StructuralUpdate(that)
+                case that: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
                 case IntegerRange(otherLB, otherUB) ⇒
                     val newLowerBound = Math.min(this.lowerBound, otherLB)
                     val newUpperBound = Math.max(this.upperBound, otherUB)
@@ -109,16 +106,10 @@ trait DefaultIntegerRangeValues
                         StructuralUpdate(AnIntegerValue())
 
                     else if (newLowerBound == lowerBound && newUpperBound == upperBound)
-                        // This is NOT a "NoUpdate" since we have to values that may
+                        // This is NOT a "NoUpdate" since we have two values that may
                         // have the same range, but which can still be two different
-                        // runtime values!
-                        if (newLowerBound == otherLB && newUpperBound == otherUB)
-                            MetaInformationUpdate(other)
-                        else
-                            MetaInformationUpdate(IntegerRange(newLowerBound, newUpperBound))
-
-                    else if (newLowerBound == otherLB && newUpperBound == otherUB)
-                        StructuralUpdate(other)
+                        // runtime values (they were not created at the same time!
+                        MetaInformationUpdate(IntegerRange(newLowerBound, newUpperBound))
                     else
                         StructuralUpdate(IntegerRange(newLowerBound, newUpperBound))
             }
