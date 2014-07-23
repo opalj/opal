@@ -30,6 +30,9 @@ package org.opalj
 package ai
 
 /**
+ * Ensures that – if two reference identical domain values – are merged multiple times, 
+ * the same value is used as the result.
+ *
  * Using join stabilization is necessary if constraints are propagated
  * or (makes sense) if the merge of domain values is expensive.
  *
@@ -67,8 +70,8 @@ trait JoinStabilization extends CoreDomain {
         }
     }
 
-    abstract override protected[this] def afterJoin(pc: PC): Unit = {
-        super.afterJoin(pc)
+    abstract override protected[this] def afterBaseJoin(pc: PC): Unit = {
+        super.afterBaseJoin(pc)
         leftValues.clear()
     }
 }
