@@ -608,7 +608,7 @@ trait CoreDomain {
         thisLocals: Locals,
         otherOperands: Operands,
         otherLocals: Locals): Update[(Operands, Locals)] = {
-        beforeJoin(pc)
+        beforeBaseJoin(pc)
 
         var operandsUpdated: UpdateType = NoUpdateType
         val newOperands: Operands =
@@ -676,9 +676,13 @@ trait CoreDomain {
 
             }
 
-        afterJoin(pc)
-        (operandsUpdated &: localsUpdated)((newOperands, newLocals))
+        afterBaseJoin(pc)
+
+        val updateType = (operandsUpdated &: localsUpdated)
+        joinPostProcessing(updateType, pc, thisOperands, thisLocals, newOperands, newLocals)
     }
+
+    protected[this] def beforeBaseJoin(pc: PC): Unit = { /*empty*/ }
 
     protected[this] def joinValues(
         pc: PC,
@@ -686,9 +690,34 @@ trait CoreDomain {
         left.join(pc, right)
     }
 
-    protected[this] def beforeJoin(pc: PC): Unit = {}
+    protected[this] def afterBaseJoin(pc: PC): Unit = { /*empty*/ }
 
-    protected[this] def afterJoin(pc: PC): Unit = {}
+    /**
+     * Enables the customization of the behavior of the base [[join]] method.
+     *
+     * This method in particular enables, in case of a
+     * [[MetaInformationUpdate]], to raise the update type to force the
+     * continuation of the abstract interpretation process.
+     *
+     * Methods should always `abstract override` this method and should call the super
+     * method.
+     *
+     * @param updateType The current update type. The level can be raised. It is
+     *      an error to lower the update level.
+     * @param oldOperands The old operands, before the join. Should not be changed.
+     * @param oldLocals The old locals, before the join. Should not be changed.
+     * @param newOperands The new operands; may be updated.
+     * @param newLocals The new locals; may be updated.
+     */
+    protected[this] def joinPostProcessing(
+        updateType: UpdateType,
+        pc: PC,
+        oldOperands: Operands,
+        oldLocals: Locals,
+        newOperands: Operands,
+        newLocals: Locals): Update[(Operands, Locals)] = {
+        updateType((newOperands, newLocals))
+    }
 
     /**
      * ''Called by the framework after performing a computation''. That is, after
