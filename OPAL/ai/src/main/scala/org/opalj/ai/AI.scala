@@ -434,7 +434,7 @@ trait AI[D <: Domain] {
                 // paths join; however, we may have a dangling computation...
                 operandsArray(targetPC) = operands
                 localsArray(targetPC) = locals
-                if (!worklist.contains(targetPC))
+                if (!worklist.contains(targetPC)) // FIXME Contains in the current context (subroutine)
                     worklist = targetPC :: worklist
                 if (tracer.isDefined)
                     tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
