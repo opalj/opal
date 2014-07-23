@@ -154,17 +154,23 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-1, 2)))
             }
 
-            it("(join of an IntegerRange value and an IntegerRange value that describes a sub-range) [-1,3] join [0,2] => \"NoUpdate\";  [0,2] join l @ [-1,3] => l ") {
+            it("(join of an IntegerRange value and an IntegerRange value that describes a sub-range) [-1,3] join [0,2] => \"NoUpdate\"") {
                 val v1 = IntegerRange(-1, 3)
                 val v2 = IntegerRange(0, 2)
 
                 v1.join(-1, v2) should be('isMetaInformationUpdate)
-
-                val result = v2.join(-1, v1)
-                result should be(StructuralUpdate(v1))
-                assert(result.value eq v1)
             }
 
+            it("(join of an IntegerRange value and an IntegerRange value that describes a sub-range) [0,2] join [-1,3] => \"StructuralUpdate\";  [0,2] join l @ [-1,3] => l'") {
+                val v1 = IntegerRange(-1, 3)
+                val v2 = IntegerRange(0, 2)
+
+                val result = v2.join(-1, v1)
+                result should be(StructuralUpdate(IntegerRange(-1, 3)))
+                assert(result.value ne v1)
+            }
+
+            
             it("(join of a \"point\" range with a non-overlapping range) [0,0] join [1,Int.MaxValue]") {
                 val v1 = IntegerRange(lb = 0, ub = 0)
                 val v2 = IntegerRange(lb = 1, ub = 2147483647)
@@ -813,6 +819,14 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             val result = BaseAI(IntegerValues, method, domain)
             // we primarily test that the top-level domain value is updated 
             result.operandsArray(26).head should be(domain.IntegerRange(-128, 126))
+        }
+
+        it("it should handle cases where we have more complex aliasing") {
+            val domain = new IntegerRangesTestDomain(4)
+            val method = IntegerValues.findMethod("moreComplexAliasing").get
+            val result = BaseAI(IntegerValues, method, domain)
+ 
+            result.operandsArray(20).head should be(domain.AnIntegerValue)
         }
     }
 }

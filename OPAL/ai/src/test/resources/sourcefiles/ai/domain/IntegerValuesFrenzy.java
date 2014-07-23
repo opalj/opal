@@ -358,22 +358,22 @@ public class IntegerValuesFrenzy {
             }
         }
         if (a == 0) {
-            doIt(/*"a: a===0",*/ a);
-            doIt(/*"a: b.is0.isUnknown",*/ b);
-            doIt(/*"a: c.is0.isUnknown",*/ c);
-            doIt(/*"a: d===null",*/ d);
+            doIt(/* "a: a===0", */a);
+            doIt(/* "a: b.is0.isUnknown", */b);
+            doIt(/* "a: c.is0.isUnknown", */c);
+            doIt(/* "a: d===null", */d);
         }
         if (b == 0) {
-            doIt(/*"b: a.is0.isUnknown",*/ a);
-            doIt(/*"b: b===0",*/ b);
-            doIt(/*"b: c.is0.isUnknown",*/ c);
-            doIt(/*"b: d===0",*/ d);
+            doIt(/* "b: a.is0.isUnknown", */a);
+            doIt(/* "b: b===0", */b);
+            doIt(/* "b: c.is0.isUnknown", */c);
+            doIt(/* "b: d===0", */d);
         }
         if (c == 0) {
-            doIt(/*"c: a.is0.isUnknown",*/ a);
-            doIt(/*"c: b.is0.isUnknown",*/ b);
-            doIt(/*"c: c===0",*/ c);
-            doIt(/*"c: d===0",*/ d);
+            doIt(/* "c: a.is0.isUnknown", */a);
+            doIt(/* "c: b.is0.isUnknown", */b);
+            doIt(/* "c: c===0", */c);
+            doIt(/* "c: d===0", */d);
         }
 
     }
@@ -459,5 +459,48 @@ public class IntegerValuesFrenzy {
             k += 1;
         }
         return j;
+    }
+
+    static int moreComplexAliasing() {
+        // Inspired by:
+        // 107  public int stringToIndex(String s)
+        // 108    {
+        // 109      if(s==null) return NULL;
+        // 110
+        // 111      int hashslot=s.hashCode()%HASHPRIME;
+        // 112      if(hashslot<0) hashslot=-hashslot;
+        // 113
+        // 114      // Is it one we already know?
+        // 115      int hashlast=m_hashStart[hashslot];
+        // 116      int hashcandidate=hashlast;
+        // 117      while(hashcandidate!=NULL)
+        // 118        {
+        // 119          if(m_intToString.elementAt(hashcandidate).equals(s))
+        // 120            return hashcandidate;
+        // 121
+        // 122          hashlast=hashcandidate;
+        // 123          hashcandidate=m_hashChain.elementAt(hashcandidate);
+        // 124        }
+        // 125
+        // 126      // New value. Add to tables.
+        // 127      int newIndex=m_intToString.size();
+        // 128      m_intToString.addElement(s);
+        // 129
+        // 130      m_hashChain.addElement(NULL);     // Initialize to no-following-same-hash
+        // 131      if(hashlast==NULL)  // First for this hash
+        // 132        m_hashStart[hashslot]=newIndex;
+        // 133      else // Link from previous with same hash
+        // 134        m_hashChain.setElementAt(newIndex,hashlast);
+        // 135
+        // 136      return newIndex;
+        // 137    }
+        int hashlast = anInt();
+        int hashcandidate = hashlast;
+        while (hashcandidate != 0) {
+            hashlast = hashcandidate;
+            hashcandidate = anInt();
+        }
+
+        return hashlast; // 0 if 0 right from the start; non-zero in all other cases
     }
 }
