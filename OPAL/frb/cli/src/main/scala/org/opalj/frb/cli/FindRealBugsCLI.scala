@@ -47,13 +47,6 @@ import java.text.DecimalFormat
 object FindRealBugsCLI extends ProgressListener {
     import FindRealBugs._
 
-    // TODO(future): Read the Wiki URL from a config file
-    val wikiUrlPrefix = "https://bitbucket.org/delors/opal/wiki/FindREALBugs/"
-
-    def getAnalysisWikiUrl(analysis: Analysis): String = {
-        wikiUrlPrefix + analysis.title
-    }
-
     /**
      * Displays help output and aborts the program. Optionally shows an error message.
      *
@@ -181,6 +174,17 @@ object FindRealBugsCLI extends ProgressListener {
         println("sum: "+secondsToString(analysesTotalSeconds)+", "+
             "real time: "+secondsToString(realSeconds))
 
+        def analysisDescription(analysis: FindRealBugs.Analysis): String = {
+            def format(header: String, body: String): String = {
+                Console.BLUE + header+": "+Console.RESET + body
+            }
+            if (analysis.documentationUrl.isDefined) {
+                format("description", analysis.documentationUrl.get.toString())
+            } else {
+                format("analysis", analysis.title)
+            }
+        }
+
         allResults.foreach {
             case (analysis, reports) ⇒
                 // Display report's console messages, separated by newlines, with the
@@ -188,8 +192,7 @@ object FindRealBugsCLI extends ProgressListener {
                 // of reports.
                 println(reports.map(_.consoleReport(urlToLocationIdentifier)).
                     mkString("\n", "\n",
-                        "\n"+Console.BLUE+"description: "+Console.RESET
-                            + getAnalysisWikiUrl(analysis)))
+                        "\n"+analysisDescription(analysis)))
         }
 
         // Display how many reports came from every analysis.

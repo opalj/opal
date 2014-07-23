@@ -75,8 +75,7 @@ private class ImmutabilityAnalysisDomain[Source](
  * @author Roberts Kolosovs
  * @author Peter Spieler
  */
-class FieldIsntImmutableInImmutableClass[Source]
-        extends MultipleResultsAnalysis[Source, SourceLocationBasedReport[Source]] {
+class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[Source] {
 
     /**
      * Returns a description text for this analysis.

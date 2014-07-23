@@ -40,8 +40,7 @@ import br.analyses._
  * @author Ralf Mitschke
  * @author Daniel Klauer
  */
-class CatchesIllegalMonitorStateException[Source]
-        extends MultipleResultsAnalysis[Source, MethodBasedReport[Source]] {
+class CatchesIllegalMonitorStateException[Source] extends FindRealBugsAnalysis[Source] {
 
     def description: String = "Reports methods that catch IllegalMonitorStateException."
 

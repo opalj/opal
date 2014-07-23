@@ -27,7 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package frb.analyses
+package frb
+package analyses
 
 import br._
 import br.analyses._
@@ -43,8 +44,7 @@ import br.analyses._
  *
  * @author Florian Brandherm
  */
-class BadlyOverriddenAdapter[Source]
-        extends MultipleResultsAnalysis[Source, SourceLocationBasedReport[Source]] {
+class BadlyOverriddenAdapter[Source] extends FindRealBugsAnalysis[Source] {
 
     def description: String =
         "Reports methods with the same name but different signatures when compared to "+

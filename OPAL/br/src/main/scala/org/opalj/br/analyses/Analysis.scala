@@ -74,6 +74,19 @@ trait Analysis[Source, +AnalysisResult] {
     def description: String
 
     /**
+     * A URL at which documentation about this analysis can be found. This allows user
+     * interfaces to show a link for the user to click on, as a way to access further
+     * documentation about this analysis.
+     *
+     * For example, for a command line interface, outputting the entire `description` to
+     * the console may not be desirable, and it could show this URL instead.
+     *
+     * This is just a `String`, not a `java.net.URL`, because we do not intend to use it
+     * as an URL internally. It is just a text string that can be shown to the user.
+     */
+    def documentationUrl: Option[String] = None
+
+    /**
      * The copyright statement which contains less than 124 character and no line-breaks.
      */
     def copyright: String = "See project documentation."
@@ -92,4 +105,3 @@ trait Analysis[Source, +AnalysisResult] {
             simpleName
     }
 }
-

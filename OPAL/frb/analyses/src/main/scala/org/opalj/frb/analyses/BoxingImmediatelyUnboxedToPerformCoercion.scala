@@ -50,8 +50,8 @@ import br.instructions._
  * @author Ralf Mitschke
  * @author Daniel Klauer
  */
-class BoxingImmediatelyUnboxedToPerformCoercion[S]
-        extends MultipleResultsAnalysis[S, LineAndColumnBasedReport[S]] {
+class BoxingImmediatelyUnboxedToPerformCoercion[Source]
+        extends FindRealBugsAnalysis[Source] {
 
     def description: String =
         "Reports sections of code that box a value but then immediately unbox it."
@@ -64,8 +64,8 @@ class BoxingImmediatelyUnboxedToPerformCoercion[S]
      * @return A list of reports, or an empty list.
      */
     def analyze(
-        project: Project[S],
-        parameters: Seq[String] = List.empty): Iterable[LineAndColumnBasedReport[S]] = {
+        project: Project[Source],
+        parameters: Seq[String] = List.empty): Iterable[LineAndColumnBasedReport[Source]] = {
 
         // For each method doing INVOKESPECIAL followed by INVOKEVIRTUAL on the same
         // java.lang class, where the called method's name ends in "Value"...
@@ -88,7 +88,7 @@ class BoxingImmediatelyUnboxedToPerformCoercion[S]
             "floatValue",
             "doubleValue")
 
-        var result: List[LineAndColumnBasedReport[S]] = List.empty
+        var result: List[LineAndColumnBasedReport[Source]] = List.empty
         for {
             classFile ← project.classFiles.par if classFile.majorVersion >= 49
             if !project.isLibraryType(classFile)

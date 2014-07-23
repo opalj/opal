@@ -43,8 +43,7 @@ import br.instructions._
  * @author Ralf Mitschke
  * @author Daniel Klauer
  */
-class FieldShouldBeFinal[Source]
-        extends MultipleResultsAnalysis[Source, FieldBasedReport[Source]] {
+class FieldShouldBeFinal[Source] extends FindRealBugsAnalysis[Source] {
 
     /**
      * Returns a description text for this analysis.

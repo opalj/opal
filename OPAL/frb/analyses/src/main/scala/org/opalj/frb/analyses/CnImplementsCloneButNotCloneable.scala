@@ -42,8 +42,7 @@ import br.instructions._
  * @author Ralf Mitschke
  * @author Roberts Kolosovs
  */
-class CnImplementsCloneButNotCloneable[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
+class CnImplementsCloneButNotCloneable[Source] extends FindRealBugsAnalysis[Source] {
 
     def description: String = "Reports classes implementing clone() but not Cloneable."
 

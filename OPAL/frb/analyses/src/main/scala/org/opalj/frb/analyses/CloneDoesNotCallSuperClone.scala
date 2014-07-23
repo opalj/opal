@@ -75,8 +75,7 @@ import br.instructions._
  * @author Ralf Mitschke
  * @author Daniel Klauer
  */
-class CloneDoesNotCallSuperClone[Source]
-        extends MultipleResultsAnalysis[Source, MethodBasedReport[Source]] {
+class CloneDoesNotCallSuperClone[Source] extends FindRealBugsAnalysis[Source] {
 
     def description: String =
         "Reports clone() methods that do not contain a call to super.clone()."
