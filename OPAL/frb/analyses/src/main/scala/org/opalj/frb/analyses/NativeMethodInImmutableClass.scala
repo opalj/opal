@@ -36,7 +36,6 @@ import br._
 import br.analyses._
 import br.instructions._
 
-
 /**
  * This analysis reports classes that are annotated with an annotation with the simple
  * name Immutable and contain a native method.
@@ -44,8 +43,7 @@ import br.instructions._
  * @author Roberts Kolosovs
  * @author Peter Spieler
  */
-class NativeMethodInImmutableClass[Source]
-        extends MultipleResultsAnalysis[Source, MethodBasedReport[Source]] {
+class NativeMethodInImmutableClass[Source] extends FindRealBugsAnalysis[Source] {
 
     /**
      * Returns a description text for this analysis.

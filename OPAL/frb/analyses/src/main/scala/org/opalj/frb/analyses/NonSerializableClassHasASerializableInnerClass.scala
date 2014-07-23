@@ -50,7 +50,7 @@ import br.analyses._
  * @author Michael Eichberg
  */
 class NonSerializableClassHasASerializableInnerClass[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
+        extends FindRealBugsAnalysis[Source] {
 
     def description: String =
         "Identifies (non-static) inner classes that are serializable, "+

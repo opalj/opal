@@ -43,8 +43,7 @@ import br.instructions._
  * @author Ralf Mitschke
  * @author Peter Spieler
  */
-class ImplementsCloneableButNotClone[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
+class ImplementsCloneableButNotClone[Source] extends FindRealBugsAnalysis[Source] {
 
     /**
      * Returns a description text for this analysis.

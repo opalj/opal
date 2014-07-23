@@ -398,8 +398,7 @@ class IincTracingDomain
  *
  * @author Daniel Klauer
  */
-class UselessIncrementInReturn[S]
-        extends MultipleResultsAnalysis[S, LineAndColumnBasedReport[S]] {
+class UselessIncrementInReturn[Source] extends FindRealBugsAnalysis[Source] {
 
     def description: String = "Reports useless increments after a return statement."
 
@@ -411,10 +410,10 @@ class UselessIncrementInReturn[S]
      * @return A list of reports, or an empty list.
      */
     def analyze(
-        project: Project[S],
-        parameters: Seq[String] = List.empty): Iterable[LineAndColumnBasedReport[S]] = {
+        project: Project[Source],
+        parameters: Seq[String] = List.empty): Iterable[LineAndColumnBasedReport[Source]] = {
 
-        var reports: List[LineAndColumnBasedReport[S]] = List.empty
+        var reports: List[LineAndColumnBasedReport[Source]] = List.empty
 
         for {
             classFile ← project.classFiles

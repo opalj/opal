@@ -47,8 +47,7 @@ import br.instructions._
  * @author Michael Eichberg
  * @author Daniel Klauer
  */
-class SyncSetUnsyncGet[Source]
-        extends MultipleResultsAnalysis[Source, MethodBasedReport[Source]] {
+class SyncSetUnsyncGet[Source] extends FindRealBugsAnalysis[Source] {
 
     def description: String =
         "Reports getters that are unsynchronized while the setter is synchronized."

@@ -46,8 +46,7 @@ import br.instructions._
  * @author Ralf Mitschke
  * @author Daniel Klauer
  */
-class LongBitsToDoubleInvokedOnInt[Source]
-        extends MultipleResultsAnalysis[Source, LineAndColumnBasedReport[Source]] {
+class LongBitsToDoubleInvokedOnInt[Source] extends FindRealBugsAnalysis[Source] {
 
     /**
      * Returns a description text for this analysis.

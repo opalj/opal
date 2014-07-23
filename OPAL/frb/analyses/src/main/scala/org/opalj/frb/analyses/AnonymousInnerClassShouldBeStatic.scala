@@ -47,9 +47,7 @@ import util._
  * @author Peter Spieler
  * @author Florian Brandherm
  */
-class AnonymousInnerClassShouldBeStatic[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
-
+class AnonymousInnerClassShouldBeStatic[Source] extends FindRealBugsAnalysis[Source] {
     def description: String = "Reports anonymous inner classes that should be made Static"
 
     private val withinAnonymousClass = "[$][0-9].*[$]".r

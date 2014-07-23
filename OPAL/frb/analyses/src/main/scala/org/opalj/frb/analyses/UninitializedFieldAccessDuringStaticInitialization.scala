@@ -51,7 +51,7 @@ import org.opalj.ai.domain.tracing._
  * @author Daniel Klauer
  */
 class UninitializedFieldAccessDuringStaticInitialization[Source]
-        extends MultipleResultsAnalysis[Source, LineAndColumnBasedReport[Source]] {
+        extends FindRealBugsAnalysis[Source] {
 
     def description: String =
         "Detects accesses to uninitialized static fields from subclasses "+

@@ -42,8 +42,7 @@ import AnalysesHelpers._
  *
  * @author Roberts Kolosovs
  */
-class ImmutableClassInheritsMutableClass[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
+class ImmutableClassInheritsMutableClass[Source] extends FindRealBugsAnalysis[Source] {
 
     def description: String =
         "Reports classes annotated with an annotation with the simple name Immutable"+

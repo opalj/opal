@@ -43,8 +43,7 @@ import br.instructions._
  * @author Ralf Mitschke
  * @author Roberts Kolosovs
  */
-class DmRunFinalizersOnExit[Source]
-        extends MultipleResultsAnalysis[Source, MethodBasedReport[Source]] {
+class DmRunFinalizersOnExit[Source] extends FindRealBugsAnalysis[Source] {
 
     /**
      * Returns a description text for this analysis.
