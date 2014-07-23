@@ -50,7 +50,9 @@ object InterpretMethod {
         override val tracer =
             //    Some(new ConsoleTracer {})
             //Some(new ConsoleEvaluationTracer {})
-            Some(new MultiTracer(new ConsoleTracer {}, new XHTMLTracer {}))
+            Some(new MultiTracer(
+                new ConsoleTracer { override val printOIDs = true }, new XHTMLTracer {}
+            ))
     }
 
     /**
@@ -72,7 +74,7 @@ object InterpretMethod {
             println("\t2: the name of a class.")
             println("\t3: the simple name or signature of a method of the class.")
             println("\t4[Optional]: -domain=CLASS the name of class of the configurable domain to use.")
-            println("\t5[Optional]: -trace={true,false}default:true")
+            println("\t5[Optional]: -trace={true,false} default:true")
         }
 
         if (args.size < 3 || args.size > 5) {
