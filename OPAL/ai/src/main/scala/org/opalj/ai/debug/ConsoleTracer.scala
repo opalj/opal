@@ -42,11 +42,18 @@ trait ConsoleTracer extends AITracer {
 
     import Console._
 
-    private def correctIndent(value: Object): String = {
+    val printOIDs: Boolean = false
+
+    private def correctIndent(value: Object, printOIDs: Boolean): String = {
         if (value eq null)
             "<EMPTY>"
-        else
-            value.toString().replaceAll("\n\t", "\n\t\t\t").replaceAll("\n\\)", "\n\t\t)")
+        else {
+            val s = value.toString().replaceAll("\n\t", "\n\t\t\t").replaceAll("\n\\)", "\n\t\t)")
+            if (printOIDs) {
+                s+" [#"+System.identityHashCode(value).toHexString+"]"
+            } else
+                s
+        }
     }
 
     override def instructionEvalution(
@@ -55,16 +62,21 @@ trait ConsoleTracer extends AITracer {
             instruction: Instruction,
             operands: domain.Operands,
             locals: domain.Locals): Unit = {
+        val placeholder = "-"
 
         println(
             pc+":"+instruction.toString(pc)+" [\n"+
                 operands.map { o ⇒
-                    correctIndent(o)
+                    correctIndent(o, printOIDs)
                 }.mkString("\toperands:\n\t\t", "\n\t\t", "\n\t;\n") +
-                locals.map { l ⇒
-                    if (l eq null) "-" else l.toString
-                }.zipWithIndex.map { v ⇒
-                    v._2+":"+correctIndent(v._1)
+                locals.zipWithIndex.map { vi ⇒
+                    val (v, i) = vi
+                    i+":"+(
+                        if (v == null)
+                            correctIndent("-", false)
+                        else
+                            correctIndent(v, printOIDs)
+                    )
                 }.mkString("\tlocals:\n\t\t", "\n\t\t", "\n")+"\t]")
     }
 
@@ -80,6 +92,7 @@ trait ConsoleTracer extends AITracer {
         println(BLACK_B + WHITE+"Starting Code Analysis"+RESET)
         println("Number of registers:      "+code.maxLocals)
         println("Size of operand stack:    "+code.maxStack)
+        println("Join instructions:        "+code.joinInstructions.mkString(", "))
         //println("Program counters:         "+code.programCounters.mkString(", "))     
     }
 
@@ -124,14 +137,14 @@ trait ConsoleTracer extends AITracer {
                     thisOperands.
                         zip(otherOperands).
                         zip(updatedOperands).
-                        map{v ⇒ 
-                            val ((thisOp,thatOp),updatedOp) = v
+                        map { v ⇒
+                            val ((thisOp, thatOp), updatedOp) = v
                             val s = if (thisOp eq updatedOp)
-                                "✓ "+Console.GREEN+updatedOp.toString
+                                "✓ "+Console.GREEN + updatedOp.toString
                             else {
-                                "given "+correctIndent(thisOp)+"\n\t\t join "+
-                                correctIndent(thatOp)+"\n\t\t   => "+
-                                correctIndent(updatedOp)
+                                "given "+correctIndent(thisOp, printOIDs)+"\n\t\t join "+
+                                    correctIndent(thatOp, printOIDs)+"\n\t\t   => "+
+                                    correctIndent(updatedOp, printOIDs)
                             }
                             s + Console.RESET
                         }.
@@ -148,12 +161,12 @@ trait ConsoleTracer extends AITracer {
                                 if (v._2 == v._3)
                                     ": ✓ "+Console.GREEN
                                 else {
-                                    ":\n\t\t   given "+correctIndent(v._2)+
-                                        "\n\t\t    join "+correctIndent(v._3)+
+                                    ":\n\t\t   given "+correctIndent(v._2, printOIDs)+
+                                        "\n\t\t    join "+correctIndent(v._3, printOIDs)+
                                         "\n\t\t      => "
                                 }
                             } +
-                                correctIndent(v._4)
+                                correctIndent(v._4, printOIDs)
                         ).
                         mkString("\tLocals:\n\t\t", "\n\t\t"+Console.BLUE, Console.BLUE)
                 )
