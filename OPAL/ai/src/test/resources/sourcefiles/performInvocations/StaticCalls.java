@@ -179,4 +179,25 @@ public class StaticCalls {
         else
             return mutualRecursionB(!b);
     }
+
+    static boolean areEqual(int i, int b) {
+        return i == b;
+    }
+
+    static boolean areNotEqual(int i, int b) {
+        return i != b;
+    }
+
+    static boolean callAreEqual() {
+        int v1 = (int) (System.currentTimeMillis() % 10000);
+        int v2 = (int) (System.currentTimeMillis() % 10000);
+
+        if (areEqual(v1, v1) && !areNotEqual(v2,v2)) {
+            if (areNotEqual(v1, v2)) {
+                return true;
+            } else
+                return true;
+        } else
+            return false; // we failed....
+    }
 }

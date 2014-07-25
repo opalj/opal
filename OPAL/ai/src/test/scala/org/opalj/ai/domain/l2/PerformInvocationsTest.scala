@@ -39,10 +39,10 @@ import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 
 import org.opalj.util._
-import br._
-import br.analyses.{ SomeProject, Project }
-import reader.Java8Framework.ClassFiles
-import l1._
+import org.opalj.br._
+import org.opalj.br.analyses.{ SomeProject, Project }
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.ai.domain.l1._
 import org.opalj.ai.domain.l0.RecordMethodCallResults
 
 /**
@@ -50,10 +50,7 @@ import org.opalj.ai.domain.l0.RecordMethodCallResults
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PerformInvocationsTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExecution {
 
     import PerformInvocationsTestFixture._
 
@@ -63,7 +60,7 @@ class PerformInvocationsTest
     // not cause any immediate harm.
     it should ("be able to analyze a simple static method that does nothing") in {
         val method = StaticCalls.findMethod("doNothing").get
-        val domain = new InvocationDomain(PerformInvocationsTestFixture.project, method)
+        val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         import domain._
         val result = BaseAI(StaticCalls, method, domain)
         result.domain.returnedNormally should be(true)
@@ -73,7 +70,7 @@ class PerformInvocationsTest
     // not cause any immediate harm.
     it should ("be able to analyze a simple static method that always throws an exception") in {
         val method = StaticCalls.findMethod("throwException").get
-        val domain = new InvocationDomain(PerformInvocationsTestFixture.project, method)
+        val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(false)
 
@@ -90,7 +87,7 @@ class PerformInvocationsTest
 
     it should ("be able to analyze a static method that calls another static method that my fail") in {
         val method = StaticCalls.findMethod("mayFail").get
-        val domain = new InvocationDomain(PerformInvocationsTestFixture.project, method)
+        val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
 
@@ -108,7 +105,7 @@ class PerformInvocationsTest
 
     it should ("be able to analyze a static method that calls another static method") in {
         val method = StaticCalls.findMethod("performCalculation").get
-        val domain = new InvocationDomain(PerformInvocationsTestFixture.project, method)
+        val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions should be(empty)
@@ -117,7 +114,7 @@ class PerformInvocationsTest
 
     it should ("be able to analyze a static method that calls multiple other static methods") in {
         val method = StaticCalls.findMethod("doStuff").get
-        val domain = new InvocationDomain(PerformInvocationsTestFixture.project, method)
+        val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions should be(empty)
@@ -126,7 +123,7 @@ class PerformInvocationsTest
 
     it should ("be able to analyze a static method that processes the results of other static methods") in {
         val method = StaticCalls.findMethod("callComplexMult").get
-        val domain = new InvocationDomain(PerformInvocationsTestFixture.project, method)
+        val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions should be(empty)
@@ -135,7 +132,7 @@ class PerformInvocationsTest
 
     it should ("be able to analyze a static method that throws different exceptions using the same throws statement") in {
         val method = StaticCalls.findMethod("throwMultipleExceptions").get
-        val domain = new InvocationDomain(PerformInvocationsTestFixture.project, method)
+        val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(false)
         val exs = domain.thrownExceptions(result.domain, -1)
@@ -171,7 +168,7 @@ class PerformInvocationsTest
 
     it should ("be able to analyze a static method that calls another static method that calls ...") in {
         val method = StaticCalls.findMethod("aLongerCallChain").get
-        val domain = new InvocationDomain(PerformInvocationsTestFixture.project, method)
+        val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
         val exs = domain.thrownExceptions(result.domain, -1)
@@ -179,11 +176,41 @@ class PerformInvocationsTest
 
         domain.returnedValue(domain, -1).flatMap(domain.intValueOption(_)) should equal(Some(175))
     }
+
+    it should ("be able to analyze a method that analyzes the correlation between values") in {
+        val method = StaticCalls.findMethod("callAreEqual").get
+        val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
+        val result = BaseAI(StaticCalls, method, domain)
+        domain.returnedNormally should be(true)
+        domain.allThrownExceptions.size should be(2) // the ArithmeticExceptions due to "%"
+
+        domain.allReturnedValues.size should be(2)
+        if (!domain.allReturnedValues.forall {
+            e ⇒ domain.intValueOption(e._2).map(_ == 1).getOrElse(false)
+        }) fail("unexpected result: "+domain.allReturnedValues)
+    }
+
 }
 
 object PerformInvocationsTestFixture {
 
-    trait BaseDomain extends Domain
+    trait L1Domain extends Domain
+        with DefaultDomainValueBinding
+        with TheProject[java.net.URL]
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l1.DefaultReferenceValuesBinding
+        with l1.DefaultIntegerRangeValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with ProjectBasedClassHierarchy
+        with IgnoreSynchronization
+        with TheMethod
+
+    trait LiDomain extends Domain
             with DefaultDomainValueBinding
             with TheProject[java.net.URL]
             with ThrowAllPotentialExceptionsConfiguration
@@ -196,18 +223,19 @@ object PerformInvocationsTestFixture {
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions
             with ProjectBasedClassHierarchy
-            with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
             with TheMethod {
         override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
     }
 
-    class InvocationDomain(
+    abstract class InvocationDomain(
         val project: Project[java.net.URL],
         val method: Method)
-            extends BaseDomain
+            extends Domain
             with PerformInvocations
+            with DefaultHandlingOfMethodResults
             with RecordMethodCallResults {
+        domain: ValuesFactory with ClassHierarchy with Configuration with TheProject[_] with TheMethod ⇒
 
         def isRecursive(
             definingClass: ClassFile,
@@ -218,6 +246,10 @@ object PerformInvocationsTestFixture {
             definingClass: ClassFile,
             method: Method): Boolean = true
 
+        protected[this] def createInvocationDomain(
+            project: Project[java.net.URL],
+            method: Method): InvocationDomain
+
         def invokeExecutionHandler(
             pc: PC,
             definingClass: ClassFile,
@@ -225,10 +257,25 @@ object PerformInvocationsTestFixture {
             operands: Operands): InvokeExecutionHandler =
             new InvokeExecutionHandler {
 
-                val domain: Domain with MethodCallResults = new InvocationDomain(project, method)
+                val domain: Domain with MethodCallResults =
+                    createInvocationDomain(project, method)
 
                 def ai: AI[_ >: domain.type] = BaseAI
             }
+    }
+
+    class LiInvocationDomain(project: Project[java.net.URL], method: Method)
+            extends InvocationDomain(project, method) with LiDomain {
+        protected[this] def createInvocationDomain(
+            project: Project[java.net.URL],
+            method: Method): InvocationDomain = new LiInvocationDomain(project, method)
+    }
+
+    class L1InvocationDomain(project: Project[java.net.URL], method: Method)
+            extends InvocationDomain(project, method) with L1Domain {
+        protected[this] def createInvocationDomain(
+            project: Project[java.net.URL],
+            method: Method): InvocationDomain = new L1InvocationDomain(project, method)
     }
 
     val testClassFileName = "classfiles/performInvocations.jar"
