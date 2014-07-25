@@ -84,6 +84,19 @@ class Project[Source] private (
         val codeSize: Long,
         val classHierarchy: ClassHierarchy) extends ClassFileRepository {
 
+    def extend(
+        projectClassFilesWithSources: Iterable[(ClassFile, Source)],
+        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
+        Project.extend[Source](this, projectClassFilesWithSources, libraryClassFilesWithSources)
+    }
+
+    def extend(otherProject: Project[Source]): Project[Source] = {
+        Project.extend[Source](
+            this,
+            otherProject.projectClassFilesWithSources,
+            otherProject.libraryClassFilesWithSources)
+    }
+
     val classFilesCount: Int =
         projectClassFilesCount + libraryClassFilesCount
 
@@ -110,6 +123,15 @@ class Project[Source] private (
         classFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
         packages
     }
+
+//    def innerClasses(classFile: ClassFile): Traversable[ClassFile] = {
+//        val innerClasses = classFile.innerClasses
+//        if (innerClasses.isDefined) {
+//            innerClasses.get
+//        } else {
+//            Traversable.empty
+//        }
+//    }
 
     /**
      * Determines for all packages of this project that contain at least one class
@@ -167,7 +189,9 @@ class Project[Source] private (
 
     def groupedClassFilesWithCode(groupsCount: Int): Array[Buffer[ClassFile]] = {
         var nextGroupId = 0
-        val groups = Array.fill[Buffer[ClassFile]](groupsCount)(new ArrayBuffer[ClassFile](methodsCount / groupsCount))
+        val groups = Array.fill[Buffer[ClassFile]](groupsCount) {
+            new ArrayBuffer[ClassFile](methodsCount / groupsCount)
+        }
         for {
             classFile ← classFiles
             if classFile.methods.exists(_.body.isDefined)
@@ -208,8 +232,7 @@ class Project[Source] private (
      * part of the library. By default all class files are considered to belong to the
      * code base that will be analyzed.
      */
-    def isLibraryType(classFile: ClassFile): Boolean =
-        !projectTypes.contains(classFile.thisType)
+    def isLibraryType(classFile: ClassFile): Boolean = isLibraryType(classFile.thisType)
 
     /**
      * Returns true if the given type file belongs to the library part of the project.
@@ -240,16 +263,14 @@ class Project[Source] private (
      * the method was previously added to this project. (I.e., the class file which
      * defines the method was added.)
      */
-    def classFile(method: Method): ClassFile =
-        methodToClassFile(method)
+    def classFile(method: Method): ClassFile = methodToClassFile(method)
 
     /**
      * Returns the given field's class file. This method is only defined if
      * the field was previously added to this project. (I.e., the class file which
      * defines the field was added.)
      */
-    def classFile(field: Field): ClassFile =
-        fieldToClassFile(field)
+    def classFile(field: Field): ClassFile = fieldToClassFile(field)
 
     /**
      * Converts this project abstraction into a standard Java `HashMap`.
@@ -408,19 +429,6 @@ class Project[Source] private (
             Option(this.projectInformation.get(pikUId).asInstanceOf[T])
         else
             None
-    }
-
-    def extend(
-        projectClassFilesWithSources: Iterable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
-        Project.extend[Source](this, projectClassFilesWithSources, libraryClassFilesWithSources)
-    }
-
-    def extend(otherProject: Project[Source]): Project[Source] = {
-        Project.extend[Source](
-            this,
-            otherProject.projectClassFilesWithSources,
-            otherProject.libraryClassFilesWithSources)
     }
 
 }
