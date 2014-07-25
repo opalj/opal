@@ -30,13 +30,12 @@ package org.opalj
 package ai
 
 import java.net.URL
-
 import org.opalj.collection.immutable.{ UIDSet, UIDSet1 }
-
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.{ ReferenceType }
 import org.opalj.br.instructions.{ Instruction, ConditionalControlTransferInstruction }
+import org.opalj.br.MethodWithBody
 
 /**
  * A shallow analysis that tries to identify dead code based on the evaluation
@@ -85,12 +84,9 @@ object DeadCode extends AnalysisExecutor {
                 for {
                     classFiles ← theProject.groupedClassFilesWithCode(cpus).par
                     classFile ← classFiles
-                    method ← classFile.methods
-                    if method.body.isDefined
-                    body = method.body.get
+                    method @ MethodWithBody(body) ← classFile.methods
                     domain = new AnalysisDomain(theProject, method)
                     result = BaseAI(classFile, method, domain)
-                    if !result.wasAborted
                     operandsArray = result.operandsArray
                     (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
                         case (ctiPC, instruction @ ConditionalControlTransferInstruction()) if operandsArray(ctiPC) != null ⇒
