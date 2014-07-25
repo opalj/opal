@@ -170,7 +170,6 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 assert(result.value ne v1)
             }
 
-            
             it("(join of a \"point\" range with a non-overlapping range) [0,0] join [1,Int.MaxValue]") {
                 val v1 = IntegerRange(lb = 0, ub = 0)
                 val v2 = IntegerRange(lb = 1, ub = 2147483647)
@@ -397,6 +396,12 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 isub(-1, v1, v2) should be(IntegerRange(Int.MinValue, 2))
             }
+
+            it("A specific (but unknown) value - 'itself' => [0,0]") {
+                val v = AnIntegerValue
+
+                isub(-1, v, v) should be(IntegerRange(0, 0))
+            }
         }
 
         describe("the behavior of the i2b cast operator") {
@@ -492,6 +497,18 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                     val p2 = IntegerRange(lb = 4, ub = 40)
                     intIsGreaterThanOrEqualTo(p1, p2) should be(No)
                 }
+
+                it("a specific (but unknown) value compared (>=) with itself should be Yes") {
+                    val p = AnIntegerValue
+                    intIsGreaterThanOrEqualTo(p, p) should be(Yes)
+                }
+            }
+
+            describe("the behavior of the greater or equal than (<=) operator") {
+                it("a specific (but unknown) value compared (<=) with itself should be Yes") {
+                    val p = AnIntegerValue
+                    intIsLessThanOrEqualTo(p, p) should be(Yes)
+                }
             }
 
             describe("the behavior of the greater than (>) operator") {
@@ -551,6 +568,18 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                     intIsGreaterThan(p1, p2) should be(No)
                 }
 
+                it("a specific (but unknown) value compared (>) with itself should be No") {
+                    val p = AnIntegerValue
+                    intIsGreaterThan(p, p) should be(No)
+                }
+            }
+
+            describe("the behavior of the greater than (<) operator") {
+
+                it("a specific (but unknown) value compared (<) with itself should be No") {
+                    val p = AnIntegerValue
+                    intIsLessThan(p, p) should be(No)
+                }
             }
 
             describe("the behavior of the equals (==) operator") {
@@ -590,6 +619,20 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                     intAreEqual(p1, p2) should be(Unknown)
                     intAreEqual(p2, p1) should be(Unknown) // reflexive
                 }
+
+                it("a specific (but unknown) value compared (==) with itself should be Yes") {
+                    val p = AnIntegerValue
+                    intAreEqual(p, p) should be(Yes)
+                }
+            }
+
+            describe("the behavior of the equals (==) operator") {
+
+                it("a specific (but unknown) value compared (!=) with itself should be Yes") {
+                    val p = AnIntegerValue
+                    intAreNotEqual(p, p) should be(No)
+                }
+
             }
         }
 
@@ -825,7 +868,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             val domain = new IntegerRangesTestDomain(4)
             val method = IntegerValues.findMethod("moreComplexAliasing").get
             val result = BaseAI(IntegerValues, method, domain)
- 
+
             result.operandsArray(20).head should be(domain.AnIntegerValue)
         }
     }

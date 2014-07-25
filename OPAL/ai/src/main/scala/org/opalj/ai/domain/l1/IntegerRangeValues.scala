@@ -51,29 +51,28 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * [[#intEstablishValue]], [[#intEstablishIsLessThan]],...) w.r.t. those values
  * that were created at the same point in time by the same operation. For example,
  * in case of the following sequence:
- *  - pcA+0/t1: iadd (Stack: 1 :: AnIntegerValue :: ...; Registers: &lt;ignored&lt;)
- *  - pcA+1/t2: dup (Stack: v(pcA/t1) :: ...; Registers: &lt;ignored&lt;)
- *  - pcA+2/t3: iflt true:+10 (Stack: v(pcA/t1) :: v(pcA/t1) :: ...; Registers: &lt;ignored&lt;)
+ *  - pcA+0/t1: `iadd` (Stack: 1 :: AnIntegerValue :: ...; Registers: &lt;ignored&lt;)
+ *  - pcA+1/t2: `dup` (Stack: v(pcA/t1) :: ...; Registers: &lt;ignored&lt;)
+ *  - pcA+2/t3: `iflt` true:+10 (Stack: v(pcA/t1) :: v(pcA/t1) :: ...; Registers: &lt;ignored&lt;)
  *  - pcA+3/t4: ... '''(Stack: v(pcA/t1) >= 0''' :: ...; Registers: &lt;ignored&lt;)
  *  - pcA+12/t5: ... '''(Stack: v(pcA/t1) < 0''' :: ...; Registers: &lt;ignored&lt;)
- * Hence, the test (iflt) of the topmost stack value constrained the second-top most
+ * Hence, the test (`iflt`) of the topmost stack value constrained the second-top most
  * stack value, because it was created at the same point in time. In case of this
- * domain the reference of the DomainValue is used to identify those values that
- * were created at the same point in time. This, however, requires that two integer
- * domain values that represent the same integer value are only
+ * domain the ''reference'' of the '''Domain(Integer)Value''' is used to identify those values that
+ * were created at the same point in time.
  *
  * ==Origin of an IntegerRangeValue==
  *
  * IntegerRangeValues provide implicit, limited information about the origin of the value;
  * i.e., about the instruction which ''created'' the value. This information is
- * implicitly encoded by the object reference as ''every update and creation of an
+ * implicitly encoded by the object reference as ''every creation, update and join of an
  * `IntegerRangeValue` always creates a new instance''. I.e, `IntegerRangeValue`s are
  * ''explicitly not cached or reused''.
  * In case that the value was passed to the method as a parameter the origin is also
  * implicitly available since the value can be found in the registers values associated
  * with the very first instruction.
  *
- * Hence, two integer range values (`ir1`,`ir2`) are reference equal (`eq` in Scala)
+ * Hence, two integer (range) values (`ir1`,`ir2`) are reference equal (`eq` in Scala)
  * iff both values were created by the '''same instruction at the same time'''.
  *
  * E.g., consider the following fictitious sequence:
@@ -100,7 +99,7 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * create new `IntegerRangeValue`s. Hence, to identify the instruction that
  * created or constrained the respective value, it is necessary to identify the
  * memory layout that first (w.r.t. the evaluation order) contained the value and the
- * instruction that was immediately executed before that is then the responsible
+ * instruction that was immediately executed before is then the responsible
  * instruction. In case that the value was constrained at some point the identified
  * instruction may be a switch or an if instruction, as that instruction added
  * additional information.
@@ -114,13 +113,13 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  *
  * If this property is not satisfied the implemented constraint propagation mechanism
  * will produce unpredictable results as it may constrain unrelated values!
- * This is true for concrete ranges as well as `AnIntegerValue.
+ * This is true for concrete ranges as well as `AnIntegerValue`s.
  *
  *
  * @author Michael Eichberg
  */
 trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues {
-    domain: JoinStabilization with Configuration with IntegerValuesFactory with VMLevelExceptionsFactory ⇒
+    domain: JoinStabilization with IdentityBasedAliasBreakUpDetection with Configuration with VMLevelExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -140,6 +139,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
 
         final def computationalType: ComputationalType = ComputationalTypeInt
 
+        def newInstance: DomainValue
     }
 
     /**
@@ -208,7 +208,8 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
 
     @inline protected final def intValues[T](
         value1: DomainValue, value2: DomainValue)(
-            f: (Int, Int) ⇒ T)(orElse: ⇒ T): T = {
+            f: (Int, Int) ⇒ T)(
+                orElse: ⇒ T): T = {
         intValue(value1) { v1 ⇒
             intValue(value2) { v2 ⇒ f(v1, v2) } { orElse }
         } {
@@ -217,6 +218,11 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
     }
 
     override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer = {
+        if (value1 eq value2)
+            // this handles the case that the two values (even if the concrete value
+            // is not known; i.e., AnIntegerValue) are actually exactly the same value
+            return Yes
+
         value1 match {
             case IntegerRange(lb1, ub1) ⇒
                 value2 match {
@@ -268,9 +274,11 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
             }
     }
 
-    override def intIsLessThan(
-        left: DomainValue,
-        right: DomainValue): Answer = {
+    override def intIsLessThan(left: DomainValue, right: DomainValue): Answer = {
+        if (left eq right)
+            // this handles the case that the two values (even if the concrete value
+            // is not known; i.e., AnIntegerValue) are actually exactly the same value
+            return No
 
         right match {
             case IntegerRange(rightLB, rightUB) ⇒
@@ -300,6 +308,11 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
     override def intIsLessThanOrEqualTo(
         left: DomainValue,
         right: DomainValue): Answer = {
+
+        if (left eq right)
+            // this handles the case that the two values (even if the concrete value
+            // is not known; i.e., AnIntegerValue) are actually exactly the same value
+            return Yes
 
         right match {
             case IntegerRange(rightLB, rightUB) ⇒
@@ -546,6 +559,9 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
     }
 
     override def isub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+        if (left eq right)
+            return IntegerRange(0, 0)
+
         (left, right) match {
             case (IntegerRange(llb, lub), IntegerRange(rlb, rub)) ⇒
                 // to identify overflows we simply do the "add" on long values
@@ -567,6 +583,8 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         numerator: DomainValue,
         denominator: DomainValue): IntegerValueOrArithmeticException = {
         denominator match {
+            case IntegerRange(1, 1) ⇒
+                ComputedValue(numerator.asInstanceOf[IntegerLikeValue].newInstance)
             case IntegerRange(lb, ub) if lb > 0 || ub < 0 ⇒
                 // no div by "0"
                 ComputedValue(IntegerValue(pc))
@@ -612,7 +630,6 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                 value2 match {
                     case IntegerRange(0, 0) ⇒ IntegerRange(0, 0)
                     case _ ⇒
-                        // we have to create a new instance... even if we just add "0"
                         IntegerValue(pc)
                 }
         }
