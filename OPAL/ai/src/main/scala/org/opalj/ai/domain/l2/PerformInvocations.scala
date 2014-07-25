@@ -225,15 +225,61 @@ trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
         operands: Operands): MethodCallResult = {
 
         val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
-        val parameters = util.Locals[executionHandler.domain.DomainValue](method.body.get.maxLocals)(executionHandler.domain.DomainValueTag)
-        var localVariableIndex = 0
-        for ((operand, index) ← operands.view.reverse.zipWithIndex) {
-            parameters.set(localVariableIndex,
-                operand.adapt(executionHandler.domain, -(index + 1)))
-            localVariableIndex += operand.computationalType.operandSize
-        }
+        import executionHandler.domain
+        val parameters = PerformInvocations.mapOperandsToParameters(operands, method, domain)
         val callResult = executionHandler.perform(pc, definingClass, method, parameters)
         // TODO [Improvement] Add support to map a value back to a parameter if a passed parameter is returned. (E.g. Math.min(a,b) will either return a or b.) 
         callResult
     }
 }
+
+object PerformInvocations {
+
+    /**
+     * @param operands The list of operands used to call the given method. The length
+     *     of the list must be:
+     *     {{{
+     *     calledMethod.descriptor.parametersCount + { if (calledMethod.isStatic) 0 else 1 }
+     *     }}}.
+     *     I.e., the list of operands must contain one value per parameter and – 
+     *     in case of instance methods – the receiver object. The list must not
+     *     contain additional values. The latter is automatically ensured if this
+     *     method is called (in)directly by [[AI]] and the operands were just passed
+     *     through.
+     *     If two operands are (reference) identical then the adaptation will only
+     *     be performed once; this ensures that the relation between values remains
+     *     stable.
+     */
+    def mapOperandsToParameters[D <: CoreDomain](
+        operands: Operands[D#DomainValue],
+        calledMethod: Method,
+        targetDomain: CoreDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
+
+        implicit val domainValueTag = targetDomain.DomainValueTag
+        val parameters = util.Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
+        var localVariableIndex = 0
+        var index = 0
+        val inOrderOperands = operands.reverse
+        for (operand ← inOrderOperands) {
+            val parameter = {
+                // Was the same value (determined by "eq") already adapted?
+                var pOperands = inOrderOperands
+                var p = 0
+                while (p < index && (pOperands.head ne operand)) {
+                    p += 1; pOperands = pOperands.tail
+                }
+                if (p < index)
+                    parameters(p)
+                else
+                    // the value was not previously adapted
+                    operand.adapt(targetDomain, -(index + 1))
+            }
+            parameters.set(localVariableIndex, parameter)
+            index += 1
+            localVariableIndex += operand.computationalType.operandSize
+        }
+
+        parameters
+    }
+}
+
