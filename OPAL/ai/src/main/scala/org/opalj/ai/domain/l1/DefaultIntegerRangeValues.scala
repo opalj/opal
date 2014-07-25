@@ -68,6 +68,8 @@ trait DefaultIntegerRangeValues
         override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.IntegerValue(pc)
 
+        override def newInstance: AnIntegerValue = AnIntegerValue()
+
         override def hashCode: Int = 101
 
         override def equals(other: Any): Boolean = {
@@ -137,6 +139,8 @@ trait DefaultIntegerRangeValues
                 target.IntegerValue(pc)
             }
 
+        override def newInstance: IntegerRange = IntegerRange(lowerBound, upperBound)
+
         override def hashCode = this.lowerBound * 13 + this.upperBound
 
         override def equals(other: Any): Boolean = {
@@ -155,7 +159,7 @@ trait DefaultIntegerRangeValues
         override def toString: String = "IntegerRange(lb="+lowerBound+", ub="+upperBound+")"
     }
 
-    override def IntegerRange(lb: Int, ub: Int): DomainValue = new IntegerRange(lb, ub)
+    override def IntegerRange(lb: Int, ub: Int): IntegerRange = new IntegerRange(lb, ub)
 
     override def BooleanValue(pc: PC): DomainValue = AnIntegerValue()
     override def BooleanValue(pc: PC, value: Boolean): DomainValue =
