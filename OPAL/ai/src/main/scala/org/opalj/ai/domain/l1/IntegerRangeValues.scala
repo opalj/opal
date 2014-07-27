@@ -266,7 +266,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         else
             value match {
                 case IntegerRange(lb, ub) ⇒
-                    if (lb <= lowerBound || ub >= upperBound)
+                    if (lb < lowerBound || ub > upperBound)
                         Yes
                     else
                         No
@@ -520,7 +520,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                     IntegerValue(pc)
             } else
                 IntegerRange(-ub, -lb)
-        case _ ⇒ value
+        case _ ⇒ IntegerValue(pc)
     }
 
     //
