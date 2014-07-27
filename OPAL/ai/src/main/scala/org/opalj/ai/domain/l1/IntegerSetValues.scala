@@ -34,7 +34,6 @@ package l1
 import scala.collection.immutable.SortedSet
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import org.opalj.br._
 
 /**
@@ -57,6 +56,9 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
 
     /**
      * Determines the maximum number of values captured by an Integer set.
+     *
+     * In many cases a rather (4-16) small number is completely sufficient to
+     * capture typically variability.
      */
     protected def maxCardinalityOfIntegerValuesSet: Int = 8
 
@@ -88,7 +90,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
     /**
      * Creates a new IntegerSet value containing the given value.
      */
-    def IntegerSet(value: Int): DomainValue
+    def IntegerSet(value: Int): DomainValue = IntegerSet(SortedSet(value))
 
     /**
      * Creates a new IntegerSet value using the given set.
@@ -202,7 +204,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                     case IntegerSet(leftValues) ⇒
                         if (leftValues.lastKey < rightValues.firstKey)
                             Yes
-                        else if (leftValues.firstKey > rightValues.lastKey ||
+                        else if (leftValues.firstKey >= rightValues.lastKey ||
                             ( /*"for point sets":*/
                                 leftValues.size == 1 && rightValues.size == 1 &&
                                 leftValues.head == rightValues.head))
@@ -239,7 +241,15 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                         Unknown
                 }
             case _ ⇒
-                Unknown
+                left match {
+                    case IntegerSet(leftValues) ⇒
+                        if (leftValues.lastKey == Int.MinValue)
+                            Yes
+                        else
+                            Unknown
+                    case _ ⇒
+                        Unknown
+                }
         }
     }
 
@@ -334,6 +344,8 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                 val newLs = ls.filter(_ < rsMax)
                 val (operands1, locals1) =
                     if (newLs.size != ls.size) {
+                        if (newLs.size == 0)
+                            println(left+"  .... "+right)
                         updateMemoryLayout(
                             left, IntegerSet(newLs),
                             operands, locals)
@@ -342,7 +354,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                     }
 
                 val lsMin = ls.firstKey
-                val newRs = rs.filter(_ <= lsMin)
+                val newRs = rs.filter(_ > lsMin)
                 val newMemoryLayout =
                     if (newRs.size != rs.size) {
                         updateMemoryLayout(
@@ -379,7 +391,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                     }
 
                 val lsMin = ls.firstKey
-                val newRs = rs.filter(_ < lsMin)
+                val newRs = rs.filter(_ >= lsMin)
                 val newMemoryLayout =
                     if (newRs.size != rs.size) {
                         updateMemoryLayout(
@@ -407,7 +419,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
     /*override*/ def ineg(pc: PC, value: DomainValue) =
         value match {
             case IntegerSet(values) ⇒ IntegerSet(values.map(-_))
-            case _                  ⇒ value
+            case _                  ⇒ IntegerValue(pc)
         }
 
     //
@@ -434,7 +446,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
     /*override*/ def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue = {
         value match {
             case IntegerSet(values) ⇒ IntegerSet(values.map(_ + increment))
-            case _                  ⇒ value
+            case _                  ⇒ IntegerValue(pc)
         }
     }
 
@@ -454,12 +466,52 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
     }
 
+    /*override*/ def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
+                val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
+                    leftValue * rightValue
+                }
+                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                    IntegerSet(results)
+                else
+                    IntegerValue(pc)
+
+            case _ ⇒
+                IntegerValue(pc)
+        }
+    }
+
+    protected[this] def createIntegerValueOrArithmeticException(
+        pc: PC,
+        exception: Boolean,
+        results: SortedSet[Int]): IntegerValueOrArithmeticException = {
+        if (results.size > 0) {
+            if (results.size <= maxCardinalityOfIntegerValuesSet) {
+                if (exception)
+                    ComputedValueOrException(IntegerSet(results), ArithmeticException(pc))
+                else
+                    ComputedValue(IntegerSet(results))
+            } else {
+                if (exception)
+                    ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
+                else
+                    ComputedValue(IntegerValue(pc))
+            }
+        } else {
+            if (exception)
+                ThrowsException(ArithmeticException(pc))
+            else
+                throw new DomainException("no result and no exception")
+        }
+    }
+
     /*override*/ def idiv(
         pc: PC,
         numerator: DomainValue,
         denominator: DomainValue): IntegerValueOrArithmeticException = {
         (numerator, denominator) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
+            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 var results: SortedSet[Int] = SortedSet.empty
                 var exception: Boolean = false
                 for (leftValue ← leftValues; rightValue ← rightValues) {
@@ -468,17 +520,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                     else
                         results += (leftValue / rightValue)
                 }
-                if (results.size > 0) {
-                    if (exception)
-                        ComputedValueOrException(IntegerSet(results), ArithmeticException(pc))
-                    else
-                        ComputedValue(IntegerSet(results))
-                } else {
-                    if (exception)
-                        ThrowsException(ArithmeticException(pc))
-                    else
-                        throw new DomainException("no result and no exception")
-                }
+                createIntegerValueOrArithmeticException(pc, exception, results)
 
             case (_, IntegerSet(rightValues)) ⇒
                 if (rightValues contains (0)) {
@@ -497,25 +539,13 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
     }
 
-    /*override*/ def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
-                val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
-                    leftValue * rightValue
-                }
-                IntegerSet(results)
-            case _ ⇒
-                IntegerValue(pc)
-        }
-    }
-
     /*override*/ def irem(
         pc: PC,
         left: DomainValue,
         right: DomainValue): IntegerValueOrArithmeticException = {
 
         (left, right) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
+            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 var results: SortedSet[Int] = SortedSet.empty
                 var exception: Boolean = false
                 for (leftValue ← leftValues; rightValue ← rightValues) {
@@ -524,17 +554,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                     else
                         results += (leftValue % rightValue)
                 }
-                if (results.size > 0) {
-                    if (exception)
-                        ComputedValueOrException(IntegerSet(results), ArithmeticException(pc))
-                    else
-                        ComputedValue(IntegerSet(results))
-                } else {
-                    if (exception)
-                        ThrowsException(ArithmeticException(pc))
-                    else
-                        throw new DomainException("no result and no exception")
-                }
+                createIntegerValueOrArithmeticException(pc, exception, results)
 
             case (_, IntegerSet(rightValues)) ⇒
                 if (rightValues contains (0)) {
@@ -555,11 +575,15 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
 
     /*override*/ def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
+            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue & rightValue
                 }
-                IntegerSet(results)
+                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                    IntegerSet(results)
+                else
+                    IntegerValue(pc)
+
             case _ ⇒
                 IntegerValue(pc)
         }
@@ -567,11 +591,15 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
 
     /*override*/ def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
+            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue | rightValue
                 }
-                IntegerSet(results)
+                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                    IntegerSet(results)
+                else
+                    IntegerValue(pc)
+
             case _ ⇒
                 IntegerValue(pc)
         }
@@ -579,11 +607,15 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
 
     /*override*/ def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
+            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue << rightValue
                 }
-                IntegerSet(results)
+                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                    IntegerSet(results)
+                else
+                    IntegerValue(pc)
+
             case _ ⇒
                 IntegerValue(pc)
         }
@@ -591,11 +623,15 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
 
     /*override*/ def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
+            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue >> rightValue
                 }
-                IntegerSet(results)
+                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                    IntegerSet(results)
+                else
+                    IntegerValue(pc)
+
             case _ ⇒
                 IntegerValue(pc)
         }
@@ -603,12 +639,16 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
 
     /*override*/ def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
+            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 val results =
                     for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue >>> rightValue
                     }
-                IntegerSet(results)
+                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                    IntegerSet(results)
+                else
+                    IntegerValue(pc)
+
             case _ ⇒
                 IntegerValue(pc)
         }
@@ -616,12 +656,16 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
 
     /*override*/ def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) if leftValues.size * rightValues.size <= maxCardinalityOfIntegerValuesSet ⇒
+            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 val results =
                     for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue ^ rightValue
                     }
-                IntegerSet(results)
+                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                    IntegerSet(results)
+                else
+                    IntegerValue(pc)
+
             case _ ⇒
                 IntegerValue(pc)
         }
