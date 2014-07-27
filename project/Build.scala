@@ -3,20 +3,14 @@ import Keys._
 
 import sbtassembly.Plugin.AssemblyKeys._
 
-import scoverage.ScoverageSbtPlugin.instrumentSettings
+import scoverage.ScoverageSbtPlugin
 
 import com.typesafe.sbteclipse.plugin.EclipsePlugin._
 
 object OPALBuild extends Build {
 
 	// Default settings without scoverage
-	lazy val buildSettings =
-		Defaults.defaultSettings
-
-	// Includes scoverage scope
-	lazy val opalDefaultSettings =
-		Defaults.defaultSettings ++
-			instrumentSettings
+	lazy val buildSettings = Defaults.defaultSettings
 
 	lazy val opal = Project(
 		id = "OPAL",
@@ -54,27 +48,28 @@ object OPALBuild extends Build {
 	lazy val bi = Project(
 		id = "BytecodeInfrastructure",
 		base = file("OPAL/bi"),
-		settings = opalDefaultSettings
+		settings = buildSettings
 	) dependsOn(common)
 
 	lazy val br = Project(
 		id = "BytecodeRepresentation",
 		base = file("OPAL/br"),
-		settings = opalDefaultSettings
+		settings = buildSettings
 	) dependsOn(bi)
 
 	lazy val da = Project(
 		id = "BytecodeDisassembler",
 		base = file("OPAL/da"),
-		settings = opalDefaultSettings
+		settings = buildSettings
 	) dependsOn(bi % "test->test;compile->compile")
 
 	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",
 		base = file("OPAL/ai"),
-		settings = opalDefaultSettings ++
+		settings = buildSettings ++
 			Seq(Defaults.itSettings : _*) ++
-			Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest))
+			Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest)) ++ 
+			ScoverageSbtPlugin.instrumentSettings
 	).dependsOn(br % "test->test;compile->compile;it->test")
 	 .configs(IntegrationTest)
 
@@ -84,13 +79,13 @@ object OPALBuild extends Build {
 	lazy val de = Project(
 		id = "DependenciesExtractionLibrary",
 		base = file("OPAL/de"),
-		settings = opalDefaultSettings
+		settings = buildSettings
 	) dependsOn(ai % "test->test;compile->compile")
 
 	lazy val av = Project(
 		id = "ArchitectureValidation",
 		base = file("OPAL/av"),
-		settings = opalDefaultSettings
+		settings = buildSettings
 	) dependsOn(de % "test->test;compile->compile")
 
 	lazy val opalDeveloperTools = Project(
@@ -103,7 +98,7 @@ object OPALBuild extends Build {
 	lazy val VALIDATE = Project(
 		id = "VALIDATE_OPAL",
 		base = file("DEVELOPING_OPAL/validate"),
-		settings = opalDefaultSettings ++ Seq(
+		settings = buildSettings ++ Seq(
 			publishArtifact := false
 		)
 	) dependsOn(
@@ -113,7 +108,7 @@ object OPALBuild extends Build {
 	lazy val demos = Project(
 		id = "Demos",
 		base = file("OPAL/demo"),
-		settings = opalDefaultSettings ++ Seq(
+		settings = buildSettings ++ Seq(
 			publishArtifact := false
 		)
 	) dependsOn(av)
@@ -145,7 +140,7 @@ object OPALBuild extends Build {
 	lazy val incubation = Project(
 		id = "Incubation",
 		base = file("OPAL/incubation"),
-		settings = opalDefaultSettings ++ Seq(
+		settings = buildSettings ++ Seq(
 			publishArtifact := false
 		)
 	) dependsOn(
