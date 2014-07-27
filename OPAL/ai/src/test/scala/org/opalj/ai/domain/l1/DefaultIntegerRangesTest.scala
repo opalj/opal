@@ -77,61 +77,61 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
     }
 
-    describe("the behavior or IntegerRange values if we exceed the max spread") {
-
-        val theDomain = new IntegerRangesTestDomain(2l)
-        import theDomain._
-
-        it("(join of two ranges with positive values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
-            val v1 = IntegerRange(lb = 2, ub = 3)
-            val v2 = IntegerRange(lb = 5, ub = 6)
-            v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
-            v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
-        }
-
-        it("(join of two ranges with positive values that do not exceed the spread); i1 join i2 => \"StructuralUpdate(IntegerRange(2,4))\"") {
-            val v1 = IntegerRange(lb = 2, ub = 3)
-            val v2 = IntegerRange(lb = 3, ub = 4)
-            v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(2, 4)))
-            v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(2, 4)))
-        }
-
-        it("(join of two ranges with negative values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
-            val v1 = IntegerRange(lb = -2, ub = -1)
-            val v2 = IntegerRange(lb = -5, ub = -4)
-            v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
-            v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
-        }
-
-        it("(join of two ranges with negative values that do not exceed the spread); i1 join i2 => \"StructuralUpdate(IntegerRange(-3,-1))\"") {
-            val v1 = IntegerRange(lb = -2, ub = -1)
-            val v2 = IntegerRange(lb = -3, ub = -2)
-            v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(-3, -1)))
-            v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-3, -1)))
-        }
-
-        it("(join of two ranges with Int.MaxValue); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
-            val v1 = IntegerRange(lb = 1, ub = Int.MaxValue)
-            val v2 = IntegerRange(lb = -10, ub = -1)
-            v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
-            v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
-        }
-
-        it("(join of two ranges one with [Int.MinValue+1 and Int.MaxValue]); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
-            val v1 = IntegerRange(lb = Int.MinValue + 1, ub = Int.MaxValue)
-            val v2 = IntegerRange(lb = -10, ub = -1)
-            v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
-            v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
-        }
-
-    }
-
     describe("operations involving IntegerRange values") {
+
+        describe("the behavior of join if we exceed the max spread") {
+
+            val theDomain = new IntegerRangesTestDomain(2l)
+            import theDomain._
+
+            it("(join of two ranges with positive values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
+                val v1 = IntegerRange(lb = 2, ub = 3)
+                val v2 = IntegerRange(lb = 5, ub = 6)
+                v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
+                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+            }
+
+            it("(join of two ranges with positive values that do not exceed the spread); i1 join i2 => \"StructuralUpdate(IntegerRange(2,4))\"") {
+                val v1 = IntegerRange(lb = 2, ub = 3)
+                val v2 = IntegerRange(lb = 3, ub = 4)
+                v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(2, 4)))
+                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(2, 4)))
+            }
+
+            it("(join of two ranges with negative values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
+                val v1 = IntegerRange(lb = -2, ub = -1)
+                val v2 = IntegerRange(lb = -5, ub = -4)
+                v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
+                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+            }
+
+            it("(join of two ranges with negative values that do not exceed the spread); i1 join i2 => \"StructuralUpdate(IntegerRange(-3,-1))\"") {
+                val v1 = IntegerRange(lb = -2, ub = -1)
+                val v2 = IntegerRange(lb = -3, ub = -2)
+                v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(-3, -1)))
+                v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-3, -1)))
+            }
+
+            it("(join of two ranges with Int.MaxValue); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
+                val v1 = IntegerRange(lb = 1, ub = Int.MaxValue)
+                val v2 = IntegerRange(lb = -10, ub = -1)
+                v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
+                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+            }
+
+            it("(join of two ranges one with [Int.MinValue+1 and Int.MaxValue]); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
+                val v1 = IntegerRange(lb = Int.MinValue + 1, ub = Int.MaxValue)
+                val v2 = IntegerRange(lb = -10, ub = -1)
+                v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
+                v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
+            }
+
+        }
 
         val theDomain = new IntegerRangesTestDomain
         import theDomain._
 
-        describe("the behavior of the join operation") {
+        describe("the behavior of the join operation if we do not exceed the max. spread") {
 
             it("(join with itself) val ir = IntegerRange(...); ir join ir => \"NoUpdate\"") {
                 val v = IntegerRange(0, 0)
@@ -179,7 +179,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         }
 
-        describe("the behavior of the summary function") {
+        describe("the behavior of the \"summarize\" function") {
 
             it("it should be able to handle overlapping values") {
                 val v1 = IntegerRange(-1, 3)
@@ -626,13 +626,46 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
 
-            describe("the behavior of the equals (==) operator") {
+            describe("the behavior of the not equals (!=) operator") {
 
                 it("a specific (but unknown) value compared (!=) with itself should be Yes") {
                     val p = AnIntegerValue
                     intAreNotEqual(p, p) should be(No)
                 }
 
+            }
+
+            describe("the behavior of intIsSomeValueInRange") {
+
+                it("if the precise value is unknown") {
+                    val p = AnIntegerValue()
+                    intIsSomeValueInRange(p, -10, 20) should be(Unknown)
+                }
+
+                it("if no value is in the range (values are smaller)") {
+                    val p = IntegerRange(-10, 10)
+                    intIsSomeValueInRange(p, -100, -20) should be(No)
+                }
+
+                it("if no value is in the range (values are larger)") {
+                    val p = IntegerRange(100, 10000)
+                    intIsSomeValueInRange(p, -100, -20) should be(No)
+                }
+
+                it("if some value is in the range (completely enclosed)") {
+                    val p = IntegerRange(-19, -10)
+                    intIsSomeValueInRange(p, -100, -2) should be(Yes)
+                }
+
+                it("if some value is in the range (lower-end is overlapping)") {
+                    val p = IntegerRange(-1000, -80)
+                    intIsSomeValueInRange(p, -100, -2) should be(Yes)
+                }
+
+                it("if some value is in the range (higher-end is overlapping)") {
+                    val p = IntegerRange(-10, 10)
+                    intIsSomeValueInRange(p, -100, -2) should be(Yes)
+                }
             }
         }
 
