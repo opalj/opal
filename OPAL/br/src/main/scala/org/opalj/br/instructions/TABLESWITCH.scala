@@ -56,6 +56,12 @@ case class TABLESWITCH(
         pcs
     }
 
+    override def toString: String =
+        "TABLESWITCH("+
+            (low to high).zip(jumpOffsets).map(e ⇒ e._1+"⤼"+e._2).mkString(",")+
+            ";default⤼"+defaultOffset+
+            ")"
+
     override def toString(pc: Int): String =
         "TABLESWITCH("+
             (low to high).zip(jumpOffsets).map { keyOffset ⇒
