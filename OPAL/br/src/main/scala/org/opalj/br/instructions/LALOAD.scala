@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-
 /**
  * Load long from array.
  *
@@ -38,8 +37,8 @@ package instructions
  */
 case object LALOAD extends ArrayLoadInstruction with PrimitiveArrayAccess {
 
-    override final val opcode = 47
+    final val opcode = 47
 
-    def mnemonic: String = "laload"
+    final val mnemonic = "laload"
 
 }

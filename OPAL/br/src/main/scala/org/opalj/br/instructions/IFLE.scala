@@ -39,9 +39,9 @@ case class IFLE(
     branchoffset: Int)
         extends IF0ConditionalBranchInstruction {
 
-    final override def opcode: Opcode = IFLE.opcode
+    final def opcode: Opcode = IFLE.opcode
 
-    final override def mnemonic: String = "ifle"
+    final def mnemonic: String = "ifle"
 
 }
 object IFLE {

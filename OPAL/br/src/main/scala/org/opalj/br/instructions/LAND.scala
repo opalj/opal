@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-
 /**
  * Boolean AND long.
  *
@@ -38,8 +37,8 @@ package instructions
  */
 case object LAND extends BitwiseInstruction {
 
-    override final val opcode = 127
+    final val opcode = 127
 
-    def mnemonic: String = "land"
+    final val mnemonic = "land"
 
 }

@@ -37,8 +37,8 @@ package instructions
  */
 case object IAND extends BitwiseInstruction {
 
-    override final val opcode = 126
+    final val opcode = 126
 
-    def mnemonic: String = "iand"
+    final val mnemonic = "iand"
 
 }

@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-
 /**
  * Convert long to float.
  *
@@ -38,8 +37,8 @@ package instructions
  */
 case object L2F extends NumericConversionInstruction {
 
-    override final val opcode = 137
+    final val opcode = 137
 
-    def mnemonic: String = "l2f"
+    final val mnemonic = "l2f"
 
 }

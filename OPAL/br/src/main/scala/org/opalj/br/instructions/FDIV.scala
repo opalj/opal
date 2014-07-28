@@ -37,8 +37,8 @@ package instructions
  */
 case object FDIV extends FloatingPointDivideInstruction {
 
-    override final val opcode = 110
+    final val opcode = 110
 
-    def mnemonic: String = "fdiv"
+    final val mnemonic = "fdiv"
 
 }

@@ -37,8 +37,8 @@ package instructions
  */
 case object DMUL extends MultiplyInstruction {
 
-    override final val opcode = 107
+    final val opcode = 107
 
-    def mnemonic: String = "dmul"
+    final val mnemonic = "dmul"
 
 }

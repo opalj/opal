@@ -35,14 +35,12 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object ALOAD_3
-        extends LoadLocalVariableInstruction
-        with ImplicitLocalVariableIndex {
+case object ALOAD_3 extends LoadLocalVariableInstruction with ImplicitLocalVariableIndex {
 
-    override def lvIndex: Int = 3
+    final val lvIndex = 3
 
-    override final val opcode = 45
+    final val opcode = 45
 
-    override def mnemonic: String = "aload_3"
+    final val mnemonic = "aload_3"
 
 }

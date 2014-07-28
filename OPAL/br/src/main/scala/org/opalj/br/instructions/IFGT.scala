@@ -39,9 +39,9 @@ case class IFGT(
     branchoffset: Int)
         extends IF0ConditionalBranchInstruction {
 
-    final override def opcode: Opcode = IFGT.opcode
+    final def opcode: Opcode = IFGT.opcode
 
-    final override def mnemonic: String = "ifgt"
+    final def mnemonic: String = "ifgt"
 
 }
 

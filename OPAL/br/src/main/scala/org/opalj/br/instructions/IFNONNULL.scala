@@ -39,9 +39,9 @@ case class IFNONNULL(
     branchoffset: Int)
         extends IFXNullConditionalBranchInstruction {
 
-    final override def opcode: Opcode = IFNONNULL.opcode
+    final def opcode: Opcode = IFNONNULL.opcode
 
-    final override def mnemonic: String = "ifnonnull"
+    final def mnemonic: String = "ifnonnull"
 
 }
 object IFNONNULL {

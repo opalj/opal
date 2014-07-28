@@ -38,12 +38,18 @@ package instructions
 case class SIPUSH(
     override val value: Int)
         extends LoadConstantInstruction[Int] {
-    
-    override def opcode: Opcode = SIPUSH.opcode
 
-    override def mnemonic: String = "sipush"
+    final def opcode: Opcode = SIPUSH.opcode
 
-    override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+    final def mnemonic: String = "sipush"
+
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
+        currentPC + 3
 }
 object SIPUSH {
 

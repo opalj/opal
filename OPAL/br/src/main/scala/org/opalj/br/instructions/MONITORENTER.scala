@@ -37,16 +37,16 @@ package instructions
  */
 case object MONITORENTER extends SynchronizationInstruction {
 
-    override final val opcode = 194
+    final val opcode = 194
 
-    final override def mnemonic: String = "monitorenter"
+    final val mnemonic = "monitorenter"
 
-    final override val runtimeExceptions: List[ObjectType] = 
+    final val runtimeExceptions: List[ObjectType] =
         List(ObjectType.NullPointerException)
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs = {
+    final def nextInstructions(currentPC: PC, code: Code): PCs = {
         Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, code, ObjectType.NullPointerException)
+            this, currentPC, code, ObjectType.NullPointerException)
     }
-    
+
 }

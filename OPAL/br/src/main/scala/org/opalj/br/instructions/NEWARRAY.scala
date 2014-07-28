@@ -41,11 +41,16 @@ sealed abstract class NEWARRAY extends CreateNewArrayInstruction {
 
     def elementType: BaseType
 
-    final override def mnemonic: String = "newarray"
+    final def mnemonic: String = "newarray"
 
-    final override def opcode: Opcode = NEWARRAY.opcode
+    final def opcode: Opcode = NEWARRAY.opcode
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 2
 
     final override def toString: String = "NEWARRAY("+elementType.toJava+"[])"

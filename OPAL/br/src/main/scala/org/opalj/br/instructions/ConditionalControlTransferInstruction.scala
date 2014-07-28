@@ -30,8 +30,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.UShortSet
-
 object ConditionalControlTransferInstruction {
 
     def unapply(instruction: Instruction): Boolean = {

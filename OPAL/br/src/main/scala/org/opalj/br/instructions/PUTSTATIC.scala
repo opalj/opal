@@ -44,16 +44,18 @@ case class PUTSTATIC(
     fieldType: FieldType)
         extends FieldWriteAccess {
 
-    override def opcode: Opcode = PUTSTATIC.opcode
+    final def opcode: Opcode = PUTSTATIC.opcode
 
-    def mnemonic: String = "putstatic"
+    final def mnemonic: String = "putstatic"
 
-    final override def runtimeExceptions: List[ObjectType] = Nil
+    final def runtimeExceptions: List[ObjectType] = Nil
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
 
-    override def toString = "put static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+    override def toString =
+        "put static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava
+
 }
 object PUTSTATIC {
 

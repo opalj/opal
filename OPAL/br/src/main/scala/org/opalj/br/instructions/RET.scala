@@ -39,14 +39,19 @@ case class RET(
     lvIndex: Int)
         extends ControlTransferInstruction {
 
-    final override def opcode: Opcode = RET.opcode
+    final def opcode: Opcode = RET.opcode
 
-    final override def mnemonic: String = "ret"
+    final def mnemonic: String = "ret"
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 2
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         throw new UnsupportedOperationException(
             "to determine the next instruction that will be executed "+
                 "a data-/control-flow analysis needs to be executed; "+

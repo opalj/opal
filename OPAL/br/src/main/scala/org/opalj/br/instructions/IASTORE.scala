@@ -31,14 +31,14 @@ package br
 package instructions
 
 /**
-  * Store into int array.
-  *
-  * @author Michael Eichberg
-  */
+ * Store into int array.
+ *
+ * @author Michael Eichberg
+ */
 case object IASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAccess {
 
-    override final val opcode = 79
+    final val opcode = 79
 
-    def mnemonic: String = "iastore"
+    final val mnemonic = "iastore"
 
 }

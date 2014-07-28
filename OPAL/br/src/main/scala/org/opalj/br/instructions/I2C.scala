@@ -37,8 +37,8 @@ package instructions
  */
 case object I2C extends NumericConversionInstruction {
 
-    override final val opcode = 146
+    final val opcode = 146
 
-    def mnemonic: String = "i2c"
+    final val mnemonic = "i2c"
 
 }

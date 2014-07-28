@@ -41,13 +41,20 @@ case class INVOKEVIRTUAL(
     methodDescriptor: MethodDescriptor)
         extends VirtualMethodInvocationInstruction {
 
-    def opcode: Opcode = INVOKEVIRTUAL.opcode
+    final def opcode: Opcode = INVOKEVIRTUAL.opcode
 
-    def mnemonic: String = "invokevirtual"
+    final def mnemonic: String = "invokevirtual"
 
-    def runtimeExceptions: List[ObjectType] = MethodInvocationInstruction.runtimeExceptions
+    final def runtimeExceptions: List[ObjectType] =
+        MethodInvocationInstruction.runtimeExceptions
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
+        currentPC + 3
 
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString

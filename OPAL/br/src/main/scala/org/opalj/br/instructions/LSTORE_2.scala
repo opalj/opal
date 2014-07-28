@@ -39,9 +39,9 @@ case object LSTORE_2
         extends StoreLocalVariableInstruction
         with ImplicitLocalVariableIndex {
 
-    def lvIndex = 2
+    final val lvIndex = 2
 
-    override final val opcode = 65
+    final val opcode = 65
 
-    def mnemonic: String = "lstore_2"
+    final val mnemonic = "lstore_2"
 }

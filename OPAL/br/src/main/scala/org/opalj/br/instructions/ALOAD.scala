@@ -36,22 +36,22 @@ package instructions
  * @author Michael Eichberg
  */
 class ALOAD(
-    override val lvIndex: Int)
+    final val lvIndex: Int)
         extends LoadLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
-    final override def opcode: Opcode = ALOAD.opcode
+    final def opcode: Opcode = ALOAD.opcode
 
-    final override def mnemonic: String = "aload"
+    final def mnemonic: String = "aload"
 
     override def equals(other: Any): Boolean = other match {
         case ALOAD(index) ⇒ index == lvIndex
         case _            ⇒ false
     }
-    
-    override lazy val hashCode: Int = 47 * lvIndex
 
-    override lazy val toString: String = s"ALOAD($lvIndex)"
+    override def hashCode: Int = 47 * lvIndex
+
+    override def toString: String = s"ALOAD($lvIndex)"
 }
 object ALOAD {
 

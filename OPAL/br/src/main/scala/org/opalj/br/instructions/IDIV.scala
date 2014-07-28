@@ -31,14 +31,14 @@ package br
 package instructions
 
 /**
-  * Divide int.
-  *
-  * @author Michael Eichberg
-  */
+ * Divide int.
+ *
+ * @author Michael Eichberg
+ */
 case object IDIV extends IntegerDivideInstruction {
 
-    override final val opcode = 108
+    final val opcode = 108
 
-    def mnemonic: String = "idiv"
+    final val mnemonic = "idiv"
 
 }

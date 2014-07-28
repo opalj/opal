@@ -37,14 +37,14 @@ package instructions
  */
 case object MONITOREXIT extends SynchronizationInstruction {
 
-    override final val opcode = 195
+    final val opcode = 195
 
-    def mnemonic: String = "monitorexit"
+    final val mnemonic = "monitorexit"
 
-    final override val runtimeExceptions: List[ObjectType] =
+    final val runtimeExceptions: List[ObjectType] =
         List(ObjectType.NullPointerException, ObjectType.IllegalMonitorStateException)
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         Instruction.nextInstructionOrExceptionHandlers(
             this, currentPC, code, runtimeExceptions)
 }

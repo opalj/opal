@@ -36,14 +36,20 @@ package instructions
  * @author Michael Eichberg
  */
 class BIPUSH private (
-    override val value: Int)
+    val value: Int)
         extends LoadConstantInstruction[Int] {
 
-    final override def opcode: Opcode = BIPUSH.opcode
+    final def opcode: Opcode = BIPUSH.opcode
 
-    final override def mnemonic: String = "bipush"
+    final def mnemonic: String = "bipush"
 
-    override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
+        currentPC + 2
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -51,7 +57,6 @@ class BIPUSH private (
             case _            ⇒ false
         }
     }
-
 
     override def hashCode = value
 

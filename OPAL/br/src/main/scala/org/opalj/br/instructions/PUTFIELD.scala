@@ -44,14 +44,14 @@ case class PUTFIELD(
     fieldType: FieldType)
         extends FieldWriteAccess {
 
-    override def opcode: Opcode = PUTFIELD.opcode
+    final def opcode: Opcode = PUTFIELD.opcode
 
-    def mnemonic: String = "putfield"
+    final def mnemonic: String = "putfield"
 
-    final override def runtimeExceptions: List[ObjectType] =
+    final def runtimeExceptions: List[ObjectType] =
         FieldAccess.runtimeExceptions
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         Instruction.nextInstructionOrExceptionHandler(
             this, currentPC, code, ObjectType.NullPointerException
         )

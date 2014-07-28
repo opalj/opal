@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-
 /**
  * Add long.
  *
@@ -38,8 +37,8 @@ package instructions
  */
 case object LADD extends AddInstruction {
 
-    override final val opcode = 97
+    final val opcode = 97
 
-    def mnemonic: String = "ladd"
+    final val mnemonic = "ladd"
 
 }
