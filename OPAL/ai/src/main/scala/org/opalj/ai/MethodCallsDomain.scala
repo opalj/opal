@@ -39,7 +39,7 @@ import org.opalj.br.ReferenceType
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait MethodCallsDomain { this: CoreDomain ⇒
+trait MethodCallsDomain { this: ValuesDomain ⇒
 
     type MethodCallResult = Computation[DomainValue, ExceptionValues]
 

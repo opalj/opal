@@ -46,7 +46,7 @@ import br._
  *
  * @author Michael Eichberg
  */
-trait PropertyTracing extends CoreDomain { domain: Domain ⇒
+trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
 
     trait Property {
         def join(otherProperty: DomainProperty): Update[DomainProperty]
@@ -105,7 +105,7 @@ trait PropertyTracing extends CoreDomain { domain: Domain ⇒
         tracer: Option[AITracer]): List[PC] = {
 
         val forceScheduling: Boolean = {
-            if (propertiesArray(successorPC) eq null) {
+            if (!wasJoinPerformed /* weaker: || propertiesArray(successorPC) eq null*/ ) {
                 propertiesArray(successorPC) = propertiesArray(currentPC)
                 true
             } else {

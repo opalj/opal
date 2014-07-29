@@ -35,7 +35,7 @@ package ai
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait VMLevelExceptionsFactory { this: CoreDomain ⇒
+trait VMLevelExceptionsFactory extends ValuesDomain { domain ⇒
 
     def Throwable(pc: PC): ExceptionValue
 

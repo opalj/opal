@@ -41,7 +41,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait RecordThrownExceptions extends ReturnInstructionsDomain { domain: CoreDomain ⇒
+trait RecordThrownExceptions extends ReturnInstructionsDomain { domain: ValuesDomain ⇒
 
     /**
      * This type determines in which way thrown exceptions are recorded.

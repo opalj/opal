@@ -54,13 +54,13 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
  * @author Michael Eichberg
  */
 trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
-    domain: CoreDomain with ReferenceValuesDomain with ValuesFactory with Configuration ⇒
+    domain: ReferenceValuesDomain with ValuesFactory with Configuration ⇒
 
     protected[this] def handleInstanceBasedInvoke(
         pc: PC,
         methodDescriptor: MethodDescriptor,
         operands: Operands): MethodCallResult =
-        refIsNull(operands.last) match {
+        refIsNull(pc, operands.last) match {
             case Yes ⇒
                 justThrows(NullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnMethodCall ⇒

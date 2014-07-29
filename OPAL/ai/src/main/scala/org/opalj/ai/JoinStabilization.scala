@@ -41,7 +41,7 @@ package ai
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait JoinStabilization extends CoreDomain {
+trait JoinStabilization extends CoreDomainFunctionality {
 
     import java.util.{ IdentityHashMap ⇒ IDMap }
 

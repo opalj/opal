@@ -105,7 +105,7 @@ package object ai {
 
     type PrimitiveValuesFactory = IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
     type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with VMLevelExceptionsFactory with TypedValuesFactory
-    type TargetDomain = CoreDomain with ValuesFactory
+    type TargetDomain = ValuesDomain with ValuesFactory
 
     /**
      * Special value that is added to the work list/list of evaluated instructions
@@ -143,13 +143,13 @@ package object ai {
      */
     final val ConstantValueOrigin: ValueOrigin = -257
 
-    type Operands[T >: Null <: CoreDomain#DomainValue] = List[T]
-    type AnOperandsArray[T >: Null <: CoreDomain#DomainValue] = Array[Operands[T]]
-    type TheOperandsArray[T >: Null <: (CoreDomain with Singleton)#Operands] = Array[T]
+    type Operands[T >: Null <: ValuesDomain#DomainValue] = List[T]
+    type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
+    type TheOperandsArray[T >: Null <: (ValuesDomain with Singleton)#Operands] = Array[T]
 
-    type Locals[T >: Null <: CoreDomain#DomainValue] = org.opalj.ai.util.Locals[T]
-    type ALocalsArray[T >: Null <: CoreDomain#DomainValue] = Array[Locals[T]]
-    type TheLocalsArray[T >: Null <: (CoreDomain with Singleton)#Locals] = Array[T]
+    type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.ai.util.Locals[T]
+    type ALocalsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Locals[T]]
+    type TheLocalsArray[T >: Null <: (ValuesDomain with Singleton)#Locals] = Array[T]
 
     /**
      * Creates a human-readable textual representation of the current memory layout.

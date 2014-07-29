@@ -30,40 +30,13 @@ package org.opalj
 package ai
 
 /**
- * Defines the primary factory methods to create Long values.
- *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
- */
-trait LongValuesFactory { this: CoreDomain ⇒
-
-    /**
-     * Factory method to create a `DomainValue` that was created (explicitly or
-     * implicitly) by the instruction with the specified program counter.
-     *
-     * The domain may ignore the information about the origin (`vo`).
-     */
-    def LongValue(vo: ValueOrigin): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that represents the given long value
-     * and that was created (explicitly or implicitly) by the instruction with the
-     * specified program counter.
-     *
-     * The domain may ignore the information about the value and the origin (`vo`).
-     */
-    def LongValue(vo: ValueOrigin, value: Long): DomainValue
-
-}
-
-/**
  * Defines the public interface between the abstract interpreter and the domain
  * that implements the functionality related to the handling of long values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait LongValuesDomain extends LongValuesFactory { this: CoreDomain ⇒
+trait LongValuesDomain extends LongValuesFactory { domain ⇒
 
     // -----------------------------------------------------------------------------------
     //

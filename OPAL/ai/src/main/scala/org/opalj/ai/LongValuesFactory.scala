@@ -28,25 +28,31 @@
  */
 package org.opalj
 package ai
-package domain
 
 /**
- * Mixin this trait if you want to reify the constraints that are stated by the
- * abstract interpretation framework.
- * This is particularly useful for testing and debugging purposes.
+ * Defines the primary factory methods to create Long values.
  *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Dennis Siebert
  */
-trait RecordConstraints extends ReifiedConstraints { domain: ValuesDomain ⇒
+trait LongValuesFactory extends ValuesDomain { domain ⇒
 
-    private[this] var constraints: Set[ReifiedConstraint] = Set.empty
+    /**
+     * Factory method to create a `DomainValue` that was created (explicitly or
+     * implicitly) by the instruction with the specified program counter.
+     *
+     * The domain may ignore the information about the origin (`vo`).
+     */
+    def LongValue(vo: ValueOrigin): DomainValue
 
-    def allConstraints: Set[ReifiedConstraint] = constraints
+    /**
+     * Factory method to create a `DomainValue` that represents the given long value
+     * and that was created (explicitly or implicitly) by the instruction with the
+     * specified program counter.
+     *
+     * The domain may ignore the information about the value and the origin (`vo`).
+     */
+    def LongValue(vo: ValueOrigin, value: Long): DomainValue
 
-    override def nextConstraint(constraint: ReifiedConstraint): Unit = {
-        constraints += constraint
-    }
 }
-
-
 

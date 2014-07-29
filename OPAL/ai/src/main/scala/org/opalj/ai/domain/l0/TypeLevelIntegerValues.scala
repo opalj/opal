@@ -105,25 +105,33 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     // QUESTION'S ABOUT VALUES
     //
 
-    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer =
+    override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer =
         Unknown
 
     override def intIsSomeValueInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer =
         Unknown
 
     override def intIsSomeValueNotInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer =
         Unknown
 
-    override def intIsLessThan(left: DomainValue, right: DomainValue): Answer =
+    override def intIsLessThan(
+        pc: PC,
+        left: DomainValue,
+        right: DomainValue): Answer =
         Unknown
 
-    override def intIsLessThanOrEqualTo(left: DomainValue, right: DomainValue): Answer =
+    override def intIsLessThanOrEqualTo(
+        pc: PC,
+        left: DomainValue,
+        right: DomainValue): Answer =
         Unknown
 
     // -----------------------------------------------------------------------------------
@@ -200,8 +208,6 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     override def i2c(pc: PC, value: DomainValue): DomainValue = CharValue(pc)
 
     override def i2s(pc: PC, value: DomainValue): DomainValue = ShortValue(pc)
-
-
 
 }
 

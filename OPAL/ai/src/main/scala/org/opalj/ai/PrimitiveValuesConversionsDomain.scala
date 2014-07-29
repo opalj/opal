@@ -35,7 +35,7 @@ package ai
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait PrimitiveValuesConversionsDomain { domain: CoreDomain ⇒
+trait PrimitiveValuesConversionsDomain { domain: ValuesDomain ⇒
 
     def i2d(pc: PC, value: DomainValue): DomainValue
     def i2f(pc: PC, value: DomainValue): DomainValue

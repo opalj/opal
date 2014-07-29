@@ -44,7 +44,7 @@ import org.opalj.br.ComputationalTypeLong
  * @author Riadh Chtara
  */
 trait LongValuesShiftOperators extends LongValuesDomain {
-    this: CoreDomain with ConcreteLongValues with ConcreteIntegerValues ⇒
+    this: ConcreteLongValues with ConcreteIntegerValues ⇒
 
     override def lshl(pc: PC, longValue: DomainValue, shift: DomainValue): DomainValue = {
         this.longValue(longValue) { v ⇒

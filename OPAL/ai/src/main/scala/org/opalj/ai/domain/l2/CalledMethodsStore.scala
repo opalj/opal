@@ -42,7 +42,7 @@ import org.opalj.br.ClassFile
  * @author Michael Eichberg
  */
 class CalledMethodsStore(
-        val domain: CoreDomain with ValuesFactory with ReferenceValuesDomain) {
+        val domain: ValuesFactory with ReferenceValuesDomain) {
 
     /**
      * Determines when we issue a frequent evaluation warning.
@@ -54,7 +54,7 @@ class CalledMethodsStore(
     def isRecursive(
         definingClass: ClassFile,
         method: Method,
-        operands: CoreDomain#Operands): Boolean = {
+        operands: ValuesDomain#Operands): Boolean = {
         val adaptedOperands = operands.map(_.adapt(domain, -1))
         calledMethods.get(method) match {
             case None ⇒

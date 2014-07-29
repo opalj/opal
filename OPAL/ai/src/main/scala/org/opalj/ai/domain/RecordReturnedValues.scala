@@ -49,7 +49,7 @@ import language.implicitConversions
  * @author Michael Eichberg
  */
 trait RecordReturnedValues extends RecordReturnedValuesInfrastructure {
-    domain : CoreDomain =>
+    domain: ValuesDomain ⇒
 
     /**
      * Wraps the given value into a `ReturnedValue`.

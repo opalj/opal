@@ -35,7 +35,7 @@ package ai
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait ReturnInstructionsDomain { domain: CoreDomain ⇒
+trait ReturnInstructionsDomain { domain: ValuesDomain ⇒
 
     //
     // RETURN FROM METHOD

@@ -43,7 +43,7 @@ trait DefaultHandlingOfMethodResults
         extends DefaultHandlingOfVoidReturns
         with DefaultHandlingForThrownExceptions
         with DefaultHandlingForReturnInstructions {
-    domain: CoreDomain ⇒
+    domain: ValuesDomain ⇒
 
 }
 

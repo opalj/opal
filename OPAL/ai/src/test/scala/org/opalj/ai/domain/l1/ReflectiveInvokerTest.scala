@@ -82,14 +82,14 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
 
         def lastValue(): Object = lastObject
 
-        override def toJavaObject(value: DomainValue): Option[Object] = {
+        override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
             value match {
                 case i: IntegerValue ⇒
                     Some(new java.lang.Integer(i.value))
                 case r: ReferenceValue if (r.upperTypeBound.contains(ObjectType("java/lang/StringBuilder"))) ⇒
                     Some(new java.lang.StringBuilder())
                 case _ ⇒
-                    super.toJavaObject(value)
+                    super.toJavaObject(pc, value)
             }
         }
 

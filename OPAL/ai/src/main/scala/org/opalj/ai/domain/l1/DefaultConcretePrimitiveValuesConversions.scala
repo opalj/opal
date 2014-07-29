@@ -37,7 +37,7 @@ package l1
  * @author Michael Eichberg
  */
 trait DefaultConcretePrimitiveValuesConversions extends l0.DefaultPrimitiveValuesConversions {
-    domain: CoreDomain with ConcreteLongValues with ConcreteIntegerValues with PrimitiveValuesFactory with Configuration ⇒
+    domain: PrimitiveValuesFactory with Configuration with ConcreteLongValues with ConcreteIntegerValues ⇒
 
     override def i2d(pc: PC, value: DomainValue): DomainValue =
         intValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))

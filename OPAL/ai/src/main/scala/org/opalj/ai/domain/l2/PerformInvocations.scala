@@ -46,7 +46,7 @@ import org.opalj.ai.util.Locals
  * @author Michael Eichberg
  */
 trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
-    callingDomain: CoreDomain with ValuesFactory with ReferenceValuesDomain with MethodCallsDomain with Configuration with TheProject[_] with TheCode with domain.ClassHierarchy ⇒
+    callingDomain: ValuesFactory with ReferenceValuesDomain with MethodCallsDomain with Configuration with TheProject[_] with TheCode with domain.ClassHierarchy ⇒
 
     /**
      * Identifies recursive calls.
@@ -261,10 +261,10 @@ object PerformInvocations {
      * @param targetDomain The [[Domain]] that will be use to perform the abstract
      *      interpretation.
      */
-    def mapOperandsToParameters[D <: CoreDomain](
+    def mapOperandsToParameters[D <: ValuesDomain](
         operands: Operands[D#DomainValue],
         calledMethod: Method,
-        targetDomain: CoreDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
+        targetDomain: ValuesDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
 
         implicit val domainValueTag = targetDomain.DomainValueTag
         val parameters = util.Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)

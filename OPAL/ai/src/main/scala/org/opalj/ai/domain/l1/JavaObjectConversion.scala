@@ -58,7 +58,7 @@ import org.opalj.br.ObjectType
  * @author Frederik Buss-Joraschek
  * @author Michael Eichberg
  */
-trait JavaObjectConversion { this: CoreDomain with ReferenceValuesDomain ⇒
+trait JavaObjectConversion { domain: ReferenceValuesDomain ⇒
 
     /**
      * Converts – if possible – a given `DomainValue` to a Java object that is
@@ -86,8 +86,8 @@ trait JavaObjectConversion { this: CoreDomain with ReferenceValuesDomain ⇒
      *   	Default: `None` unless the `value` is null. In the latter case `Some(null)`
      *    	is returned.
      */
-    def toJavaObject(value: DomainValue): Option[Object] = {
-        if (refIsNull(value).isYes)
+    def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
+        if (refIsNull(pc, value).isYes)
             Some(null)
         else
             None

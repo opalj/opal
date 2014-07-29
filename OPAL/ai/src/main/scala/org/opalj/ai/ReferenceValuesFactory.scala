@@ -37,7 +37,7 @@ import org.opalj.br.{ MethodDescriptor, MethodHandle }
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait ReferenceValuesFactory extends VMLevelExceptionsFactory { this: CoreDomain ⇒
+trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
 
     /**
      * Factory method to create a `DomainValue` that represents the `null` value and

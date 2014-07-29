@@ -211,22 +211,22 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
                 val result = BaseAI(classFile, method, TheDomain)
                 val exception = result.operandsArray(20)
-                TheDomain.refIsNull(exception.head) should be(No)
+                TheDomain.refIsNull(-1, exception.head) should be(No)
             }
 
             val theProject = Project(locateTestResources("classfiles/ai.jar", "ai"))
             val targetType = ObjectType("ai/domain/ReferenceValuesFrenzy")
             val ReferenceValues = theProject.classFile(targetType).get
 
-//            it("it should be possible to get precise information about a method's return values (maybeNull)") {
-//                val result = BaseAI(ReferenceValues, method, TheDomain)
-//                val exception = result.operandsArray(20)
-//                TheDomain.refIsNull(exception.head) should be(No)
-//            }
-//
-//            it("it should be able to correctly distinguish different values that were created at different points in time.") {
-//
-//            }
+            //            it("it should be possible to get precise information about a method's return values (maybeNull)") {
+            //                val result = BaseAI(ReferenceValues, method, TheDomain)
+            //                val exception = result.operandsArray(20)
+            //                TheDomain.refIsNull(exception.head) should be(No)
+            //            }
+            //
+            //            it("it should be able to correctly distinguish different values that were created at different points in time.") {
+            //
+            //            }
         }
     }
 }

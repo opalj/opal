@@ -36,7 +36,7 @@ package ai
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait DoubleValuesDomain extends DoubleValuesFactory { this: CoreDomain ⇒
+trait DoubleValuesDomain extends DoubleValuesFactory { domain ⇒
 
     // -----------------------------------------------------------------------------------
     //

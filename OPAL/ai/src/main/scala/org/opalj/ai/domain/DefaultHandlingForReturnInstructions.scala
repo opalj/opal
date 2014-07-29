@@ -39,7 +39,7 @@ package domain
  * @author Michael Eichberg
  */
 trait DefaultHandlingForReturnInstructions extends ReturnInstructionsDomain { 
-    domain: CoreDomain ⇒
+    domain: ValuesDomain ⇒
 
     /*base impl.*/ def areturn(pc: PC, value: DomainValue): Unit = {
         /* Nothing to do. */

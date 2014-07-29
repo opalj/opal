@@ -36,7 +36,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait GeneralizedArrayHandling extends ReferenceValuesDomain { this: CoreDomain ⇒
+trait GeneralizedArrayHandling extends ReferenceValuesDomain { this: ValuesDomain ⇒
 
     //
     // NEW INTERFACE

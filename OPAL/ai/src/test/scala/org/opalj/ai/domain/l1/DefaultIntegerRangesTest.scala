@@ -49,6 +49,8 @@ import org.opalj.br.analyses.Project
 @RunWith(classOf[JUnitRunner])
 class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestExecution {
 
+    final val IrrelevantPC = Int.MinValue
+
     class IntegerRangesTestDomain(
         override val maxSizeOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
             extends Domain
@@ -447,67 +449,67 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 it("[3,3] >= [0,2] => Yes") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val i2 = IntegerRange(lb = 0, ub = 2)
-                    intIsGreaterThanOrEqualTo(p1, i2) should be(Yes)
+                    intIsGreaterThanOrEqualTo(IrrelevantPC, p1, i2) should be(Yes)
                 }
 
                 it("[3,3] >= [0,3] => Yes") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val i2 = IntegerRange(lb = 0, ub = 3)
-                    intIsGreaterThanOrEqualTo(p1, i2) should be(Yes)
+                    intIsGreaterThanOrEqualTo(IrrelevantPC, p1, i2) should be(Yes)
                 }
 
                 it("[Int.MaxValue,Int.MaxValue] >= AnIntegerValue should be Yes") {
                     val p1 = IntegerRange(lb = Int.MaxValue, ub = Int.MaxValue)
                     val p2 = AnIntegerValue()
-                    intIsGreaterThanOrEqualTo(p1, p2) should be(Yes)
+                    intIsGreaterThanOrEqualTo(IrrelevantPC, p1, p2) should be(Yes)
                 }
 
                 it("[0,3] >= [3,3] => Unknown") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val i2 = IntegerRange(lb = 0, ub = 3)
-                    intIsGreaterThanOrEqualTo(i2, p1) should be(Unknown)
+                    intIsGreaterThanOrEqualTo(IrrelevantPC, i2, p1) should be(Unknown)
                 }
 
                 it("[2,3] >= [1,4] => Unknown") {
                     val i1 = IntegerRange(lb = 2, ub = 3)
                     val i2 = IntegerRange(lb = 1, ub = 4)
-                    intIsGreaterThanOrEqualTo(i1, i2) should be(Unknown)
+                    intIsGreaterThanOrEqualTo(IrrelevantPC, i1, i2) should be(Unknown)
                 }
 
                 it("[1,4] >= [2,3] => Unknown") {
                     val i1 = IntegerRange(lb = 1, ub = 4)
                     val i2 = IntegerRange(lb = 2, ub = 3)
-                    intIsGreaterThanOrEqualTo(i1, i2) should be(Unknown)
+                    intIsGreaterThanOrEqualTo(IrrelevantPC, i1, i2) should be(Unknown)
                 }
 
                 it("[Int.MinValue,Int.MinValue] >= AnIntegerValue should be Unknown") {
                     val p1 = IntegerRange(lb = Int.MinValue, ub = Int.MinValue)
                     val p2 = AnIntegerValue()
-                    intIsGreaterThanOrEqualTo(p1, p2) should be(Unknown)
+                    intIsGreaterThanOrEqualTo(IrrelevantPC, p1, p2) should be(Unknown)
                 }
 
                 it("[3,3] >= [4,4] => No") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val p2 = IntegerRange(lb = 4, ub = 4)
-                    intIsGreaterThanOrEqualTo(p1, p2) should be(No)
+                    intIsGreaterThanOrEqualTo(IrrelevantPC, p1, p2) should be(No)
                 }
 
                 it("[-3,3] >= [4,40] => No") {
                     val p1 = IntegerRange(lb = -3, ub = 3)
                     val p2 = IntegerRange(lb = 4, ub = 40)
-                    intIsGreaterThanOrEqualTo(p1, p2) should be(No)
+                    intIsGreaterThanOrEqualTo(IrrelevantPC, p1, p2) should be(No)
                 }
 
                 it("a specific (but unknown) value compared (>=) with itself should be Yes") {
                     val p = AnIntegerValue
-                    intIsGreaterThanOrEqualTo(p, p) should be(Yes)
+                    intIsGreaterThanOrEqualTo(IrrelevantPC, p, p) should be(Yes)
                 }
             }
 
             describe("the behavior of the greater or equal than (<=) operator") {
                 it("a specific (but unknown) value compared (<=) with itself should be Yes") {
                     val p = AnIntegerValue
-                    intIsLessThanOrEqualTo(p, p) should be(Yes)
+                    intIsLessThanOrEqualTo(IrrelevantPC, p, p) should be(Yes)
                 }
             }
 
@@ -516,61 +518,61 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 it("[3,3] > [0,2] should be Yes") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val i2 = IntegerRange(lb = 0, ub = 2)
-                    intIsGreaterThan(p1, i2) should be(Yes)
+                    intIsGreaterThan(IrrelevantPC, p1, i2) should be(Yes)
                 }
 
                 it("[3,300] > [0,2] should be Yes") {
                     val p1 = IntegerRange(lb = 3, ub = 300)
                     val i2 = IntegerRange(lb = 0, ub = 2)
-                    intIsGreaterThan(p1, i2) should be(Yes)
+                    intIsGreaterThan(IrrelevantPC, p1, i2) should be(Yes)
                 }
 
                 it("[3,3] > [0,3] should be Unknown") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val i2 = IntegerRange(lb = 0, ub = 3)
-                    intIsGreaterThan(p1, i2) should be(Unknown)
+                    intIsGreaterThan(IrrelevantPC, p1, i2) should be(Unknown)
                 }
 
                 it("[0,3] > [3,3] should be Unknown") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val i2 = IntegerRange(lb = 0, ub = 3)
-                    intIsGreaterThan(i2, p1) should be(Unknown)
+                    intIsGreaterThan(IrrelevantPC, i2, p1) should be(Unknown)
                 }
 
                 it("[2,3] > [1,4] should be Unknown") {
                     val i1 = IntegerRange(lb = 2, ub = 3)
                     val i2 = IntegerRange(lb = 1, ub = 4)
-                    intIsGreaterThan(i1, i2) should be(Unknown)
+                    intIsGreaterThan(IrrelevantPC, i1, i2) should be(Unknown)
                 }
 
                 it("[-3,3] > [3,30] should be Unknown") {
                     val p1 = IntegerRange(lb = -3, ub = 3)
                     val p2 = IntegerRange(lb = 3, ub = 30)
-                    intIsGreaterThan(p1, p2) should be(Unknown)
+                    intIsGreaterThan(IrrelevantPC, p1, p2) should be(Unknown)
                 }
 
                 it("[3,3] > [4,4] should be No") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val p2 = IntegerRange(lb = 4, ub = 4)
-                    intIsGreaterThan(p1, p2) should be(No)
+                    intIsGreaterThan(IrrelevantPC, p1, p2) should be(No)
                 }
 
                 it("[3,3] > [3,3] should be No") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val p2 = IntegerRange(lb = 3, ub = 3)
-                    intIsGreaterThan(p1, p2) should be(No)
-                    intIsGreaterThan(p1, p1) should be(No)
+                    intIsGreaterThan(IrrelevantPC, p1, p2) should be(No)
+                    intIsGreaterThan(IrrelevantPC, p1, p1) should be(No)
                 }
 
                 it("[Int.MinValue,Int.MinValue] > AnIntegerValue should be No") {
                     val p1 = IntegerRange(lb = Int.MinValue, ub = Int.MinValue)
                     val p2 = AnIntegerValue()
-                    intIsGreaterThan(p1, p2) should be(No)
+                    intIsGreaterThan(IrrelevantPC, p1, p2) should be(No)
                 }
 
                 it("a specific (but unknown) value compared (>) with itself should be No") {
                     val p = AnIntegerValue
-                    intIsGreaterThan(p, p) should be(No)
+                    intIsGreaterThan(IrrelevantPC, p, p) should be(No)
                 }
             }
 
@@ -578,7 +580,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 it("a specific (but unknown) value compared (<) with itself should be No") {
                     val p = AnIntegerValue
-                    intIsLessThan(p, p) should be(No)
+                    intIsLessThan(IrrelevantPC, p, p) should be(No)
                 }
             }
 
@@ -587,42 +589,42 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 it("[3,3] == [3,3] should be Yes") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val p2 = IntegerRange(lb = 3, ub = 3)
-                    intAreEqual(p1, p2) should be(Yes)
-                    intAreEqual(p2, p1) should be(Yes)
-                    intAreEqual(p1, p1) should be(Yes) // reflexive
+                    intAreEqual(IrrelevantPC, p1, p2) should be(Yes)
+                    intAreEqual(IrrelevantPC, p2, p1) should be(Yes)
+                    intAreEqual(IrrelevantPC, p1, p1) should be(Yes) // reflexive
                 }
 
                 it("[2,2] == [3,3] should be No") {
                     val p1 = IntegerRange(lb = 2, ub = 2)
                     val p2 = IntegerRange(lb = 3, ub = 3)
-                    intAreEqual(p1, p2) should be(No)
-                    intAreEqual(p2, p1) should be(No) // reflexive
+                    intAreEqual(IrrelevantPC, p1, p2) should be(No)
+                    intAreEqual(IrrelevantPC, p2, p1) should be(No) // reflexive
                 }
 
                 it("[0,3] == [4,10] should be No") {
                     val p1 = IntegerRange(lb = 0, ub = 3)
                     val p2 = IntegerRange(lb = 4, ub = 10)
-                    intAreEqual(p1, p2) should be(No)
-                    intAreEqual(p2, p1) should be(No) // reflexive
+                    intAreEqual(IrrelevantPC, p1, p2) should be(No)
+                    intAreEqual(IrrelevantPC, p2, p1) should be(No) // reflexive
                 }
 
                 it("[0,3] == [3,3] should be Unknown") {
                     val p1 = IntegerRange(lb = 0, ub = 3)
                     val p2 = IntegerRange(lb = 3, ub = 3)
-                    intAreEqual(p1, p2) should be(Unknown)
-                    intAreEqual(p2, p1) should be(Unknown) // reflexive
+                    intAreEqual(IrrelevantPC, p1, p2) should be(Unknown)
+                    intAreEqual(IrrelevantPC, p2, p1) should be(Unknown) // reflexive
                 }
 
                 it("[0,3] == [0,3] should be Unknown") {
                     val p1 = IntegerRange(lb = 0, ub = 3)
                     val p2 = IntegerRange(lb = 0, ub = 3)
-                    intAreEqual(p1, p2) should be(Unknown)
-                    intAreEqual(p2, p1) should be(Unknown) // reflexive
+                    intAreEqual(IrrelevantPC, p1, p2) should be(Unknown)
+                    intAreEqual(IrrelevantPC, p2, p1) should be(Unknown) // reflexive
                 }
 
                 it("a specific (but unknown) value compared (==) with itself should be Yes") {
                     val p = AnIntegerValue
-                    intAreEqual(p, p) should be(Yes)
+                    intAreEqual(IrrelevantPC, p, p) should be(Yes)
                 }
             }
 
@@ -630,7 +632,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 it("a specific (but unknown) value compared (!=) with itself should be Yes") {
                     val p = AnIntegerValue
-                    intAreNotEqual(p, p) should be(No)
+                    intAreNotEqual(IrrelevantPC, p, p) should be(No)
                 }
 
             }
@@ -639,32 +641,32 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 it("if the precise value is unknown") {
                     val p = AnIntegerValue()
-                    intIsSomeValueInRange(p, -10, 20) should be(Unknown)
+                    intIsSomeValueInRange(IrrelevantPC, p, -10, 20) should be(Unknown)
                 }
 
                 it("if no value is in the range (values are smaller)") {
                     val p = IntegerRange(-10, 10)
-                    intIsSomeValueInRange(p, -100, -20) should be(No)
+                    intIsSomeValueInRange(IrrelevantPC, p, -100, -20) should be(No)
                 }
 
                 it("if no value is in the range (values are larger)") {
                     val p = IntegerRange(100, 10000)
-                    intIsSomeValueInRange(p, -100, -20) should be(No)
+                    intIsSomeValueInRange(IrrelevantPC, p, -100, -20) should be(No)
                 }
 
                 it("if some value is in the range (completely enclosed)") {
                     val p = IntegerRange(-19, -10)
-                    intIsSomeValueInRange(p, -100, -2) should be(Yes)
+                    intIsSomeValueInRange(IrrelevantPC, p, -100, -2) should be(Yes)
                 }
 
                 it("if some value is in the range (lower-end is overlapping)") {
                     val p = IntegerRange(-1000, -80)
-                    intIsSomeValueInRange(p, -100, -2) should be(Yes)
+                    intIsSomeValueInRange(IrrelevantPC, p, -100, -2) should be(Yes)
                 }
 
                 it("if some value is in the range (higher-end is overlapping)") {
                     val p = IntegerRange(-10, 10)
-                    intIsSomeValueInRange(p, -100, -2) should be(Yes)
+                    intIsSomeValueInRange(IrrelevantPC, p, -100, -2) should be(Yes)
                 }
             }
         }
@@ -904,5 +906,22 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
             result.operandsArray(20).head should be(domain.AnIntegerValue)
         }
+
+        //        it("it should handle cases where we constrain and compare unknown values (without join)") {
+        //            val domain = new IntegerRangesTestDomain(4)
+        //            val method = IntegerValues.findMethod("multipleConstraints1").get
+        //            val result = BaseAI(IntegerValues, method, domain)
+        //
+        //            result.operandsArray(20).head should be(domain.AnIntegerValue)
+        //        }
+        //
+        //        it("it should handle cases where we constrain and compare unknown values (with join)") {
+        //            val domain = new IntegerRangesTestDomain(4)
+        //            val method = IntegerValues.findMethod("multipleConstraints2").get
+        //            val result = BaseAI(IntegerValues, method, domain)
+        //
+        //            result.operandsArray(20).head should be(domain.AnIntegerValue)
+        //        }
+
     }
 }

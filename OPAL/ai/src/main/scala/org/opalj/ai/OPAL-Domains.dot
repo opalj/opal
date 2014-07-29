@@ -15,11 +15,11 @@ digraph OPALDomains {
 
 		//{rank=sink; CoreDomain;}
 		//{rank=source; Domain;}
-		IntegerValuesDomain -> IntegerValuesFactory -> CoreDomain;
-		LongValuesDomain -> LongValuesFactory -> CoreDomain;
-		FloatValuesDomain -> FloatValuesFactory -> CoreDomain;
-		DoubleValuesDomain -> DoubleValuesFactory -> CoreDomain;
-		ReferenceValuesDomain -> ReferenceValuesFactory -> VMLevelExceptionsFactory -> CoreDomain;
+		IntegerValuesDomain -> IntegerValuesFactory -> ValuesDomain;
+		LongValuesDomain -> LongValuesFactory -> ValuesDomain;
+		FloatValuesDomain -> FloatValuesFactory -> ValuesDomain;
+		DoubleValuesDomain -> DoubleValuesFactory -> ValuesDomain;
+		ReferenceValuesDomain -> ReferenceValuesFactory -> VMLevelExceptionsFactory -> ValuesDomain;
 
 		PrimitiveValuesFactory -> IntegerValuesFactory [style=dotted,arrowhead=onormal];
 		PrimitiveValuesFactory -> LongValuesFactory [style=dotted,arrowhead=onormal];
@@ -27,20 +27,28 @@ digraph OPALDomains {
 		PrimitiveValuesFactory -> DoubleValuesFactory [style=dotted,arrowhead=onormal];
 		PrimitiveValuesFactory [style=filled,fillcolor=mintcream,shape=rectangle];
 
-		JoinStabilization -> CoreDomain;
+		JoinStabilization -> CoreDomainFunctionality;
 		JoinStabilization [style=filled,fillcolor=crimson,shape=rectangle];
+
+		IdentityBasedAliasBreakUpDetection -> CoreDomainFunctionality;
+		IdentityBasedAliasBreakUpDetection [style=filled,fillcolor=crimson,shape=rectangle];
 
 		Domain -> IntegerValuesDomain;
 		Domain -> LongValuesDomain;
 		Domain -> FloatValuesDomain;
 		Domain -> DoubleValuesDomain;
 		Domain -> ReferenceValuesDomain;
-		Domain -> FieldAccessesDomain -> CoreDomain;
-		Domain -> MethodCallsDomain -> CoreDomain;
-		Domain -> MonitorInstructionsDomain -> CoreDomain;
-		Domain -> ReturnInstructionsDomain -> CoreDomain;
-		Domain -> PrimitiveValuesConversionsDomain -> CoreDomain;
+		Domain -> FieldAccessesDomain -> ValuesDomain;
+		Domain -> MethodCallsDomain;
+		MethodCallsDomain -> ValuesDomain [style=dashed,color=blue];
+		Domain -> MonitorInstructionsDomain;
+		MonitorInstructionsDomain -> ValuesDomain [style=dashed,color=blue];
+		Domain -> ReturnInstructionsDomain;
+		ReturnInstructionsDomain -> ValuesDomain [style=dashed,color=blue];
+		Domain -> PrimitiveValuesConversionsDomain;
+		PrimitiveValuesConversionsDomain -> ValuesDomain [style=dashed,color=blue];
 		Domain -> TypedValuesFactory -> { PrimitiveValuesFactory; ReferenceValuesFactory;};
+		Domain -> CoreDomainFunctionality -> ValuesDomain;
 
 		{rank=same;
 			MethodCallsDomain;
@@ -64,11 +72,11 @@ digraph OPALDomains {
 			DoubleValuesFactory;
 		}
 	  {rank=same;
-			CoreDomain;
+			IdentityBasedAliasBreakUpDetection;
 			JoinStabilization;
 		}
 
-		label="Base Domains";
+		label="Base\nDomains";
 		labeljust=l;
 	}
 
@@ -77,9 +85,9 @@ digraph OPALDomains {
 		color=antiquewhite;
 		fontsize=10;
 
-		ConcreteIntegerValues -> CoreDomain [style=dashed,arrowhead=vee];
-		ConcreteLongValues -> CoreDomain [style=dashed,arrowhead=vee];
-		Origin -> CoreDomain [style=dashed,arrowhead=vee];
+		ConcreteIntegerValues -> ValuesDomain [style=dashed,arrowhead=vee];
+		ConcreteLongValues -> ValuesDomain [style=dashed,arrowhead=vee];
+		Origin -> ValuesDomain [style=dashed,arrowhead=vee];
 		ProjectBasedClassHierarchy -> ClassHierarchy;
 		ProjectBasedClassHierarchy -> TheProject [style=dashed,arrowhead=vee];
 		TheProject;
@@ -104,7 +112,7 @@ digraph OPALDomains {
 
 	}
 
-	DefaultDomainValueBinding -> CoreDomain;
+	DefaultDomainValueBinding -> ValuesDomain;
 
 	label = "OPAL Inheritance Relationships of Core Domains";
 	labelloc = "t";

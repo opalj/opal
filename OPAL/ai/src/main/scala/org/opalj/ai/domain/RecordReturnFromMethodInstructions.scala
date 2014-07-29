@@ -51,7 +51,7 @@ import org.opalj.collection.mutable.UShortSet
  * @author Michael Eichberg
  */
 trait RecordReturnFromMethodInstructions extends ReturnInstructionsDomain {
-    domain: CoreDomain ⇒
+    domain: ValuesDomain ⇒
 
     @volatile private[this] var returnFromMethodInstructions: UShortSet = UShortSet.empty
 

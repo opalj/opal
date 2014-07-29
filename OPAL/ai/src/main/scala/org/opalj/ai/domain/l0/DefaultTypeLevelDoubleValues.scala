@@ -41,7 +41,7 @@ package l0
 trait DefaultTypeLevelDoubleValues
         extends DefaultDomainValueBinding
         with TypeLevelDoubleValues {
-    this: IntegerValuesFactory ⇒
+    domain: IntegerValuesFactory ⇒
 
     /**
      * Represents an unknown double value.

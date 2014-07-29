@@ -41,7 +41,7 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * @author Michael Eichberg
  */
 trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
-    this: CoreDomain with VMLevelExceptionsFactory with Configuration ⇒
+    this: VMLevelExceptionsFactory with Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -137,10 +137,11 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
             orElse
         }
 
-    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer =
+    override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer =
         intValues(value1, value2) { (v1, v2) ⇒ Answer(v1 == v2) } { Unknown }
 
     override def intIsSomeValueInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer = {
@@ -155,6 +156,7 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     }
 
     override def intIsSomeValueNotInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer = {
@@ -169,6 +171,7 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     }
 
     override def intIsLessThan(
+        pc: PC,
         smallerValue: DomainValue,
         largerValue: DomainValue): Answer =
         intValues(smallerValue, largerValue) { (v1, v2) ⇒
@@ -176,6 +179,7 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
         } { Unknown }
 
     override def intIsLessThanOrEqualTo(
+        pc: PC,
         smallerOrEqualValue: DomainValue,
         equalOrLargerValue: DomainValue): Answer =
         intValues(smallerOrEqualValue, equalOrLargerValue) { (v1, v2) ⇒

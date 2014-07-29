@@ -34,7 +34,7 @@ package ai
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait MonitorInstructionsDomain { this: CoreDomain ⇒
+trait MonitorInstructionsDomain { this: ValuesDomain ⇒
 
     /**
      * Handles a `monitorenter` instruction.

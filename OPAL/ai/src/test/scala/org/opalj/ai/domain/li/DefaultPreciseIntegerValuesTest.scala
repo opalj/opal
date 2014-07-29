@@ -113,11 +113,11 @@ class DefaultPreciseIntegerValuesTest
         val v0 = IntegerValue(SomePC, 0)
         val v1 = IntegerValue(SomePC, 1)
 
-        intAreEqual(vconst0, v0) should be(Yes)
-        intAreEqual(v0, vconst0) should be(Yes)
+        intAreEqual(-1, vconst0, v0) should be(Yes)
+        intAreEqual(-1, v0, vconst0) should be(Yes)
 
-        intAreEqual(vconst0, v1) should be(No)
-        intAreEqual(v1, vconst0) should be(No)
+        intAreEqual(-1, vconst0, v1) should be(No)
+        intAreEqual(-1, v1, vconst0) should be(No)
 
     }
 

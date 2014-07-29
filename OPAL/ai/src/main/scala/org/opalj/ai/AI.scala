@@ -380,8 +380,8 @@ trait AI[D <: Domain] {
 
         import ObjectType._
 
-        type SingleValueDomainTest = (DomainValue) ⇒ Answer
-        type TwoValuesDomainTest = (DomainValue, DomainValue) ⇒ Answer
+        type SingleValueDomainTest = (PC, DomainValue) ⇒ Answer
+        type TwoValuesDomainTest = (PC, DomainValue, DomainValue) ⇒ Answer
 
         val instructions: Array[Instruction] = code.instructions
         val joinInstructions = this.joinInstructions(code)
@@ -649,7 +649,7 @@ trait AI[D <: Domain] {
                     val nextPC = pcOfNextInstruction
                     val branchTarget = pc + branchInstruction.branchoffset
 
-                    domainTest(operand) match {
+                    domainTest(pc, operand) match {
                         case Yes ⇒ gotoTarget(pc, branchTarget, false, rest, locals)
                         case No  ⇒ gotoTarget(pc, nextPC, false, rest, locals)
                         case Unknown ⇒ {
@@ -694,7 +694,7 @@ trait AI[D <: Domain] {
                     val rest = remainingOperands.tail
                     val branchTarget = pc + branchInstruction.branchoffset
                     val nextPC = code.pcOfNextInstruction(pc)
-                    val testResult = domainTest(value1, value2)
+                    val testResult = domainTest(pc, value1, value2)
                     testResult match {
                         case Yes ⇒ gotoTarget(pc, branchTarget, false, rest, locals)
                         case No  ⇒ gotoTarget(pc, nextPC, false, rest, locals)
@@ -1046,7 +1046,7 @@ trait AI[D <: Domain] {
                                 if (!branchToDefaultRequired && (key - previousKey) > 1) {
                                     val domainValueMayBeOutOfRange: Boolean =
                                         (previousKey until key) exists { v ⇒
-                                            theDomain.intIsSomeValueInRange(index, v, v).
+                                            theDomain.intIsSomeValueInRange(pc, index, v, v).
                                                 isYesOrUnknown
                                         }
                                     if (domainValueMayBeOutOfRange) {
@@ -1055,7 +1055,7 @@ trait AI[D <: Domain] {
                                         previousKey = key
                                     }
                                 }
-                                if (theDomain.intIsSomeValueInRange(index, key, key).isYesOrUnknown) {
+                                if (theDomain.intIsSomeValueInRange(pc, index, key, key).isYesOrUnknown) {
                                     val branchTarget = pc + offset
                                     val (updatedOperands, updatedLocals) =
                                         theDomain.intEstablishValue(
@@ -1073,6 +1073,7 @@ trait AI[D <: Domain] {
                             }
                             if (branchToDefaultRequired ||
                                 theDomain.intIsSomeValueNotInRange(
+                                    pc,
                                     index,
                                     firstKey,
                                     switch.npairs(switch.npairs.size - 1)._1).isYesOrUnknown) {
@@ -1091,7 +1092,7 @@ trait AI[D <: Domain] {
                         var v = low
                         while (v <= high) {
 
-                            if (theDomain.intIsSomeValueInRange(index, v, v).isYesOrUnknown) {
+                            if (theDomain.intIsSomeValueInRange(pc, index, v, v).isYesOrUnknown) {
                                 val branchTarget = pc + tableswitch.jumpOffsets(v - low)
                                 val (updatedOperands, updatedLocals) =
                                     theDomain.intEstablishValue(
@@ -1108,7 +1109,7 @@ trait AI[D <: Domain] {
                             }
                             v = v + 1
                         }
-                        if (theDomain.intIsSomeValueNotInRange(index, low, high).isYesOrUnknown) {
+                        if (theDomain.intIsSomeValueNotInRange(pc, index, low, high).isYesOrUnknown) {
                             gotoTarget(
                                 pc, pc + tableswitch.defaultOffset, false,
                                 remainingOperands, locals)
@@ -1846,7 +1847,7 @@ trait AI[D <: Domain] {
                     case 192 /*checkcast*/ ⇒
                         val objectref = operands.head
                         val supertype = instruction.asInstanceOf[CHECKCAST].referenceType
-                        if (theDomain.refIsNull(objectref).isYes)
+                        if (theDomain.refIsNull(pc, objectref).isYes)
                             // if objectref is null => UNCHANGED (see spec. for details)
                             fallThrough()
                         else {
@@ -1883,7 +1884,7 @@ trait AI[D <: Domain] {
                         val referenceType = as[INSTANCEOF](instruction).referenceType
 
                         val result =
-                            if (theDomain.refIsNull(objectref).isYes)
+                            if (theDomain.refIsNull(pc, objectref).isYes)
                                 theDomain.BooleanValue(pc, false)
                             else
                                 theDomain.isValueSubtypeOf(objectref, referenceType) match {

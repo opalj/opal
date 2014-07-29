@@ -35,7 +35,7 @@ package ai
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait DoubleValuesFactory { this: CoreDomain ⇒
+trait DoubleValuesFactory extends ValuesDomain { domain ⇒
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or

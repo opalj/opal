@@ -48,7 +48,7 @@ import org.opalj.util.Yes
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
-    domain: CoreDomain with ReferenceValuesDomain with TypedValuesFactory with Configuration ⇒
+    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration ⇒
 
     /*override*/ def getfield(
         pc: PC,
@@ -56,7 +56,7 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         declaringClass: ObjectType,
         name: String,
         fieldType: FieldType): Computation[DomainValue, ExceptionValue] =
-        refIsNull(objectref) match {
+        refIsNull(pc, objectref) match {
             case Yes ⇒ throws(NullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnFieldAccess ⇒
                 ComputedValueOrException(TypedValue(pc, fieldType), NullPointerException(pc))
@@ -78,7 +78,7 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         declaringClass: ObjectType,
         name: String,
         fieldType: FieldType): Computation[Nothing, ExceptionValue] =
-        refIsNull(objectref) match {
+        refIsNull(pc, objectref) match {
             case Yes ⇒
                 throws(NullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnFieldAccess ⇒

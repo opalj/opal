@@ -42,7 +42,7 @@ package l1
  * @author Riadh Chtara
  */
 trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
-    domain: CoreDomain with IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
+    domain: IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
 
     /**
      * Represents a specific, but unknown long value.

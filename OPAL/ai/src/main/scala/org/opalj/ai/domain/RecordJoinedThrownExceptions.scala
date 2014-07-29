@@ -40,8 +40,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait RecordJoinedThrownExceptions extends RecordThrownExceptions {
-    domain: CoreDomain ⇒
+trait RecordJoinedThrownExceptions extends RecordThrownExceptions { domain: ValuesDomain ⇒
 
     type ThrownException = ExceptionValue
 

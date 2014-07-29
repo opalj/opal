@@ -67,7 +67,7 @@ import org.opalj.util.Yes
  * @author Michael Eichberg
  */
 trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
-    domain: CoreDomain with IntegerValuesDomain with Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with Configuration with ClassHierarchy ⇒
 
     /**
      * Merges those exceptions that have the same upper type bound. This ensures
@@ -392,9 +392,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             // is checked for by the domain-level method.
 
             val isIndexValid =
-                length.map((l: Int) ⇒ intIsSomeValueInRange(index, 0, l - 1)).
+                length.map((l: Int) ⇒ intIsSomeValueInRange(pc, index, 0, l - 1)).
                     getOrElse(
-                        if (intIsLessThan0(index).isYes)
+                        if (intIsLessThan0(pc, index).isYes)
                             No
                         else
                             Unknown // the index may be too large...
@@ -431,9 +431,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             // represented by an instance of the respective class
 
             val isIndexValid =
-                length.map((l: Int) ⇒ intIsSomeValueInRange(index, 0, l - 1)).
+                length.map((l: Int) ⇒ intIsSomeValueInRange(pc, index, 0, l - 1)).
                     getOrElse(
-                        if (intIsLessThan0(index).isYes)
+                        if (intIsLessThan0(pc, index).isYes)
                             No
                         else
                             Unknown
@@ -515,7 +515,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
      * @param value1 A value of type `ReferenceValue`.
      * @param value2 A value of type `ReferenceValue`.
      */
-    override def refAreEqual(value1: DomainValue, value2: DomainValue): Answer = {
+    override def refAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
         val v1 = asReferenceValue(value1)
         val v2 = asReferenceValue(value2)
         val value1IsNull = v1.isNull
@@ -548,7 +548,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
      *
      * @param value A value of type `ReferenceValue`.
      */
-    final override def refIsNull(value: DomainValue): Answer =
+    final override def refIsNull(pc: PC, value: DomainValue): Answer =
         asReferenceValue(value).isNull
 
     /**
@@ -578,7 +578,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         pc: PC,
         count: DomainValue,
         componentType: FieldType): Computation[DomainValue, ExceptionValue] = {
-        val validCount = intIsSomeValueInRange(count, 0, Int.MaxValue)
+        val validCount = intIsSomeValueInRange(pc, count, 0, Int.MaxValue)
         if (validCount.isNo)
             return throws(NegativeArraySizeException(pc))
 
@@ -602,7 +602,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         arrayType: ArrayType): Computation[DomainArrayValue, ExceptionValue] = {
         var validCounts: Answer = Yes
         counts foreach { (count) ⇒
-            val validCount = intIsSomeValueInRange(count, 0, Int.MaxValue)
+            val validCount = intIsSomeValueInRange(pc, count, 0, Int.MaxValue)
             if (validCount.isNo)
                 return throws(NegativeArraySizeException(pc))
             else if (validCount.isUnknown)
@@ -636,7 +636,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         pc: PC,
         index: DomainValue,
         arrayref: DomainValue): ArrayLoadResult = {
-        if (refIsNull(arrayref).isYes)
+        if (refIsNull(pc, arrayref).isYes)
             justThrows(NullPointerException(pc))
         else
             // if the bytecode is valid, the type cast (asArrayValue) is safe
@@ -656,7 +656,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         value: DomainValue,
         index: DomainValue,
         arrayref: DomainValue): ArrayStoreResult = {
-        if (refIsNull(arrayref).isYes)
+        if (refIsNull(pc, arrayref).isYes)
             justThrows(NullPointerException(pc))
         else
             // if the bytecode is valid, the type cast (asArrayValue) is safe
@@ -673,7 +673,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     override def arraylength(
         pc: PC,
         arrayref: DomainValue): Computation[DomainValue, ExceptionValue] = {
-        if (refIsNull(arrayref).isYes)
+        if (refIsNull(pc, arrayref).isYes)
             throws(NullPointerException(pc))
         else
             asArrayAbstraction(arrayref).length(pc)

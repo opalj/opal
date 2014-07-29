@@ -35,7 +35,7 @@ package l0
  * @author Michael Eichberg
  */
 trait DefaultPrimitiveValuesConversions extends PrimitiveValuesConversionsDomain {
-    this: CoreDomain with PrimitiveValuesFactory ⇒
+    this: ValuesDomain with PrimitiveValuesFactory ⇒
 
     override def d2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
     override def d2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)

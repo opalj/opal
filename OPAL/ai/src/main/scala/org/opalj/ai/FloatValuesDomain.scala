@@ -30,37 +30,13 @@ package org.opalj
 package ai
 
 /**
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
- */
-trait FloatValuesFactory { this: CoreDomain ⇒
-
-    /**
-     * Factory method to create a `DomainValue` that was created (explicitly or
-     * implicitly) by the instruction with the specified program counter.
-     *
-     * The domain may ignore the information about the origin (`vo`).
-     */
-    def FloatValue(vo: ValueOrigin): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that represents the given float value
-     * and that was created (explicitly or implicitly) by the instruction with the
-     * specified program counter.
-     *
-     * The domain may ignore the information about the value and the origin (`vo`).
-     */
-    def FloatValue(vo: ValueOrigin, value: Float): DomainValue
-}
-
-/**
  * Defines the public interface between the abstract interpreter and the domain
  * that implements the functionality related to the handling of float values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait FloatValuesDomain extends FloatValuesFactory { this: CoreDomain ⇒
+trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
 
     // -----------------------------------------------------------------------------------
     //

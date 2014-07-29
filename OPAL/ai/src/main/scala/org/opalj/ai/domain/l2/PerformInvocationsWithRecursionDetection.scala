@@ -40,7 +40,7 @@ import org.opalj.br.ClassFile
  * @author Michael Eichberg
  */
 trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
-    callingDomain: CoreDomain with ValuesFactory with ReferenceValuesDomain with MethodCallsDomain with domain.ClassHierarchy with Configuration with TheProject[_] with TheCode ⇒
+    callingDomain: ValuesFactory with ReferenceValuesDomain with MethodCallsDomain with domain.ClassHierarchy with Configuration with TheProject[_] with TheCode ⇒
 
     val calledMethodsStore: CalledMethodsStore
 

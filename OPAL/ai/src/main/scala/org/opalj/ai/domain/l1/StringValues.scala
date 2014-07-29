@@ -98,10 +98,10 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
         def unapply(value: StringValue): Option[String] = Some(value.value)
     }
 
-    abstract override def toJavaObject(value: DomainValue): Option[Object] = {
+    abstract override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
         value match {
             case StringValue(value) ⇒ Some(value)
-            case _                  ⇒ super.toJavaObject(value)
+            case _                  ⇒ super.toJavaObject(pc, value)
         }
     }
 

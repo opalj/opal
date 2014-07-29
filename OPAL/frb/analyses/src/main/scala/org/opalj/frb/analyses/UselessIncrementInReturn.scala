@@ -223,15 +223,19 @@ class IincTracingDomain
     override def DoubleValue(pc: PC): DomainValue = MakeDoubleResult(pc)
     override def DoubleValue(pc: PC, value: Double): DomainValue = MakeDoubleResult(pc)
 
-    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer = Unknown
-    override def intIsSomeValueInRange(value: DomainValue, lowerBound: Int,
+    override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = Unknown
+    override def intIsSomeValueInRange(pc: PC, value: DomainValue, lowerBound: Int,
                                        upperBound: Int): Answer = Unknown
-    override def intIsSomeValueNotInRange(value: DomainValue, lowerBound: Int,
+    override def intIsSomeValueNotInRange(pc: PC, value: DomainValue, lowerBound: Int,
                                           upperBound: Int): Answer = Unknown
-    override def intIsLessThan(smallerValue: DomainValue,
-                               largerValue: DomainValue): Answer = Unknown
-    override def intIsLessThanOrEqualTo(smallerOrEqualValue: DomainValue,
-                                        equalOrLargerValue: DomainValue): Answer = Unknown
+    override def intIsLessThan(
+        pc: PC,
+        smallerValue: DomainValue,
+        largerValue: DomainValue): Answer = Unknown
+    override def intIsLessThanOrEqualTo(
+        pc: PC,
+        smallerOrEqualValue: DomainValue,
+        equalOrLargerValue: DomainValue): Answer = Unknown
 
     override def ineg(pc: PC, value: DomainValue) = MakeIntegerResult(pc, value)
     override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =

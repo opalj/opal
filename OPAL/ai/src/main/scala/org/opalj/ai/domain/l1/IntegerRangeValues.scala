@@ -36,8 +36,8 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
- * This domain enables the tracking of an integer value's range. 
- * 
+ * This domain enables the tracking of an integer value's range.
+ *
  * The cardinality of the range can be configured to facilitate different needs with regard to the
  * desired precision ([[maxSizeOfIntegerRanges]]).
  * Often, a very small cardinality (e.g., between 2 and 8) may be
@@ -221,7 +221,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         }
     }
 
-    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer = {
+    override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
         if (value1 eq value2)
             // this handles the case that the two values (even if the concrete value
             // is not known; i.e., AnIntegerValue) are actually exactly the same value
@@ -245,6 +245,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
     }
 
     override def intIsSomeValueInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer = {
@@ -262,6 +263,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
     }
 
     override def intIsSomeValueNotInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer = {
@@ -278,7 +280,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
             }
     }
 
-    override def intIsLessThan(left: DomainValue, right: DomainValue): Answer = {
+    override def intIsLessThan(pc: PC, left: DomainValue, right: DomainValue): Answer = {
         if (left eq right)
             // this handles the case that the two values (even if the concrete value
             // is not known; i.e., AnIntegerValue) are actually exactly the same value
@@ -310,6 +312,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
     }
 
     override def intIsLessThanOrEqualTo(
+        pc: PC,
         left: DomainValue,
         right: DomainValue): Answer = {
 

@@ -39,8 +39,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait RecordLastReturnedValues extends RecordReturnedValues {
-    domain: CoreDomain ⇒
+trait RecordLastReturnedValues extends RecordReturnedValues { domain: ValuesDomain ⇒
 
     type ReturnedValue = DomainValue
 

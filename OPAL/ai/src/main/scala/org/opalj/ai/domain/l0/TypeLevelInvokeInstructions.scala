@@ -48,7 +48,7 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
  * @author Michael Eichberg
  */
 trait TypeLevelInvokeInstructions extends MethodCallsDomain {
-    domain: CoreDomain with ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode ⇒
+    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode ⇒
 
     protected[this] def getExceptions(pc: PC): Set[ExceptionValue] = {
         var exceptionTypes: Set[ExceptionValue] = Set.empty
@@ -68,7 +68,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsDomain {
         pc: PC,
         methodDescriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
-        val exceptions = refIsNull(operands.last) match {
+        val exceptions = refIsNull(pc, operands.last) match {
             case Yes ⇒
                 return justThrows(NullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnMethodCall ⇒

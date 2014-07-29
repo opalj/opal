@@ -42,7 +42,7 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeFloat }
  * @author Michael Eichberg
  */
 trait TypeLevelFloatValues extends FloatValuesDomain {
-    this: CoreDomain with Configuration with IntegerValuesFactory ⇒
+    this: ValuesDomain with Configuration with IntegerValuesFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //

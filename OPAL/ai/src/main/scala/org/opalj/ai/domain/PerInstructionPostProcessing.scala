@@ -45,7 +45,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait PerInstructionPostProcessing extends CoreDomain {
+trait PerInstructionPostProcessing extends CoreDomainFunctionality {
 
     type DomainValueUpdater = (DomainValue) ⇒ DomainValue
 

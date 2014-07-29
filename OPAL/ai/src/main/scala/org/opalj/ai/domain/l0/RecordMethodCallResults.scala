@@ -57,7 +57,7 @@ trait RecordMethodCallResults
         extends MethodCallResults
         with RecordLastReturnedValues
         with RecordAllThrownExceptions {
-    this: CoreDomain with ClassHierarchy  ⇒
+    this: ValuesDomain with ClassHierarchy  ⇒
 
     private[this] var hasReturnedNormally: Boolean = false
 

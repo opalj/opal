@@ -93,7 +93,8 @@ import org.opalj.br.ConstantString
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait Domain extends CoreDomain
+trait Domain
+        extends CoreDomainFunctionality
         with IntegerValuesDomain
         with LongValuesDomain
         with FloatValuesDomain

@@ -36,7 +36,7 @@ import org.opalj.br.FieldType
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait FieldAccessesDomain { this: CoreDomain ⇒
+trait FieldAccessesDomain { this: ValuesDomain ⇒
 
     /**
      * Returns the field's value and/or a new `NullPointerException` if the given

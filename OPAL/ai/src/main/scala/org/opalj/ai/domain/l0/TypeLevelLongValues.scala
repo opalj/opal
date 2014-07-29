@@ -46,7 +46,7 @@ import org.opalj.br.ComputationalTypeLong
  * @author Michael Eichberg
  */
 trait TypeLevelLongValues extends LongValuesDomain {
-    this: CoreDomain with Configuration with IntegerValuesFactory with VMLevelExceptionsFactory ⇒
+    this: IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //

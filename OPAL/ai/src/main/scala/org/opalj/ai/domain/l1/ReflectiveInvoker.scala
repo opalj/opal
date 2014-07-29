@@ -74,7 +74,7 @@ trait ReflectiveInvoker extends JavaObjectConversion { this: Domain ⇒
                 operands foreach { op ⇒
                     operandCount += 1
                     val jObject =
-                        toJavaObject(op) match {
+                        toJavaObject(pc, op) match {
                             case Some(jObject) ⇒ jObject
                             case _             ⇒ return None /* <------- EARLY RETURN FROM METHOD */
                         }

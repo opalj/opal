@@ -655,7 +655,7 @@ class MethodsPlainTest
         /*val result =*/ BaseAI(classFile, method, domain)
 
         domain.isValueSubtypeOf(domain.returnedValue.get, ObjectType("ai/MethodsPlain")) should be(Yes)
-        domain.refIsNull(domain.returnedValue.get) should not be (No)
+        domain.refIsNull(-1, domain.returnedValue.get) should not be (No)
     }
 
     //
@@ -666,7 +666,7 @@ class MethodsPlainTest
         /*val result =*/ BaseAI(classFile, method, domain)
 
         assert(
-            domain.refIsNull(domain.returnedValue.get).isYes,
+            domain.refIsNull(-1, domain.returnedValue.get).isYes,
             "unexpected nullness property of the returned value: "+domain.returnedValue.get)
     }
     it should "be able to analyze a push of byte value" in {

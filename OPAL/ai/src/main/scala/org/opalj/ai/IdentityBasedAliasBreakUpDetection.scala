@@ -35,7 +35,7 @@ package ai
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait IdentityBasedAliasBreakUpDetection extends CoreDomain {
+trait IdentityBasedAliasBreakUpDetection extends CoreDomainFunctionality {
 
     import java.util.{ IdentityHashMap ⇒ IDMap }
 

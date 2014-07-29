@@ -28,6 +28,8 @@
  */
 package ai.domain;
 
+import scala.Int;
+
 /**
  * A class that does perform a large number of operations related to int values.
  * 
@@ -502,5 +504,33 @@ public class IntegerValuesFrenzy {
         }
 
         return hashlast; // 0 if 0 right from the start; non-zero in all other cases
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+    // To catch the bugs in the following a "relational domain" (that puts two
+    // difference values in relation) is needed.
+    //
+
+    static void multipleConstraints1(int a, int b) {
+        if (a < b) // we know nothing about a and b...
+            doIt(-1);
+        else if (a == b)
+            doIt(0);
+        else if (b > a) // <== "BUG"
+            doIt(1);
+    }
+
+    static int multipleConstraints2(int a, int b) {
+        if (a < b)
+            return (-1);
+        else if (a == b)
+            return (0);
+
+        doIt(Int.MaxValue());
+
+        if (b > a) // <== "BUG"
+            return (1);
+        else
+            throw new Error();
     }
 }

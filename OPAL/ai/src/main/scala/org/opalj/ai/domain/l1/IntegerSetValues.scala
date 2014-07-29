@@ -140,7 +140,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
     }
 
-    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer = {
+    override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
         if (value1 eq value2)
             // this handles the case that the two values (even if the concrete value
             // is not known; i.e., AnIntegerValue) are actually exactly the same value
@@ -162,6 +162,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
     }
 
     override def intIsSomeValueInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer = {
@@ -176,6 +177,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
     }
 
     override def intIsSomeValueNotInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer = {
@@ -189,7 +191,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
     }
 
-    override def intIsLessThan(left: DomainValue, right: DomainValue): Answer = {
+    override def intIsLessThan(pc: PC, left: DomainValue, right: DomainValue): Answer = {
         if (left eq right)
             // this handles the case that the two values (even if the concrete value
             // is not known; i.e., AnIntegerValue) are actually exactly the same value
@@ -219,7 +221,10 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
         }
     }
 
-    override def intIsLessThanOrEqualTo(left: DomainValue, right: DomainValue): Answer = {
+    override def intIsLessThanOrEqualTo(
+        pc: PC,
+        left: DomainValue,
+        right: DomainValue): Answer = {
         if (left eq right)
             // this handles the case that the two values (even if the concrete value
             // is not known; i.e., AnIntegerValue) are actually exactly the same value

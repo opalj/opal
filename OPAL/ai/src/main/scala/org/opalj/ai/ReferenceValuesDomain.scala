@@ -37,7 +37,7 @@ import org.opalj.br.{ ReferenceType, ArrayType, FieldType }
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait ReferenceValuesDomain extends ReferenceValuesFactory { this: CoreDomain â‡’
+trait ReferenceValuesDomain extends ReferenceValuesFactory { domain â‡’
 
     // -----------------------------------------------------------------------------------
     //
@@ -73,9 +73,9 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { this: CoreDomain â‡
      *
      * @param value A value of computational type reference.
      */
-    /*ABSTRACT*/ def refIsNull(value: DomainValue): Answer
+    /*ABSTRACT*/ def refIsNull(pc: PC, value: DomainValue): Answer
 
-    def refIsNonNull(value: DomainValue): Answer = refIsNull(value).negate
+    def refIsNonNull(pc: PC, value: DomainValue): Answer = refIsNull(pc, value).negate
 
     /**
      * Compares the given values for reference equality. Returns `Yes` if both values
@@ -86,10 +86,10 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { this: CoreDomain â‡
      * @param value1 A value of computational type reference.
      * @param value2 A value of computational type reference.
      */
-    /*ABSTRACT*/ def refAreEqual(value1: DomainValue, value2: DomainValue): Answer
+    /*ABSTRACT*/ def refAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer
 
-    def refAreNotEqual(value1: DomainValue, value2: DomainValue): Answer =
-        refAreEqual(value1, value2).negate
+    def refAreNotEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer =
+        refAreEqual(pc, value1, value2).negate
 
     // -----------------------------------------------------------------------------------
     //

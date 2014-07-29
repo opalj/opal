@@ -36,7 +36,7 @@ package domain
  * @author Michael Eichberg
  */
 trait RecordReturnedValuesInfrastructure extends ReturnInstructionsDomain {
-    domain: CoreDomain ⇒
+    domain: ValuesDomain ⇒
 
     /**
      * This type determines in which way the returned values are recorded.

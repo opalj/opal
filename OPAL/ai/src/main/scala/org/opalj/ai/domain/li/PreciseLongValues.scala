@@ -44,7 +44,7 @@ import org.opalj.br._
  * @author Michael Eichberg
  */
 trait PreciseLongValues extends LongValuesDomain with ConcreteLongValues {
-    domain: CoreDomain with IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
+    domain: IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
