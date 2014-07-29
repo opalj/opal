@@ -43,7 +43,7 @@ import br._
  *
  * @author Michael Eichberg
  */
-trait AIWithPropertyTracing[D <: PropertyTracing] extends AI[D] {
+trait AIWithPropertyTracing[D <: Domain with PropertyTracing] extends AI[D] {
 
     /**
      * Performs an abstract interpretation of the given code snippet.

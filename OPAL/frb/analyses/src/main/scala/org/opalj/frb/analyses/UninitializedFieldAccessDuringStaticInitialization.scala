@@ -395,7 +395,7 @@ private class FieldStatusTracingDomain[Source](
      * The custom property used to hold the static field status at each instruction.
      */
     class FieldStatusProperty(val status: FieldStatus) extends Property {
-        override def merge(other: FieldStatusProperty): Update[FieldStatusProperty] = {
+        override def join(other: FieldStatusProperty): Update[FieldStatusProperty] = {
             if (status == other.status) {
                 NoUpdate
             } else {

@@ -422,86 +422,90 @@ trait AI[D <: Domain] {
             // - the main loop that processes the worklist
 
             val currentOperands = operandsArray(targetPC)
-            if (currentOperands == null) {
-                // we analyze the instruction for the first time 
-                operandsArray(targetPC) = operands
-                localsArray(targetPC) = locals
-                worklist = targetPC :: worklist
-                if (tracer.isDefined)
-                    tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
-            } else if (!joinInstructions.contains(targetPC)) {
-                // the instructions is not an instruction where multiple control-flow 
-                // paths join; however, we may have a dangling computation...
-                operandsArray(targetPC) = operands
-                localsArray(targetPC) = locals
-                if (!worklist.contains(targetPC)) // FIXME Contains in the current context (subroutine)
+            var wasJoinPerformed =
+                if (currentOperands == null) {
+                    // we analyze the instruction for the first time 
+                    operandsArray(targetPC) = operands
+                    localsArray(targetPC) = locals
                     worklist = targetPC :: worklist
-                if (tracer.isDefined)
-                    tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
-            } else {
-                // we already evaluated the target instruction ... 
-                val currentLocals = localsArray(targetPC)
-                val mergeResult =
-                    theDomain.join(
-                        targetPC, currentOperands, currentLocals, operands, locals
+                    if (tracer.isDefined)
+                        tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
+                    false
+                } else if (!joinInstructions.contains(targetPC)) {
+                    // the instructions is not an instruction where multiple control-flow 
+                    // paths join; however, we may have a dangling computation...
+                    operandsArray(targetPC) = operands
+                    localsArray(targetPC) = locals
+                    if (!worklist.contains(targetPC)) // FIXME Contains in the current context (subroutine)
+                        worklist = targetPC :: worklist
+                    if (tracer.isDefined)
+                        tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
+                    false
+                } else {
+                    // we already evaluated the target instruction ... 
+                    val currentLocals = localsArray(targetPC)
+                    val mergeResult =
+                        theDomain.join(
+                            targetPC, currentOperands, currentLocals, operands, locals
+                        )
+                    if (tracer.isDefined) tracer.get.join(theDomain)(
+                        targetPC,
+                        currentOperands, currentLocals, operands, locals,
+                        mergeResult
                     )
-                if (tracer.isDefined) tracer.get.join(theDomain)(
-                    targetPC,
-                    currentOperands, currentLocals, operands, locals,
-                    mergeResult
-                )
-                mergeResult match {
-                    case NoUpdate ⇒ /* nothing to do*/
-                        if (tracer.isDefined) {
-                            tracer.get.noFlow(theDomain)(sourcePC, targetPC)
-                        }
-
-                    case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
-                        operandsArray(targetPC) = updatedOperands
-                        localsArray(targetPC) = updatedLocals
-                        // we want depth-first evaluation (, but we do not want to 
-                        // reschedule instructions that do not belong to the current
-                        // evaluation context/(sub-)routine.)
-                        val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
-                        if (tracer.isDefined) {
-                            if (filteredList eq worklist)
-                                // the instruction was not yet scheduled for another
-                                // evaluation
-                                tracer.get.flow(theDomain)(
-                                    sourcePC, targetPC, isExceptionalControlFlow)
-                            else {
-                                // the instruction was just moved to the beginning
-                                tracer.get.rescheduled(theDomain)(
-                                    sourcePC, targetPC, isExceptionalControlFlow)
-                            }
-                        }
-                        worklist = targetPC :: filteredList
-
-                    case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
-                        operandsArray(targetPC) = updatedOperands
-                        localsArray(targetPC) = updatedLocals
-                        // we want depth-first evaluation (, but we do not want to 
-                        // reschedule instructions that do not belong to the current
-                        // evaluation context/(sub-)routine.)
-                        val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
-                        if (filteredList ne worklist) {
-                            // the instruction was scheduled, but not as the next one
-                            // let's move the instruction to the beginning
-                            worklist = targetPC :: filteredList
-
-                            if (tracer.isDefined)
-                                tracer.get.rescheduled(theDomain)(
-                                    sourcePC, targetPC, isExceptionalControlFlow)
-                        } else {
+                    mergeResult match {
+                        case NoUpdate ⇒ /* nothing to do*/
                             if (tracer.isDefined) {
                                 tracer.get.noFlow(theDomain)(sourcePC, targetPC)
                             }
-                        }
+
+                        case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
+                            operandsArray(targetPC) = updatedOperands
+                            localsArray(targetPC) = updatedLocals
+                            // we want depth-first evaluation (, but we do not want to 
+                            // reschedule instructions that do not belong to the current
+                            // evaluation context/(sub-)routine.)
+                            val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
+                            if (tracer.isDefined) {
+                                if (filteredList eq worklist)
+                                    // the instruction was not yet scheduled for another
+                                    // evaluation
+                                    tracer.get.flow(theDomain)(
+                                        sourcePC, targetPC, isExceptionalControlFlow)
+                                else {
+                                    // the instruction was just moved to the beginning
+                                    tracer.get.rescheduled(theDomain)(
+                                        sourcePC, targetPC, isExceptionalControlFlow)
+                                }
+                            }
+                            worklist = targetPC :: filteredList
+
+                        case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
+                            operandsArray(targetPC) = updatedOperands
+                            localsArray(targetPC) = updatedLocals
+                            // we want depth-first evaluation (, but we do not want to 
+                            // reschedule instructions that do not belong to the current
+                            // evaluation context/(sub-)routine.)
+                            val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
+                            if (filteredList ne worklist) {
+                                // the instruction was scheduled, but not as the next one
+                                // let's move the instruction to the beginning
+                                worklist = targetPC :: filteredList
+
+                                if (tracer.isDefined)
+                                    tracer.get.rescheduled(theDomain)(
+                                        sourcePC, targetPC, isExceptionalControlFlow)
+                            } else {
+                                if (tracer.isDefined) {
+                                    tracer.get.noFlow(theDomain)(sourcePC, targetPC)
+                                }
+                            }
+                    }
+                    true
                 }
-            }
 
             worklist = theDomain.flow(
-                sourcePC, targetPC, isExceptionalControlFlow,
+                sourcePC, targetPC, isExceptionalControlFlow, wasJoinPerformed,
                 worklist,
                 operandsArray, localsArray,
                 tracer)

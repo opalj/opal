@@ -40,7 +40,7 @@ package tracing
  *
  * @author Michael Eichberg
  */
-object BaseTracingAI extends AIWithPropertyTracing[PropertyTracing] {
+object BaseTracingAI extends AIWithPropertyTracing[Domain with PropertyTracing] {
 
     override def isInterrupted = Thread.interrupted()
 

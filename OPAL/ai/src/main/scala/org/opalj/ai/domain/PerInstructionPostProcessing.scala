@@ -57,6 +57,7 @@ trait PerInstructionPostProcessing extends CoreDomain {
         currentPC: PC,
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
+        wasJoinPerformed: Boolean,
         worklist: List[PC],
         operandsArray: OperandsArray,
         localsArray: LocalsArray,
@@ -95,7 +96,7 @@ trait PerInstructionPostProcessing extends CoreDomain {
         }
 
         super.flow(
-            currentPC, successorPC, isExceptionalControlFlow, worklist,
+            currentPC, successorPC, isExceptionalControlFlow, wasJoinPerformed, worklist,
             operandsArray, localsArray, tracer)
     }
 

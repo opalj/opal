@@ -765,6 +765,10 @@ trait CoreDomain {
      *      `false` otherwise. Hence, if `true` the instruction with `successorPC` is the
      *      first instruction of the handler.
      *
+     * @param wasJoinPerformed `True` if a join was performed. I.e., the successor 
+     *      instruction is a join instruction (`Code.joinInstructions`) that was already
+     *      previously evaluated.
+     *
      * @param operandsArray The array that associates '''every instruction''' with its
      *      operand stack that is in effect.  Note, that only those elements of the
      *      array contain values that are related to instructions that were
@@ -802,7 +806,7 @@ trait CoreDomain {
      * @note The domain is allowed to modify the `worklist`, `operandsArray` and
      *      `localsArray`. However, the AI will not perform any checks. In case of
      *      updates of the `operandsArray` or `localsArray` it is necessary to first
-     *      create a shallow copy before  updating it.
+     *      create a shallow copy before updating it.
      *      If this is not done, it may happen that the locals associated
      *      with other instructions are also updated.
      */
@@ -810,6 +814,7 @@ trait CoreDomain {
         currentPC: PC,
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
+        wasJoinPerformed: Boolean,
         worklist: List[PC],
         operandsArray: OperandsArray,
         localsArray: LocalsArray,

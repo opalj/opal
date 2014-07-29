@@ -46,10 +46,10 @@ import br._
  *
  * @author Michael Eichberg
  */
-trait PropertyTracing extends Domain { domain ⇒
+trait PropertyTracing extends CoreDomain { domain: Domain ⇒
 
     trait Property {
-        def merge(otherProperty: DomainProperty): Update[DomainProperty]
+        def join(otherProperty: DomainProperty): Update[DomainProperty]
     }
 
     type DomainProperty <: Property
@@ -98,6 +98,7 @@ trait PropertyTracing extends Domain { domain ⇒
         currentPC: PC,
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
+        wasJoinPerformed: Boolean,
         worklist: List[PC],
         operandsArray: OperandsArray,
         localsArray: LocalsArray,
@@ -108,7 +109,7 @@ trait PropertyTracing extends Domain { domain ⇒
                 propertiesArray(successorPC) = propertiesArray(currentPC)
                 true
             } else {
-                propertiesArray(successorPC) merge propertiesArray(currentPC) match {
+                propertiesArray(successorPC) join propertiesArray(currentPC) match {
                     case NoUpdate ⇒ false
                     case StructuralUpdate(property) ⇒
                         propertiesArray(successorPC) = property
