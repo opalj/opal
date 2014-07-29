@@ -52,7 +52,7 @@ trait ValuesDomain {
 
     /**
      * Abstracts over a concrete operand stack value or a value stored in one of the local
-     * variables.
+     * variables/registers.
      *
      * ==Use Of Value/Dependencies On Value==
      * '''In general, subclasses and users of a `Domain` should not have/declare
@@ -116,7 +116,7 @@ trait ValuesDomain {
         /**
          * The computational type of the value.
          *
-         * The precise computational type is needed by OPAL to calculate the effect
+         * The precise computational type is needed by the framework to calculate the effect
          * of generic stack manipulation instructions (e.g., `dup_...` and swap)
          * on the stack as well as to calculate the jump targets of `RET`
          * instructions and to determine which values are actually copied by, e.g., the
@@ -126,9 +126,9 @@ trait ValuesDomain {
          */
         def computationalType: ComputationalType
 
-        // only used by the abstract interpretation framework 
-        // and implemented only by ReturnAddressValue
-        @throws[DomainException]("This method is not supported.")
+        // This method is only used by the abstract interpretation framework 
+        // and is only implemented by ReturnAddressValue.
+        @throws[DomainException]("This value is not a return address value.")
         private[ai] def asReturnAddressValue: PC =
             throw new DomainException("this value ("+this+") is not a return address")
 
@@ -140,7 +140,8 @@ trait ValuesDomain {
          * Join is called whenever an instruction is evaluated more than once and, hence,
          * the values found on the paths need to be joined. This method is, however,
          * only called if the two values are two different objects
-         * (`(this ne value) == true`), but both values have the same computational type.
+         * (`(this ne value) == true`), but both values have the
+         * ''same computational type''.
          *
          * ==Example==
          * For example, joining a `DomainValue` that represents the integer value 0
@@ -173,7 +174,10 @@ trait ValuesDomain {
          *
          * Conceptually, the join of an object with itself has to return the object
          * itself. Note, that this is a conceptual requirement as such a call
-         * (`this.doJoin(..,this)`) will not be done by the abstract interpreter.
+         * (`this.doJoin(..,this)`) will not be performed by the abstract interpretation
+         * framework.
+         * However, if the join object is also used by the implementation of the domain
+         * itself, it may be necessary to explicitly handle self-joins.
          *
          * ==Performance==
          * In general, the domain should try to minimize the number of objects that it
@@ -187,7 +191,7 @@ trait ValuesDomain {
          *      '''The given `value` and this value are guaranteed to have
          *      the same computational type, but are not reference equal.'''
          */
-        protected def doJoin(pc: PC, value: DomainValue): Update[DomainValue]
+        protected[this] def doJoin(pc: PC, value: DomainValue): Update[DomainValue]
 
         /**
          * Checks that the given value and this value are compatible and – if so –
@@ -201,7 +205,8 @@ trait ValuesDomain {
          * @param value The "new" domain value with which this domain value should be
          *      joined. The caller has to ensure that the given value and `this` value
          *      are guaranteed to be two different objects.
-         * @return [[MetaInformationUpdateIllegalValue]]
+         * @return [[MetaInformationUpdateIllegalValue]] or the result of calling
+         *      [[doJoin]].
          */
         def join(pc: PC, that: DomainValue): Update[DomainValue] = {
             if ((that eq TheIllegalValue) ||
@@ -282,9 +287,9 @@ trait ValuesDomain {
          * domain-adaptation. I.e., to make it possible to change the abstract domain at
          * runtime if the analysis time takes too long using a (more) precise domain.
          *
-         * @note The OPAL core does not use/call this method. This method
-         *      is solely predefined to facilitate the development of project-wide
-         *      analyses.
+         * @note The abstract interpretation framework does not use/call this method. 
+         *      This method is solely predefined to facilitate the development of 
+         *      project-wide analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
         def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =

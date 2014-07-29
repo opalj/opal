@@ -31,7 +31,8 @@ package ai
 
 /**
  * Defines factory methods for those exceptions that are (also) created by the JVM
- * when the execution of a bytecode instruction fails.
+ * when the execution of a specific bytecode instruction fails
+ * (e.g., `idiv`, `checkcast`,...).
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */

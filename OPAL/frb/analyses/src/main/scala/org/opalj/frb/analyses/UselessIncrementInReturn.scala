@@ -224,10 +224,14 @@ class IincTracingDomain
     override def DoubleValue(pc: PC, value: Double): DomainValue = MakeDoubleResult(pc)
 
     override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = Unknown
-    override def intIsSomeValueInRange(pc: PC, value: DomainValue, lowerBound: Int,
-                                       upperBound: Int): Answer = Unknown
-    override def intIsSomeValueNotInRange(pc: PC, value: DomainValue, lowerBound: Int,
-                                          upperBound: Int): Answer = Unknown
+    override def intIsSomeValueInRange(
+        pc: PC,
+        value: DomainValue,
+        lowerBound: Int, upperBound: Int): Answer = Unknown
+    override def intIsSomeValueNotInRange(
+        pc: PC,
+        value: DomainValue,
+        lowerBound: Int, upperBound: Int): Answer = Unknown
     override def intIsLessThan(
         pc: PC,
         smallerValue: DomainValue,
