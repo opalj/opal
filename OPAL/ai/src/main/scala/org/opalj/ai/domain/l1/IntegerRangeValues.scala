@@ -36,8 +36,9 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
- * This domain enables the tracking of an integer value's range. The cardinality of
- * the range can be configured to facilitate different needs with regard to the
+ * This domain enables the tracking of an integer value's range. 
+ * 
+ * The cardinality of the range can be configured to facilitate different needs with regard to the
  * desired precision ([[maxSizeOfIntegerRanges]]).
  * Often, a very small cardinality (e.g., between 2 and 8) may be
  * completely sufficient and a large cardinality does not add the overall precision
@@ -48,18 +49,21 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * ==Constraint Propagation==
  *
  * Additionally, it supports constraint propagation (e.g.,
- * [[#intEstablishValue]], [[#intEstablishIsLessThan]],...) w.r.t. those values
+ * [[intEstablishValue]], [[intEstablishIsLessThan]],...) w.r.t. those values
  * that were created at the same point in time by the same operation. For example,
  * in case of the following sequence:
- *  - pcA+0/t1: `iadd` (Stack: 1 :: AnIntegerValue :: ...; Registers: &lt;ignored&lt;)
- *  - pcA+1/t2: `dup` (Stack: v(pcA/t1) :: ...; Registers: &lt;ignored&lt;)
- *  - pcA+2/t3: `iflt` true:+10 (Stack: v(pcA/t1) :: v(pcA/t1) :: ...; Registers: &lt;ignored&lt;)
- *  - pcA+3/t4: ... '''(Stack: v(pcA/t1) >= 0''' :: ...; Registers: &lt;ignored&lt;)
- *  - pcA+12/t5: ... '''(Stack: v(pcA/t1) < 0''' :: ...; Registers: &lt;ignored&lt;)
- * Hence, the test (`iflt`) of the topmost stack value constrained the second-top most
- * stack value, because it was created at the same point in time. In case of this
- * domain the ''reference'' of the '''Domain(Integer)Value''' is used to identify those values that
- * were created at the same point in time.
+ *  - pcA+0/t1: `iadd` (Stack: 1 :: AnIntegerValue :: ...; Registers: &lt;ignored&gt;)
+ *  - pcA+1/t2: `dup` (Stack: v(pcA/t1) :: ...; Registers: &lt;ignored&gt;)
+ *  - pcA+2/t3: `iflt` true:+10 (Stack: v(pcA/t1) :: v(pcA/t1) :: ...; Registers: &lt;ignored&gt;)
+ *  - pcA+3/t4: ... '''(Stack: v(pcA/t1) >= 0''' :: ...; Registers: &lt;ignored&gt;)
+ *  - pcA+XYZ...
+ *  - pcA+12/t5: ... '''(Stack: v(pcA/t1) < 0''' :: ...; Registers: &lt;ignored&gt;)
+ *
+ * Hence, the test (`iflt`) of the topmost stack value against the constant 0
+ * also constrained the second-top most stack value, because it was created at
+ * the same point in time.
+ * In case of this domain the ''reference'' of the '''Domain(Integer)Value'''
+ * is used to identify those values that were created at the same point in time.
  *
  * ==Origin of an IntegerRangeValue==
  *
