@@ -37,10 +37,10 @@ package instructions
  */
 abstract class PrimitiveArrayStoreInstruction extends ArrayAccessInstruction {
 
-    final override def runtimeExceptions: List[ObjectType] =
+    final def runtimeExceptions: List[ObjectType] =
         PrimitiveArrayAccess.runtimeExceptions
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         Instruction.nextInstructionOrExceptionHandlers(
             this, currentPC, code, PrimitiveArrayAccess.runtimeExceptions)
 

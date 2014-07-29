@@ -42,13 +42,20 @@ case class INVOKESPECIAL(
     methodDescriptor: MethodDescriptor)
         extends StaticMethodInvocationInstruction {
 
-    def opcode: Opcode = INVOKESPECIAL.opcode 
+    final def opcode: Opcode = INVOKESPECIAL.opcode
 
-    def mnemonic: String = "invokespecial"
+    final def mnemonic: String = "invokespecial"
 
-    def runtimeExceptions: List[ObjectType] = MethodInvocationInstruction.runtimeExceptions
+    final def runtimeExceptions: List[ObjectType] =
+        MethodInvocationInstruction.runtimeExceptions
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 3
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
+        currentPC + 3
 
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString

@@ -37,10 +37,10 @@ package instructions
  */
 abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
 
-    final override def runtimeExceptions: List[ObjectType] =
+    final def runtimeExceptions: List[ObjectType] =
         ArrayLoadInstruction.runtimeExceptions
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         Instruction.nextInstructionOrExceptionHandlers(
             this, currentPC, code, runtimeExceptions)
 

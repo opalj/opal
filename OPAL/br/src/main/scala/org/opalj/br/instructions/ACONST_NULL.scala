@@ -37,9 +37,9 @@ package instructions
  */
 case object ACONST_NULL extends LoadConstantInstruction[Null] with ImplicitValue {
 
-    override def value: Null = null
+    final val value: Null = null
 
-    override final val opcode = 1
+    final val opcode = 1
 
-    override def mnemonic: String = "aconst_null"
+    final val mnemonic = "aconst_null"
 }

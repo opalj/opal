@@ -37,8 +37,8 @@ package instructions
  */
 case object LXOR extends BitwiseInstruction {
 
-    override final val opcode = 131
+    final val opcode = 131
 
-    def mnemonic: String = "lxor"
+    final val mnemonic = "lxor"
 
 }

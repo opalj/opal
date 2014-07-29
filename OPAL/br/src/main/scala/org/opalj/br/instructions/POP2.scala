@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-
 /**
  * Pop the top one or two operand stack values.
  *
@@ -38,8 +37,8 @@ package instructions
  */
 case object POP2 extends StackManagementInstruction {
 
-    override final val opcode = 88
+    final val opcode = 88
 
-    def mnemonic: String = "pop2"
+    final val mnemonic = "pop2"
 
 }

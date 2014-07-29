@@ -37,16 +37,16 @@ package instructions
  */
 case object AASTORE extends ArrayStoreInstruction {
 
-    override final val opcode = 83
+    final val opcode = 83
 
-    override def mnemonic: String = "aastore"
+    final val mnemonic = "aastore"
 
-    final override val runtimeExceptions: List[ObjectType] = {
+    final val runtimeExceptions: List[ObjectType] = {
         import ObjectType._
         List(ArrayIndexOutOfBoundsException, NullPointerException, ArrayStoreException)
     }
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         Instruction.nextInstructionOrExceptionHandlers(
             this, currentPC, code, runtimeExceptions)
 }

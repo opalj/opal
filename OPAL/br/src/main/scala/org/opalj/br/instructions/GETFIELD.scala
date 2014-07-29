@@ -52,14 +52,14 @@ case class GETFIELD(
     fieldType: FieldType)
         extends FieldReadAccess {
 
-    def opcode: Opcode = GETFIELD.opcode
+    final def opcode: Opcode = GETFIELD.opcode
 
-    def mnemonic: String = "getfield"
+    final def mnemonic: String = "getfield"
 
-    final override def runtimeExceptions: List[ObjectType] = 
+    final def runtimeExceptions: List[ObjectType] =
         FieldAccess.runtimeExceptions
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         Instruction.nextInstructionOrExceptionHandler(
             this, currentPC, code, ObjectType.NullPointerException
         )

@@ -66,10 +66,6 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
             with domain.ProjectBasedClassHierarchy
             with domain.RecordReturnedValuesInfrastructure {
 
-        type Id = String
-
-        def id = "Return Type Analysis Domain"
-
         type ReturnedValue = DomainValue
 
         private[this] val originalReturnType: ReferenceType =
@@ -98,7 +94,7 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
     val analysis = new Analysis[URL, BasicReport] {
 
         override def title: String =
-            "Tries to refine the return type of methods."
+            "Derives Information About Returned Values"
 
         override def description: String =
             "Identifies methods where we can – statically – derive more precise return type information."

@@ -37,10 +37,10 @@ package instructions
  */
 case object FCONST_0 extends LoadConstantInstruction[Float] with ImplicitValue {
 
-    override def value: Float = 0.0f
+    final val value = 0.0f
 
-    override final val opcode = 11
+    final val opcode = 11
 
-    override def mnemonic: String = "fconst_0"
+    final val mnemonic = "fconst_0"
 
 }

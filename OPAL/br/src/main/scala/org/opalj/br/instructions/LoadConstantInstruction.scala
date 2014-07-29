@@ -42,11 +42,11 @@ abstract class LoadConstantInstruction[T] extends Instruction {
      */
     def value: T
 
-    override def runtimeExceptions: List[ObjectType] = Nil
+    final def runtimeExceptions: List[ObjectType] = Nil
 
-    override def nextInstructions(currentPC: PC, code: Code): PCs = {
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
-    }
+
 }
 /**
  * Defines factory methods for `LoadConstantInstruction`s.

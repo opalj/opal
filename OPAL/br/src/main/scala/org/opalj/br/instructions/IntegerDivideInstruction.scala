@@ -37,10 +37,10 @@ package instructions
  */
 abstract class IntegerDivideInstruction extends DivideInstruction {
 
-    final override def runtimeExceptions: List[ObjectType] =
+    final def runtimeExceptions: List[ObjectType] =
         ArithmeticInstruction.runtimeExceptions
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs = {
+    final def nextInstructions(currentPC: PC, code: Code): PCs = {
         Instruction.nextInstructionOrExceptionHandler(
             this, currentPC, code, ObjectType.ArithmeticException)
     }

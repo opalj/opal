@@ -37,7 +37,12 @@ package instructions
  */
 abstract class ArrayAccessInstruction extends Instruction {
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 1
 
 }

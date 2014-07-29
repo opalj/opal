@@ -47,19 +47,23 @@ case object UNRESOLVED_INVOKEDYNAMIC extends InvocationInstruction {
         throw new BytecodeProcessingFailedException(
             "this invokedynamic instruction was not resolved")
 
-    def bootstrapMethod: BootstrapMethod = error
+    final def bootstrapMethod: BootstrapMethod = error
 
-    override def name: String = error
+    final def name: String = error
 
-    override def methodDescriptor: MethodDescriptor = error
+    final def methodDescriptor: MethodDescriptor = error
 
-    override final val opcode = INVOKEDYNAMIC.opcode
+    final val opcode = INVOKEDYNAMIC.opcode
 
-    override def mnemonic: String = "invokedynamic"
+    final def mnemonic: String = "invokedynamic"
 
-    override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
 
-    override def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
+        currentPC + 5
+
+    final def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
 
 }
 
@@ -75,13 +79,19 @@ case class INVOKEDYNAMIC(
     override val methodDescriptor: MethodDescriptor)
         extends InvocationInstruction {
 
-    override def opcode: Opcode = INVOKEDYNAMIC.opcode
+    final def opcode: Opcode = INVOKEDYNAMIC.opcode
 
-    override def mnemonic: String = "invokedynamic"
+    final def mnemonic: String = "invokedynamic"
 
-    override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 5
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
 
-    override def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
+        currentPC + 5
+
+    final def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
 
     override def toString: String =
         "INVOKEDYNAMIC\n"+
@@ -129,24 +139,24 @@ object INVOKEDYNAMIC {
 
     val runtimeExceptions = List(ObjectType.BootstrapMethodError)
     final val opcode = 186
-    
+
     private val lambdaMetafactoryDescriptor = MethodDescriptor(
-            IndexedSeq(ObjectType.MethodHandles$Lookup,
-                       ObjectType.String,
-                       ObjectType.MethodType,
-                       ObjectType.MethodType,
-                       ObjectType.MethodHandle,
-                       ObjectType.MethodType
-            ), 
-            ObjectType.CallSite)
-            
+        IndexedSeq(ObjectType.MethodHandles$Lookup,
+            ObjectType.String,
+            ObjectType.MethodType,
+            ObjectType.MethodType,
+            ObjectType.MethodHandle,
+            ObjectType.MethodType
+        ),
+        ObjectType.CallSite)
+
     private val lambdaAltMetafactoryDescriptor = MethodDescriptor(
-            IndexedSeq(ObjectType.MethodHandles$Lookup,
-                       ObjectType.String,
-                       ObjectType.MethodType,
-                       ArrayType.ArrayOfObjects
-            ),
-            ObjectType.CallSite)
+        IndexedSeq(ObjectType.MethodHandles$Lookup,
+            ObjectType.String,
+            ObjectType.MethodType,
+            ArrayType.ArrayOfObjects
+        ),
+        ObjectType.CallSite)
 
 }
 

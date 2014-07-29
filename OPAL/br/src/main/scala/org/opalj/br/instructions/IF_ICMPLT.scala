@@ -39,9 +39,9 @@ case class IF_ICMPLT(
     branchoffset: Int)
         extends IFICMPConditionalBranchInstruction {
 
-    final override def opcode: Opcode = IF_ICMPLT.opcode
+    final def opcode: Opcode = IF_ICMPLT.opcode
 
-    final override def mnemonic: String = "if_icmplt"
+    final def mnemonic: String = "if_icmplt"
 
 }
 object IF_ICMPLT {

@@ -40,9 +40,9 @@ case class ISTORE(
         extends StoreLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
-    final override def opcode: Opcode = ISTORE.opcode
+    final def opcode: Opcode = ISTORE.opcode
 
-    final override def mnemonic: String = "istore"
+    final def mnemonic: String = "istore"
 
 }
 object ISTORE {

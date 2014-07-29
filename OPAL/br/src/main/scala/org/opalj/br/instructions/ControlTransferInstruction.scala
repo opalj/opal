@@ -37,6 +37,6 @@ package instructions
  */
 abstract class ControlTransferInstruction extends Instruction {
 
-    def runtimeExceptions: List[ObjectType] = Nil
+    final def runtimeExceptions: List[ObjectType] = Nil
 
 }

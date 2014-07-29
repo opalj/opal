@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-
 /**
  * Extend local variable index by additional bytes.
  *
@@ -38,16 +37,21 @@ package instructions
  */
 case object WIDE extends Instruction {
 
-    override final val opcode = 196
+    final val opcode = 196
 
-    def mnemonic: String = "wide"
+    final val mnemonic = "wide"
 
     def runtimeExceptions: List[ObjectType] = Nil
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = 
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 1
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs = 
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
-    
+
 }

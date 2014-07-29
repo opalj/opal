@@ -39,10 +39,10 @@ case object ILOAD_3
         extends LoadLocalVariableInstruction
         with ImplicitLocalVariableIndex {
 
-    def lvIndex: Int = 3
+    final val lvIndex = 3
 
-    override final val opcode = 29
+    final val opcode = 29
 
-    def mnemonic: String = "iload_3"
+    final val mnemonic = "iload_3"
 
 }

@@ -33,7 +33,7 @@ package l1
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
+import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.time._
@@ -42,19 +42,18 @@ import org.scalatest.ParallelTestExecution
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.ObjectType
-import org.opalj.ai.util.Locals
+import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
-
-import org.opalj.br.TestSupport
+import org.opalj.br.TestSupport.locateTestResources
+import org.opalj.ai.util.Locals
 
 /**
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultReferenceValuesTest extends FlatSpec with Matchers with ParallelTestExecution {
+class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTestExecution {
 
-    object TestDomain
-            extends Domain
+    object TheDomain extends Domain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with PredefinedClassHierarchy
@@ -76,107 +75,158 @@ class DefaultReferenceValuesTest extends FlatSpec with Matchers with ParallelTes
         override protected def maxSizeOfIntegerRanges: Long = 25l
     }
 
-    import TestDomain._
-
-    val File = ObjectType("java/io/File")
-
-    // Helper object to match against Sets which contain one element
-    object Set1 {
-        def unapply[T](s: Set[T]): Option[T] =
-            if (s.size == 1) Some(s.head) else None
-    }
-
-    val ref1 = ObjectValue(444, No, true, ObjectType.Object)
-
-    val ref1Alt = ObjectValue(444, No, true, ObjectType.Object)
-
-    val ref2 = ObjectValue(668, No, true, File)
-
-    val ref2Alt = ObjectValue(668, No, true, File)
-
-    val ref3 = ObjectValue(732, No, true, File)
-
-    val ref1MergeRef2 = ref1.join(-1, ref2).value
-
-    val ref1AltMergeRef2Alt = ref1Alt.join(-1, ref2Alt).value
-
-    val ref1MergeRef2MergeRef3 = ref1MergeRef2.join(-1, ref3).value
-
-    val ref3MergeRef1MergeRef2 = ref3.join(-1, ref1MergeRef2).value
+    import TheDomain._
 
     //
     // TESTS
     //
 
-    behavior of "the domain that models reference values at the type level"
+    describe("the DefaultReferenceValues domain") {
 
-    it should ("be able to handle upper bounds updates") in {
+        //
+        // FACTORY METHODS
+        //
 
-        val theObject = ObjectValue(-1, No, false, ObjectType.Object)
-        val theFile = ObjectValue(-1, No, false, File)
+        describe("using the factory methods") {
+            it("it should be possible to create a representation for a non-null object with a specific type") {
+                val ref = ReferenceValue(444, No, true, ObjectType.Object)
+                if (!ref.isNull.isNo || ref.origin != 444 || !ref.isPrecise)
+                    fail("expected a precise, non-null reference value with pc 444;"+
+                        " actual: "+ref)
 
-        val (update1, _) = theObject.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
-        update1.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
-        val (update2, _) = theFile.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
-        update2.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
-        val (update3, _) = theFile.refineUpperTypeBound(-1, ObjectType.Object, List(theFile), Locals.empty)
-        update3.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
-    }
+            }
+        }
 
-    it should ("be able to create an ObjectValue with the expected values") in {
-        val ref = ReferenceValue(444, No, true, ObjectType.Object)
-        ref1 match {
-            case `ref` ⇒ // OK
-            case v     ⇒ fail("expected: "+ref1+";actual: "+v)
+        //
+        // SIMPLE REFINEMENT
+        //
+
+        describe("refining a DomainValue that represents a reference value") {
+
+            it("it should be able to update the upper bound") {
+
+                val File = ObjectType("java/io/File")
+
+                val theObject = ObjectValue(-1, No, false, ObjectType.Object)
+                val theFile = ObjectValue(-1, No, false, File)
+
+                val (update1, _) = theObject.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
+                update1.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
+                val (update2, _) = theFile.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
+                update2.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
+                val (update3, _) = theFile.refineUpperTypeBound(-1, ObjectType.Object, List(theFile), Locals.empty)
+                update3.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
+            }
+
+        }
+
+        //
+        // SUMMARIES
+        //
+
+        describe("the summarize function") {
+
+            it("it should calculate a meaningful upper type bound given multiple different types of reference values") {
+                summarize(
+                    -1,
+                    List(
+                        ObjectValue(444, No, true, ObjectType.Object),
+                        NullValue(444),
+                        ObjectValue(668, No, true, ObjectType("java/io/File"))
+                    )
+                ) should be(ObjectValue(-1, Unknown, false, ObjectType.Object))
+            }
+        }
+
+        //
+        // JOIN
+        //
+
+        describe("joining two DomainValues that represent reference values") {
+
+            val ref1 = ObjectValue(444, No, true, ObjectType.Object)
+
+            val ref1Alt = ObjectValue(444, No, true, ObjectType.Object)
+
+            val ref2 = ObjectValue(668, No, true, ObjectType.String)
+
+            val ref2Alt = ObjectValue(668, No, true, ObjectType.String)
+
+            val ref3 = ObjectValue(732, No, true, ObjectType.String)
+
+            val ref1MergeRef2 = ref1.join(-1, ref2).value
+
+            val ref1AltMergeRef2Alt = ref1Alt.join(-1, ref2Alt).value
+
+            val ref1MergeRef2MergeRef3 = ref1MergeRef2.join(-1, ref3).value
+
+            val ref3MergeRef1MergeRef2 = ref3.join(-1, ref1MergeRef2).value
+
+            it("it should keep the old value when we merge a value with an identical value") {
+                ref1.join(-1, ref1Alt) should be(NoUpdate)
+            }
+
+            it("it should represent both values after a merge of two independent values") {
+                val IsReferenceValue(values) = typeOfValue(ref1MergeRef2)
+                values.exists(_ == ref1) should be(true)
+                values.exists(_ == ref2) should be(true)
+            }
+
+            it("it should represent all three values when we merge a MultipleReferenceValue with an ObjectValue if all three values are independent") {
+                val IsReferenceValue(values) = typeOfValue(ref1MergeRef2MergeRef3)
+                values.exists(_ == ref1) should be(true)
+                values.exists(_ == ref2) should be(true)
+                values.exists(_ == ref3) should be(true)
+            }
+
+            it("it should be able to merge two value sets that contain (reference) identical values") {
+                val IsReferenceValue(values312) = typeOfValue(ref3MergeRef1MergeRef2)
+                val IsReferenceValue(values123) = typeOfValue(ref1MergeRef2MergeRef3)
+                values312.toSet should be(values123.toSet)
+            }
+
+            it("it should be able to merge two value sets where the original set is a superset of the second set") {
+                // the values represent different values in time...
+                val update = ref1MergeRef2MergeRef3.join(-1, ref1AltMergeRef2Alt)
+                if (!update.isMetaInformationUpdate)
+                    fail("expected: MetaInformationUpdate; actual: "+update)
+            }
+
+            it("it should be able to merge two value sets where the original set is a subset of the second set") {
+                ref1AltMergeRef2Alt.join(-1, ref1MergeRef2MergeRef3) should be(StructuralUpdate(ref1MergeRef2MergeRef3))
+            }
+        }
+
+        //
+        // USAGE
+        //
+
+        describe("using the DefaultReferenceValues domain") {
+
+            it("it should be able to handle the case where we throw a \"null\" value or some other value") {
+
+                val classFiles = ClassFiles(locateTestResources("classfiles/cornercases.jar", "ai"))
+                val classFile = classFiles.find(_._1.thisType.fqn == "cornercases/ThrowsNullValue").get._1
+                val method = classFile.methods.find(_.name == "main").get
+
+                val result = BaseAI(classFile, method, TheDomain)
+                val exception = result.operandsArray(20)
+                TheDomain.refIsNull(exception.head) should be(No)
+            }
+
+            val theProject = Project(locateTestResources("classfiles/ai.jar", "ai"))
+            val targetType = ObjectType("ai/domain/ReferenceValuesFrenzy")
+            val ReferenceValues = theProject.classFile(targetType).get
+
+//            it("it should be possible to get precise information about a method's return values (maybeNull)") {
+//                val result = BaseAI(ReferenceValues, method, TheDomain)
+//                val exception = result.operandsArray(20)
+//                TheDomain.refIsNull(exception.head) should be(No)
+//            }
+//
+//            it("it should be able to correctly distinguish different values that were created at different points in time.") {
+//
+//            }
         }
     }
-
-    it should ("keep the old value when we merge a value with an identical value") in {
-        ref1.join(-1, ref1Alt) should be(NoUpdate)
-    }
-
-    it should ("represent both values after a merge of two independent values") in {
-        val IsReferenceValue(values) = typeOfValue(ref1MergeRef2)
-        values.exists(_ == ref1) should be(true)
-        values.exists(_ == ref2) should be(true)
-    }
-
-    it should ("represent all three values when we merge \"some value\" with another \"value\"") in {
-        val IsReferenceValue(values) = typeOfValue(ref1MergeRef2MergeRef3)
-        values.exists(_ == ref1) should be(true)
-        values.exists(_ == ref2) should be(true)
-        values.exists(_ == ref3) should be(true)
-    }
-
-    it should ("be able to merge two value sets that contain equal values") in {
-        val IsReferenceValue(values312) = typeOfValue(ref3MergeRef1MergeRef2)
-        val IsReferenceValue(values123) = typeOfValue(ref1MergeRef2MergeRef3)
-        values312.toSet should be(values123.toSet)
-    }
-
-    it should ("be able to merge two value sets where the original set is a superset of the second set") in {
-        ref1MergeRef2MergeRef3.join(-1, ref1AltMergeRef2Alt) should be(NoUpdate)
-    }
-
-    it should ("be able to merge two value sets where the original set is a subset of the second set") in {
-        ref1AltMergeRef2Alt.join(-1, ref1MergeRef2MergeRef3) should be(StructuralUpdate(ref1MergeRef2MergeRef3))
-    }
-
-    it should ("calculate a meaningful upper type bound if I have multiple different types of reference values") in {
-        val nullRef = NullValue(444)
-        summarize(-1, List(ref1, nullRef, ref2)) should be(ObjectValue(-1, Unknown, false, ObjectType.Object))
-    }
-
-    it should ("be able to handle the case where we throw a \"null\" value or some other value") in {
-
-        val classFiles = ClassFiles(
-            TestSupport.locateTestResources("classfiles/cornercases.jar", "ai"))
-        val classFile = classFiles.find(_._1.thisType.fqn == "cornercases/ThrowsNullValue").get._1
-        val method = classFile.methods.find(_.name == "main").get
-
-        val result = BaseAI(classFile, method, TestDomain)
-        val exception = result.operandsArray(20)
-        TestDomain.refIsNull(exception.head) should be(No)
-    }
-
 }

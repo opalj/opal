@@ -37,10 +37,10 @@ package instructions
  */
 case object DCONST_0 extends LoadConstantInstruction[Double] with ImplicitValue {
 
-    override def value: Double = 0.0d
+    final val value = 0.0d
 
-    override final val opcode = 14
+    final val opcode = 14
 
-    override def mnemonic: String = "dconst_0"
+    final val mnemonic = "dconst_0"
 
 }

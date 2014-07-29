@@ -43,11 +43,10 @@ abstract class LoadLocalVariableInstruction extends Instruction {
      */
     def lvIndex: Int
 
-    override def runtimeExceptions: List[ObjectType] = Nil
+    final def runtimeExceptions: List[ObjectType] = Nil
 
-    override def nextInstructions(currentPC: PC, code: Code): PCs = {
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
-    }
 
 }
 /**

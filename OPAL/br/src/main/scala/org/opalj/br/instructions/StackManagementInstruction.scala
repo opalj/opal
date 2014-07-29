@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-
 /**
  * An instruction that directly manipulates the operand stack.
  *
@@ -40,9 +39,15 @@ abstract class StackManagementInstruction extends Instruction {
 
     def runtimeExceptions: List[ObjectType] = Nil
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
-    
-    override def nextInstructions(currentPC: PC, code: Code): PCs = {
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
+        currentPC + 1
+
+    final def nextInstructions(currentPC: PC, code: Code): PCs = {
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
     }
 }

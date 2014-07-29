@@ -37,10 +37,10 @@ package instructions
  */
 abstract class CreateNewArrayInstruction extends Instruction {
 
-    final override def runtimeExceptions: List[ObjectType] =
+    final def runtimeExceptions: List[ObjectType] =
         CreateNewArrayInstruction.runtimeExceptions
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         Instruction.nextInstructionOrExceptionHandlers(
             this, currentPC, code, CreateNewArrayInstruction.runtimeExceptionsAndErrors)
 

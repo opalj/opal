@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-
 /**
  * Store into long array.
  *
@@ -38,7 +37,7 @@ package instructions
  */
 case object LASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAccess {
 
-    override final val opcode = 80
+    final val opcode = 80
 
-    def mnemonic: String = "lastore"
+    final val mnemonic = "lastore"
 }

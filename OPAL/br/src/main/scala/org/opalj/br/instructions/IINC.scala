@@ -40,14 +40,19 @@ case class IINC(
     constValue: Int)
         extends ArithmeticInstruction {
 
-    override def opcode: Opcode = IINC.opcode
+    final def opcode: Opcode = IINC.opcode
 
-    def mnemonic: String = "iinc"
+    final def mnemonic: String = "iinc"
 
-    def runtimeExceptions: List[ObjectType] = Nil
+    final def runtimeExceptions: List[ObjectType] = Nil
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
-        if (code.isModifiedByWide(currentPC)) {
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int = {
+        if (modifiedByWide) {
             currentPC + 1 + 4
         } else {
             currentPC + 1 + 2

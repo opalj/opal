@@ -37,6 +37,12 @@ package instructions
  */
 abstract class RemainderInstruction extends ArithmeticInstruction {
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 1
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
+        currentPC + 1
 
 }

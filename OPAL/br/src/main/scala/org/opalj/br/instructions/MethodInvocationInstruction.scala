@@ -47,7 +47,7 @@ abstract class InvocationInstruction extends Instruction {
      * exceptions may be thrown we make the safe assumption that any handler
      * is a potential successor!
      */
-    final override def nextInstructions(currentPC: PC, code: Code): PCs = {
+    final def nextInstructions(currentPC: PC, code: Code): PCs = {
         val exceptionHandlerPCs = code.handlerInstructionsFor(currentPC)
         exceptionHandlerPCs + indexOfNextInstruction(currentPC, code)
     }

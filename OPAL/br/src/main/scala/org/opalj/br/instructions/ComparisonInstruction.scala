@@ -37,12 +37,17 @@ package instructions
  */
 abstract class ComparisonInstruction extends ArithmeticInstruction {
 
-    final override def runtimeExceptions: List[ObjectType] = Nil
+    final def runtimeExceptions: List[ObjectType] = Nil
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = 
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 1
-    
-    final override def nextInstructions(currentPC: PC, code: Code): PCs = 
+
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
-    
+
 }

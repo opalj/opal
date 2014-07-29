@@ -37,17 +37,22 @@ package instructions
  */
 case object ARRAYLENGTH extends Instruction {
 
-    override final val opcode = 190
+    final val opcode = 190
 
-    override def mnemonic: String = "arraylength"
+    final val mnemonic = "arraylength"
 
-    final override val runtimeExceptions: List[ObjectType] =
+    final val runtimeExceptions: List[ObjectType] =
         List(ObjectType.NullPointerException)
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 1
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         Instruction.nextInstructionOrExceptionHandler(
             this, currentPC, code, ObjectType.NullPointerException)
 

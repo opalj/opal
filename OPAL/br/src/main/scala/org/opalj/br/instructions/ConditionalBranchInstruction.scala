@@ -41,10 +41,15 @@ abstract class ConditionalBranchInstruction extends ControlTransferInstruction {
 
     def branchoffset: Int
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 3
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs = {
+    final def nextInstructions(currentPC: PC, code: Code): PCs = {
         MutableUShortSet(indexOfNextInstruction(currentPC, code), currentPC + branchoffset)
     }
 
@@ -54,7 +59,7 @@ abstract class ConditionalBranchInstruction extends ControlTransferInstruction {
             ", false=↓)"
 }
 
-abstract class IF0ConditionalBranchInstruction extends ConditionalBranchInstruction 
+abstract class IF0ConditionalBranchInstruction extends ConditionalBranchInstruction
 
 abstract class IFICMPConditionalBranchInstruction extends ConditionalBranchInstruction
 

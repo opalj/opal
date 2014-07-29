@@ -37,10 +37,10 @@ package instructions
  */
 case object ICONST_1 extends LoadConstantInstruction[Int] with ImplicitValue {
 
-    override def value: Int = 1
+    final val value = 1
 
-    override final val opcode = 4
+    final val opcode = 4
 
-    def mnemonic: String = "iconst_1"
+    final val mnemonic = "iconst_1"
 
 }

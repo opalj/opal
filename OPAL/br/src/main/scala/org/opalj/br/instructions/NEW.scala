@@ -39,16 +39,21 @@ case class NEW(
     objectType: ObjectType)
         extends Instruction {
 
-    final override def opcode: Opcode = NEW.opcode
+    final def opcode: Opcode = NEW.opcode
 
-    final override def mnemonic: String = "new"
+    final def mnemonic: String = "new"
 
-    final override def runtimeExceptions: List[ObjectType] = Nil
+    final def runtimeExceptions: List[ObjectType] = Nil
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 3
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         Instruction.nextInstructionOrExceptionHandler(
             this, currentPC, code, ObjectType.OutOfMemoryError)
 
