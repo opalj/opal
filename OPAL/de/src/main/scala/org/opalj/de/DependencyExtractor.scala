@@ -111,10 +111,10 @@ class DependencyExtractor(
                     val EnclosingMethod(enclosingClass, name, descriptor) = attribute
                     // Check whether the enclosing method attribute refers to an enclosing 
                     // method or an enclosing class.
-                    if (name != null && descriptor != null)
+                    if (name.isDefined /*&& descriptor.isDefined*/ )
                         dependencyProcessor.processDependency(
                             vc,
-                            dependencyProcessor.asVirtualMethod(enclosingClass, name, descriptor),
+                            dependencyProcessor.asVirtualMethod(enclosingClass, name.get, descriptor.get),
                             ENCLOSED)
                     else
                         processDependency(

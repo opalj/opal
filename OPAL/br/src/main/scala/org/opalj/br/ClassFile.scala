@@ -150,29 +150,78 @@ final class ClassFile private (
 
     /**
      * Returns the set of all immediate nested classes of this class. I.e., returns those
-     * nested classes that are not defined in the scope of a nestes class of this
+     * nested classes that are not defined in the scope of a nested class of this
      * class.
      */
-    def nestedClasses: Seq[ObjectType] = {
+    def nestedClasses(classFileRepository: ClassFileRepository): Seq[ObjectType] = {
         // From the specification:
         // - every inner class must have an inner class attribute (at least for itself)
         // - every class that has inner classes must have an innerclasses attribute
-        //   and the nner classes array must contain an entry
+        //   and the inner classes array must contain an entry
         // - the InnerClasses attribute only encodes information about its immediate
         //   inner classes
+        var outerClassType: Option[ObjectType] = enclosingMethod.map(_.clazz)
+        var isInnerType = false
 
-        innerClasses.map { innerClasses ⇒
+        def isThisType(innerClass: InnerClass): Boolean = {
+            if (innerClass.innerClassType eq thisType) {
+                if (innerClass.outerClassType.isDefined)
+                    outerClassType = innerClass.outerClassType
+                isInnerType = true
+                true
+            } else
+                false
+        }
+
+        val nestedClasses = innerClasses.map { innerClasses ⇒
             innerClasses.filter(innerClass ⇒
                 // it does not describe this class:
-                (innerClass.innerClassType ne thisType) &&
+                (!isThisType(innerClass)) &&
                     // it does not give information about an outer class:     
                     (!this.fqn.startsWith(innerClass.innerClassType.fqn)) &&
                     // it does not give information about some other inner class:
-                    (innerClass.outerClassType.isEmpty || (innerClass.outerClassType.get eq thisType))
+                    (
+                        innerClass.outerClassType.isEmpty ||
+                        (innerClass.outerClassType.get eq thisType)
+                    )
             ).map(_.innerClassType)
         }.getOrElse {
             Nil
         }
+
+        // THE FOLLOWING CODE IS NECESSARY TO COPE WITH BYTECODE GENERATED
+        // BY OLD JAVA COMPILERS; IT BASICALLY IMPLEMENTS SEVERAL STRATEGIES
+        // TO IDENTIFY THE CORRECT OUTERCLASS 
+        if (isInnerType && outerClassType.isEmpty) {
+            // let's try to find the outer class that refers to this class
+            val thisFQN = thisType.fqn
+            val innerTypeNameStartIndex = thisFQN.lastIndexOf('$')
+            if (innerTypeNameStartIndex == -1) {
+                println(
+                    "[warn] the inner class "+thisType.toJava+" does not use the standard naming schema"+
+                        "; the inner classes information may be incomplete"
+                )
+                return nestedClasses.filter(_.fqn.startsWith(this.fqn))
+            }
+            val outerFQN = thisFQN.substring(0, innerTypeNameStartIndex)
+            classFileRepository.classFile(ObjectType(outerFQN)) match {
+                case Some(classFile) ⇒
+                    // let's filter those classes that are known innerclasses of this type's
+                    // (indirect) outertype (they cannot be innerclasses of this class..)
+                    val nestedClassesOfOuterClass = classFile.nestedClasses(classFileRepository)
+                    return nestedClasses.filterNot(nestedClassesOfOuterClass.contains(_))
+                case None ⇒
+                    println(
+                        "[warn] project information incomplete; "+
+                            "cannot identify outer type of "+thisType.toJava+
+                            "; the inner classes information may be incomplete"
+                    )
+                    return nestedClasses.filter(_.fqn.startsWith(this.fqn))
+            }
+
+        }
+
+        nestedClasses
     }
 
     /**
@@ -184,13 +233,13 @@ final class ClassFile private (
      *   foreachNestedClasses(innerclassesProject, { nc ⇒ allNestedTypes += nc.thisType })
      * }}}
      */
-    def foreachNestedClasses(
+    def foreachNestedClass(
         classFileRepository: ClassFileRepository,
         f: (ClassFile) ⇒ Unit): Unit = {
-        nestedClasses.foreach { nestedType ⇒
+        nestedClasses(classFileRepository).foreach { nestedType ⇒
             classFileRepository.classFile(nestedType).map { nestedClassFile ⇒
                 f(nestedClassFile)
-                nestedClassFile.foreachNestedClasses(classFileRepository, f)
+                nestedClassFile.foreachNestedClass(classFileRepository, f)
             }
         }
     }
