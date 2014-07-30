@@ -12,7 +12,7 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.1"
 
 fork in run := true
 
-javaOptions in run := Seq("-Xmx3G", "-Xms1024m", "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts", "-Xnoclassgc")
+javaOptions in run := Seq("-Xmx2G", "-Xms1024m", "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts", "-Xnoclassgc")
 
 
 ////////////////////// (Unit) Tests
