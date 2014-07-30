@@ -29,7 +29,10 @@
 package org.opalj
 package br
 
-import instructions._
+import scala.collection.BitSet
+
+import org.opalj.br.instructions._
+
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -80,7 +83,7 @@ case class Code(
      * In case of exceptions handlers the sound over approximation is made that
      * all exception handlers may be reached on multiple paths.
      */
-    def joinInstructions: scala.collection.BitSet = {
+    def joinInstructions: BitSet = {
         val instructions = this.instructions
         val instructionsCount = instructions.length
         val joinInstructions = new scala.collection.mutable.BitSet(instructionsCount)
