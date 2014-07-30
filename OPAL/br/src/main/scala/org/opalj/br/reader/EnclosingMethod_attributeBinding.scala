@@ -50,13 +50,13 @@ trait EnclosingMethod_attributeBinding
         method_index: Constant_Pool_Index): EnclosingMethod_attribute = {
 
         if (method_index == 0)
-            new EnclosingMethod_attribute(cp(class_index).asObjectType(cp), null, null)
+            new EnclosingMethod_attribute(cp(class_index).asObjectType(cp), None, None)
         else {
             val nameAndType = cp(method_index).asNameAndType
             new EnclosingMethod_attribute(
                 cp(class_index).asObjectType(cp),
-                nameAndType.name(cp),
-                nameAndType.methodDescriptor(cp))
+                Some(nameAndType.name(cp)),
+                Some(nameAndType.methodDescriptor(cp)))
         }
     }
 }

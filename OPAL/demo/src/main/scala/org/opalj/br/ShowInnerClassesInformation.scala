@@ -42,7 +42,7 @@ import org.opalj.br.analyses.Project
  * @author Daniel Klauer
  * @author Michael Eichberg
  */
-object ShowInnerClassesAttribute extends AnalysisExecutor {
+object ShowInnerClassesInformation extends AnalysisExecutor {
     val analysis = new Analysis[URL, BasicReport] {
         def description: String = "Prints out the inner classes tables."
 
@@ -55,7 +55,14 @@ object ShowInnerClassesAttribute extends AnalysisExecutor {
                     classFile ← project.classFiles
                     if classFile.innerClasses.isDefined
                 } yield {
-                    classFile.innerClasses.get.mkString(classFile.fqn+":\n\t", "\n\t", "\n")
+                    val header =
+                        classFile.fqn+"(ver:"+classFile.majorVersion+")"+":\n\t"+(
+                            if (classFile.enclosingMethod.isDefined)
+                                classFile.enclosingMethod.get.toString
+                            else
+                                "<no enclosing method defined>"
+                        )+"\n\t"
+                    classFile.innerClasses.get.mkString(header, "\n\t", "\n")
                 }
 
             BasicReport(messages.mkString("\n"))

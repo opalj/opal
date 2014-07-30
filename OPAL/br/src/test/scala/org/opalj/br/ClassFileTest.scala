@@ -131,7 +131,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
     val formatterClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass$Formatter.class")
 
     test("that all direct nested classes of a top-level class are correctly identified") {
-        outerClass.nestedClasses.toSet should be(Set(
+        outerClass.nestedClasses(innerclassesProject).toSet should be(Set(
             ObjectType("innerclasses/MyRootClass$1"),
             ObjectType("innerclasses/MyRootClass$1MyInnerPrinter"),
             ObjectType("innerclasses/MyRootClass$2"),
@@ -141,35 +141,52 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
     }
 
     test("that all direct nested classes of a member class are correctly identified") {
-        innerPrinterOfXClass.nestedClasses.toSet should be(Set(
+        innerPrinterOfXClass.nestedClasses(innerclassesProject).toSet should be(Set(
             ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$1"),
             ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$InnerPrettyPrinter")
         ))
     }
 
     test("that no supertype information is extracted") {
-        formatterClass.nestedClasses.toSet should be(Set.empty)
+        formatterClass.nestedClasses(innerclassesProject).toSet should be(Set.empty)
     }
 
     test("that all direct and indirect nested classes of a top-level class are correctly identified") {
         val expectedNestedTypes = Set(
-            ObjectType("innerclasses/MyRootClass$1"),
-            ObjectType("innerclasses/MyRootClass$1MyInnerPrinter"),
             ObjectType("innerclasses/MyRootClass$2"),
             ObjectType("innerclasses/MyRootClass$Formatter"),
             ObjectType("innerclasses/MyRootClass$InnerPrinterOfX"),
+            ObjectType("innerclasses/MyRootClass$1"),
+            ObjectType("innerclasses/MyRootClass$1MyInnerPrinter"),
+            ObjectType("innerclasses/MyRootClass$1$InnerPrinterOfAnonymousClass"),
             ObjectType("innerclasses/MyRootClass$1$1"),
             ObjectType("innerclasses/MyRootClass$1$1$1"),
-            ObjectType("innerclasses/MyRootClass$1$InnerPrinterOfAnonymousClass"),
             ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$InnerPrettyPrinter"),
-            ObjectType("innerclasses/MyRootClass$2"),
             ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$1")
         )
 
         var foundNestedTypes: Set[ObjectType] = Set.empty
-        outerClass.foreachNestedClasses(innerclassesProject, { nc ⇒ foundNestedTypes += nc.thisType })
+        outerClass.foreachNestedClass(innerclassesProject, { nc ⇒ foundNestedTypes += nc.thisType })
 
         foundNestedTypes.size should be(expectedNestedTypes.size)
         foundNestedTypes should be(expectedNestedTypes)
+    }
+
+    test("that it is possible to get the inner classes information for Apache ANT 1.8.4 - excerpt.jar") {
+        val antJARFile = TestSupport.locateTestResources("classfiles/Apache ANT 1.8.4 - excerpt.jar", "bi")
+        val antProject = analyses.Project(antJARFile)
+        var innerClassesCount = 0
+        for (classFile ← antProject.classFiles) {
+            // should not time out or crash...
+            classFile.nestedClasses(antProject)
+            var nestedClasses: List[Type] = Nil
+            classFile.foreachNestedClass(antProject, {
+                c ⇒
+                    nestedClasses = c.thisType :: nestedClasses
+                    innerClassesCount += 1
+            })
+            innerClassesCount += 1
+        }
+        innerClassesCount should be > (0)
     }
 }

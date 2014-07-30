@@ -46,7 +46,7 @@ import org.junit.runner.RunWith
  * @author Arne Lottmann
  */
 @RunWith(classOf[JUnitRunner])
-class GeneratedProxyClassFilesTest extends FunSpec with Matchers with ParallelTestExecution {
+class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
 
     describe("the generation of Proxy classes") {
 
@@ -109,9 +109,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers with ParallelTe
                     }
 
                     // the layout of the instructions array is correct
-                    for {
-                        pc ← 0 until instructions.size
-                    } {
+                    for { pc ← 0 until instructions.size } {
                         if (instructions(pc) != null) {
                             val nextPc = instructions(pc).indexOfNextInstruction(pc, false)
                             instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
