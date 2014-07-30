@@ -88,7 +88,7 @@ case class ClassFile(
     }
 
     protected def loadStyle: String = {
-        process(this.getClass().getResourceAsStream("css/style.css"))(
+        process(this.getClass().getResourceAsStream("style.css"))(
             scala.io.Source.fromInputStream(_).mkString
         )
     }
@@ -101,86 +101,86 @@ case class ClassFile(
 
     protected def accessFlags: Node = {
         <span class="AccessFlags">
-        Access Flags { AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }
+            Access Flags{ AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }
         </span>
     }
 
     protected def filter: Node = {
         <details>
-            <summary>Filter</summary> 
-            <table style="min-width:850px" class="code" >
+            <summary>Filter</summary>
+            <table style="min-width:850px" class="code">
                 <tr>
-                    <td> <input type="checkbox"  value="HTML" onclick="FlagFilter('private');" > Private </input></td>
-                    <td> <input type="checkbox"  value="HTML" onclick="FlagFilter('public');"> Public </input></td>
-                    <td> <input type="checkbox"  value="HTML" onclick="FlagFilter('protected');"> Protected </input></td> 
-                    <td> <input type="checkbox"  value="HTML" onclick="FlagFilter('static');"> Static </input></td>
-                    <td> <input type="checkbox"  value="HTML" onclick="FlagFilter('final');"> Final </input></td> 
-                    <td> <input type="checkbox"  value="HTML" onclick="FlagFilter('synchronized');"> Synchronized </input></td>
+                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('private');"> Private </input></td>
+                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('public');"> Public </input></td>
+                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('protected');"> Protected </input></td>
+                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('static');"> Static </input></td>
+                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('final');"> Final </input></td>
+                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('synchronized');"> Synchronized </input></td>
                 </tr>
                 <tr>
-                    <td> <input type="checkbox"  value="HTML" onclick="FlagFilter('bridge');"> Bridge </input></td>
-                    <td> <input type="checkbox"  value="HTML" onclick="FlagFilter('varargs');"> Varargs </input></td> 
-                    <td> <input type="checkbox"  value="HTML" onclick="FlagFilter('native');"> Native </input></td>
-                    <td> <input type="checkbox"  value="HTML" onclick="FlagFilter('abstract');"> Abstract </input></td> 
-                    <td> <input type="checkbox"  value="HTML" onclick="FlagFilter('strict');"> Strict </input></td>
-                    <td><input type="text" title='enter methode name'  onkeyup="NameFilter(this.value);" >  </input></td>                
+                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('bridge');"> Bridge </input></td>
+                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('varargs');"> Varargs </input></td>
+                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('native');"> Native </input></td>
+                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('abstract');"> Abstract </input></td>
+                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('strict');"> Strict </input></td>
+                    <td><input type="text" title='enter methode name' onkeyup="NameFilter(this.value);">  </input></td>
                 </tr>
             </table>
-       </details>
+        </details>
     }
 
     def toXHTML: Node =
         <html>
             <head>
                 <title>Opal ByteCode Disassembler</title>
-                <style type="text/css" >
+                <style type="text/css">
                     { scala.xml.Unparsed(loadStyle) }
                 </style>
-                <script>{ scala.xml.Unparsed(loadJavaScript("css/filter.js")) }</script>           
+                <script>{ scala.xml.Unparsed(loadJavaScript("filter.js")) }</script>
                 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
             </head>
             <body>
                 <p class="Summary">
-                    <b>{ fqn }</b> Version { minor_version + "." + major_version } 
-                        { accessFlags }
-                        <span class="constantPoolLink">
-                            <a href="#openConstantPool" style="color:black;">ConstantPool</a>
-                        </span>                 
-                </p>              
+                    <b>{ fqn }</b>
+                    Version{ minor_version+"."+major_version }
+                    { accessFlags }
+                    <span class="constantPoolLink">
+                        <a href="#openConstantPool" style="color:black;">ConstantPool</a>
+                    </span>
+                </p>
                 <div id="openConstantPool" class="constantPool">
-                  <div>
-                    <a href="#close" title="Close" class="close">X</a>                                                                     
-                                { cpToXHTML }                       
-                  </div>
-                 </div>
-                 <div >
-                     <div id="classFile">
-                     <div id="attributes">
-                             <details>
-                             <summary>Class Attributes</summary>                   
-                                 { attributesToXHTML }
-                             </details>
-                         </div>
-                         <div id="fields">
-                             <details>
-                             <summary>Fields</summary>
-                             <ol>
-                                 { fieldsToXHTML }
-                             </ol>
-                             </details>
-                         </div>                        
-                         <div id="methods">
-                            <details>
-                            <summary>Methods</summary>
-                            <ol>
-                                 { filter }
-                                 
-                                 { methodsToXHTML }
-                            </ol>
-                            </details>
-                         </div>
+                    <div>
+                        <a href="#close" title="Close" class="close">X</a>
+                        { cpToXHTML }
                     </div>
-                </div>                             
-    	   </body>
+                </div>
+                <div>
+                    <div id="classFile">
+                        <div id="attributes">
+                            <details>
+                                <summary>Class Attributes</summary>
+                                { attributesToXHTML }
+                            </details>
+                        </div>
+                        <div id="fields">
+                            <details>
+                                <summary>Fields</summary>
+                                <ol>
+                                    { fieldsToXHTML }
+                                </ol>
+                            </details>
+                        </div>
+                        <div id="methods">
+                            <details>
+                                <summary>Methods</summary>
+                                <ol>
+                                    { filter }
+                                    { methodsToXHTML }
+                                </ol>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            </body>
         </html>
 }
