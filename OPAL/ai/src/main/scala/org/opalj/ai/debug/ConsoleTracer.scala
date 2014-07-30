@@ -247,4 +247,14 @@ trait ConsoleTracer extends AITracer {
     }
 
     override def result(result: AIResult): Unit = { /*ignored*/ }
+
+    override def domainMessage(
+        domain: Domain,
+        source: Class[_], typeID: String,
+        pc: Option[PC], message: ⇒ String): Unit = {
+        val loc = pc.map(pc ⇒ s"$pc:").getOrElse("<NO PC>")
+        println(
+            s"$loc[Domain:${source.getSimpleName().split('$')(0)} - $typeID] $message"
+        )
+    }
 }

@@ -151,4 +151,13 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
                 pc, effectivePC, operands, locals, newOperands, newLocals)
         }
     }
+
+    override def domainMessage(
+        domain: Domain,
+        source: Class[_], typeID: String,
+        pc: Option[PC], message: ⇒ String): Unit = {
+        tracers foreach { tracer ⇒
+            tracer.domainMessage(domain, source, typeID, pc, message)
+        }
+    }
 }

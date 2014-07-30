@@ -365,6 +365,11 @@ trait XHTMLTracer extends AITracer {
             oldWorklist: List[PC],
             newWorklist: List[PC]): Unit = { /*ignored*/ }
 
+    override def domainMessage(
+        domain: Domain,
+        source: Class[_], typeID: String,
+        pc: Option[PC], message: ⇒ String): Unit = { /*EMPTY*/ }
+
     override def result(result: AIResult): Unit = {
         writeAndOpenDump(dumpXHTML((new java.util.Date).toString()))
     }

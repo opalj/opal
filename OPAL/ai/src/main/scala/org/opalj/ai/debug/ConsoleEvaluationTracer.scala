@@ -142,4 +142,9 @@ trait ConsoleEvaluationTracer extends AITracer {
             newLocals: domain.Locals): Unit = { /*EMPTY*/ }
 
     override def result(result: AIResult): Unit = { /*EMPTY*/ }
+
+    override def domainMessage(
+        domain: Domain,
+        source: Class[_], typeID: String,
+        pc: Option[PC], message: ⇒ String): Unit = { /*EMPTY*/ }
 }
