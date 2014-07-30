@@ -62,9 +62,9 @@ import org.opalj.br.ConstantString
  *
  * OPAL uses the following three methods to inform a domain about the progress of the
  * abstract interpretation:
- *  - [[org.opalj.ai.CoreDomain.flow]]
- *  - [[org.opalj.ai.CoreDomain.evaluationCompleted]]
- *  - [[org.opalj.ai.CoreDomain.abstractInterpretationEnded]]
+ *  - [[org.opalj.ai.CoreDomainFunctionality.flow]]
+ *  - [[org.opalj.ai.CoreDomainFunctionality.evaluationCompleted]]
+ *  - [[org.opalj.ai.CoreDomainFunctionality.abstractInterpretationEnded]]
  * A domain that implements (`overrides`) one of these methods should always also delegate
  * the call to its superclass to make sure that every domain interested in these
  * events is informed.

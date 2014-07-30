@@ -78,7 +78,7 @@ trait TypedValuesFactory {
 
     /**
      * Creates a `DomainValue` that represents a a value with the given type
-     * and whic is initialized using the JVM's default value for that type.
+     * and which is initialized using the JVM's default value for that type.
      * E.g., for `IntegerValue`s the value is set to `0`. In case of a
      * `ReferenceType` the value is the [[ReferenceValuesFactory#NullValue]].
      */

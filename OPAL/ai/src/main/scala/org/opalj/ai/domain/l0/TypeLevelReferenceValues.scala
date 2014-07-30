@@ -71,7 +71,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
 
     /**
      * Merges those exceptions that have the same upper type bound. This ensures
-     * that per upper type bound only one [[CoreDomain.DomainValue]] (which may be a
+     * that per upper type bound only one [[ValuesDomain.DomainValue]] (which may be a
      * `MultipleReferenceValues`) is used.
      */
     def mergeMultipleExceptionValues(

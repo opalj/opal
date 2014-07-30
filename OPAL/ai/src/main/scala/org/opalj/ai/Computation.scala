@@ -198,7 +198,7 @@ case object ComputationWithSideEffectOnly extends Computation[Nothing, Nothing] 
 
 /**
  * Indicates that the computation did not succeed. This is typically the case
- * for methods that contain a endless loop, such as:
+ * for methods that contain an endless loop, such as:
  * {{{ 
  *  while(true){.../* no break statements */} 
  * }}}

@@ -33,7 +33,7 @@ package ai
  * A abstract interpreter that interrupts itself after some configurable
  * ([[maxEffortInNs]]) time has passed.
  *
- * @param maxEffortInNs  The number of nanoseconds after which the abstract 
+ * @param maxEffortInNs  The number of nanoseconds after which the abstract
  *      interpretation is aborted. The default value is 150 milliseconds.
  *
  * @author Michael Eichberg
@@ -42,7 +42,7 @@ class TimeBoundedAI[D <: Domain](
         val maxEffortInNs: Long = 150l /*ms*/ * 1000l * 1000l) extends AI[D] {
 
     private[this] final val CheckInterval = 100;
-    
+
     private[this] var evaluationCount = -1 // we don't check the p
 
     private[this] var startTime: Long = _

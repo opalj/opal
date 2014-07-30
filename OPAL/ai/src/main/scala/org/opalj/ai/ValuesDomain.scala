@@ -496,8 +496,7 @@ trait ValuesDomain {
      * it is possible that the returned type(s) is(are) only an upper bound of the
      * real type unless the type is a primitive type.
      *
-     * This default implementation always returns
-     * [[org.opalj.ai.TypeUnknown]].
+     * This default implementation always returns [[org.opalj.ai.TypeUnknown]].
      *
      * ==Implementing `typeOfValue`==
      * This method is typically not implemented by a single `Domain` trait/object, but is

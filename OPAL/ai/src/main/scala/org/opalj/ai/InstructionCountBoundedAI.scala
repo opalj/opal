@@ -32,7 +32,7 @@ package ai
 import org.opalj.br.Code
 
 /**
- * A abstract interpreter that interrupts itself after the evaluation of
+ * An abstract interpreter that interrupts itself after the evaluation of
  * the given number of instructions.
  *
  * @param maxEvaluationCount The maximum number of instruction evaluations.
