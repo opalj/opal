@@ -30,8 +30,21 @@ package org.opalj
 package ai
 
 /**
- * Ensures that – if two reference identical domain values – are merged multiple times, 
- * the same value is used as the result.
+ * Ensures that if two domain values are merged multiple times,
+ * the same value is used as the result. This ensures that the relation between the
+ * values remains the same.
+ *
+ * For example, given the following two stacks:
+ *  - `AnIntegerValue[#1]` <- `AnIntegerValue[#1]` <- `IntegerRange(lb=0,ub=10)[#2]` <- ...
+ *  - `AnIntegerValue[#3]` <- `AnIntegerValue[#3]` <- `IntegerRange(lb=0,ub=10)[#2]` <- ...
+ *
+ * The result will be (assuming that the result of joining `AnIntegerValue[#'''1''']` with
+ *  `AnIntegerValue[#'''3''']` creates a new value, e.g., `AnIntegerValue[#'''4''']`):
+ *  - `AnIntegerValue[#'''4''']` <- `AnIntegerValue[#'''4''']` <- `IntegerRange(lb=0,ub=10)[#2]` <- ...
+ *
+ * Without this trait each pair of values is joined again. In this case the result
+ * would be:
+ *  - `AnIntegerValue[#'''4''']` <- `AnIntegerValue[#'''5''']` <- `IntegerRange(lb=0,ub=10)[#2]` <- ...
  *
  * Using join stabilization is necessary if constraints are propagated
  * or (makes sense) if the merge of domain values is expensive.
