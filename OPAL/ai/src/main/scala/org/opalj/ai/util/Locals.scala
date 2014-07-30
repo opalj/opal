@@ -197,7 +197,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     override def hashCode: Int = {
         var hc = 1
-        foreach { e ⇒ hc * 41 + e.hashCode }
+        foreach { e ⇒ hc * 41 + { if (e ne null) e.hashCode else 7 } }
         hc
     }
 
