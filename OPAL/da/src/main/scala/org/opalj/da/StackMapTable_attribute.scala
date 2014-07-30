@@ -29,16 +29,55 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-case class CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
+case class StackMapTable_attribute(
+        attribute_name_index: Int,
+        attribute_length: Int,
+        stack_map_frames: IndexedSeq[StackMapFrame]) extends Attribute {
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+cp(name_and_type_index).toString(cp)
+    type StackMapFrames = IndexedSeq[StackMapFrame]
+
+    //
+    // IMPLEMENTATION
+    //
+
+    val attribute_name = StackMapTable_attribute.name
+
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <div>
+	        <details>
+	            <summary>Stack map table:</summary>
+	            <span> number of frames:{ stack_map_frames.length }</span>
+	            { stack_map_framestoXHTML(cp) }
+	       </details>
+	    </div>
     }
+
+    def stack_map_framestoXHTML(implicit cp: Constant_Pool): Node = {
+        var offset: Int = -1
+        val frames = for (stack_map_frame ← stack_map_frames) yield {
+            val Nodehtml = stack_map_frame.toXHTML(cp, offset)
+            offset = stack_map_frame.initial_offset
+            Nodehtml
+        }
+        <div> { frames } </div>
+    }
+
+}
+
+object StackMapTable_attribute {
+
+    val name = "StackMapTable"
+
 }

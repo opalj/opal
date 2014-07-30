@@ -29,16 +29,49 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
+
 /**
  * @author Michael Eichberg
  */
-case class CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
+object MethodDescriptor {
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
+    def apply(methodName: String, descriptor: String): String = {
+        var index = 1 // we are not interested in the leading '('
+        var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
+        while (descriptor.charAt(index) != ')') {
+            val (ft, nextIndex) = parseParameterType(descriptor, index)
+            parameterTypes = parameterTypes :+ ft
+            index = nextIndex
+        }
+        val returnType = descriptor.substring(index + 1)
 
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+cp(name_and_type_index).toString(cp)
+        s"$returnType $methodName(${parameterTypes.mkString(",")})"
+    }
+
+    private[this] def parseParameterType(md: String, startIndex: Int): (String, Int) = {
+        val td = md.charAt(startIndex)
+        (td: @scala.annotation.switch) match {
+            case 'L' ⇒
+                val endIndex = md.indexOf(';', startIndex + 1)
+                ( // this is the return tuple
+                    md.substring(startIndex + 1, endIndex),
+                    endIndex + 1
+                )
+            case '[' ⇒
+                val (ft, index) = parseParameterType(md, startIndex + 1)
+                ( // this is the return tuple
+                    ft,
+                    index
+                )
+            case _ ⇒
+                ( // this is the return tuple
+                    FieldType(td.toString),
+                    startIndex + 1
+                )
+        }
     }
 }

@@ -32,8 +32,10 @@ package da
 import scala.xml.Node
 
 /**
- *
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
 case class SourceFile_attribute(
         attribute_name_index: Int,
@@ -44,7 +46,7 @@ case class SourceFile_attribute(
     def attribute_name = SourceFile_attribute.name
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>, Source={ cp(sourceFile_index).asString }</div>
+        <span><span class="attributename">Source:</span> { cp(sourceFile_index).asString }</span>
     }
 
 }

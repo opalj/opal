@@ -29,33 +29,40 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  * <pre>
- * Signature_attribute { 
- * 	u2 attribute_name_index; 
- * 	u4 attribute_length; 
- * 	u2 signature_index; 
- * } 
- * </pre> 
+ * Signature_attribute {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * 	u2 signature_index;
+ * }
+ * </pre>
  *
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-case class Signature_attribute (
+case class Signature_attribute(
         attribute_name_index: Int,
-        sourceFile_index: Int)extends Attribute {
+        Signature_index: Int) extends Attribute {
 
-	/**
-	 * The value of the attribute_length item is fixed; it is always 4.
-	 */
-	def attribute_length = 2
-	
-	def attribute_name = Signature_attribute.name
+    /**
+     * The value of the attribute_length item is fixed; it is always 4.
+     */
+    def attribute_length = 2
 
+    def attribute_name = Signature_attribute.name
+
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <div><span class="attributename">Signature:</span> { cp(Signature_index).toString.replace('/', '.') }</div>
+    }
 }
 
-
 object Signature_attribute {
-	
-	val name = "Signature"
-	
+
+    val name = "Signature"
+
 }

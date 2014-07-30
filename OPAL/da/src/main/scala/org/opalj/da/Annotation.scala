@@ -29,16 +29,32 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
+ *
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-case class CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
+case class Annotation(
+        type_index: Int,
+        element_value_pairs: IndexedSeq[ElementValuePair]) {
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
+    //
+    // ABSTRACT DEFINITIONS
+    //
 
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+cp(name_and_type_index).toString(cp)
+    type ElementValuePairs = IndexedSeq[ElementValuePair]
+
+    def toXHTML(implicit cp: Constant_Pool): Node = {
+        val annotations =
+            for (element_value_pair ← element_value_pairs)
+                yield element_value_pair.toXHTML(cp)
+        <span>
+	        { cp(type_index).toString(cp).replace('/', '.') }
+	        { annotations }
+	    </span>
     }
 }

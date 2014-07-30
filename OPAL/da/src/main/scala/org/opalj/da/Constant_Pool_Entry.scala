@@ -30,23 +30,14 @@ package org.opalj
 package da
 
 /**
- *
  * @author Michael Eichberg
  */
 trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
-
     def Constant_Type_Value: bi.ConstantPoolTags.Value
-
-    //
-    // IMPLEMENTATION
-    //
 
     def asString: String = throw new UnsupportedOperationException()
 
-    def toString(implicit cp: Constant_Pool): String = throw new UnsupportedOperationException()
+    def toString(implicit cp: Constant_Pool): String = ""
 
 }

@@ -29,16 +29,50 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
+ * <pre>
+ * InnerClasses_attribute {
+ * u2 attribute_name_index;
+ * u4 attribute_length;
+ * u2 number_of_classes; // => Seq[InnerClasses_attribute.Class]
+ * {	u2 inner_class_info_index;
+ * 	u2 outer_class_info_index;
+ * 	u2 inner_name_index;
+ * 	u2 inner_class_access_flags;
+ * 	} classes[number_of_classes];
+ * }
+ * </pre>
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-case class CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
+case class InnerClasses_attribute(
+        attribute_name_index: Int,
+        classes: Seq[InnerClassesEntry]) extends Attribute {
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
+    def attribute_name = InnerClasses_attribute.name
 
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+cp(name_and_type_index).toString(cp)
+    def attribute_length = 2 + (classes.size * 8)
+
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <div id="#innerClasses">
+	        <details>
+	            <summary>{ cp(attribute_name_index).toString }</summary>
+	            <ol>
+	                <div class="code"><ul>{ for (class_ ← classes) yield class_.toXHTML(cp) }</ul></div>
+	            </ol>
+	        </details>
+	    </div>
     }
 }
+object InnerClasses_attribute {
+    val name = "InnerClasses"
+}
+
+
+
+
+

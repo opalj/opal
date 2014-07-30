@@ -37,4 +37,9 @@ case class CONSTANT_MethodType_info(
         descriptor_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_MethodType
+
+    override def toString(implicit cp: Constant_Pool): String = {
+        "CONSTANT_MethodType_info"
+        //cp(name_index).toString(cp)+" : "+FieldType(cp(descriptor_index).asString).toJava
+    }
 }

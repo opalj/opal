@@ -37,5 +37,6 @@ case class CONSTANT_Float_info(
         value: Float) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Float
+    override def toString(implicit cp: Constant_Pool):String  = value.toString
 
 }

@@ -38,4 +38,5 @@ case class CONSTANT_Integer_info(
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Integer
 
+    override def toString(implicit cp: Constant_Pool): String = value.toString
 }

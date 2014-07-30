@@ -31,14 +31,32 @@ package da
 
 /**
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-case class CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
+case class LocalVariableTable_attribute(
+        attribute_name_index: Int,
+        local_variable_table: Seq[LocalVariableTableEntry]) extends Attribute {
 
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+cp(name_and_type_index).toString(cp)
+    def attribute_length: Int = 2 + (local_variable_table.size * 10)
+
+    def attribute_name = LocalVariableTable_attribute.name
+
+    override def toXHTML(implicit cp: Constant_Pool) = {
+        <div>
+            <details>
+                <summary>LocalVariableTable:</summary>
+                { for (local_variable ← local_variable_table) yield local_variable.toXHTML(cp) }
+            </details>
+       </div>
     }
 }
+object LocalVariableTable_attribute {
+
+    val name = "LocalVariableTable"
+
+}
+
+

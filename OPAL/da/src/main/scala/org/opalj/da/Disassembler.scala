@@ -41,7 +41,7 @@ object Disassembler {
         if (args.length < 2) {
             println("Usage: java …Disassembler "+
                 "<JAR file containing class files> "+
-                "<Name of classfile (incl. path) contained in the JAR file>+")
+                "<Name of classfile (incl. path) contained in the JAR file>+") //
             println("Example:\n\tjava …Disassembler /Library/Java/JavaVirtualMachines/jdk1.7.0_51.jdk/Contents/Home/jre/lib/rt.jar java/util/ArrayList.class")
             sys.exit(-1)
         }

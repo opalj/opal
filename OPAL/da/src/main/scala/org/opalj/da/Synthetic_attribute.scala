@@ -29,16 +29,26 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
+ *
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-case class CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
+case class Synthetic_attribute(
+        attribute_name_index: Int) extends Attribute {
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
+    def attribute_length = 0
 
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+cp(name_and_type_index).toString(cp)
-    }
+    def attribute_name = Synthetic_attribute.name
+
+}
+
+object Synthetic_attribute {
+
+    val name = "Synthetic"
+
 }

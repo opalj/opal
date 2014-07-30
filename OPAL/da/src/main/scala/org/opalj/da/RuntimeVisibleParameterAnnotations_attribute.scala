@@ -29,16 +29,37 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
+ *
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-case class CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
+case class RuntimeVisibleParameterAnnotations_attribute(
+        attribute_name_index: Int,
+        attribute_length: Int,
+        parameter_annotations: IndexedSeq[IndexedSeq[Annotation]]) extends Attribute {
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
+    type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
 
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+cp(name_and_type_index).toString(cp)
+    def attribute_name = RuntimeVisibleParameterAnnotations_attribute.name
+
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <div class="annotation">//RuntimeVisibleParameterAnnotations:{ annotationstoXHTML(cp) }</div>
     }
+
+    def annotationstoXHTML(implicit cp: Constant_Pool): Node = {
+        <span>
+          { for (parameter_annotation ← parameter_annotations)for (annotation ← parameter_annotation) yield annotation.toXHTML(cp) }
+      </span>
+    }
+}
+
+object RuntimeVisibleParameterAnnotations_attribute {
+
+    val name = "RuntimeVisibleParameterAnnotations"
+
 }

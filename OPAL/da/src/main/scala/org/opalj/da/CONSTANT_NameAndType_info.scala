@@ -29,14 +29,20 @@
 package org.opalj
 package da
 
-/**
- *
- * @author Michael Eichberg
- */
 case class CONSTANT_NameAndType_info(
         name_index: Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_NameAndType
+
+    override def toString(implicit cp: Constant_Pool): String = {
+        // TODO Validate the implementation - looks confusing
+        if (!(cp(descriptor_index).toString(cp).charAt(0) == '('))
+            cp(name_index).toString(cp)+" : "+FieldType(cp(descriptor_index).asString)
+        else if ("<init>" == cp(name_index).asString)
+            cp(name_index).toString(cp)
+        else
+            "."+cp(name_index).toString(cp)+" : "+MethodDescriptor(cp(name_index).asString, cp(descriptor_index).asString)
+    }
 }
 

@@ -29,16 +29,37 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+import bi.AccessFlags
+import bi.AccessFlagsContexts
+
+/**
+ * u2 inner_class_info_index;
+ * u2 outer_class_info_index;
+ * u2 inner_name_index;
+ * u2 inner_class_access_flags;
+ */
+
 /**
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-case class CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
+case class InnerClassesEntry(
+        inner_class_info_index: Int,
+        outer_class_info_index: Int,
+        inner_name_index: Int,
+        inner_class_access_flags: Int) {
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
-
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+cp(name_and_type_index).toString(cp)
+    def toXHTML(implicit cp: Constant_Pool): Node = {
+        <li>[<span class="AccessFlags">inner</span> class info: { cp(inner_class_info_index).toString }
+           , <span class="AccessFlags">outer</span> class info:{ cp(inner_class_info_index).toString }
+           inner name:{ cp(inner_name_index).toString }
+           accessflags:<span class="AccessFlags">{ AccessFlags.toString(inner_class_access_flags, AccessFlagsContexts.INNER_CLASS) }</span>]
+           
+       </li>
     }
 }
+
+

@@ -1,5 +1,4 @@
-﻿
-@charset "utf-8";
+﻿@charset "utf-8";
 body{
 	font-family: "Times New Roman", Times, serif;
 	background: #fff url(../images/bg.jpg) repeat top left;
@@ -16,8 +15,8 @@ body{
 	border: 1px solid rgba(147, 184, 189, 0.8);
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(105, 108, 109, 0.7), 0 0 8px 5px rgba(208, 223, 226, 0.4) inset;
-	width: 60%;
-	padding:20px;
+	width: 66%;
+	padding:10px;
 	float:left;
 	border-radius: 10px;
 	background: none repeat scroll 0 0 #F7F7F7;
@@ -30,7 +29,7 @@ body{
 	border: 1px solid rgba(100, 170, 0, 0.8);
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(100,105, 0, 0.7), 0 0 8px 5px rgba(100, 208, 0, 0.4) inset;	
-	width: 31%;
+	width: 25%;
 	float:left;
 	padding:20px;
 	 margin-left:20px;	
@@ -41,13 +40,13 @@ body{
 	background: -o-linear-gradient(0   ,#F7F7F7);
 }
 
-#methods,#fields {
+#methods,#fields,#attributes {
 	font-weight:bold;
 	border: 1px solid rgba(147, 184, 189, 0.8);
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(105, 108, 109, 0.7), 0 0 8px 5px rgba(208, 223, 226, 0.4) inset;
-	margin-top: 10px;
-	padding: 5px 20px 13px 20px;
+	margin-top: 3px;
+	padding: 5px 210px 13px 10px;
 	border-radius: 10px;
 	background: none repeat scroll 0 0 #F7F7F7;
 	background: -moz-linear-gradient(0 ,#F7F7F7);
@@ -55,13 +54,21 @@ body{
 	background: -o-linear-gradient(0   ,#F7F7F7);
 }
 
-h2, p, ol, ul, li {
+h2, p {
     margin:20px;
     padding:0px;
     font-size:13px;
     font-family:Arial, Helvetica, sans-serif;
 }
- 			
+ 
+ol, ul, li {
+    margin:10px;
+    margin-left:7px;
+    padding:0px;
+    font-size:13px;
+    font-family:Arial, Helvetica, sans-serif;
+}
+			
 p.Summary {
     position:relative; /*see the support section below for more info*/
     padding:20px 40px;
@@ -86,15 +93,47 @@ p.Summary {
     letter-spacing:.06em;
     }
 	
-
 .code {
 	font-family:Consolas;
 }
 
+#sourcecode {
+	font-weight:bold;
+	width:100%;
+	border: 1px solid rgba(147, 184, 189, 0.8);
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(105, 108, 109, 0.7), 0 0 8px 5px rgba(208, 223, 226, 0.4) inset;
+	margin-top: 3px;
+	padding: 5px 210px 13px 10px;
+	border-radius: 10px;
+	background: none repeat scroll 0 0 #F7F7F7;
+	background: -moz-linear-gradient(0 ,#F7F7F7);
+	background: -webkit-linear-gradient(0   ,#F7F7F7);
+	background: -o-linear-gradient(0   ,#F7F7F7);
+}
+.annotation{
+	color: #228B22;
+	font-weight:lighter;
+	font-style:italic;
+	font-size:small;
+	fontName: 'Times-Roman';
+}
 .AccessFlags {
     color: rgba(0, 0, 100, 0.6);
 }
 
+.index{
+	color: #FFA500;
+	min-width:90px;
+	}
+	
+.reservedwords,.verification{
+	color: #0000ff;
+	}
+		
+.ConstantValue,.attributename{
+	color: #FFA500;
+}
 a.tooltip{
 	color:gray;
 }

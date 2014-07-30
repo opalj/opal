@@ -33,18 +33,24 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
- *
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-trait CONSTANT_Ref extends Constant_Pool_Entry {
+case class ElementValuePair(
+        element_name_index: Int,
+        element_value: ElementValue) {
 
-    val class_index: Constant_Pool_Index
-
-    val name_and_type_index: Constant_Pool_Index
-
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+
-            cp(name_and_type_index).toString(cp)
+    def toXHTML(implicit cp: Constant_Pool): Node = {
+        <div>
+            <span>
+                <span class="attributename">{ cp(element_name_index).toString(cp) }:</span> 
+                { element_value.toString() }
+            </span>
+        </div>
     }
 }

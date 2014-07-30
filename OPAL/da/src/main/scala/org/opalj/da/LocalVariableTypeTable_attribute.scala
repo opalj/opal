@@ -30,15 +30,43 @@ package org.opalj
 package da
 
 /**
+ * <pre>
+ * LocalVariableTypeTable_attribute {
+ * u2 attribute_name_index;
+ * u4 attribute_length;
+ * u2 local_variable_type_table_length;
+ * { u2 start_pc;
+ * u2 length;
+ * u2 name_index;
+ * u2 signature_index;
+ * u2 index;
+ * } local_variable_type_table[
+ * local_variable_type_table_length];
+ * }
+ * </pre>
+ *
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-case class CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
+case class LocalVariableTypeTable_attribute(
+        attribute_name_index: Int,
+        local_variable_type_table: Seq[LocalVariableTypeTableEntry]) extends Attribute {
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
+    def attribute_length: Int = 2 + (local_variable_type_table.size * 10)
 
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+cp(name_and_type_index).toString(cp)
-    }
+    def attribute_name = LocalVariableTypeTable_attribute.name
 }
+object LocalVariableTypeTable_attribute {
+
+    val name = "LocalVariableTypeTable"
+
+}
+
+case class LocalVariableTypeTableEntry(
+    start_pc: Int,
+    length: Int,
+    name_index: Int,
+    signature_index: Int,
+    index: Int) 

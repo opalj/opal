@@ -29,16 +29,23 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-case class CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
+case class LocalVariableTableEntry(
+        start_pc: Int,
+        length: Int,
+        name_index: Int,
+        descriptor_index: Int,
+        index: Int) {
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
-
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+cp(name_and_type_index).toString(cp)
+    def toXHTML(implicit cp: Constant_Pool): Node = {
+        <div>[pc={ start_pc }, { cp(name_index).toString(cp) },{ cp(descriptor_index).toString(cp).toString.replace('/', '.') },index:{ index }, default value:{ cp(index).toString(cp) }]</div>
     }
+
 }

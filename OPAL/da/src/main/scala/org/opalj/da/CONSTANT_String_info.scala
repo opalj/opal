@@ -34,7 +34,6 @@ package org.opalj
 package da
 
 /**
- *
  * @author Michael Eichberg
  */
 case class CONSTANT_String_info(

@@ -29,16 +29,21 @@
 package org.opalj
 package da
 
-/**
- * @author Michael Eichberg
- */
-case class CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
+object FieldType {
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
-
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+cp(name_and_type_index).toString(cp)
+    def apply(ft: String): String = {
+        (ft.charAt(0): @scala.annotation.switch) match {
+            case 'B' ⇒ "byte"
+            case 'C' ⇒ "char"
+            case 'D' ⇒ "double"
+            case 'F' ⇒ "float"
+            case 'I' ⇒ "int"
+            case 'J' ⇒ "long"
+            case 'S' ⇒ "short"
+            case 'Z' ⇒ "boolean"
+            case 'L' ⇒ ft.substring(1, ft.length - 1).replace('/', '.')
+            case '[' ⇒ apply(ft.substring(1))+"[]"
+            case _   ⇒ throw new IllegalArgumentException(ft+" is not a valid field type descriptor")
+        }
     }
 }

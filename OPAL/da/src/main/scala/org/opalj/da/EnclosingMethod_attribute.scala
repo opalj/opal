@@ -30,15 +30,35 @@ package org.opalj
 package da
 
 /**
+ * <pre>
+ * EnclosingMethod_attribute {
+ * 	u2 attribute_name_index;
+ * 	u4 attribute_length;
+ * 	u2 class_index
+ * 	u2 method_index;
+ * }
+ * </pre>
+ *
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-case class CONSTANT_Fieldref_info(
-        class_index: Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
+case class EnclosingMethod_attribute(
+        attribute_name_index: Int,
+        class_index: Int,
+        method_index: Int) extends Attribute {
 
-    override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
+    /**
+     * The value of the attribute_length item is fixed; it is 4.
+     */
+    def attribute_length = 4
 
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+cp(name_and_type_index).toString(cp)
-    }
+    def attribute_name = EnclosingMethod_attribute.name
+
+    // TODO Implementat support for Enclosing Method Attribute
+}
+object EnclosingMethod_attribute {
+
+    val name = "EnclosingMethod"
 }

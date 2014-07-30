@@ -39,10 +39,14 @@ import scala.xml.Node
  * 	u2 attribute_name_index;
  * 	u4 attribute_length;
  * 	u1 info[attribute_length];
+ *  ...
  * }
  * </pre>
  *
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
 trait Attribute {
 
@@ -53,7 +57,9 @@ trait Attribute {
 
     def attribute_name_index: Constant_Pool_Index
 
+    def attribute_name(implicit cp: Constant_Pool) = cp(attribute_name_index).asString
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>,{ cp(attribute_name_index).asString }</div>
+        <span class="attributename">{ attribute_name }</span>
     }
 }
