@@ -28,38 +28,33 @@
  */
 package org.opalj
 package ai
-package domain
-package tracing
 
-import br._
+import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
 
 /**
- * Abstract interpreter that (in combination with an appropriate domain)
- * facilitates the analysis of properties that are control-flow dependent.
+ * Makes the instance of the abstract interpreter that performs the
+ * abstract interpretation available.
  *
- * Basically this abstract interpreter can be used as a drop-in replacement
- * of the default abstract interpreter if the domain supports property
- * tracing.
+ * ==Usage==
+ * It is sufficient to mixin this trait in a [[Domain]] that needs to access the abstract
+ * interpreter. The abstract interpreter will then perform the initialization.
+ *
+ * The concrete instance of [[AI]] that performs the abstract interpretation is set
+ * immediately before the abstract interpretation is started/continued.
  *
  * @author Michael Eichberg
  */
-trait AIWithPropertyTracing[D <: Domain with PropertyTracing] extends AI[D] {
+trait TheAI[D <: Domain] {
 
-    /**
-     * Performs an abstract interpretation of the given code snippet.
-     *
-     * Before actually starting the interpretation the domain is called to
-     * let it initialize its properties.
-     */
-    override def perform(
-        code: Code,
-        theDomain: D)(
-            initialOperands: theDomain.Operands,
-            initialLocals: theDomain.Locals): AIResult { val domain: theDomain.type } = {
+    private[this] var theAI: AI[D] = null
 
-        theDomain.initProperties(code, initialOperands, initialLocals)
-        super.perform(code, theDomain)(initialOperands, initialLocals)
+    private[ai] def setAI(ai: AI[D]) {
+        this.theAI = ai
     }
+
+    def ai: AI[D] = theAI
+
+    def tracer: Option[AITracer] = ai.tracer
+
 }
-
-

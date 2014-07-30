@@ -28,38 +28,44 @@
  */
 package org.opalj
 package ai
-package domain
-package tracing
 
-import br._
+import scala.collection.BitSet
+
+import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
 
 /**
- * Abstract interpreter that (in combination with an appropriate domain)
- * facilitates the analysis of properties that are control-flow dependent.
+ * Mixin this trait if access to the operands ([[Domain#OperandsArray]])
+ * and locals ([[Domain#LocalsArray]]) is needed.
  *
- * Basically this abstract interpreter can be used as a drop-in replacement
- * of the default abstract interpreter if the domain supports property
- * tracing.
+ * ==Usage==
+ * It is sufficient to mixin this trait in a [[Domain]] that needs to get access to the
+ * memory structures. The abstract interpreter will then perform the initialization.
+ *
+ * This information is set immediately before the abstract interpretation is
+ * started/continued.
  *
  * @author Michael Eichberg
  */
-trait AIWithPropertyTracing[D <: Domain with PropertyTracing] extends AI[D] {
+trait TheMemoryLayout { domain: ValuesDomain ⇒
 
-    /**
-     * Performs an abstract interpretation of the given code snippet.
-     *
-     * Before actually starting the interpretation the domain is called to
-     * let it initialize its properties.
-     */
-    override def perform(
-        code: Code,
-        theDomain: D)(
-            initialOperands: theDomain.Operands,
-            initialLocals: theDomain.Locals): AIResult { val domain: theDomain.type } = {
+    private[this] var theOperandsArray: OperandsArray = null
+    def operandsArray: OperandsArray = theOperandsArray
 
-        theDomain.initProperties(code, initialOperands, initialLocals)
-        super.perform(code, theDomain)(initialOperands, initialLocals)
+    private[this] var theLocalsArray: LocalsArray = null
+    def localsArray: LocalsArray = theLocalsArray
+
+    private[this] var theMemoryLayoutBeforeSubroutineCall: List[(this.OperandsArray, this.LocalsArray)] = null
+    def memoryLayoutBeforeSubroutineCall: List[(this.OperandsArray, this.LocalsArray)] =
+        theMemoryLayoutBeforeSubroutineCall
+
+    private[ai] def setMemoryLayout(
+        theOperandsArray: this.OperandsArray,
+        theLocalsArray: this.LocalsArray,
+        theMemoryLayoutBeforeSubroutineCall: List[(this.OperandsArray, this.LocalsArray)]) {
+
+        this.theOperandsArray = theOperandsArray
+        this.theLocalsArray = theLocalsArray
+        this.theMemoryLayoutBeforeSubroutineCall = theMemoryLayoutBeforeSubroutineCall
     }
 }
-
-

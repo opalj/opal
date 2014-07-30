@@ -30,6 +30,7 @@ package org.opalj
 package ai
 
 import scala.util.control.ControlThrowable
+import scala.collection.BitSet
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
@@ -276,7 +277,7 @@ trait AI[D <: Domain] {
      * Performs an abstract interpretation of the given (byte)code using
      * the given domain and the initial operand stack and initial register assignment.
      */
-    protected[ai] def perform(
+    def perform(
         code: Code,
         theDomain: D)(
             initialOperands: theDomain.Operands,
@@ -298,13 +299,41 @@ trait AI[D <: Domain] {
     }
 
     /**
-     * Returns the set of instructions that are join instructions. I.e.,
-     * those instructions where multiple control-flow paths merge.
+     * Performs additional initializations of the [[Domain]], if the `Domain` implements
+     * the trait [[TheAI]].
      *
-     * @see [[org.opalj.br.Code#joinInstructions]]
+     * This method is called before the abstract interpretation is started/continued.
      */
-    protected[ai] def joinInstructions(code: Code): scala.collection.BitSet =
-        code.joinInstructions
+    protected[this] def preInterpretationInitialization(
+        code: Code,
+        theDomain: D)(
+            instructions: Array[Instruction],
+            joinInstructions: BitSet,
+            theOperandsArray: theDomain.OperandsArray,
+            theLocalsArray: theDomain.LocalsArray,
+            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): Unit = {
+
+        // The following order must not change: 
+        // (The order is part of the contract of AI.)
+
+        theDomain match {
+            case d: TheAI[D] ⇒ d.setAI(this)
+            case _           ⇒ /*nothing to do*/
+        }
+        theDomain match {
+            case d: TheCodeStructure ⇒
+                d.setCodeStructure(instructions, joinInstructions)
+            case _ ⇒ /*nothing to do*/
+        }
+        theDomain match {
+            case d: TheMemoryLayout ⇒
+                d.setMemoryLayout(
+                    theOperandsArray.asInstanceOf[d.OperandsArray],
+                    theLocalsArray.asInstanceOf[d.LocalsArray],
+                    theMemoryLayoutBeforeSubroutineCall.asInstanceOf[List[(d.OperandsArray, d.LocalsArray)]])
+            case _ ⇒ /*nothing to do*/
+        }
+    }
 
     /**
      * Continues the interpretation of the given method (code) using the given domain.
@@ -384,7 +413,12 @@ trait AI[D <: Domain] {
         type TwoValuesDomainTest = (PC, DomainValue, DomainValue) ⇒ Answer
 
         val instructions: Array[Instruction] = code.instructions
-        val joinInstructions = this.joinInstructions(code)
+        val joinInstructions = code.joinInstructions
+
+        preInterpretationInitialization(
+            code, theDomain)(
+                instructions, joinInstructions,
+                theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall)
 
         // The entire state of the computation is (from the perspective of the AI)
         // encapsulated by the following data-structures:

@@ -28,38 +28,37 @@
  */
 package org.opalj
 package ai
-package domain
-package tracing
 
-import br._
+import scala.collection.BitSet
+
+import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
 
 /**
- * Abstract interpreter that (in combination with an appropriate domain)
- * facilitates the analysis of properties that are control-flow dependent.
+ * Mixin this trait if information about the structure of the code is needed.
  *
- * Basically this abstract interpreter can be used as a drop-in replacement
- * of the default abstract interpreter if the domain supports property
- * tracing.
+ * ==Usage==
+ * It is sufficient to mixin this trait in a [[Domain]] that needs to get access to
+ * the code array. The abstract interpreter will then perform the initialization.
+ *
+ * This information is set immediately before the abstract interpretation is
+ * started/continued.
  *
  * @author Michael Eichberg
  */
-trait AIWithPropertyTracing[D <: Domain with PropertyTracing] extends AI[D] {
+trait TheCodeStructure { domain: ValuesDomain ⇒
 
-    /**
-     * Performs an abstract interpretation of the given code snippet.
-     *
-     * Before actually starting the interpretation the domain is called to
-     * let it initialize its properties.
-     */
-    override def perform(
-        code: Code,
-        theDomain: D)(
-            initialOperands: theDomain.Operands,
-            initialLocals: theDomain.Locals): AIResult { val domain: theDomain.type } = {
+    private[this] var theInstructions: Array[Instruction] = null
+    def instructions: Array[Instruction] = theInstructions
 
-        theDomain.initProperties(code, initialOperands, initialLocals)
-        super.perform(code, theDomain)(initialOperands, initialLocals)
+    private[this] var theJoinInstructions: BitSet = null
+    def joinInstructions: BitSet = theJoinInstructions
+
+    private[ai] def setCodeStructure(
+        theInstructions: Array[Instruction],
+        theJoinInstructions: BitSet) {
+
+        this.theInstructions = theInstructions
+        this.theJoinInstructions = theJoinInstructions
     }
 }
-
-
