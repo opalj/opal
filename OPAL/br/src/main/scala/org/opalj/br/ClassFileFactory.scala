@@ -37,7 +37,8 @@ import instructions._
  * @author Arne Lottmann
  */
 object ClassFileFactory {
-    private val receiverFieldName = "receiver";
+
+    final val ReceiverFieldName = "receiver";
 
     /**
      * Creates a class that acts as a proxy for the specified class and that implements
@@ -87,22 +88,25 @@ object ClassFileFactory {
             if (isStaticCall) {
                 IndexedSeq.empty
             } else {
-                IndexedSeq(createPrivateFinalField(receiverType, receiverFieldName))
+                IndexedSeq(createField(fieldType = receiverType, name = ReceiverFieldName))
             }
 
         val constructor: Method = createConstructor(definingType, fields)
 
-        val methods: IndexedSeq[Method] = IndexedSeq(proxyMethod(
-            definingType.objectType,
-            methodName,
-            methodDescriptor,
-            receiverType,
-            receiverMethodName,
-            receiverMethodDescriptor,
-            isStaticCall,
-            isPrivateCall,
-            isInterfaceCall
-        ), constructor)
+        val methods: IndexedSeq[Method] = IndexedSeq(
+            proxyMethod(
+                definingType.objectType,
+                methodName,
+                methodDescriptor,
+                receiverType,
+                receiverMethodName,
+                receiverMethodDescriptor,
+                isStaticCall,
+                isPrivateCall,
+                isInterfaceCall
+            ),
+            constructor
+        )
 
         ClassFile(0, 49,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
@@ -115,24 +119,21 @@ object ClassFileFactory {
     }
 
     /**
-     * Creates a `private final` field of the specified type with the given name.
+     * Creates a field of the specified type with the given name.
      */
-    private def createPrivateFinalField(
+    def createField(
+        accessFlags: Int = (bi.ACC_PRIVATE.mask | bi.ACC_FINAL.mask),
+        name: String,
         fieldType: FieldType,
-        name: String): Field = {
+        attributes: Seq[Attribute] = Seq.empty): Field = {
 
-        Field(
-            bi.ACC_PRIVATE.mask | bi.ACC_FINAL.mask,
-            name,
-            fieldType,
-            Seq.empty
-        )
+        Field(accessFlags, name, fieldType, Seq.empty)
     }
 
     /**
      * Creates the proxy class's constructor.
      *
-     * If the given `fields` are not the empty sequence, the constructor will have parameters
+     * If `fields` is not empty, the constructor will have parameters
      * corresponding to these fields in the order given by the sequence. Furthermore, the
      * constructor will contain bytecode instructions that place the parameters into these
      * fields.
@@ -142,26 +143,25 @@ object ClassFileFactory {
     private[br] def createConstructor(
         definingType: TypeDeclaration,
         fields: IndexedSeq[Field]): Method = {
-
-        val theSuperclassType = definingType.theSuperclassType.getOrElse(ObjectType.Object)
+        // it doesn't make sense that the superClassType is not defined
+        val theSuperclassType = definingType.theSuperclassType.get
         val theType = definingType.objectType
-        val instructions = callSuperDefaultConstructor(theSuperclassType) ++
-            putParametersToFieldsInstructions(theType, fields) :+ RETURN
-        val maxStack = 1 + fields.map(_.fieldType.computationalType.operandSize).foldLeft(0) {
-            (maximum, current) ⇒ if (maximum >= current) maximum else current
-        }
+        val instructions =
+            callSuperDefaultConstructor(theSuperclassType) ++
+                putParametersToFieldsInstructions(theType, fields) :+
+                RETURN
+        val maxStack =
+            if (fields.isEmpty)
+                0
+            else
+                1 + fields.map(_.fieldType.computationalType.operandSize).max
         val maxLocals = 1 + fields.map(_.fieldType.computationalType.operandSize).sum
 
         Method(
             bi.ACC_PUBLIC.mask,
             "<init>",
             MethodDescriptor(fields.map(_.fieldType), VoidType),
-            Seq(Code(
-                maxStack,
-                maxLocals,
-                instructions,
-                IndexedSeq.empty,
-                Seq.empty))
+            Seq(Code(maxStack, maxLocals, instructions, IndexedSeq.empty, Seq.empty))
         )
     }
 
@@ -170,12 +170,13 @@ object ClassFileFactory {
      * given superclass.
      */
     private def callSuperDefaultConstructor(
-        theSuperclassType: ObjectType): Array[Instruction] = Array(
-        ALOAD_0,
-        INVOKESPECIAL(theSuperclassType,
-            "<init>",
-            NoArgumentAndNoReturnValueMethodDescriptor)
-    )
+        theSuperclassType: ObjectType): Array[Instruction] =
+        Array(
+            ALOAD_0,
+            INVOKESPECIAL(theSuperclassType,
+                "<init>",
+                NoArgumentAndNoReturnValueMethodDescriptor)
+        )
 
     /**
      * Creates an array of instructions that populate the given `fields` in `declaringType`
@@ -200,7 +201,7 @@ object ClassFileFactory {
             variablesWithBytecodeIndices(index) = (field, variableIndex)
 
             // advance the variableIndex for the next iteration of the foldLeft method
-            // by the amount of blocks taken up by this parameter
+            // by the amount of words (1 or 2) taken up by this parameter
             variableIndex + field.fieldType.computationalType.operandSize
         }
 
@@ -208,8 +209,9 @@ object ClassFileFactory {
             val (field, variableIndex) = fieldWithIndex
             val array = new Array[Instruction](if (variableIndex > 3) 4 else 3)
             array(0) = ALOAD_0
-            array(1) = LoadLocalVariableInstruction(field.fieldType, variableIndex)
-            val nextIndex = array(1).indexOfNextInstruction(1, false)
+            val llv = LoadLocalVariableInstruction(field.fieldType, variableIndex)
+            array(1) = llv
+            val nextIndex = llv.indexOfNextInstruction(1, false)
             array(nextIndex) = PUTFIELD(declaringType, field.name, field.fieldType)
             array
         }
@@ -235,16 +237,13 @@ object ClassFileFactory {
         isPrivateCall: Boolean,
         isInterfaceCall: Boolean): Method = {
 
-        val code = createProxyMethodBytecode(definingType, methodName, methodDescriptor,
-            receiverType, receiverMethodName, receiverMethodDescriptor,
-            isStaticCall, isPrivateCall, isInterfaceCall)
+        val code =
+            createProxyMethodBytecode(
+                definingType, methodName, methodDescriptor,
+                receiverType, receiverMethodName, receiverMethodDescriptor,
+                isStaticCall, isPrivateCall, isInterfaceCall)
 
-        Method(
-            bi.ACC_PUBLIC.mask,
-            methodName,
-            methodDescriptor,
-            Seq(code)
-        )
+        Method(bi.ACC_PUBLIC.mask, methodName, methodDescriptor, Seq(code))
     }
 
     /**
@@ -278,7 +277,7 @@ object ClassFileFactory {
             } else {
                 Array(
                     ALOAD_0,
-                    GETFIELD(definingType, receiverFieldName, receiverType),
+                    GETFIELD(definingType, ReceiverFieldName, receiverType),
                     null,
                     null
                 )
@@ -293,7 +292,7 @@ object ClassFileFactory {
             if (isStaticCall) {
                 Array(
                     INVOKESTATIC(receiverType, receiverMethodName, receiverMethodDescriptor),
-                    null, 
+                    null,
                     null
                 )
             } else if (isPrivateCall) {
@@ -305,9 +304,9 @@ object ClassFileFactory {
             } else if (isInterfaceCall) {
                 Array(
                     INVOKEINTERFACE(receiverType, receiverMethodName, receiverMethodDescriptor),
-                    null, 
-                    null, 
-                    null, 
+                    null,
+                    null,
+                    null,
                     null
                 )
             } else {
@@ -318,8 +317,8 @@ object ClassFileFactory {
                 )
             }
 
-        val forwardingInstructions: Array[Instruction] = forwardParametersInstructions ++
-            forwardingCallInstruction
+        val forwardingInstructions: Array[Instruction] =
+            forwardParametersInstructions ++ forwardingCallInstruction
 
         val returnInstruction: Instruction = ReturnInstruction(methodDescriptor.returnType)
 
@@ -333,8 +332,8 @@ object ClassFileFactory {
                 1
             }
 
-        val parametersStackSize = receiverMethodDescriptor.parameterTypes.map(
-            _.computationalType.operandSize).sum
+        val parametersStackSize =
+            receiverMethodDescriptor.parameterTypes.map(_.computationalType.operandSize).sum
 
         val returnValueStackSize =
             if (methodDescriptor.returnType != VoidType) {
@@ -343,8 +342,10 @@ object ClassFileFactory {
                 0
             }
 
-        val maxStack = math.max(
-            (receiverObjectStackSize) + parametersStackSize, returnValueStackSize)
+        val maxStack =
+            math.max(
+                (receiverObjectStackSize) + parametersStackSize,
+                returnValueStackSize)
 
         val maxLocals = 1 + receiverObjectStackSize + parametersStackSize +
             returnValueStackSize

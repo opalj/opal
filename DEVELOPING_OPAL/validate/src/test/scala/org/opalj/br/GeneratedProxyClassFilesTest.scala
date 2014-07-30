@@ -37,6 +37,7 @@ import org.opalj.ai.BaseAI
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
+import org.scalatest.ParallelTestExecution
 import org.junit.runner.RunWith
 
 /**
@@ -45,8 +46,9 @@ import org.junit.runner.RunWith
  * @author Arne Lottmann
  */
 @RunWith(classOf[JUnitRunner])
-class ValidatingGeneratedProxyClassFiles extends FunSpec with Matchers {
-    describe("Validating ClassFileFactory's proxy class files") {
+class GeneratedProxyClassFilesTest extends FunSpec with Matchers with ParallelTestExecution {
+
+    describe("the generation of Proxy classes") {
 
         val testProject = Project(TestSupport.locateTestResources("classfiles/proxy.jar", "br"))
 
@@ -66,12 +68,12 @@ class ValidatingGeneratedProxyClassFiles extends FunSpec with Matchers {
         val types = Seq(StaticMethods, InstanceMethods, Constructors,
             PrivateInstanceMethods, InterfaceMethods)
 
-        it("should generate interpretable proxy methods") {
-            types.par.foreach { theType ⇒
-                val methods = getMethods(theType, testProject)
-                methods should not be ('empty)
-                methods.foreach { p ⇒
-                    val (t: ObjectType, m: Method) = p
+        types.foreach { theType ⇒
+            val methods = getMethods(theType, testProject)
+            methods should not be ('empty)
+            methods.foreach { p ⇒
+                val (t: ObjectType, m: Method) = p
+                it(s"it should generate a valid proxy method for ${t.toJava} { ${m.toJava} }") {
                     val definingType = TypeDeclaration(
                         ObjectType("ProxyValidation$"+t.toJava+":"+m.toJava.replace(' ', '_')+"$"),
                         false,
@@ -79,26 +81,34 @@ class ValidatingGeneratedProxyClassFiles extends FunSpec with Matchers {
                         Set.empty
                     )
                     val proxyMethodName = m.name+"$proxy"
-                    val proxy = ClassFileFactory.Proxy(definingType,
-                        proxyMethodName,
-                        m.descriptor,
-                        t,
-                        m.name,
-                        m.descriptor,
-                        m.isStatic,
-                        m.isPrivate,
-                        testProject.classFile(t).map(_.isInterfaceDeclaration).getOrElse(false))
+                    val proxy =
+                        ClassFileFactory.Proxy(definingType,
+                            proxyMethodName,
+                            m.descriptor,
+                            t,
+                            m.name,
+                            m.descriptor,
+                            m.isStatic,
+                            m.isPrivate,
+                            testProject.classFile(t).map(_.isInterfaceDeclaration).getOrElse(false))
                     val proxyMethod = proxy.findMethod(proxyMethodName).get
                     val domain = new BaseDomain(testProject, proxy, proxyMethod)
                     val result = BaseAI(proxy, proxyMethod, domain)
+
+                    // the abstract interpretation succeed
                     result should not be ('wasAborted)
+
+                    // the method was non-empty
                     val instructions = proxyMethod.body.get.instructions
                     instructions.count(_ != null) should be >= 2
-                    //                println(org.opalj.ai.memoryLayoutToText(result.domain)(result.operandsArray, result.localsArray))
+
+                    // there is no dead-code
                     result.operandsArray.zip(instructions).foreach { p ⇒
                         val (oa, i) = p
                         if (i != null) oa should not be (null)
                     }
+
+                    // the layout of the instructions array is correct
                     for {
                         pc ← 0 until instructions.size
                     } {
