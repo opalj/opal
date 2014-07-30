@@ -242,7 +242,8 @@ object PerformInvocations {
      * the list of parameters for the given method. The parameters are stored in the
      * local variables ([[Locals]])/registers of the method; i.e., this method
      * creates an initial assignment for the local variables that can directly
-     * be used to pass them to [[AI]]'s `perform(...)(initialLocals)` method.
+     * be used to pass them to [[AI]]'s 
+     * `perform(...)(<initialOperands = Nil>,initialLocals)` method.
      *
      * @param operands The list of operands used to call the given method. The length
      *      of the list must be:
