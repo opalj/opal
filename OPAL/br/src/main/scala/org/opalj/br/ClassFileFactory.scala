@@ -151,10 +151,14 @@ object ClassFileFactory {
                 putParametersToFieldsInstructions(theType, fields) :+
                 RETURN
         val maxStack =
-            if (fields.isEmpty)
-                0
-            else
-                1 + fields.map(_.fieldType.computationalType.operandSize).max
+            1 + (
+                if (fields.isEmpty)
+                    0
+                else if (fields.exists(_.fieldType.computationalType.operandSize == 2))
+                    2
+                else
+                    1
+            )
         val maxLocals = 1 + fields.map(_.fieldType.computationalType.operandSize).sum
 
         Method(
