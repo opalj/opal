@@ -30,17 +30,28 @@ package org.opalj
 package ai
 
 /**
+ * Identifies situations in which the memory layout changes such that an alias that
+ * existed before a join no longer exists. In this case the [[UpdateType]] is set to
+ * [[StructuralUpdateType]].
+ * For example, imagine that the old stack layout (before the join was executed)
+ * is as follows:
  *
- * @note Mixin in this trait is strictly necessary when aliases are traced.
+ *  `AnIntegerValue[#1]` <- `AnIntegerValue[#1]` <- `IntegerRange(lb=0,ub=10)[#2]` <- ...
+ *
+ *  and that the stack after the join is:
+ *
+ *  `AnIntegerValue[#2]` <- `AnIntegerValue[#3]` <- `IntegerRange(lb=0,ub=10)[#2]` <- ...
+ *
+ * Hence, the two top-most stack values are no aliases and – if the result of an
+ * analysis/domain is influenced by aliasing information – the continuation of the
+ * abstract interpretation is enforced.
+ *
+ * @note Mixing in this trait is strictly necessary when aliases are traced using a
+ *      a DomainValue's reference.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait IdentityBasedAliasBreakUpDetection extends CoreDomainFunctionality {
-
-    import java.util.{ IdentityHashMap ⇒ IDMap }
-
-    // preallocated 
-    protected[this] val aliasInformation = new IDMap[DomainValue, Integer]()
 
     protected[this] override def joinPostProcessing(
         updateType: UpdateType,
@@ -58,50 +69,48 @@ trait IdentityBasedAliasBreakUpDetection extends CoreDomainFunctionality {
         }
 
         if (updateType.isMetaInformationUpdate) {
-            val aliasInformation = this.aliasInformation
-            try {
-                var opi = -1;
-                oldOperands.foreach { op ⇒
-                    val previousLocation = aliasInformation.get(op);
-                    if (previousLocation == null)
-                        aliasInformation.put(op, opi)
-                    else {
-                        // let's check if we can find the same alias in the new operands
-                        if (newOperands(-previousLocation - 1) ne newOperands(-opi - 1))
-                            return liftUpdateType(previousLocation, opi)
-                    }
-                    opi -= 1;
-                }
+            val aliasInformation = new java.util.IdentityHashMap[DomainValue, Integer]()
 
-                var li = 0;
-                oldLocals.foreach { l ⇒
-                    if ((l ne null) && (l ne TheIllegalValue)) {
-                        val previousLocation = aliasInformation.get(l);
-                        if (previousLocation == null)
-                            aliasInformation.put(l, li)
-                        else {
-                            // let's check if we can find the same alias relation
-                            if (previousLocation < 0) {
-                                val v2 = newLocals(li)
-                                if ((newOperands(-previousLocation - 1) ne v2) &&
-                                    (v2 ne TheIllegalValue))
-                                    return liftUpdateType(previousLocation, li)
-                            } else /*previousLocation >= 0*/ {
-                                val v1 = newLocals(previousLocation)
-                                val v2 = newLocals(li)
-                                if ((v1 ne v2) /* <=> the alias no longer exists */ &&
-                                    // but, does it matter?
-                                    (v1 ne TheIllegalValue) && (v2 ne TheIllegalValue))
-                                    return liftUpdateType(previousLocation, li)
-                            }
+            var opi = -1;
+            oldOperands.foreach { op ⇒
+                val previousLocation = aliasInformation.get(op);
+                if (previousLocation == null)
+                    aliasInformation.put(op, opi)
+                else {
+                    // let's check if we can find the same alias 
+                    // relation in the new operands
+                    if (newOperands(-previousLocation - 1) ne newOperands(-opi - 1))
+                        return liftUpdateType(previousLocation, opi)
+                }
+                opi -= 1;
+            }
+
+            var li = 0;
+            oldLocals.foreach { l ⇒
+                if ((l ne null) && (l ne TheIllegalValue)) {
+                    val previousLocation = aliasInformation.get(l);
+                    if (previousLocation == null)
+                        aliasInformation.put(l, li)
+                    else {
+                        // let's check if we can find the same alias relation
+                        if (previousLocation < 0) {
+                            val v2 = newLocals(li)
+                            if ((newOperands(-previousLocation - 1) ne v2) &&
+                                (v2 ne TheIllegalValue))
+                                return liftUpdateType(previousLocation, li)
+                        } else /*previousLocation >= 0*/ {
+                            val v1 = newLocals(previousLocation)
+                            val v2 = newLocals(li)
+                            if ((v1 ne v2) /* <=> the alias no longer exists */ &&
+                                // but, does it matter?
+                                (v1 ne TheIllegalValue) && (v2 ne TheIllegalValue))
+                                return liftUpdateType(previousLocation, li)
                         }
                     }
-                    li += 1;
                 }
-
-            } finally {
-                aliasInformation.clear
+                li += 1;
             }
+
         }
 
         super.joinPostProcessing(
