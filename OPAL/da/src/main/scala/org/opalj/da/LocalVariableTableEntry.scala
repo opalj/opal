@@ -45,7 +45,9 @@ case class LocalVariableTableEntry(
         index: Int) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>[pc={ start_pc }, { cp(name_index).toString(cp) },{ cp(descriptor_index).toString(cp).toString.replace('/', '.') },index:{ index }, default value:{ cp(index).toString(cp) }]</div>
+        val name = cp(name_index).toString(cp)
+        val descriptor = cp(descriptor_index).toString(cp).replace('/', '.')
+        <div>[pc={ start_pc }, { name },{ descriptor },index in the local variable array:{ index }]</div>
     }
 
 }
