@@ -3,7 +3,7 @@
 body{
 	font-family: Arial, Helvetica, sans-serif;
 	font-weight: 400;
-	font-size: 15px;
+	font-size: 12px;
 	color: #1d3c41;
 	width: 90%;
 	margin:40px auto;
@@ -60,7 +60,6 @@ body > * {
 h2, p {
     margin:20px;
     padding:0px;
-    font-size:13px;
 }
 
 details,summary{
@@ -71,19 +70,16 @@ ol, ul, li {
     margin:10px;
     margin-left:7px;
     padding:0px;
-    font-size:13px;
 }
 			
 p.Summary {
     position:relative; /*see the support section below for more info*/
     margin:10px 10px 10px 10px;
     color:#575544;
-    font-size:1em;
     letter-spacing:.06em;
     }
 	
 .code ,table{
-	font-size:13px;
 }
 
 #sourcecode {
@@ -100,7 +96,6 @@ p.Summary {
 	color: #228B22;
 	font-weight:lighter;
 	font-style:italic;
-	font-size:small;
 }
 .AccessFlags {
     color: rgba(0, 0, 100, 0.6);
@@ -211,7 +206,6 @@ a.tooltip span { border-radius:4px;
     box-shadow: -3px 4px 8px #989898;
     /**style the text**/
     color:black;
-    font-size:1em;
     letter-spacing:.06em;
 }
 .close:hover { background: #00d9ff; }
