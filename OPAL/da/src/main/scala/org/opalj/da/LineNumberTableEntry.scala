@@ -42,6 +42,6 @@ case class LineNumberTableEntry(
         line_number: Int) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>start_pc: { start_pc }, line_number { line_number }</div>
+        <div>start_pc: { start_pc }, line_number: { line_number }</div>
     }
 }
