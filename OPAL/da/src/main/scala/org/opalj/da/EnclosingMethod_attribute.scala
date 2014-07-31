@@ -30,15 +30,6 @@ package org.opalj
 package da
 
 /**
- * <pre>
- * EnclosingMethod_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 class_index
- * 	u2 method_index;
- * }
- * </pre>
- *
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
