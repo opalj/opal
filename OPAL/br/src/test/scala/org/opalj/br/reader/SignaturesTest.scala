@@ -33,6 +33,8 @@ package reader
 import org.scalatest.FunSuite
 import org.scalatest.ParallelTestExecution
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 /**
  * Tests the parsing of signatures.
  *
@@ -66,10 +68,10 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
     }
 
     import Java8Framework.ClassFile
-    private val classA = ClassFile(TestSupport.locateTestResources("classfiles/Signatures.jar","bi"), "signatures/A.class")
+    private val classA = ClassFile(locateTestResources("classfiles/Signatures.jar", "bi"), "signatures/A.class")
     assert(classA ne null)
 
-    private val classB = ClassFile(TestSupport.locateTestResources("classfiles/Signatures.jar","bi"), "signatures/B.class")
+    private val classB = ClassFile(locateTestResources("classfiles/Signatures.jar", "bi"), "signatures/B.class")
     assert(classB ne null)
 
     test("parsing the class signatures") {

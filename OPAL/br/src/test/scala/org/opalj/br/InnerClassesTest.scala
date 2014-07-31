@@ -39,6 +39,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 /**
  * Tests OPAL's support w.r.t. inner classes.
  *
@@ -58,7 +60,7 @@ class InnerClassesTest
 
     val project =
         Project(
-            ClassFiles(TestSupport.locateTestResources("classfiles/Innerclasses.jar","bi"))
+            ClassFiles(locateTestResources("classfiles/Innerclasses.jar","bi"))
         )
 
     val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")

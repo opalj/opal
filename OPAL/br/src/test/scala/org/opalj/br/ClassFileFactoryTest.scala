@@ -33,12 +33,14 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+
+import org.opalj.bi.TestSupport.locateTestResources
 import analyses.Project
 import instructions._
 
 @RunWith(classOf[JUnitRunner])
 class ClassFileFactoryTest extends FunSpec with Matchers {
-    val testProject = Project(TestSupport.locateTestResources("classfiles/proxy.jar", "br"))
+    val testProject = Project(locateTestResources("classfiles/proxy.jar", "br"))
 
     val StaticMethods = ObjectType("proxy/StaticMethods")
     val InstanceMethods = ObjectType("proxy/InstanceMethods")

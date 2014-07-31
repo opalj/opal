@@ -33,6 +33,8 @@ import java.net.URL
 
 import org.scalatest.FunSuite
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import br._
 import br.reader.Java8Framework.ClassFiles
 
@@ -98,7 +100,7 @@ object DependencyExtractorFixture extends FunSuite {
                     }
                 }
             )
-        def resources() = TestSupport.locateTestResources(jarFile, folder)
+        def resources() = locateTestResources(jarFile, folder)
         for ((classFile, _) ← ClassFiles(resources())) {
             dependencyExtractor.process(classFile)
         }

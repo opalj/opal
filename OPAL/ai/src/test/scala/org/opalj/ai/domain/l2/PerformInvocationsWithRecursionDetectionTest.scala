@@ -40,6 +40,8 @@ import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import org.opalj.util._
 import br._
 import br.analyses.{ SomeProject, Project }
@@ -205,7 +207,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     val testClassFileName = "classfiles/performInvocations.jar"
-    val testClassFile = TestSupport.locateTestResources(testClassFileName, "ai")
+    val testClassFile = locateTestResources(testClassFileName, "ai")
     val project = Project(testClassFile)
     val StaticCalls = project.classFile(ObjectType("performInvocations/StaticCalls")).get
 

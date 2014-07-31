@@ -676,7 +676,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
     describe("Using IntegerRange values") {
 
         val testJAR = "classfiles/ai.jar"
-        val testFolder = org.opalj.br.TestSupport.locateTestResources(testJAR, "ai")
+        val testFolder = org.opalj.bi.TestSupport.locateTestResources(testJAR, "ai")
         val testProject = org.opalj.br.analyses.Project(testFolder)
         val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 

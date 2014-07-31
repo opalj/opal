@@ -1,4 +1,5 @@
 ﻿@charset "utf-8";
+
 body{
 	font-family: Arial, Helvetica, sans-serif;
 	font-weight: 400;
@@ -8,6 +9,10 @@ body{
 	margin:40px auto;
 	padding:20px;
 	overflow-y: scroll;
+}
+
+body > * {
+	font-family: Arial, Helvetica, sans-serif;
 }
  
 #classFile {
@@ -28,7 +33,6 @@ body{
 
 .exception{
 	border: 1px solid rgba( 184,0, 0, 0.8);
-    border-radius: 5px;
     box-shadow: 0 2px 5px rgba( 108,0, 0, 0.7), 0 0 8px 5px rgba( 223,0, 0, 0.4) inset;
   	width: 10px;
   	height: 10px;
@@ -57,7 +61,6 @@ h2, p {
     margin:20px;
     padding:0px;
     font-size:13px;
-    font-family:Arial, Helvetica, sans-serif;
 }
 
 details,summary{
@@ -69,7 +72,6 @@ ol, ul, li {
     margin-left:7px;
     padding:0px;
     font-size:13px;
-    font-family:Arial, Helvetica, sans-serif;
 }
 			
 p.Summary {
@@ -85,14 +87,9 @@ p.Summary {
 }
 
 #sourcecode {
-	font-weight:bold;
 	width:95%;
-	border: 1px solid rgba(147, 184, 189, 0.8);
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(105, 108, 109, 0.7), 0 0 8px 5px rgba(208, 223, 226, 0.4) inset;
 	margin-top: 3px;
 	padding: 5px 2px 3px 10px;
-	border-radius: 10px;
 	background: none repeat scroll 0 0 #F7F7F7;
 	background: -moz-linear-gradient(0 ,#F7F7F7);
 	background: -webkit-linear-gradient(0   ,#F7F7F7);

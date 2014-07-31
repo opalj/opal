@@ -39,6 +39,8 @@ import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import org.opalj.util._
 
 import org.opalj.br._
@@ -173,6 +175,6 @@ object PlainClassesTest {
     }
 
     val testClassFileName = "classfiles/ai.jar"
-    val testClassFile = TestSupport.locateTestResources(testClassFileName, "ai")
+    val testClassFile = locateTestResources(testClassFileName, "ai")
     val classFile = ClassFiles(testClassFile).map(_._1).find(_.thisType.fqn == "ai/domain/PlainClassesJava").get
 }

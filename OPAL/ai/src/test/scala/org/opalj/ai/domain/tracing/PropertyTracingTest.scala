@@ -41,6 +41,8 @@ import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import br._
@@ -180,7 +182,7 @@ class PropertyTracingTest
 
 private object PropertyTracingTest {
 
-    val classFiles = ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
 
     val classFile = classFiles.map(_._1).
         find(_.thisType.fqn == "ai/domain/Sanitization").get

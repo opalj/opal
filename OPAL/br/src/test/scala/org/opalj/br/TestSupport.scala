@@ -33,6 +33,8 @@ package br
 import java.io.File
 
 import org.opalj.br.analyses.Project
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.bi.TestSupport.JRELibraryFolder
 
 /**
  * Common functionality required by all test.
@@ -42,70 +44,12 @@ import org.opalj.br.analyses.Project
 object TestSupport {
 
     /**
-     * This function tries to locate resources (at runtime) that are used by tests and
-     * which are stored in the `SUBPROJECT-ROOT-FOLDER/src/test/resources` folder.
-     * I.e., when the test suite is executed, the current folder may be either Eclipse's
-     * `bin` bolder or OPAL's root folder when we use sbt to build the project.
-     *
-     * @param resourceName The name of the resource relative to the test/resources
-     *      folder. The name must not begin with a "/".
-     * @param subProjectFoler The root folder of the OPAL subproject; e.g., "ai".
-     *      (Default: "core").
-     */
-    def locateTestResources(resourceName: String, subProjectFolder: String): File = {
-        { // if the current path is set to OPAL's root folder
-            var file = new File("OPAL/"+subProjectFolder+"/src/test/resources/"+resourceName)
-            if (file.exists()) return file
-        }
-        { // if the current path is set to "<SUB-PROJECT>/<BIN>"
-            var file = new File("../../"+subProjectFolder+"src/test/resources/"+resourceName)
-            if (file.exists()) return file
-        }
-
-        {
-            // if we are in the sub-project's root folder
-            var file = new File("../"+subProjectFolder+"/src/test/resources/"+resourceName)
-            if (file.exists()) return file
-        }
-        {
-            val userDir = System.getProperty("user.dir")
-            // if the current path is set to "target/scala-.../classes"
-            if ("""target/scala\-[\w\.]+/classes$""".r.findFirstIn(userDir).isDefined) {
-
-                var file = new File("../../../src/test/resources/"+resourceName)
-                if (file.exists()) return file
-            }
-        }
-
-        throw new IllegalArgumentException("Cannot locate resource: "+resourceName)
-    }
-
-    /**
-     * Tries to locate the JRE's library folder. (I.e., the
-     * location in which the rt.jar file and the other jar files belonging to the
-     * Java runtime environment can be found).
-     */
-    lazy val JRELibraryFolder: File = {
-        val paths = System.getProperties().getProperty("sun.boot.class.path").split(File.pathSeparator)
-        var libPath = paths.find(_.endsWith("rt.jar")).map(path ⇒ path.substring(0, path.length() - 6)).getOrElse("null")
-
-        if (libPath == null) {
-            libPath = System.getProperty("sun.boot.library.path")
-            if (libPath == null) {
-                throw new RuntimeException("cannot locate the JRE libraries")
-            }
-        }
-
-        new File(libPath)
-    }
-
-    /**
      * Loads class files from JRE .jars found in the boot classpath.
      *
      * @return List of class files ready to be passed to a `IndexBasedProject`.
      */
     lazy val JREClassFiles: Seq[(ClassFile, java.net.URL)] = {
-        val classFiles = org.opalj.br.reader.Java8Framework.ClassFiles(JRELibraryFolder)
+        val classFiles = ClassFiles(JRELibraryFolder)
         if (classFiles.isEmpty)
             sys.error("Loading the JRE failed.")
 

@@ -33,6 +33,8 @@ import org.scalatest.FunSuite
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 /**
  * @author Michael Eichberg
  */
@@ -41,7 +43,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
 
     import reader.Java8Framework.ClassFile
 
-    val codeJARFile = TestSupport.locateTestResources("classfiles/Code.jar", "bi")
+    val codeJARFile = locateTestResources("classfiles/Code.jar", "bi")
     val immutableList = ClassFile(codeJARFile, "code/ImmutableList.class")
     val boundedBuffer = ClassFile(codeJARFile, "code/BoundedBuffer.class")
     val quicksort = ClassFile(codeJARFile, "code/Quicksort.class")
@@ -124,7 +126,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
         boundedBuffer.findField("AnumberInBuffers") should be(None)
     }
 
-    val innerclassesJARFile = TestSupport.locateTestResources("classfiles/Innerclasses.jar", "bi")
+    val innerclassesJARFile = locateTestResources("classfiles/Innerclasses.jar", "bi")
     val innerclassesProject = analyses.Project(innerclassesJARFile)
     val outerClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass.class")
     val innerPrinterOfXClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass$InnerPrinterOfX.class")
@@ -173,7 +175,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
     }
 
     test("that it is possible to get the inner classes information for Apache ANT 1.8.4 - excerpt.jar") {
-        val antJARFile = TestSupport.locateTestResources("classfiles/Apache ANT 1.8.4 - excerpt.jar", "bi")
+        val antJARFile = locateTestResources("classfiles/Apache ANT 1.8.4 - excerpt.jar", "bi")
         val antProject = analyses.Project(antJARFile)
         var innerClassesCount = 0
         for (classFile ← antProject.classFiles) {

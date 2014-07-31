@@ -163,7 +163,7 @@ object DefaultPreciseIntegerValuesTest {
     }
 
     val testClassFileName = "classfiles/ai.jar"
-    val testClassFile = org.opalj.br.TestSupport.locateTestResources(testClassFileName, "ai")
+    val testClassFile = org.opalj.bi.TestSupport.locateTestResources(testClassFileName, "ai")
     val project = org.opalj.br.analyses.Project(testClassFile)
     val ConditionalMath = project.classFile(ObjectType("ai/domain/ConditionalMath")).get
 

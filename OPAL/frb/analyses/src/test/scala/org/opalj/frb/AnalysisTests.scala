@@ -36,6 +36,9 @@ import org.scalatest._
 import java.io.File
 import java.net.URL
 
+import org.opalj.bi.TestSupport.locateTestResources
+
+
 /**
  * Superclass for all analysis unit-tests.
  *
@@ -79,7 +82,7 @@ object AnalysisTest {
 
         val classFiles = filenames.map(filename ⇒
             Java8Framework.ClassFiles(
-                TestSupport.locateTestResources("classfiles/analyses/"+filename,
+                locateTestResources("classfiles/analyses/"+filename,
                     "frb/analyses")
             )
         ).flatten

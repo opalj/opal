@@ -28,13 +28,16 @@
  */
 package org.opalj.jdkbug
 
-import collection.mutable.Stack
+import java.net.URL
 import org.scalatest._
+import scala.collection.mutable.Stack
+
+import org.opalj.bi.TestSupport.locateTestResources
+
 import org.opalj.br.TestSupport
 import org.opalj.ai.jdkbug.JDKTaintAnalysis
 import org.opalj.ai.jdkbug.TaintAnalysisDomain
 import org.opalj.ai.jdkbug.RootTaintAnalysisDomain
-import java.net.URL
 
 /**
  * Simple test that checks if the analysis finds the right number of issues.
@@ -46,8 +49,8 @@ class JDKBugsTest extends FlatSpec with Matchers {
     "JDKBugs" should "find all known bugs in the corresponding files in src/test/java" in {
 
         val args = new Array[String](2)
-        args(0) = "-cp="+TestSupport.locateTestResources("jdkbug/test.jar", "incubation").getPath()
-        args(1) = "-java.security="+TestSupport.locateTestResources("jdkbug/java.security", "incubation").getPath()
+        args(0) = "-cp="+locateTestResources("jdkbug/test.jar", "incubation").getPath()
+        args(1) = "-java.security="+locateTestResources("jdkbug/java.security", "incubation").getPath()
 
         JDKTaintAnalysis.main(args)
         TaintAnalysisDomain.numberOfReports.get should be(19)

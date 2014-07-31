@@ -61,7 +61,7 @@ class LoadClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
 
     behavior of "OPAL"
 
-    val jreLibFolder: File = TestSupport.JRELibraryFolder
+    val jreLibFolder: File = org.opalj.bi.TestSupport.JRELibraryFolder
 
     var count = 0
     for {

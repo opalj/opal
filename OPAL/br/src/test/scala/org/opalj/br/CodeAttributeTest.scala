@@ -29,16 +29,18 @@
 package org.opalj
 package br
 
-import reader.Java8Framework.ClassFiles
-import analyses.Project
-import instructions._
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
+
+import org.opalj.bi.TestSupport.locateTestResources
+
+import org.opalj.br.analyses.Project
+import org.opalj.br.instructions._
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Tests some of the core methods of the Code attribute.
@@ -160,9 +162,9 @@ class CodeAttributeTest
     }
 
     behavior of "the \"Code\" attribute's joinInstructions method"
-    
+
     it should "be able to correctly identify the join instructions" in {
-        codeOfPut.joinInstructions.size should be (1)
+        codeOfPut.joinInstructions.size should be(1)
         codeOfPut.joinInstructions should contain(15)
     }
 
@@ -177,7 +179,7 @@ private object CodeAttributeTest {
 
     val project =
         Project(
-            ClassFiles(TestSupport.locateTestResources("classfiles/Code.jar", "bi"))
+            ClassFiles(locateTestResources("classfiles/Code.jar", "bi"))
         )
 
     val boundedBufferClass = ObjectType("code/BoundedBuffer")

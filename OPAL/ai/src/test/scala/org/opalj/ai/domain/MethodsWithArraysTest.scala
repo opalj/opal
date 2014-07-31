@@ -38,6 +38,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import br._
@@ -135,7 +137,7 @@ class MethodsWithArraysTest
 }
 private object MethodsWithArraysTest {
 
-    val classFiles = ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
 
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithArrays").get
 }

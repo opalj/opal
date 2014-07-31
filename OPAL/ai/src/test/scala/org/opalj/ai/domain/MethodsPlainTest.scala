@@ -38,6 +38,8 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.matchers.MatchResult
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import org.opalj.br._
@@ -1028,6 +1030,6 @@ private object MethodsPlainTest {
     }
 
     val classFile =
-        ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ai")).map(_._1).
+        ClassFiles(locateTestResources("classfiles/ai.jar", "ai")).map(_._1).
             find(_.thisType.fqn == "ai/MethodsPlain").get
 }

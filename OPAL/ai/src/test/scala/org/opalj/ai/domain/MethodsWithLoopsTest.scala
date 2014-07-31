@@ -37,8 +37,10 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import br._
-import br.reader.Java8Framework
+import br.reader.Java8Framework.ClassFiles
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -104,8 +106,7 @@ class MethodsWithLoopsTest
 }
 object MethodsWithLoopsTest {
 
-    val classFiles = Java8Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
 
     val classFile = classFiles.map(_._1).
         find(_.thisType.fqn == "ai/MethodsWithLoops").get

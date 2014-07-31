@@ -37,11 +37,12 @@ import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import br._
 import br.reader.Java8Framework.ClassFile
 
 import DependencyType._
-
 
 /**
  * Tests that the dependency extractor extracts the types as desired.
@@ -95,7 +96,7 @@ class DependenciesOnTypesTest extends FlatSpec with Matchers {
     //
     dependencyExtractor.process(
         ClassFile(
-            TestSupport.locateTestResources("classfiles/Types.jar", "de"),
+            locateTestResources("classfiles/Types.jar", "de"),
             "types/TypeDeclarations.class")
     )
 

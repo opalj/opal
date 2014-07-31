@@ -54,14 +54,20 @@ object OPALBuild extends Build {
 	lazy val br = Project(
 		id = "BytecodeRepresentation",
 		base = file("OPAL/br"),
-		settings = buildSettings
-	) dependsOn(bi)
+		settings = buildSettings ++
+			Seq(Defaults.itSettings : _*) ++
+			Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest))
+	).dependsOn(bi % "test->test;compile->compile;it->test")
+	 .configs(IntegrationTest)
 
 	lazy val da = Project(
 		id = "BytecodeDisassembler",
 		base = file("OPAL/da"),
-		settings = buildSettings
-	) dependsOn(bi % "test->test;compile->compile")
+		settings = buildSettings ++
+			Seq(Defaults.itSettings : _*) ++
+			Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest))
+	).dependsOn(bi % "test->test;compile->compile;it->test")
+	 .configs(IntegrationTest)
 
 	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",

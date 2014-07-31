@@ -29,16 +29,16 @@
 package org.opalj
 package br
 
-import reader.Java8Framework.ClassFiles
-import analyses.Project
-import instructions._
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
+
+import org.opalj.bi.TestSupport.locateTestResources
+
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.br.analyses.Project
 
 /**
  * Tests that type annotations can be read.
@@ -46,10 +46,7 @@ import org.scalatest.ParallelTestExecution
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class TypeAnnotationsTest
-        extends FlatSpec
-        with Matchers /*with BeforeAndAfterAll */
-        with ParallelTestExecution {
+class TypeAnnotationsTest extends FlatSpec with Matchers with ParallelTestExecution {
 
     import TypeAnnotationsTest._
 
@@ -90,7 +87,7 @@ private object TypeAnnotationsTest {
 
     val project =
         Project(
-            ClassFiles(TestSupport.locateTestResources("classfiles/TypeAnnotations.jar","bi"))
+            ClassFiles(locateTestResources("classfiles/TypeAnnotations.jar", "bi"))
         )
 
     //Classfile /Users/Michael/Code/OPAL/core/bin/type_annotations/ATypeAnnotationUser.class

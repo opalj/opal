@@ -37,6 +37,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import reader.Java8Framework.ClassFiles
 
 /**
@@ -285,11 +287,11 @@ private object ProjectTest {
     // Setup
     //
     //
-    val resources = TestSupport.locateTestResources("classfiles/Methods.jar","bi")
-    val libraryResources = TestSupport.locateTestResources("classfiles/Attributes.jar","bi")
+    val resources = locateTestResources("classfiles/Methods.jar", "bi")
+    val libraryResources = locateTestResources("classfiles/Attributes.jar", "bi")
     val project = Project(ClassFiles(resources), ClassFiles(libraryResources))
 
-    val codeJAR = TestSupport.locateTestResources("classfiles/Code.jar","bi")
+    val codeJAR = locateTestResources("classfiles/Code.jar", "bi")
     val overallProject = Project.extend(project, ClassFiles(codeJAR))
 
     val SuperType = ObjectType("methods/a/Super")
