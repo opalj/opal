@@ -31,14 +31,16 @@ package br
 
 import analyses.Project
 
-import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.ai.BaseAI
-
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
 import org.junit.runner.RunWith
+
+import org.opalj.bi.TestSupport.locateTestResources
+
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l0.BaseDomain
 
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.
@@ -50,7 +52,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
 
     describe("the generation of Proxy classes") {
 
-        val testProject = Project(TestSupport.locateTestResources("classfiles/proxy.jar", "br"))
+        val testProject = Project(locateTestResources("classfiles/proxy.jar", "br"))
 
         val StaticMethods = ObjectType("proxy/StaticMethods")
         val InstanceMethods = ObjectType("proxy/InstanceMethods")
