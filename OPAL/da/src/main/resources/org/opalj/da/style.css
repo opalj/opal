@@ -1,19 +1,13 @@
-﻿@charset "utf-8";
+
+html { font-family: "Helvetica Neue Light", Helvetica, "Arial"; }
 
 body{
-	font-family: Arial, Helvetica, sans-serif;
-	font-weight: 400;
-	font-size: 12px;
+	font-weight: 300;
+	font-size: 14px;
 	color: #1d3c41;
-	width: 90%;
-	margin:40px auto;
-	padding:20px;
 	overflow-y: scroll;
 }
 
-body > * {
-	font-family: Arial, Helvetica, sans-serif;
-}
  
 #classFile {
 	min-width: 900px;
@@ -79,7 +73,7 @@ p.Summary {
     letter-spacing:.06em;
     }
 	
-.code ,table{
+.code ,table, .method{
 }
 
 #sourcecode {
@@ -101,7 +95,7 @@ p.Summary {
     color: rgba(0, 0, 100, 0.6);
 }
 
-.index{
+.index, .pc{
 	color: #FFA500;
 	min-width:90px;
 	}
