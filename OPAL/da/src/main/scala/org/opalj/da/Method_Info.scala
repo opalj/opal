@@ -49,9 +49,9 @@ case class Method_Info(
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="methodinfo" title= { cp(name_index).toString(cp) } 
         name={ AccessFlags.toString(accessFlags, AccessFlagsContexts.METHOD) }>
-            <div class="code">
+            <div class="method">
                 <span class="AccessFlags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.METHOD) }</span>
-                <span>{ MethodDescriptor(cp(name_index).asString, cp(descriptor_index).asString) }</span>
+                <span>{ parseMethodDescriptor(cp(name_index).asString, cp(descriptor_index).asString) }</span>
                 <a href="#" class="tooltip">{ name_index } <span>{ cp(name_index) }</span></a> 
                 { attributesToXHTML }
             </div>

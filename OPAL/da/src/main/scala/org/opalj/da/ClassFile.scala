@@ -67,9 +67,15 @@ case class ClassFile(
      * Converts the constant pool to (x)HTML5.
      */
     def cpToXHTML: Node = {
-        <ol>
-            { for { cpIndex ← (1 until constant_pool.length) if cp(cpIndex) != null } yield { <li value={ cpIndex.toString }>{ cp(cpIndex).toString() }</li> } }
-        </ol>
+        val cpEntries =
+            for {
+                cpIndex ← (1 until constant_pool.length)
+                if cp(cpIndex) != null
+            } yield {
+                <li value={ cpIndex.toString }>{ cp(cpIndex).toString() }</li>
+            }
+
+        <ol>{ cpEntries }</ol>
     }
 
     def attributesToXHTML: Node = {
@@ -88,18 +94,6 @@ case class ClassFile(
         <div>{ for (method ← methods) yield method.toXHTML(cp) }</div>
     }
 
-    protected def loadStyle: String = {
-        process(this.getClass().getResourceAsStream("style.css"))(
-            scala.io.Source.fromInputStream(_).mkString
-        )
-    }
-
-    protected def loadJavaScript(js: String): String = {
-        process(this.getClass().getResourceAsStream(js))(
-            scala.io.Source.fromInputStream(_).mkString
-        )
-    }
-
     protected def accessFlags: Node = {
         <span class="AccessFlags">
             { AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }
@@ -111,19 +105,19 @@ case class ClassFile(
             <summary>Filter</summary>
             <table style="min-width:850px" class="code">
                 <tr>
-                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('private');"> Private </input></td>
-                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('public');"> Public </input></td>
-                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('protected');"> Protected </input></td>
-                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('static');"> Static </input></td>
-                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('final');"> Final </input></td>
-                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('synchronized');"> Synchronized </input></td>
+                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('private');"> Private </input></td>
+                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('public');"> Public </input></td>
+                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('protected');"> Protected </input></td>
+                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('static');"> Static </input></td>
+                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('final');"> Final </input></td>
+                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('synchronized');"> Synchronized </input></td>
                 </tr>
                 <tr>
-                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('bridge');"> Bridge </input></td>
-                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('varargs');"> Varargs </input></td>
-                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('native');"> Native </input></td>
-                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('abstract');"> Abstract </input></td>
-                    <td> <input type="checkbox" value="HTML" onclick="FlagFilter('strict');"> Strict </input></td>
+                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('bridge');"> Bridge </input></td>
+                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('varargs');"> Varargs </input></td>
+                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('native');"> Native </input></td>
+                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('abstract');"> Abstract </input></td>
+                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('strict');"> Strict </input></td>
                     <td><input type="text" title='enter methode name' onkeyup="NameFilter(this.value);">  </input></td>
                 </tr>
             </table>
@@ -134,8 +128,9 @@ case class ClassFile(
         <html>
             <head>
                 <title>Java Bytecode of { fqn }</title>
-                <style type="text/css">{ scala.xml.Unparsed(loadStyle) }</style>
-                <script>{ scala.xml.Unparsed(loadJavaScript("filter.js")) }</script>
+                <style type="text/css">{ scala.xml.Unparsed(ClassFile.ResetCSS) }</style>
+                <style type="text/css">{ scala.xml.Unparsed(ClassFile.TheCSS) }</style>
+                <script>{ scala.xml.Unparsed(ClassFile.FilterJS) }</script>
                 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
             </head>
             <body>
@@ -153,33 +148,57 @@ case class ClassFile(
                         { cpToXHTML }
                     </div>
                 </div>
-                <div>
-                    <div id="classFile">
-                        <div id="attributes">
-                            <details>
-                                <summary>Class Attributes</summary>
-                                { attributesToXHTML }
-                            </details>
-                        </div>
-                        <div id="fields">
-                            <details>
-                                <summary>Fields</summary>
-                                <ol>
-                                    { fieldsToXHTML }
-                                </ol>
-                            </details>
-                        </div>
-                        <div id="methods">
-                            <details>
-                                <summary>Methods</summary>
-                                <ol>
-                                    { filter }
-                                    { methodsToXHTML }
-                                </ol>
-                            </details>
-                        </div>
+                <div id="classFile">
+                    <div id="attributes">
+                        <details>
+                            <summary>Class Attributes</summary>
+                            { attributesToXHTML }
+                        </details>
+                    </div>
+                    <div id="fields">
+                        <details>
+                            <summary>Fields</summary>
+                            <ol>
+                                { fieldsToXHTML }
+                            </ol>
+                        </details>
+                    </div>
+                    <div id="methods">
+                        <details>
+                            <summary>Methods</summary>
+                            <ol>
+                                { filter }
+                                { methodsToXHTML }
+                            </ol>
+                        </details>
                     </div>
                 </div>
             </body>
         </html>
+}
+
+object ClassFile {
+
+    final val ResetCSS: String = {
+        process(this.getClass().getResourceAsStream("reset.css"))(
+            scala.io.Source.fromInputStream(_).mkString
+        )
+    }
+
+    final val TheCSS: String = {
+        process(this.getClass().getResourceAsStream("style.css"))(
+            scala.io.Source.fromInputStream(_).mkString
+        )
+    }
+
+    final val FilterJS = {
+        loadJavaScript("filter.js")
+    }
+
+    private def loadJavaScript(js: String): String = {
+        process(this.getClass().getResourceAsStream(js))(
+            scala.io.Source.fromInputStream(_).mkString
+        )
+    }
+
 }

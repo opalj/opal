@@ -44,5 +44,64 @@ package object da {
 
     type Attributes = Seq[Attribute]
 
+    def parseReturnType(rt: String): String =
+        if (rt.charAt(0) == 'V')
+            "void"
+        else
+            parseFieldType(rt)
+
+    def parseFieldType(ft: String): String = {
+        (ft.charAt(0): @scala.annotation.switch) match {
+            case 'B' ⇒ "byte"
+            case 'C' ⇒ "char"
+            case 'D' ⇒ "double"
+            case 'F' ⇒ "float"
+            case 'I' ⇒ "int"
+            case 'J' ⇒ "long"
+            case 'S' ⇒ "short"
+            case 'Z' ⇒ "boolean"
+            case 'L' ⇒ ft.substring(1, ft.length - 1).replace('/', '.')
+            case '[' ⇒ parseFieldType(ft.substring(1))+"[]"
+            case _   ⇒ throw new IllegalArgumentException(ft+" is not a valid field type descriptor")
+        }
+    }
+
+    def parseMethodDescriptor(methodName: String, descriptor: String): String = {
+        var index = 1 // we are not interested in the leading '('
+        var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
+        while (descriptor.charAt(index) != ')') {
+            val (ft, nextIndex) = parseParameterType(descriptor, index)
+            parameterTypes = parameterTypes :+ ft
+            index = nextIndex
+        }
+        val returnType =
+            parseReturnType(descriptor.substring(index + 1))
+
+        s"$returnType $methodName(${parameterTypes.mkString(", ")})"
+    }
+
+    private[this] def parseParameterType(md: String, startIndex: Int): (String, Int) = {
+        val td = md.charAt(startIndex)
+        (td: @scala.annotation.switch) match {
+            case 'L' ⇒
+                val endIndex = md.indexOf(';', startIndex + 1)
+                ( // this is the return tuple
+                    md.substring(startIndex + 1, endIndex).replace('/','.'),
+                    endIndex + 1
+                )
+            case '[' ⇒
+                val (ft, index) = parseParameterType(md, startIndex + 1)
+                ( // this is the return tuple
+                    ft+"[]",
+                    index
+                )
+            case _ ⇒
+                ( // this is the return tuple
+                    parseFieldType(td.toString),
+                    startIndex + 1
+                )
+        }
+    }
+
 }
 
