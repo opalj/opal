@@ -51,24 +51,33 @@ class DisassemblerTest extends FlatSpec with Matchers {
 
     it should (s"be able to process every class of $files") in {
 
+        val Lock = new Object
         var exceptions: List[Exception] = Nil
 
         val classFiles =
             ClassFileReader.ClassFiles(
                 files,
-                { (exception: Exception) ⇒ exceptions = exception :: exceptions }
+                { (exception: Exception) ⇒
+                    Lock.synchronized { exceptions = exception :: exceptions }
+                }
             )
+        exceptions should be('empty)
         classFiles.isEmpty should be(false)
+        info(s"loaded ${classFiles.size} class files")
 
-        for ((classFile, url) ← classFiles) {
+        for ((classFile, url) ← classFiles.par) yield {
+            println(classFile.fqn)
             try {
                 classFile.toXHTML.toString.length() should be > (0)
                 // ideally: should be valid HTML
             } catch {
                 case e: Exception ⇒
-                    exceptions =
-                        new RuntimeException(s"failed: $url; message:"+e.getMessage(), e) ::
-                            exceptions
+                    Console.err.println(s"identified an issue: "+e.getMessage())
+                    Lock.synchronized {
+                        exceptions =
+                            new RuntimeException(s"failed: $url; message:"+e.getMessage(), e) ::
+                                exceptions
+                    }
             }
         }
         if (exceptions.nonEmpty) {
