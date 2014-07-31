@@ -34,13 +34,6 @@ import bi.AccessFlags
 import bi.AccessFlagsContexts
 
 /**
- * u2 inner_class_info_index;
- * u2 outer_class_info_index;
- * u2 inner_name_index;
- * u2 inner_class_access_flags;
- */
-
-/**
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
@@ -53,12 +46,15 @@ case class InnerClassesEntry(
         inner_class_access_flags: Int) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <li>[<span class="AccessFlags">inner</span> class info: { cp(inner_class_info_index).toString }
-           , <span class="AccessFlags">outer</span> class info:{ cp(inner_class_info_index).toString }
-           inner name:{ cp(inner_name_index).toString }
-           accessflags:<span class="AccessFlags">{ AccessFlags.toString(inner_class_access_flags, AccessFlagsContexts.INNER_CLASS) }</span>]
-           
-       </li>
+        val accessFlags =
+            AccessFlags.toString(inner_class_access_flags, AccessFlagsContexts.INNER_CLASS)
+
+        <li>
+            type:&nbsp;<span class="fqn">{ cp(inner_class_info_index).toString }</span><br/>
+            outer type:&nbsp;<span class="fqn">{ cp(outer_class_info_index).toString }</span><br/>
+            <span class="AccessFlags">{ accessFlags } </span>
+            <span class="sn">{ cp(inner_name_index).toString }</span>
+        </li>
     }
 }
 
