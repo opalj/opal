@@ -77,8 +77,9 @@ case class ClassFile(
     }
 
     def attributeToXHTML(attribute: Attribute): Node = {
-        <span><br/>{ attribute.toXHTML(cp) }</span>
+        <div><span>{ attribute.toXHTML(cp) }</span></div>
     }
+
     def fieldsToXHTML: Node = {
         <ul>{ for (field ← fields) yield field.toXHTML(cp) }</ul>
     }
@@ -101,7 +102,7 @@ case class ClassFile(
 
     protected def accessFlags: Node = {
         <span class="AccessFlags">
-            Access Flags{ AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }
+            { AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }
         </span>
     }
 
@@ -132,18 +133,16 @@ case class ClassFile(
     def toXHTML: Node =
         <html>
             <head>
-                <title>Opal ByteCode Disassembler</title>
-                <style type="text/css">
-                    { scala.xml.Unparsed(loadStyle) }
-                </style>
+                <title>Java Bytecode of { fqn }</title>
+                <style type="text/css">{ scala.xml.Unparsed(loadStyle) }</style>
                 <script>{ scala.xml.Unparsed(loadJavaScript("filter.js")) }</script>
                 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
             </head>
             <body>
                 <p class="Summary">
-                    <b>{ fqn }</b>
-                    Version{ minor_version+"."+major_version }
                     { accessFlags }
+                    &nbsp;<b>{ fqn }</b>
+                    Version:&nbsp;{ major_version+"."+minor_version }
                     <span class="constantPoolLink">
                         <a href="#openConstantPool" style="color:black;">ConstantPool</a>
                     </span>
