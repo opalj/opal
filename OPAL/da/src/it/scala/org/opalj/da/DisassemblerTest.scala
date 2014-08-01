@@ -46,8 +46,8 @@ class DisassemblerTest extends FlatSpec with Matchers {
 
     behavior of "the Disassembler"
 
-    val files = new java.io.File("/users/eichberg/Applications/Scala IDE")
-    //val files = Forg.opalj.bi.TestSupport.JRELibraryFolder,
+    //val files = new java.io.File("/users/eichberg/Applications/Scala IDE")
+    val files = org.opalj.bi.TestSupport.JRELibraryFolder
 
     it should (s"be able to process every class of $files") in {
 
@@ -65,19 +65,36 @@ class DisassemblerTest extends FlatSpec with Matchers {
         classFiles.isEmpty should be(false)
         info(s"loaded ${classFiles.size} class files")
 
-        for ((classFile, url) ← classFiles.par) yield {
-            println(classFile.fqn)
-            try {
-                classFile.toXHTML.toString.length() should be > (0)
-                // ideally: should be valid HTML
-            } catch {
-                case e: Exception ⇒
-                    Console.err.println(s"identified an issue: "+e.getMessage())
-                    Lock.synchronized {
-                        exceptions =
-                            new RuntimeException(s"failed: $url; message:"+e.getMessage(), e) ::
-                                exceptions
-                    }
+        val classFilesGroupedByPackage = classFiles.groupBy { e ⇒
+            val (classFile, url) = e
+            val fqn = classFile.fqn
+            if (fqn.contains('.'))
+                fqn.substring(0, fqn.lastIndexOf('.'))
+            else
+                "<default>"
+        }
+        info(s"identified ${classFilesGroupedByPackage.size} packages")
+
+        val transformationCounter = new java.util.concurrent.atomic.AtomicInteger(0)
+        for {
+            groupedClassFiles ← classFilesGroupedByPackage
+        } yield {
+            val (packageName, classFiles) = groupedClassFiles
+            info("processing package "+packageName)
+            for { (classFile, url) ← classFiles.par } {
+                try {
+                    classFile.toXHTML.toString.length() should be > (0)
+                    transformationCounter.incrementAndGet()
+                    // ideally: should be valid HTML
+                } catch {
+                    case e: Exception ⇒
+                        Console.err.println(s"identified an issue: "+e.getMessage())
+                        Lock.synchronized {
+                            exceptions =
+                                new RuntimeException(s"failed: $url; message:"+e.getMessage(), e) ::
+                                    exceptions
+                        }
+                }
             }
         }
         if (exceptions.nonEmpty) {
@@ -98,5 +115,6 @@ class DisassemblerTest extends FlatSpec with Matchers {
             fail(exceptions.map(_.getMessage()).
                 mkString("Exceptions:\n", "\n", "Details: "+file))
         }
+        info(s"transformed ${transformationCounter.get} class files")
     }
 }
