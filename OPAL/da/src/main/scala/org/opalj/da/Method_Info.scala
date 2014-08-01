@@ -43,7 +43,7 @@ case class Method_Info(
         descriptor_index: Constant_Pool_Index,
         attributes: Attributes) {
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
+    def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
         val flags = methodAccessFlagsToString(accessFlags)
         val name = cp(name_index).toString(cp)
         <div class="methodinfo" name={ name } flags={ flags }>
@@ -51,12 +51,19 @@ case class Method_Info(
                 <span class="AccessFlags">{ flags }</span>
                 <span>{ parseMethodDescriptor(name, cp(descriptor_index).asString) }</span>
                 <a href="#" class="tooltip">{ name_index } <span>{ cp(name_index) }</span></a>
-                { attributesToXHTML }
+                { attributesToXHTML(methodIndex) }
             </div>
         </div>
     }
 
-    def attributesToXHTML(implicit cp: Constant_Pool) = {
-        for (attribute ← attributes) yield attribute.toXHTML(cp)
+    private[this] def attributesToXHTML(methodIndex: Int)(implicit cp: Constant_Pool) = {
+        for (attribute ← attributes) yield {
+            attribute match {
+                case codeAttribute: Code_attribute ⇒
+                    codeAttribute.toXHTML(methodIndex)
+                case _ ⇒
+                    attribute.toXHTML(cp)
+            }
+        }
     }
 }

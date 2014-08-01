@@ -40,25 +40,64 @@ import scala.util.Random
 case class Code(instructions: Array[Byte]) {
 
     def toXHTML(
-        attributes: Attributes,
-        exception_handlers: IndexedSeq[ExceptionTableEntry])(
+        methodIndex: Int,
+        exceptionTable: IndexedSeq[ExceptionTableEntry],
+        lineNumberTable: Option[Seq[LineNumberTableEntry]])(
             implicit cp: Constant_Pool): Node = {
 
-        val instructionslist = InstructionsToXHTML(instructions)
-        CodeAttributesLinking(instructionslist, attributes)
-        ExceptionsLinking(instructionslist, exception_handlers)
-        val rows =
-            for (Index ← (0 until instructionslist.length))
-                yield if (instructionslist(Index) != null)
-                InstructionToXHTML(Index, instructionslist(Index))
+        val instructions = InstructionsToXHTML(methodIndex, this.instructions)
+        ExceptionsLinking(instructions, exceptionTable)
 
-        <table style="width:100%;">{ rows }</table>
+        <table style="width:100%;">
+            <tr>
+                <th class="pc">PC</th>
+                {
+                    lineNumberTable.map { _ ⇒
+                        <th class="line">Line</th>
+                    }.getOrElse {
+                        Seq.empty
+                    }
+                }
+                <th>Instruction</th>
+            </tr>
+            { // One instruction per row
+                for {
+                    pc ← (0 until instructions.length)
+                    if instructions(pc) != null
+                } yield {
+                    createTableRowForInstruction(
+                        methodIndex, instructions(pc), pc, lineNumberTable)
+                }
+            }
+        </table>
     }
 
-    def InstructionToXHTML(pc: Int, instruction: Node): Node =
-        <tr><td><span class="pc">{ pc }</span></td><td> { instruction }</td></tr>
+    private[this] def id(methodIndex: Int, pc: Int): String = s"m${methodIndex}_pc$pc"
 
-    def InstructionsToXHTML(source: Array[Byte])(implicit cp: Constant_Pool): Array[Node] = {
+    private[this] def createTableRowForInstruction(
+        methodIndex: Int,
+        instruction: Node,
+        pc: Int,
+        lineNumberTable: Option[Seq[LineNumberTableEntry]]): Node = {
+
+        <tr>
+            <td class="pc" id={ id(methodIndex, pc) }>{ pc }</td>
+            {
+                lineNumberTable.map { lineNumberTable ⇒
+                    val ln = lineNumberTable.find(e ⇒ e.start_pc == pc).map(_.line_number)
+                    <td class="line">{ ln.getOrElse("|") }</td>
+                }.getOrElse {
+                    Seq.empty
+                }
+            }
+            <td> { instruction }</td>
+        </tr>
+    }
+
+    private[this] def InstructionsToXHTML(
+        methodIndex: Int,
+        source: Array[Byte])(
+            implicit cp: Constant_Pool): Array[Node] = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
         val bas = new ByteArrayInputStream(source)
@@ -76,9 +115,15 @@ case class Code(instructions: Array[Byte]) {
                 in.readUnsignedByte
             }
 
+        def ifToString(mnemonic: String, pc: Int): Node = {
+            val targetPC = in.readShort + pc
+            val targetID = "#"+id(methodIndex, targetPC)
+            <span title={ mnemonic }>{ mnemonic } <a href={ targetID } class="pc">{ targetPC }</a></span>
+        }
+
         while (in.available > 0) {
-            val index = codeLength - in.available
-            instructions(index) = (in.readUnsignedByte: @scala.annotation.switch) match {
+            val pc = codeLength - in.available
+            instructions(pc) = (in.readUnsignedByte: @scala.annotation.switch) match {
                 case 50 ⇒ <span title="aaload">aaload</span>
                 case 83 ⇒ <span title="aastore">aastore</span>
                 case 1  ⇒ <span title="aconst_null">aconst_null</span>
@@ -169,8 +214,14 @@ case class Code(instructions: Array[Byte]) {
                 case 102 ⇒ <span title="fsub">fsub</span>
                 case 180 ⇒ <span title="getfield">getfield { val c = in.readUnsignedShort; cp(c).toString(cp)+" ["+c+"]" }</span>
                 case 178 ⇒ <span title="getstatic">getstatic { val c = in.readUnsignedShort; cp(c).toString(cp)+" ["+c+"]" }</span>
-                case 167 ⇒ <span title="goto">goto <span class="index">{ in.readShort + index }</span></span>
-                case 200 ⇒ <span title="goto_w">goto_w <span class="index">{ in.readInt + index }</span></span>
+                case 167 ⇒
+                    val targetPC = in.readShort + pc
+                    val targetID = "#"+id(methodIndex, targetPC)
+                    <span title="goto">goto <a href={ targetID } class="pc">{ targetPC }</a></span>
+                case 200 ⇒
+                    val targetPC = in.readInt + pc
+                    val targetID = "#"+id(methodIndex, targetPC)
+                    <span title="goto_w">goto_w <a href={ targetID } class="pc">{ targetPC }</a></span>
                 case 145 ⇒ <span title="i2b">i2b</span>
                 case 146 ⇒ <span title="i2c">i2c</span>
                 case 135 ⇒ <span title="i2d">i2d</span>
@@ -189,22 +240,38 @@ case class Code(instructions: Array[Byte]) {
                 case 7   ⇒ <span title="iconst_4">iconst_4</span>
                 case 8   ⇒ <span title="iconst_5">iconst_5</span>
                 case 108 ⇒ <span title="idiv">idiv</span>
-                case 165 ⇒ <span title="if_acmpeq">if_acmpeq <span class="index">{ in.readShort + index }</span></span>
-                case 166 ⇒ <span title="if_acmpne">if_acmpne <span class="index">{ in.readShort + index }</span></span>
-                case 159 ⇒ <span title="if_icmpeq">if_icmpeq <span class="index">{ in.readShort + index }</span></span>
-                case 160 ⇒ <span title="if_icmpne">if_icmpne <span class="index">{ in.readShort + index }</span></span>
-                case 161 ⇒ <span title="if_icmplt">if_icmplt <span class="index">{ in.readShort + index }</span></span>
-                case 162 ⇒ <span title="if_icmpge">if_icmpge <span class="index">{ in.readShort + index }</span></span>
-                case 163 ⇒ <span title="if_icmpgt">if_icmpgt <span class="index">{ in.readShort + index }</span></span>
-                case 164 ⇒ <span title="if_icmple">if_icmple <span class="index">{ in.readShort + index }</span></span>
-                case 153 ⇒ <span title="ifeq">ifeq <span class="index">{ in.readShort + index }</span></span>
-                case 154 ⇒ <span title="ifeq">ifne <span class="index">{ in.readShort + index }</span></span>
-                case 155 ⇒ <span title="iflt">iflt <span class="index">{ in.readShort + index }</span></span>
-                case 156 ⇒ <span title="ifge">ifge <span class="index">{ in.readShort + index }</span></span>
-                case 157 ⇒ <span title="ifgt">ifgt <span class="index">{ in.readShort + index }</span></span>
-                case 158 ⇒ <span title="ifle">ifle <span class="index">{ in.readShort + index }</span></span>
-                case 199 ⇒ <span title="ifnonnull">ifnonnull <span class="index">{ in.readShort + index }</span></span>
-                case 198 ⇒ <span title="ifnull">ifnull <span class="index">{ in.readShort + index }</span></span>
+                case 165 ⇒
+                    ifToString("if_acmpeq", pc)
+                case 166 ⇒
+                    ifToString("if_acmpne", pc)
+                case 159 ⇒
+                    ifToString("if_icmpeq", pc)
+                case 160 ⇒
+                    ifToString("if_icmpne", pc)
+                case 161 ⇒
+                    ifToString("if_icmplt", pc)
+                case 162 ⇒
+                    ifToString("if_icmpge", pc)
+                case 163 ⇒
+                    ifToString("if_icmpgt", pc)
+                case 164 ⇒
+                    ifToString("if_icmple", pc)
+                case 153 ⇒
+                    ifToString("ifeq", pc)
+                case 154 ⇒
+                    ifToString("ifeq", pc)
+                case 155 ⇒
+                    ifToString("iflt", pc)
+                case 156 ⇒
+                    ifToString("ifge", pc)
+                case 157 ⇒
+                    ifToString("ifgt", pc)
+                case 158 ⇒
+                    ifToString("ifle", pc)
+                case 199 ⇒
+                    ifToString("ifnonnull", pc)
+                case 198 ⇒
+                    ifToString("ifnull", pc)
                 case 132 ⇒
                     val params = if (wide) {
                         wide = false
@@ -264,8 +331,8 @@ case class Code(instructions: Array[Byte]) {
                 case 100 ⇒ <span title="isub">isub</span>
                 case 124 ⇒ <span title="iushr">iushr</span>
                 case 130 ⇒ <span title="ixor">ixor</span>
-                case 168 ⇒ <span title="jsr">jsr { in.readShort + index }</span>
-                case 201 ⇒ <span title="jsr_w">jsr_w { in.readInt + index }</span>
+                case 168 ⇒ <span title="jsr">jsr { in.readShort + pc }</span>
+                case 201 ⇒ <span title="jsr_w">jsr_w { in.readInt + pc }</span>
                 case 138 ⇒ <span title="l2d">l2d</span>
                 case 137 ⇒ <span title="l2d">l2f</span>
                 case 136 ⇒ <span title="l2i">l2i</span>
@@ -295,14 +362,14 @@ case class Code(instructions: Array[Byte]) {
                 case 117 ⇒ <span title="lneg">lneg</span>
                 case 171 ⇒
                     // LOOKUPSWITCH
-                    in.skip(3 - (index % 4)) // skip padding bytes
-                    val defaultOffset = in.readInt + index
+                    in.skip(3 - (pc % 4)) // skip padding bytes
+                    val defaultTarget = in.readInt + pc
                     val npairsCount = in.readInt
                     val table = new StringBuilder("");
                     repeat(npairsCount) {
-                        table.append("(case:"+in.readInt+","+(in.readInt + index)+") ")
+                        table.append("(case:"+in.readInt+","+(in.readInt + pc)+") ")
                     }
-                    <span title="lookupswitch">lookupswitch default:{ defaultOffset } [{ table }]</span>
+                    <span title="lookupswitch">lookupswitch default:{ defaultTarget } [{ table }]</span>
                 case 129 ⇒ <span title="lor">lor</span>
                 case 113 ⇒ <span title="lrem">lrem</span>
                 case 173 ⇒ <span title="lreturn">lreturn</span>
@@ -329,92 +396,57 @@ case class Code(instructions: Array[Byte]) {
                 case 0   ⇒ <span title="nop">nop</span>
                 case 87  ⇒ <span title="pop">pop</span>
                 case 88  ⇒ <span title="pop2">pop2</span>
-                case 181 ⇒ <span title="putfield">putfield { val c = in.readUnsignedShort; cp(c).toString(cp)+" ["+c+"]" }</span>
-                case 179 ⇒ <span title="putstatic">putstatic { val c = in.readUnsignedShort; cp(c).toString(cp)+" ["+c+"]" }</span>
+                case 181 ⇒
+                    val c = in.readUnsignedShort
+                    val fieldSignature = cp(c).toString(cp)+" ["+c+"]"
+                    <span title="putfield">putfield { fieldSignature }</span>
+                case 179 ⇒
+                    val c = in.readUnsignedShort
+                    val fieldSignature = cp(c).toString(cp)+" ["+c+"]"
+                    <span title="putstatic">putstatic { fieldSignature }</span>
                 case 169 ⇒
-                    val lvIndex =
-                        if (wide) {
-                            wide = false
-                            in.readUnsignedShort
-                        } else {
-                            in.readUnsignedByte
-                        }
                     <span title="ret">ret { lvIndex }</span>
-                case 177 ⇒ <span title="return"><span class="reservedwords">return</span></span>
+                case 177 ⇒ <span title="return">return</span>
                 case 53  ⇒ <span title="saload">saload</span>
                 case 86  ⇒ <span title="sastore">sastore</span>
                 case 17  ⇒ <span title="sipush">sipush { in.readShort /* value */ }</span>
                 case 95  ⇒ <span title="swap">swap </span>
                 case 170 ⇒
-                    in.skip(3 - (index % 4)) // skip padding bytes
-                    val defaultOffset = in.readInt + index
+                    in.skip(3 - (pc % 4)) // skip padding bytes
+                    val defaultTarget = in.readInt + pc
                     val low = in.readInt
                     val high = in.readInt
                     var offsetcounter: Int = 0;
                     val table = new StringBuilder("");
                     repeat(high - low + 1) {
-                        table.append("(case:"+(low + offsetcounter)+","+(in.readInt + index)+") ")
+                        table.append("(case:"+(low + offsetcounter)+","+(in.readInt + pc)+") ")
                         offsetcounter += 1;
                     }
-                    <span title="tableswitch">tableswitch default:{ defaultOffset } [{ table }]</span>
+                    <span title="tableswitch">tableswitch default:{ defaultTarget } [{ table }]</span>
                 case 196 ⇒
                     wide = true
                     <span title="wide">wide</span>
                 case opcode ⇒ throw new UnknownError("unknown opcode: "+opcode)
             }
-
-        }
-        InstructionsToLinking(instructions)
-    }
-
-    def InstructionsToLinking(instructions: Array[Node]): Array[Node] = {
-        for { cpIndex ← (1 until instructions.length) } yield {
-            if (instructions(cpIndex) != null)
-                instructions(cpIndex).child(0).text match {
-                    case "goto " ⇒ {
-                        val goto_index = Integer.parseInt(instructions(cpIndex).child(1).text)
-                        val random = Random.nextInt();
-                        instructions(goto_index) = { <a id={ goto_index.toString + random }>{ instructions(goto_index) }</a> }
-                        instructions(cpIndex) =
-                            <a href={ "#"+goto_index.toString + random }>
-                                <span>goto <span class="index">{ goto_index }</span></span>
-                            </a>
-                    }
-                    case other ⇒
-                }
         }
         instructions
     }
 
-    def CodeAttributesLinking(instructions: Array[Node], attributes: Attributes): Array[Node] = {
-        for { atIndex ← (0 until attributes.length) } yield {
-            if (attributes(atIndex) != null)
-                attributes(atIndex) match {
-                    case LineNumberTable_attribute(attribute_name_index, line_number_table) ⇒ {
-                        for (line ← line_number_table) yield {
-                            val LNT_index = line.start_pc;
-                            instructions(LNT_index) = <span> { instructions(LNT_index) }  <a href="#" class="tooltip">LN<span>Line Number :{ line.line_number }</span></a></span>
-                        }
-                    }
-                    case other ⇒
-                }
-        }
-        instructions
-    }
-    def ExceptionsLinking(instructions: Array[Node], exception_handlers: IndexedSeq[ExceptionTableEntry]): Array[Node] = {
-        for { atIndex ← (0 until exception_handlers.length) } yield {
-            for (i ← exception_handlers(atIndex).start_pc to exception_handlers(atIndex).end_pc) {
+    def ExceptionsLinking(
+        instructions: Array[Node],
+        exceptionTable: IndexedSeq[ExceptionTableEntry]): Array[Node] = {
+        for { exceptionHandler ← exceptionTable } yield {
+            for (i ← exceptionHandler.start_pc until exceptionHandler.end_pc) {
                 if (instructions(i) != null)
                     instructions(i) = <span> { instructions(i) } <span class="exception" alt="the ranges in the code
                  array at which the exception handler is active"></span></span>
             }
 
-            if (instructions(exception_handlers(atIndex).handler_pc) != null)
-                instructions(exception_handlers(atIndex).handler_pc) =
-                    <span>
-                        { instructions(atIndex) }
-                        <span class="exceptionHandler" alt="the start of the exception handler"></span>
-                    </span>
+            instructions(exceptionHandler.handler_pc) =
+                <span>
+                    { instructions(exceptionHandler.handler_pc) }
+                    <span class="exceptionHandler" alt="the start of the exception handler"></span>
+                </span>
         }
         instructions
     }

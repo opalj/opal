@@ -61,7 +61,7 @@ case class ClassFile(
      * The fully qualified name of the class in Java notation (i.e., using dots
      * to seperate packages.)
      */
-    final val fqn = cp(this_class).toString.replace('/', '.')
+    final val fqn = cp(this_class).toString
 
     /**
      * Converts the constant pool to (x)HTML5.
@@ -91,7 +91,7 @@ case class ClassFile(
     }
 
     def methodsToXHTML: Node = {
-        <div>{ for (method ← methods) yield method.toXHTML(cp) }</div>
+        <div>{ for ((method, index) ← methods.zipWithIndex) yield method.toXHTML(index) }</div>
     }
 
     protected def accessFlags: Node = {

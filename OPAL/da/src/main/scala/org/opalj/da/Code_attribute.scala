@@ -43,10 +43,20 @@ case class Code_attribute(
         max_stack: Int,
         max_locals: Int,
         code: Code,
-        exception_handlers: IndexedSeq[ExceptionTableEntry],
+        exceptionTable: IndexedSeq[ExceptionTableEntry],
         attributes: Attributes) extends Attribute {
 
+    /**
+     * @ see `toXHTML(Int)(implicit Constant_Pool)
+     */
+    @throws[UnsupportedOperationException]("always")
     override def toXHTML(implicit cp: Constant_Pool): Node = {
+        throw new UnsupportedOperationException(
+            "the code attribute needs the method's id; "+
+                "use the \"toXHTML(methodIndex: Int)(implicit cp: Constant_Pool)\" method")
+    }
+
+    def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
 
         val methodBodyHeader =
             s"Method Body (Size: ${code.instructions.size} bytes, Max Stack: $max_stack, Max Locals: $max_locals)"
@@ -54,7 +64,12 @@ case class Code_attribute(
         <div id="sourcecode">
             <details>
                 <summary>{ methodBodyHeader }</summary>
-                { code.toXHTML(attributes, exception_handlers) }
+                {
+                    code.toXHTML(
+                        methodIndex,
+                        exceptionTable,
+                        attributes.collectFirst({ case LineNumberTable_attribute(_, lnt) ⇒ lnt }))
+                }
                 { exception_handlersAsXHTML }
                 { attributesAsXHTML }
             </details>
@@ -66,11 +81,11 @@ case class Code_attribute(
     }
 
     def exception_handlersAsXHTML(implicit cp: Constant_Pool): Node = {
-        if (exception_handlers.length > 0)
+        if (exceptionTable.length > 0)
             <div>
                 <details>
                     <summary>Exception Table:</summary>
-                    { for (exception ← exception_handlers) yield exception.toXHTML(cp, code) }
+                    { for (exception ← exceptionTable) yield exception.toXHTML(cp, code) }
                 </details>
             </div>
         else
