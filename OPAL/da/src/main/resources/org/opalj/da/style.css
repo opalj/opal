@@ -108,12 +108,23 @@ p.Summary {
 
 .index, .pc{
 	color: #FFA500;
-	min-width:90px;
-	}
+}
+
+.line{
+	color: #A5CC00;
+}	
+	
+th {
+	text-align: left;
+}	
+	
+th.pc, td.pc, th.line, td.line {
+	width: 3.5em;
+}
 	
 .reservedwords,.verification{
 	color: #0000ff;
-	}
+}
 		
 .ConstantValue,.attributename{
 	color: #FFA500;
@@ -133,6 +144,7 @@ a.tooltip span { border-radius:4px;
  -webkit-box-shadow: 5px 5px 8px #CCC;
  box-shadow: 5px 5px 8px #CCC;
 }
+
 
 .constantPool {
 	word-wrap: break-word;
