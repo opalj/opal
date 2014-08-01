@@ -37,10 +37,14 @@ import scala.util.Random
  * @author Isbel Isbel
  * @author Noorulla Sharief
  */
-case class Code(val code: Array[Byte]) {
+case class Code(instructions: Array[Byte]) {
 
-    def toXHTML(implicit cp: Constant_Pool, attributes: Attributes, exception_handlers: IndexedSeq[ExceptionTableEntry]): Node = {
-        val instructionslist = InstructionsToXHTML(cp, code)
+    def toXHTML(
+        attributes: Attributes,
+        exception_handlers: IndexedSeq[ExceptionTableEntry])(
+            implicit cp: Constant_Pool): Node = {
+
+        val instructionslist = InstructionsToXHTML(instructions)
         CodeAttributesLinking(instructionslist, attributes)
         ExceptionsLinking(instructionslist, exception_handlers)
         val rows =
@@ -51,10 +55,10 @@ case class Code(val code: Array[Byte]) {
         <table style="width:100%;">{ rows }</table>
     }
 
-    def InstructionToXHTML(line: Int, instruction: Node): Node =
-        <tr><td><span class="index">{ line }</span></td><td> { instruction }</td></tr>
+    def InstructionToXHTML(pc: Int, instruction: Node): Node =
+        <tr><td><span class="pc">{ pc }</span></td><td> { instruction }</td></tr>
 
-    def InstructionsToXHTML(cp: Constant_Pool, source: Array[Byte]): Array[Node] = {
+    def InstructionsToXHTML(source: Array[Byte])(implicit cp: Constant_Pool): Array[Node] = {
         import java.io.DataInputStream
         import java.io.ByteArrayInputStream
         val bas = new ByteArrayInputStream(source)
@@ -83,11 +87,11 @@ case class Code(val code: Array[Byte]) {
                 case 43 ⇒ <span title="aload_1">aload_1</span>
                 case 44 ⇒ <span title="aload_2">aload_2</span>
                 case 45 ⇒ <span title="aload_3">aload_3</span>
-                case 189 ⇒ <span title="anewarray">
-                               <span class="reservedwords">anewarray </span>
-                               { cp(in.readUnsignedShort).toString(cp).replace('/', '.') }
-                           </span>
-                case 176 ⇒ <span title="areturn"><span class="reservedwords">areturn </span>  </span>
+                case 189 ⇒
+                    <span title="anewarray">
+                        anewarray&nbsp;{ asObjectType(in.readUnsignedShort) }
+                    </span>
+                case 176 ⇒ <span title="areturn">areturn</span>
                 case 190 ⇒ <span title="arraylength">arraylength</span>
                 case 58  ⇒ <span title="astore">astore { lvIndex }</span>
                 case 75  ⇒ <span title="astore_0">astore_0</span>
@@ -100,7 +104,10 @@ case class Code(val code: Array[Byte]) {
                 case 16  ⇒ <span title="bipush">bipush { in.readByte }</span>
                 case 52  ⇒ <span title="caload">caload</span>
                 case 85  ⇒ <span title="castore">castore</span>
-                case 192 ⇒ <span title="checkcast">checkcast { cp(in.readUnsignedShort).toString(cp).replace('/', '.') } </span>
+                case 192 ⇒
+                    <span title="checkcast">
+                        checkcast&nbsp;{ asReferenceType(in.readUnsignedShort) }
+                    </span>
                 case 144 ⇒ <span title="d2f">d2f</span>
                 case 142 ⇒ <span title="d2i">d2i</span>
                 case 143 ⇒ <span title="d2l">d2l</span>
@@ -235,11 +242,11 @@ case class Code(val code: Array[Byte]) {
                 case 183 ⇒
                     val c = in.readUnsignedShort
                     val signature = cp(c).toString(cp)+" ["+c+"]"
-                    <span title="invokespecial">invokespecial  {} </span>
+                    <span title="invokespecial">invokespecial  { signature } </span>
                 case 184 ⇒
                     val c = in.readUnsignedShort
                     val signature = cp(c).toString(cp)+" ["+c+"]"
-                    <span title="invokespecial">invokestatic  {} </span>
+                    <span title="invokespecial">invokestatic  { signature } </span>
                 case 182 ⇒
                     val c = in.readUnsignedShort
                     val signature = cp(c).toString(cp)+" ["+c+"]"
