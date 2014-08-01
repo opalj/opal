@@ -28,6 +28,9 @@
  */
 package org.opalj
 
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
+
 /**
  * Defines convenience methods related to reading in class files.
  *
@@ -43,6 +46,22 @@ package object da {
     type Fields = IndexedSeq[Field_Info]
 
     type Attributes = Seq[Attribute]
+
+    def asReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
+        val rt = cp(cpIndex).toString(cp)
+        if (rt.charAt(0) == '[')
+            parseFieldType(rt.substring(1))+"[]"
+        else
+            asJavaObjectType(rt);
+    }
+
+    def asObjectType(cpIndex: Int)(implicit cp: Constant_Pool): String = {
+        asJavaObjectType(cp(cpIndex).toString(cp))
+    }
+
+    def asJavaObjectType(t: String): String = {
+        t.replace('/', '.')
+    }
 
     def parseReturnType(rt: String): String =
         if (rt.charAt(0) == 'V')
@@ -86,7 +105,7 @@ package object da {
             case 'L' ⇒
                 val endIndex = md.indexOf(';', startIndex + 1)
                 ( // this is the return tuple
-                    md.substring(startIndex + 1, endIndex).replace('/','.'),
+                    md.substring(startIndex + 1, endIndex).replace('/', '.'),
                     endIndex + 1
                 )
             case '[' ⇒
@@ -102,6 +121,9 @@ package object da {
                 )
         }
     }
+
+    def methodAccessFlagsToString(access_flags: Int): String =
+        AccessFlags.toString(access_flags, AccessFlagsContexts.METHOD)
 
 }
 
