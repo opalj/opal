@@ -59,6 +59,13 @@ a {
     background:transparent;
 }
 
+table {
+	font-weight: inherit;
+	font-size: inherit;
+	font-variant: inherit;
+	font-style: inherit;
+}
+
 /* change colours to suit your needs */
 ins {
     background-color:#ff9;
