@@ -30,21 +30,6 @@ package org.opalj
 package da
 
 /**
- * <pre>
- * LocalVariableTypeTable_attribute {
- * u2 attribute_name_index;
- * u4 attribute_length;
- * u2 local_variable_type_table_length;
- * { u2 start_pc;
- * u2 length;
- * u2 name_index;
- * u2 signature_index;
- * u2 index;
- * } local_variable_type_table[
- * local_variable_type_table_length];
- * }
- * </pre>
- *
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
@@ -56,7 +41,8 @@ case class LocalVariableTypeTable_attribute(
 
     def attribute_length: Int = 2 + (local_variable_type_table.size * 10)
 
-    def attribute_name = LocalVariableTypeTable_attribute.name
+    // TODO Implement conversion to XHTML
+    
 }
 object LocalVariableTypeTable_attribute {
 
