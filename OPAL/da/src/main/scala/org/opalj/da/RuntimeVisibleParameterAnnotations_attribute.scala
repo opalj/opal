@@ -43,18 +43,18 @@ case class RuntimeVisibleParameterAnnotations_attribute(
         attribute_length: Int,
         parameter_annotations: IndexedSeq[IndexedSeq[Annotation]]) extends Attribute {
 
-    type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
-
-    def attribute_name = RuntimeVisibleParameterAnnotations_attribute.name
-
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">//RuntimeVisibleParameterAnnotations:{ annotationstoXHTML(cp) }</div>
     }
 
     def annotationstoXHTML(implicit cp: Constant_Pool): Node = {
-        <span>
-          { for (parameter_annotation ← parameter_annotations)for (annotation ← parameter_annotation) yield annotation.toXHTML(cp) }
-      </span>
+        val annotations =
+            for {
+                // TODO This doesn't make sense: it is no longer possible to distinguish parameters
+                parameter_annotation ← parameter_annotations
+                annotation ← parameter_annotation
+            } yield annotation.toXHTML(cp)
+        <span>{ annotations }</span>
     }
 }
 
