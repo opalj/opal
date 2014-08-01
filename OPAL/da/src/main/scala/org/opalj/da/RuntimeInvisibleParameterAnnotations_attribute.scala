@@ -32,18 +32,6 @@ package da
 import scala.xml.Node
 
 /**
- * <pre>
- * RuntimeInvisibleParameterAnnotations_attribute {
- * u2 attribute_name_index;
- * u4 attribute_length;
- * u1 num_parameters;
- * {
- * u2 num_annotations;
- * annotation annotations[num_annotations];
- * } parameter_annotations[num_parameters];
- * }
- * </pre>
- *
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
@@ -53,13 +41,6 @@ case class RuntimeInvisibleParameterAnnotations_attribute(
         attribute_name_index: Int,
         attribute_length: Int,
         parameter_annotations: IndexedSeq[IndexedSeq[Annotation]]) extends Attribute {
-
-    //
-    // IMPLEMENTATION
-    //
-    type ParameterAnnotations = IndexedSeq[IndexedSeq[Annotation]]
-
-    def attribute_name = RuntimeInvisibleParameterAnnotations_attribute.name
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">//RuntimeInvisibleParameterAnnotations:{ annotationstoXHTML(cp) }</div>

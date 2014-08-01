@@ -30,16 +30,8 @@ package org.opalj
 package da
 
 import scala.xml.Node
+
 /**
- * <pre>
- * RuntimeVisibleAnnotations_attribute {
- * u2 attribute_name_index;
- * u4 attribute_length;
- * u2 num_annotations;
- * annotation annotations[num_annotations];
- * }
- * </pre>
- *
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
@@ -49,9 +41,6 @@ case class RuntimeVisibleAnnotations_attribute(
         attribute_name_index: Int,
         attribute_length: Int,
         annotations: IndexedSeq[Annotation]) extends Annotations_attribute {
-
-    type Annotations = IndexedSeq[Annotation]
-    def attribute_name = RuntimeVisibleAnnotations_attribute.name
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">//RuntimeVisibleAnnotations:{ annotationstoXHTML(cp) }</div>

@@ -42,16 +42,14 @@ case class RuntimeVisibleTypeAnnotations_attribute(
         attribute_length: Int,
         annotations: IndexedSeq[TypeAnnotation]) extends Attribute {
 
-    def attribute_name = RuntimeVisibleTypeAnnotations_attribute.name
-
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">//RuntimeInvisibleParameterAnnotations:{ annotationstoXHTML(cp) }</div>
+        <div class="annotation">//RuntimeVisibleTypeAnnotations_attribute:{ annotationstoXHTML(cp) }</div>
     }
 
     def annotationstoXHTML(implicit cp: Constant_Pool): Node = {
         <span>
-          { for (annotation ← annotations) yield annotation.toXHTML(cp) }
-      </span>
+            { for (annotation ← annotations) yield annotation.toXHTML(cp) }
+        </span>
     }
 }
 
