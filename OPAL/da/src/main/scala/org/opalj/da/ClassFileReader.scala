@@ -309,32 +309,41 @@ object ClassFileReader
         new ArrayValue(values)
 
     val AnnotationManifest: ClassTag[Annotation] = implicitly
-    def Annotation(cp: Constant_Pool, type_index: Int, element_value_pairs: ElementValuePairs): Annotation = new Annotation(type_index, element_value_pairs)
+    def Annotation(
+        cp: Constant_Pool,
+        type_index: Int,
+        element_value_pairs: ElementValuePairs): Annotation =
+        new Annotation(type_index, element_value_pairs)
 
     type AnnotationDefault_attribute = da.AnnotationDefault_attribute
-    def AnnotationDefault_attribute(cp: Constant_Pool,
-                                    attribute_name_index: Int, attribute_length: Int, element_value: ElementValue) = new AnnotationDefault_attribute(
-        attribute_name_index, attribute_length, element_value)
+    def AnnotationDefault_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        element_value: ElementValue) =
+        new AnnotationDefault_attribute(attribute_name_index, attribute_length, element_value)
 
     type RuntimeVisibleAnnotations_attribute = da.RuntimeVisibleAnnotations_attribute
-    def RuntimeVisibleAnnotations_attribute(cp: Constant_Pool,
-                                            attribute_name_index: Int, attribute_length: Int, annotations: Annotations) = new RuntimeVisibleAnnotations_attribute(
-        attribute_name_index, attribute_length, annotations)
+    def RuntimeVisibleAnnotations_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        annotations: Annotations) =
+        new RuntimeVisibleAnnotations_attribute(attribute_name_index, attribute_length, annotations)
 
     type RuntimeInvisibleAnnotations_attribute = da.RuntimeInvisibleAnnotations_attribute
-    def RuntimeInvisibleAnnotations_attribute(cp: Constant_Pool,
-                                              attribute_name_index: Int, attribute_length: Int, annotations: Annotations) = new RuntimeInvisibleAnnotations_attribute(
-        attribute_name_index, attribute_length, annotations)
+    def RuntimeInvisibleAnnotations_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        annotations: Annotations) =
+        new RuntimeInvisibleAnnotations_attribute(attribute_name_index, attribute_length, annotations)
 
     type RuntimeVisibleParameterAnnotations_attribute = da.RuntimeVisibleParameterAnnotations_attribute
-    def RuntimeVisibleParameterAnnotations_attribute(cp: Constant_Pool,
-                                                     attribute_name_index: Int, attribute_length: Int, parameter_annotations: ParameterAnnotations) = new RuntimeVisibleParameterAnnotations_attribute(
-        attribute_name_index, attribute_length, parameter_annotations
-    )
+    def RuntimeVisibleParameterAnnotations_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        parameter_annotations: ParameterAnnotations) =
+        new RuntimeVisibleParameterAnnotations_attribute(
+            attribute_name_index, attribute_length, parameter_annotations)
 
     type RuntimeInvisibleParameterAnnotations_attribute = da.RuntimeInvisibleParameterAnnotations_attribute
-    def RuntimeInvisibleParameterAnnotations_attribute(cp: Constant_Pool,
-                                                       attribute_name_index: Int, attribute_length: Int, parameter_annotations: ParameterAnnotations) =
+    def RuntimeInvisibleParameterAnnotations_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        parameter_annotations: ParameterAnnotations) =
         new RuntimeInvisibleParameterAnnotations_attribute(
             attribute_name_index, attribute_length, parameter_annotations
         )
