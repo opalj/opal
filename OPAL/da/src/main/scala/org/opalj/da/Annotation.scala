@@ -32,7 +32,6 @@ package da
 import scala.xml.Node
 
 /**
- *
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
@@ -53,8 +52,8 @@ case class Annotation(
             for (element_value_pair ← element_value_pairs)
                 yield element_value_pair.toXHTML(cp)
         <span>
-	        { cp(type_index).toString(cp).replace('/', '.') }
-	        { annotations }
-	    </span>
+            { asObjectType(type_index) }
+            { annotations }
+        </span>
     }
 }

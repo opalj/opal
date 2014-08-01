@@ -42,11 +42,9 @@ case class AnnotationDefault_attribute(
         attribute_length: Int,
         element_value: ElementValue) extends Attribute {
 
-    def attribute_name = AnnotationDefault_attribute.name
-
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="annotation">
-            //AnnotationDefault:{ attribute_name }: { element_value }
+            // default:{ element_value }
         </div>
     }
 }
