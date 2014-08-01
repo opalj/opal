@@ -47,8 +47,6 @@ case class ConstantValue_attribute(
 
     def attribute_length = 2
 
-    def attribute_name = ConstantValue_attribute.name
-
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <span>=<span class="ConstantValue"> { cp(constantValue_index).toString }</span>;</span>
     }
