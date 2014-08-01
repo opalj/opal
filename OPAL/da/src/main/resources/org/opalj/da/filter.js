@@ -62,53 +62,53 @@ function FlagFilter(tagee) {
 				var conditionString="div[class*='methodinfo']";
 				if(privateNum ==-1)
 				{
-					conditionString=conditionString+"[name*='private']";
+					conditionString=conditionString+"[flags*='private']";
 				}
 				if(publicNum ==-1)
 				{
-					conditionString=conditionString+"[name*='public']";
+					conditionString=conditionString+"[flags*='public']";
 					
 				}
 				if(ProtectedNum ==-1)
 				{
-					conditionString=conditionString+"[name*='protected']";
+					conditionString=conditionString+"[flags*='protected']";
 				}
 				if(StaticNum ==-1)
 				{
-					conditionString=conditionString+"[name*='static']";
+					conditionString=conditionString+"[flags*='static']";
 				}
 				if(FinalNum ==-1)
 				{
-					conditionString=conditionString+"[name*='final']";
+					conditionString=conditionString+"[flags*='final']";
 				}
 				if(SynchronizedNum ==-1)
 				{
-					conditionString=conditionString+"[name*='synchronized']";
+					conditionString=conditionString+"[flags*='synchronized']";
 				}
 				if(BridgeNum ==-1)
 				{
-					conditionString=conditionString+"[name*='bridge']";
+					conditionString=conditionString+"[flags*='bridge']";
 				}
 				if(VarargsNum ==-1)
 				{
-					conditionString=conditionString+"[name*='varargs']";
+					conditionString=conditionString+"[flags*='varargs']";
 				}
 				if(NativeNum ==-1)
 				{
-					conditionString=conditionString+"[name*='native']";
+					conditionString=conditionString+"[flags*='native']";
 				}
 				if(AbstractNum ==-1)
 				{
-					conditionString=conditionString+"[name*='abstract']";
+					conditionString=conditionString+"[flags*='abstract']";
 				}
 				if(StrictNum ==-1)
 				{
-					conditionString=conditionString+"[name*='strict']";
+					conditionString=conditionString+"[flags*='strict']";
 				}
 				$( conditionString ).show();
 			}
 			if(tempText!="")
-			$( "div[class*='methodinfo']" ).not("div[title*='"+tempText+"']").hide(); 
+			$( "div[class*='methodinfo']" ).not("div[name*='"+tempText+"']").hide(); 
 }
 
 function NameFilter(text) 
@@ -116,5 +116,5 @@ function NameFilter(text)
 	tempText=text;
 	FlagFilter("none");
 	if(text!="")
-	$( "div[class*='methodinfo']" ).not("div[title*='"+text+"']").hide(); 
+	$( "div[class*='methodinfo']" ).not("div[name*='"+text+"']").hide(); 
 }
