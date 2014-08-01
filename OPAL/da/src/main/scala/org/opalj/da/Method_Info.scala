@@ -31,9 +31,6 @@ package da
 
 import scala.xml.Node
 
-import org.opalj.bi.AccessFlags
-import org.opalj.bi.AccessFlagsContexts
-
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
@@ -47,15 +44,16 @@ case class Method_Info(
         attributes: Attributes) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="methodinfo" title= { cp(name_index).toString(cp) } 
-        name={ AccessFlags.toString(accessFlags, AccessFlagsContexts.METHOD) }>
+        val flags = methodAccessFlagsToString(accessFlags)
+        val name = cp(name_index).toString(cp)
+        <div class="methodinfo" name={ name } flags={ flags }>
             <div class="method">
-                <span class="AccessFlags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.METHOD) }</span>
-                <span>{ parseMethodDescriptor(cp(name_index).asString, cp(descriptor_index).asString) }</span>
-                <a href="#" class="tooltip">{ name_index } <span>{ cp(name_index) }</span></a> 
+                <span class="AccessFlags">{ flags }</span>
+                <span>{ parseMethodDescriptor(name, cp(descriptor_index).asString) }</span>
+                <a href="#" class="tooltip">{ name_index } <span>{ cp(name_index) }</span></a>
                 { attributesToXHTML }
             </div>
-       </div>
+        </div>
     }
 
     def attributesToXHTML(implicit cp: Constant_Pool) = {

@@ -30,8 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import org.opalj.bi.AccessFlags
-import org.opalj.bi.AccessFlagsContexts
 
 /**
  * @author Michael Eichberg
@@ -65,9 +63,10 @@ case class MethodParameter(
         access_flags: Int) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span> { AccessFlags.toString(access_flags, AccessFlagsContexts.METHOD) }
-         { cp(name_index).toString(cp) }
-      </span>
+        <span>
+            { methodAccessFlagsToString(access_flags) }
+            { cp(name_index).toString(cp) }
+        </span>
     }
 }
 	
