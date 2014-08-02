@@ -110,7 +110,7 @@ private class UShortSet2(private var value: Int) extends UShortSet {
             val value1 = this.value1
             if (uShortValue < value1) {
                 // the new value is smaller than the first value
-                new UShortSet4((value.toLong << 16) | uShortValue)
+                new UShortSet4((intMaskToLongMask(value) << 16) | uShortValue)
             } else if (uShortValue == value1) {
                 // the new value is already in the set
                 this
@@ -119,12 +119,14 @@ private class UShortSet2(private var value: Int) extends UShortSet {
                 val value2 = this.value2
                 if (uShortValue < value2) {
                     // the new value is smaller than the second value
-                    new UShortSet4(value1 | (uShortValue << 16) | (value2.toLong << 32))
+                    new UShortSet4(value1.toLong | (uShortValue.toLong << 16) | (value2.toLong << 32))
                 } else if (uShortValue == value2)
                     // the new value is equal to the second value
                     this
                 else /*uShortValue > value2*/ {
-                    new UShortSet4(value | (uShortValue.toLong << 32))
+                    new UShortSet4(
+                        intMaskToLongMask(value) | (intMaskToLongMask(uShortValue) << 32)
+                    )
                 }
             }
         }
@@ -144,6 +146,13 @@ private class UShortSet2(private var value: Int) extends UShortSet {
 private object UShortSet2 {
     final val Value1Mask: Int = UShort.MaxValue
     final val Value2Mask: Int = Value1Mask << 16
+
+    final def intMaskToLongMask(value: Int): Long = {
+        var v = 0l
+        v |= (value >>> 16).toLong << 16
+        v |= (value & 0xFFFF).toLong
+        v
+    }
 }
 
 /**
@@ -157,11 +166,11 @@ private class UShortSet4(private var value: Long) extends UShortSet {
 
     import UShortSet4._
 
-    @inline protected final def value1 = (value & Value1Mask)
-    @inline protected final def value2 = ((value & Value2Mask) >>> 16)
-    @inline protected final def value3 = ((value & Value3Mask) >>> 32)
-    @inline protected final def value4 = ((value & Value4Mask) >>> 48)
-    @inline protected final def notFull = (value & Value4Mask) == 0
+    @inline protected final def value1: Long = (value & Value1Mask)
+    @inline protected final def value2: Long = ((value & Value2Mask) >>> 16)
+    @inline protected final def value3: Long = ((value & Value3Mask) >>> 32)
+    @inline protected final def value4: Long = ((value & Value4Mask) >>> 48)
+    @inline protected final def notFull: Boolean = (value & Value4Mask) == 0
 
     def max: UShort = (if (notFull) value3 else value4).toInt
 
