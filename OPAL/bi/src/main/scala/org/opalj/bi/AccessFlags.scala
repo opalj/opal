@@ -49,4 +49,46 @@ object AccessFlags {
         toStrings(accessFlags, ctx).mkString(" ")
     }
 
+    def classFlagsToJava(accessFlags: Int): String = {
+        val ctx = AccessFlagsContexts.CLASS_FLAGS
+        // ACC_PUBLIC,ACC_FINAL,ACC_SUPER,ACC_INTERFACE,ACC_ABSTRACT,
+        // ACC_SYNTHETIC,ACC_ANNOTATION,ACC_ENUM
+        var flags = List.empty[String]
+
+        if (ACC_SYNTHETIC.unapply(accessFlags)) {
+            flags ::= "/*synthetic*/"
+        }
+
+        if (ACC_PUBLIC.unapply(accessFlags)) {
+            flags ::= "public"
+        }
+
+        if (ACC_FINAL.unapply(accessFlags)) {
+            flags ::= "final"
+        }
+
+        if (ACC_ABSTRACT.unapply(accessFlags) && !ACC_INTERFACE.unapply(accessFlags))
+            flags ::= "abstract"
+
+        if (ACC_INTERFACE.unapply(accessFlags)) {
+            if (!ACC_ABSTRACT.unapply(accessFlags))
+                flags ::= "/*NOT abstract (specification violation)*/"
+
+            if (ACC_ANNOTATION.unapply(accessFlags))
+                flags ::= "@interface"
+            else
+                flags ::= "interface"
+        }
+
+        if (!ACC_SUPER.unapply(accessFlags))
+            flags ::= "/*super bit NOT set*/"
+
+        if (ACC_ENUM.unapply(accessFlags))
+            flags ::= "enum"
+        else if (!ACC_INTERFACE.unapply(accessFlags))
+            flags ::= "class"
+
+        flags.reverse.mkString(" ")
+    }
+
 }
