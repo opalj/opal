@@ -45,7 +45,7 @@ case class InnerClassesEntry(
         inner_name_index: Int,
         inner_class_access_flags: Int) {
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
+    def toXHTML(definingClassFQN: String)(implicit cp: Constant_Pool): Node = {
         val accessFlags =
             AccessFlags.toString(inner_class_access_flags, AccessFlagsContexts.INNER_CLASS)
 

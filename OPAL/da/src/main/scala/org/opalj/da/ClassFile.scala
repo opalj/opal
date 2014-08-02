@@ -78,12 +78,15 @@ case class ClassFile(
         <ol>{ cpEntries }</ol>
     }
 
-    def attributesToXHTML: Node = {
-        <span>{ for (attribute ← attributes) yield attributeToXHTML(attribute) }</span>
+    def attributesToXHTML: Seq[Node] = {
+        for (attribute ← attributes) yield attributeToXHTML(attribute)
     }
 
     def attributeToXHTML(attribute: Attribute): Node = {
-        <div><span>{ attribute.toXHTML(cp) }</span></div>
+        attribute match {
+            case ica: InnerClasses_attribute ⇒ ica.toXHTML(fqn)
+            case _                           ⇒ attribute.toXHTML(cp)
+        }
     }
 
     def fieldsToXHTML: Node = {

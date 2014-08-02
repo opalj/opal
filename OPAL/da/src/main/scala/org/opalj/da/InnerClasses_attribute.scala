@@ -51,21 +51,30 @@ import scala.xml.Node
  */
 case class InnerClasses_attribute(
         attribute_name_index: Int,
-        classes: Seq[InnerClassesEntry]) extends Attribute {
+        innerClasses: Seq[InnerClassesEntry]) extends Attribute {
 
-    def attribute_name = InnerClasses_attribute.name
-
-    def attribute_length = 2 + (classes.size * 8)
+    def attribute_length = 2 + (innerClasses.size * 8)
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
+        throw new UnsupportedOperationException(
+            "use \"toXHTML(definingClassFQN: String)(implicit cp: Constant_Pool): Node\""
+        )
+    }
+
+    def toXHTML(definingClassFQN: String)(implicit cp: Constant_Pool): Node = {
         <div id="#innerClasses">
-	        <details>
-	            <summary>{ cp(attribute_name_index).toString }</summary>
-	            <ol>
-	                <div class="code"><ul>{ for (class_ ← classes) yield class_.toXHTML(cp) }</ul></div>
-	            </ol>
-	        </details>
-	    </div>
+            <details>
+                <summary>{ cp(attribute_name_index).toString }</summary>
+                <ol>
+                    <ul>
+                        {
+                            for (innerClass ← innerClasses)
+                                yield innerClass.toXHTML(definingClassFQN)(cp)
+                        }
+                    </ul>
+                </ol>
+            </details>
+        </div>
     }
 }
 object InnerClasses_attribute {
