@@ -43,16 +43,32 @@ import scala.collection.JavaConversions._
  * on Java-bytecode and detect bugs.
  *
  * This object keeps a list of all available analyses and provides a way to run them on
- * a given `bat.resolved.analyses.ProjectLike`.
+ * a given [[org.opalj.br.analyses.Project]].
  *
  * @author Florian Brandherm
  * @author Peter Spieler
  * @author Daniel Klauer
  */
 object FindRealBugs {
+    /**
+     * An analysis that can be used by FindRealBugs. FindRealBugs' own built-in analyses
+     * and also external analyses need to be compatible to this.
+     */
     type Analysis = MultipleResultsAnalysis[URL, SourceLocationBasedReport[URL]]
+
     type AnalysisReports = Set[SourceLocationBasedReport[URL]]
+
+    /**
+     * A function that instantiates an analysis. This allows us to keep track of analyses
+     * without having to instantiate them immediately, because doing so could be quite
+     * expensive, depending on the analyses.
+     */
     type AnalysisCreator = () ⇒ Analysis
+
+    /**
+     * A list of analysis class names and their enabled/disabled state. Useful for saving
+     * and loading a list of analysis classes to/from configuration files.
+     */
     type AnalysisRegistry = Map[String, Boolean]
 
     /**
@@ -99,6 +115,9 @@ object FindRealBugs {
     val builtInAnalysisClassNames: Set[String] =
         builtInAnalysisNames.map("org.opalj.frb.analyses."+_)
 
+    /**
+     * The default set of FindRealBugs' built-in analyses, all marked as enabled.
+     */
     val defaultRegistry: AnalysisRegistry =
         builtInAnalysisClassNames.map(name ⇒ name -> true).toMap
 
