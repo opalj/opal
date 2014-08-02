@@ -48,7 +48,7 @@ case class Method_Info(
         val name = cp(name_index).toString(cp)
         <div class="methodinfo" name={ name } flags={ flags }>
             <div class="method">
-                <span class="AccessFlags">{ flags }</span>
+                <span class="access_flags">{ flags }</span>
                 <span>{ parseMethodDescriptor(name, cp(descriptor_index).asString) }</span>
                 <a href="#" class="tooltip">{ name_index } <span>{ cp(name_index) }</span></a>
                 { attributesToXHTML(methodIndex) }

@@ -98,7 +98,7 @@ case class ClassFile(
     }
 
     protected def accessFlags: Node = {
-        <span class="AccessFlags">{ AccessFlags.classFlagsToJava(access_flags) }</span>
+        <span class="access_flags">{ AccessFlags.classFlagsToJava(access_flags) }</span>
     }
 
     protected def filter: Node = {
