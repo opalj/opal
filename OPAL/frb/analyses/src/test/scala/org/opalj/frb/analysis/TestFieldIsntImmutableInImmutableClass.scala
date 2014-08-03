@@ -44,9 +44,17 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
-    import TestFieldIsntImmutableInImmutableClass._
 
     behavior of "FieldIsntImmutableInImmutableClass"
+
+    val project = createProject(
+        Seq("JCIPAnnotations.jar",
+            "FieldIsntImmutableInImmutableClass.jar",
+            "OwnAnnotations.jar",
+            "JSR305Annotations.jar")
+    )
+
+    val results = new FieldIsntImmutableInImmutableClass[URL].analyze(project).toSet
 
     it should "report a mutable field whatever in CustomAnnotatedWithTrivialMutable" in {
         val declaringClass = ObjectType(
@@ -270,15 +278,4 @@ class TestFieldIsntImmutableInImmutableClass extends AnalysisTest {
     it should "find 18 issues in total" in {
         results.size should be(18)
     }
-}
-
-object TestFieldIsntImmutableInImmutableClass {
-    val project = makeProjectFromJars(
-        Seq("JCIPAnnotations.jar",
-            "FieldIsntImmutableInImmutableClass.jar",
-            "OwnAnnotations.jar",
-            "JSR305Annotations.jar")
-    )
-
-    val results = new FieldIsntImmutableInImmutableClass[URL].analyze(project).toSet
 }

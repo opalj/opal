@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestUnusedPrivateFields extends AnalysisTest {
-    import TestUnusedPrivateFields._
 
     behavior of "UnusedPrivateFields"
+
+    val project = createProject("UnusedPrivateFields.jar")
+    val results = new UnusedPrivateFields[URL].analyze(project)
 
     it should "detect an unused private field" in {
         val declaringClass = ObjectType("UnusedPrivateFields/Unused")
@@ -119,9 +121,4 @@ class TestUnusedPrivateFields extends AnalysisTest {
     it should "find exactly 6 issues in UnusedPrivateFields.jar" in {
         results.size should be(6)
     }
-}
-
-object TestUnusedPrivateFields {
-    val project = makeProjectFromJar("UnusedPrivateFields.jar")
-    val results = new UnusedPrivateFields[URL].analyze(project)
 }

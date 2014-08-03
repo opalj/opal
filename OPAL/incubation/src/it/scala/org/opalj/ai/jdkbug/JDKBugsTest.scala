@@ -26,27 +26,23 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.jdkbug
+package org.opalj
+package ai
+package jdkbug
 
-import java.net.URL
 import org.scalatest._
-import scala.collection.mutable.Stack
-
-import org.opalj.bi.TestSupport.locateTestResources
-
-import org.opalj.br.TestSupport
-import org.opalj.ai.jdkbug.JDKTaintAnalysis
-import org.opalj.ai.jdkbug.TaintAnalysisDomain
-import org.opalj.ai.jdkbug.RootTaintAnalysisDomain
 
 /**
  * Simple test that checks if the analysis finds the right number of issues.
  *
  * @author Lars Schulte
  */
+@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class JDKBugsTest extends FlatSpec with Matchers {
 
     "JDKBugs" should "find all known bugs in the corresponding files in src/test/java" in {
+
+        import org.opalj.bi.TestSupport.locateTestResources
 
         val args = new Array[String](2)
         args(0) = "-cp="+locateTestResources("jdkbug/test.jar", "incubation").getPath()

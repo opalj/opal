@@ -14,6 +14,7 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -27,43 +28,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package frb
-package analysis
+package br
 
-import AnalysisTest._
-import analyses._
-import br._
-import br.analyses._
-import java.net.URL
+import org.opalj.bi.TestSupport.JRELibraryFolder
+import org.opalj.br.analyses.Project
+import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.br.reader.BytecodeInstructionsCache
 
 /**
- * Unit Test for class AnonymousInnerClassShouldBeStatic.
+ * Common functionality required by all test.
  *
- * @author Daniel Klauer
- * @author Peter Spieler
+ * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class AnonymousInnerClassShouldBeStaticTest extends AnalysisTest {
+object TestSupport {
 
-    behavior of "AnonymousInnerClassShouldBeStatic"
+    /**
+     * Loads class files from JRE .jars found in the boot classpath.
+     *
+     * @return List of class files ready to be passed to a `IndexBasedProject`.
+     */
+    def readJREClassFiles: Seq[(ClassFile, java.net.URL)] = {
+        val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
+        val classFiles = reader.ClassFiles(JRELibraryFolder)
+        if (classFiles.isEmpty)
+            sys.error(s"loading the JRE (${JRELibraryFolder}) failed")
 
-    val project = createProject("AnonymousInnerClassShouldBeStatic.jar")
-    val results = new AnonymousInnerClassShouldBeStatic[URL].analyze(project).toSet
-
-    it should "detect a non-static inner class that does not use its outer class" in {
-        val classToReport =
-            ObjectType("AnonymousInnerClassShouldBeStatic/AnonymousInnerClass$1")
-
-        results should contain(
-            ClassBasedReport(project.source(classToReport),
-                Severity.Info,
-                classToReport,
-                "This inner class should be made Static")
-        )
+        classFiles.toSeq
     }
 
-    it should "find 1 issue in total" in {
-        results.size should be(1)
-    }
+    def createJREProject: Project[java.net.URL] = Project(readJREClassFiles)
 
 }

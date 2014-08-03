@@ -51,7 +51,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
 
     describe("a more precise domain") {
         it("should return a more precise result") {
-            val project = org.opalj.br.TestSupport.JREProject
+            val project = org.opalj.br.TestSupport.createJREProject
             // The following three domains are very basic domains that – given that the
             // same partial domains are used – should compute the same results.
 
@@ -59,7 +59,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
             // expressive power as the other domains.
             class TheValuesDomain(val project: Project[java.net.URL])
                 extends ValuesCoordinatingDomain
-                with l0.DefaultTypeLevelLongValues
+                with l1.DefaultLongValues
                 with l0.DefaultTypeLevelFloatValues
                 with l0.DefaultTypeLevelDoubleValues
                 with l1.DefaultReferenceValuesBinding
@@ -93,7 +93,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with IgnoreSynchronization
                 with l1.DefaultReferenceValuesBinding
                 with l1.DefaultIntegerRangeValues
-                with l0.DefaultTypeLevelLongValues
+                with l1.DefaultLongValues
                 with l0.DefaultTypeLevelFloatValues
                 with l0.DefaultTypeLevelDoubleValues
                 with l0.DefaultPrimitiveValuesConversions

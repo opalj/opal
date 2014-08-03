@@ -45,9 +45,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestSerializableNoSuitableConstructor extends AnalysisTest {
-    import TestSerializableNoSuitableConstructor._
 
     behavior of "SerializableNoSuitableConstructor"
+
+    val project = createProject("SerializableNoSuitableConstructor.jar")
+    val results = new SerializableNoSuitableConstructor[URL].analyze(project).toSet
 
     it should "detect that class SerializableNoSuitableConstructor is the superclass of"+
         " a Serializable subclass and does not have a zero-arguments constructor" in {
@@ -66,9 +68,4 @@ class TestSerializableNoSuitableConstructor extends AnalysisTest {
     it should "find exactly 1 issue in SerializableNoSuitableConstructor.jar" in {
         results.size should be(1)
     }
-}
-
-object TestSerializableNoSuitableConstructor {
-    val project = makeProjectFromJar("SerializableNoSuitableConstructor.jar")
-    val results = new SerializableNoSuitableConstructor[URL].analyze(project).toSet
 }

@@ -30,7 +30,6 @@ package org.opalj
 package frb
 package analysis
 
-import AnalysisTest._
 import analyses._
 import br._
 import br.analyses._
@@ -44,10 +43,12 @@ import java.net.URL
  * @author Peter Spieler
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class TestBadlyOverriddenAdapter extends AnalysisTest {
-    import TestBadlyOverriddenAdapter._
+class TestBadlyOverriddenAdapter extends AnalysisIntegrationTest {
 
-    behavior of "BadlyOverriddenAdapter"
+    behavior of "the analysis BadlyOverriddenAdapter"
+
+    val project = createProject("BadlyOverriddenAdapter.jar")
+    val results = new BadlyOverriddenAdapter[URL].analyze(project).toSet
 
     it should "detect that a class inheriting from javax.swing.event.MouseInputAdapter "+
         "has a mouseClicked() method with an incompatible signature when compared to "+
@@ -100,7 +101,3 @@ class TestBadlyOverriddenAdapter extends AnalysisTest {
     }
 }
 
-object TestBadlyOverriddenAdapter {
-    val project = makeProjectFromJar("BadlyOverriddenAdapter.jar", true)
-    val results = new BadlyOverriddenAdapter[URL].analyze(project).toSet
-}

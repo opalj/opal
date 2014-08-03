@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestInefficientToArray extends AnalysisTest {
-    import TestInefficientToArray._
 
     behavior of "InefficientToArray"
+
+    val project = createProject("InefficientToArray.jar")
+    val results = new InefficientToArray[URL].analyze(project).toSet
 
     it should "detect that a toArray(new Integer[0]) call on an ArrayList<Integer> "+
         "object at InefficientToArray/InefficientToArray:50" in {
@@ -68,7 +70,3 @@ class TestInefficientToArray extends AnalysisTest {
     }
 }
 
-object TestInefficientToArray {
-    val project = makeProjectFromJar("InefficientToArray.jar")
-    val results = new InefficientToArray[URL].analyze(project).toSet
-}

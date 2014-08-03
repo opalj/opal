@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestSyncSetUnsyncGet extends AnalysisTest {
-    import TestSyncSetUnsyncGet._
 
     behavior of "SyncSetUnsyncGet"
+
+    val project = createProject("SyncSetUnsyncGet.jar")
+    val results = new SyncSetUnsyncGet[URL].analyze(project)
 
     it should "detect that getter is not synchronized like setter for field 'String a'" in {
         val declaringClass = ObjectType("SyncSetUnsyncGet/VariousSettersAndGetters")
@@ -75,9 +77,4 @@ class TestSyncSetUnsyncGet extends AnalysisTest {
     it should "find (only) 2 issues in SyncSetUnsyncGet.jar" in {
         results.size should be(2)
     }
-}
-
-object TestSyncSetUnsyncGet {
-    val project = makeProjectFromJar("SyncSetUnsyncGet.jar")
-    val results = new SyncSetUnsyncGet[URL].analyze(project)
 }

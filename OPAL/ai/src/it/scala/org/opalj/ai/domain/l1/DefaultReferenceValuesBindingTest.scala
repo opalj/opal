@@ -54,7 +54,9 @@ import org.opalj.ai.domain.ValuesCoordinatingDomain
 class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
 
     private object ValuesDomain
-            extends ValuesCoordinatingDomain
+            extends {
+                final val project: Project[java.net.URL] = TestSupport.createJREProject
+            } with ValuesCoordinatingDomain
             with l0.DefaultTypeLevelIntegerValues
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
@@ -64,7 +66,6 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
             with TheProject[java.net.URL]
             with ProjectBasedClassHierarchy {
 
-        def project: Project[java.net.URL] = TestSupport.JREProject
     }
 
     behavior of "instances of domains of type DomainReferenceValuesBinding"

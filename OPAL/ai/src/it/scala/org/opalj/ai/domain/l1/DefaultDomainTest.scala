@@ -36,7 +36,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-import org.opalj.br.analyses.Project
 import org.opalj.ai.debug.InterpretMethodsAnalysis.interpret
 
 /**
@@ -52,7 +51,7 @@ class DefaultDomainTest extends FlatSpec with Matchers {
     behavior of "the l1.DefaultDomain"
 
     it should ("be able to perform an abstract interpretation of the JRE's classes") in {
-        val project = Project(org.opalj.br.TestSupport.JREClassFiles)
+        val project = org.opalj.br.TestSupport.createJREProject
 
         val (message, source) = interpret(project, classOf[DefaultDomain[_]], false, 10)
 

@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestFieldShouldBeFinal extends AnalysisTest {
-    import TestFieldShouldBeFinal._
 
     behavior of "FieldShouldBeFinal"
+
+    val project = createProject("FieldShouldBeFinal.jar")
+    val results = new FieldShouldBeFinal[URL].analyze(project).toSet
 
     val declaringClass =
         ObjectType("FieldShouldBeFinal/VariousFields")
@@ -76,7 +78,3 @@ class TestFieldShouldBeFinal extends AnalysisTest {
     }
 }
 
-object TestFieldShouldBeFinal {
-    val project = makeProjectFromJar("FieldShouldBeFinal.jar")
-    val results = new FieldShouldBeFinal[URL].analyze(project).toSet
-}

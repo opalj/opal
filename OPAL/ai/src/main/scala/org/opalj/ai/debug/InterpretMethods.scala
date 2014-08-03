@@ -135,7 +135,7 @@ object InterpretMethodsAnalysis {
             if (beVerbose) println(classFile.thisType.toJava)
 
             val collectedExceptions =
-                for (method @ MethodWithBody(body) ← classFile.methods.par) yield {
+                for (method @ MethodWithBody(body) ← classFile.methods) yield {
                     try {
                         if (beVerbose) println("  started:  "+method.toJava)
                         time('AI) {
@@ -180,18 +180,20 @@ object InterpretMethodsAnalysis {
                     }
                 }
 
-            collectedExceptions.filter(_.isDefined).map(_.get).seq
+            collectedExceptions.filter(_.isDefined).map(_.get)
         }
 
         val collectedExceptions = time('OVERALL) {
-            (
-                for { (source, classFile) ← project.classFilesWithSources } yield {
+            val result = (
+                for { (source, classFile) ← project.classFilesWithSources.par } yield {
 
                     if (beVerbose) print(BOLD + source.toString + RESET+" – ")
 
                     analyzeClassFile(source.toString, classFile)
                 }
             ).flatten.seq.toSeq
+            result.size //for the evaluation
+            result
         }
 
         if (collectedExceptions.nonEmpty) {
@@ -201,17 +203,17 @@ object InterpretMethodsAnalysis {
                         exInstances.map { ex ⇒
                             val (_, classFile, method, throwable) = ex
                             <div>
-                            	<b>{ classFile.thisType.fqn }</b> 
-                            	<i>"{ method.toJava }"</i><br/>
-                            	{ "Length: " + method.body.get.instructions.length }
-                            	<div>{ XHTML.throwableToXHTML(throwable) }</div>
+                                <b>{ classFile.thisType.fqn }</b>
+                                <i>"{ method.toJava }"</i><br/>
+                                { "Length: "+method.body.get.instructions.length }
+                                <div>{ XHTML.throwableToXHTML(throwable) }</div>
                             </div>
                         }
 
                     <section>
-                    <h1>{ exResource }</h1>
-                    <p>Number of thrown exceptions: { exInstances.size }</p>
-                    { exDetails }
+                        <h1>{ exResource }</h1>
+                        <p>Number of thrown exceptions: { exInstances.size }</p>
+                        { exDetails }
                     </section>
                 }
 
@@ -224,7 +226,7 @@ object InterpretMethodsAnalysis {
             (
                 "During the interpretation of "+
                 methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes (overall: "+ns2sec(getTime('OVERALL))+
+                project.classFilesCount+" classes (real time: "+ns2sec(getTime('OVERALL))+
                 "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
                 "secs.)"+collectedExceptions.size+" exceptions occured.",
                 file
@@ -233,7 +235,7 @@ object InterpretMethodsAnalysis {
             (
                 "No exceptions occured during the interpretation of "+
                 methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes (overall: "+ns2sec(getTime('OVERALL))+
+                project.classFilesCount+" classes (real time: "+ns2sec(getTime('OVERALL))+
                 "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
                 "secs.)",
                 None

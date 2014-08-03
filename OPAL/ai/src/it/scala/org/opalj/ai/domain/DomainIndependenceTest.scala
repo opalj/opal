@@ -166,20 +166,24 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         }
 
         val failed = new java.util.concurrent.atomic.AtomicInteger(0)
+        val aiCount = new java.util.concurrent.atomic.AtomicInteger(0)
         val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
         for {
-            (classFile, source) ← org.opalj.br.TestSupport.JREClassFiles.par
+            (classFile, source) ← org.opalj.br.TestSupport.readJREClassFiles.par
             method @ MethodWithBody(body) ← classFile.methods
         } {
             def TheAI() = new InstructionCountBoundedAI[Domain](body, 10)
 
             val a1 = TheAI()
             val r1 = a1(classFile, method, new Domain1(body))
+            aiCount.incrementAndGet()
             val a2 = TheAI()
             val r2 = a2(classFile, method, new Domain2(body))
+            aiCount.incrementAndGet()
             val a3 = TheAI()
             val r3 = a3(classFile, method, new Domain3(body))
+            aiCount.incrementAndGet()
 
             def abort(ai: InstructionCountBoundedAI[_], r: AIResult) {
                 fail("the abstract interpretation of "+
@@ -236,8 +240,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                 failed.get()+" cases out of "+comparisonCount.get)
         }
         info(
-            "successfully compared the results of "+
-                comparisonCount.get+
-                " abstract interpretations")
+            s"successfully compared (${comparisonCount.get} comparisons) the results of "+
+                s" ${aiCount.get} abstract interpretations")
     }
 }

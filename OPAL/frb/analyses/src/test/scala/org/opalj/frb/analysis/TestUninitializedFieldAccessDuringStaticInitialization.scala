@@ -46,9 +46,12 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestUninitializedFieldAccessDuringStaticInitialization extends AnalysisTest {
-    import TestUninitializedFieldAccessDuringStaticInitialization._
 
     behavior of "UninitializedFieldAccessDuringStaticInitialization"
+
+    val project = createProject("UninitializedFieldAccessDuringStaticInitialization.jar")
+    val reports =
+        new UninitializedFieldAccessDuringStaticInitialization[URL].analyze(project).toSet
 
     def MethodReport(
         className: String,
@@ -239,10 +242,4 @@ class TestUninitializedFieldAccessDuringStaticInitialization extends AnalysisTes
     it should "find 31 issues in total" in {
         reports.size should be(31)
     }
-}
-
-object TestUninitializedFieldAccessDuringStaticInitialization {
-    val project = makeProjectFromJar("UninitializedFieldAccessDuringStaticInitialization.jar")
-    val reports =
-        new UninitializedFieldAccessDuringStaticInitialization[URL].analyze(project).toSet
 }

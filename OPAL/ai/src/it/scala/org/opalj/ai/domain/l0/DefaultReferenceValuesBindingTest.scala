@@ -52,7 +52,9 @@ import org.opalj.ai.domain.ValuesCoordinatingDomain
 class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
 
     private object ValuesDomain
-            extends ValuesCoordinatingDomain
+            extends {
+                final val project: Project[java.net.URL] = TestSupport.createJREProject
+            } with ValuesCoordinatingDomain
             with l0.DefaultTypeLevelIntegerValues
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
@@ -61,18 +63,16 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
             with l0.DefaultReferenceValuesBinding
             with TheProject[java.net.URL]
             with ProjectBasedClassHierarchy {
-        type Id = String
-        def id = "Values Domain"
 
-        def project: Project[java.net.URL] = TestSupport.JREProject
     }
 
-    behavior of "instances of domains of type DomainReferenceValuesBinding"
+    behavior of "instances of domains of type l0.DomainReferenceValuesBinding"
 
     it should "be able to join a value with a single interface with one with multiple interfaces" in {
-        // the operand stack value org.omg.CORBA.Object(origin=-1;maybeNull;isUpperBound) does not abstract over org.omg.CORBA.Object with java.rmi.Remote(origin=-1; isUpperBound)
+        // the operand stack value org.omg.CORBA.Object(origin=-1;maybeNull;isUpperBound) 
+        // does not abstract over org.omg.CORBA.Object with java.rmi.Remote(origin=-1; isUpperBound)
         val t1 = ObjectType("org/omg/CORBA/Object")
-        val t2 = ObjectType("java.rmi.Remote")
+        val t2 = ObjectType("java/rmi/Remote")
         val domain = ValuesDomain
         val stValue = domain.ReferenceValue(-1, t1)
         val mtValue = domain.ObjectValue(-1, UIDSet(t1, t2))

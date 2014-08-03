@@ -14,7 +14,6 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 
- *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,36 +27,55 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package frb
 
+import br._
+import br.reader._
+import br.analyses._
+import org.scalatest._
 import java.io.File
+import java.net.URL
 
-import org.opalj.br.analyses.Project
-import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.bi.TestSupport.JRELibraryFolder
+import org.opalj.bi.TestSupport.locateTestResources
+
+trait AnalysisIntegrationTest extends FlatSpec with Matchers with ParallelTestExecution {
+
+    protected def println(m: String) { info(m) }
+
+    def createProject(jarFileName: String): Project[URL] = {
+        AnalysisIntegrationTest.createProject(Seq(jarFileName), println)
+    }
+
+    def createProject(jarFileNames: Seq[String]): Project[URL] = {
+        AnalysisIntegrationTest.createProject(jarFileNames, println)
+    }
+}
 
 /**
- * Common functionality required by all test.
+ * Helper functions used by various tests.
  *
- * @author Michael Eichberg
+ * @author Florian Brandherm
+ * @author Daniel Klauer
  */
-object TestSupport {
+object AnalysisIntegrationTest {
 
     /**
-     * Loads class files from JRE .jars found in the boot classpath.
+     * Builds a project from one or more .jar files in src/test/resources/.
      *
-     * @return List of class files ready to be passed to a `IndexBasedProject`.
+     * @param filenames The files names, containing the path relative to
+     * ext/findrealbugs/src/test/resources/.
+     * @return A `Project` representing the class files from the provided .jar file.
      */
-    lazy val JREClassFiles: Seq[(ClassFile, java.net.URL)] = {
-        val classFiles = ClassFiles(JRELibraryFolder)
-        if (classFiles.isEmpty)
-            sys.error("Loading the JRE failed.")
+    def createProject(filenames: Seq[String], println: String ⇒ Unit): Project[URL] = {
 
-        classFiles.toSeq
+        val classFiles = filenames.map(filename ⇒
+            Java8Framework.ClassFiles(
+                locateTestResources("classfiles/analyses/"+filename,
+                    "frb/analyses")
+            )
+        ).flatten
+
+        println("Creating Project: "+filenames.mkString(", ")+" and "+" the JRE.")
+        Project(classFiles, TestSupport.readJREClassFiles)
     }
-
-    lazy val JREProject: Project[java.net.URL] = {
-        Project(JREClassFiles)
-    }
-
 }

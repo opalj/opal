@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestManualGarbageCollection extends AnalysisTest {
-    import TestManualGarbageCollection._
 
     behavior of "ManualGarbageCollection"
+
+    val project = createProject("ManualGarbageCollection.jar")
+    val results = new ManualGarbageCollection[URL].analyze(project).toSet
 
     it should "report class RuntimeGc which invokes "+
         "java.lang.Runtime.getRuntime().gc()" in {
@@ -76,9 +78,4 @@ class TestManualGarbageCollection extends AnalysisTest {
     it should "find 2 issues in total" in {
         results.size should be(2)
     }
-}
-
-object TestManualGarbageCollection {
-    val project = makeProjectFromJar("ManualGarbageCollection.jar")
-    val results = new ManualGarbageCollection[URL].analyze(project).toSet
 }

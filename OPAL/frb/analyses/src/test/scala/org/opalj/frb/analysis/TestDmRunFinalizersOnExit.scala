@@ -45,9 +45,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestDmRunFinalizersOnExit extends AnalysisTest {
-    import TestDmRunFinalizersOnExit._
 
     behavior of "DmRunFinalizersOnExit"
+
+    val project = createProject("DmRunFinalizersOnExit.jar")
+    val results = new DmRunFinalizersOnExit[URL].analyze(project).toSet
 
     it should "detect a method that calls System.runFinalizersOnExit()" in {
         val declaringClass =
@@ -65,9 +67,4 @@ class TestDmRunFinalizersOnExit extends AnalysisTest {
     it should "only find 1 issue in DmRunFinalizersOnExit.jar" in {
         results.size should be(1)
     }
-}
-
-object TestDmRunFinalizersOnExit {
-    val project = makeProjectFromJar("DmRunFinalizersOnExit.jar")
-    val results = new DmRunFinalizersOnExit[URL].analyze(project).toSet
 }

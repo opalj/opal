@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestCatchesIllegalMonitorStateException extends AnalysisTest {
-    import TestCatchesIllegalMonitorStateException._
 
     behavior of "CatchesIllegalMonitorStateException"
+
+    val project = createProject("CatchesIllegalMonitorStateException.jar")
+    val results = new CatchesIllegalMonitorStateException[URL].analyze(project).toSet
 
     it should "detect that MissingSynchronized.test() has a catch block for "+
         "IllegalMonitorStateException" in {
@@ -81,9 +83,4 @@ class TestCatchesIllegalMonitorStateException extends AnalysisTest {
     it should "find exactly 2 issues in CatchesIllegalMonitorStateException.jar" in {
         results.size should be(2)
     }
-}
-
-object TestCatchesIllegalMonitorStateException {
-    val project = makeProjectFromJar("CatchesIllegalMonitorStateException.jar")
-    val results = new CatchesIllegalMonitorStateException[URL].analyze(project).toSet
 }

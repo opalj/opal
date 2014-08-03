@@ -28,6 +28,7 @@
  */
 package org.opalj
 package br
+package reader
 
 import java.io.File
 import java.util.zip.ZipFile
@@ -35,15 +36,11 @@ import java.util.zip.ZipEntry
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
 
-import org.junit.runner.RunWith
-
 import org.scalatest.FlatSpec
-import org.scalatest.FunSuite
 import org.scalatest.Matchers
+import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
-
-import br.reader.Java8Framework
 
 /**
  * This test(suite) just loads a very large number of class files to make sure the library
@@ -53,38 +50,40 @@ import br.reader.Java8Framework
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class LoadClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARALLELIZED*/ {
+class LoadClassFilesInParallelTest
+        extends FlatSpec
+        with Matchers
+        with ParallelTestExecution {
 
-    def simpleValidator(classFile: ClassFile) {
-        assert(!(classFile.thisType.fqn eq null))
+    private def commonValidator(classFile: ClassFile, source: java.net.URL): Unit = {
+        classFile.thisType.fqn should not be null
+    }
+
+    private def interfaceValidator(classFile: ClassFile, source: java.net.URL): Unit = {
+        commonValidator(classFile, source)
+        // the body of no method should be available
+        classFile.methods.forall(m ⇒ m.body.isEmpty)
     }
 
     behavior of "OPAL"
 
     val jreLibFolder: File = org.opalj.bi.TestSupport.JRELibraryFolder
 
-    var count = 0
     for {
         file ← jreLibFolder.listFiles
-        if file.isFile
-        if file.canRead
-        if file.getName.endsWith(".jar")
-        if file.length() > 0
+        if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
     } {
-        count += 1
-        it should ("be able to parse the class files in "+file) in {
-            val jarFile = new ZipFile(file)
-            val jarEntries = (jarFile).entries
-            while (jarEntries.hasMoreElements) {
-                val jarEntry = jarEntries.nextElement
-                if (!jarEntry.isDirectory && jarEntry.getName.endsWith(".class")) {
-                    val data = new Array[Byte](jarEntry.getSize().toInt)
-                    process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
-                    simpleValidator(Java8Framework.ClassFile(new DataInputStream(new ByteArrayInputStream(data))))
-                }
+        it should ("be able to completely read all classes in the jar file "+file.getPath+" in parallel") in {
+            reader.Java8Framework.ClassFiles(file) foreach { cs ⇒
+                val (cf, s) = cs
+                commonValidator(cf, s)
+            }
+        }
+        it should ("be able to read the public interface of all classes in the jar file "+file.getPath+" in parallel") in {
+            reader.Java8LibraryFramework.ClassFiles(file) foreach { cs ⇒
+                val (cf, s) = cs
+                interfaceValidator(cf, s)
             }
         }
     }
-    assert(count > 0)
-
 }

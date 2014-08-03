@@ -46,9 +46,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestCnImplementsCloneButNotCloneable extends AnalysisTest {
-    import TestCnImplementsCloneButNotCloneable._
 
     behavior of "CnImplementsCloneButNotCloneable"
+
+    val project = createProject("CnImplementsCloneButNotCloneable.jar")
+    val results = new CnImplementsCloneButNotCloneable[URL].analyze(project).toSet
 
     it should "detect a clone() method in a class that does not implement Cloneable" in {
         val classToReport =
@@ -61,9 +63,4 @@ class TestCnImplementsCloneButNotCloneable extends AnalysisTest {
     it should "only find 1 issue in CnImplementsCloneButNotCloneable.jar" in {
         results.size should be(1)
     }
-}
-
-object TestCnImplementsCloneButNotCloneable {
-    val project = makeProjectFromJar("CnImplementsCloneButNotCloneable.jar")
-    val results = new CnImplementsCloneButNotCloneable[URL].analyze(project).toSet
 }

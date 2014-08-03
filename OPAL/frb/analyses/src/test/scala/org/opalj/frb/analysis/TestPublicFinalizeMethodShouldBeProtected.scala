@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestPublicFinalizeMethodShouldBeProtected extends AnalysisTest {
-    import TestPublicFinalizeMethodShouldBeProtected._
 
     behavior of "PublicFinalizeMethodShouldBeProtected"
+
+    val project = createProject("PublicFinalizeMethodShouldBeProtected.jar")
+    val results = new PublicFinalizeMethodShouldBeProtected[URL].analyze(project).toSet
 
     it should "detect a public finalize() method" in {
         val declaringClass =
@@ -63,9 +65,4 @@ class TestPublicFinalizeMethodShouldBeProtected extends AnalysisTest {
     it should "find exactly 1 issue in PublicFinalizeMethodShouldBeProtected.jar" in {
         results.size should be(1)
     }
-}
-
-object TestPublicFinalizeMethodShouldBeProtected {
-    val project = makeProjectFromJar("PublicFinalizeMethodShouldBeProtected.jar")
-    val results = new PublicFinalizeMethodShouldBeProtected[URL].analyze(project).toSet
 }

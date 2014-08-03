@@ -45,9 +45,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestDoInsideDoPrivileged extends AnalysisTest {
-    import TestDoInsideDoPrivileged._
 
     behavior of "DoInsideDoPrivileged"
+
+    val project = createProject("DoInsideDoPrivileged.jar")
+    val results = new DoInsideDoPrivileged[URL].analyze(project).toSet
 
     it should "detect a java.lang.reflect.Field.setAccessible() call outside a "+
         "doPrivileged block" in {
@@ -69,7 +71,3 @@ class TestDoInsideDoPrivileged extends AnalysisTest {
     }
 }
 
-object TestDoInsideDoPrivileged {
-    val project = makeProjectFromJar("DoInsideDoPrivileged.jar")
-    val results = new DoInsideDoPrivileged[URL].analyze(project).toSet
-}

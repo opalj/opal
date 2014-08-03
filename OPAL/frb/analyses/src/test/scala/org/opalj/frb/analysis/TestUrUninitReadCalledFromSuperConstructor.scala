@@ -46,9 +46,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestUrUninitReadCalledFromSuperConstructor extends AnalysisTest {
-    import TestUrUninitReadCalledFromSuperConstructor._
 
     behavior of "UrUninitReadCalledFromSuperConstructor"
+
+    val project = createProject("UrUninitReadCalledFromSuperConstructor.jar")
+    val results = new UrUninitReadCalledFromSuperConstructor[URL].analyze(project).toSet
 
     val superclass =
         "UrUninitReadCalledFromSuperConstructor.SuperclassWithAccessToSubclassDuringInit"
@@ -74,7 +76,3 @@ class TestUrUninitReadCalledFromSuperConstructor extends AnalysisTest {
     }
 }
 
-object TestUrUninitReadCalledFromSuperConstructor {
-    val project = makeProjectFromJar("UrUninitReadCalledFromSuperConstructor.jar")
-    val results = new UrUninitReadCalledFromSuperConstructor[URL].analyze(project).toSet
-}

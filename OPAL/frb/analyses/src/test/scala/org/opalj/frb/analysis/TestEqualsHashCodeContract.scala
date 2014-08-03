@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestEqualsHashCodeContract extends AnalysisTest {
-    import TestEqualsHashCodeContract._
 
     behavior of "EqualsHashCodeContract"
+
+    val project = createProject("EqualsHashCodeContract.jar")
+    val results = new EqualsHashCodeContract[URL].analyze(project).toSet
 
     it should "detect a class with an equals() but no hashCode()" in {
         val classToReport = ObjectType("EqualsHashCodeContract/EqualsWithoutHashCode")
@@ -65,9 +67,4 @@ class TestEqualsHashCodeContract extends AnalysisTest {
     it should "report only 2 issues in EqualsHashCodeContract.jar" in {
         results.size should be(2)
     }
-}
-
-object TestEqualsHashCodeContract {
-    val project = makeProjectFromJar("EqualsHashCodeContract.jar")
-    val results = new EqualsHashCodeContract[URL].analyze(project).toSet
 }

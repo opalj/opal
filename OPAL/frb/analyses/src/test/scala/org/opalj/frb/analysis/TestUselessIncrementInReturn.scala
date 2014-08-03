@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestUselessIncrementInReturn extends AnalysisTest {
-    import UselessIncrementInReturn._
 
     behavior of "UselessIncrementInReturn"
+
+    val project = createProject("UselessIncrementInReturn.jar")
+    val reports = new UselessIncrementInReturn[URL].analyze(project)
 
     it should "detect a useless int++ (IINC) instruction in a return statement at "+
         "UselessIncrementInReturn/IntParameterIncrementInReturn:50" in {
@@ -115,9 +117,4 @@ class TestUselessIncrementInReturn extends AnalysisTest {
     it should "only find 4 issues in UselessIncrementInReturn.jar" in {
         reports.size should be(4)
     }
-}
-
-object UselessIncrementInReturn {
-    val project = makeProjectFromJar("UselessIncrementInReturn.jar")
-    val reports = new UselessIncrementInReturn[URL].analyze(project)
 }

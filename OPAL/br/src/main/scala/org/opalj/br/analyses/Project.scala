@@ -124,14 +124,14 @@ class Project[Source] private (
         packages
     }
 
-//    def innerClasses(classFile: ClassFile): Traversable[ClassFile] = {
-//        val innerClasses = classFile.innerClasses
-//        if (innerClasses.isDefined) {
-//            innerClasses.get
-//        } else {
-//            Traversable.empty
-//        }
-//    }
+    //    def innerClasses(classFile: ClassFile): Traversable[ClassFile] = {
+    //        val innerClasses = classFile.innerClasses
+    //        if (innerClasses.isDefined) {
+    //            innerClasses.get
+    //        } else {
+    //            Traversable.empty
+    //        }
+    //    }
 
     /**
      * Determines for all packages of this project that contain at least one class
@@ -445,10 +445,16 @@ object Project {
      * files, all class files will be loaded and a project will be returned.
      */
     def apply(file: File): Project[URL] = {
-        Project.apply[URL](reader.Java8Framework.ClassFiles(file))
+        val cache = new reader.BytecodeInstructionsCache
+        val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
+
+        Project.apply[URL](Java8ClassFileReader.ClassFiles(file))
     }
 
     def extend(project: Project[URL], file: File): Project[URL] = {
+        val cache = new reader.BytecodeInstructionsCache
+        val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
+
         project.extend(reader.Java8Framework.ClassFiles(file))
     }
 
