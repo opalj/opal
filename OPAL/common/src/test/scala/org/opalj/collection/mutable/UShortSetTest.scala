@@ -64,9 +64,9 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
                 set.contains(i) should be(false)
         }
 
-        it("it should be possible to store a larger number of different values in the set") {
+        it("it should be possible – though the datastructure is not intended to be used for that – to store a larger number of different values in the set") {
             val seed = 72387238787323390l
-            val ValuesCount = 1000
+            val ValuesCount = 100000
             val rnd = new java.util.Random
             var uShortSet = UShortSet.empty
 
@@ -80,7 +80,7 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
                 scalaSet += rnd.nextInt(0xFFFF)
 
             uShortSet.size should equal(scalaSet.size) // we use a random number generator...
-
+            info(s"stored ${scalaSet.size} elemets - using 100000 insertions and ${uShortSet.nodeCount} nodes - in the set")
             scalaSet.forall(uShortSet.contains(_)) should be(true)
 
             rnd.setSeed(seed)
@@ -90,6 +90,64 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
             }
         }
 
+        it("the number of leaf nodes should be 3 if we add nine distinct value") {
+
+            var uShortSet = UShortSet.empty
+
+            val values = List(3, 40033, 23433, 11233, 2, 233, 23, 1233, 55555)
+
+            values.foreach(v ⇒ uShortSet = v +≈: uShortSet)
+            uShortSet.iterator.toSet should equal(values.toSet)
+
+            if (uShortSet.nodeCount > 3) {
+                val file =
+                    org.opalj.util.writeAndOpenDesktopApplication(
+                        org.opalj.graphs.toDot((
+                            for (i ← (4 to values.size)) yield {
+                                var uShortSet = UShortSet.empty
+                                values.take(i).foreach(v ⇒ uShortSet = v +≈: uShortSet)
+                                uShortSet.asGraph
+                            }
+                        ).toSet),
+                        "UShortSet-"+8,
+                        ".dot")
+
+                fail(s"two many nodes: ${uShortSet.nodeCount} (expected 3})(details: $file)")
+            }
+        }
+
+        it("the number of leaf nodes should be close to 1/4 of the number of entries") {
+            val seed = -983432872323390l
+            val ValuesCount = 10000
+            val rnd = new java.util.Random
+            var uShortSet = UShortSet.empty
+
+            rnd.setSeed(seed)
+            var valueToBeAdded: UShort = 0
+            try {
+                for (i ← (0 until ValuesCount)) {
+                    valueToBeAdded = rnd.nextInt(0xFFFF)
+                    uShortSet = valueToBeAdded +≈: uShortSet
+                }
+            } catch {
+                case e: Exception ⇒
+                    org.opalj.util.writeAndOpenDesktopApplication(
+                        org.opalj.graphs.toDot(Set(uShortSet.asGraph)),
+                        "UShortSet-CREATION_FAILED_FOR_VALUE_"+valueToBeAdded+"-"+ValuesCount,
+                        ".dot")
+                    throw e
+            }
+            val nodeCount = uShortSet.nodeCount
+            if (!(nodeCount < (ValuesCount / 3))) {
+                val file = org.opalj.util.writeAndOpenDesktopApplication(
+                    org.opalj.graphs.toDot(Set(uShortSet.asGraph)),
+                    "UShortSet-"+ValuesCount,
+                    ".dot")
+                fail(s"two many nodes: ${uShortSet.nodeCount} (expected << ${ValuesCount / 3})(details: $file)")
+            } else {
+                info(s"for storing $ValuesCount values $nodeCount nodes are required")
+            }
+        }
     }
 
 }

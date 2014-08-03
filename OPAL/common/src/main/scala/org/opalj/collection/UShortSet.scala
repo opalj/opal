@@ -113,6 +113,11 @@ trait UShortSet {
     def max: UShort
 
     /**
+     * The minimum value.
+     */
+    def min: UShort
+
+    /**
      * The last value in this set which is also the maximum value.
      */
     def last: UShort = max
@@ -120,9 +125,10 @@ trait UShortSet {
     /**
      * The number of elements of this set.
      *
-     * @note The size is calculated using an iterator, hence its complexity is O(n).
+     * @note The size is calculated on demand and requires a traversal of this
+     *      data structure.
      */
-    def size: Int = iterator.size
+    def size: Int
 
     /**
      * Returns `true` if this set is empty.

@@ -147,6 +147,18 @@ package object opalj {
             f: (Int, T) ⇒ Unit): Unit = macro ControlAbstractionsImplementation.foreachNonNullValueOf[T]
 
     /**
+     * Converts a given bit mask using an `Int` value into a bit mask using a `Long` value.
+     *
+     * @note This is not the same as a type conversion as the "sign-bit" is not treated
+     *      as such. I.e., after conversion of the `Int` value -1, the `Long` value
+     *      will be `4294967295` (both have the same bit mask:
+     *      `11111111111111111111111111111111`).
+     */
+    final def i2lBitMask(value: Int): Long = {
+        (value >>> 16).toLong << 16 | (value & 0xFFFF).toLong
+    }
+
+    /**
      * Evaluates the given expression `f` with type `T` the given number of
      * `times` and stores the result in an `IndexedSeq[T]`.
      *

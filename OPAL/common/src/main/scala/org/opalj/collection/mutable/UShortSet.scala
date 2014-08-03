@@ -51,6 +51,10 @@ trait UShortSet extends collection.UShortSet {
     override def +(value: UShort): UShortSet = {
         value +≈: this.mutableCopy
     }
+
+    // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
+    private[mutable] def nodeCount: Int
+    private[mutable] def asGraph: org.opalj.graphs.Node
 }
 
 /**
@@ -65,7 +69,7 @@ private class UShortSet2(private var value: Int) extends UShortSet {
     import UShortSet2._
 
     @inline protected final def value1 = (value & Value1Mask)
-    @inline protected final def value2 = ((value & Value2Mask) >>> 16)
+    @inline protected final def value2 = (value & Value2Mask) >>> 16
     @inline protected final def notFull = (value & Value2Mask) == 0
 
     def mutableCopy: mutable.UShortSet = {
@@ -78,6 +82,10 @@ private class UShortSet2(private var value: Int) extends UShortSet {
     }
 
     def max: UShort = if (notFull) value1 else value2
+
+    def min: UShort = value1
+
+    def size: Int = if (notFull) 1 else 2
 
     def contains(uShortValue: UShort): Boolean = {
         val value1 = this.value1
@@ -98,7 +106,7 @@ private class UShortSet2(private var value: Int) extends UShortSet {
 
         if (notFull) {
             val value = this.value
-            // update this sets container, if necessary 
+            // update this set's container, if necessary 
             if (uShortValue < value)
                 this.value = (value << 16) | uShortValue
             else if (uShortValue > value)
@@ -110,7 +118,7 @@ private class UShortSet2(private var value: Int) extends UShortSet {
             val value1 = this.value1
             if (uShortValue < value1) {
                 // the new value is smaller than the first value
-                new UShortSet4((intMaskToLongMask(value) << 16) | uShortValue)
+                new UShortSet4((i2lBitMask(value) << 16) | uShortValue)
             } else if (uShortValue == value1) {
                 // the new value is already in the set
                 this
@@ -119,13 +127,15 @@ private class UShortSet2(private var value: Int) extends UShortSet {
                 val value2 = this.value2
                 if (uShortValue < value2) {
                     // the new value is smaller than the second value
-                    new UShortSet4(value1.toLong | (uShortValue.toLong << 16) | (value2.toLong << 32))
+                    new UShortSet4(
+                        value1.toLong | (uShortValue.toLong << 16) | (value2.toLong << 32)
+                    )
                 } else if (uShortValue == value2)
                     // the new value is equal to the second value
                     this
                 else /*uShortValue > value2*/ {
                     new UShortSet4(
-                        intMaskToLongMask(value) | (intMaskToLongMask(uShortValue) << 32)
+                        i2lBitMask(value) | (i2lBitMask(uShortValue) << 32)
                     )
                 }
             }
@@ -142,17 +152,17 @@ private class UShortSet2(private var value: Int) extends UShortSet {
         case that: UShortSet2 ⇒ that.value == this.value
         case _                ⇒ false
     }
+
+    // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
+    private[mutable] def nodeCount: Int = 1
+    private[mutable] def asGraph: org.opalj.graphs.Node =
+        new org.opalj.graphs.SimpleNode[Int](
+            System.identityHashCode(this), { i ⇒ this.toString })
 }
 private object UShortSet2 {
     final val Value1Mask: Int = UShort.MaxValue
     final val Value2Mask: Int = Value1Mask << 16
 
-    final def intMaskToLongMask(value: Int): Long = {
-        var v = 0l
-        v |= (value >>> 16).toLong << 16
-        v |= (value & 0xFFFF).toLong
-        v
-    }
 }
 
 /**
@@ -173,6 +183,10 @@ private class UShortSet4(private var value: Long) extends UShortSet {
     @inline protected final def notFull: Boolean = (value & Value4Mask) == 0
 
     def max: UShort = (if (notFull) value3 else value4).toInt
+
+    def min: UShort = value1.toInt
+
+    def size: Int = if (notFull) 3 else 4
 
     def mutableCopy: mutable.UShortSet = {
         if (notFull)
@@ -262,15 +276,15 @@ private class UShortSet4(private var value: Long) extends UShortSet {
         f(value2.toInt)
         f(value3.toInt)
         val value4 = this.value4
-        if (value4 > 0) f(value4.toInt)
+        if (value4 > 0l) f(value4.toInt)
     }
 
     def forall(f: /*ushortValue:*/ UShort ⇒ Boolean): Boolean = {
-        val value4 = this.value4.toInt
+        val value4 = this.value4
         f(value1.toInt) &&
             f(value2.toInt) &&
             f(value3.toInt) &&
-            ((value4 == 0) || f(value4))
+            ((value4 == 0l) || f(value4.toInt))
     }
 
     def isEmpty = false
@@ -287,6 +301,12 @@ private class UShortSet4(private var value: Long) extends UShortSet {
         case that: UShortSet4 ⇒ that.value == this.value
         case _                ⇒ false
     }
+
+    // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
+    private[mutable] def nodeCount: Int = 1
+    private[mutable] def asGraph: org.opalj.graphs.Node =
+        new org.opalj.graphs.SimpleNode[Int](
+            System.identityHashCode(this), { i ⇒ this.toString })
 }
 
 private object UShortSet4 {
@@ -303,6 +323,8 @@ private class UShortSetNode(
     private[this] var currentMax = set2.max
     def max = currentMax
 
+    def min = set1.min
+
     def mutableCopy: mutable.UShortSet = {
         val set1Copy = set1.mutableCopy
         if (set1Copy eq set1) {
@@ -317,6 +339,8 @@ private class UShortSetNode(
     }
 
     def iterable = set1.iterable ++ set2.iterable
+
+    def size: Int = set1.size + set2.size
 
     def contains(uShortValue: UShort): Boolean =
         if (set1.max > uShortValue)
@@ -335,12 +359,20 @@ private class UShortSetNode(
     def +≈:(uShortValue: UShort): UShortSet = {
         if (uShortValue < MinValue || uShortValue > MaxValue)
             throw new IllegalArgumentException("value out of range: "+uShortValue)
+
         val set1Max = set1.max
-        if (set1Max > uShortValue) {
+        if (set1Max > uShortValue ||
+            (uShortValue < set2.min &&
+                uShortValue > set1Max &&
+                set1.isInstanceOf[UShortSet2])) {
             val newSet1 = uShortValue +≈: set1
             if (newSet1 eq set1)
                 this
-            else
+            else if (set2.isInstanceOf[UShortSet2] && newSet1.isInstanceOf[UShortSetNode]) {
+                val tempNode = newSet1.asInstanceOf[UShortSetNode]
+                val v = tempNode.set2.asInstanceOf[UShortSet2].min
+                new UShortSetNode(tempNode.set1, v +≈: set2)
+            } else
                 new UShortSetNode(newSet1, set2)
         } else if (set1Max == uShortValue)
             this
@@ -362,10 +394,24 @@ private class UShortSetNode(
         case that: UShortSetNode ⇒ this.set1 == that.set1 && this.set2 == that.set2
         case _                   ⇒ false
     }
+
+    // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
+    private[mutable] def nodeCount: Int = set1.nodeCount + set2.nodeCount
+    private[mutable] def asGraph: org.opalj.graphs.Node =
+        new org.opalj.graphs.SimpleNode[Int](
+            System.identityHashCode(this),
+            { i ⇒ "UShortSetNode" },
+            None,
+            List(set1.asGraph, set2.asGraph))
+}
+
+object UShortSetNode {
+
 }
 
 private object EmptyUShortSet extends UShortSet {
     def isEmpty = true
+    def size: Int = 0
     def mutableCopy: mutable.UShortSet = this
     def iterable = Iterable.empty
     def contains(uShortValue: UShort): Boolean = false
@@ -373,6 +419,13 @@ private object EmptyUShortSet extends UShortSet {
     def forall(f: /*ushortValue:*/ UShort ⇒ Boolean): Boolean = true
     def +≈:(uShortValue: UShort): UShortSet = UShortSet(uShortValue)
     def max = throw new UnsupportedOperationException("the set is empty")
+    def min = throw new UnsupportedOperationException("the set is empty")
+
+    // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
+    private[mutable] def nodeCount: Int = 1
+    private[mutable] def asGraph: org.opalj.graphs.Node =
+        new org.opalj.graphs.SimpleNode[Int](
+            System.identityHashCode(this), { i ⇒ "EmptyUShortSet" })
 }
 /**
  * Factory to create sets of unsigned short values.

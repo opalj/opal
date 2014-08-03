@@ -36,11 +36,13 @@ package graphs
  */
 object toDot {
 
+    def apply(nodes: Set[Node], dir: String = "forward"): String = generateDot(nodes, dir)
+
     /**
      * Generates a string that describes a (multi-)graph using the ".dot" file format
      * [[http://graphviz.org/pdf/dotguide.pdf]].
      * The graph is defined by the given set of nodes.
-     * 
+     *
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def generateDot(
