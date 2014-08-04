@@ -50,7 +50,11 @@ case class InnerClassesEntry(
             AccessFlags.toString(inner_class_access_flags, AccessFlagsContexts.INNER_CLASS)
 
         val definedType = cp(inner_class_info_index).toString
-        val outerClassFQN = cp(outer_class_info_index).toString
+        val outerClassFQN =
+            if (outer_class_info_index != 0)
+                cp(outer_class_info_index).toString
+            else
+                ""
 
         if (definingClassFQN == outerClassFQN && inner_name_index != 0) {
             <div class="inner_class">

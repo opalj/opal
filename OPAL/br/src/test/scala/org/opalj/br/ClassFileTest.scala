@@ -32,8 +32,8 @@ package br
 import org.scalatest.FunSuite
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
-
 import org.opalj.bi.TestSupport.locateTestResources
+import scala.util.control.ControlThrowable
 
 /**
  * @author Michael Eichberg
@@ -174,21 +174,51 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
         foundNestedTypes should be(expectedNestedTypes)
     }
 
-    test("that it is possible to get the inner classes information for Apache ANT 1.8.4 - excerpt.jar") {
-        val antJARFile = locateTestResources("classfiles/Apache ANT 1.8.4 - excerpt.jar", "bi")
-        val antProject = analyses.Project(antJARFile)
+    private def testJARFile(jarFile: java.io.File) = {
+        val project = analyses.Project(jarFile)
         var innerClassesCount = 0
-        for (classFile ← antProject.classFiles) {
-            // should not time out or crash...
-            classFile.nestedClasses(antProject)
-            var nestedClasses: List[Type] = Nil
-            classFile.foreachNestedClass(antProject, {
-                c ⇒
-                    nestedClasses = c.thisType :: nestedClasses
-                    innerClassesCount += 1
-            })
-            innerClassesCount += 1
+        var failures: List[String] = List.empty
+        val nestedTypes = for (classFile ← project.classFiles) yield {
+            try {
+                // should not time out or crash...
+                classFile.nestedClasses(project)
+                var nestedClasses: List[Type] = Nil
+                classFile.foreachNestedClass(project, {
+                    c ⇒
+                        nestedClasses = c.thisType :: nestedClasses
+                        innerClassesCount += 1
+                })
+                innerClassesCount += 1
+                Some((classFile.thisType, nestedClasses))
+            } catch {
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable ⇒
+                    failures =
+                        s"cannot calculate inner classes for ${classFile.fqn}: ${t.getClass().getSimpleName()} - ${t.getMessage()}" ::
+                            failures
+                    None
+            }
         }
+        if (failures.nonEmpty) {
+            fail(failures.mkString("; "))
+        }
+
         innerClassesCount should be > (0)
+        nestedTypes.flatten.toSeq.toMap
+    }
+
+    test("that it is possible to get the inner classes information for Apache ANT 1.8.4 - excerpt.jar") {
+        testJARFile(locateTestResources("classfiles/Apache ANT 1.8.4 - excerpt.jar", "bi"))
+
+    }
+
+    test("that it is possible to get the inner classes information for Batik-DOMViewer 1.7.jar") {
+        val nestedTypeInformation = testJARFile(locateTestResources("classfiles/Batik-DOMViewer 1.7.jar", "bi"))
+        val D$Panel = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$Panel")
+        val D$2 = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$2")
+        val D$3 = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$3")
+        nestedTypeInformation(D$Panel) should contain(D$2)
+        nestedTypeInformation(D$2) should contain(D$3)
+        nestedTypeInformation(D$3) should be('empty)
     }
 }

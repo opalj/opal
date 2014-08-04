@@ -173,7 +173,7 @@ final class ClassFile private (
                 false
         }
 
-        val nestedClasses = innerClasses.map { innerClasses ⇒
+        val nestedClassesCandidates = innerClasses.map { innerClasses ⇒
             innerClasses.filter(innerClass ⇒
                 // it does not describe this class:
                 (!isThisType(innerClass)) &&
@@ -190,8 +190,8 @@ final class ClassFile private (
         }
 
         // THE FOLLOWING CODE IS NECESSARY TO COPE WITH BYTECODE GENERATED
-        // BY OLD JAVA COMPILERS; IT BASICALLY IMPLEMENTS SEVERAL STRATEGIES
-        // TO IDENTIFY THE CORRECT OUTERCLASS 
+        // BY OLD JAVA COMPILERS (IN PARTICULAR JAVA 1.1); 
+        // IT BASICALLY IMPLEMENTS SEVERAL STRATEGIES TO IDENTIFY THE CORRECT OUTERCLASS 
         if (isInnerType && outerClassType.isEmpty) {
             // let's try to find the outer class that refers to this class
             val thisFQN = thisType.fqn
@@ -201,27 +201,59 @@ final class ClassFile private (
                     "[warn] the inner class "+thisType.toJava+" does not use the standard naming schema"+
                         "; the inner classes information may be incomplete"
                 )
-                return nestedClasses.filter(_.fqn.startsWith(this.fqn))
+                return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
             }
             val outerFQN = thisFQN.substring(0, innerTypeNameStartIndex)
             classFileRepository.classFile(ObjectType(outerFQN)) match {
                 case Some(classFile) ⇒
+
+                    def directNestedClasses(objectTypes: Iterable[ObjectType]): Set[ObjectType] = {
+                        var nestedTypes: Set[ObjectType] = Set.empty
+                        objectTypes.foreach { objectType ⇒
+                            classFileRepository.classFile(objectType) match {
+                                case Some(classFile) ⇒
+                                    nestedTypes ++= classFile.nestedClasses(classFileRepository)
+                                case None ⇒
+                                    println(
+                                        "[warn] project information incomplete; "+
+                                            "cannot get informaton about "+objectType.toJava+
+                                            "; the inner classes information may be incomplete"
+                                    )
+                            }
+                        }
+                        nestedTypes
+                    }
+
                     // let's filter those classes that are known innerclasses of this type's
                     // (indirect) outertype (they cannot be innerclasses of this class..)
-                    val nestedClassesOfOuterClass = classFile.nestedClasses(classFileRepository)
-                    return nestedClasses.filterNot(nestedClassesOfOuterClass.contains(_))
+                    var nestedClassesOfOuterClass = classFile.nestedClasses(classFileRepository)
+                    while (!nestedClassesOfOuterClass.contains(thisType) &&
+                        !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains(_))) {
+                        // We are still lacking sufficient information to make a decision 
+                        // which class is a nested class of which other class
+                        // e.g. we might have the following situation:
+                        // class X { 
+                        //  class Y {                                // X$Y
+                        //      void m(){ 
+                        //          new Listener(){                  // X$Listener$1
+                        //              void event(){ 
+                        //                  new Listener(){...}}}}}} // X$Listener$2
+                        nestedClassesOfOuterClass = directNestedClasses(nestedClassesOfOuterClass).toSeq
+                    }
+                    val filteredNestedClasses = nestedClassesCandidates.filterNot(nestedClassesOfOuterClass.contains(_))
+                    return filteredNestedClasses
                 case None ⇒
                     println(
                         "[warn] project information incomplete; "+
                             "cannot identify outer type of "+thisType.toJava+
                             "; the inner classes information may be incomplete"
                     )
-                    return nestedClasses.filter(_.fqn.startsWith(this.fqn))
+                    return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
             }
 
         }
 
-        nestedClasses
+        nestedClassesCandidates
     }
 
     /**
