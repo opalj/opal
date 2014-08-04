@@ -49,47 +49,41 @@ case class InnerClassesEntry(
         val accessFlags =
             AccessFlags.toString(inner_class_access_flags, AccessFlagsContexts.INNER_CLASS)
 
+        val definedType = cp(inner_class_info_index).toString
         val outerClassFQN = cp(outer_class_info_index).toString
 
         if (definingClassFQN == outerClassFQN && inner_name_index != 0) {
-            <li>
+            <div class="inner_class">
                 <span class="access_flags">{ accessFlags } </span>
                 <span class="sn tooltip">
                     { cp(inner_name_index).toString }
                     <span>
                         Defined Type:
-                        <span class="fqn">
-                            { cp(inner_class_info_index).toString }
-                        </span>
+                        <span class="fqn">{ definedType }</span>
                     </span>
                 </span>
-            </li>
+            </div>
         } else {
-            <li>
+            <div class={ "inner_class"+{ if (definedType == definingClassFQN) " selfRef" else "" } }>
                 <span class="fqn">
                     { outerClassFQN }
                     {{
                     <span class="access_flags">{ accessFlags } </span>
                     {
                         if (inner_name_index != 0)
-                            <span class="sn">
+                            <span class="sn tooltip">
                                 { cp(inner_name_index).toString }
-                                <span>
-                                    Defined Type:
-                                    <span class="fqn">
-                                        { cp(inner_class_info_index).toString }
-                                    </span>
-                                </span>
+                                <span class="fqn">{ definedType }</span>
                             </span>
                         else
                             <span class="fqn tooltip">
-                                { cp(inner_class_info_index).toString }
+                                { definedType }
                                 <span>Anonymous Type</span>
                             </span>
                     }
                     }}
                 </span>
-            </li>
+            </div>
 
         }
     }

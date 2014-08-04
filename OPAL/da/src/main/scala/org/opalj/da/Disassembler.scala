@@ -38,22 +38,33 @@ object Disassembler {
 
     def main(args: Array[String]) {
 
-        if (args.length < 2) {
+        if (args.length < 1) {
             println("Usage: java …Disassembler "+
                 "<JAR file containing class files> "+
-                "<Name of classfile (incl. path) contained in the JAR file>+") //
+                "[<Name of classfile (incl. path) contained in the JAR file>+]") //
             println("Example:\n\tjava …Disassembler /Library/Java/JavaVirtualMachines/jdk1.7.0_51.jdk/Contents/Home/jre/lib/rt.jar java/util/ArrayList.class")
             sys.exit(-1)
         }
 
-        for (classFileName ← args.drop(1) /* drop the name of the jar file */ ) {
-
+        def process(classFileName: String) {
             val classFile = ClassFileReader.ClassFile(args(0), classFileName)
+            processClassFile(classFile)
+        }
 
+        def processClassFile(classFile: ClassFile) {
             org.opalj.util.writeAndOpenDesktopApplication(
                 classFile.toXHTML.toString,
                 classFile.fqn,
                 ".html")
         }
+
+        if (args.length == 1) {
+            for ((classFile, _) ← ClassFileReader.ClassFiles(new java.io.File(args(0)))) {
+                processClassFile(classFile)
+            }
+        } else
+            for (classFileName ← args.drop(1) /* drop the name of the jar file */ ) {
+                process(classFileName)
+            }
     }
 }

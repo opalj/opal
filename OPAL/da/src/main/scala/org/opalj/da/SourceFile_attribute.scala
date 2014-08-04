@@ -43,16 +43,8 @@ case class SourceFile_attribute(
 
     def attribute_length = 2
 
-    def attribute_name = SourceFile_attribute.name
-
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span><span class="attributename">Source:</span> { cp(sourceFile_index).asString }</span>
+        <span><span class="attribute_name">SourceFile</span>: { cp(sourceFile_index).asString }</span>
     }
-
-}
-
-object SourceFile_attribute {
-
-    val name = "SourceFile"
 
 }

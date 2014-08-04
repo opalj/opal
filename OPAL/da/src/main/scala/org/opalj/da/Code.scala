@@ -30,6 +30,7 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.Text
 import scala.util.Random
 
 /**
@@ -118,128 +119,169 @@ case class Code(instructions: Array[Byte]) {
         def ifToString(mnemonic: String, pc: Int): Node = {
             val targetPC = in.readShort + pc
             val targetID = "#"+id(methodIndex, targetPC)
-            <span title={ mnemonic }>{ mnemonic } <a href={ targetID } class="pc">{ targetPC }</a></span>
+            <span>
+                <span class={ "instruction "+mnemonic }>{ mnemonic }</span>
+                <a href={ targetID } class="pc">{ targetPC }</a>
+            </span>
         }
 
         while (in.available > 0) {
             val pc = codeLength - in.available
             instructions(pc) = (in.readUnsignedByte: @scala.annotation.switch) match {
-                case 50 ⇒ <span title="aaload">aaload</span>
-                case 83 ⇒ <span title="aastore">aastore</span>
-                case 1  ⇒ <span title="aconst_null">aconst_null</span>
-                case 25 ⇒ <span title="aload">aload { lvIndex() }</span>
-                case 42 ⇒ <span title="aload_0">aload_0</span>
-                case 43 ⇒ <span title="aload_1">aload_1</span>
-                case 44 ⇒ <span title="aload_2">aload_2</span>
-                case 45 ⇒ <span title="aload_3">aload_3</span>
+                case 50 ⇒ <span class="instruction aaload">aaload</span>
+                case 83 ⇒ <span class="instruction aastore">aastore</span>
+                case 1  ⇒ <span class="instruction aconst_null">aconst_null</span>
+                case 25 ⇒
+                    <span>
+                        <span class="instruction aload">aload </span>
+                        { lvIndex() }
+                    </span>
+                case 42 ⇒ <span class="instruction aload_0">aload_0</span>
+                case 43 ⇒ <span class="instruction aload_1">aload_1</span>
+                case 44 ⇒ <span class="instruction aload_2">aload_2</span>
+                case 45 ⇒ <span class="instruction aload_3">aload_3</span>
                 case 189 ⇒
-                    <span title="anewarray">
-                        anewarray&nbsp;{ asObjectType(in.readUnsignedShort) }
+                    <span>
+                        <span class="instruction anewarray">anewarray </span>
+                        { asObjectType(in.readUnsignedShort) }
                     </span>
-                case 176 ⇒ <span title="areturn">areturn</span>
-                case 190 ⇒ <span title="arraylength">arraylength</span>
-                case 58  ⇒ <span title="astore">astore { lvIndex }</span>
-                case 75  ⇒ <span title="astore_0">astore_0</span>
-                case 76  ⇒ <span title="astore_1">astore_1</span>
-                case 77  ⇒ <span title="astore_2">astore_2</span>
-                case 78  ⇒ <span title="astore_3">astore_3</span>
-                case 191 ⇒ <span title="athrow">athrow</span>
-                case 51  ⇒ <span title="baload">baload</span>
-                case 84  ⇒ <span title="bastore">bastore</span>
-                case 16  ⇒ <span title="bipush">bipush { in.readByte }</span>
-                case 52  ⇒ <span title="caload">caload</span>
-                case 85  ⇒ <span title="castore">castore</span>
+                case 176 ⇒ <span class="instruction areturn">areturn</span>
+                case 190 ⇒ <span class="instruction arraylength">arraylength</span>
+                case 58 ⇒
+                    <span>
+                        <span class="instruction astore">astore </span>{ lvIndex }
+                    </span>
+                case 75  ⇒ <span class="instruction astore_0">astore_0</span>
+                case 76  ⇒ <span class="instruction astore_1">astore_1</span>
+                case 77  ⇒ <span class="instruction astore_2">astore_2</span>
+                case 78  ⇒ <span class="instruction astore_3">astore_3</span>
+                case 191 ⇒ <span class="instruction athrow">athrow</span>
+                case 51  ⇒ <span class="instruction baload">baload</span>
+                case 84  ⇒ <span class="instruction bastore">bastore</span>
+                case 16 ⇒
+                    <span>
+                        <span class="instruction bipush">bipush </span>{ in.readByte }
+                    </span>
+                case 52 ⇒ <span class="instruction caload">caload</span>
+                case 85 ⇒ <span class="instruction castore">castore</span>
                 case 192 ⇒
-                    <span title="checkcast">
-                        checkcast&nbsp;{ asReferenceType(in.readUnsignedShort) }
+                    <span>
+                        <span class="instruction checkcast">checkcast </span>
+                        { asReferenceType(in.readUnsignedShort) }
                     </span>
-                case 144 ⇒ <span title="d2f">d2f</span>
-                case 142 ⇒ <span title="d2i">d2i</span>
-                case 143 ⇒ <span title="d2l">d2l</span>
-                case 99  ⇒ <span title="dadd">dadd</span>
-                case 49  ⇒ <span title="daload">daload</span>
-                case 82  ⇒ <span title="dastore">dastore</span>
-                case 152 ⇒ <span title="dcmpg">dcmpg </span>
-                case 151 ⇒ <span title="dcmpl">dcmpl </span>
-                case 14  ⇒ <span title="dconst_0">dconst_0</span>
-                case 15  ⇒ <span title="dconst_1">dconst_1</span>
-                case 111 ⇒ <span title="ddiv">ddiv </span>
-                case 24  ⇒ <span title="dload">dload { lvIndex }</span>
-                case 38  ⇒ <span title="dload_0">dload_0</span>
-                case 39  ⇒ <span title="dload_1">dload_1</span>
-                case 40  ⇒ <span title="dload_2">dload_2</span>
-                case 41  ⇒ <span title="dload_3">dload_3</span>
-                case 107 ⇒ <span title="dmul">dmul</span>
-                case 119 ⇒ <span title="dneg">dneg</span>
-                case 115 ⇒ <span title="drem">drem</span>
-                case 175 ⇒ <span title="dreturn">dreturn</span>
-                case 57  ⇒ <span title="dstore">dstore { lvIndex }</span>
-                case 71  ⇒ <span title="dstore_0">dstore_0</span>
-                case 72  ⇒ <span title="dstore_1">dstore_1</span>
-                case 73  ⇒ <span title="dstore_2">dstore_2</span>
-                case 74  ⇒ <span title="dstore_3">dstore_3</span>
-                case 103 ⇒ <span title="dsub">dsub</span>
-                case 89  ⇒ <span title="dsub">dup</span>
-                case 90  ⇒ <span title="dup_x1">dup_x1</span>
-                case 91  ⇒ <span title="dup_x2">dup_x2</span>
-                case 92  ⇒ <span title="dup2">dup2</span>
-                case 93  ⇒ <span title="dup2_x1">dup2_x1</span>
-                case 94  ⇒ <span title="dup2_x2">dup2_x2</span>
-                case 141 ⇒ <span title="f2d">f2d</span>
-                case 139 ⇒ <span title="f2i">f2i</span>
-                case 140 ⇒ <span title="f2l">f2l</span>
-                case 98  ⇒ <span title="fadd">fadd</span>
-                case 48  ⇒ <span title="faload">faload</span>
-                case 81  ⇒ <span title="fastore">fastore</span>
-                case 150 ⇒ <span title="fastore">fcmpg</span>
-                case 149 ⇒ <span title="fcmpl">fcmpl</span>
-                case 11  ⇒ <span title="fconst_0">fconst_0</span>
-                case 12  ⇒ <span title="fconst_1">fconst_1</span>
-                case 13  ⇒ <span title="fconst_2">fconst_2</span>
-                case 110 ⇒ <span title="fdiv">fdiv</span>
-                case 23  ⇒ <span title="fload">fload { lvIndex }</span>
-                case 34  ⇒ <span title="fload_0">fload_0</span>
-                case 35  ⇒ <span title="fload_1">fload_1</span>
-                case 36  ⇒ <span title="fload_2">fload_2</span>
-                case 37  ⇒ <span title="fload_3">fload_3</span>
-                case 106 ⇒ <span title="fmul">fmul</span>
-                case 118 ⇒ <span title="fneg">fneg</span>
-                case 114 ⇒ <span title="frem">frem</span>
-                case 174 ⇒ <span title="freturn">freturn</span>
-                case 56  ⇒ <span title="fstore">fstore { lvIndex }</span>
-                case 67  ⇒ <span title="fstore_0">fstore_0</span>
-                case 68  ⇒ <span title="fstore_1">fstore_1</span>
-                case 69  ⇒ <span title="fstore_2">fstore_2</span>
-                case 70  ⇒ <span title="fstore_3">fstore_3</span>
-                case 102 ⇒ <span title="fsub">fsub</span>
-                case 180 ⇒ <span title="getfield">getfield { val c = in.readUnsignedShort; cp(c).toString(cp)+" ["+c+"]" }</span>
-                case 178 ⇒ <span title="getstatic">getstatic { val c = in.readUnsignedShort; cp(c).toString(cp)+" ["+c+"]" }</span>
+                case 144 ⇒ <span class="instruction d2f">d2f</span>
+                case 142 ⇒ <span class="instruction d2i">d2i</span>
+                case 143 ⇒ <span class="instruction d2l">d2l</span>
+                case 99  ⇒ <span class="instruction dadd">dadd</span>
+                case 49  ⇒ <span class="instruction daload">daload</span>
+                case 82  ⇒ <span class="instruction dastore">dastore</span>
+                case 152 ⇒ <span class="instruction dcmpg">dcmpg</span>
+                case 151 ⇒ <span class="instruction dcmpl">dcmpl</span>
+                case 14  ⇒ <span class="instruction dconst_0">dconst_0</span>
+                case 15  ⇒ <span class="instruction dconst_1">dconst_1</span>
+                case 111 ⇒ <span class="instruction ddiv">ddiv </span>
+                case 24 ⇒
+                    <span>
+                        <span class="instruction dload">dload </span>{ lvIndex }
+                    </span>
+                case 38  ⇒ <span class="instruction dload_0">dload_0</span>
+                case 39  ⇒ <span class="instruction dload_1">dload_1</span>
+                case 40  ⇒ <span class="instruction dload_2">dload_2</span>
+                case 41  ⇒ <span class="instruction dload_3">dload_3</span>
+                case 107 ⇒ <span class="instruction dmul">dmul</span>
+                case 119 ⇒ <span class="instruction dneg">dneg</span>
+                case 115 ⇒ <span class="instruction drem">drem</span>
+                case 175 ⇒ <span class="instruction dreturn">dreturn</span>
+                case 57 ⇒
+                    <span>
+                        <span class="instruction dstore">dstore </span>{ lvIndex }
+                    </span>
+                case 71  ⇒ <span class="instruction dstore_0">dstore_0</span>
+                case 72  ⇒ <span class="instruction dstore_1">dstore_1</span>
+                case 73  ⇒ <span class="instruction dstore_2">dstore_2</span>
+                case 74  ⇒ <span class="instruction dstore_3">dstore_3</span>
+                case 103 ⇒ <span class="instruction dsub">dsub</span>
+                case 89  ⇒ <span class="instruction dup">dup</span>
+                case 90  ⇒ <span class="instruction dup_x1">dup_x1</span>
+                case 91  ⇒ <span class="instruction dup_x2">dup_x2</span>
+                case 92  ⇒ <span class="instruction dup2">dup2</span>
+                case 93  ⇒ <span class="instruction dup2_x1">dup2_x1</span>
+                case 94  ⇒ <span class="instruction dup2_x2">dup2_x2</span>
+                case 141 ⇒ <span class="instruction f2d">f2d</span>
+                case 139 ⇒ <span class="instruction f2i">f2i</span>
+                case 140 ⇒ <span class="instruction f2l">f2l</span>
+                case 98  ⇒ <span class="instruction fadd">fadd</span>
+                case 48  ⇒ <span class="instruction faload">faload</span>
+                case 81  ⇒ <span class="instruction fastore">fastore</span>
+                case 150 ⇒ <span class="instruction fcmpg">fcmpg</span>
+                case 149 ⇒ <span class="instruction fcmpl">fcmpl</span>
+                case 11  ⇒ <span class="instruction fconst_0">fconst_0</span>
+                case 12  ⇒ <span class="instruction fconst_1">fconst_1</span>
+                case 13  ⇒ <span class="instruction fconst_2">fconst_2</span>
+                case 110 ⇒ <span class="instruction fdiv">fdiv</span>
+                case 23 ⇒
+                    <span>
+                        <span class="instruction fload">fload </span>{ lvIndex }
+                    </span>
+                case 34  ⇒ <span class="instruction fload_0">fload_0</span>
+                case 35  ⇒ <span class="instruction fload_1">fload_1</span>
+                case 36  ⇒ <span class="instruction fload_2">fload_2</span>
+                case 37  ⇒ <span class="instruction fload_3">fload_3</span>
+                case 106 ⇒ <span class="instruction fmul">fmul</span>
+                case 118 ⇒ <span class="instruction fneg">fneg</span>
+                case 114 ⇒ <span class="instruction frem">frem</span>
+                case 174 ⇒ <span class="instruction freturn">freturn</span>
+                case 56 ⇒
+                    <span>
+                        <span class="instruction fstore">fstore </span>{ lvIndex }
+                    </span>
+                case 67  ⇒ <span class="instruction fstore_0">fstore_0</span>
+                case 68  ⇒ <span class="instruction fstore_1">fstore_1</span>
+                case 69  ⇒ <span class="instruction fstore_2">fstore_2</span>
+                case 70  ⇒ <span class="instruction fstore_3">fstore_3</span>
+                case 102 ⇒ <span class="instruction fsub">fsub</span>
+                case 180 ⇒
+                    <span>
+                        <span class="instruction getfield">getfield </span>
+                        { val c = in.readUnsignedShort; cp(c).toString(cp)+" ["+c+"]" }
+                    </span>
+                case 178 ⇒
+                    <span>
+                        <span class="instruction getstatic">getstatic </span>
+                        { val c = in.readUnsignedShort; cp(c).toString(cp)+" ["+c+"]" }
+                    </span>
                 case 167 ⇒
                     val targetPC = in.readShort + pc
                     val targetID = "#"+id(methodIndex, targetPC)
-                    <span title="goto">goto <a href={ targetID } class="pc">{ targetPC }</a></span>
+                    <span>
+                        <span class="instruction goto">goto </span>
+                        <a href={ targetID } class="pc">{ targetPC }</a>
+                    </span>
                 case 200 ⇒
                     val targetPC = in.readInt + pc
                     val targetID = "#"+id(methodIndex, targetPC)
-                    <span title="goto_w">goto_w <a href={ targetID } class="pc">{ targetPC }</a></span>
-                case 145 ⇒ <span title="i2b">i2b</span>
-                case 146 ⇒ <span title="i2c">i2c</span>
-                case 135 ⇒ <span title="i2d">i2d</span>
-                case 134 ⇒ <span title="i2f">i2f</span>
-                case 133 ⇒ <span title="i2l">i2l</span>
-                case 147 ⇒ <span title="i2s">i2s</span>
-                case 96  ⇒ <span title="iadd">iadd</span>
-                case 46  ⇒ <span title="iadd">iaload</span>
-                case 126 ⇒ <span title="iand">iand</span>
-                case 79  ⇒ <span title="iastore">iastore</span>
-                case 2   ⇒ <span title="iconst_m1">iconst_m1</span>
-                case 3   ⇒ <span title="iconst_0">iconst_0</span>
-                case 4   ⇒ <span title="iconst_1">iconst_1</span>
-                case 5   ⇒ <span title="iconst_2">iconst_2</span>
-                case 6   ⇒ <span title="iconst_3">iconst_3</span>
-                case 7   ⇒ <span title="iconst_4">iconst_4</span>
-                case 8   ⇒ <span title="iconst_5">iconst_5</span>
-                case 108 ⇒ <span title="idiv">idiv</span>
+                    <span>
+                        <span class="instruction goto_w">goto_w </span>
+                        <a href={ targetID } class="pc">{ targetPC }</a>
+                    </span>
+                case 145 ⇒ <span class="instruction i2b">i2b</span>
+                case 146 ⇒ <span class="instruction i2c">i2c</span>
+                case 135 ⇒ <span class="instruction i2d">i2d</span>
+                case 134 ⇒ <span class="instruction i2f">i2f</span>
+                case 133 ⇒ <span class="instruction i2l">i2l</span>
+                case 147 ⇒ <span class="instruction i2s">i2s</span>
+                case 96  ⇒ <span class="instruction iadd">iadd</span>
+                case 46  ⇒ <span class="instruction iaload">iaload</span>
+                case 126 ⇒ <span class="instruction iand">iand</span>
+                case 79  ⇒ <span class="instruction iastore">iastore</span>
+                case 2   ⇒ <span class="instruction iconst_m1">iconst_m1</span>
+                case 3   ⇒ <span class="instruction iconst_0">iconst_0</span>
+                case 4   ⇒ <span class="instruction iconst_1">iconst_1</span>
+                case 5   ⇒ <span class="instruction iconst_2">iconst_2</span>
+                case 6   ⇒ <span class="instruction iconst_3">iconst_3</span>
+                case 7   ⇒ <span class="instruction iconst_4">iconst_4</span>
+                case 8   ⇒ <span class="instruction iconst_5">iconst_5</span>
+                case 108 ⇒ <span class="instruction idiv">idiv</span>
                 case 165 ⇒
                     ifToString("if_acmpeq", pc)
                 case 166 ⇒
@@ -283,83 +325,104 @@ case class Code(instructions: Array[Byte]) {
                         val constValue = in.readByte
                         lvIndex+" "+constValue
                     }
-                    <span title="iinc">iinc { params }</span>
-                case 21  ⇒ <span title="iload">iload { lvIndex }</span>
-                case 26  ⇒ <span title="iload_0">iload_0</span>
-                case 27  ⇒ <span title="iload_1">iload_1</span>
-                case 28  ⇒ <span title="iload_2">iload_2</span>
-                case 29  ⇒ <span title="iload_3">iload_3</span>
-                case 104 ⇒ <span title="imul">imul</span>
-                case 116 ⇒ <span title="ineg">ineg</span>
+                    <span class="instruction iinc">iinc { params }</span>
+                case 21 ⇒
+                    <span>
+                        <span class="instruction iload">iload </span>{ lvIndex }
+                    </span>
+                case 26  ⇒ <span class="instruction iload_0">iload_0</span>
+                case 27  ⇒ <span class="instruction iload_1">iload_1</span>
+                case 28  ⇒ <span class="instruction iload_2">iload_2</span>
+                case 29  ⇒ <span class="instruction iload_3">iload_3</span>
+                case 104 ⇒ <span class="instruction imul">imul</span>
+                case 116 ⇒ <span class="instruction ineg">ineg</span>
                 case 193 ⇒
                     val referenceType = cp(in.readUnsignedShort).toString(cp)
-                    <span title="instanceof">instanceof { referenceType }</span>
-                case 186 ⇒ <span title="unresolved_invokedynamic">unresolved_invokedynamic {
+                    <span>
+                        <span class="instruction instanceof">instanceof </span>
+                        { referenceType }
+                    </span>
+                case 186 ⇒
                     val c = in.readUnsignedShort
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
-                    cp(c).toString(cp)
-                }</span>
-                case 185 ⇒ <span title="invokeinterface">invokeinterface {
+                    val signature = cp(c).toString(cp)
+                    <span>
+                        <span class="instruction unresolved_invokedynamic">unresolved_invokedynamic </span>
+                        { signature }
+                    </span>
+                case 185 ⇒
                     val c = in.readUnsignedShort
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
-                    cp(c).toString(cp)+" ["+c+"]"
-                }</span>
+                    val signature = cp(c).toString(cp)+" ["+c+"]"
+                    <span>
+                        <span class="instruction invokeinterface">invokeinterface </span>
+                        { signature }
+                    </span>
                 case 183 ⇒
                     val c = in.readUnsignedShort
                     val signature = cp(c).toString(cp)+" ["+c+"]"
-                    <span title="invokespecial">invokespecial  { signature } </span>
+                    <span>
+                        <span class="instruction invokespecial">invokespecial </span>
+                        { signature }
+                    </span>
                 case 184 ⇒
                     val c = in.readUnsignedShort
                     val signature = cp(c).toString(cp)+" ["+c+"]"
-                    <span title="invokespecial">invokestatic  { signature } </span>
+                    <span>
+                        <span class="instruction invokespecial">invokestatic  </span>
+                        { signature }
+                    </span>
                 case 182 ⇒
                     val c = in.readUnsignedShort
                     val signature = cp(c).toString(cp)+" ["+c+"]"
-                    <span title="invokevirtual">invokevirtual { signature } </span>
-                case 128 ⇒ <span title="ior">ior</span>
-                case 112 ⇒ <span title="irem">irem</span>
-                case 172 ⇒ <span title="ireturn">ireturn</span>
-                case 120 ⇒ <span title="ireturn">ishl</span>
-                case 122 ⇒ <span title="ishr">ishr</span>
-                case 54  ⇒ <span title="istore">istore { lvIndex }</span>
-                case 59  ⇒ <span title="istore_0">istore_0</span>
-                case 60  ⇒ <span title="istore_1">istore_1</span>
-                case 61  ⇒ <span title="istore_2">istore_2</span>
-                case 62  ⇒ <span title="istore_3">istore_3</span>
-                case 100 ⇒ <span title="isub">isub</span>
-                case 124 ⇒ <span title="iushr">iushr</span>
-                case 130 ⇒ <span title="ixor">ixor</span>
-                case 168 ⇒ <span title="jsr">jsr { in.readShort + pc }</span>
-                case 201 ⇒ <span title="jsr_w">jsr_w { in.readInt + pc }</span>
-                case 138 ⇒ <span title="l2d">l2d</span>
-                case 137 ⇒ <span title="l2d">l2f</span>
-                case 136 ⇒ <span title="l2i">l2i</span>
-                case 97  ⇒ <span title="ladd">ladd</span>
-                case 47  ⇒ <span title="laload">laload</span>
-                case 127 ⇒ <span title="land">land</span>
-                case 80  ⇒ <span title="lastore">lastore</span>
-                case 148 ⇒ <span title="lcmp">lcmp</span>
-                case 9   ⇒ <span title="lconst_0">lconst_0</span>
-                case 10  ⇒ <span title="lconst_1">lconst_1</span>
+                    <span>
+                        <span class="instruction invokevirtual">invokevirtual </span>
+                        { signature }
+                    </span>
+                case 128 ⇒ <span class="instruction ior">ior</span>
+                case 112 ⇒ <span class="instruction irem">irem</span>
+                case 172 ⇒ <span class="instruction ireturn">ireturn</span>
+                case 120 ⇒ <span class="instruction ishl">ishl</span>
+                case 122 ⇒ <span class="instruction ishr">ishr</span>
+                case 54  ⇒ <span><span class="instruction istore">istore </span>{ lvIndex }</span>
+                case 59  ⇒ <span class="instruction istore_0">istore_0</span>
+                case 60  ⇒ <span class="instruction istore_1">istore_1</span>
+                case 61  ⇒ <span class="instruction istore_2">istore_2</span>
+                case 62  ⇒ <span class="instruction istore_3">istore_3</span>
+                case 100 ⇒ <span class="instruction isub">isub</span>
+                case 124 ⇒ <span class="instruction iushr">iushr</span>
+                case 130 ⇒ <span class="instruction ixor">ixor</span>
+                case 168 ⇒ <span><span class="instruction jsr">jsr </span>{ in.readShort + pc }</span>
+                case 201 ⇒ <span><span class="instruction jsr_w">jsr_w </span>{ in.readInt + pc }</span>
+                case 138 ⇒ <span class="instruction l2d">l2d</span>
+                case 137 ⇒ <span class="instruction l2d">l2f</span>
+                case 136 ⇒ <span class="instruction l2i">l2i</span>
+                case 97  ⇒ <span class="instruction ladd">ladd</span>
+                case 47  ⇒ <span class="instruction laload">laload</span>
+                case 127 ⇒ <span class="instruction land">land</span>
+                case 80  ⇒ <span class="instruction lastore">lastore</span>
+                case 148 ⇒ <span class="instruction lcmp">lcmp</span>
+                case 9   ⇒ <span class="instruction lconst_0">lconst_0</span>
+                case 10  ⇒ <span class="instruction lconst_1">lconst_1</span>
                 case 18 ⇒
                     val constantValue = cp(in.readUnsignedByte()).toString(cp)
-                    <span title="ldc">ldc { constantValue }</span>
+                    <span><span class="instruction ldc">ldc </span>{ constantValue }</span>
                 case 19 ⇒
                     val constantValue = cp(in.readUnsignedShort).toString(cp)
-                    <span title="ldc_w">ldc_w { constantValue }</span>
+                    <span><span class="instruction ldc_w">ldc_w </span>{ constantValue }</span>
                 case 20 ⇒
                     val constantValue = cp(in.readUnsignedShort).toString(cp)
-                    <span title="ldc2_w">ldc2_w { constantValue }</span>
-                case 109 ⇒ <span title="ldiv">ldiv</span>
-                case 22  ⇒ <span title="lload">lload { lvIndex }</span>
-                case 30  ⇒ <span title="lload_0">lload_0</span>
-                case 31  ⇒ <span title="lload_1">lload_1</span>
-                case 32  ⇒ <span title="lload_2">lload_2</span>
-                case 33  ⇒ <span title="lload_3">lload_3</span>
-                case 105 ⇒ <span title="lmul">lmul</span>
-                case 117 ⇒ <span title="lneg">lneg</span>
+                    <span><span class="instruction ldc2_w">ldc2_w </span>{ constantValue }</span>
+                case 109 ⇒ <span class="instruction ldiv">ldiv</span>
+                case 22  ⇒ <span><span class="instruction lload">lload </span>{ lvIndex }</span>
+                case 30  ⇒ <span class="instruction lload_0">lload_0</span>
+                case 31  ⇒ <span class="instruction lload_1">lload_1</span>
+                case 32  ⇒ <span class="instruction lload_2">lload_2</span>
+                case 33  ⇒ <span class="instruction lload_3">lload_3</span>
+                case 105 ⇒ <span class="instruction lmul">lmul</span>
+                case 117 ⇒ <span class="instruction lneg">lneg</span>
                 case 171 ⇒
                     // LOOKUPSWITCH
                     in.skip(3 - (pc % 4)) // skip padding bytes
@@ -369,48 +432,48 @@ case class Code(instructions: Array[Byte]) {
                     repeat(npairsCount) {
                         table.append("(case:"+in.readInt+","+(in.readInt + pc)+") ")
                     }
-                    <span title="lookupswitch">lookupswitch default:{ defaultTarget } [{ table }]</span>
-                case 129 ⇒ <span title="lor">lor</span>
-                case 113 ⇒ <span title="lrem">lrem</span>
-                case 173 ⇒ <span title="lreturn">lreturn</span>
-                case 121 ⇒ <span title="lshl">lshl</span>
-                case 123 ⇒ <span title="lshl">lshr</span>
-                case 55  ⇒ <span title="lstore">lstore { lvIndex }</span>
-                case 63  ⇒ <span title="lstore_0">lstore_0</span>
-                case 64  ⇒ <span title="lstore_1">lstore_1</span>
-                case 65  ⇒ <span title="lstore_2">lstore_2</span>
-                case 66  ⇒ <span title="lstore_3">lstore_3</span>
-                case 101 ⇒ <span title="lsub">lsub</span>
-                case 125 ⇒ <span title="lushr">lushr</span>
-                case 131 ⇒ <span title="lushr">lxor</span>
-                case 194 ⇒ <span title="monitorenter">monitorenter</span>
-                case 195 ⇒ <span title="monitorexit">monitorexit</span>
+                    <span><span class="instruction lookupswitch">lookupswitch </span>default:{ defaultTarget } [{ table }]</span>
+                case 129 ⇒ <span class="instruction lor">lor</span>
+                case 113 ⇒ <span class="instruction lrem">lrem</span>
+                case 173 ⇒ <span class="instruction lreturn">lreturn</span>
+                case 121 ⇒ <span class="instruction lshl">lshl</span>
+                case 123 ⇒ <span class="instruction lshr">lshr</span>
+                case 55  ⇒ <span><span class="instruction lstore">lstore </span>{ lvIndex }</span>
+                case 63  ⇒ <span class="instruction lstore_0">lstore_0</span>
+                case 64  ⇒ <span class="instruction lstore_1">lstore_1</span>
+                case 65  ⇒ <span class="instruction lstore_2">lstore_2</span>
+                case 66  ⇒ <span class="instruction lstore_3">lstore_3</span>
+                case 101 ⇒ <span class="instruction lsub">lsub</span>
+                case 125 ⇒ <span class="instruction lushr">lushr</span>
+                case 131 ⇒ <span class="instruction lxor">lxor</span>
+                case 194 ⇒ <span class="instruction monitorenter">monitorenter</span>
+                case 195 ⇒ <span class="instruction monitorexit">monitorexit</span>
                 case 197 ⇒
                     val referenceType = cp(in.readUnsignedShort).toString(cp)
                     val dim = in.readUnsignedByte
-                    <span title="multianewarray">multianewarray { referenceType } { dim }</span>
+                    <span><span class="instruction multianewarray">multianewarray </span>{ referenceType } { dim } </span>
                 case 187 ⇒
                     val referenceType = cp(in.readUnsignedShort).toString(cp).replace('/', '.')
-                    <span title="new">new { referenceType }</span>
-                case 188 ⇒ <span title="newarray">newarray { in.readByte }</span>
-                case 0   ⇒ <span title="nop">nop</span>
-                case 87  ⇒ <span title="pop">pop</span>
-                case 88  ⇒ <span title="pop2">pop2</span>
+                    <span><span class="instruction new">new </span>{ referenceType } </span>
+                case 188 ⇒ <span><span class="instruction newarray">newarray </span>{ in.readByte } </span>
+                case 0   ⇒ <span class="instruction nop">nop</span>
+                case 87  ⇒ <span class="instruction pop">pop</span>
+                case 88  ⇒ <span class="instruction pop2">pop2</span>
                 case 181 ⇒
                     val c = in.readUnsignedShort
                     val fieldSignature = cp(c).toString(cp)+" ["+c+"]"
-                    <span title="putfield">putfield { fieldSignature }</span>
+                    <span><span class="instruction putfield">putfield </span>{ fieldSignature }</span>
                 case 179 ⇒
                     val c = in.readUnsignedShort
                     val fieldSignature = cp(c).toString(cp)+" ["+c+"]"
-                    <span title="putstatic">putstatic { fieldSignature }</span>
+                    <span><span class="instruction putstatic">putstatic </span>{ fieldSignature }</span>
                 case 169 ⇒
-                    <span title="ret">ret { lvIndex }</span>
-                case 177 ⇒ <span title="return">return</span>
-                case 53  ⇒ <span title="saload">saload</span>
-                case 86  ⇒ <span title="sastore">sastore</span>
-                case 17  ⇒ <span title="sipush">sipush { in.readShort /* value */ }</span>
-                case 95  ⇒ <span title="swap">swap </span>
+                    <span><span class="instruction ret">ret </span>{ lvIndex }</span>
+                case 177 ⇒ <span class="instruction return">return</span>
+                case 53  ⇒ <span class="instruction saload">saload</span>
+                case 86  ⇒ <span class="instruction sastore">sastore</span>
+                case 17  ⇒ <span><span class="instruction sipush">sipush </span>{ in.readShort /* value */ }</span>
+                case 95  ⇒ <span class="instruction swap">swap</span>
                 case 170 ⇒
                     in.skip(3 - (pc % 4)) // skip padding bytes
                     val defaultTarget = in.readInt + pc
@@ -422,10 +485,10 @@ case class Code(instructions: Array[Byte]) {
                         table.append("(case:"+(low + offsetcounter)+","+(in.readInt + pc)+") ")
                         offsetcounter += 1;
                     }
-                    <span title="tableswitch">tableswitch default:{ defaultTarget } [{ table }]</span>
+                    <span><span class="instruction tableswitch">tableswitch </span>default:{ defaultTarget } [{ table }]</span>
                 case 196 ⇒
                     wide = true
-                    <span title="wide">wide</span>
+                    <span class="instruction wide">wide</span>
                 case opcode ⇒ throw new UnknownError("unknown opcode: "+opcode)
             }
         }

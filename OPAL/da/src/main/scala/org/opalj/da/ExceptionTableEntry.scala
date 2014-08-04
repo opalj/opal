@@ -46,10 +46,7 @@ case class ExceptionTableEntry(
 
     def toXHTML(implicit cp: Constant_Pool, code: Code): Node = {
         val catchType = if (catch_type != 0) cp(catch_type).toString(cp) else "Any"
-        <div>
-            [pc: { start_pc }, pc: { end_pc }] -> exception handler start :{ handler_pc } when : 
-            { catchType }
-        </div>
+        <div>try [{ start_pc }-{ end_pc }) catch { catchType } goto{ handler_pc }</div>
     }
 }
 

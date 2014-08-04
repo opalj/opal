@@ -34,7 +34,6 @@ package org.opalj
 package da
 
 /**
- *
  * @author Michael Eichberg
  */
 trait CONSTANT_Ref extends Constant_Pool_Entry {

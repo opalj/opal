@@ -64,15 +64,11 @@ case class InnerClasses_attribute(
     def toXHTML(definingClassFQN: String)(implicit cp: Constant_Pool): Node = {
         <div id="#innerClasses">
             <details>
-                <summary>{ cp(attribute_name_index).toString }</summary>
-                <ol>
-                    <ul>
-                        {
-                            for (innerClass ← innerClasses)
-                                yield innerClass.toXHTML(definingClassFQN)(cp)
-                        }
-                    </ul>
-                </ol>
+                <summary class="attribute_name">{ cp(attribute_name_index).toString }</summary>
+                {
+                    for (innerClass ← innerClasses)
+                        yield innerClass.toXHTML(definingClassFQN)(cp)
+                }
             </details>
         </div>
     }

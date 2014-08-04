@@ -32,14 +32,6 @@ package da
 import scala.xml.Node
 
 /**
- * <pre>
- * Signature_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 signature_index;
- * }
- * </pre>
- *
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
@@ -54,15 +46,7 @@ case class Signature_attribute(
      */
     def attribute_length = 2
 
-    def attribute_name = Signature_attribute.name
-
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div><span class="attributename">Signature:</span> { cp(Signature_index).toString.replace('/', '.') }</div>
+        <div><span class="attributename">Signature</span>: { cp(Signature_index).toString }</div>
     }
-}
-
-object Signature_attribute {
-
-    val name = "Signature"
-
 }

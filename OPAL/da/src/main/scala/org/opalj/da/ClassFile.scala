@@ -55,6 +55,17 @@ case class ClassFile(
         methods: Methods,
         attributes: Attributes) {
 
+    def jdkVersion: String = {
+        // 52 == 8; ... 50 == 6
+        if (major_version >= 49) {
+            "Java "+(major_version - 44)
+        } else if (major_version > 45) {
+            "Java 2 Platform version 1."+(major_version - 44)
+        } else {
+            "JDK 1.1 (JDK 1.0.2)"
+        }
+    }
+
     private[this] implicit val cp = constant_pool
 
     /**
@@ -89,9 +100,7 @@ case class ClassFile(
         }
     }
 
-    def fieldsToXHTML: Node = {
-        <ul>{ for (field ← fields) yield field.toXHTML(cp) }</ul>
-    }
+    def fieldsToXHTML: Seq[Node] = for (field ← fields) yield field.toXHTML(cp)
 
     def methodsToXHTML: Node = {
         <div>{ for ((method, index) ← methods.zipWithIndex) yield method.toXHTML(index) }</div>
@@ -119,7 +128,7 @@ case class ClassFile(
                     <td><input type="checkbox" value="HTML" onclick="FlagFilter('native');"> Native </input></td>
                     <td><input type="checkbox" value="HTML" onclick="FlagFilter('abstract');"> Abstract </input></td>
                     <td><input type="checkbox" value="HTML" onclick="FlagFilter('strict');"> Strict </input></td>
-                    <td><input type="text" title='enter methode name' onkeyup="NameFilter(this.value);">  </input></td>
+                    <td><input type="text" title='filter by method name' onkeyup="NameFilter(this.value);">  </input></td>
                 </tr>
             </table>
         </details>
@@ -138,7 +147,10 @@ case class ClassFile(
                 <p class="Summary">
                     { accessFlags }
                     &nbsp;<b>{ fqn }</b>
-                    Version:&nbsp;{ major_version+"."+minor_version }
+                    <span class="tooltip">
+                        Version:&nbsp;{ major_version+"."+minor_version }
+                        <span>{ jdkVersion }</span>
+                    </span>
                     <span class="constantPoolLink">
                         <a href="#openConstantPool" style="color:black;">ConstantPool</a>
                     </span>
@@ -159,9 +171,7 @@ case class ClassFile(
                     <div id="fields">
                         <details>
                             <summary>Fields</summary>
-                            <ol>
-                                { fieldsToXHTML }
-                            </ol>
+                            { fieldsToXHTML }
                         </details>
                     </div>
                     <div id="methods">

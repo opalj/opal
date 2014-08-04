@@ -29,6 +29,8 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  * @author Michael Eichberg
  * @author Wael Alkhatib
@@ -40,14 +42,18 @@ case class EnclosingMethod_attribute(
         class_index: Int,
         method_index: Int) extends Attribute {
 
-    /**
-     * The value of the attribute_length item is fixed; it is 4.
-     */
     def attribute_length = 4
 
-    def attribute_name = EnclosingMethod_attribute.name
-
-    // TODO Implementat support for Enclosing Method Attribute
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <div>
+            <span class="fqn">
+                { cp(class_index).toString }
+            </span>
+            {{
+            { cp(method_index).toString }
+            }}
+        </div>
+    }
 }
 object EnclosingMethod_attribute {
 

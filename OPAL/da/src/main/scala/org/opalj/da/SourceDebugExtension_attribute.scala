@@ -43,10 +43,8 @@ case class SourceDebugExtension_attribute(
 
     def attribute_length = 2
 
-    def attribute_name = SourceDebugExtension_attribute.name
-
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="attributename">{ attribute_name } ("Content Not Available")</span>
+        <span><span class="attribute_name">SourceDebugExtensio</span>: ("Content Not Available")</span>
     }
 
 }
