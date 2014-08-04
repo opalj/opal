@@ -52,7 +52,7 @@ case class Annotation(
             for (element_value_pair ← element_value_pairs)
                 yield element_value_pair.toXHTML(cp)
         <span>
-            { asObjectType(type_index) }
+            { parseFieldType(cp(type_index).toString) }
             { annotations }
         </span>
     }

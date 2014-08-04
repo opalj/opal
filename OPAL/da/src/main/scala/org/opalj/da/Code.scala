@@ -348,7 +348,7 @@ case class Code(instructions: Array[Byte]) {
                     in.readByte // ignored; fixed value
                     val signature = cp(c).toString(cp)
                     <span>
-                        <span class="instruction unresolved_invokedynamic">unresolved_invokedynamic </span>
+                        <span class="instruction invokedynamic">invokedynamic </span>
                         { signature }
                     </span>
                 case 185 ⇒
