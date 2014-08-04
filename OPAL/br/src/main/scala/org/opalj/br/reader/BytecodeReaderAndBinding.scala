@@ -229,7 +229,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                         )
                     }
                     //INVOKEDYNAMIC(cpe.bootstrapMethodAttributeIndex, cpe.methodName, cpe.methodDescriptor)
-                    UNRESOLVED_INVOKEDYNAMIC
+                    INCOMPLETE_INVOKEDYNAMIC
                 case 185 ⇒
                     val (declaringClass, name, methodDescriptor) /*: (ReferenceType,String,MethodDescriptor)*/ =
                         cp(in.readUnsignedShort).asMethodref(cp) // methodRef
