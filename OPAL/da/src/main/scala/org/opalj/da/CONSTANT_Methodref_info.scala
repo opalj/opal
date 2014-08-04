@@ -39,8 +39,4 @@ case class CONSTANT_Methodref_info(
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Methodref
 
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.') +
-            cp(name_and_type_index).toString(cp)
-    }
 }

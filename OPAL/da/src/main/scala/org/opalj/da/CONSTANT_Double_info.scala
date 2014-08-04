@@ -39,4 +39,6 @@ case class CONSTANT_Double_info(
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Double
 
     override def toString(implicit cp: Constant_Pool): String = value.toString
+
+    override def toLDCString(implicit cp: Constant_Pool): String = value.toString+"d"
 }

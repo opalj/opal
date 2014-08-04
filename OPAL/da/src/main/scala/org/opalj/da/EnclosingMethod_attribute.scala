@@ -50,7 +50,12 @@ case class EnclosingMethod_attribute(
                 { cp(class_index).toString }
             </span>
             {{
-            { cp(method_index).toString }
+            {
+                if (method_index != 0)
+                    cp(method_index).toString
+                else
+                    "<not immediately enclosed>"
+            }
             }}
         </div>
     }

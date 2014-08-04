@@ -38,6 +38,8 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
     def asString: String = throw new UnsupportedOperationException()
 
-    def toString(implicit cp: Constant_Pool): String = ""
+    def toString(implicit cp: Constant_Pool): String
+
+    def toLDCString(implicit cp: Constant_Pool): String
 
 }

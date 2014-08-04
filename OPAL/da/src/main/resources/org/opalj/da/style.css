@@ -33,6 +33,10 @@ div{
 	float:left;	
 }
 
+.local_variable_name{
+	font-weight:400;
+}
+
 #methods,#fields,#attributes {
 	margin-top: 0.5em;
 	padding: 5px 20px 13px 10px;

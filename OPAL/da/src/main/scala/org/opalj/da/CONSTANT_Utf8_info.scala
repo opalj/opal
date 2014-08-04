@@ -43,5 +43,8 @@ case class CONSTANT_Utf8_info(
 
     override def asString = value
 
-    override def toString(implicit cp: Constant_Pool): String = value
+    def toString(implicit cp: Constant_Pool): String = value
+
+    def toLDCString(implicit cp: Constant_Pool): String =
+        throw new UnsupportedOperationException
 }

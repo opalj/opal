@@ -35,7 +35,7 @@ case class CONSTANT_NameAndType_info(
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_NameAndType
 
-    override def toString(implicit cp: Constant_Pool): String = {
+    def toString(implicit cp: Constant_Pool): String = {
         // TODO Validate the implementation - looks confusing
         if (!(cp(descriptor_index).toString(cp).charAt(0) == '('))
             cp(name_index).toString(cp)+" : "+parseFieldType(cp(descriptor_index).asString)
@@ -45,5 +45,8 @@ case class CONSTANT_NameAndType_info(
             "."+cp(name_index).toString(cp)+" : "+
                 parseMethodDescriptor(cp(name_index).asString, cp(descriptor_index).asString)
     }
+
+    def toLDCString(implicit cp: Constant_Pool): String =
+        throw new UnsupportedOperationException
 }
 

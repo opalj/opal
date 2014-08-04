@@ -42,8 +42,11 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
 
     val name_and_type_index: Constant_Pool_Index
 
-    override def toString(implicit cp: Constant_Pool): String = {
-        cp(class_index).toString(cp).replace('/', '.')+"."+
-            cp(name_and_type_index).toString(cp)
+    def toString(implicit cp: Constant_Pool): String = {
+        cp(class_index).toString(cp).replace('/', '.')+"{ "+
+            cp(name_and_type_index).toString(cp)+" }"
     }
+
+    def toLDCString(implicit cp: Constant_Pool): String =
+        throw new UnsupportedOperationException
 }

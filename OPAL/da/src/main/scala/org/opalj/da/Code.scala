@@ -407,13 +407,13 @@ case class Code(instructions: Array[Byte]) {
                 case 9   ⇒ <span class="instruction lconst_0">lconst_0</span>
                 case 10  ⇒ <span class="instruction lconst_1">lconst_1</span>
                 case 18 ⇒
-                    val constantValue = cp(in.readUnsignedByte()).toString(cp)
+                    val constantValue = cp(in.readUnsignedByte()).toLDCString(cp)
                     <span><span class="instruction ldc">ldc </span>{ constantValue }</span>
                 case 19 ⇒
-                    val constantValue = cp(in.readUnsignedShort).toString(cp)
+                    val constantValue = cp(in.readUnsignedShort).toLDCString(cp)
                     <span><span class="instruction ldc_w">ldc_w </span>{ constantValue }</span>
                 case 20 ⇒
-                    val constantValue = cp(in.readUnsignedShort).toString(cp)
+                    val constantValue = cp(in.readUnsignedShort).toLDCString(cp)
                     <span><span class="instruction ldc2_w">ldc2_w </span>{ constantValue }</span>
                 case 109 ⇒ <span class="instruction ldiv">ldiv</span>
                 case 22  ⇒ <span><span class="instruction lload">lload </span>{ lvIndex }</span>

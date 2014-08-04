@@ -38,12 +38,9 @@ import scala.xml.Node
  * @author Isbel Isbel
  * @author Noorulla Sharief
  */
-case class Synthetic_attribute(
-        attribute_name_index: Int) extends Attribute {
+case class Synthetic_attribute(attribute_name_index: Int) extends Attribute {
 
     def attribute_length = 0
-
-    def attribute_name = Synthetic_attribute.name
 
 }
 

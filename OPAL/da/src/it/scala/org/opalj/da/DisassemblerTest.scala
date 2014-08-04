@@ -88,7 +88,6 @@ class DisassemblerTest extends FlatSpec with Matchers {
                     // ideally: should be valid HTML
                 } catch {
                     case e: Exception ⇒
-                        Console.err.println(s"identified an issue: "+e.getMessage())
                         Lock.synchronized {
                             exceptions =
                                 new RuntimeException(s"failed: $url; message:"+e.getMessage(), e) ::

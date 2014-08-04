@@ -38,10 +38,12 @@ case class CONSTANT_Integer_info(
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Integer
 
-    override def toString(implicit cp: Constant_Pool): String = {
+    def toString(implicit cp: Constant_Pool): String = {
         if (value < 0 || value >= 10)
             value+" (== 0x"+value.toHexString+")"
         else
             value.toString
     }
+
+    def toLDCString(implicit cp: Constant_Pool): String = toString
 }

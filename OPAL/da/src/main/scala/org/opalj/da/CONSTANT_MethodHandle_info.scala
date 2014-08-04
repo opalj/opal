@@ -38,4 +38,11 @@ case class CONSTANT_MethodHandle_info(
         reference_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_MethodHandle
+
+    def toString(implicit cp: Constant_Pool): String = {
+        s"CONSTANT_MethodHandle_info($reference_kind ,${cp(reference_index).toString(cp)}/*$reference_index */)"
+    }
+
+    def toLDCString(implicit cp: Constant_Pool): String =
+        s"Kind $reference_kind: ${cp(reference_index).toString(cp)}"
 }

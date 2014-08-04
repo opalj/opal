@@ -44,6 +44,8 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
     protected[this] def createDeferredActionsStore(): DeferredActionsStore = {
         new scala.collection.mutable.ArrayBuffer[ClassFile ⇒ ClassFile] with Constant_Pool_Entry {
             def Constant_Type_Value = throw new UnsupportedOperationException()
+            def toString(implicit cp: Constant_Pool) = throw new UnsupportedOperationException()
+            def toLDCString(implicit cp: Constant_Pool) = throw new UnsupportedOperationException()
         }
     }
 
