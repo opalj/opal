@@ -1,0 +1,203 @@
+package org.opalj
+package av
+package viz
+
+import java.net.URL
+import br._
+import br.instructions._
+import br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.de._
+import org.w3c.dom.html.HTMLDocument
+import scala.util.Random
+import java.util.concurrent.atomic.AtomicInteger
+import scala.language.reflectiveCalls
+import scala.collection.SortedSet
+import scala.collection.immutable.TreeSet
+import java.io.File
+object DependencyAnalysis extends AnalysisExecutor {
+
+	val template = this.getClass().getResource("DependencyAnalysis.html.template")
+	val colors = Set("#E41A1C", "#FFFF33", "#FF7F00", "#999999", "#984EA3", "#377EB8", "#4DAF4A", "#F781BF", "#A65628")
+	var mainPackage: String = ""
+	var debug = false
+	var filter: String = ""
+	var inverse: Boolean = false
+
+	def readParameter(param: String, args: Seq[String], default: String = ""): (String, Seq[String]) = {
+		args.partition(_.startsWith("-" + param + "=")) match {
+			case (Seq(), parameters1) => (default, parameters1)
+			case (Seq(p), parameters1) ⇒ {
+				if (p.startsWith("-" + param + "=\"") && p.endsWith("\""))
+					(p.substring(param.length + 3, p.length - 1), parameters1)
+				else
+					(p.substring(param.length + 2), parameters1)
+			}
+		}
+	}
+
+	override def checkAnalysisSpecificParameters(args: Seq[String]): Boolean = {
+
+		val (mainPackage, parameters1) = readParameter("mp", args)
+		this.mainPackage = mainPackage
+
+		val (debug, parameters2) = readParameter("debug", parameters1, "false")
+		this.debug = debug.toBoolean
+
+		val (inverse, parameters3) = readParameter("inverse", parameters2, "false")
+		this.inverse = inverse.toBoolean
+
+		val (filter, parameters4) = readParameter("filter", parameters3)
+		this.filter = filter
+
+		parameters4.isEmpty
+	}
+
+	override def analysisSpecificParametersDescription: String = "" +
+		"[-mp=<Package-Name> (Main Package, won't be clustered. default: \"\")]\n" +
+		"[-debug=<Boolean> (true, if there should be additional output. default: false)]\n" +
+		"[-inverse=<Boolean> (true, if incoming and outgoing dependencies should be switched. default: false)]\n" +
+		"[-filter=<Prefix> (Only show dependencies within packages with this prefix. default: \"\")]\n"
+
+	def checkDocument(doc: String): String = {
+		val pattern = "<%[A-Z_]+%>".r
+		val option = pattern findFirstIn doc
+		option match {
+			case Some(o) => {
+				println(Console.YELLOW +
+					"[warning] HtmlDocument has at least one unreplaced option " + o + " (wrong template?)" + Console.RESET)
+			}
+			case None =>
+		}
+		doc
+	}
+
+	val analysis = new Analysis[URL, BasicReport] {
+
+		def description: String = "Collects information about the number of dependencies on others packages per package."
+
+		def analyze(project: Project[URL], parameters: Seq[String]) = {
+
+			import scala.collection.mutable.{ HashSet, HashMap }
+			// Collect the number of outgoing dependencies per package 
+			// FQPN = FullyQualifiedPackageName
+			val dependenciesPerFQPN = HashMap.empty[String, Int]
+
+			val rootPackages = project.rootPackages
+
+			val dependencyProcessor = new DependencyProcessor {
+				protected[this] val dependencyCount = HashMap.empty[String, HashMap[String, Int]]
+				protected[this] val dependencyCounter = new AtomicInteger(0);
+
+				def addDependency(sourcePN: String, targetPN: String): Unit = {
+					val sourcePackage = getPackageName(sourcePN)
+					val targetPackage = getPackageName(targetPN)
+
+					// filter by -filter=<prefix>
+					if (filter != "" && !sourcePackage.startsWith(filter) || !targetPackage.startsWith(filter))
+						return
+
+					// ignore interpackage dependencies
+					if (sourcePackage == targetPackage)
+						return
+
+					val depsForSource = dependencyCount.getOrElse(sourcePackage, HashMap.empty[String, Int])
+					depsForSource.update(targetPackage, depsForSource.getOrElse(targetPackage, 0) + 1)
+					dependencyCount.update(sourcePackage, depsForSource)
+					dependencyCounter.incrementAndGet()
+				}
+
+				override def processDependency(
+					source: VirtualSourceElement,
+					target: VirtualSourceElement,
+					dType: DependencyType): Unit = {
+					if (source.isClass && target.isClass)
+						addDependency(source.asInstanceOf[VirtualClass].thisType.packageName, target.asInstanceOf[VirtualClass].thisType.packageName)
+				}
+
+				def getPackageName(pn: String): String = {
+					if (pn == "") // standard package = <default>
+						return "<default>"
+					if (mainPackage != "" && pn.startsWith(mainPackage))
+						return pn
+					rootPackages.getOrElse(pn, pn)
+				}
+
+				def processDependency(
+					source: VirtualSourceElement,
+					baseType: BaseType,
+					dType: DependencyType): Unit = {
+
+				}
+				def processDependency(
+					source: VirtualSourceElement,
+					arrayType: ArrayType,
+					dType: DependencyType): Unit = {
+					if (source.isClass && arrayType.componentType.isObjectType)
+						addDependency(source.asInstanceOf[VirtualClass].thisType.packageName, arrayType.componentType.asInstanceOf[ObjectType].packageName)
+				}
+
+				def currentDependencyCount(source: String, target: String): Int = {
+					dependencyCount.getOrElse(source, HashMap.empty[String, Int]).getOrElse(target, 0)
+				}
+				def currentPackages = dependencyCount.keySet
+				def currentMaxDependencyCount = dependencyCounter.doubleValue()
+
+			} // dependencyCount(source,target,anzahl)
+			val dependencyExtractor = new DependencyExtractor(dependencyProcessor)
+
+			for {
+				classFile ← project.classFiles
+				packageName = classFile.thisType.packageName
+			} {
+				dependencyExtractor.process(classFile)
+			}
+
+			// create html file from template
+
+			// get packages and sort them
+			var packages = dependencyProcessor.currentPackages.toSeq.sorted
+
+			var maxCount = dependencyProcessor.currentMaxDependencyCount
+
+			var data = ("[" + packages.foldRight("")(
+				(p1, l1) => "[" +
+					packages.foldRight("")(
+						(p2, l2) => (dependencyProcessor.currentDependencyCount(p1, p2) / maxCount) + "," + l2) + "]," + l1) + "]").replaceAll(",]", "]")
+
+			if (inverse)
+				data = "d3.transpose(" + data + ")"
+
+			val cS = """ style="border-style:solid;border-width:1px;""""
+
+			val addOut =
+				if (debug)
+					("<table> <tr><th" + cS + "></th>" + packages.foldRight("</tr>")((p, l) => "<th" + cS + ">" + p + "</th>" + l) + packages.foldRight("</table>")(
+						(p1, l1) => "<tr><td" + cS + "><b>" + p1 + "</b></td>" +
+							packages.foldRight("</tr>\n")(
+								(p2, l2) => "<td" + cS + ">" + (dependencyProcessor.currentDependencyCount(p1, p2)) + "</td>" + l2) + l1))
+				else
+					""
+			// read the the template
+			var htmlDocument = scala.io.Source.fromFile(template.getPath())(scala.io.Codec.UTF8).mkString
+
+			if (!htmlDocument.contains("<%DATA%>") || !htmlDocument.contains("<%PACKAGES%>")) {
+				println(Console.RED +
+					"[error] The template: " + template + " is not valid." + Console.RESET)
+				sys.exit(-2)
+			}
+
+			htmlDocument = htmlDocument.replace("<%TITLE%>", "DependencyAnalysis")
+
+			htmlDocument = htmlDocument.replace("<%DATA%>", data)
+
+			htmlDocument = htmlDocument.replace("<%ADDITIONAL_OUTPUT%>", addOut)
+
+			htmlDocument = htmlDocument.replace("<%PACKAGES%>", "[" + packages.foldRight("")(
+				(name, json) =>
+					s"""{ "name": "$name", "color": "${Random.shuffle(colors.toList).head}"},\n""" + json) + "]")
+			util.writeAndOpenDesktopApplication(checkDocument(htmlDocument), "DependencyAnalysis", ".html")
+
+			BasicReport(packages)
+		}
+	}
+}

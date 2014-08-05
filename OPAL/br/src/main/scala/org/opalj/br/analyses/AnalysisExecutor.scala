@@ -108,8 +108,13 @@ trait AnalysisExecutor {
         println(analysis.copyright)
     }
 
-    def main(args: Array[String]): Unit = {
-
+    def main(params: Array[String]): Unit = {
+    	
+    	// re-reads parameter input to allow parameters like -param="in put"
+		var regx = """(-\w+="[\w:./\\ ]*")|(-\w+=[\w:./\\]+)""".r
+		val input = params.mkString(" ") 
+		val args = regx.findAllMatchIn(input).map(_.matched).toArray
+		
         //
         // 1. check arguments
         //
@@ -136,16 +141,24 @@ trait AnalysisExecutor {
             args.partition(_.startsWith("-cp=")) match {
                 case (Array(), args1) ⇒
                     (Array(System.getProperty("user.dir")), args1)
-                case (Array(cpParam), args1) ⇒
-                    (cpParam.substring(4).split(File.pathSeparator), args1)
+                case (Array(cpParam), args1) ⇒ {
+                	if (cpParam.startsWith("-cp=\"") && cpParam.endsWith("\""))
+                		(cpParam.substring(5, cpParam.length-1).split(File.pathSeparator), args1)
+                	else
+                		(cpParam.substring(4).split(File.pathSeparator), args1)
+                }
             }
         }
         val cpFiles = checkIfFilesAreReadableAndReturnThem(cp)
 
         val (libcp, parameters) = {
             args1.partition(_.startsWith("-libcp=")) match {
-                case (Array(libParam), parameters) ⇒
-                    (libParam.substring(7).split(File.pathSeparator), parameters)
+                case (Array(libParam), parameters) ⇒ {
+                	if (libParam.startsWith("-libcp=\"") && libParam.endsWith("\""))
+                		(libParam.substring(8, libParam.length-1).split(File.pathSeparator), parameters)
+                	else
+                		(libParam.substring(7).split(File.pathSeparator), parameters)
+                }
                 case result ⇒
                     result
             }
