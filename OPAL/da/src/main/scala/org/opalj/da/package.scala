@@ -63,11 +63,20 @@ package object da {
         t.replace('/', '.')
     }
 
-    def parseReturnType(rt: String): String =
+    def parseReturnType(type_index: Int)(implicit cp: Constant_Pool): String = {
+        parseReturnType(cp(type_index).toString)
+    }
+
+    def parseReturnType(rt: String): String = {
         if (rt.charAt(0) == 'V')
             "void"
         else
             parseFieldType(rt)
+    }
+
+    def parseFieldType(type_index: Int)(implicit cp: Constant_Pool): String = {
+        parseFieldType(cp(type_index).toString)
+    }
 
     def parseFieldType(ft: String): String = {
         (ft.charAt(0): @scala.annotation.switch) match {

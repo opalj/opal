@@ -49,7 +49,7 @@ case class Code(instructions: Array[Byte]) {
         val instructions = InstructionsToXHTML(methodIndex, this.instructions)
         ExceptionsLinking(instructions, exceptionTable)
 
-        <table style="width:100%;">
+        <table class="method_bytecode">
             <tr>
                 <th class="pc">PC</th>
                 {

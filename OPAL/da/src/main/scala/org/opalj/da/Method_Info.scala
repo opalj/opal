@@ -38,21 +38,33 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class Method_Info(
-        accessFlags: Int,
+        access_flags: Int,
         name_index: Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
         attributes: Attributes) {
 
     def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
-        val flags = methodAccessFlagsToString(accessFlags)
+        val flags = methodAccessFlagsToString(access_flags)
+        val filter_flags =
+            org.opalj.bi.VisibilityModifier.get(access_flags) match {
+                case None ⇒
+                    val ac = flags
+                    if (ac.length() == 0)
+                        "default"
+                    else
+                        ac+" default"
+                case _ ⇒
+                    flags
+            }
+
         val name = cp(name_index).toString(cp)
-        <div class="methodinfo" name={ name } flags={ flags }>
-            <div class="method">
+        <div class="method" name={ name } flags={ filter_flags }>
+            <div class="method_signature">
                 <span class="access_flags">{ flags }</span>
                 <span>{ parseMethodDescriptor(name, cp(descriptor_index).asString) }</span>
                 <a href="#" class="tooltip">{ name_index } <span>{ cp(name_index) }</span></a>
-                { attributesToXHTML(methodIndex) }
             </div>
+            { attributesToXHTML(methodIndex) }
         </div>
     }
 

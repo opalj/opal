@@ -8,21 +8,20 @@ body{
 	overflow-y: scroll;
 }
 
-div{
+div,fieldset{
 	padding:0.15em;
 	margin-bottom:0.25em;
 }
+
+.filter_settings{
+	padding: 1em;
+	background-color:#FFE7E7;
+}
  
-#classFile {a
+ 
+.members {
 	min-width: 900px;
 	width:100%;
-	padding-right:1em;
-	padding-top:1em;
-}
-
-.methodinfo{
-	margin-top:2em;	
-	margin-bottom:1em;	
 }
 
 .instruction{
@@ -37,9 +36,8 @@ div{
 	font-weight:400;
 }
 
-#methods,#fields,#attributes {
-	margin-top: 0.5em;
-	padding: 5px 20px 13px 10px;
+.methods,.fields,.attributes {
+	border-top: 1px solid #cccccc;
 }
 
 .exception{
@@ -68,54 +66,54 @@ div{
 	background: -o-linear-gradient(0   ,#00F700);
 }
 
-h2, p {
-    margin:20px;
-    padding:0px;
-}
-
 details {
-	margin-left: 1em;
-	margin-top: 1em;
-	margin-bottom: 0.5em;
+	padding-left: 1em;
+	padding-right: 1em;
+	padding-top: 1em;
+	padding-bottom: 1em;
 } 
 
 summary {
-	margin-left: -1em;
-	margin-bottom: 0.75em;
+	background-color: #eeeeee;
+	padding: 0.5em 0.5em 0.5em 0.5em;
 } 
-
- 
-ol, ul {
-	margin:0em;
-	padding:0em;
-}
-
-li {
-    padding:0.25em;
-}
 			
-p.Summary {
-    position:relative; /*see the support section below for more info*/
-    margin:10px 10px 10px 10px;
-    color:#575544;
-    letter-spacing:.06em;
-    }
-	
-.code ,table, .method{
+div#class_file {
+	background-color:#fcfcec;
+	padding: 1em 1em 1em 1em;
 }
-
+	
 .selfRef {
 	color:#888888;
 }
 
-#sourcecode {
-	width:95%;
-	margin-top: 3px;
-	padding: 5px 2px 3px 10px;
-	background: none repeat scroll 0 0 #F7F7F7;
-	background: -moz-linear-gradient(0 ,#F7F7F7);
-	background: -webkit-linear-gradient(0   ,#F7F7F7);
-	background: -o-linear-gradient(0   ,#F7F7F7);
+.runtime_visible {
+	color:#ccFFcc;
+}
+
+.runtime_visible {
+	color:#ccDDDD;
+}
+
+.element_value_pair + .element_value_pair::before { 
+	content:", ";
+	color:#AA22FF;
+}
+
+
+.method_body {
+	background-color:#F7F7F7;
+	margin:0 0 0 0;
+	padding:0 0 0 0;
+}
+
+.method_signature {
+	margin-top: 2em;
+	font-weight: 600;
+}
+
+table.method_bytecode{
+	margin: 1em 1em 1em 1em;
 }
 
 .annotation{
@@ -176,7 +174,7 @@ th.pc, td.pc, th.line, td.line {
 }
 
 
-.constantPool {
+#constant_pool {
 	word-wrap: break-word;
 	position: fixed;
 
@@ -193,13 +191,13 @@ th.pc, td.pc, th.line, td.line {
 	pointer-events: none;
 }
 
-.constantPool:target {
+#constant_pool:target {
 	opacity:1;
 	pointer-events: auto;
 	overflow-y: scroll;
 }
 
-.constantPool > div {
+#constant_pool > div {
     border: 1px solid rgba(147, 184, 189, 0.8);
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(105, 108, 109, 0.7), 0 0 8px 5px rgba(208, 223, 226, 0.4) inset;	
@@ -233,7 +231,7 @@ th.pc, td.pc, th.line, td.line {
 	-webkit-box-shadow: 1px 1px 3px #000;
 	box-shadow: 1px 1px 3px #000;
 }
-.constantPoolLink{
+.constant_pool_link{
     padding:10px 10px;
     margin-top:10px;
     padding-top:20px; 

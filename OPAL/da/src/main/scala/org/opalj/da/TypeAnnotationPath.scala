@@ -46,12 +46,9 @@ trait TypeAnnotationPath {
     def toXHTML(implicit cp: Constant_Pool): Node
 }
 
-/**
- * The path's length was `0`.
- */
 case class TypeAnnotationDirectlyOnType() extends TypeAnnotationPath {
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>TypeAnnotationDirectlyOnType</span>
+        <span class="type_annotation_path">DirectlyOnType</span>
     }
 }
 
@@ -63,7 +60,7 @@ case class TypeAnnotationPathElements(
         path: IndexedSeq[TypeAnnotationPathElement]) extends TypeAnnotationPath {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>[ResourcevarDecl:{ for (line ← path) yield line.toXHTML(cp) }]</span>
+        <span class="type_annotation_path">Path:{ for (elem ← path) yield elem.toXHTML(cp) }]</span>
     }
 }
 
@@ -73,29 +70,21 @@ case class TypeAnnotationPathElements(
 case class TypeAnnotationDeeperInArrayType() extends TypeAnnotationPathElement {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>TypeAnnotationDeeperInArrayType</span>
+        <span class="type_annotation_path">DeeperInArrayType</span>
     }
 }
 
-/**
- * The `type_path_kind` was `1` (and the type_argument_index was (as defined by the
- * specification) also `0`).
- */
 case class TypeAnnotationDeeperInNestedType() extends TypeAnnotationPathElement {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>TypeAnnotationDeeperInNestedType</span>
+        <span class="type_annotation_path">DeeperInNestedType</span>
     }
 }
 
-/**
- * The `type_path_kind` was `2` (and the type_argument_index was (as defined by the
- * specification) also `0`).
- */
 case class TypeAnnotationOnBoundOfWildcardType() extends TypeAnnotationPathElement {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>TypeAnnotationOnBoundOfWildcardType</span>
+        <span class="type_annotation_path">OnBoundOfWildcardType</span>
     }
 }
 
@@ -103,7 +92,7 @@ case class TypeAnnotationOnTypeArgument(
         type_argument_index: Int) extends TypeAnnotationPathElement {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>TypeAnnotationOnTypeArgument :{ cp(type_argument_index).toString(cp) }</span>
+        <span class="type_annotation_path">OnTypeArgument: { type_argument_index }</span>
     }
 }
 

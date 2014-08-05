@@ -102,8 +102,8 @@ case class ClassFile(
 
     def fieldsToXHTML: Seq[Node] = for (field ← fields) yield field.toXHTML(cp)
 
-    def methodsToXHTML: Node = {
-        <div>{ for ((method, index) ← methods.zipWithIndex) yield method.toXHTML(index) }</div>
+    def methodsToXHTML: Seq[Node] = {
+        for ((method, index) ← methods.zipWithIndex) yield method.toXHTML(index)
     }
 
     protected def accessFlags: Node = {
@@ -111,26 +111,32 @@ case class ClassFile(
     }
 
     protected def filter: Node = {
-        <details>
+        <details class="filter_settings">
             <summary>Filter</summary>
-            <table style="min-width:850px" class="code">
-                <tr>
-                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('private');"> Private </input></td>
-                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('public');"> Public </input></td>
-                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('protected');"> Protected </input></td>
-                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('static');"> Static </input></td>
-                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('final');"> Final </input></td>
-                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('synchronized');"> Synchronized </input></td>
-                </tr>
-                <tr>
-                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('bridge');"> Bridge </input></td>
-                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('varargs');"> Varargs </input></td>
-                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('native');"> Native </input></td>
-                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('abstract');"> Abstract </input></td>
-                    <td><input type="checkbox" value="HTML" onclick="FlagFilter('strict');"> Strict </input></td>
-                    <td><input type="text" title='filter by method name' onkeyup="NameFilter(this.value);">  </input></td>
-                </tr>
-            </table>
+            <fieldset>
+                <input type="radio" name="visibility" value="private" onclick="toogleFilter();">private</input>
+                <input type="radio" name="visibility" value="default" onclick="toogleFilter();">&lt;default&gt;</input>
+                <input type="radio" name="visibility" value="protected" onclick="toogleFilter();">protected</input>
+                <input type="radio" name="visibility" value="public" onclick="toogleFilter();">public</input>
+            </fieldset>
+            <fieldset>
+                <input type="radio" name="final_or_abstract" value="final" onclick="toogleFilter();">final</input>
+                <input type="radio" name="final_or_abstract" value="abstract" onclick="toogleFilter();">abstract</input>
+            </fieldset>
+            <div class="java_flags">
+                <input type="checkbox" name="static" value="static" onclick="toogleFilter();">static</input>
+                <input type="checkbox" value="strict" onclick="toogleFilter();">strict</input>
+                <input type="checkbox" value="native" onclick="toogleFilter();">native</input>
+                <input type="checkbox" value="synchronized" onclick="toogleFilter();">synchronized</input>
+            </div>
+            <div class="jvm_flags">
+                <input type="checkbox" value="bridge" onclick="toogleFilter();">bridge</input>
+                <input type="checkbox" value="varargs" onclick="toogleFilter();">varargs</input>
+            </div>
+            <div class="name_filter">
+                Name:<input type="text" title='filter by method name' onkeyup="toogleFilter();"></input>
+            </div>
+            <button value="clear" onclick="clearFilter();">clear</button>
         </details>
     }
 
@@ -141,46 +147,43 @@ case class ClassFile(
                 <style type="text/css">{ scala.xml.Unparsed(ClassFile.ResetCSS) }</style>
                 <style type="text/css">{ scala.xml.Unparsed(ClassFile.TheCSS) }</style>
                 <script>{ scala.xml.Unparsed(ClassFile.FilterJS) }</script>
-                <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
             </head>
             <body>
-                <p class="Summary">
+                <div id="class_file">
                     { accessFlags }
                     &nbsp;<b>{ fqn }</b>
                     <span class="tooltip">
                         Version:&nbsp;{ major_version+"."+minor_version }
                         <span>{ jdkVersion }</span>
                     </span>
-                    <span class="constantPoolLink">
-                        <a href="#openConstantPool" style="color:black;">ConstantPool</a>
+                    <span class="constant_pool_link">
+                        <a href="#constant_pool" style="color:black;">ConstantPool</a>
                     </span>
-                </p>
-                <div id="openConstantPool" class="constantPool">
+                </div>
+                <div id="constant_pool">
                     <div>
                         <a href="#close" title="Close" class="close">X</a>
                         { cpToXHTML }
                     </div>
                 </div>
-                <div id="classFile">
-                    <div id="attributes">
+                <div class="members">
+                    <div class="attributes">
                         <details>
-                            <summary>Class Attributes</summary>
+                            <summary>Attributes</summary>
                             { attributesToXHTML }
                         </details>
                     </div>
-                    <div id="fields">
+                    <div class="fields">
                         <details>
                             <summary>Fields</summary>
                             { fieldsToXHTML }
                         </details>
                     </div>
-                    <div id="methods">
+                    <div class="methods">
                         <details>
                             <summary>Methods</summary>
-                            <ol>
-                                { filter }
-                                { methodsToXHTML }
-                            </ol>
+                            { filter }
+                            { methodsToXHTML }
                         </details>
                     </div>
                 </div>

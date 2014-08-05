@@ -43,7 +43,10 @@ case class RuntimeVisibleAnnotations_attribute(
         annotations: IndexedSeq[Annotation]) extends Annotations_attribute {
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">//RuntimeVisibleAnnotations:{ annotationstoXHTML(cp) }</div>
+        <div class="annotations runtime_visible tooltip">
+            <span>Runtime Visible</span>
+            { annotationsToXHTML(cp) }
+        </div>
     }
 
 }

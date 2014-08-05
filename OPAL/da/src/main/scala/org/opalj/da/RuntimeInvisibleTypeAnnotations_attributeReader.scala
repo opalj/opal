@@ -44,10 +44,10 @@ case class RuntimeInvisibleTypeAnnotations_attribute(
         annotations: IndexedSeq[TypeAnnotation]) extends Attribute {
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">//RuntimeInvisibleTypeAnnotations_attribute:{ annotationstoXHTML(cp) }</div>
+        <div class="annotation">//RuntimeInvisibleTypeAnnotations_attribute:{ annotationsToXHTML(cp) }</div>
     }
 
-    def annotationstoXHTML(implicit cp: Constant_Pool): Node = {
+    def annotationsToXHTML(implicit cp: Constant_Pool): Node = {
         val annotationNodes = for (annotation ← annotations) yield annotation.toXHTML(cp)
         <span>{ annotationNodes }</span>
     }

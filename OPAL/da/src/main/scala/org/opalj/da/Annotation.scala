@@ -41,19 +41,14 @@ case class Annotation(
         type_index: Int,
         element_value_pairs: IndexedSeq[ElementValuePair]) {
 
-    //
-    // ABSTRACT DEFINITIONS
-    //
-
-    type ElementValuePairs = IndexedSeq[ElementValuePair]
-
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val annotations =
-            for (element_value_pair ← element_value_pairs)
+        val element_value_pairs =
+            for (element_value_pair ← this.element_value_pairs)
                 yield element_value_pair.toXHTML(cp)
-        <span>
-            { parseFieldType(cp(type_index).toString) }
-            { annotations }
-        </span>
+
+        <div class="annotation">
+            <span class="type">{ parseFieldType(cp(type_index).toString) }</span>
+            (<span class="element_value_pairs">{ element_value_pairs }</span>)
+        </div>
     }
 }

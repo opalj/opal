@@ -41,8 +41,11 @@ trait Annotations_attribute extends Attribute {
 
     val annotations: IndexedSeq[Annotation]
 
-    def annotationstoXHTML(implicit cp: Constant_Pool): Node = {
-        val annotationNodes = for (annotation ← annotations) yield annotation.toXHTML(cp)
-        <span>{ annotationNodes }</span>
+    def annotationsToXHTML(implicit cp: Constant_Pool): Seq[Node] = {
+        val annotationNodes =
+            for (annotation ← annotations)
+                yield annotation.toXHTML(cp)
+
+        annotationNodes
     }
 }

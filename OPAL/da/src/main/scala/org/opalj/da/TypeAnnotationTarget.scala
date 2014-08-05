@@ -49,27 +49,27 @@ trait TypeAnnotationTarget {
 // type_parameter_target
 case class ParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int) extends TypeAnnotationTarget {
+    
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{ cp(type_parameter_index).toString(cp) }</span>
+        <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp) }</span>
     }
 }
-object ParameterDeclarationOfClassOrInterface {}
 
 case class ParameterDeclarationOfMethodOrConstructor(
         type_parameter_index: Int) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{ cp(type_parameter_index).toString(cp) }</span>
+        <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp) }</span>
     }
 }
-object ParameterDeclarationOfMethodOrConstructor {}
+
 //______________________________
 // supertype_target
 case class SupertypeTarget(
         supertype_index: Int) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{ cp(supertype_index).toString(cp) }</span>
+        <span class="type_annotation_target">{ cp(supertype_index).toString(cp) }</span>
     }
 }
 
@@ -80,7 +80,7 @@ case class TypeBoundOfParameterDeclarationOfClassOrInterface(
         bound_index: Int) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{ cp(type_parameter_index).toString(cp) + "-" + cp(bound_index).toString(cp) }</span>
+        <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp)+"-"+cp(bound_index).toString(cp) }</span>
     }
 }
 case class TypeBoundOfParameterDeclarationOfMethodOrConstructor(
@@ -88,7 +88,7 @@ case class TypeBoundOfParameterDeclarationOfMethodOrConstructor(
         bound_index: Int) extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{ cp(type_parameter_index).toString(cp) + "-" + cp(bound_index).toString(cp) }</span>
+        <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp)+"-"+cp(bound_index).toString(cp) }</span>
     }
 }
 
@@ -96,18 +96,18 @@ case class TypeBoundOfParameterDeclarationOfMethodOrConstructor(
 // empty_target
 case class FieldDeclaration() extends TypeAnnotationTarget {
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>Field Decleration</span>
+        <span class="type_annotation_target">Field Decleration</span>
     }
 }
 case class ReturnType() extends TypeAnnotationTarget {
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>Return Type</span>
+        <span class="type_annotation_target">Return Type</span>
     }
 }
 case class ReceiverType() extends TypeAnnotationTarget {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>Receiver Type</span>
+        <span class="type_annotation_target">Receiver Type</span>
     }
 }
 
@@ -115,15 +115,16 @@ case class ReceiverType() extends TypeAnnotationTarget {
 // formal_parameter_target
 case class FormalParameter(formal_parameter_index: Int) extends TypeAnnotationTarget {
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{ cp(formal_parameter_index).toString(cp) }</span>
+        <span class="type_annotation_target">{ cp(formal_parameter_index).toString(cp) }</span>
     }
 }
 
 //______________________________
 // throws_target
 case class Throws(throws_type_index: Int) extends TypeAnnotationTarget {
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{ cp(throws_type_index).toString(cp) }</span>
+        <span class="type_annotation_target">{ cp(throws_type_index).toString(cp) }</span>
     }
 }
 
@@ -131,30 +132,10 @@ case class Throws(throws_type_index: Int) extends TypeAnnotationTarget {
 // catch_target
 case class Catch(exception_table_index: Int) extends TypeAnnotationTarget {
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{ cp(exception_table_index).toString(cp) }</span>
+        <span class="type_annotation_target">{ cp(exception_table_index).toString(cp) }</span>
     }
 }
 
-//______________________________
-// localvar_target
-/*
-     * Format
-     * {{{
-     * u2 table_length;
-     * {    u2 start_pc;
-     *      u2 length;
-     *      u2 index; // index into the local variable table(!)
-     * } table[table_length];
-     * }}}
-     */
-
-/**
- * Factory method to create a `LocalvarTableEntry`. To completely resolve
- * such entries; i.e., to resolve the local_variable_table_index it may
- * be necessary to do some post-processing after all attributes belonging
- * to a code block are loaded. This can be done using the method
- * [[org.opalj.bi.reader.AttributeReader.registerAttributesPostProcessor]].
- */
 case class LocalvarTableEntry(
         start_pc: Int,
         length: Int,

@@ -32,14 +32,6 @@ package da
 import scala.xml.Node
 
 /**
- * <pre>
- * Signature_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 signature_index;
- * }
- * </pre>
- *
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel
@@ -52,6 +44,12 @@ case class TypeAnnotation(
         element_value_pairs: IndexedSeq[ElementValuePair]) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">//TypeAnnotation[target: { target.toXHTML(cp) }, path: { path.toXHTML(cp) },type { cp(type_index).toString(cp) }]</div>
+        <div class="annotation">
+            TypeAnnotation [target:{ target.toXHTML(cp) }
+            , path:{ path.toXHTML(cp) }
+            ,type{ parseFieldType(type_index) }
+            ]
+            <span class="element_value_pairs">{ element_value_pairs.map(_.toXHTML) }</span>
+        </div>
     }
 }

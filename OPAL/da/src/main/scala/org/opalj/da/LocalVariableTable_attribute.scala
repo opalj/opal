@@ -42,15 +42,11 @@ case class LocalVariableTable_attribute(
 
     def attribute_length: Int = 2 + (local_variable_table.size * 10)
 
-    def attribute_name = LocalVariableTable_attribute.name
-
     override def toXHTML(implicit cp: Constant_Pool) = {
-        <div>
-            <details>
-                <summary>LocalVariableTable:</summary>
-                { for (local_variable ← local_variable_table) yield local_variable.toXHTML(cp) }
-            </details>
-       </div>
+        <details>
+            <summary>LocalVariableTable:</summary>
+            { for (local_variable ← local_variable_table) yield local_variable.toXHTML(cp) }
+        </details>
     }
 }
 object LocalVariableTable_attribute {

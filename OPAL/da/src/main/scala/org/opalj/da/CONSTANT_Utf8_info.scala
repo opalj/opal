@@ -45,6 +45,6 @@ case class CONSTANT_Utf8_info(
 
     def toString(implicit cp: Constant_Pool): String = value
 
-    def toLDCString(implicit cp: Constant_Pool): String =
+    def toLDCString(implicit cp: Constant_Pool): String = 
         throw new UnsupportedOperationException
 }

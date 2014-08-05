@@ -43,13 +43,10 @@ case class RuntimeInvisibleAnnotations_attribute(
         annotations: IndexedSeq[Annotation]) extends Annotations_attribute {
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="annotation">//RuntimeVisibleAnnotations:{ annotationstoXHTML(cp) }</div>
+        <div class="annotations runtime_invisible tooltip">
+            <span>Runtime Invisible</span>
+            { annotationsToXHTML(cp) }
+        </div>
     }
-
-}
-
-object RuntimeInvisibleAnnotations_attribute {
-
-    val name = "RuntimeInvisibleAnnotations"
 
 }

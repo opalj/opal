@@ -60,20 +60,18 @@ case class Code_attribute(
 
         val methodBodyHeader =
             s"Method Body (Size: ${code.instructions.size} bytes, Max Stack: $max_stack, Max Locals: $max_locals)"
+        <details class="method_body">
+            <summary>{ methodBodyHeader }</summary>
+            {
+                code.toXHTML(
+                    methodIndex,
+                    exceptionTable,
+                    attributes.collectFirst({ case LineNumberTable_attribute(_, lnt) ⇒ lnt }))
+            }
+            { exception_handlersAsXHTML }
+            { attributesAsXHTML }
+        </details>
 
-        <div id="sourcecode">
-            <details>
-                <summary>{ methodBodyHeader }</summary>
-                {
-                    code.toXHTML(
-                        methodIndex,
-                        exceptionTable,
-                        attributes.collectFirst({ case LineNumberTable_attribute(_, lnt) ⇒ lnt }))
-                }
-                { exception_handlersAsXHTML }
-                { attributesAsXHTML }
-            </details>
-        </div>
     }
 
     def attributesAsXHTML(implicit cp: Constant_Pool) = {

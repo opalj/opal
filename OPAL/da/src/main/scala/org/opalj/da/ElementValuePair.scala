@@ -46,11 +46,7 @@ case class ElementValuePair(
         element_value: ElementValue) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div>
-            <span>
-                <span class="attributename">{ cp(element_name_index).toString(cp) }:</span> 
-                { element_value.toString() }
-            </span>
-        </div>
+        val en = cp(element_name_index).toString(cp)
+        <span class="element_value_pair"><span class="element_name">{ en }</span>={ element_value.toXHTML }</span>
     }
 }
