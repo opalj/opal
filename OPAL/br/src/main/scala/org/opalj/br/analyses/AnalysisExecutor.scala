@@ -109,12 +109,22 @@ trait AnalysisExecutor {
     }
 
     def main(params: Array[String]): Unit = {
-    	
-    	// re-reads parameter input to allow parameters like -param="in put"
-		var regx = """(-\w+="[\w:./\\ ]*")|(-\w+=[\w:./\\]+)""".r
-		val input = params.mkString(" ") 
-		val args = regx.findAllMatchIn(input).map(_.matched).toArray
-		
+
+        // transform parameters input to allow parameters like -param="in put"
+        // -param="the input" is transformed into -param=the input
+        val quotedParams = """(-\w+="[\w:./\\ ]+")""".r
+        val unqoutedParams = """(-\w+=[\w:./\\]+)""".r
+        val input = params.mkString(" ")
+        val args =
+            (
+                quotedParams.findAllMatchIn(input).map { p ⇒
+                    val paramMatcher = """(-\w+=)"([\w:./\\ ]*)"""".r
+                    val paramMatcher(kind, value) = p.matched
+                    kind + value
+                } ++
+                unqoutedParams.findAllMatchIn(input).map(_.matched)
+            ).toArray
+
         //
         // 1. check arguments
         //
@@ -142,10 +152,7 @@ trait AnalysisExecutor {
                 case (Array(), args1) ⇒
                     (Array(System.getProperty("user.dir")), args1)
                 case (Array(cpParam), args1) ⇒ {
-                	if (cpParam.startsWith("-cp=\"") && cpParam.endsWith("\""))
-                		(cpParam.substring(5, cpParam.length-1).split(File.pathSeparator), args1)
-                	else
-                		(cpParam.substring(4).split(File.pathSeparator), args1)
+                    (cpParam.substring(4).split(File.pathSeparator), args1)
                 }
             }
         }
@@ -154,10 +161,7 @@ trait AnalysisExecutor {
         val (libcp, parameters) = {
             args1.partition(_.startsWith("-libcp=")) match {
                 case (Array(libParam), parameters) ⇒ {
-                	if (libParam.startsWith("-libcp=\"") && libParam.endsWith("\""))
-                		(libParam.substring(8, libParam.length-1).split(File.pathSeparator), parameters)
-                	else
-                		(libParam.substring(7).split(File.pathSeparator), parameters)
+                    (libParam.substring(7).split(File.pathSeparator), parameters)
                 }
                 case result ⇒
                     result
