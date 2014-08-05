@@ -198,8 +198,10 @@ final class ClassFile private (
             val innerTypeNameStartIndex = thisFQN.lastIndexOf('$')
             if (innerTypeNameStartIndex == -1) {
                 println(
-                    "[warn] the inner class "+thisType.toJava+" does not use the standard naming schema"+
-                        "; the inner classes information may be incomplete"
+                    Console.YELLOW+"[warn] the inner class "+thisType.toJava+
+						" does not use the standard naming schema"+
+                        "; the inner classes information may be incomplete"+
+						Console.RESET
                 )
                 return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
             }
@@ -215,9 +217,10 @@ final class ClassFile private (
                                     nestedTypes ++= classFile.nestedClasses(classFileRepository)
                                 case None ⇒
                                     println(
-                                        "[warn] project information incomplete; "+
+                                        Console.YELLOW+"[warn] project information incomplete; "+
                                             "cannot get informaton about "+objectType.toJava+
-                                            "; the inner classes information may be incomplete"
+                                            "; the inner classes information may be incomplete"+
+											Console.RESET
                                     )
                             }
                         }
@@ -244,9 +247,10 @@ final class ClassFile private (
                     return filteredNestedClasses
                 case None ⇒
                     println(
-                        "[warn] project information incomplete; "+
+                        Console.YELLOW+"[warn] project information incomplete; "+
                             "cannot identify outer type of "+thisType.toJava+
-                            "; the inner classes information may be incomplete"
+                            "; the inner classes information may be incomplete"+
+							Console.RESET
                     )
                     return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
             }

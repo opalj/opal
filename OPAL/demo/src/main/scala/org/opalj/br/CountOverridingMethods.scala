@@ -48,7 +48,8 @@ object CountOverridingMethods extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Counts the number of methods that override a method."
+        override def description: String =
+            "Counts the number of methods that override a method."
 
         def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
             import project.classHierarchy

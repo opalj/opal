@@ -59,10 +59,10 @@ class InstructionCountBoundedAI[D <: Domain](
         max = max * maxEvaluationFactor
         if (max < 0) {
             max = Int.MaxValue
-            println("[warn] effectively unbounded evaluation"+
+            println(Console.YELLOW+"[warn] effectively unbounded evaluation"+
                 "; instructions size="+code.instructions+
                 "; exception handlers="+code.exceptionHandlers.size+
-                "; maxEvaluationFactor="+maxEvaluationFactor)
+                "; maxEvaluationFactor="+maxEvaluationFactor+Console.RESET)
         }
         max
     }

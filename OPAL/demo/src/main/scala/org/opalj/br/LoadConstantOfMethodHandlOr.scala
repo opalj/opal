@@ -46,7 +46,7 @@ object LoadConstantOfMethodHandlOrMethodType extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String =
+        override def description: String =
             "Prints information about loads of method handles and types."
 
         def analyze(project: Project[URL], parameters: Seq[String]) = {

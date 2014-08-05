@@ -52,7 +52,7 @@ import br.instructions._
  */
 class SwingMethodInvokedInSwingThread[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String =
+    override def description: String =
         "Reports calls to certain Swing methods made from outside of the Swing thread."
 
     /**

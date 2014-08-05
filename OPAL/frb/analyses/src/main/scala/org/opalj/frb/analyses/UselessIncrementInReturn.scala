@@ -408,7 +408,7 @@ class IincTracingDomain
  */
 class UselessIncrementInReturn[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String = "Reports useless increments after a return statement."
+    override def description: String = "Reports useless increments after a return statement."
 
     /**
      * Runs this analysis on the given project.

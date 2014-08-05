@@ -98,7 +98,7 @@ object DependencyAnalysis extends AnalysisExecutor {
             case Some(o) ⇒ {
                 println(
                     Console.YELLOW+
-                        "[warn] HtmlDocument has at least one unset option "+o+
+                        "[warn] HtmlDocument has at least one unset option "+o +
                         Console.RESET)
             }
             case None ⇒
@@ -108,7 +108,8 @@ object DependencyAnalysis extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Collects information about the number of dependencies on others packages per package."
+        override def description: String =
+            "Collects information about the number of dependencies on others packages per package."
 
         def analyze(project: Project[URL], parameters: Seq[String]) = {
 

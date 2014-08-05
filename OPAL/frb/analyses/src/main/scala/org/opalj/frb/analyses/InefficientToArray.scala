@@ -56,7 +56,7 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
      * Returns a description text for this analysis.
      * @return analysis description
      */
-    def description: String = "Reports inefficient toArray(T[]) calls"
+    override def description: String = "Reports inefficient toArray(T[]) calls"
 
     private val objectArrayType = ArrayType(ObjectType.Object)
     private val toArrayDescriptor = MethodDescriptor(IndexedSeq(objectArrayType),

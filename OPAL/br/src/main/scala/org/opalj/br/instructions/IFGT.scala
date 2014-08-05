@@ -37,7 +37,7 @@ package instructions
  */
 case class IFGT(
     branchoffset: Int)
-        extends IF0ConditionalBranchInstruction {
+        extends IF0Instruction {
 
     final def opcode: Opcode = IFGT.opcode
 

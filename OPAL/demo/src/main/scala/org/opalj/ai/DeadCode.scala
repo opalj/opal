@@ -83,7 +83,7 @@ object DeadCode extends AnalysisExecutor { analysis ⇒
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        override def title: String = "Identifies Dead Code"
+        override def title: String = "Dead Code Identification"
 
         override def description: String = "Identifies dead code using abstract interpretation."
 

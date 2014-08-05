@@ -37,7 +37,7 @@ package instructions
  */
 case class IFLT(
     branchoffset: Int)
-        extends IF0ConditionalBranchInstruction {
+        extends IF0Instruction {
 
     final def opcode: Opcode = IFLT.opcode
 

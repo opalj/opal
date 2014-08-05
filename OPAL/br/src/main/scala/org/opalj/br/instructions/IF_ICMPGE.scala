@@ -37,7 +37,7 @@ package instructions
  */
 case class IF_ICMPGE(
     branchoffset: Int)
-        extends IFICMPConditionalBranchInstruction {
+        extends IFICMPInstruction {
 
     final def opcode: Opcode = IF_ICMPGE.opcode
 

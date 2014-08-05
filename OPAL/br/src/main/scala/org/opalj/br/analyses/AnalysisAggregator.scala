@@ -84,7 +84,7 @@ class AnalysisAggregator[Source, AnalysisResult]
                 analyses.map("\t"+_.copyright).mkString("\"")
         }
 
-    def description: String =
+    override def description: String =
         this.synchronized {
             "Executes the following analyses:\n"+analyses.map("\t"+_.title).mkString("\n")
         }

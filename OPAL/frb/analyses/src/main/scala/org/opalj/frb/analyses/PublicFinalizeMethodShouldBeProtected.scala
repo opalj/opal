@@ -46,7 +46,7 @@ import br.analyses._
  */
 class PublicFinalizeMethodShouldBeProtected[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String = "Reports finalize() methods that are not protected."
+    override def description: String = "Reports finalize() methods that are not protected."
 
     /**
      * Runs this analysis on the given project.

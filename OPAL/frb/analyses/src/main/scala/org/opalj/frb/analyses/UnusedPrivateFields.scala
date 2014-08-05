@@ -55,7 +55,7 @@ import br.instructions._
  */
 class UnusedPrivateFields[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String = "Reports unused private fields."
+    override def description: String = "Reports unused private fields."
 
     private def foreachConstantLoad(body: Code, f: ConstantValue[_] ⇒ Unit): Unit = {
         body.instructions.foreach {

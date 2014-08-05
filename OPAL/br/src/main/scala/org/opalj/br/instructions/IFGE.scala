@@ -37,7 +37,7 @@ package instructions
  */
 case class IFGE(
     branchoffset: Int)
-        extends IF0ConditionalBranchInstruction {
+        extends IF0Instruction {
 
     final def opcode: Opcode = IFGE.opcode
 

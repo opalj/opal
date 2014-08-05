@@ -50,8 +50,8 @@ class NativeMethodInImmutableClass[Source] extends FindRealBugsAnalysis[Source] 
      *
      * @return analysis description
      */
-    def description: String =
-        "Reports Classes annotated with an annotation with the simple name Immutable"+
+    override def description: String =
+        "Reports classes annotated with an annotation with the simple name Immutable"+
             " that contain a native method."
 
     /**

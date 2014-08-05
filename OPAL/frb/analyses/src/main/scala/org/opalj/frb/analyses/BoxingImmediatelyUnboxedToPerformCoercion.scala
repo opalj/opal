@@ -53,7 +53,7 @@ import br.instructions._
 class BoxingImmediatelyUnboxedToPerformCoercion[Source]
         extends FindRealBugsAnalysis[Source] {
 
-    def description: String =
+    override def description: String =
         "Reports sections of code that box a value but then immediately unbox it."
 
     /**

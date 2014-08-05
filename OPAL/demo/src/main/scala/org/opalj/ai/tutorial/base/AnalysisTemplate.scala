@@ -39,10 +39,6 @@ object AnalysisTemplate extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        override def title: String = "My Analysis"
-
-        override def description: String = "A cool analysis."
-
         override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
             BasicReport(theProject.statistics.mkString("\n"))
         }

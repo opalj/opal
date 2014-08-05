@@ -43,8 +43,8 @@ import br.instructions._
  */
 class CovariantEquals[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String = "Reports classes with one (or more) equals() methods,"+
-        " but without equals(Object)."
+    override def description: String = 
+        "Reports classes with one (or more) equals() methods but without equals(Object)."
 
     /**
      * Checks whether a class has `equals()` methods but not `equals(Object)`.

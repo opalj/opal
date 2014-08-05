@@ -46,7 +46,7 @@ import br.analyses._
  */
 class BadlyOverriddenAdapter[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String =
+    override def description: String =
         "Reports methods with the same name but different signatures when compared to "+
             "those from an AWT/Swing Adapter super class."
 

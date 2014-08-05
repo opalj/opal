@@ -43,7 +43,7 @@ import br.analyses._
  */
 class SerializableNoSuitableConstructor[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String =
+    override def description: String =
         "Reports superclasses of Serializable classes without zero-arguments constructor."
 
     /**

@@ -44,7 +44,7 @@ import br.instructions._
  */
 class CnImplementsCloneButNotCloneable[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String = "Reports classes implementing clone() but not Cloneable."
+    override def description: String = "Reports classes implementing clone() but not Cloneable."
 
     private val Cloneable = ObjectType("java/lang/Cloneable")
 

@@ -51,7 +51,8 @@ class CovariantEqualsMethodDefined[Source]
     // Meta-data
     //
 
-    def description: String = "Finds classes that define a co-variant equals method."
+    override def description: String =
+        "Finds classes that define a co-variant equals method."
 
     // 
     // Implementation

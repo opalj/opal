@@ -92,13 +92,13 @@ object UselessComputations extends AnalysisExecutor {
                         //                            UselessComputation(classFile, method, pc, "useless comparison with null")
                         case (
                             pc,
-                            _: IFICMPConditionalBranchInstruction,
+                            _: IFICMPInstruction,
                             Seq(domain.ConcreteIntegerValue(a), domain.ConcreteIntegerValue(b), _*)
                             ) ⇒
                             UselessComputation(classFile, method, pc, "comparison of constant values: "+a+", "+b)
                         case (
                             pc,
-                            _: IF0ConditionalBranchInstruction,
+                            _: IF0Instruction,
                             Seq(domain.ConcreteIntegerValue(a), _*)
                             ) ⇒
                             UselessComputation(classFile, method, pc, "comparison of 0 with constant value: "+a)

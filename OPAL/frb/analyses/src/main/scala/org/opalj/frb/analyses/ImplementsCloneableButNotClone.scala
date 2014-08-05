@@ -49,7 +49,7 @@ class ImplementsCloneableButNotClone[Source] extends FindRealBugsAnalysis[Source
      * Returns a description text for this analysis.
      * @return analysis description
      */
-    def description: String =
+    override def description: String =
         "Reports classes that implement the interface cloneable, "+
             "but not the clone() method."
 

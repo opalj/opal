@@ -112,7 +112,7 @@ private class BitNopsDomain
  */
 class BitNops[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String = "Reports various useless bit operations."
+    override def description: String = "Reports various useless bit operations."
 
     /**
      * Runs this analysis on the given project.

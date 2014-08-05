@@ -266,9 +266,9 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
         if (intValue.isDefined && reifyArray(pc, intValue.get, arrayType)) {
             val count = intValue.get
             if (count >= 1024)
-                println("[warn] tracking arrays ("+arrayType.toJava+
+                println(Console.YELLOW+"[warn] tracking arrays ("+arrayType.toJava+
                     ") with more than 1024 ("+count+
-                    ") elements is not officially supported")
+                    ") elements is not officially supported"+Console.RESET)
             var virtualPC = 65536 + pc * 1024
 
             val array: Array[DomainValue] = new Array[DomainValue](count)

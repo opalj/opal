@@ -54,7 +54,7 @@ class FieldShouldBePackageProtected[Source] extends FindRealBugsAnalysis[Source]
      * Returns a description text for this analysis.
      * @return analysis description
      */
-    def description: String =
+    override def description: String =
         "Reports Public/Protected Static Final fields that should be package protected"
 
     /**

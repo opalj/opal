@@ -70,7 +70,8 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description = "Counts the number of public methods in non-restricted packages."
+        override def description =
+            "Counts the number of public methods in non-restricted packages."
 
         def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
             val methods =

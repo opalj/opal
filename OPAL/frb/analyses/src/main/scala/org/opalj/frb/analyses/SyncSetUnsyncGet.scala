@@ -49,7 +49,7 @@ import br.instructions._
  */
 class SyncSetUnsyncGet[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String =
+    override def description: String =
         "Reports getters that are unsynchronized while the setter is synchronized."
 
     /**

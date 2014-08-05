@@ -194,9 +194,9 @@ trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
                         invokestatic(pc, classFile, method, operands)
                 case _ ⇒
                     println(
-                        "[info] method reference cannot be resolved: "+
+                        Console.YELLOW+"[warn] method reference cannot be resolved: "+
                             declaringClass.toJava+
-                            "{ static "+methodDescriptor.toJava(methodName)+"}")
+                            "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET)
                     fallback()
             }
     }

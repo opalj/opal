@@ -48,7 +48,7 @@ class FinalizeUseless[Source] extends FindRealBugsAnalysis[Source] {
      * Returns a description text for this analysis.
      * @return analysis description
      */
-    def description: String = "Reports useless finalize() methods."
+    override def description: String = "Reports useless finalize() methods."
 
     /**
      * Runs this analysis on the given project.

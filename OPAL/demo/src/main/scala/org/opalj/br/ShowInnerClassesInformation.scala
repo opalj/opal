@@ -43,8 +43,10 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 object ShowInnerClassesInformation extends AnalysisExecutor {
+
     val analysis = new Analysis[URL, BasicReport] {
-        def description: String = "Prints out the inner classes tables."
+
+        override def description: String = "Prints out the inner classes tables."
 
         def analyze(
             project: Project[URL],

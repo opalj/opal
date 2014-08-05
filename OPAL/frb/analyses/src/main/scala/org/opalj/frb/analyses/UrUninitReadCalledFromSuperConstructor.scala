@@ -66,7 +66,7 @@ import br.instructions._
  */
 class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String =
+    override def description: String =
         "Reports methods that access their class'es static fields and are called by a "+
             "super class constructor."
 

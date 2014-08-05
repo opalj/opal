@@ -42,7 +42,8 @@ import br.analyses._
  */
 class CatchesIllegalMonitorStateException[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String = "Reports methods that catch IllegalMonitorStateException."
+    override def description: String = 
+        "Reports methods that catch IllegalMonitorStateException."
 
     /**
      * Determines whether the given method has a catch block for the given exception.

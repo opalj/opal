@@ -47,7 +47,7 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
      * Returns a description text for this analysis.
      * @return analysis description
      */
-    def description: String =
+    override def description: String =
         "Detects calls to setAccessible() outside of doPrivileged blocks."
 
     private val ReflectFieldType =

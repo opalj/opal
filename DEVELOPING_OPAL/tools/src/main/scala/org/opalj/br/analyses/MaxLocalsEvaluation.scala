@@ -39,7 +39,7 @@ object MaxLocalsEvaluation extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String =
+        override def description: String =
             "Collects information about the maxium number of registers required per method."
 
         def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {

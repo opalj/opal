@@ -71,7 +71,7 @@ trait Analysis[Source, +AnalysisResult] {
      *  - if applicable it should give an example. I.e., what the expected result is given
      *    a project with certain resources.
      */
-    def description: String
+    def description: String = "See project documentation."
 
     /**
      * A URL at which documentation about this analysis can be found. This allows user
@@ -98,10 +98,14 @@ trait Analysis[Source, +AnalysisResult] {
      * The default is the simple name of the class implementing the analysis.
      */
     def title: String = {
-        val simpleName = this.getClass().getSimpleName()
-        if (simpleName.endsWith("$")) {
-            simpleName.init
-        } else
-            simpleName
+        if (this.getClass().isAnonymousClass() || this.getClass().isLocalClass()) {
+            this.getClass().getDeclaringClass().getSimpleName()
+        } else {
+            val simpleName = this.getClass().getSimpleName()
+            if (simpleName.endsWith("$")) {
+                simpleName.init
+            } else
+                simpleName
+        }
     }
 }

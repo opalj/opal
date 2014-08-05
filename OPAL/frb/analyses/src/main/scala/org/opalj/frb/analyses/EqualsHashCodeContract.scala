@@ -46,7 +46,7 @@ class EqualsHashCodeContract[Source] extends FindRealBugsAnalysis[Source] {
      * Returns a description text for this analysis.
      * @return analysis description
      */
-    def description: String = "Finds violations of the equals-hashCode contract."
+    override def description: String = "Finds violations of the equals-hashCode contract."
 
     /**
      * Runs this analysis on the given project.

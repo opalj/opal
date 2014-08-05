@@ -108,13 +108,13 @@ trait AnalysisExecutor {
         println(analysis.copyright)
     }
 
-    def main(params: Array[String]): Unit = {
+    def main(unparsedArgs: Array[String]): Unit = {
 
         // transform parameters input to allow parameters like -param="in put"
         // -param="the input" is transformed into -param=the input
-        val quotedParams = """(-\w+="[\w:./\\ ]+")""".r
-        val unqoutedParams = """(-\w+=[\w:./\\]+)""".r
-        val input = params.mkString(" ")
+        val quotedParams = """(-[\w.]+="[\w:./\\ ]+")""".r
+        val unqoutedParams = """(-[\w.]+=[\w:./\\]+)""".r
+        val input = unparsedArgs.mkString(" ")
         val args =
             (
                 quotedParams.findAllMatchIn(input).map { p ⇒
@@ -158,10 +158,10 @@ trait AnalysisExecutor {
         }
         val cpFiles = checkIfFilesAreReadableAndReturnThem(cp)
 
-        val (libcp, parameters) = {
+        val (libcp, args2) = {
             args1.partition(_.startsWith("-libcp=")) match {
-                case (Array(libParam), parameters) ⇒ {
-                    (libParam.substring(7).split(File.pathSeparator), parameters)
+                case (Array(libParam), args2) ⇒ {
+                    (libParam.substring(7).split(File.pathSeparator), args2)
                 }
                 case result ⇒
                     result
@@ -169,9 +169,11 @@ trait AnalysisExecutor {
         }
         val libcpFiles = checkIfFilesAreReadableAndReturnThem(libcp)
 
-        if (!checkAnalysisSpecificParameters(parameters)) {
+        if (!checkAnalysisSpecificParameters(args2)) {
             println(Console.RED+
-                "[error] Unknown parameters: "+parameters.mkString("\"", " ", "\"") +
+                "[error] Unknown parameter(s): "+args2.mkString("\"", " ", "\"")+
+                "; original: \""+unparsedArgs.mkString(" ")+"\""+
+                "; parsed: \""+args.mkString(" ")+"\""+
                 Console.RESET)
             printUsage()
             sys.exit(-3)
@@ -186,7 +188,7 @@ trait AnalysisExecutor {
         // 3. execute analysis
         //
         println("[info] Executing analysis: "+analysis.title+".")
-        val result = analysis.analyze(project, parameters)
+        val result = analysis.analyze(project, args2)
         println(result.consoleReport)
     }
 

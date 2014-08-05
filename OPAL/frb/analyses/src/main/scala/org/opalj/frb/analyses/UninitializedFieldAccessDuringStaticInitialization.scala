@@ -53,7 +53,7 @@ import org.opalj.ai.domain.tracing._
 class UninitializedFieldAccessDuringStaticInitialization[Source]
         extends FindRealBugsAnalysis[Source] {
 
-    def description: String =
+    override def description: String =
         "Detects accesses to uninitialized static fields from subclasses "+
             "during static initialization of a certain class."
 

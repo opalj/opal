@@ -82,7 +82,7 @@ class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[So
      *
      * @return analysis description.
      */
-    def description: String =
+    override def description: String =
         "Reports classes annotated with an annotation with the simple name Immutable"+
             " that contain mutable fields."
 

@@ -35,7 +35,6 @@ import br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 
 import de._
 
-
 /**
  * Calculates the transitive closure of all classes referred to by a given class.
  * Here, referred to means that the type is explicitly used in the implementation

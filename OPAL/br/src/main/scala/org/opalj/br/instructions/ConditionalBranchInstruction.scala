@@ -59,11 +59,11 @@ abstract class ConditionalBranchInstruction extends ControlTransferInstruction {
             ", false=↓)"
 }
 
-abstract class IF0ConditionalBranchInstruction extends ConditionalBranchInstruction
+abstract class IF0Instruction extends ConditionalBranchInstruction
 
-abstract class IFICMPConditionalBranchInstruction extends ConditionalBranchInstruction
+abstract class IFICMPInstruction extends ConditionalBranchInstruction
 
-abstract class IFACMPConditionalBranchInstruction extends ConditionalBranchInstruction
+abstract class IFACMPInstruction extends ConditionalBranchInstruction
 
-abstract class IFXNullConditionalBranchInstruction extends ConditionalBranchInstruction
+abstract class IFXNullInstruction extends ConditionalBranchInstruction
 
