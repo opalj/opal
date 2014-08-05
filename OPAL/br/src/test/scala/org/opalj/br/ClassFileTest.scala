@@ -212,8 +212,8 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
 
     }
 
-    test("that it is possible to get the inner classes information for Batik-DOMViewer 1.7.jar") {
-        val nestedTypeInformation = testJARFile(locateTestResources("classfiles/Batik-DOMViewer 1.7.jar", "bi"))
+    test("that it is possible to get the inner classes information for batik-DOMViewer 1.7.jar") {
+        val nestedTypeInformation = testJARFile(locateTestResources("classfiles/batik-DOMViewer 1.7.jar", "bi"))
         val D$Panel = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$Panel")
         val D$2 = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$2")
         val D$3 = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$3")
