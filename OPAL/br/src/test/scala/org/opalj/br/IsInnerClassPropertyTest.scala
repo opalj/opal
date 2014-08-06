@@ -47,32 +47,17 @@ import org.opalj.bi.TestSupport.locateTestResources
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class InnerClassesTest
-        extends FlatSpec
-        with Matchers /*with BeforeAndAfterAll */
-        with ParallelTestExecution {
-
-    //
-    //
-    // Setup
-    //
-    //
+class IsInnerClassPropertyTest extends FlatSpec with Matchers with ParallelTestExecution {
 
     val project =
         Project(
-            ClassFiles(locateTestResources("classfiles/Innerclasses.jar","bi"))
+            ClassFiles(locateTestResources("classfiles/Innerclasses.jar", "bi"))
         )
 
     val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")
     val myRootClass = ObjectType("innerclasses/MyRootClass")
     val myRootClass$1 = ObjectType("innerclasses/MyRootClass$1")
     val myRootClass$1$1 = ObjectType("innerclasses/MyRootClass$1$1")
-
-    //
-    //
-    // Verify
-    //
-    //
 
     behavior of "a named inner class"
 
@@ -99,11 +84,5 @@ class InnerClassesTest
     it should "return false if isInnerClass is called" in {
         project.classFile(myRootClass).get.isInnerClass should be(false)
     }
-
-    //    it should "find a method declared by an indirectly implemented interface" in {
-    //        val r = project.lookupMethodDeclaration(AbstractB, "someMethod", MethodDescriptor("()V"))
-    //        r should be('Defined)
-    //        assert(r.get._1.thisClass === ObjectType("methods/b/SomeInterface"))
-    //    }
 
 }
