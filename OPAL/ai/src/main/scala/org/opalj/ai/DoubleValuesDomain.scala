@@ -31,18 +31,12 @@ package ai
 
 /**
  * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of double values.
+ * that implements the functionality related to the handling of `double` values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
 trait DoubleValuesDomain extends DoubleValuesFactory { domain ⇒
-
-    // -----------------------------------------------------------------------------------
-    //
-    // ABSTRACTIONS RELATED TO INSTRUCTIONS
-    //
-    // -----------------------------------------------------------------------------------
 
     //
     // RELATIONAL OPERATORS
@@ -51,12 +45,12 @@ trait DoubleValuesDomain extends DoubleValuesFactory { domain ⇒
     def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
     //
-    // UNARY EXPRESSIONS
+    // UNARY ARITHMETIC EXPRESSIONS
     //
     def dneg(pc: PC, value: DomainValue): DomainValue
 
     //
-    // BINARY EXPRESSIONS
+    // BINARY ARITHMETIC EXPRESSIONS
     //
     def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue

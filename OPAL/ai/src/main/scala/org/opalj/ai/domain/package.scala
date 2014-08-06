@@ -30,7 +30,8 @@ package org.opalj
 package ai
 
 /**
- * Definition of common domains that can be used for the implementation of analyses.
+ * This package contains definitions of common domains that can be used for the 
+ * implementation of analyses.
  *
  * ==Types of Domains==
  * In general, we distinguish two types of domains. First, domains that define a
@@ -74,7 +75,8 @@ package ai
  * ==Thread Safety==
  * Unless explicitly documented, a domain is never thread-safe. The general programming
  * model is to use one `Domain` object per code block/method and therefore, thread-safety
- * is not required for `Domain`s.
+ * is not required for `Domain`s that are used for the evaluation of methods. However
+ * domains that are used to adapt/transfer values should be thread safe.
  *
  * @author Michael Eichberg
  */

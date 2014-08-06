@@ -31,18 +31,12 @@ package ai
 
 /**
  * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of float values.
+ * that implements the functionality related to the handling of `float` values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
 trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
-
-    // -----------------------------------------------------------------------------------
-    //
-    // ABSTRACTIONS RELATED TO INSTRUCTIONS
-    //
-    // -----------------------------------------------------------------------------------
 
     //
     // RELATIONAL OPERATORS
@@ -51,12 +45,12 @@ trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
     def fcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
     //
-    // UNARY EXPRESSIONS
+    // UNARY ARITHMETIC EXPRESSIONS
     //
     def fneg(pc: PC, value: DomainValue): DomainValue
 
     //
-    // BINARY EXPRESSIONS
+    // BINARY ARITHMETIC EXPRESSIONS
     //
     def fadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def fdiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue

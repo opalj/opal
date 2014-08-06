@@ -84,8 +84,9 @@ import org.opalj.br.ConstantString
  * When every analyzed method is associated with a unique `Domain` instance and – given
  * that OPAL only uses one thread to analyze a given method at a time – no special care
  * has to be taken. However, if a domain needs to consult another domain which is, e.g,
- * associated with a project as a whole, it is then the responsibility of the domain to
- * make sure that coordination with the world is thread safe.
+ * associated with a project as a whole (e.g., to create a central store of values), 
+ * it is then the responsibility of the domain to make sure that coordination with 
+ * the world is thread safe.
  *
  * @note OPAL assumes that – at least conceptually – every method/code block is associated
  *      with its own instance of a domain object.

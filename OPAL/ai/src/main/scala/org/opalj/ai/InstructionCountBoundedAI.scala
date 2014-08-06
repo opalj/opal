@@ -35,7 +35,8 @@ import org.opalj.br.Code
  * An abstract interpreter that interrupts itself after the evaluation of
  * the given number of instructions.
  *
- * @param maxEvaluationCount The maximum number of instruction evaluations.
+ * @param maxEvaluationFactor Determines the maximum number of instruction evaluations
+ *      before the evaluation of the method is automatically interrupted.
  *
  * @note This domain is thread safe.
  *

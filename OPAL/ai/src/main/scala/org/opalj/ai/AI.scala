@@ -42,7 +42,7 @@ import org.opalj.br.instructions._
  * that relies on OPAL's resolved representation ([[org.opalj.br]]) of Java bytecode.
  *
  * This framework basically traverses all instructions of a method in depth-first order
- * and evaluates each instruction using a given [[org.opalj.ai.Domain]].
+ * and evaluates each instruction using a given (abstract) [[org.opalj.ai.Domain]].
  *
  * ==Interacting with OPAL's Abstract Interpreter==
  * The primary means how to make use of this framework is to perform
@@ -300,7 +300,7 @@ trait AI[D <: Domain] {
 
     /**
      * Performs additional initializations of the [[Domain]], if the `Domain` implements
-     * the trait [[TheAI]].
+     * the trait [[TheAI]], [[TheCodeStructure]] or [[TheMemoryLayout]].
      *
      * This method is called before the abstract interpretation is started/continued.
      */
@@ -722,20 +722,20 @@ trait AI[D <: Domain] {
                              noConstraint: TwoValuesConstraint) {
 
                     val branchInstruction = as[ConditionalBranchInstruction](instruction)
-                    val value2 = operands.head
+                    val right = operands.head
                     val remainingOperands = operands.tail
-                    val value1 = remainingOperands.head
+                    val left = remainingOperands.head
                     val rest = remainingOperands.tail
                     val branchTarget = pc + branchInstruction.branchoffset
                     val nextPC = code.pcOfNextInstruction(pc)
-                    val testResult = domainTest(pc, value1, value2)
+                    val testResult = domainTest(pc, left, right)
                     testResult match {
                         case Yes ⇒ gotoTarget(pc, branchTarget, false, rest, locals)
                         case No  ⇒ gotoTarget(pc, nextPC, false, rest, locals)
                         case Unknown ⇒ {
                             {
                                 val (newOperands, newLocals) =
-                                    yesConstraint(branchTarget, value1, value2, rest, locals)
+                                    yesConstraint(branchTarget, left, right, rest, locals)
                                 if (tracer.isDefined &&
                                     ((rest ne newOperands) || (locals ne newLocals))) {
                                     tracer.get.establishedConstraint(theDomain)(
@@ -746,7 +746,7 @@ trait AI[D <: Domain] {
                             }
                             {
                                 val (newOperands, newLocals) =
-                                    noConstraint(nextPC, value1, value2, rest, locals)
+                                    noConstraint(nextPC, left, right, rest, locals)
                                 if (tracer.isDefined &&
                                     ((rest ne newOperands) || (locals ne newLocals))) {
                                     tracer.get.establishedConstraint(theDomain)(

@@ -33,7 +33,7 @@ import org.opalj.util.Answer
 
 /**
  * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of integer values.
+ * that implements the functionality related to the handling of `int`eger values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
@@ -279,12 +279,12 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
     private[ai]type TwoValuesConstraint = ((PC, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
 
     private[ai] final def IntIsGreaterThan: TwoValuesConstraint =
-        (pc: PC, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
-            intEstablishIsLessThan(pc, value2, value1, operands, locals)
+        (pc: PC, left: DomainValue, right: DomainValue, operands: Operands, locals: Locals) ⇒
+            intEstablishIsLessThan(pc, right, left, operands, locals)
 
     private[ai] final def IntIsGreaterThanOrEqualTo: TwoValuesConstraint =
-        (pc: PC, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
-            intEstablishIsLessThanOrEqualTo(pc, value2, value1, operands, locals)
+        (pc: PC, left: DomainValue, right: DomainValue, operands: Operands, locals: Locals) ⇒
+            intEstablishIsLessThanOrEqualTo(pc, right, left, operands, locals)
 
     private[ai] final def IntIs0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
@@ -325,13 +325,13 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
     def i2s(pc: PC, value: DomainValue): DomainValue
 
     //
-    // UNARY EXPRESSIONS
+    // UNARY ARITHMETIC EXPRESSIONS
     //
 
     def ineg(pc: PC, value: DomainValue): DomainValue
 
     //
-    // BINARY EXPRESSIONS
+    // BINARY ARITHMETIC EXPRESSIONS
     //
 
     /**

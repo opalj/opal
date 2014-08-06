@@ -30,7 +30,7 @@ package org.opalj
 package ai
 
 /**
- * Defines the primary factory methods to create Long values.
+ * Defines the primary factory methods to create `long` values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert

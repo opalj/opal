@@ -54,7 +54,12 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
     private[this] var theJoinInstructions: BitSet = null
     def joinInstructions: BitSet = theJoinInstructions
 
-    private[ai] def setCodeStructure(
+    /**
+     * Sets the code structure.
+     * 
+     * This method is called by the AI framework.
+     */
+    def setCodeStructure(
         theInstructions: Array[Instruction],
         theJoinInstructions: BitSet) {
 

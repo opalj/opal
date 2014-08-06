@@ -33,8 +33,8 @@ import org.scalatest.FunSuite
 import org.scalatest.ParallelTestExecution
 
 /**
-  * @author Michael Eichberg
-  */
+ * @author Michael Eichberg
+ */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class MethodDescriptorTest extends FunSuite with ParallelTestExecution {
 
@@ -87,7 +87,14 @@ class MethodDescriptorTest extends FunSuite with ParallelTestExecution {
         assert(md.parameterTypes(3).isArrayType)
         assert(md.returnType.isArrayType)
         assert(md match {
-            case MethodDescriptor(Seq(_: BaseType, DoubleType, ObjectType(_), ArrayType(_)), ArrayType(_)) ⇒ true
+            case MethodDescriptor(
+                Seq(
+                    _: BaseType,
+                    DoubleType,
+                    ObjectType(_),
+                    ArrayType(LongType)
+                    ),
+                ArrayType(ObjectType("java/lang/Object"))) ⇒ true
             case _ ⇒ false
         })
     }

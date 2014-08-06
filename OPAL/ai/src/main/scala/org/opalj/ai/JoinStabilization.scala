@@ -30,9 +30,8 @@ package org.opalj
 package ai
 
 /**
- * Ensures that if two domain values are merged multiple times,
- * the same value is used as the result. This ensures that the relation between the
- * values remains the same.
+ * Ensures that the same value is used whenever we merge the same two identical domain
+ * values. This ensures that the relation between the values remains the same.
  *
  * For example, given the following two stacks:
  *  - `AnIntegerValue[#1]` <- `AnIntegerValue[#1]` <- `IntegerRange(lb=0,ub=10)[#2]` <- ...
@@ -49,8 +48,11 @@ package ai
  * Using join stabilization is necessary if constraints are propagated
  * or (makes sense) if the merge of domain values is expensive.
  *
- * @note Join stabilization is always done for all domain values once this domain is
- *      used.
+ * ==Thread Safety==
+ * This domain requires that the join method is never invoked concurrently.
+ *
+ * @note Join stabilization is always done for all domain values once this trait
+ *      is mixed in.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
