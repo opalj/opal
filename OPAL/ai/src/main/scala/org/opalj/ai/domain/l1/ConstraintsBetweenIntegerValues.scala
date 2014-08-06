@@ -31,13 +31,17 @@ package ai
 package domain
 package l1
 
-import java.util.IdentityHashMap
-
-import scala.collection.mutable.WeakHashMap
+import scala.collection.BitSet
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
+import org.opalj.br.instructions.Instruction
 
+/**
+ * Enumeration of all possible constraints between two arbitrary integer values.
+ *
+ * @author Michael Eichberg
+ */
 object Constraints extends Enumeration(1) {
 
     final val LT = 1
@@ -57,22 +61,34 @@ object Constraints extends Enumeration(1) {
 
     nextId = 7
 
+    /**
+     * Returns the relation when we swap the operands.
+     *
+     * E.g., `inverse(x ? y) = x ?' y`
+     */
     def inverse(constraint: Value): Value = {
         (constraint.id: @scala.annotation.switch) match {
-            case LT ⇒ >=
-            case LE ⇒ >
-            case GT ⇒ <=
-            case GE ⇒ <
-            case EQ ⇒ !=
-            case NE ⇒ ==
+            case LT ⇒ >
+            case LE ⇒ >=
+            case GT ⇒ <
+            case GE ⇒ <=
+            case EQ ⇒ ==
+            case NE ⇒ !=
         }
     }
 
+    /**
+     * Calculates the constraint that is in effect if both constraints need to be
+     * satisfied at the same time.
+     *
+     * @note This a narrowing operation.
+     */
     def combine(c1: Value, c2: Value): Value = {
         (c1.id: @scala.annotation.switch) match {
             case LT ⇒
                 (c2.id: @scala.annotation.switch) match {
                     case LT ⇒ <
+                    case LE ⇒ <
                     case NE ⇒ <
                     case _  ⇒ throw IncompatibleConstraints(c1, c2)
                 }
@@ -81,6 +97,7 @@ object Constraints extends Enumeration(1) {
                 (c2.id: @scala.annotation.switch) match {
                     case LT ⇒ <
                     case LE ⇒ <=
+                    case GE ⇒ ==
                     case EQ ⇒ ==
                     case NE ⇒ <
                     case _  ⇒ throw IncompatibleConstraints(c1, c2)
@@ -89,12 +106,14 @@ object Constraints extends Enumeration(1) {
             case GT ⇒
                 (c2.id: @scala.annotation.switch) match {
                     case GT ⇒ >
+                    case GE ⇒ >
                     case NE ⇒ >
                     case _  ⇒ throw IncompatibleConstraints(c1, c2)
                 }
 
             case GE ⇒
                 (c2.id: @scala.annotation.switch) match {
+                    case LE ⇒ ==
                     case GT ⇒ >
                     case GE ⇒ >=
                     case EQ ⇒ ==
@@ -190,30 +209,59 @@ object Constraints extends Enumeration(1) {
 case class IncompatibleConstraints(
     constraint1: Constraints.Value,
     constraint2: Constraints.Value)
-        extends Exception(s"incompatible: $constraint1 and $constraint2")
+        extends AIException(s"incompatible: $constraint1 and $constraint2")
 
 /**
  *
  * @author Michael Eichberg
  */
-trait ConstraintsBetweenIntegerValues extends CoreDomainFunctionality with IntegerRangeValues {
+trait ConstraintsBetweenIntegerValues
+        extends CoreDomainFunctionality
+        with IntegerRangeValues
+        with TheCodeStructure {
     domain: JoinStabilization with IdentityBasedAliasBreakUpDetection with Configuration with VMLevelExceptionsFactory ⇒
+
+    import java.util.{ IdentityHashMap ⇒ IDMap }
 
     type Constraint = Constraints.Value
 
-    private[this] val constraints =
-        new IdentityHashMap[IntegerLikeValue, IdentityHashMap[IntegerLikeValue, Constraint]]()
+    type ConstraintsStore = IDMap[IntegerLikeValue, IDMap[IntegerLikeValue, Constraint]]
 
-    private[this] def putConstraint(
+    //
+    //
+    // INITIALIZATION (TIME)
+    //
+    //
+
+    private[this] var constraints: Array[ConstraintsStore] = null
+
+    abstract override def setCodeStructure(
+        theInstructions: Array[Instruction],
+        theJoinInstructions: BitSet) {
+        super.setCodeStructure(theInstructions, theJoinInstructions)
+
+        constraints = new Array[ConstraintsStore](theInstructions.size)
+    }
+
+    private[this] var lastConstraint: Option[(IntegerLikeValue, IntegerLikeValue, Constraint)] = None
+
+    //
+    //
+    // IMPLEMENTATION
+    //
+    //
+
+    def putConstraintInStore(
+        constraints: ConstraintsStore,
         v1: IntegerLikeValue,
         v2: IntegerLikeValue,
-        c: Constraint): Unit = {
+        c: Constraint): ConstraintsStore = {
 
         require(v1 ne v2)
 
         var m = constraints.get(v1)
         if (m == null) {
-            m = new IdentityHashMap()
+            m = new IDMap()
             constraints.put(v1, m)
             m.put(v2, c)
         } else {
@@ -223,36 +271,55 @@ trait ConstraintsBetweenIntegerValues extends CoreDomainFunctionality with Integ
             else
                 m.put(v2, Constraints.combine(old_c, c))
         }
+        constraints
+    }
 
+    def establishConstraint(
+        pc: PC,
+        v1: IntegerLikeValue,
+        v2: IntegerLikeValue,
+        c: Constraint): ConstraintsStore = {
+
+        val constraints = {
+            val constraints = this.constraints(pc)
+            if (constraints == null) {
+                val constraints = new ConstraintsStore()
+                this.constraints(pc) = constraints
+                constraints
+            } else {
+                constraints
+            }
+        }
+        putConstraintInStore(constraints, v1, v2, c)
     }
 
     private[this] def addConstraint(
+        pc: PC,
         v1: IntegerLikeValue,
         v2: IntegerLikeValue,
         c: Constraint): Unit = {
-        putConstraint(v1, v2, c)
-        putConstraint(v2, v1, Constraints.inverse(c))
 
-        val cs = (scala.collection.JavaConversions.mapAsScalaMap(constraints).map { e ⇒
-            val (v1, v2c) = e
-            val jv2c = scala.collection.JavaConversions.mapAsScalaMap(v2c)
-            for ((v2, c) ← jv2c) yield s"$v1 [#${System.identityHashCode(v1).toHexString}], $v2 [#${System.identityHashCode(v2).toHexString}] => $c"
-        }).flatten
-        println(cs.mkString("Constraints:\n\t", "\n\t", ""))
+        // let's collect the constraints
+        this.lastConstraint = Some((v1, v2, c))
     }
 
     private[this] def addConstraint(
+        pc: PC,
         v1: DomainValue,
         v2: DomainValue,
         c: Constraint): Unit = {
         addConstraint(
-            v1.asInstanceOf[IntegerLikeValue], v2.asInstanceOf[IntegerLikeValue],
-            c)
+            pc, v1.asInstanceOf[IntegerLikeValue], v2.asInstanceOf[IntegerLikeValue], c)
     }
 
     private[this] def getConstraint(
+        pc: PC,
         v1: IntegerLikeValue,
         v2: IntegerLikeValue): Option[Constraint] = {
+        val constraints = this.constraints(pc)
+        if (constraints == null)
+            return None
+
         val m = constraints.get(v1)
         if (m == null)
             None
@@ -262,12 +329,97 @@ trait ConstraintsBetweenIntegerValues extends CoreDomainFunctionality with Integ
     }
 
     private[this] def getConstraint(
+        pc: PC,
         v1: DomainValue,
         v2: DomainValue): Option[Constraint] = {
-        getConstraint(v1.asInstanceOf[IntegerLikeValue], v2.asInstanceOf[IntegerLikeValue])
+        getConstraint(
+            pc,
+            v1.asInstanceOf[IntegerLikeValue],
+            v2.asInstanceOf[IntegerLikeValue])
     }
 
-    private[this] val updatedValues = new IdentityHashMap[DomainValue, DomainValue]
+    def cloneConstraintsStore(store: ConstraintsStore): ConstraintsStore = {
+        val newStore = new ConstraintsStore()
+        val it = store.entrySet().iterator
+        while (it.hasNext) {
+            val e = it.next()
+            newStore.put(e.getKey(), e.getValue().clone().asInstanceOf[IDMap[IntegerLikeValue, Constraint]])
+        }
+        newStore
+    }
+
+    abstract override def flow(
+        currentPC: PC,
+        successorPC: PC,
+        isExceptionalControlFlow: Boolean,
+        wasJoinPerformed: Boolean,
+        worklist: List[PC],
+        operandsArray: OperandsArray,
+        localsArray: LocalsArray,
+        tracer: Option[AITracer]): List[PC] = {
+
+        def clone(store: ConstraintsStore): ConstraintsStore = {
+            def stillExists(value: IntegerLikeValue): Boolean = {
+                operandsArray(successorPC).exists(_ eq value) ||
+                    localsArray(successorPC).exists(_ eq value)
+            }
+
+            val newStore = new ConstraintsStore()
+            val it = store.entrySet().iterator
+            while (it.hasNext) {
+                val e = it.next()
+                if (stillExists(e.getKey)) {
+                    val inner_newStore = new IDMap[IntegerLikeValue, Constraint]()
+                    val inner_it = e.getValue().entrySet().iterator
+                    while (inner_it.hasNext) {
+                        val inner_e = inner_it.next()
+                        if (stillExists(inner_e.getKey)) {
+                            inner_newStore.put(inner_e.getKey, inner_e.getValue)
+                        }
+                    }
+                    if (!inner_newStore.isEmpty()) {
+                        newStore.put(e.getKey, inner_newStore)
+                    }
+                }
+            }
+            if (newStore.isEmpty())
+                null
+            else
+                newStore
+        }
+
+        val constraints = this.constraints
+
+        if (!wasJoinPerformed) {
+            if (constraints(currentPC) != null)
+                constraints(successorPC) = clone(constraints(currentPC))
+            val lastConstraintOption = this.lastConstraint
+            if (lastConstraintOption.isDefined) {
+                val (v1, v2, c) = lastConstraintOption.get
+                val constraintsStore = establishConstraint(successorPC, v1, v2, c)
+                putConstraintInStore(constraintsStore, v2, v1, Constraints.inverse(c))
+            }
+        } else {
+            // We only keep constraints for values where we have constraints on
+            // both paths (including a newly established constraint)
+
+            // IMPROVE The join of inter-integer-value constraints
+            constraints(successorPC) = null
+
+        }
+
+        this.lastConstraint = None
+
+        super.flow(
+            currentPC, successorPC,
+            isExceptionalControlFlow, wasJoinPerformed,
+            worklist,
+            operandsArray, localsArray,
+            tracer)
+
+    }
+
+    private[this] val updatedValues = new IDMap[DomainValue, DomainValue]
 
     abstract override def updateMemoryLayout(
         oldValue: DomainValue,
@@ -282,7 +434,7 @@ trait ConstraintsBetweenIntegerValues extends CoreDomainFunctionality with Integ
         super.updateMemoryLayout(oldValue, newValue, operands, locals)
     }
 
-    def currentValue(value: DomainValue): DomainValue = {
+    private[this] def currentValue(value: DomainValue): DomainValue = {
         val updatedValue = this.updatedValues.get(value)
         if (updatedValue != null)
             updatedValue
@@ -299,7 +451,7 @@ trait ConstraintsBetweenIntegerValues extends CoreDomainFunctionality with Integ
     abstract override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
         super.intAreEqual(pc, value1, value2) match {
             case Unknown ⇒
-                val constraint = getConstraint(value1, value2)
+                val constraint = getConstraint(pc, value1, value2)
                 if (constraint.isDefined)
                     constraint.get match {
                         case Constraints.!= ⇒ No
@@ -316,9 +468,9 @@ trait ConstraintsBetweenIntegerValues extends CoreDomainFunctionality with Integ
     }
 
     override def intIsLessThan(pc: PC, left: DomainValue, right: DomainValue): Answer = {
-        super.intAreEqual(pc, left, right) match {
+        super.intIsLessThan(pc, left, right) match {
             case Unknown ⇒
-                val constraint = getConstraint(left, right)
+                val constraint = getConstraint(pc, left, right)
                 if (constraint.isDefined)
                     constraint.get match {
                         case Constraints.>  ⇒ No
@@ -337,7 +489,7 @@ trait ConstraintsBetweenIntegerValues extends CoreDomainFunctionality with Integ
     override def intIsLessThanOrEqualTo(pc: PC, left: DomainValue, right: DomainValue): Answer = {
         super.intIsLessThanOrEqualTo(pc, left, right) match {
             case Unknown ⇒
-                val constraint = getConstraint(left, right)
+                val constraint = getConstraint(pc, left, right)
                 if (constraint.isDefined)
                     constraint.get match {
                         case Constraints.>  ⇒ No
@@ -389,13 +541,10 @@ trait ConstraintsBetweenIntegerValues extends CoreDomainFunctionality with Integ
         value2: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        val result =
-            super.intEstablishAreNotEqual(pc, value1, value2, operands, locals)
 
-        addConstraint(
-            currentValue(value1),
-            currentValue(value2),
-            Constraints.!=)
+        val result = super.intEstablishAreNotEqual(pc, value1, value2, operands, locals)
+
+        addConstraint(pc, currentValue(value1), currentValue(value2), Constraints.!=)
 
         updatedValues.clear
         result
@@ -411,10 +560,7 @@ trait ConstraintsBetweenIntegerValues extends CoreDomainFunctionality with Integ
         val result =
             super.intEstablishIsLessThan(pc, left, right, operands, locals)
 
-        addConstraint(
-            currentValue(left),
-            currentValue(right),
-            Constraints.<)
+        addConstraint(pc, currentValue(left), currentValue(right), Constraints.<)
 
         updatedValues.clear
         result
@@ -430,10 +576,7 @@ trait ConstraintsBetweenIntegerValues extends CoreDomainFunctionality with Integ
         val result =
             super.intEstablishIsLessThanOrEqualTo(pc, left, right, operands, locals)
 
-        addConstraint(
-            currentValue(left),
-            currentValue(right),
-            Constraints.<=)
+        addConstraint(pc, currentValue(left), currentValue(right), Constraints.<=)
 
         updatedValues.clear
         result
@@ -616,5 +759,38 @@ trait ConstraintsBetweenIntegerValues extends CoreDomainFunctionality with Integ
     //            case _ ⇒
     //                IntegerRange(Short.MinValue, Short.MaxValue)
     //        }
+
+    //
+    //
+    // "DEBUGGING"
+    //
+    //
+    private def constraintsToText(
+        pc: PC,
+        valueToString: AnyRef ⇒ String): String = {
+        if (constraints(pc) == null)
+            return "No constraints found."
+
+        val cs = (scala.collection.JavaConversions.mapAsScalaMap(constraints(pc)).map { e ⇒
+            val (v1, v2c) = e
+            val jv2c = scala.collection.JavaConversions.mapAsScalaMap(v2c)
+            for ((v2, c) ← jv2c)
+                yield s"${valueToString(v1)} $c ${valueToString(v2)}"
+        }).flatten
+        cs.mkString("Constraints:\n\t", "\n\t", "")
+    }
+
+    abstract override def properties(
+        pc: PC,
+        valueToString: AnyRef ⇒ String): Option[String] = {
+        val superProperties = super.properties(pc)
+        if (constraints(pc) != null) {
+            Some(
+                superProperties.map(_+"\n").getOrElse("") +
+                    constraintsToText(pc, valueToString))
+        } else {
+            superProperties
+        }
+    }
 }
 
