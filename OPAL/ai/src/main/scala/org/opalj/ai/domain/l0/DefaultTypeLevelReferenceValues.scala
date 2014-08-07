@@ -216,13 +216,13 @@ trait DefaultTypeLevelReferenceValues
                 StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
         }
 
-        override def load(pc: PC, index: DomainValue): ArrayLoadResult =
+        final override def load(pc: PC, index: DomainValue): ArrayLoadResult =
             throw DomainException("arrayload not possible; this is not an array value: "+this)
 
-        override def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult =
+        final override def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult =
             throw DomainException("arraystore not possible; this is not an array value: "+this)
 
-        override def length(pc: PC): Computation[DomainValue, ExceptionValue] =
+        final override def length(pc: PC): Computation[DomainValue, ExceptionValue] =
             throw DomainException("arraylength not possible; this is not an array value: "+this)
     }
 
