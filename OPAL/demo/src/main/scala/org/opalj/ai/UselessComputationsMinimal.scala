@@ -31,12 +31,8 @@ package ai
 
 import java.net.URL
 
-import org.opalj.br.Method
-import org.opalj.br.MethodWithBody
-import org.opalj.br.analyses.Analysis
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
+import org.opalj.br._
+import org.opalj.br.analyses._
 import org.opalj.br.instructions.IFICMPInstruction
 
 /**
@@ -48,7 +44,7 @@ object UselessComputationsMinimal extends AnalysisExecutor with Analysis[URL, Ba
 
     val analysis = this
 
-    class AnalysisDomain(val project: Project[java.net.URL], val method: Method)
+    class AnalysisDomain(val project: Project[URL], val method: Method)
         extends Domain
         with domain.DefaultDomainValueBinding
         with domain.DefaultHandlingOfMethodResults
@@ -83,9 +79,7 @@ object UselessComputationsMinimal extends AnalysisExecutor with Analysis[URL, Ba
             }
         }).flatten.seq
 
-        BasicReport(
-            results.mkString(s"${results.size} Useless computations:\n", "\n", "\n")
-        )
+        BasicReport(results.mkString(s"${results.size} Useless computations:\n", "\n", "\n"))
     }
 }
 
