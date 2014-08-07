@@ -3,6 +3,7 @@
 digraph OPAL {
 	compound=true;
 	fontname=Helvetica;
+	dpi=50;
 	node [shape=circle];
 	node [fontname=Helvetica];
 	edge [fontname=Helvetica];
