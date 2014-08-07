@@ -38,6 +38,8 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 /**
  * Domain to track integer values at a configurable level of precision.
  *
+ * This domain requires support for the concrete evaluation.
+ *
  * @author Michael Eichberg
  */
 trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {

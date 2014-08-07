@@ -97,9 +97,9 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
             otherLocals: domain.Locals,
             result: Update[(domain.Operands, domain.Locals)]): Unit = {
         tracers foreach { tracer ⇒
-            tracer.join(domain)(
-                pc, thisOperands, thisLocals, otherOperands, otherLocals, result
-            )
+            tracer.join(
+                domain)(
+                    pc, thisOperands, thisLocals, otherOperands, otherLocals, result)
         }
     }
 

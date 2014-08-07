@@ -193,6 +193,7 @@ case class AdditionalCallTargets(
         method: Method,
         pc: PC,
         callTargets: Iterable[Method]) extends CallGraphDifferenceReport {
+
     final val differenceClassifier = BLUE+"[Additional] "+RESET
 }
 
@@ -204,5 +205,6 @@ case class UnexpectedCallTargets(
         method: Method,
         pc: PC,
         callTargets: Iterable[Method]) extends CallGraphDifferenceReport {
+
     final val differenceClassifier = RED+"[Unexpected] "+RESET
 }
