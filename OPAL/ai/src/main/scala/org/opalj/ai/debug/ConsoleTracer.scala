@@ -206,7 +206,7 @@ trait ConsoleTracer extends AITracer {
             exception: domain.DomainValue): Unit = {
         println(Console.BOLD +
             Console.RED +
-            pc+":RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION :"+exception +
+            pc+":RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION: "+exception +
             Console.RESET)
     }
 
