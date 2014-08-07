@@ -119,7 +119,6 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * will produce unpredictable results as it may constrain unrelated values!
  * This is true for concrete ranges as well as `AnIntegerValue`s.
  *
- *
  * @author Michael Eichberg
  */
 trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues {
@@ -691,10 +690,10 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
 
     override def i2c(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case IntegerRange(lb, ub) if lb >= Char.MinValue && ub <= Char.MaxValue ⇒
+            case IntegerRange(lb, ub) if lb >= 0 && ub <= 65535 ⇒
                 value
             case _ ⇒
-                IntegerRange(Char.MinValue, Char.MaxValue)
+                IntegerRange(0, 65535)
         }
 
     override def i2s(pc: PC, value: DomainValue): DomainValue =
