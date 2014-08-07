@@ -97,8 +97,8 @@ object XHTML {
                     val title = Some("Generated due to exception: "+e.getMessage())
                     val dump =
                         XHTML.dump(
-                            title,
                             Some(classFile), Some(method), method.body.get,
+                            title,
                             theDomain
                         )(operandsArray, localsArray)
                     XHTML.writeAndOpenDump(dump) //.map(_.deleteOnExit)
@@ -137,9 +137,9 @@ object XHTML {
                 if ((currentTime - lastDump) > minimumDumpInterval) {
                     lastDump = currentTime
                     writeAndOpenDump(
-                        dump("Dump generated due to exception: "+e.getMessage(),
-                            classFile.get,
-                            method.get,
+                        dump(
+                            classFile.get, method.get,
+                            "Dump generated due to exception: "+e.getMessage(),
                             result)
                     )
                 } else {
@@ -149,49 +149,81 @@ object XHTML {
         }
     }
 
-    def htmlTemplate(
-        title: Option[String] = None,
+    def createXHTML(
+        htmlTitle: Option[String] = None,
         body: NodeSeq): Node = {
+        val theTitle = htmlTitle.map(t ⇒ Seq(<title>{ t }</title>)).getOrElse(Seq.empty[Node])
         // HTML 5 XML serialization (XHTML 5)
         <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
+                { theTitle }
                 <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
-                <style>
-                    { styles }
-                </style>
+                <script type="text/javascript">{ scala.xml.Unparsed(jquery) }</script>
+                <script type="text/javascript">{ scala.xml.Unparsed(colResizable) }</script>
+                <script type="text/javascript">$(function(){{$('table').colResizable({{ liveDrag:true, minWidth:75 }});}});</script>
+                <style>{ scala.xml.Unparsed(styles) }</style>
             </head>
             <body>
-                { scala.xml.Unparsed(title.getOrElse("")) }
                 { body }
             </body>
         </html>
     }
 
     def dump(
-        header: String,
         classFile: ClassFile,
         method: Method,
+        resultHeader: String,
         result: AIResult): Node = {
         import result._
-        htmlTemplate(
-            Some(header),
-            dumpTable(
-                Some(classFile), Some(method), code, domain)(
-                    operandsArray, localsArray))
+
+        val title = s"${classFile.thisType.toJava}{ ${method.toJava} }"
+
+        createXHTML(
+            Some(title),
+            Seq[Node](
+                <h1>{ title }</h1>,
+                annotationsAsXHTML(method),
+                scala.xml.Unparsed(resultHeader),
+                dumpTable(code, domain)(operandsArray, localsArray)))
     }
 
+    def annotationsAsXHTML(method: Method) =
+        <div class="annotations">
+            {
+                this.annotations(method) map { annotation ⇒
+                    <div class="annotation">
+                        { Unparsed(annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")) }
+                    </div>
+                }
+            }
+        </div>
+
     def dump(
-        header: Option[String],
         classFile: Option[ClassFile],
         method: Option[Method],
         code: Code,
+        resultHeader: Option[String],
         domain: Domain)(
             operandsArray: TheOperandsArray[domain.Operands],
             localsArray: TheLocalsArray[domain.Locals]): Node = {
-        htmlTemplate(
-            header,
-            dumpTable(classFile, method, code, domain)(
-                operandsArray, localsArray))
+
+        val title =
+            classFile.
+                map(_.thisType.toJava + method.map("{ "+_.toJava+" }").getOrElse("")).
+                orElse(method.map(_.toJava))
+
+        val annotations =
+            method.map(annotationsAsXHTML(_)).getOrElse(<div class="annotations"></div>)
+
+        createXHTML(
+            title,
+            Seq[Node](
+                title.map(t => <h1>{ t }</h1>).getOrElse(Text("")),
+                annotations,
+                scala.xml.Unparsed(resultHeader.getOrElse("")),
+                dumpTable(code, domain)(operandsArray, localsArray)
+            )
+        )
     }
 
     def writeAndOpenDump(node: Node): Option[File] = {
@@ -223,9 +255,17 @@ object XHTML {
             scala.io.Source.fromInputStream(_).mkString
         )
 
-    def dumpTable(
-        classFile: Option[ClassFile],
-        method: Option[Method],
+    private def jquery: String =
+        process(this.getClass().getResourceAsStream("jquery.js"))(
+            scala.io.Source.fromInputStream(_).mkString
+        )
+
+    private def colResizable: String =
+        process(this.getClass().getResourceAsStream("colResizable-1.3.min.js"))(
+            scala.io.Source.fromInputStream(_).mkString
+        )
+
+    private def dumpTable(
         code: Code,
         domain: Domain)(
             operandsArray: TheOperandsArray[domain.Operands],
@@ -239,13 +279,6 @@ object XHTML {
                         " ["+eh.startPC+","+eh.endPC+")"+" => "+eh.handlerPC
                 }
             ).map(eh ⇒ <p>{ eh }</p>)
-
-        val annotations =
-            this.annotations(method) map { annotation ⇒
-                <span class="annotation">
-                    { Unparsed(annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")) }
-                </span><br/>
-            }
 
         val ids = new java.util.IdentityHashMap[AnyRef, Integer]
         var nextId = 1
@@ -261,12 +294,6 @@ object XHTML {
 
         <div>
             <table>
-                <caption>
-                    <div class="annotations">
-                        { annotations }
-                    </div>
-                    { caption(classFile, method) }
-                </caption>
                 <thead>
                     <tr>
                         <th class="pc">PC</th>
@@ -284,10 +311,10 @@ object XHTML {
         </div>
     }
 
-    private def annotations(method: Option[Method]): Seq[String] = {
+    private def annotations(method: Method): Seq[String] = {
         val annotations =
-            method.map(m ⇒ (m.runtimeVisibleAnnotations ++ m.runtimeInvisibleAnnotations))
-        annotations.map(_.map(_.toJava)).getOrElse(Nil)
+            method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
+        annotations.map(_.toJava)
     }
 
     private def caption(classFile: Option[ClassFile], method: Option[Method]): String = {
@@ -422,7 +449,7 @@ object XHTML {
     }
 
     def evaluatedInstructionsToXHTML(evaluated: List[PC]) = {
-        val header = "Evaluated instructions: "+evaluated.filter(_ >= 0).size
+        val header = "Evaluated instructions: "+evaluated.filter(_ >= 0).size+"<br>"
         val footer = ""
         val subroutineStart = "<details><summary>Subroutine</summary><div style=\"margin-left:2em;\">"
         val subroutineEnd = "</div></details>"
@@ -440,7 +467,7 @@ object XHTML {
             }
         }
 
-        header+"<div style=\"margin-left:2em;\">"+
+        header+"Evaluation Order:<br><div style=\"margin-left:2em;\">"+
             asStrings.mkString("") +
             (
                 if (openSubroutines > 0) {

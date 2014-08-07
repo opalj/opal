@@ -1,11 +1,25 @@
+body {
+	font-family: "Helvetica Neue", Helvetica;
+	font-weight: 300;
+	line-height: 1.5em;
+}
+
+h1 {
+	font-size: 1.25em;
+}
 
 table {
 	width:100%;
 	min-width: 1000px;
 	font-size: 0.9em;
-	font-family: HelveticaNeue;
-	margin-top: 3em;
+	font-weight: inherit;
+	margin-top: 1.5em;
 	border: 1px solid gray;
+}
+table li, table td, table th {
+	overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 thead {
 	font-weight: bold;
@@ -37,15 +51,24 @@ td{
 tr.not_evaluated td {
 	background-color: #FFDBDB;
 }
+tr:hover {
+	background-color: #cccccc;
+}
 td + td {
 	border-left: 1px solid #eee;
 }
 
+th {
+	min-width: 75px;
+}
 th.pc {
-	width:6em;
+	width: 75px;
+}
+th.instruction {
+	width: 20%;
 }
 th.registers, th.stack {
-	width: 35%;
+	width: 27%;
 }
 
 td.stack{

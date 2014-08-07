@@ -218,7 +218,7 @@ object InterpretMethodsAnalysis {
                 }
 
             val node =
-                XHTML.htmlTemplate(
+                XHTML.createXHTML(
                     Some("Exceptions Thrown During Interpretation"),
                     scala.xml.NodeSeq.fromSeq(body.toSeq))
             val file = XHTML.writeAndOpenDump(node)

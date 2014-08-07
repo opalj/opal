@@ -167,8 +167,8 @@ object GetCallees {
                     )
                 val evaluationDump =
                     dump(
-                        header,
                         Some(classFile), Some(method), method.body.get,
+                        header,
                         ife.domain)(
                             ife.operandsArray, ife.localsArray)
                 writeAndOpenDump(evaluationDump)

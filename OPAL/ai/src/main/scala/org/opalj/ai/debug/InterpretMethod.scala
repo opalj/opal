@@ -183,19 +183,20 @@ object InterpretMethod {
                     BaseAI(classFile, method, createDomain(project, classFile, method))
             val domain = result.domain
             writeAndOpenDump(dump(
-                Some(
-                    "Result("+domainClass.getName()+"): "+(new java.util.Date).toString+"<br />"+
-                        XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
                 Some(classFile),
                 Some(method),
                 method.body.get,
+                Some(
+                    "Created: "+(new java.util.Date).toString+"<br>"+
+                        "Domain: "+domainClass.getName()+"<br>"+
+                        XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
                 result.domain)(
                     result.operandsArray,
                     result.localsArray)
             )
         } catch {
             case ife: InterpretationFailedException ⇒
-                val header =
+                val resultHeader =
                     Some("<p><b>"+domainClass.getName()+"</b></p>"+
                         ife.cause.getMessage()+"<br>"+
                         ife.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
@@ -205,9 +206,8 @@ object InterpretMethod {
                     )
                 val evaluationDump =
                     dump(
-                        header,
                         Some(classFile), Some(method), method.body.get,
-                        ife.domain)(
+                        resultHeader, ife.domain)(
                             ife.operandsArray, ife.localsArray)
                 writeAndOpenDump(evaluationDump)
                 throw ife
