@@ -548,14 +548,14 @@ trait AI[D <: Domain] {
         // THIS IS THE MAIN INTERPRETER LOOP
         while (worklist.nonEmpty) {
             if (isInterrupted) {
-                val result = AIResultBuilder.aborted(
-                    code,
-                    theDomain)(
-                        worklist,
-                        evaluated,
-                        operandsArray,
-                        localsArray,
-                        memoryLayoutBeforeSubroutineCall)
+                val result =
+                    AIResultBuilder.aborted(
+                        code, theDomain)(
+                            worklist,
+                            evaluated,
+                            operandsArray,
+                            localsArray,
+                            memoryLayoutBeforeSubroutineCall)
                 if (tracer.isDefined)
                     tracer.get.result(result)
 
@@ -667,7 +667,7 @@ trait AI[D <: Domain] {
                         pc, instruction, operands, locals
                     )
 
-                def pcOfNextInstruction = code.pcOfNextInstruction(pc)
+                @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
 
                 /*
                  * Handles all '''if''' instructions that perform a comparison with a fixed
