@@ -778,7 +778,10 @@ trait AI[D <: Domain] {
                     exceptionValue: ExceptionValue,
                     establishNonNull: Boolean) {
 
-                    def gotoExceptionHandler(pc: PC, branchTarget: PC, upperBound: Option[ObjectType]) {
+                    def gotoExceptionHandler(
+                        pc: PC,
+                        branchTarget: PC,
+                        upperBound: Option[ObjectType]) {
                         val operands = List(exceptionValue)
                         val memoryLayout1 @ (updatedOperands1, updatedLocals1) =
                             if (establishNonNull)
@@ -823,7 +826,7 @@ trait AI[D <: Domain] {
                     // handler caught the exception... hence this method
                     // invocation will not complete abruptly.
                     if (!isHandled)
-                        theDomain.abruptMethodExecution(pc, exceptionValue)
+                        abruptMethodExecution(pc, exceptionValue)
                 }
 
                 def handleException(exceptionValue: DomainValue) {
@@ -901,8 +904,9 @@ trait AI[D <: Domain] {
 
                     if (computation.hasResult)
                         fallThrough(computation.result :: rest)
-                    if (computation.throwsException)
+                    if (computation.throwsException) {
                         handleExceptions(computation.exceptions)
+                    }
                 }
 
                 def computationWithOptionalReturnValueAndExceptions(
