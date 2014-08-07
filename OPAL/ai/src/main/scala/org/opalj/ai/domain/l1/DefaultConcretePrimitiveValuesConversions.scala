@@ -32,6 +32,8 @@ package domain
 package l1
 
 /**
+ * Default implementation of a domain that performs basic conversion between integer
+ * and long values.
  *
  * @author Riadh Chtara
  * @author Michael Eichberg
