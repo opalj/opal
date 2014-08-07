@@ -329,6 +329,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         /** Returns an empty upper type bound. */
         final override def upperTypeBound: UpperTypeBound = UIDSet.empty
 
+        // IMPLEMENTATION OF THE ARRAY RELATED METHODS
+        // 
+
         final override def load(pc: PC, index: DomainValue): ArrayLoadResult =
             justThrows(NullPointerException(pc))
 
@@ -388,8 +391,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
          */
         override def load(pc: PC, index: DomainValue): ArrayLoadResult = {
             // The case "this.isNull == Yes" will not occur as the value "null" is always
-            // represented by an instance of the respective class and this situation
-            // is checked for by the domain-level method.
+            // represented by an instance of the respective class.
 
             val isIndexValid =
                 length.map((l: Int) ⇒ intIsSomeValueInRange(pc, index, 0, l - 1)).
@@ -403,11 +405,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
                 return justThrows(ArrayIndexOutOfBoundsException(pc))
 
             var thrownExceptions: List[ExceptionValue] = Nil
-            if (isNull.isYesOrUnknown && throwNullPointerExceptionOnArrayAccess)
+            if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)
                 thrownExceptions = NullPointerException(pc) :: thrownExceptions
-            if (isIndexValid.isNoOrUnknown && throwArrayIndexOutOfBoundsException)
+            if (isIndexValid.isUnknown && throwArrayIndexOutOfBoundsException)
                 thrownExceptions = ArrayIndexOutOfBoundsException(pc) :: thrownExceptions
-
             doLoad(pc, index, thrownExceptions)
         }
 
@@ -450,7 +451,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
                 thrownExceptions = ArrayIndexOutOfBoundsException(pc) :: thrownExceptions
             if (isAssignable.isUnknown && throwArrayStoreException)
                 thrownExceptions = ArrayStoreException(pc) :: thrownExceptions
-            if (isNull.isYesOrUnknown && throwNullPointerExceptionOnArrayAccess)
+            if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)
                 thrownExceptions = NullPointerException(pc) :: thrownExceptions
 
             doStore(pc, value, index, thrownExceptions)
@@ -636,11 +637,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         pc: PC,
         index: DomainValue,
         arrayref: DomainValue): ArrayLoadResult = {
-        if (refIsNull(pc, arrayref).isYes)
-            justThrows(NullPointerException(pc))
-        else
-            // if the bytecode is valid, the type cast (asArrayValue) is safe
-            asArrayAbstraction(arrayref).load(pc, index)
+        // if the bytecode is valid, the type cast (asArrayValue) is safe
+        asArrayAbstraction(arrayref).load(pc, index)
     }
 
     /**
@@ -656,11 +654,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         value: DomainValue,
         index: DomainValue,
         arrayref: DomainValue): ArrayStoreResult = {
-        if (refIsNull(pc, arrayref).isYes)
-            justThrows(NullPointerException(pc))
-        else
-            // if the bytecode is valid, the type cast (asArrayValue) is safe
-            asArrayAbstraction(arrayref).store(pc, value, index)
+        // if the bytecode is valid, the type cast (asArrayValue) is safe
+        asArrayAbstraction(arrayref).store(pc, value, index)
     }
 
     /**
@@ -673,10 +668,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     override def arraylength(
         pc: PC,
         arrayref: DomainValue): Computation[DomainValue, ExceptionValue] = {
-        if (refIsNull(pc, arrayref).isYes)
-            throws(NullPointerException(pc))
-        else
-            asArrayAbstraction(arrayref).length(pc)
+        asArrayAbstraction(arrayref).length(pc)
     }
 
     // -----------------------------------------------------------------------------------
