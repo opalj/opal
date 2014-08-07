@@ -38,26 +38,26 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 import org.opalj.br.instructions.Instruction
 
 /**
- * Enumeration of all possible constraints between two arbitrary integer values.
+ * Enumeration of all possible relations/constraints between two arbitrary integer values.
  *
  * @author Michael Eichberg
  */
 object Constraints extends Enumeration(1) {
 
     final val LT = 1
-    val < = Value(LT, "<")
+    final val < : Value = Value(LT, "<")
     final val LE = 2
-    val <= = Value(LE, "<=")
+    final val <= : Value = Value(LE, "<=")
 
     final val GT = 3
-    val > = Value(GT, ">")
+    final val > : Value = Value(GT, ">")
     final val GE = 4
-    val >= = Value(GE, ">=")
+    final val >= : Value = Value(GE, ">=")
 
     final val EQ = 5
-    val == = Value(EQ, "==")
+    final val == : Value = Value(EQ, "==")
     final val NE = 6
-    val != = Value(NE, "!=")
+    final val != : Value = Value(NE, "!=")
 
     nextId = 7
 
@@ -66,8 +66,8 @@ object Constraints extends Enumeration(1) {
      *
      * E.g., `inverse(x ? y) = x ?' y`
      */
-    def inverse(constraint: Value): Value = {
-        (constraint.id: @scala.annotation.switch) match {
+    def inverse(relation: Value): Value = {
+        (relation.id: @scala.annotation.switch) match {
             case LT ⇒ >
             case LE ⇒ >=
             case GT ⇒ <
@@ -141,6 +141,12 @@ object Constraints extends Enumeration(1) {
         }
     }
 
+    /**
+     * Joins the given constraints. I.e., returns the constraint that still has to
+     * hold if either `c1` or `c2` holds.
+     *
+     * @note This is a widening operation.
+     */
     def join(c1: Value, c2: Value): Option[Value] = {
         (c1.id: @scala.annotation.switch) match {
             case LT ⇒
@@ -206,13 +212,17 @@ object Constraints extends Enumeration(1) {
     }
 }
 
+/**
+ * Exception that is if two constraints should be combined that are incompatible.  
+ */
 case class IncompatibleConstraints(
     constraint1: Constraints.Value,
     constraint2: Constraints.Value)
         extends AIException(s"incompatible: $constraint1 and $constraint2")
 
 /**
- *
+ * Domain that traces the relationship between integer values.  
+ * 
  * @author Michael Eichberg
  */
 trait ConstraintsBetweenIntegerValues
@@ -732,40 +742,14 @@ trait ConstraintsBetweenIntegerValues
     //    override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
     //        IntegerValue(pc)
     //
-    //    //
-    //    // TYPE CONVERSION INSTRUCTIONS
-    //    //
-    //
-    //    override def i2b(pc: PC, value: DomainValue): DomainValue =
-    //        value match {
-    //            case IntegerRange(lb, ub) if lb >= Byte.MinValue && ub <= Byte.MaxValue ⇒
-    //                value
-    //            case _ ⇒
-    //                IntegerRange(Byte.MinValue, Byte.MaxValue)
-    //        }
-    //
-    //    override def i2c(pc: PC, value: DomainValue): DomainValue =
-    //        value match {
-    //            case IntegerRange(lb, ub) if lb >= Char.MinValue && ub <= Char.MaxValue ⇒
-    //                value
-    //            case _ ⇒
-    //                IntegerRange(Char.MinValue, Char.MaxValue)
-    //        }
-    //
-    //    override def i2s(pc: PC, value: DomainValue): DomainValue =
-    //        value match {
-    //            case IntegerRange(lb, ub) if lb >= Short.MinValue && ub <= Short.MaxValue ⇒
-    //                value
-    //            case _ ⇒
-    //                IntegerRange(Short.MinValue, Short.MaxValue)
-    //        }
 
-    //
+    // -----------------------------------------------------------------------------------
     //
     // "DEBUGGING"
     //
-    //
-    private def constraintsToText(
+    // -----------------------------------------------------------------------------------
+
+    protected[this] def constraintsToText(
         pc: PC,
         valueToString: AnyRef ⇒ String): String = {
         if (constraints(pc) == null)
