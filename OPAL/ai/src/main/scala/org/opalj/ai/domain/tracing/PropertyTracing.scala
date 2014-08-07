@@ -91,7 +91,7 @@ trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
      *
      * (Run `de...ai.util.InterpretMethod` with a domain that traces properties.)
      */
-    override def properties(pc: Int): Option[String] =
+    override def properties(pc: Int, valueToString: AnyRef ⇒ String): Option[String] =
         Option(propertiesArray(pc)).map(_.toString())
 
     override def flow(

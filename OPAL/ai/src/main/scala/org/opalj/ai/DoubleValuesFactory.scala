@@ -39,7 +39,8 @@ trait DoubleValuesFactory extends ValuesDomain { domain ⇒
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
-     * implicitly) by the instruction with the specified program counter.
+     * implicitly) by the instruction with the specified program counter, but where
+     * we have no knowledge about the precise value.
      *
      * The domain may ignore the information about the origin (`vo`).
      */

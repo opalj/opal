@@ -33,11 +33,13 @@ package domain
 import org.opalj.br.ObjectType
 
 /**
+ * Default implementation of the [[VMLevelExceptionsFactory]] trait that relies
+ * on the [[ReferenceValuesFactory]].
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait DefaultVMLevelExceptionsFactory extends VMLevelExceptionsFactory {
-    this: ValuesDomain with ReferenceValuesDomain ⇒
+    this: ValuesDomain with ReferenceValuesFactory ⇒
 
     final override def Throwable(pc: PC): ExceptionValue =
         InitializedObjectValue(pc, ObjectType.Throwable)

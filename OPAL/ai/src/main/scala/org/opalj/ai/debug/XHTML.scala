@@ -154,16 +154,16 @@ object XHTML {
         body: NodeSeq): Node = {
         // HTML 5 XML serialization (XHTML 5)
         <html xmlns="http://www.w3.org/1999/xhtml">
-        <head>
-        <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8' />
-        <style>
-        { styles }
-        </style>
-        </head>
-        <body>
-        { scala.xml.Unparsed(title.getOrElse("")) }
-        { body }
-        </body>
+            <head>
+                <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
+                <style>
+                    { styles }
+                </style>
+            </head>
+            <body>
+                { scala.xml.Unparsed(title.getOrElse("")) }
+                { body }
+            </body>
         </html>
     }
 
@@ -243,8 +243,8 @@ object XHTML {
         val annotations =
             this.annotations(method) map { annotation ⇒
                 <span class="annotation">
-                { Unparsed(annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")) }
-                </span><br />
+                    { Unparsed(annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")) }
+                </span><br/>
             }
 
         val ids = new java.util.IdentityHashMap[AnyRef, Integer]
@@ -260,25 +260,27 @@ object XHTML {
         }
 
         <div>
-        <table>
-            <caption>
-            	<div class="annotations">
-                { annotations }
-                </div>
-        		{ caption(classFile, method) }
-        	</caption>
-            <thead>
-            <tr><th class="pc">PC</th>
-                <th class="instruction">Instruction</th>
-                <th class="stack">Operand Stack</th>
-                <th class="registers">Registers</th>
-                <th class="properties">Properties</th></tr>
-            </thead>
-            <tbody>
-            { dumpInstructions(code, domain)(operandsArray, localsArray)(Some(idsLookup)) }
-            </tbody>
-        </table>
-        { exceptionHandlers }
+            <table>
+                <caption>
+                    <div class="annotations">
+                        { annotations }
+                    </div>
+                    { caption(classFile, method) }
+                </caption>
+                <thead>
+                    <tr>
+                        <th class="pc">PC</th>
+                        <th class="instruction">Instruction</th>
+                        <th class="stack">Operand Stack</th>
+                        <th class="registers">Registers</th>
+                        <th class="properties">Properties</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    { dumpInstructions(code, domain)(operandsArray, localsArray)(Some(idsLookup)) }
+                </tbody>
+            </table>
+            { exceptionHandlers }
         </div>
     }
 
@@ -334,13 +336,25 @@ object XHTML {
                 exceptionHandlers.map("<br>"+_).getOrElse("") +
                 lineNumber.map("<br><i>l="+_+"</i>").getOrElse(""))
 
+        val properties =
+            htmlify(domain.properties(pc, valueToString).getOrElse("<None>"))
+
         <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
             <td class="pc">{ pcAsXHTML }</td>
             <td class="instruction">{ Unparsed(instruction.toString(pc).replace("\n", "<br>")) }</td>
             <td class="stack">{ dumpStack(operands) }</td>
             <td class="locals">{ dumpLocals(locals) }</td>
-            <td class="properties">{ domain.properties(pc).getOrElse("<None>") }</td>
-        </tr >
+            <td class="properties">{ properties }</td>
+        </tr>
+    }
+
+    def htmlify(s: String): Node = {
+        scala.xml.Unparsed(
+            s.replace("<", "&lt;").
+                replace(">", "&gt;").
+                replace("\n", "<br>").
+                replace("\t", "&nbsp;&nbsp;")
+        )
     }
 
     def dumpStack(
@@ -350,7 +364,7 @@ object XHTML {
             <em>Information about operands is not available.</em>
         else {
             <ul class="Stack">
-            { operands.map(op ⇒ <li>{ valueToString(op) }</li>) }
+                { operands.map(op ⇒ <li>{ valueToString(op) }</li>) }
             </ul>
         }
 
@@ -369,26 +383,26 @@ object XHTML {
             <em>Information about the local variables is not available.</em>
         else {
             <ol start="0" class="registers">
-            { locals.map { mapLocal(_) }.map(l ⇒ <li>{ l }</li>).iterator }
+                { locals.map { mapLocal(_) }.map(l ⇒ <li>{ l }</li>).iterator }
             </ol>
         }
     }
 
     def valueToString(value: AnyRef)(implicit ids: Option[AnyRef ⇒ Int]): String =
-        value.toString + ids.map("; #"+_.apply(value)).getOrElse("")
+        value.toString + ids.map("@"+_.apply(value)).getOrElse("")
 
     def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
         val node =
             if (throwable.getStackTrace() == null ||
                 throwable.getStackTrace().size == 0) {
-                <div>{ throwable.getClass().getSimpleName() + " " + throwable.getMessage() }</div>
+                <div>{ throwable.getClass().getSimpleName()+" "+throwable.getMessage() }</div>
             } else {
                 val stackElements =
                     for { stackElement ← throwable.getStackTrace() } yield {
                         <tr>
-                        	<td>{ stackElement.getClassName() }</td>
-                        	<td>{ stackElement.getMethodName() }</td>
-                        	<td>{ stackElement.getLineNumber() }</td>
+                            <td>{ stackElement.getClassName() }</td>
+                            <td>{ stackElement.getMethodName() }</td>
+                            <td>{ stackElement.getLineNumber() }</td>
                         </tr>
                     }
                 val summary = throwable.getClass().getSimpleName()+" "+throwable.getMessage()

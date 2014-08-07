@@ -33,7 +33,7 @@ package bi
 import java.io.File
 
 /**
- * Common functionality required by all test.
+ * Common functionality required by many tests.
  *
  * @author Michael Eichberg
  */
@@ -84,8 +84,12 @@ object TestSupport {
      * Java runtime environment can be found).
      */
     lazy val JRELibraryFolder: File = {
-        val paths = System.getProperties().getProperty("sun.boot.class.path").split(File.pathSeparator)
-        var libPath = paths.find(_.endsWith("rt.jar")).map(path ⇒ path.substring(0, path.length() - 6)).getOrElse("null")
+        val paths =
+            System.getProperties().getProperty("sun.boot.class.path").split(File.pathSeparator)
+        var libPath =
+            paths.find(_.endsWith("rt.jar")).map { path ⇒
+                path.substring(0, path.length() - 6)
+            }.getOrElse("null")
 
         if (libPath == null) {
             libPath = System.getProperty("sun.boot.library.path")

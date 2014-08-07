@@ -536,7 +536,7 @@ sealed abstract class BooleanType private () extends BaseType {
 
     final val id = Int.MinValue + atype
 
-    def toJava: String = "boolean"
+    final val toJava /*: String*/ = "boolean"
 
     override def toBinaryJavaName: String = "Z"
 

@@ -35,7 +35,7 @@ import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 
 /**
- * This domain defines the concept of a value in a `Domain`.
+ * Defines the concept of a value in a `Domain`.
  *
  * @see [[Domain]] For an explanation of the underlying concepts and ideas.
  *
@@ -287,8 +287,8 @@ trait ValuesDomain {
          * domain-adaptation. I.e., to make it possible to change the abstract domain at
          * runtime if the analysis time takes too long using a (more) precise domain.
          *
-         * @note The abstract interpretation framework does not use/call this method. 
-         *      This method is solely predefined to facilitate the development of 
+         * @note The abstract interpretation framework does not use/call this method.
+         *      This method is solely predefined to facilitate the development of
          *      project-wide analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
@@ -578,5 +578,7 @@ trait ValuesDomain {
      * `Domain`s that define (additional) properties should (`abstract`) `override`
      * this method and should return a textual representation of the property.
      */
-    def properties(pc: PC): Option[String] = None
+    def properties(
+        pc: PC,
+        valueToString: AnyRef ⇒ String = (v) ⇒ v.toString): Option[String] = None
 }

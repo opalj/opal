@@ -38,5 +38,5 @@ package domain
 case class ImpossibleRefinement(
     value: AnyRef,
     refinementGoal: String)
-        extends Exception(
+        extends AIException(
             "refining "+value+" failed: "+refinementGoal) //,null, true, false)

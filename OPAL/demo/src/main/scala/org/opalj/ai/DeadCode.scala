@@ -62,7 +62,8 @@ object DeadCode extends AnalysisExecutor { analysis ⇒
             with domain.l0.TypeLevelInvokeInstructions
             with domain.l1.DefaultReferenceValuesBinding
             with domain.l1.DefaultIntegerRangeValues
-//            with domain.l1.DefaultIntegerSetValues
+          //  with domain.l1.ConstraintsBetweenIntegerValues
+            //            with domain.l1.DefaultIntegerSetValues
             with domain.l1.DefaultLongValues
             with domain.l1.LongValuesShiftOperators
             with domain.l1.DefaultConcretePrimitiveValuesConversions
@@ -76,8 +77,8 @@ object DeadCode extends AnalysisExecutor { analysis ⇒
         override protected def maxSizeOfIntegerRanges: Long = 128l
 
         // a value larger than ~10 has no real effect (except of taking longer...)
-//        override protected final val maxCardinalityOfIntegerValuesSet: Int =
-//            analysis.maxCardinalityOfIntegerValuesSet 
+        //        override protected final val maxCardinalityOfIntegerValuesSet: Int =
+        //            analysis.maxCardinalityOfIntegerValuesSet 
 
     }
 

@@ -38,12 +38,6 @@ package ai
  */
 trait LongValuesDomain extends LongValuesFactory { domain ⇒
 
-    // -----------------------------------------------------------------------------------
-    //
-    // ABSTRACTIONS RELATED TO INSTRUCTIONS
-    //
-    // -----------------------------------------------------------------------------------
-
     //
     // RELATIONAL OPERATORS
     //
@@ -58,7 +52,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
     def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
     //
-    // UNARY EXPRESSIONS
+    // UNARY ARITHMETIC EXPRESSIONS
     //
 
     /**
@@ -70,7 +64,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
     def lneg(pc: PC, value: DomainValue): DomainValue
 
     //
-    // BINARY EXPRESSIONS
+    // BINARY ARITHMETIC EXPRESSIONS
     //
 
     type LongValueOrArithmeticException = Computation[DomainValue, ExceptionValue]
