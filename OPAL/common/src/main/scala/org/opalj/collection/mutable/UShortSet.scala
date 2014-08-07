@@ -45,6 +45,8 @@ trait UShortSet extends collection.UShortSet {
      * If this set has enough space to hold the additional value, a reference to this
      * set is returned. Otherwise, a new set is created and a reference to that set
      * is returned. Hence, the return value ''must not'' be ignored.
+     *
+     * @return The set with the given value.
      */
     def +≈:(value: UShort): UShortSet
 
@@ -144,7 +146,18 @@ private class UShortSet2(private var value: Int) extends UShortSet {
 
     def isEmpty = false
 
-    def iterable: Iterable[UShort] = if (notFull) Iterable(value1) else Iterable(value1, value2)
+    def iterator: Iterator[UShort] =
+        if (notFull)
+            Iterator.single(value1)
+        else
+            new Iterator[UShort] {
+                private var i = 0
+                def hasNext = i < 2
+                def next = if (i == 0) { i += 1; value1 } else value2
+            }
+
+    def iterable: Iterable[UShort] =
+        if (notFull) Iterable(value1) else Iterable(value1, value2)
 
     override def hashCode = value
 
@@ -160,9 +173,8 @@ private class UShortSet2(private var value: Int) extends UShortSet {
             System.identityHashCode(this), { i ⇒ this.toString })
 }
 private object UShortSet2 {
-    final val Value1Mask: Int = UShort.MaxValue
-    final val Value2Mask: Int = Value1Mask << 16
-
+    final val Value1Mask /*: Int*/ = UShort.MaxValue
+    final val Value2Mask /*: Int*/ = Value1Mask << 16
 }
 
 /**
@@ -289,6 +301,22 @@ private class UShortSet4(private var value: Long) extends UShortSet {
 
     def isEmpty = false
 
+    def iterator: Iterator[UShort] = new Iterator[UShort] {
+        private var i = 0;
+        private final val maxI = if (notFull) 3 else 4
+        def hasNext: Boolean = i < maxI
+        def next: UShort = {
+            val v = i match {
+                case 0 ⇒ value1.toInt
+                case 1 ⇒ value2.toInt
+                case 2 ⇒ value3.toInt
+                case 3 ⇒ value4.toInt
+            }
+            i += 1
+            v
+        }
+    }
+
     def iterable: Iterable[UShort] =
         if (notFull)
             Iterable(value1.toInt, value2.toInt, value3.toInt)
@@ -310,10 +338,10 @@ private class UShortSet4(private var value: Long) extends UShortSet {
 }
 
 private object UShortSet4 {
-    final val Value1Mask: Long = UShort.MaxValue.toLong
-    final val Value2Mask: Long = Value1Mask << 16
-    final val Value3Mask: Long = Value2Mask << 16
-    final val Value4Mask: Long = Value3Mask << 16
+    final val Value1Mask /*: Long*/ = UShort.MaxValue.toLong
+    final val Value2Mask /*: Long*/ = Value1Mask << 16
+    final val Value3Mask /*: Long*/ = Value2Mask << 16
+    final val Value4Mask /*: Long*/ = Value3Mask << 16
 }
 
 private class UShortSetNode(
@@ -337,6 +365,25 @@ private class UShortSetNode(
             new UShortSetNode(set1Copy, set2.mutableCopy)
         }
     }
+
+    def iterator: Iterator[UShort] =
+        new Iterator[UShort] {
+            private[this] var firstSet = true
+            private[this] var iterator = set1.iterator
+            def hasNext = iterator.hasNext
+            def next = {
+                if (iterator.hasNext) {
+                    val v = iterator.next
+                    if (firstSet && !iterator.hasNext) {
+                        firstSet = false
+                        iterator = set2.iterator
+                    }
+                    v
+                } else {
+                    throw new UnsupportedOperationException
+                }
+            }
+        }
 
     def iterable = set1.iterable ++ set2.iterable
 
@@ -413,6 +460,7 @@ private object EmptyUShortSet extends UShortSet {
     def isEmpty = true
     def size: Int = 0
     def mutableCopy: mutable.UShortSet = this
+    def iterator = Iterator.empty
     def iterable = Iterable.empty
     def contains(uShortValue: UShort): Boolean = false
     def foreach(f: /*ushortValue:*/ UShort ⇒ Unit): Unit = { /*Nothing to do.*/ }

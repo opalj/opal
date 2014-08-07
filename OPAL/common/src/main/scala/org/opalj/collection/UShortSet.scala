@@ -95,7 +95,7 @@ trait UShortSet {
      *      (e.g., foreach and contains) as they are guaranteed to be optimized for
      *      performance.
      */
-    def iterator: Iterator[UShort] = iterable.iterator
+    def iterator: Iterator[UShort]
 
     /**
      * Returns a new `Iterable`. The method is primarily defined to facilitate

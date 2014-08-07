@@ -62,8 +62,8 @@ object DeadCode extends AnalysisExecutor { analysis ⇒
             with domain.l0.TypeLevelInvokeInstructions
             with domain.l1.DefaultReferenceValuesBinding
             with domain.l1.DefaultIntegerRangeValues
-          //  with domain.l1.ConstraintsBetweenIntegerValues
-            //            with domain.l1.DefaultIntegerSetValues
+            with domain.l1.ConstraintsBetweenIntegerValues
+            // with domain.l1.DefaultIntegerSetValues
             with domain.l1.DefaultLongValues
             with domain.l1.LongValuesShiftOperators
             with domain.l1.DefaultConcretePrimitiveValuesConversions
@@ -74,7 +74,7 @@ object DeadCode extends AnalysisExecutor { analysis ⇒
             with domain.ProjectBasedClassHierarchy {
 
         // a value larger than ~16 has no real effect (except of taking longer...)
-        override protected def maxSizeOfIntegerRanges: Long = 128l
+        override protected def maxSizeOfIntegerRanges: Long = 16l
 
         // a value larger than ~10 has no real effect (except of taking longer...)
         //        override protected final val maxCardinalityOfIntegerValuesSet: Int =
@@ -105,7 +105,7 @@ object DeadCode extends AnalysisExecutor { analysis ⇒
                         case (ctiPC, instruction @ ConditionalControlTransferInstruction()) if operandsArray(ctiPC) != null ⇒
                             (ctiPC, instruction, instruction.nextInstructions(ctiPC, /*not required*/ null))
                     }
-                    branchTarget ← branchTargetPCs
+                    branchTarget ← branchTargetPCs.iterator
                     if operandsArray(branchTarget) == null
                 } { // using "yield" is more convenient but a bit slower if there is not much to yield...
                     val operands = operandsArray(ctiPC).take(2)
