@@ -56,7 +56,7 @@ case class Code(instructions: Array[Byte]) {
                     lineNumberTable.map { _ ⇒
                         <th class="line">Line</th>
                     }.getOrElse {
-                        Seq.empty
+                        scala.xml.NodeSeq.Empty
                     }
                 }
                 <th>Instruction</th>
@@ -86,9 +86,9 @@ case class Code(instructions: Array[Byte]) {
             {
                 lineNumberTable.map { lineNumberTable ⇒
                     val ln = lineNumberTable.find(e ⇒ e.start_pc == pc).map(_.line_number)
-                    <td class="line">{ ln.getOrElse("|") }</td>
+                    <td class="line">{ Text(ln.map(_.toString).getOrElse("|")) }</td>
                 }.getOrElse {
-                    Seq.empty
+                    scala.xml.NodeSeq.Empty
                 }
             }
             <td> { instruction }</td>
@@ -121,7 +121,7 @@ case class Code(instructions: Array[Byte]) {
             val targetID = "#"+id(methodIndex, targetPC)
             <span>
                 <span class={ "instruction "+mnemonic }>{ mnemonic }</span>
-                <a href={ targetID } class="pc">{ targetPC }</a>
+                <a href={ targetID } class="pc">{ Text(targetPC.toString) }</a>
             </span>
         }
 
