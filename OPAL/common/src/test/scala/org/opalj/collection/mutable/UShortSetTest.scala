@@ -55,7 +55,7 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
                 set.contains(i) should be(false)
         }
 
-        it("it should be possible to store the single value 0xFFFF-1 === 65535 === UShort.MaxValue in the set") {
+        it("it should be possible to store the single value 0xFFFF === 65535 === UShort.MaxValue in the set") {
             var set = UShortSet.empty
             set = UShort.MaxValue +≈: set
 
@@ -72,12 +72,12 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
 
             rnd.setSeed(seed)
             for (i ← (0 until ValuesCount))
-                uShortSet = rnd.nextInt(0xFFFF) +≈: uShortSet
+                uShortSet = rnd.nextInt(0xFFFF+1) +≈: uShortSet
 
             var scalaSet = Set.empty[Int]
             rnd.setSeed(seed)
             for (i ← (0 until ValuesCount))
-                scalaSet += rnd.nextInt(0xFFFF)
+                scalaSet += rnd.nextInt(0xFFFF+1)
 
             uShortSet.size should equal(scalaSet.size) // we use a random number generator...
             info(s"stored ${scalaSet.size} elemets - using 100000 insertions and ${uShortSet.nodeCount} nodes - in the set")
@@ -85,7 +85,7 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
 
             rnd.setSeed(seed)
             for (i ← (0 until ValuesCount)) {
-                val value = rnd.nextInt(0xFFFF)
+                val value = rnd.nextInt(0xFFFF+1)
                 if (!uShortSet.contains(value)) fail(s"the $i. value ($value) was not stored in the set")
             }
         }
@@ -126,7 +126,7 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
             var valueToBeAdded: UShort = 0
             try {
                 for (i ← (0 until ValuesCount)) {
-                    valueToBeAdded = rnd.nextInt(0xFFFF)
+                    valueToBeAdded = rnd.nextInt(0xFFFF+1)
                     uShortSet = valueToBeAdded +≈: uShortSet
                 }
             } catch {
