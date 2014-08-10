@@ -71,11 +71,13 @@ class FinalizeUseless[Source] extends FindRealBugsAnalysis[Source] {
                 NoArgsAndReturnVoid) ← classFile.methods
             if finalizeMethod.body.isDefined
             instructions = finalizeMethod.body.get.instructions
-            if instructions.filter(_ != null).length == 3
-            if instructions.exists {
-                case INVOKESPECIAL(_, "finalize", NoArgsAndReturnVoid) ⇒ true
-                case _ ⇒ false
-            }
+            if instructions.length == 5
+            if (
+                instructions(1) match {
+                    case INVOKESPECIAL(_ /*a supertype */ , "finalize", NoArgsAndReturnVoid) ⇒ true
+                    case _ ⇒ false
+                }
+            )
         } yield {
             ClassBasedReport(
                 project.source(classFile.thisType),
