@@ -372,19 +372,20 @@ object MethodDescriptor {
     final val SignaturePolymorphicMethod: MethodDescriptor =
         new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
 
-    final val JustReturnsBoolean = withNoArgs(BooleanType)
-    final val JustReturnsByte = withNoArgs(ByteType)
-    final val JustReturnsShort = withNoArgs(ShortType)
-    final val JustReturnsChar = withNoArgs(CharType)
-    final val JustReturnsInteger = withNoArgs(IntegerType)
-    final val JustReturnsFloat = withNoArgs(FloatType)
-    final val JustReturnsDouble = withNoArgs(DoubleType)
-    final val JustReturnsLong = withNoArgs(LongType)
-    final val JustReturnsObject = withNoArgs(ObjectType.Object)
-    final val JustReturnsString = withNoArgs(ObjectType.String)
+    final val JustReturnsBoolean: MethodDescriptor = new NoArgumentMethodDescriptor(BooleanType)
+    final val JustReturnsByte: MethodDescriptor = new NoArgumentMethodDescriptor(ByteType)
+    final val JustReturnsShort: MethodDescriptor = new NoArgumentMethodDescriptor(ShortType)
+    final val JustReturnsChar: MethodDescriptor = new NoArgumentMethodDescriptor(CharType)
+    final val JustReturnsInteger: MethodDescriptor = new NoArgumentMethodDescriptor(IntegerType)
+    final val JustReturnsFloat: MethodDescriptor = new NoArgumentMethodDescriptor(FloatType)
+    final val JustReturnsDouble: MethodDescriptor = new NoArgumentMethodDescriptor(DoubleType)
+    final val JustReturnsLong: MethodDescriptor = new NoArgumentMethodDescriptor(LongType)
+    final val JustReturnsObject: MethodDescriptor = new NoArgumentMethodDescriptor(ObjectType.Object)
+    final val JustReturnsString: MethodDescriptor = new NoArgumentMethodDescriptor(ObjectType.String)
 
     def withNoArgs(returnType: Type): MethodDescriptor = {
         (returnType.id: @scala.annotation.switch) match {
+            case VoidType.id         ⇒ NoArgumentAndNoReturnValueMethodDescriptor
             case BooleanType.id      ⇒ JustReturnsBoolean
             case ByteType.id         ⇒ JustReturnsByte
             case ShortType.id        ⇒ JustReturnsShort
@@ -408,10 +409,7 @@ object MethodDescriptor {
         returnType: Type): MethodDescriptor = {
         (parameterTypes.size: @annotation.switch) match {
             case 0 ⇒
-                if (returnType == VoidType)
-                    NoArgumentAndNoReturnValueMethodDescriptor
-                else
-                    withNoArgs(returnType)
+                withNoArgs(returnType)
             case 1 ⇒
                 new SingleArgumentMethodDescriptor(parameterTypes(0), returnType)
             case 2 ⇒
