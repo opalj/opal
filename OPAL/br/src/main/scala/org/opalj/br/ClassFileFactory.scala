@@ -381,4 +381,34 @@ object ClassFileFactory {
             array
         }.toArray
     }
+
+    def cloneMethodSignature: MethodSignature = {
+        MethodSignature("clone", MethodDescriptor.withNoArgs(ObjectType.Object))
+    }
+
+    def equalsMethodSignature: MethodSignature = {
+        MethodSignature("equals", MethodDescriptor(ObjectType.Object, BooleanType))
+    }
+
+    def finalizeMethodSignature: MethodSignature = {
+        MethodSignature("equals", MethodDescriptor.NoArgsAndReturnVoid)
+    }
+
+    def hashCodeMethodSignature: MethodSignature = {
+        MethodSignature("hashCode", MethodDescriptor.withNoArgs(IntegerType))
+    }
+
+    def toStringSignature: MethodSignature = {
+        MethodSignature("toString", MethodDescriptor.withNoArgs(ObjectType.String))
+    }
+
+    def nonFinalInterfaceOfObject(): Array[MethodSignature] = {
+        Array(
+            cloneMethodSignature,
+            equalsMethodSignature,
+            finalizeMethodSignature,
+            hashCodeMethodSignature,
+            toStringSignature
+        )
+    }
 }
