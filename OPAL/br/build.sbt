@@ -7,3 +7,7 @@ scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
 scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Representation") 
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.1"
+
+parallelExecution in IntegrationTest := false
+
+logBuffered in IntegrationTest := false
