@@ -32,8 +32,8 @@ package invokedynamic
 
 import scala.language.existentials
 
-import br._
-import br.instructions.INVOKEDYNAMIC
+import org.opalj.br._
+import org.opalj.br.instructions.INVOKEDYNAMIC
 
 
 /**
