@@ -63,124 +63,129 @@ import org.scalatest.Sequential
 @RunWith(classOf[JUnitRunner])
 class CallGraphPrecisionTest extends FunSpec with Matchers {
 
-    describe("the relation between two callgraphs") {
+    describe("call graphs") {
         info("loading the JRE")
         val project = org.opalj.br.TestSupport.createJREProject
         val entryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project)
         info("loaded the JRE")
 
-        var CHACG: CallGraph = null
-        var VTACG: CallGraph = null
+        describe("the relation between CHA and VTA callgraphs") {
 
-        it("calculating the CHA based Call Graph multiple times should create the same call graph") {
-            info("calculating the CHA based call graph (1)")
-            val ComputedCallGraph(theCHACG, _, _) =
-                CallGraphFactory.create(
-                    project,
-                    entryPoints,
-                    new CHACallGraphAlgorithmConfiguration
-                )
-            CHACG = theCHACG
+            var CHACG: CallGraph = null
+            var VTACG: CallGraph = null
 
-            info("calculating the CHA based call graph (2)")
-            val ComputedCallGraph(newCHACG, _, _) =
-                CallGraphFactory.create(
-                    project,
-                    entryPoints,
-                    new CHACallGraphAlgorithmConfiguration
-                )
+            it("calculating the CHA based Call Graph multiple times should create the same call graph") {
+                info("calculating the CHA based call graph (1)")
+                val ComputedCallGraph(theCHACG, _, _) =
+                    CallGraphFactory.create(
+                        project,
+                        entryPoints,
+                        new CHACallGraphAlgorithmConfiguration
+                    )
+                CHACG = theCHACG
 
-            info("comparing the call graphs")
-            val (unexpected, additional) =
-                org.opalj.ai.debug.CallGraphComparison(project, theCHACG, newCHACG)
-            unexpected should be(empty)
-            additional should be(empty)
+                info("calculating the CHA based call graph (2)")
+                val ComputedCallGraph(newCHACG, _, _) =
+                    CallGraphFactory.create(
+                        project,
+                        entryPoints,
+                        new CHACallGraphAlgorithmConfiguration
+                    )
+
+                info("comparing the call graphs")
+                val (unexpected, additional) =
+                    org.opalj.ai.debug.CallGraphComparison(project, theCHACG, newCHACG)
+                unexpected should be(empty)
+                additional should be(empty)
+            }
+
+            it("calculating the VTA based Call Graph multiple times should create the same call graph") {
+                info("calculating the VTA based call graph (1)")
+                val ComputedCallGraph(theVTACG, _, _) =
+                    CallGraphFactory.create(
+                        project,
+                        entryPoints,
+                        new VTACallGraphAlgorithmConfiguration {
+                            override def Domain[Source](
+                                theProject: Project[Source],
+                                cache: Cache,
+                                classFile: ClassFile,
+                                method: Method): VTACallGraphDomain =
+                                new DefaultVTACallGraphDomain(
+                                    theProject, cache, classFile, method, 3
+                                ) with domain.ConstantFieldValuesResolution[Source]
+                        })
+                VTACG = theVTACG
+
+                info("calculating the VTA based call graph (2)")
+                val ComputedCallGraph(newVTACG, _, _) =
+                    CallGraphFactory.create(
+                        project,
+                        entryPoints,
+                        new VTACallGraphAlgorithmConfiguration {
+                            override def Domain[Source](
+                                theProject: Project[Source],
+                                cache: Cache,
+                                classFile: ClassFile,
+                                method: Method): VTACallGraphDomain =
+                                new DefaultVTACallGraphDomain(
+                                    theProject, cache, classFile, method, 3
+                                ) with domain.ConstantFieldValuesResolution[Source]
+                        })
+
+                info("comparing the call graphs")
+                val (unexpected, additional) =
+                    org.opalj.ai.debug.CallGraphComparison(project, theVTACG, newVTACG)
+                unexpected should be(empty)
+                additional should be(empty)
+            }
+
+            it("the call graph created using CHA should be less precise than the one created using VTA") {
+                val (unexpected, additional) =
+                    org.opalj.ai.debug.CallGraphComparison(project, CHACG, VTACG)
+                unexpected should be(empty)
+            }
         }
 
-        it("calculating the VTA based Call Graph multiple times should create the same call graph") {
-            info("calculating the VTA based call graph (1)")
-            val ComputedCallGraph(theVTACG, _, _) =
-                CallGraphFactory.create(
-                    project,
-                    entryPoints,
-                    new VTACallGraphAlgorithmConfiguration {
-                        override def Domain[Source](
-                            theProject: Project[Source],
-                            cache: Cache,
-                            classFile: ClassFile,
-                            method: Method): VTACallGraphDomain =
-                            new DefaultVTACallGraphDomain(
-                                theProject, cache, classFile, method, 3
-                            ) with domain.ConstantFieldValuesResolution[Source]
-                    })
-            VTACG = theVTACG
+        describe("the relation between different configurations of VTA callgraphs") {
+            it("a VTA base call graph created using a less precise domain should be less precise than one created using a more precise domain") {
+                info("calculating the less precise VTA based call graph")
+                val ComputedCallGraph(theLPVTACG, _, _) =
+                    CallGraphFactory.create(
+                        project,
+                        entryPoints,
+                        new VTACallGraphAlgorithmConfiguration {
+                            override def Domain[Source](
+                                theProject: Project[Source],
+                                cache: Cache,
+                                classFile: ClassFile,
+                                method: Method): VTACallGraphDomain =
+                                new DefaultVTACallGraphDomain(
+                                    theProject, cache, classFile, method, 2
+                                ) with domain.ConstantFieldValuesResolution[Source]
+                        })
 
-            info("calculating the VTA based call graph (2)")
-            val ComputedCallGraph(newVTACG, _, _) =
-                CallGraphFactory.create(
-                    project,
-                    entryPoints,
-                    new VTACallGraphAlgorithmConfiguration {
-                        override def Domain[Source](
-                            theProject: Project[Source],
-                            cache: Cache,
-                            classFile: ClassFile,
-                            method: Method): VTACallGraphDomain =
-                            new DefaultVTACallGraphDomain(
-                                theProject, cache, classFile, method, 3
-                            ) with domain.ConstantFieldValuesResolution[Source]
-                    })
+                info("calculating the more precise VTA based call graph")
+                val ComputedCallGraph(theMPVTACG, _, _) =
+                    CallGraphFactory.create(
+                        project,
+                        entryPoints,
+                        new VTACallGraphAlgorithmConfiguration {
+                            override def Domain[Source](
+                                theProject: Project[Source],
+                                cache: Cache,
+                                classFile: ClassFile,
+                                method: Method): VTACallGraphDomain =
+                                new DefaultVTACallGraphDomain(
+                                    theProject, cache, classFile, method, 20
+                                ) with domain.ConstantFieldValuesResolution[Source]
+                        })
 
-            info("comparing the call graphs")
-            val (unexpected, additional) =
-                org.opalj.ai.debug.CallGraphComparison(project, theVTACG, newVTACG)
-            unexpected should be(empty)
-            additional should be(empty)
-        }
-
-        it("the call graph created using CHA should be less precise than the one created using VTA") {
-            val (unexpected, additional) =
-                org.opalj.ai.debug.CallGraphComparison(project, CHACG, VTACG)
-            unexpected should be(empty)
-        }
-
-        it("a VTA base call graph created using a less precise domain should be less precise than one created using a more precise domain") {
-            info("calculating the less precise VTA based call graph")
-            val ComputedCallGraph(theLPVTACG, _, _) =
-                CallGraphFactory.create(
-                    project,
-                    entryPoints,
-                    new VTACallGraphAlgorithmConfiguration {
-                        override def Domain[Source](
-                            theProject: Project[Source],
-                            cache: Cache,
-                            classFile: ClassFile,
-                            method: Method): VTACallGraphDomain =
-                            new DefaultVTACallGraphDomain(
-                                theProject, cache, classFile, method, 2
-                            ) with domain.ConstantFieldValuesResolution[Source]
-                    })
-
-            info("calculating the more precise VTA based call graph")
-            val ComputedCallGraph(theMPVTACG, _, _) =
-                CallGraphFactory.create(
-                    project,
-                    entryPoints,
-                    new VTACallGraphAlgorithmConfiguration {
-                        override def Domain[Source](
-                            theProject: Project[Source],
-                            cache: Cache,
-                            classFile: ClassFile,
-                            method: Method): VTACallGraphDomain =
-                            new DefaultVTACallGraphDomain(
-                                theProject, cache, classFile, method, 20
-                            ) with domain.ConstantFieldValuesResolution[Source]
-                    })
-
-            info("comparing the variants of the VTA based call graphs")
-            val (unexpected, additional) =
-                org.opalj.ai.debug.CallGraphComparison(project, theLPVTACG, theMPVTACG)
-            unexpected should be(empty)
+                info("comparing the variants of the VTA based call graphs")
+                val (unexpected, additional) =
+                    org.opalj.ai.debug.CallGraphComparison(project, theLPVTACG, theMPVTACG)
+                unexpected should be(empty)
+            }
         }
     }
 }
