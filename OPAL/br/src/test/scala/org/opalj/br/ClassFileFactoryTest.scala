@@ -55,7 +55,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             cf.methods.map((theClass, _))
         }.getOrElse(Iterable.empty)
 
-    describe("A Proxy ClassFile") {
+    describe("a Proxy ClassFile") {
         describe("should proxify instance methods") {
             val instanceMethods = getMethods(InstanceMethods, testProject)
             instanceMethods should not be ('empty)
@@ -260,7 +260,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
             it("and an empty default constructor") {
                 testMethods(methods, testProject) { (classFile, _) ⇒
-                    val constructor = classFile.constructors.head
+                    val constructor = classFile.constructors.next
                     hasFlag(constructor.accessFlags, bi.ACC_PUBLIC.mask) should be(true)
                     constructor.body should be('defined)
                     for (body ← constructor.body) {
@@ -301,6 +301,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             }
 
             it("and passes all parameters correctly [barring reference type check]") {
+                // TODO rename: "triple" doesn't fit at all!
                 testMethods(methods, testProject) { (classFile, triple) ⇒
                     val method = classFile.methods.filterNot(_.isConstructor).head
                     method.body should be('defined)
@@ -315,11 +316,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     } {
                         val remainingInstructions = instructions.slice(currentInstruction, instructions.size)
                         val consumedInstructions = requiredParameter match {
-                            case IntegerType      ⇒ requireInt(remainingInstructions)
-                            case ShortType        ⇒ requireInt(remainingInstructions)
-                            case ByteType         ⇒ requireInt(remainingInstructions)
-                            case CharType         ⇒ requireInt(remainingInstructions)
-                            case BooleanType      ⇒ requireInt(remainingInstructions)
+                            case BooleanType | ByteType | CharType | ShortType | IntegerType ⇒
+                                requireInt(remainingInstructions)
                             case FloatType        ⇒ requireFloat(remainingInstructions)
                             case DoubleType       ⇒ requireDouble(remainingInstructions)
                             case LongType         ⇒ requireLong(remainingInstructions)
@@ -442,7 +440,8 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 testMethods(methods, testProject) { (classFile, triple) ⇒
                     val method = classFile.methods.filterNot(_.isConstructor).head
                     method.body should be('defined)
-                    for (body ← method.body; instructions = body.instructions) {
+                    method.body foreach { body ⇒
+                        val instructions = body.instructions
                         instructions.last should be(method.returnType match {
                             case VoidType         ⇒ RETURN
                             case IntegerType      ⇒ IRETURN
@@ -462,7 +461,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         }
     }
 
-    describe("The ClassFileFactory") {
+    describe("the ClassFileFactory") {
         describe("should compute correct constructor stack and local values") {
             val definingType = TypeDeclaration(
                 ObjectType("SomeRandomType"),
@@ -526,67 +525,85 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
      ************************************** */
 
     private def require(
-        oneOf: Seq[Opcode],
+        oneOf: Set[Opcode],
         remainingInstructions: Array[Instruction]): Int = {
-        val indexOfNextFittingInstruction = remainingInstructions.filter(_ != null).
-            indexWhere(instruction ⇒ oneOf contains instruction.opcode)
+        val indexOfNextFittingInstruction =
+            remainingInstructions.filter(_ != null).
+                indexWhere(instruction ⇒ oneOf contains instruction.opcode)
         indexOfNextFittingInstruction should not be (-1)
 
         indexOfNextFittingInstruction + 1
     }
 
-    private def requireInt(remainingInstructions: Array[Instruction]): Int = require(Seq(
-        ILOAD_0.opcode,
-        ILOAD_1.opcode,
-        ILOAD_2.opcode,
-        ILOAD_3.opcode,
-        ILOAD.opcode,
-        ICONST_0.opcode
-    ), remainingInstructions)
+    private def requireInt(remainingInstructions: Array[Instruction]): Int =
+        require(
+            Set(
+                ILOAD_0.opcode,
+                ILOAD_1.opcode,
+                ILOAD_2.opcode,
+                ILOAD_3.opcode,
+                ILOAD.opcode,
+                ICONST_0.opcode // TODO Why does this make sense?
+            ),
+            remainingInstructions)
 
-    private def requireLong(remainingInstructions: Array[Instruction]): Int = require(Seq(
-        LLOAD_0.opcode,
-        LLOAD_1.opcode,
-        LLOAD_2.opcode,
-        LLOAD_3.opcode,
-        LLOAD.opcode,
-        LCONST_0.opcode
-    ), remainingInstructions)
+    private def requireLong(remainingInstructions: Array[Instruction]): Int =
+        require(
+            Set(
+                LLOAD_0.opcode,
+                LLOAD_1.opcode,
+                LLOAD_2.opcode,
+                LLOAD_3.opcode,
+                LLOAD.opcode,
+                LCONST_0.opcode // TODO Why does this make sense?
+            ),
+            remainingInstructions)
 
-    private def requireFloat(remainingInstructions: Array[Instruction]): Int = require(Seq(
-        FLOAD_0.opcode,
-        FLOAD_1.opcode,
-        FLOAD_2.opcode,
-        FLOAD_3.opcode,
-        FLOAD.opcode,
-        FCONST_0.opcode
-    ), remainingInstructions)
+    private def requireFloat(remainingInstructions: Array[Instruction]): Int =
+        require(
+            Set(
+                FLOAD_0.opcode,
+                FLOAD_1.opcode,
+                FLOAD_2.opcode,
+                FLOAD_3.opcode,
+                FLOAD.opcode,
+                FCONST_0.opcode // TODO Why does this make sense?
+            ),
+            remainingInstructions)
 
-    private def requireDouble(remainingInstructions: Array[Instruction]): Int = require(Seq(
-        DLOAD_0.opcode,
-        DLOAD_1.opcode,
-        DLOAD_2.opcode,
-        DLOAD_3.opcode,
-        DLOAD.opcode,
-        DCONST_0.opcode
-    ), remainingInstructions)
+    private def requireDouble(remainingInstructions: Array[Instruction]): Int =
+        require(
+            Set(
+                DLOAD_0.opcode,
+                DLOAD_1.opcode,
+                DLOAD_2.opcode,
+                DLOAD_3.opcode,
+                DLOAD.opcode,
+                DCONST_0.opcode // TODO Why does this make sense?
+            ),
+            remainingInstructions)
 
-    private def requireReference(remainingInstructions: Array[Instruction]): Int = require(Seq(
-        ALOAD_0.opcode,
-        ALOAD_1.opcode,
-        ALOAD_2.opcode,
-        ALOAD_3.opcode,
-        ALOAD.opcode,
-        ACONST_NULL.opcode
-    ), remainingInstructions)
+    private def requireReference(remainingInstructions: Array[Instruction]): Int =
+        require(
+            Set(
+                ALOAD_0.opcode,
+                ALOAD_1.opcode,
+                ALOAD_2.opcode,
+                ALOAD_3.opcode,
+                ALOAD.opcode,
+                ACONST_NULL.opcode // TODO Why does this make sense?
+            ),
+            remainingInstructions)
 
     /**
      * Iterates over the given list of triples, generating a proxy class file for the
      * method specified by each triple, and passes that proxy class file to the provided
      * test function.
      */
-    def testMethods(methods: Iterable[(ObjectType, Method)],
-                    repository: ClassFileRepository)(test: (ClassFile, (ObjectType, Method)) ⇒ Unit): Unit = {
+    def testMethods(
+        methods: Iterable[(ObjectType, Method)],
+        repository: ClassFileRepository)(
+            test: (ClassFile, (ObjectType, Method)) ⇒ Unit): Unit = {
         for {
             (calleeType, calleeMethod) ← methods
         } {
@@ -594,8 +611,10 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         }
     }
 
-    def testMethod(calleeType: ObjectType, calleeMethod: Method,
-                   repository: ClassFileRepository)(test: (ClassFile, (ObjectType, Method)) ⇒ Unit) {
+    def testMethod(
+        calleeType: ObjectType, calleeMethod: Method,
+        repository: ClassFileRepository)(
+            test: (ClassFile, (ObjectType, Method)) ⇒ Unit) {
         val calleeMethodName = calleeMethod.name
         val calleeMethodDescriptor = calleeMethod.descriptor
         val definingTypeName = calleeType.simpleName+"$"+calleeMethodName
