@@ -30,8 +30,10 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import bi.AccessFlags
-import bi.AccessFlagsContexts
+import scala.xml.Text
+
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 
 /**
  * @author Michael Eichberg
@@ -57,34 +59,54 @@ case class InnerClassesEntry(
                 ""
 
         if (definingClassFQN == outerClassFQN && inner_name_index != 0) {
+            val innerName = cp(inner_name_index).toString
             <div class="inner_class">
+                ...
+                {{
                 <span class="access_flags">{ accessFlags } </span>
                 <span class="sn tooltip">
-                    { cp(inner_name_index).toString }
+                    { innerName }
                     <span>
                         Defined Type:
                         <span class="fqn">{ definedType }</span>
                     </span>
                 </span>
+                }}
             </div>
         } else {
-            <div class={ "inner_class"+{ if (definedType == definingClassFQN) " selfRef" else "" } }>
+            val innerName =
+                if (inner_name_index != 0) cp(inner_name_index).toString else ""
+            val outerName =
+                if (outerClassFQN == "") {
+                    if (innerName == "")
+                        "..." // <= anonymous inner type
+                    else {
+                        // named inner type of an anonymous outer type
+                        val outerName =
+                            definedType.substring(0, definedType.length() - innerName.length())
+
+                        if (outerName.length < definingClassFQN.length)
+                            outerName.substring(0, outerName.length() - 1)
+                        else if (outerName.length == definingClassFQN.length)
+                            "..."
+                        else
+                            "..."+outerName.substring(definingClassFQN.length(), outerName.length() - 1)
+                    }
+                } else
+                    outerClassFQN
+
+            <div class={ "inner_class" + { if (definedType == definingClassFQN) " selfRef" else "" } }>
                 <span class="fqn">
-                    { outerClassFQN }
+                    { outerName }
                     {{
                     <span class="access_flags">{ accessFlags } </span>
-                    {
-                        if (inner_name_index != 0)
-                            <span class="sn tooltip">
-                                { cp(inner_name_index).toString }
+                    { if (innerName != "") { <span class="sn tooltip">
+                                { innerName }
                                 <span class="fqn">{ definedType }</span>
-                            </span>
-                        else
-                            <span class="fqn tooltip">
+                            </span> } else { <span class="fqn tooltip">
                                 { definedType }
                                 <span>Anonymous Type</span>
-                            </span>
-                    }
+                            </span> } }
                     }}
                 </span>
             </div>

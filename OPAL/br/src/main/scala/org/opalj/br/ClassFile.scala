@@ -154,7 +154,7 @@ final class ClassFile private (
      * class.
      */
     def nestedClasses(classFileRepository: ClassFileRepository): Seq[ObjectType] = {
-        // From the specification:
+        // From the Java __8__ specification:
         // - every inner class must have an inner class attribute (at least for itself)
         // - every class that has inner classes must have an innerclasses attribute
         //   and the inner classes array must contain an entry
@@ -179,7 +179,7 @@ final class ClassFile private (
                 (!isThisType(innerClass)) &&
                     // it does not give information about an outer class:     
                     (!this.fqn.startsWith(innerClass.innerClassType.fqn)) &&
-                    // it does not give information about some other inner class:
+                    // it does not give information about some other inner class of this type:
                     (
                         innerClass.outerClassType.isEmpty ||
                         (innerClass.outerClassType.get eq thisType)
@@ -191,11 +191,11 @@ final class ClassFile private (
 
         // THE FOLLOWING CODE IS NECESSARY TO COPE WITH BYTECODE GENERATED
         // BY OLD JAVA COMPILERS (IN PARTICULAR JAVA 1.1); 
-        // IT BASICALLY IMPLEMENTS SEVERAL STRATEGIES TO IDENTIFY THE CORRECT OUTERCLASS 
+        // IT BASICALLY TRIES TO RECREATE THE INNER-OUTERCLASSES STRUCTURE 
         if (isInnerType && outerClassType.isEmpty) {
             // let's try to find the outer class that refers to this class
             val thisFQN = thisType.fqn
-            val innerTypeNameStartIndex = thisFQN.lastIndexOf('$')
+            val innerTypeNameStartIndex = thisFQN.indexOf('$')
             if (innerTypeNameStartIndex == -1) {
                 println(
                     Console.YELLOW+"[warn] the inner class "+thisType.toJava+
@@ -207,7 +207,7 @@ final class ClassFile private (
             }
             val outerFQN = thisFQN.substring(0, innerTypeNameStartIndex)
             classFileRepository.classFile(ObjectType(outerFQN)) match {
-                case Some(classFile) ⇒
+                case Some(outerClass) ⇒
 
                     def directNestedClasses(objectTypes: Iterable[ObjectType]): Set[ObjectType] = {
                         var nestedTypes: Set[ObjectType] = Set.empty
@@ -229,7 +229,7 @@ final class ClassFile private (
 
                     // let's filter those classes that are known innerclasses of this type's
                     // (indirect) outertype (they cannot be innerclasses of this class..)
-                    var nestedClassesOfOuterClass = classFile.nestedClasses(classFileRepository)
+                    var nestedClassesOfOuterClass = outerClass.nestedClasses(classFileRepository)
                     while (!nestedClassesOfOuterClass.contains(thisType) &&
                         !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains(_))) {
                         // We are still lacking sufficient information to make a decision 

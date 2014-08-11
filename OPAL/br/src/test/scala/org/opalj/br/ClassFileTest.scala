@@ -34,6 +34,9 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.opalj.bi.TestSupport.locateTestResources
 import scala.util.control.ControlThrowable
+import org.scalatest.concurrent.TimeLimitedTests
+import org.scalatest.time.Millis
+import org.scalatest.time.Span
 
 /**
  * @author Michael Eichberg
@@ -215,7 +218,6 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
 
     test("that it is possible to get the inner classes information for Apache ANT 1.8.4 - excerpt.jar") {
         testJARFile(locateTestResources("classfiles/Apache ANT 1.8.4 - excerpt.jar", "bi"))
-
     }
 
     test("that it is possible to get the inner classes information for batik-DOMViewer 1.7.jar") {
@@ -226,5 +228,10 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
         nestedTypeInformation(D$Panel) should contain(D$2)
         nestedTypeInformation(D$2) should contain(D$3)
         nestedTypeInformation(D$3) should be('empty)
+    }
+
+    test("that it is possible to get the inner classes information for argouml-excerpt.jar") {
+        testJARFile(locateTestResources("classfiles/argouml-excerpt.jar", "bi"))
+
     }
 }
