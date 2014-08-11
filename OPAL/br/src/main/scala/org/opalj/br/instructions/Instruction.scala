@@ -65,7 +65,7 @@ trait Instruction {
     /**
      * The index of the next instruction in the code array.
      */
-    def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean = false): Int
+    def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int
 
     /**
      * Returns the set of instructions that may be executed next at runtime. This
