@@ -325,7 +325,33 @@ final class ClassFile private (
      *
      * (This does not include static initializers.)
      */
-    def constructors: Seq[Method] = methods.view filter { _.name == "<init>" }
+    def constructors: Iterator[Method] = {
+        new Iterator[Method] {
+            var i = -1
+
+            private def lookupNextConstructor() {
+                i += 1
+                if (i >= methods.size)
+                    i = -1
+                else {
+                    val methodName = methods(i).name
+                    if (methodName < "<init>")
+                        lookupNextConstructor()
+                    else if (methodName > "<init>")
+                        i = -1;
+                }
+            }
+
+            lookupNextConstructor()
+
+            def hasNext: Boolean = i >= 0
+            def next: Method = {
+                val m = methods(i)
+                lookupNextConstructor
+                m
+            }
+        }
+    }
 
     /**
      * The set of all instance methods. I.e., the set of methods that are not static,
