@@ -66,7 +66,12 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
                     VoidType)
             ).isDefined
         )
+    }
 
+    test("test that all constructors are returned") {
+        assert(
+            immutableList.constructors.size == 2
+        )
     }
 
     test("test that it can find all other methods") {
@@ -97,6 +102,8 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
                 MethodDescriptor(IndexedSeq(), ObjectType.Object)
             ).isDefined
         )
+
+        assert(immutableList.instanceMethods.size == 4)
     }
 
     test("that findField on a class without fields does not fail") {
@@ -183,10 +190,9 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
                 // should not time out or crash...
                 classFile.nestedClasses(project)
                 var nestedClasses: List[Type] = Nil
-                classFile.foreachNestedClass(project, {
-                    c ⇒
-                        nestedClasses = c.thisType :: nestedClasses
-                        innerClassesCount += 1
+                classFile.foreachNestedClass(project, { c ⇒
+                    nestedClasses = c.thisType :: nestedClasses
+                    innerClassesCount += 1
                 })
                 innerClassesCount += 1
                 Some((classFile.thisType, nestedClasses))
