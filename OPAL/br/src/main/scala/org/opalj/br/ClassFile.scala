@@ -199,9 +199,9 @@ final class ClassFile private (
             if (innerTypeNameStartIndex == -1) {
                 println(
                     Console.YELLOW+"[warn] the inner class "+thisType.toJava+
-						" does not use the standard naming schema"+
+                        " does not use the standard naming schema"+
                         "; the inner classes information may be incomplete"+
-						Console.RESET
+                        Console.RESET
                 )
                 return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
             }
@@ -220,7 +220,7 @@ final class ClassFile private (
                                         Console.YELLOW+"[warn] project information incomplete; "+
                                             "cannot get informaton about "+objectType.toJava+
                                             "; the inner classes information may be incomplete"+
-											Console.RESET
+                                            Console.RESET
                                     )
                             }
                         }
@@ -250,7 +250,7 @@ final class ClassFile private (
                         Console.YELLOW+"[warn] project information incomplete; "+
                             "cannot identify outer type of "+thisType.toJava+
                             "; the inner classes information may be incomplete"+
-							Console.RESET
+                            Console.RESET
                     )
                     return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
             }
