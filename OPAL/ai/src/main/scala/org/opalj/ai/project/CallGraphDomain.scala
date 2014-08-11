@@ -48,11 +48,9 @@ import br.analyses._
  *
  * @author Michael Eichberg
  */
-trait CallGraphDomain extends Domain { this: TheMethod ⇒
+trait CallGraphDomain extends Domain { this: TheProject[_] with TheMethod ⇒
 
     // THE CONTEXT - SET DURING THE CREATION OF THE DOMAIN
-
-    /* abstract */ val project: SomeProject
 
     /* abstract */ val classFile: ClassFile
 

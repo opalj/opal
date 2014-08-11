@@ -52,7 +52,7 @@ import org.opalj.ai.domain.ClassHierarchy
  * @author Michael Eichberg
  */
 trait VTACallGraphDomain extends CHACallGraphDomain {
-    domain: ClassHierarchy with TheMethod ⇒
+    domain: TheProject[_] with TheMethod with ClassHierarchy ⇒
 
     @inline override protected[this] def unresolvedCall(
         pc: PC,
