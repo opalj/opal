@@ -33,7 +33,6 @@ import scala.collection.BitSet
 
 import org.opalj.br.instructions._
 
-
 /**
  * Representation of a method's code attribute, that is, representation of a method's
  * implementation.
@@ -192,14 +191,17 @@ case class Code(
      *      program counter will be equivalent to the length of the Code/Instructions
      *      array.
      */
-    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
-        val max_pc = instructions.size
-        var nextPC = currentPC + 1
-        while (nextPC < max_pc && (instructions(nextPC) eq null))
-            nextPC += 1
-
-        nextPC
-    }
+    @inline final def pcOfNextInstruction(currentPC: PC): PC =
+        instructions(currentPC).indexOfNextInstruction(currentPC, this)
+    // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!        
+    //    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
+    //        val max_pc = instructions.size
+    //        var nextPC = currentPC + 1
+    //        while (nextPC < max_pc && (instructions(nextPC) eq null))
+    //            nextPC += 1
+    //
+    //        nextPC
+    //    }
 
     /**
      * Returns the line number table - if any.
@@ -292,12 +294,10 @@ case class Code(
         var result: List[(PC, B)] = List.empty
         while (pc < max_pc) {
             val instruction = instructions(pc)
-            if (instruction ne null) {
-                if (f.isDefinedAt(instruction)) {
-                    result = (pc, f(instruction)) :: result
-                }
+            if (f.isDefinedAt(instruction)) {
+                result = (pc, f(instruction)) :: result
             }
-            pc += 1
+            pc = pcOfNextInstruction(pc)
         }
         result.reverse
     }
@@ -322,14 +322,11 @@ case class Code(
         var pc = 0
         var result: List[B] = List.empty
         while (pc < max_pc) {
-            val instruction = instructions(pc)
-            if (instruction ne null) {
-                val params = (pc, instruction)
-                if (f.isDefinedAt(params)) {
-                    result = f(params) :: result
-                }
+            val params = (pc, instructions(pc))
+            if (f.isDefinedAt(params)) {
+                result = f(params) :: result
             }
-            pc += 1
+            pc = pcOfNextInstruction(pc)
         }
         result.reverse
     }
@@ -342,13 +339,10 @@ case class Code(
         val max_pc = instructions.size
         var pc = 0
         while (pc < max_pc) {
-            val instruction = instructions(pc)
-            if ((instruction ne null)) {
-                val params = (pc, instruction)
-                if (f.isDefinedAt(params))
-                    return Some(f(params))
-            }
-            pc += 1
+            val params = (pc, instructions(pc))
+            if (f.isDefinedAt(params))
+                return Some(f(params))
+            pc = pcOfNextInstruction(pc)
         }
         return None
     }
@@ -361,11 +355,10 @@ case class Code(
         val max_pc = instructions.size
         var pc = 0
         while (pc < max_pc) {
-            val instruction = instructions(pc)
-            if ((instruction ne null) && f(instruction)) {
+            if (f(instructions(pc))) {
                 return Some(pc)
             }
-            pc += 1
+            pc = pcOfNextInstruction(pc)
         }
         return None
     }
@@ -607,7 +600,7 @@ case class Code(
         "Code_attribute("+
             "maxStack="+maxStack+
             ", maxLocals="+maxLocals+","+
-            (instructions.filter(_ ne null).deep.toString) +
+            (instructions.zipWithIndex.filter(_._1 ne null).deep.toString) +
             (exceptionHandlers.toString)+","+
             (attributes.toString)+
             ")"
