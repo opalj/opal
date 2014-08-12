@@ -51,6 +51,7 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
             extends Domain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
+            with domain.l0.DefaultPrimitiveValuesConversions
             with domain.l0.DefaultTypeLevelIntegerValues
             with domain.l0.DefaultTypeLevelLongValues
             with domain.l0.DefaultTypeLevelFloatValues
@@ -64,10 +65,6 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy
             with domain.RecordReturnedValuesInfrastructure {
-
-        type Id = String
-
-        def id = "Return Type Analysis Domain"
 
         type ReturnedValue = DomainValue
 
@@ -97,7 +94,7 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
     val analysis = new Analysis[URL, BasicReport] {
 
         override def title: String =
-            "Tries to refine the return type of methods."
+            "Derives Information About Returned Values"
 
         override def description: String =
             "Identifies methods where we can – statically – derive more precise return type information."

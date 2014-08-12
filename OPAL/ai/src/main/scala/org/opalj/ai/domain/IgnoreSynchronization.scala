@@ -37,12 +37,13 @@ import org.opalj.util.{ Yes, No, Unknown }
  *
  * @author Michael Eichberg
  */
-trait IgnoreSynchronization { this: Domain with Configuration ⇒
+trait IgnoreSynchronization extends MonitorInstructionsDomain {
+    this: ValuesDomain with ReferenceValuesDomain with VMLevelExceptionsFactory with Configuration ⇒
 
     protected[this] def sideEffectOnlyOrNullPointerException(
         pc: PC,
         value: DomainValue): Computation[Nothing, ExceptionValue] = {
-        refIsNull(value) match {
+        refIsNull(pc, value) match {
             case Yes ⇒
                 ThrowsException(NullPointerException(pc))
             case No ⇒

@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestCloneDoesNotCallSuperClone extends AnalysisTest {
-    import TestCloneDoesNotCallSuperClone._
 
     behavior of "CloneDoesNotCallSuperClone"
+
+    val project = createProject("CloneDoesNotCallSuperClone.jar")
+    val results = new CloneDoesNotCallSuperClone[URL].analyze(project).toSet
 
     it should "detect a clone() method that does not contain a call to super.clone()" in {
         val declaringClass =
@@ -64,9 +66,4 @@ class TestCloneDoesNotCallSuperClone extends AnalysisTest {
     it should "find 1 issue in total" in {
         results.size should be(1)
     }
-}
-
-object TestCloneDoesNotCallSuperClone {
-    val project = makeProjectFromJar("CloneDoesNotCallSuperClone.jar")
-    val results = new CloneDoesNotCallSuperClone[URL].analyze(project).toSet
 }

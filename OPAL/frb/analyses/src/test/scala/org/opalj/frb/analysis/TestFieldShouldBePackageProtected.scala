@@ -43,9 +43,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestFieldShouldBePackageProtected extends AnalysisTest {
-    import TestFieldShouldBePackageProtected._
 
     behavior of "FieldShouldBePackageProtected"
+
+    val project = createProject("FieldShouldBePackageProtected.jar")
+    val results = new FieldShouldBePackageProtected[URL].analyze(project).toSet
 
     val declaringClass =
         ObjectType("FieldShouldBePackageProtected/VariousFields")
@@ -73,9 +75,4 @@ class TestFieldShouldBePackageProtected extends AnalysisTest {
     it should "find 2 issues in total" in {
         results.size should be(2)
     }
-}
-
-object TestFieldShouldBePackageProtected {
-    val project = makeProjectFromJar("FieldShouldBePackageProtected.jar")
-    val results = new FieldShouldBePackageProtected[URL].analyze(project).toSet
 }

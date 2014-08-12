@@ -39,8 +39,10 @@ import org.opalj.br.{ ObjectType, ArrayType }
  *
  * @author Michael Eichberg
  */
-trait DefaultReferenceValuesBinding extends DefaultTypeLevelReferenceValues {
-    domain: Configuration with ClassHierarchy ⇒
+trait DefaultReferenceValuesBinding
+        extends DefaultTypeLevelReferenceValues
+        with DefaultVMLevelExceptionsFactory {
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type DomainReferenceValue = ReferenceValue
     type DomainNullValue = NullValue
@@ -58,24 +60,26 @@ trait DefaultReferenceValuesBinding extends DefaultTypeLevelReferenceValues {
      *
      * This implementation always returns the singleton instance [[TheNullValue]].
      */
-    override def NullValue(pc: PC): DomainNullValue = TheNullValue
+    override def NullValue(valueOrigin: ValueOrigin): DomainNullValue = TheNullValue
 
-    override def ObjectValue(pc: PC, objectType: ObjectType): DomainObjectValue = {
+    override def ObjectValue(
+        valueOrigin: ValueOrigin,
+        objectType: ObjectType): DomainObjectValue = {
         new SObjectValue(objectType)
     }
 
     override def ObjectValue(
-        pc: PC,
+        valueOrigin: ValueOrigin,
         upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
 
-        if (upperTypeBound.containsOneElement)
-            ObjectValue(pc, upperTypeBound.first)
+        if (upperTypeBound.consistsOfOneElement)
+            ObjectValue(valueOrigin, upperTypeBound.first)
         else
             new MObjectValue(upperTypeBound)
     }
 
     override protected[domain] def ArrayValue(
-        pc: PC,
+        valueOrigin: ValueOrigin,
         arrayType: ArrayType): DomainArrayValue = {
 
         new ArrayValue(arrayType)

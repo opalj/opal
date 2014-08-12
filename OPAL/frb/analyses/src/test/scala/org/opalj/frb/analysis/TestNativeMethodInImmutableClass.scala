@@ -44,9 +44,12 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestNativeMethodInImmutableClass extends AnalysisTest {
-    import TestNativeMethodInImmutableClass._
 
     behavior of "NativeMethodInImmutableClass"
+
+    val project = createProject(
+        Seq("JCIPAnnotations.jar", "NativeMethodInImmutableClass.jar"))
+    val results = new NativeMethodInImmutableClass[URL].analyze(project).toSet
 
     it should "detect that JCIPAnnotatedWithNativeMethod contains native method "+
         "changeFoo" in {
@@ -65,10 +68,4 @@ class TestNativeMethodInImmutableClass extends AnalysisTest {
     it should "detect 1 issue in total" in {
         results.size should be(1)
     }
-}
-
-object TestNativeMethodInImmutableClass {
-    val project = makeProjectFromJars(
-        Seq("JCIPAnnotations.jar", "NativeMethodInImmutableClass.jar"))
-    val results = new NativeMethodInImmutableClass[URL].analyze(project).toSet
 }

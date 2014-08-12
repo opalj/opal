@@ -30,6 +30,7 @@ package org.opalj
 package ai
 
 import scala.util.control.ControlThrowable
+import scala.collection.BitSet
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
@@ -38,11 +39,10 @@ import org.opalj.br.instructions._
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode
- * that relies on OPAL's resolved representation of Java bytecode.
+ * that relies on OPAL's resolved representation ([[org.opalj.br]]) of Java bytecode.
  *
  * This framework basically traverses all instructions of a method in depth-first order
- * and evaluates each instruction using an exchangeable
- * [[org.opalj.ai.Domain]].
+ * and evaluates each instruction using a given (abstract) [[org.opalj.ai.Domain]].
  *
  * ==Interacting with OPAL's Abstract Interpreter==
  * The primary means how to make use of this framework is to perform
@@ -54,7 +54,7 @@ import org.opalj.br.instructions._
  * ==Thread Safety==
  * This class is thread-safe. However, to make it possible to use one abstract
  * interpreter instance for the concurrent abstract interpretation of independent
- * methods, the `AITracer` (if any) has to be thread-safe to.
+ * methods, the [[AITracer]] (if any) has to be thread-safe too.
  *
  * Hence, it is possible to use a single instance to analyze multiple methods in parallel.
  * However, if you want to be able to selectively abort the abstract interpretation
@@ -63,10 +63,6 @@ import org.opalj.br.instructions._
  * Creating new instances is extremely cheap as this class
  * does not have any significant associated state.
  *
- * ==Customizing the Abstract Interpretation Framework==
- * Customization of the abstract interpreter is done by creating new subclasses that
- * override the relevant methods (in particular: `isInterrupted` and `tracer`).
- *
  * @note
  *     OPAL does not make assumptions about the number of domain objects that
  *     are used. However, if a single domain object is used by multiple instances
@@ -74,6 +70,10 @@ import org.opalj.br.instructions._
  *     the domain has to be thread-safe.
  *     The latter is trivially the case when the domain object itself does not have
  *     any state.
+ *
+ * ==Customizing the Abstract Interpretation Framework==
+ * Customization of the abstract interpreter is done by creating new subclasses that
+ * override the relevant methods (in particular: [[isInterrupted]] and [[tracer]]).
  *
  * @author Michael Eichberg
  */
@@ -90,7 +90,7 @@ trait AI[D <: Domain] {
      * is not sufficiently precise enough/if additional information is needed to
      * continue with the analysis.
      *
-     * Called by OPAL-AI during the abstract interpretation of a method to determine whether
+     * Called during the abstract interpretation of a method to determine whether
      * the computation should be aborted. This method is ''always called directly before
      * the evaluation of the first/next instruction''. I.e., after the evaluation of an
      * instruction and the update of the memory as well as stating all constraints.
@@ -109,13 +109,13 @@ trait AI[D <: Domain] {
      * The tracer (default: `None`) that is called by OPAL while performing the abstract
      * interpretation of a method.
      *
-     * This method is called at different points (see
-     * [[org.opalj.ai.AITracer]]) to report on the analysis progress.
+     * This method is called at different points  to report on the analysis progress (see
+     * [[org.opalj.ai.AITracer]] for further details)
      *
      * '''To attach a tracer to the abstract interpreter override this
      * method in subclasses''' and return some tracer object.
      *
-     * OPAL enables the attachment/detachment of tracers at any time.
+     * It is possible to attach/detach a tracer at any time.
      */
     def tracer: Option[AITracer] = None
 
@@ -132,14 +132,14 @@ trait AI[D <: Domain] {
     def apply(
         classFile: ClassFile,
         method: Method,
-        theDomain: D) : AIResult{val domain : theDomain.type} = 
-            perform(classFile, method, theDomain)(None)
+        theDomain: D): AIResult { val domain: theDomain.type } =
+        perform(classFile, method, theDomain)(None)
 
     /**
-     * Returns the initial set of operands that will be used for for the abstract
+     * Returns the initial set of operands that will be used for the abstract
      * interpretation of the given method.
      *
-     * In general, an empty set is returned as the JVM specification mandates
+     * In general, an empty list is returned as the JVM specification mandates
      * that the operand stack is empty at the very beginning of a method.
      *
      * This method is called by the `perform` method with the same signature. It
@@ -148,16 +148,15 @@ trait AI[D <: Domain] {
     protected def initialOperands(
         classFile: ClassFile,
         method: Method,
-        domain: D): domain.Operands =
-        List.empty[domain.DomainValue]
+        domain: D): domain.Operands = Nil
 
     /**
-     * Returns the initial register assignment that is used when analyzing a new
-     * method.
+     * Returns the initial register assignment (the initialized locals) that is
+     * used when analyzing a new method.
      *
      * Initially, only the registers that contain the method's parameters (including
      * the self reference (`this`)) are used.  If no initial assignment is provided
-     * (`someLocals == None`) OPAL-AI will automatically create a valid assignment using
+     * (`someLocals == None`) a valid assignment is automatically created using
      * the domain. See `perform(...)` for further details regarding the initial
      * register assignment.
      *
@@ -168,7 +167,7 @@ trait AI[D <: Domain] {
      *
      * @param classFile The class file which defines the given method.
      * @param method A non-native, non-abstract method. I.e., a method that has an
-     *      implementation in Java bytecode.
+     *      implementation in Java bytecode (e.g., `method.body.isDefined === true`).
      * @param domain The domain that will be used to perform computations related
      *  	to values.
      */
@@ -278,7 +277,7 @@ trait AI[D <: Domain] {
      * Performs an abstract interpretation of the given (byte)code using
      * the given domain and the initial operand stack and initial register assignment.
      */
-    protected[ai] def perform(
+    def perform(
         code: Code,
         theDomain: D)(
             initialOperands: theDomain.Operands,
@@ -299,8 +298,42 @@ trait AI[D <: Domain] {
                 initialWorkList, List.empty[PC], operandsArray, localsArray, Nil)
     }
 
-    protected[ai] def joinInstructions(code: Code): scala.collection.BitSet =
-        code.joinInstructions
+    /**
+     * Performs additional initializations of the [[Domain]], if the `Domain` implements
+     * the trait [[TheAI]], [[TheCodeStructure]] or [[TheMemoryLayout]].
+     *
+     * This method is called before the abstract interpretation is started/continued.
+     */
+    protected[this] def preInterpretationInitialization(
+        code: Code,
+        theDomain: D)(
+            instructions: Array[Instruction],
+            joinInstructions: BitSet,
+            theOperandsArray: theDomain.OperandsArray,
+            theLocalsArray: theDomain.LocalsArray,
+            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): Unit = {
+
+        // The following order must not change: 
+        // (The order is part of the contract of AI.)
+
+        theDomain match {
+            case d: TheAI[D] ⇒ d.setAI(this)
+            case _           ⇒ /*nothing to do*/
+        }
+        theDomain match {
+            case d: TheCodeStructure ⇒
+                d.setCodeStructure(instructions, joinInstructions)
+            case _ ⇒ /*nothing to do*/
+        }
+        theDomain match {
+            case d: TheMemoryLayout ⇒
+                d.setMemoryLayout(
+                    theOperandsArray.asInstanceOf[d.OperandsArray],
+                    theLocalsArray.asInstanceOf[d.LocalsArray],
+                    theMemoryLayoutBeforeSubroutineCall.asInstanceOf[List[(d.OperandsArray, d.LocalsArray)]])
+            case _ ⇒ /*nothing to do*/
+        }
+    }
 
     /**
      * Continues the interpretation of the given method (code) using the given domain.
@@ -376,11 +409,16 @@ trait AI[D <: Domain] {
 
         import ObjectType._
 
-        type SingleValueDomainTest = (DomainValue) ⇒ Answer
-        type TwoValuesDomainTest = (DomainValue, DomainValue) ⇒ Answer
+        type SingleValueDomainTest = (PC, DomainValue) ⇒ Answer
+        type TwoValuesDomainTest = (PC, DomainValue, DomainValue) ⇒ Answer
 
         val instructions: Array[Instruction] = code.instructions
-        val joinInstructions = this.joinInstructions(code)
+        val joinInstructions = code.joinInstructions
+
+        preInterpretationInitialization(
+            code, theDomain)(
+                instructions, joinInstructions,
+                theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall)
 
         // The entire state of the computation is (from the perspective of the AI)
         // encapsulated by the following data-structures:
@@ -418,86 +456,90 @@ trait AI[D <: Domain] {
             // - the main loop that processes the worklist
 
             val currentOperands = operandsArray(targetPC)
-            if (currentOperands == null) {
-                // we analyze the instruction for the first time 
-                operandsArray(targetPC) = operands
-                localsArray(targetPC) = locals
-                worklist = targetPC :: worklist
-                if (tracer.isDefined)
-                    tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
-            } else if (!joinInstructions.contains(targetPC)) {
-                // the instructions is not an instruction where multiple control-flow 
-                // paths join; however, we may have a dangling computation...
-                operandsArray(targetPC) = operands
-                localsArray(targetPC) = locals
-                if (!worklist.contains(targetPC))
+            var wasJoinPerformed =
+                if (currentOperands == null) {
+                    // we analyze the instruction for the first time 
+                    operandsArray(targetPC) = operands
+                    localsArray(targetPC) = locals
                     worklist = targetPC :: worklist
-                if (tracer.isDefined)
-                    tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
-            } else {
-                // we already evaluated the target instruction ... 
-                val currentLocals = localsArray(targetPC)
-                val mergeResult =
-                    theDomain.join(
-                        targetPC, currentOperands, currentLocals, operands, locals
+                    if (tracer.isDefined)
+                        tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
+                    false
+                } else if (!joinInstructions.contains(targetPC)) {
+                    // the instructions is not an instruction where multiple control-flow 
+                    // paths join; however, we may have a dangling computation...
+                    operandsArray(targetPC) = operands
+                    localsArray(targetPC) = locals
+                    if (!worklist.contains(targetPC)) // FIXME Contains in the current context (subroutine)
+                        worklist = targetPC :: worklist
+                    if (tracer.isDefined)
+                        tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
+                    false
+                } else {
+                    // we already evaluated the target instruction ... 
+                    val currentLocals = localsArray(targetPC)
+                    val mergeResult =
+                        theDomain.join(
+                            targetPC, currentOperands, currentLocals, operands, locals
+                        )
+                    if (tracer.isDefined) tracer.get.join(theDomain)(
+                        targetPC,
+                        currentOperands, currentLocals, operands, locals,
+                        mergeResult
                     )
-                if (tracer.isDefined) tracer.get.join(theDomain)(
-                    targetPC,
-                    currentOperands, currentLocals, operands, locals,
-                    mergeResult
-                )
-                mergeResult match {
-                    case NoUpdate ⇒ /* nothing to do*/
-                        if (tracer.isDefined) {
-                            tracer.get.noFlow(theDomain)(sourcePC, targetPC)
-                        }
-
-                    case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
-                        operandsArray(targetPC) = updatedOperands
-                        localsArray(targetPC) = updatedLocals
-                        // we want depth-first evaluation (, but we do not want to 
-                        // reschedule instructions that do not belong to the current
-                        // evaluation context/(sub-)routine.)
-                        val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
-                        if (tracer.isDefined) {
-                            if (filteredList eq worklist)
-                                // the instruction was not yet scheduled for another
-                                // evaluation
-                                tracer.get.flow(theDomain)(
-                                    sourcePC, targetPC, isExceptionalControlFlow)
-                            else {
-                                // the instruction was just moved to the beginning
-                                tracer.get.rescheduled(theDomain)(
-                                    sourcePC, targetPC, isExceptionalControlFlow)
-                            }
-                        }
-                        worklist = targetPC :: filteredList
-
-                    case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
-                        operandsArray(targetPC) = updatedOperands
-                        localsArray(targetPC) = updatedLocals
-                        // we want depth-first evaluation (, but we do not want to 
-                        // reschedule instructions that do not belong to the current
-                        // evaluation context/(sub-)routine.)
-                        val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
-                        if (filteredList ne worklist) {
-                            // the instruction was scheduled, but not as the next one
-                            // let's move the instruction to the beginning
-                            worklist = targetPC :: filteredList
-
-                            if (tracer.isDefined)
-                                tracer.get.rescheduled(theDomain)(
-                                    sourcePC, targetPC, isExceptionalControlFlow)
-                        } else {
+                    mergeResult match {
+                        case NoUpdate ⇒ /* nothing to do*/
                             if (tracer.isDefined) {
                                 tracer.get.noFlow(theDomain)(sourcePC, targetPC)
                             }
-                        }
+
+                        case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
+                            operandsArray(targetPC) = updatedOperands
+                            localsArray(targetPC) = updatedLocals
+                            // we want depth-first evaluation (, but we do not want to 
+                            // reschedule instructions that do not belong to the current
+                            // evaluation context/(sub-)routine.)
+                            val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
+                            if (tracer.isDefined) {
+                                if (filteredList eq worklist)
+                                    // the instruction was not yet scheduled for another
+                                    // evaluation
+                                    tracer.get.flow(theDomain)(
+                                        sourcePC, targetPC, isExceptionalControlFlow)
+                                else {
+                                    // the instruction was just moved to the beginning
+                                    tracer.get.rescheduled(theDomain)(
+                                        sourcePC, targetPC, isExceptionalControlFlow)
+                                }
+                            }
+                            worklist = targetPC :: filteredList
+
+                        case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
+                            operandsArray(targetPC) = updatedOperands
+                            localsArray(targetPC) = updatedLocals
+                            // we want depth-first evaluation (, but we do not want to 
+                            // reschedule instructions that do not belong to the current
+                            // evaluation context/(sub-)routine.)
+                            val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
+                            if (filteredList ne worklist) {
+                                // the instruction was scheduled, but not as the next one
+                                // let's move the instruction to the beginning
+                                worklist = targetPC :: filteredList
+
+                                if (tracer.isDefined)
+                                    tracer.get.rescheduled(theDomain)(
+                                        sourcePC, targetPC, isExceptionalControlFlow)
+                            } else {
+                                if (tracer.isDefined) {
+                                    tracer.get.noFlow(theDomain)(sourcePC, targetPC)
+                                }
+                            }
+                    }
+                    true
                 }
-            }
 
             worklist = theDomain.flow(
-                sourcePC, targetPC, isExceptionalControlFlow,
+                sourcePC, targetPC, isExceptionalControlFlow, wasJoinPerformed,
                 worklist,
                 operandsArray, localsArray,
                 tracer)
@@ -506,14 +548,14 @@ trait AI[D <: Domain] {
         // THIS IS THE MAIN INTERPRETER LOOP
         while (worklist.nonEmpty) {
             if (isInterrupted) {
-                val result = AIResultBuilder.aborted(
-                    code,
-                    theDomain)(
-                        worklist,
-                        evaluated,
-                        operandsArray,
-                        localsArray,
-                        memoryLayoutBeforeSubroutineCall)
+                val result =
+                    AIResultBuilder.aborted(
+                        code, theDomain)(
+                            worklist,
+                            evaluated,
+                            operandsArray,
+                            localsArray,
+                            memoryLayoutBeforeSubroutineCall)
                 if (tracer.isDefined)
                     tracer.get.result(result)
 
@@ -625,7 +667,7 @@ trait AI[D <: Domain] {
                         pc, instruction, operands, locals
                     )
 
-                def pcOfNextInstruction = code.pcOfNextInstruction(pc)
+                @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
 
                 /*
                  * Handles all '''if''' instructions that perform a comparison with a fixed
@@ -641,7 +683,7 @@ trait AI[D <: Domain] {
                     val nextPC = pcOfNextInstruction
                     val branchTarget = pc + branchInstruction.branchoffset
 
-                    domainTest(operand) match {
+                    domainTest(pc, operand) match {
                         case Yes ⇒ gotoTarget(pc, branchTarget, false, rest, locals)
                         case No  ⇒ gotoTarget(pc, nextPC, false, rest, locals)
                         case Unknown ⇒ {
@@ -680,20 +722,20 @@ trait AI[D <: Domain] {
                              noConstraint: TwoValuesConstraint) {
 
                     val branchInstruction = as[ConditionalBranchInstruction](instruction)
-                    val value2 = operands.head
+                    val right = operands.head
                     val remainingOperands = operands.tail
-                    val value1 = remainingOperands.head
+                    val left = remainingOperands.head
                     val rest = remainingOperands.tail
                     val branchTarget = pc + branchInstruction.branchoffset
                     val nextPC = code.pcOfNextInstruction(pc)
-                    val testResult = domainTest(value1, value2)
+                    val testResult = domainTest(pc, left, right)
                     testResult match {
                         case Yes ⇒ gotoTarget(pc, branchTarget, false, rest, locals)
                         case No  ⇒ gotoTarget(pc, nextPC, false, rest, locals)
                         case Unknown ⇒ {
                             {
                                 val (newOperands, newLocals) =
-                                    yesConstraint(branchTarget, value1, value2, rest, locals)
+                                    yesConstraint(branchTarget, left, right, rest, locals)
                                 if (tracer.isDefined &&
                                     ((rest ne newOperands) || (locals ne newLocals))) {
                                     tracer.get.establishedConstraint(theDomain)(
@@ -704,7 +746,7 @@ trait AI[D <: Domain] {
                             }
                             {
                                 val (newOperands, newLocals) =
-                                    noConstraint(nextPC, value1, value2, rest, locals)
+                                    noConstraint(nextPC, left, right, rest, locals)
                                 if (tracer.isDefined &&
                                     ((rest ne newOperands) || (locals ne newLocals))) {
                                     tracer.get.establishedConstraint(theDomain)(
@@ -736,7 +778,10 @@ trait AI[D <: Domain] {
                     exceptionValue: ExceptionValue,
                     establishNonNull: Boolean) {
 
-                    def gotoExceptionHandler(pc: PC, branchTarget: PC, upperBound: Option[ObjectType]) {
+                    def gotoExceptionHandler(
+                        pc: PC,
+                        branchTarget: PC,
+                        upperBound: Option[ObjectType]) {
                         val operands = List(exceptionValue)
                         val memoryLayout1 @ (updatedOperands1, updatedLocals1) =
                             if (establishNonNull)
@@ -781,7 +826,7 @@ trait AI[D <: Domain] {
                     // handler caught the exception... hence this method
                     // invocation will not complete abruptly.
                     if (!isHandled)
-                        theDomain.abruptMethodExecution(pc, exceptionValue)
+                        abruptMethodExecution(pc, exceptionValue)
                 }
 
                 def handleException(exceptionValue: DomainValue) {
@@ -859,8 +904,9 @@ trait AI[D <: Domain] {
 
                     if (computation.hasResult)
                         fallThrough(computation.result :: rest)
-                    if (computation.throwsException)
+                    if (computation.throwsException) {
                         handleExceptions(computation.exceptions)
+                    }
                 }
 
                 def computationWithOptionalReturnValueAndExceptions(
@@ -1038,7 +1084,7 @@ trait AI[D <: Domain] {
                                 if (!branchToDefaultRequired && (key - previousKey) > 1) {
                                     val domainValueMayBeOutOfRange: Boolean =
                                         (previousKey until key) exists { v ⇒
-                                            theDomain.intIsSomeValueInRange(index, v, v).
+                                            theDomain.intIsSomeValueInRange(pc, index, v, v).
                                                 isYesOrUnknown
                                         }
                                     if (domainValueMayBeOutOfRange) {
@@ -1047,7 +1093,7 @@ trait AI[D <: Domain] {
                                         previousKey = key
                                     }
                                 }
-                                if (theDomain.intIsSomeValueInRange(index, key, key).isYesOrUnknown) {
+                                if (theDomain.intIsSomeValueInRange(pc, index, key, key).isYesOrUnknown) {
                                     val branchTarget = pc + offset
                                     val (updatedOperands, updatedLocals) =
                                         theDomain.intEstablishValue(
@@ -1065,6 +1111,7 @@ trait AI[D <: Domain] {
                             }
                             if (branchToDefaultRequired ||
                                 theDomain.intIsSomeValueNotInRange(
+                                    pc,
                                     index,
                                     firstKey,
                                     switch.npairs(switch.npairs.size - 1)._1).isYesOrUnknown) {
@@ -1083,7 +1130,7 @@ trait AI[D <: Domain] {
                         var v = low
                         while (v <= high) {
 
-                            if (theDomain.intIsSomeValueInRange(index, v, v).isYesOrUnknown) {
+                            if (theDomain.intIsSomeValueInRange(pc, index, v, v).isYesOrUnknown) {
                                 val branchTarget = pc + tableswitch.jumpOffsets(v - low)
                                 val (updatedOperands, updatedLocals) =
                                     theDomain.intEstablishValue(
@@ -1100,7 +1147,7 @@ trait AI[D <: Domain] {
                             }
                             v = v + 1
                         }
-                        if (theDomain.intIsSomeValueNotInRange(index, low, high).isYesOrUnknown) {
+                        if (theDomain.intIsSomeValueNotInRange(pc, index, low, high).isYesOrUnknown) {
                             gotoTarget(
                                 pc, pc + tableswitch.defaultOffset, false,
                                 remainingOperands, locals)
@@ -1838,7 +1885,7 @@ trait AI[D <: Domain] {
                     case 192 /*checkcast*/ ⇒
                         val objectref = operands.head
                         val supertype = instruction.asInstanceOf[CHECKCAST].referenceType
-                        if (theDomain.refIsNull(objectref).isYes)
+                        if (theDomain.refIsNull(pc, objectref).isYes)
                             // if objectref is null => UNCHANGED (see spec. for details)
                             fallThrough()
                         else {
@@ -1875,7 +1922,7 @@ trait AI[D <: Domain] {
                         val referenceType = as[INSTANCEOF](instruction).referenceType
 
                         val result =
-                            if (theDomain.refIsNull(objectref).isYes)
+                            if (theDomain.refIsNull(pc, objectref).isYes)
                                 theDomain.BooleanValue(pc, false)
                             else
                                 theDomain.isValueSubtypeOf(objectref, referenceType) match {

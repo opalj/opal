@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestFinalizeUseless extends AnalysisTest {
-    import TestFinalizeUseless._
 
     behavior of "FinalizeUseless"
+
+    val project = createProject("FinalizeUseless.jar")
+    val results = new FinalizeUseless[URL].analyze(project).toSet
 
     it should "detect a finalize() method containing only a call to super.finalize()" in {
         val classToReport = ObjectType("FinalizeUseless/UselessFinalize")
@@ -62,7 +64,3 @@ class TestFinalizeUseless extends AnalysisTest {
     }
 }
 
-object TestFinalizeUseless {
-    val project = makeProjectFromJar("FinalizeUseless.jar")
-    val results = new FinalizeUseless[URL].analyze(project).toSet
-}

@@ -97,9 +97,9 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
             otherLocals: domain.Locals,
             result: Update[(domain.Operands, domain.Locals)]): Unit = {
         tracers foreach { tracer ⇒
-            tracer.join(domain)(
-                pc, thisOperands, thisLocals, otherOperands, otherLocals, result
-            )
+            tracer.join(
+                domain)(
+                    pc, thisOperands, thisLocals, otherOperands, otherLocals, result)
         }
     }
 
@@ -149,6 +149,15 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         tracers foreach { tracer ⇒
             tracer.establishedConstraint(domain)(
                 pc, effectivePC, operands, locals, newOperands, newLocals)
+        }
+    }
+
+    override def domainMessage(
+        domain: Domain,
+        source: Class[_], typeID: String,
+        pc: Option[PC], message: ⇒ String): Unit = {
+        tracers foreach { tracer ⇒
+            tracer.domainMessage(domain, source, typeID, pc, message)
         }
     }
 }

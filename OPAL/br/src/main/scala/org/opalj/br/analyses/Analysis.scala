@@ -71,7 +71,20 @@ trait Analysis[Source, +AnalysisResult] {
      *  - if applicable it should give an example. I.e., what the expected result is given
      *    a project with certain resources.
      */
-    def description: String
+    def description: String = "See project documentation."
+
+    /**
+     * A URL at which documentation about this analysis can be found. This allows user
+     * interfaces to show a link for the user to click on, as a way to access further
+     * documentation about this analysis.
+     *
+     * For example, for a command line interface, outputting the entire `description` to
+     * the console may not be desirable, and it could show this URL instead.
+     *
+     * This is just a `String`, not a `java.net.URL`, because we do not intend to use it
+     * as an URL internally. It is just a text string that can be shown to the user.
+     */
+    def documentationUrl: Option[String] = None
 
     /**
      * The copyright statement which contains less than 124 character and no line-breaks.
@@ -85,11 +98,14 @@ trait Analysis[Source, +AnalysisResult] {
      * The default is the simple name of the class implementing the analysis.
      */
     def title: String = {
-        val simpleName = this.getClass().getSimpleName()
-        if (simpleName.endsWith("$")) {
-            simpleName.init
-        } else
-            simpleName
+        if (this.getClass().isAnonymousClass() || this.getClass().isLocalClass()) {
+            this.getClass().getDeclaringClass().getSimpleName()
+        } else {
+            val simpleName = this.getClass().getSimpleName()
+            if (simpleName.endsWith("$")) {
+                simpleName.init
+            } else
+                simpleName
+        }
     }
 }
-

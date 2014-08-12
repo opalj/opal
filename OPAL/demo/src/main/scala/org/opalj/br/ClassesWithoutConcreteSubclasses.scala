@@ -43,7 +43,7 @@ object ClassesWithoutConcreteSubclasses extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String =
+        override def description: String =
             "Abstract classes and interfaces that have no concrete subclass in the given jars."
 
         def analyze(project: Project[URL], parameters: Seq[String]) = {

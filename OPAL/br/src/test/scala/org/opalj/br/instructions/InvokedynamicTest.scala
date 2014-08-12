@@ -30,11 +30,16 @@ package org.opalj
 package br
 package instructions
 
-import analyses.{ Project, SomeProject }
+import java.io.File
+
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-import java.io.File
+
+import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestSupport.JRELibraryFolder 
+
 import org.opalj.br.reader.Java8Framework
+import analyses.{ Project, SomeProject }
 
 /**
  * Test resolution capabilities of the [[INVOKEDYNAMIC]] instruction.
@@ -45,7 +50,7 @@ class InvokedynamicTest extends FunSpec with Matchers {
 
     val InvokedMethod = ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethod")
 
-    val testResources = TestSupport.locateTestResources("classfiles/Lambdas.jar", "br")
+    val testResources = locateTestResources("classfiles/Lambdas.jar", "br")
 
     val project: SomeProject = Project(testResources)
 
@@ -125,7 +130,7 @@ class InvokedynamicTest extends FunSpec with Matchers {
 
         describe("when passed the jre 8 jars") {
             it("should resolve all invokedynamic instructions found there") {
-                val jrePath = TestSupport.JRELibraryFolder
+                val jrePath = JRELibraryFolder
                 val jreProject = Project(jrePath)
                 val failedInstructions = (for {
                     classFile ← jreProject.classFiles

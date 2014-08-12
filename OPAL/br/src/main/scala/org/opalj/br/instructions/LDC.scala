@@ -40,11 +40,17 @@ import language.existentials
 sealed abstract class LDC[@specialized(Int, Float) T]
         extends LoadConstantInstruction[T] {
 
-    override def opcode: Opcode = LDC.opcode
+    final def opcode: Opcode = LDC.opcode
 
-    override def mnemonic: String = "ldc"
+    final def mnemonic: String = "ldc"
 
-    override def indexOfNextInstruction(currentPC: Int, code: Code): Int = currentPC + 2
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
+        currentPC + 2
 }
 
 final case class LoadInt(value: Int) extends LDC[Int]

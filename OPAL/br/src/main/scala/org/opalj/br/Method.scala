@@ -38,9 +38,12 @@ import bi.ACC_VARARGS
 import bi.ACC_SYNCHRONIZED
 import bi.AccessFlagsContexts
 import bi.AccessFlags
+import org.opalj.bi.ACC_PUBLIC
 
 /**
  * Represents a single method.
+ *
+ * Method objects are constructed using the companion object's factory methods.
  *
  * @note Equality of methods is – by purpose – reference based.
  *
@@ -179,11 +182,16 @@ final class Method private (
  */
 object Method {
 
-    private final val ACC_NATIVEAndACC_VARARGS: Int = ACC_NATIVE.mask | ACC_VARARGS.mask
+    final val ACC_NATIVEAndVARARGS /*:Int*/ = ACC_NATIVE.mask | ACC_VARARGS.mask
 
     private def isNativeAndVarargs(accessFlags: Int) =
-        (accessFlags & ACC_NATIVEAndACC_VARARGS) == ACC_NATIVEAndACC_VARARGS
+        (accessFlags & ACC_NATIVEAndVARARGS) == ACC_NATIVEAndVARARGS
 
+    /**
+     * @param name The name of the method. In case of a constructor the method
+     *      name has to be "<init>". In case of a static initializer the name has to
+     *      be "<clinit>".
+     */
     def apply(
         accessFlags: Int,
         name: String,
@@ -202,6 +210,24 @@ object Method {
             descriptor,
             theBody,
             remainingAttributes)
+    }
+
+    /**
+     * Factory method for Method objects. 
+     * 
+     * @example A new method that is public abstract that takes no parameters and
+     * returns void and has the name "myMethod" can be created as shown next:
+     * {{{
+     *  val myMethod = Method(name="myMethod");
+     * }}}
+     */
+    def apply(
+        accessFlags: Int = ACC_ABSTRACT.mask | ACC_PUBLIC.mask,
+        name: String,
+        parameterTypes: IndexedSeq[FieldType] = IndexedSeq.empty,
+        returnType: Type = VoidType,
+        attributes: Attributes = Seq.empty[Attribute]): Method = {
+        Method(accessFlags, name, MethodDescriptor(parameterTypes, returnType), attributes)
     }
 
     def unapply(method: Method): Option[(Int, String, MethodDescriptor)] =

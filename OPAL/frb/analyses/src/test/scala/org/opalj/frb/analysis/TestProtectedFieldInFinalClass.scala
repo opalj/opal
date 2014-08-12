@@ -42,9 +42,11 @@ import br._
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestProtectedFieldInFinalClass extends AnalysisTest {
-    import TestProtectedFieldInFinalClass._
 
     behavior of "ProtectedFieldInFinalClass"
+
+    val project = createProject("ProtectedFieldInFinalClass.jar")
+    val results = new ProtectedFieldInFinalClass[URL].analyze(project).toSet
 
     it should "report class ProtectedInFinal" in {
 
@@ -61,9 +63,4 @@ class TestProtectedFieldInFinalClass extends AnalysisTest {
     it should "find 1 issue in total" in {
         results.size should be(1)
     }
-}
-
-object TestProtectedFieldInFinalClass {
-    val project = makeProjectFromJar("ProtectedFieldInFinalClass.jar")
-    val results = new ProtectedFieldInFinalClass[URL].analyze(project).toSet
 }

@@ -51,9 +51,9 @@ import org.opalj.ai.domain.tracing._
  * @author Daniel Klauer
  */
 class UninitializedFieldAccessDuringStaticInitialization[Source]
-        extends MultipleResultsAnalysis[Source, LineAndColumnBasedReport[Source]] {
+        extends FindRealBugsAnalysis[Source] {
 
-    def description: String =
+    override def description: String =
         "Detects accesses to uninitialized static fields from subclasses "+
             "during static initialization of a certain class."
 
@@ -224,6 +224,7 @@ private class FieldStatusTracingDomain[Source](
         with l0.TypeLevelInvokeInstructions
         with l1.DefaultReferenceValuesBinding
         with l1.DefaultIntegerRangeValues
+        with l0.DefaultPrimitiveValuesConversions
         with PropertyTracing
         with RecordReturnFromMethodInstructions {
 
@@ -378,7 +379,7 @@ private class FieldStatusTracingDomain[Source](
 
         super.invokestatic(pc, accessClass, name, descriptor, operands)
     }
- 
+
     override final type DomainProperty = FieldStatusProperty
     override final val DomainPropertyTag: reflect.ClassTag[DomainProperty] = implicitly
 
@@ -394,7 +395,7 @@ private class FieldStatusTracingDomain[Source](
      * The custom property used to hold the static field status at each instruction.
      */
     class FieldStatusProperty(val status: FieldStatus) extends Property {
-        override def merge(other: FieldStatusProperty): Update[FieldStatusProperty] = {
+        override def join(other: FieldStatusProperty): Update[FieldStatusProperty] = {
             if (status == other.status) {
                 NoUpdate
             } else {

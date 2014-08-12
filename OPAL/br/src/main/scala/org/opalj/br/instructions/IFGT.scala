@@ -37,11 +37,11 @@ package instructions
  */
 case class IFGT(
     branchoffset: Int)
-        extends ConditionalBranchInstruction {
+        extends IF0Instruction {
 
-    final override def opcode: Opcode = IFGT.opcode
+    final def opcode: Opcode = IFGT.opcode
 
-    final override def mnemonic: String = "ifgt"
+    final def mnemonic: String = "ifgt"
 
 }
 

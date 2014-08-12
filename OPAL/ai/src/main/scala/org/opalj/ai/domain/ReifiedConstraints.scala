@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import br._
+import org.opalj.br.ReferenceType
 
 /**
  * Mixin this trait to reify the stated constraints. This trait
@@ -38,12 +38,20 @@ import br._
  *
  * This is particularly useful for testing and debugging purposes.
  *
+ * ==Core Properties==
+ *  - Needs to be stacked upon a base implementation of the domains: [[IntegerValuesDomain]] 
+ *    and [[ReferenceValuesDomain]]].
+ *  - Collects state directly associated with the analyzed code block.  
+ *  - '''Not''' thread-safe.
+ *  - '''Not''' reusable.
+ *
  * @author Michael Eichberg
  */
-trait ReifiedConstraints extends Domain {
+trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain {
+    domain: ValuesDomain ⇒
 
     /**
-     * (Indirectly) called by OPAL-AI for a new value-based constraint.
+     * (Indirectly) called by OPAL for a new value-based constraint.
      */
     /*abstract*/ def nextConstraint(constraint: ReifiedConstraint)
 

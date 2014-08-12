@@ -34,6 +34,8 @@ import java.util.zip.ZipFile
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import br._
 import br.reader.Java8Framework.ClassFile
 
@@ -52,7 +54,7 @@ class ExtractDependenciesFromClassFilesTest extends FlatSpec with Matchers {
     val dependencyExtractor = new DependencyExtractor(DependencyProcessorAdapter)
 
     for {
-        file ← TestSupport.locateTestResources("classfiles", "de").listFiles()
+        file ← locateTestResources("classfiles", "de").listFiles()
         if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
     } {
         val zipfile = new ZipFile(file)

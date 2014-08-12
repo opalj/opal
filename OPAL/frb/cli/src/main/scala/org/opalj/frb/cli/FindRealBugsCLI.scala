@@ -47,13 +47,6 @@ import java.text.DecimalFormat
 object FindRealBugsCLI extends ProgressListener {
     import FindRealBugs._
 
-    // TODO(future): Read the Wiki URL from a config file
-    val wikiUrlPrefix = "https://bitbucket.org/delors/opal/wiki/FindREALBugs/"
-
-    def getAnalysisWikiUrl(analysis: Analysis): String = {
-        wikiUrlPrefix + analysis.title
-    }
-
     /**
      * Displays help output and aborts the program. Optionally shows an error message.
      *
@@ -70,9 +63,16 @@ object FindRealBugsCLI extends ProgressListener {
         println("  -l=<input file>")
         println("      Add library input file (won't be analyzed for bugs, but may help")
         println("      making the analysis more accurate)")
+        println("  --analysis=<classname>")
+        println("      Specify a FindRealBugs.Analysis-compatible class that will be used")
+        println("      instead of the default set of analyses. This option can be given")
+        println("      multiple times to select multiple analyses.")
         println("  --config=<file>")
-        println("      Run only the analysis listed as enabled in that file.")
-        println("      Format: Java properties file:")
+        println("      Use the analysis classes listed as enabled in the file, instead of")
+        println("      the default set of analyses. This option can be given multiple")
+        println("      times in order to use all analyses listed as enabled in multiple")
+        println("      configuration files, and it can be used together with --analysis.")
+        println("      File format: Java properties file:")
         println("      keys = full names of FindRealBugs.Analysis-compatible classes")
         println("      values = 'yes' (enabled) or 'no' (disabled)")
         println("  --write-default-config=<file>")
@@ -93,6 +93,8 @@ object FindRealBugsCLI extends ProgressListener {
                 option(0) match {
                     case "-l" ⇒
                         libraryInputFiles += option(1)
+                    case "--analysis" ⇒
+                        analysisClassNames += option(1)
                     case "--config" ⇒
                         analysisClassNames ++=
                             loadRegistry(new java.io.File(option(1))).
@@ -172,6 +174,17 @@ object FindRealBugsCLI extends ProgressListener {
         println("sum: "+secondsToString(analysesTotalSeconds)+", "+
             "real time: "+secondsToString(realSeconds))
 
+        def analysisDescription(analysis: FindRealBugs.Analysis): String = {
+            def format(header: String, body: String): String = {
+                Console.BLUE + header+": "+Console.RESET + body
+            }
+            if (analysis.documentationUrl.isDefined) {
+                format("description", analysis.documentationUrl.get.toString())
+            } else {
+                format("analysis", analysis.title)
+            }
+        }
+
         allResults.foreach {
             case (analysis, reports) ⇒
                 // Display report's console messages, separated by newlines, with the
@@ -179,8 +192,7 @@ object FindRealBugsCLI extends ProgressListener {
                 // of reports.
                 println(reports.map(_.consoleReport(urlToLocationIdentifier)).
                     mkString("\n", "\n",
-                        "\n"+Console.BLUE+"description: "+Console.RESET
-                            + getAnalysisWikiUrl(analysis)))
+                        "\n"+analysisDescription(analysis)))
         }
 
         // Display how many reports came from every analysis.

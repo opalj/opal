@@ -45,11 +45,10 @@ import br.instructions._
  * @author Ralf Mitschke
  * @author Peter Spieler
  */
-class ManualGarbageCollection[Source]
-        extends MultipleResultsAnalysis[Source, MethodBasedReport[Source]] {
+class ManualGarbageCollection[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String =
-        "Reports Methods outside of java.lang, that explicitly invoke the Garbage Collection."
+    override def description: String =
+        "Reports methods outside of java.lang that explicitly invoke the garbage collector."
 
     /**
      * Runs this analysis on the given project.

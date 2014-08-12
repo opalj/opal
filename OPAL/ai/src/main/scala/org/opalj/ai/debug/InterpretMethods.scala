@@ -116,7 +116,8 @@ object InterpretMethodsAnalysis {
     def interpret[Source](
         project: Project[Source],
         domainClass: Class[_ <: Domain],
-        beVerbose: Boolean): (String, Option[File]) = {
+        beVerbose: Boolean,
+        maxEvaluationFactor: Int = 10): (String, Option[File]) = {
 
         import org.opalj.util.PerformanceEvaluation.ns2sec
         val performanceEvaluationContext = new org.opalj.util.PerformanceEvaluation
@@ -125,9 +126,7 @@ object InterpretMethodsAnalysis {
 
         val domainConstructor =
             domainClass.getConstructor(
-                classOf[Project[java.net.URL]],
-                classOf[ClassFile],
-                classOf[Method])
+                classOf[Project[java.net.URL]], classOf[ClassFile], classOf[Method])
 
         def analyzeClassFile(
             source: String,
@@ -136,19 +135,35 @@ object InterpretMethodsAnalysis {
             if (beVerbose) println(classFile.thisType.toJava)
 
             val collectedExceptions =
-                for (method @ MethodWithBody(_) ← classFile.methods) yield {
-                    if (beVerbose) println("  =>  "+method.toJava)
+                for (method @ MethodWithBody(body) ← classFile.methods) yield {
                     try {
+                        if (beVerbose) println("  started:  "+method.toJava)
                         time('AI) {
+                            val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor)
                             val result =
-                                BaseAI(
+                                ai.apply(
                                     classFile,
                                     method,
                                     domainConstructor.newInstance(project, classFile, method)
                                 )
-                            if (result.wasAborted)
-                                throw new InterruptedException();
+                            if (result.wasAborted) {
+                                if (beVerbose)
+                                    println(Console.RED+
+                                        "  aborted:  "+method.toJava+
+                                        " after evaluating "+ai.currentEvaluationCount+
+                                        " instructions (size of instructions array="+body.instructions.size+
+                                        "; max="+ai.maxEvaluationCount+")"+
+                                        Console.RESET)
+
+                                throw new InterruptedException(
+                                    "evaluation bound (max="+ai.maxEvaluationCount+
+                                        ") exceeded")
+                            }
                         }
+                        if (beVerbose)
+                            println(Console.GREEN+
+                                "  finished:  "+method.toJava +
+                                Console.RESET)
                         methodsCount.incrementAndGet()
                         None
                     } catch {
@@ -165,11 +180,11 @@ object InterpretMethodsAnalysis {
                     }
                 }
 
-            collectedExceptions.view.filter(_.isDefined).map(_.get)
+            collectedExceptions.filter(_.isDefined).map(_.get)
         }
 
         val collectedExceptions = time('OVERALL) {
-            (
+            val result = (
                 for { (source, classFile) ← project.classFilesWithSources.par } yield {
 
                     if (beVerbose) print(BOLD + source.toString + RESET+" – ")
@@ -177,6 +192,8 @@ object InterpretMethodsAnalysis {
                     analyzeClassFile(source.toString, classFile)
                 }
             ).flatten.seq.toSeq
+            result.size //for the evaluation
+            result
         }
 
         if (collectedExceptions.nonEmpty) {
@@ -186,22 +203,22 @@ object InterpretMethodsAnalysis {
                         exInstances.map { ex ⇒
                             val (_, classFile, method, throwable) = ex
                             <div>
-                            	<b>{ classFile.thisType.fqn }</b> 
-                            	<i>"{ method.toJava }"</i><br/>
-                            	{ "Length: " + method.body.get.instructions.length }
-                            	<div>{ XHTML.throwableToXHTML(throwable) }</div>
+                                <b>{ classFile.thisType.fqn }</b>
+                                <i>"{ method.toJava }"</i><br/>
+                                { "Length: "+method.body.get.instructions.length }
+                                <div>{ XHTML.throwableToXHTML(throwable) }</div>
                             </div>
                         }
 
                     <section>
-                    <h1>{ exResource }</h1>
-                    <p>Number of thrown exceptions: { exInstances.size }</p>
-                    { exDetails }
+                        <h1>{ exResource }</h1>
+                        <p>Number of thrown exceptions: { exInstances.size }</p>
+                        { exDetails }
                     </section>
                 }
 
             val node =
-                XHTML.htmlTemplate(
+                XHTML.createXHTML(
                     Some("Exceptions Thrown During Interpretation"),
                     scala.xml.NodeSeq.fromSeq(body.toSeq))
             val file = XHTML.writeAndOpenDump(node)
@@ -209,7 +226,7 @@ object InterpretMethodsAnalysis {
             (
                 "During the interpretation of "+
                 methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes (overall: "+ns2sec(getTime('OVERALL))+
+                project.classFilesCount+" classes (real time: "+ns2sec(getTime('OVERALL))+
                 "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
                 "secs.)"+collectedExceptions.size+" exceptions occured.",
                 file
@@ -218,7 +235,7 @@ object InterpretMethodsAnalysis {
             (
                 "No exceptions occured during the interpretation of "+
                 methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes (overall: "+ns2sec(getTime('OVERALL))+
+                project.classFilesCount+" classes (real time: "+ns2sec(getTime('OVERALL))+
                 "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
                 "secs.)",
                 None

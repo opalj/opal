@@ -40,10 +40,9 @@ import br.analyses._
  * @author Ralf Mitschke
  * @author Daniel Klauer
  */
-class ProtectedFieldInFinalClass[Source]
-        extends MultipleResultsAnalysis[Source, FieldBasedReport[Source]] {
+class ProtectedFieldInFinalClass[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String = "Reports final classes that have protected fields."
+    override def description: String = "Reports final classes that have protected fields."
 
     /**
      * Runs this analysis on the given project.

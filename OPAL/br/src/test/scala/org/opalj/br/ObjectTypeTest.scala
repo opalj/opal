@@ -38,13 +38,14 @@ import org.scalatest.ParallelTestExecution
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ObjectTypeTest extends FunSuite with ParallelTestExecution {
 
-    test("ObjectType Field Descriptor") {
+    test("FieldType factory method") {
         val fieldType = FieldType("Ljava/lang/Object;")
         val ObjectType(className) = fieldType
+
         assert(className === "java/lang/Object")
     }
 
-    test("toJavaClass") {
+    test("toJavaClass method") {
         val ot2 = ObjectType("java/lang/Object")
         val ot3 = ObjectType("java/lang/String")
         val ot4 = ObjectType("java/util/List")
@@ -54,7 +55,7 @@ class ObjectTypeTest extends FunSuite with ParallelTestExecution {
         assert(ot4.toJavaClass == classOf[java.util.List[_]])
     }
 
-    test("Structural Equality") {
+    test("equals method") {
         val ot1 = ObjectType("java/lang/Object")
         val ot2 = ObjectType("java/lang/Object")
         val ot3 = ObjectType("java/lang/String")
@@ -63,21 +64,7 @@ class ObjectTypeTest extends FunSuite with ParallelTestExecution {
         assert(ot1 != ot3)
     }
 
-    test("Reference equality") {
-        val ot1 = ObjectType("java/lang/Object")
-        val ot2 = ObjectType("java/lang/Object")
-        val ot3 = ObjectType("java/lang/String")
-
-        assert(ot1 eq ot2)
-        assert(ot1 ne ot3)
-    }
-
-    test("Pattern matching") {
-        val ot1: FieldType = ObjectType("java/lang/Object")
-        ot1 match { case ObjectType(c) ⇒ assert(c === "java/lang/Object") }
-    }
-
-    test("onPrimitiveWrapperMatch") {
+    test("primitiveTypeWrapperMatcher method") {
 
         val matcher = ObjectType.primitiveTypeWrapperMatcher[Int, (Int, Int)](
             (id) ⇒ (id, BooleanType.WrapperType.id),
@@ -111,4 +98,21 @@ class ObjectTypeTest extends FunSuite with ParallelTestExecution {
         assert(matcher(ObjectType.String, ObjectType.String.id) == (-1, ObjectType.String.id))
     }
 
+    test("reference equality property") {
+        val ot1 = ObjectType("java/lang/Object")
+        val ot2 = ObjectType("java/lang/Object")
+        val ot3 = ObjectType("java/lang/String")
+
+        assert(ot1 eq ot2)
+        assert(ot1 ne ot3)
+    }
+
+    test("pattern matching on ObjectTypes") {
+        val ot1: FieldType = ObjectType("java/lang/Object")
+
+        ot1 match {
+            case ObjectType(c) ⇒ assert(c === "java/lang/Object")
+            case _             ⇒ fail(s"pattern match on ObjectType ($ot1) failed")
+        }
+    }
 }

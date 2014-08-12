@@ -29,114 +29,21 @@
 package org.opalj
 package ai
 
-import org.opalj.util.{ Answer }
+import org.opalj.util.Answer
 
 /**
  * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of integer values.
+ * that implements the functionality related to the handling of `int`eger values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait IntegerValuesDomain { this: CoreDomain ⇒
+trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
 
     // -----------------------------------------------------------------------------------
     //
-    // FACTORY METHODS TO CREATE INTEGER VALUES
+    // QUERY METHODS
     //
     // -----------------------------------------------------------------------------------
-
-    /**
-     * Factory method to create a representation of a boolean value if we know the
-     * origin of the value.
-     *
-     * The domain may ignore the information about the origin (`vo`).
-     */
-    def BooleanValue(vo: ValueOrigin): DomainValue
-
-    /**
-     * Factory method to create a representation of a boolean value with the given
-     * initial value and origin.
-     *
-     * The domain may ignore the information about the value and the origin (`vo`).
-     */
-    def BooleanValue(vo: ValueOrigin, value: Boolean): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that was created (explicitly or
-     * implicitly) by the instruction with the specified program counter.
-     *
-     * The domain may ignore the information about the origin (`vo`).
-     */
-    def ByteValue(vo: ValueOrigin): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that represents the given byte value
-     * and that was created (explicitly or implicitly) by the instruction with the
-     * specified program counter.
-     *
-     * The domain may ignore the information about the value and the origin (`vo`).
-     */
-    def ByteValue(vo: ValueOrigin, value: Byte): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that was created (explicitly or
-     * implicitly) by the instruction with the specified program counter.
-     *
-     * The domain may ignore the information about the origin (`vo`).
-     */
-    def ShortValue(vo: ValueOrigin): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that represents the given short value
-     * and that was created (explicitly or implicitly) by the instruction with the
-     * specified program counter.
-     */
-    def ShortValue(pc: PC, value: Short): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that was created (explicitly or
-     * implicitly) by the instruction with the specified program counter.
-     *
-     * The domain may ignore the information about the origin (`vo`).
-     */
-    def CharValue(vo: ValueOrigin): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that represents the given char value
-     * and that was created (explicitly or implicitly) by the instruction with the
-     * specified program counter.
-     */
-    def CharValue(vo: ValueOrigin, value: Char): DomainValue
-
-    /**
-     * Factory method to create a representation of the integer constant value 0.
-     *
-     * OPAL in particular uses this special value for performing subsequent
-     * computations against the fixed value 0 (e.g., for if_XX instructions).
-     *
-     * (The origin ([[ValueOrigin]]) that should be used should be the
-     * [[ConstantValueOrigin]] to signify that this value was not created by the program.)
-     *
-     * The domain may ignore the information about the value.
-     */
-    def IntegerConstant0: DomainValue = IntegerValue(ConstantValueOrigin, 0)
-
-    /**
-     * Factory method to create a `DomainValue` that was created (explicitly or
-     * implicitly) by the instruction with the specified program counter.
-     *
-     * The domain may ignore the information about the origin (`vo`).
-     */
-    def IntegerValue(vo: ValueOrigin): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that represents the given integer value
-     * and that was created (explicitly or implicitly) by the instruction with the
-     * specified program counter.
-     *
-     * The domain may ignore the information about the value and the origin (`vo`).
-     */
-    def IntegerValue(vo: ValueOrigin, value: Int): DomainValue
 
     /**
      * Returns `Yes` iff at least one possible extension of the given
@@ -153,6 +60,7 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
      * @param upperBound The range's upper bound (inclusive).
      */
     /*ABSTRACT*/ def intIsSomeValueInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer
@@ -164,9 +72,9 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
      * For example, if the given `value` has the integer value `10` and the
      * specified range is [0,Integer.MAX_VALUE] then the answer has to be `No`. But,
      * if the given `value` represents the range [-5,Integer.MAX_VALUE] and the specified
-     * range is again [0,Integer.MAX_VALUE] then the answer has to be `Yes` `Unknown`.
+     * range is again [0,Integer.MAX_VALUE] then the answer has to be `Yes`.
      *
-     * The answer is Yes iff the analysis determined that at runtime `value`  will have
+     * The answer is `Yes` iff the analysis determined that at runtime `value` will have
      * a value that is not in the specified range. If the analysis(domain) is not able
      * to determine whether the value is or is not in the given range then the answer
      * has to be `Unknown`.
@@ -176,6 +84,7 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
      * @param upperBound The range's upper bound (inclusive).
      */
     /*ABSTRACT*/ def intIsSomeValueNotInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer
@@ -186,7 +95,7 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
      * @param value1 A value with computational type integer.
      * @param value2 A value with computational type integer.
      */
-    /*ABSTRACT*/ def intAreEqual(value1: DomainValue, value2: DomainValue): Answer
+    /*ABSTRACT*/ def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer
 
     /**
      * Tests if the two given integer values are not equal.
@@ -195,9 +104,10 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
      * @param value2 A value with computational type integer.
      */
     def intAreNotEqual(
+        pc: PC,
         value1: DomainValue,
         value2: DomainValue): Answer =
-        intAreEqual(value1, value2).negate
+        intAreEqual(pc, value1, value2).negate
 
     /**
      * Tests if the first integer value is smaller than the second value.
@@ -206,6 +116,7 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
      * @param largerValue A value with computational type integer.
      */
     /*ABSTRACT*/ def intIsLessThan(
+        pc: PC,
         smallerValue: DomainValue,
         largerValue: DomainValue): Answer
 
@@ -216,6 +127,7 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
      * @param equalOrLargerValue A value with computational type integer.
      */
     /*ABSTRACT*/ def intIsLessThanOrEqualTo(
+        pc: PC,
         smallerOrEqualValue: DomainValue,
         equalOrLargerValue: DomainValue): Answer
 
@@ -226,9 +138,10 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
      * @param smallerValue A value with computational type integer.
      */
     def intIsGreaterThan(
+        pc: PC,
         largerValue: DomainValue,
         smallerValue: DomainValue): Answer =
-        intIsLessThan(smallerValue, largerValue)
+        intIsLessThan(pc, smallerValue, largerValue)
 
     /**
      * Tests if the first integer value is larger than or equal to the second value.
@@ -237,33 +150,34 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
      * @param smallerOrEqualValue A value with computational type integer.
      */
     def intIsGreaterThanOrEqualTo(
+        pc: PC,
         largerOrEqualValue: DomainValue,
         smallerOrEqualValue: DomainValue): Answer =
-        intIsLessThanOrEqualTo(smallerOrEqualValue, largerOrEqualValue)
+        intIsLessThanOrEqualTo(pc, smallerOrEqualValue, largerOrEqualValue)
 
     /**
      * Tests if the given integer value is 0 or maybe 0.
      *
      * @param value A value with computational type integer.
      */
-    def intIs0(value: DomainValue): Answer =
-        intAreEqual(value, IntegerConstant0)
+    def intIs0(pc: PC, value: DomainValue): Answer =
+        intAreEqual(pc, value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is not 0 or maybe not 0.
      *
      * @param value A value with computational type integer.
      */
-    def intIsNot0(value: DomainValue): Answer =
-        intAreNotEqual(value, IntegerConstant0)
+    def intIsNot0(pc: PC, value: DomainValue): Answer =
+        intAreNotEqual(pc, value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is &lt; 0 or maybe &lt; 0.
      *
      * @param value A value with computational type integer.
      */
-    def intIsLessThan0(value: DomainValue): Answer =
-        intIsLessThan(value, IntegerConstant0)
+    def intIsLessThan0(pc: PC, value: DomainValue): Answer =
+        intIsLessThan(pc, value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is less than or equal to 0 or maybe
@@ -271,16 +185,16 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
      *
      * @param value A value with computational type integer.
      */
-    def intIsLessThanOrEqualTo0(value: DomainValue): Answer =
-        intIsLessThanOrEqualTo(value, IntegerConstant0)
+    def intIsLessThanOrEqualTo0(pc: PC, value: DomainValue): Answer =
+        intIsLessThanOrEqualTo(pc, value, IntegerConstant0)
 
     /**
      * Tests if the given integer value is &gt; 0 or maybe &gt; 0.
      *
      * @param value A value with computational type integer.
      */
-    def intIsGreaterThan0(value: DomainValue): Answer =
-        intIsGreaterThan(value, IntegerConstant0)
+    def intIsGreaterThan0(pc: PC, value: DomainValue): Answer =
+        intIsGreaterThan(pc, value, IntegerConstant0)
 
     /**
      * Tests if the given value is greater than or equal to 0 or maybe greater
@@ -288,8 +202,8 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
      *
      * @param value A value with computational type integer.
      */
-    def intIsGreaterThanOrEqualTo0(value: DomainValue): Answer =
-        intIsGreaterThanOrEqualTo(value, IntegerConstant0)
+    def intIsGreaterThanOrEqualTo0(pc: PC, value: DomainValue): Answer =
+        intIsGreaterThanOrEqualTo(pc, value, IntegerConstant0)
 
     // -----------------------------------------------------------------------------------
     //
@@ -365,12 +279,12 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
     private[ai]type TwoValuesConstraint = ((PC, DomainValue, DomainValue, Operands, Locals) ⇒ (Operands, Locals))
 
     private[ai] final def IntIsGreaterThan: TwoValuesConstraint =
-        (pc: PC, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
-            intEstablishIsLessThan(pc, value2, value1, operands, locals)
+        (pc: PC, left: DomainValue, right: DomainValue, operands: Operands, locals: Locals) ⇒
+            intEstablishIsLessThan(pc, right, left, operands, locals)
 
     private[ai] final def IntIsGreaterThanOrEqualTo: TwoValuesConstraint =
-        (pc: PC, value1: DomainValue, value2: DomainValue, operands: Operands, locals: Locals) ⇒
-            intEstablishIsLessThanOrEqualTo(pc, value2, value1, operands, locals)
+        (pc: PC, left: DomainValue, right: DomainValue, operands: Operands, locals: Locals) ⇒
+            intEstablishIsLessThanOrEqualTo(pc, right, left, operands, locals)
 
     private[ai] final def IntIs0: SingleValueConstraint =
         (pc: PC, value: DomainValue, operands: Operands, locals: Locals) ⇒
@@ -411,13 +325,13 @@ trait IntegerValuesDomain { this: CoreDomain ⇒
     def i2s(pc: PC, value: DomainValue): DomainValue
 
     //
-    // UNARY EXPRESSIONS
+    // UNARY ARITHMETIC EXPRESSIONS
     //
 
     def ineg(pc: PC, value: DomainValue): DomainValue
 
     //
-    // BINARY EXPRESSIONS
+    // BINARY ARITHMETIC EXPRESSIONS
     //
 
     /**

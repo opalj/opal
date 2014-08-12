@@ -72,7 +72,7 @@ trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBindi
         val bootstrapMethods = classFile.attributes collectFirst {
             case BootstrapMethodTable(bms) ⇒ bms
         }
-        val invokeDynamic = INVOKEDYNAMIC(
+        val invokeDynamic = UNRESOLVED_INVOKEDYNAMIC(
             bootstrapMethods.get(cpEntry.bootstrapMethodAttributeIndex),
             cpEntry.methodName(cp),
             cpEntry.methodDescriptor(cp)

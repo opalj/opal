@@ -41,11 +41,10 @@ import br.instructions._
  *
  * @author Daniel Klauer
  */
-class CovariantEquals[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
+class CovariantEquals[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String = "Reports classes with one (or more) equals() methods,"+
-        " but without equals(Object)."
+    override def description: String = 
+        "Reports classes with one (or more) equals() methods but without equals(Object)."
 
     /**
      * Checks whether a class has `equals()` methods but not `equals(Object)`.
@@ -73,8 +72,7 @@ class CovariantEquals[Source]
         project: Project[Source],
         parameters: Seq[String] = List.empty): Iterable[ClassBasedReport[Source]] = {
         for (
-            classFile ← project.classFiles.filter(hasEqualsButNotEqualsObject(_))
-            if !project.isLibraryType(classFile)
+            classFile ← project.classFiles.filter(hasEqualsButNotEqualsObject(_)) if !project.isLibraryType(classFile)
         ) yield {
             ClassBasedReport(
                 project.source(classFile.thisType),

@@ -44,9 +44,7 @@ import br.instructions.ReturnInstruction
  */
 trait SimpleBooleanPropertyTracing
         extends PropertyTracing
-        with RecordReturnFromMethodInstructions { domain ⇒
-
-    def code: Code
+        with RecordReturnFromMethodInstructions { domain: Domain with TheCode ⇒
 
     /**
      * A name associated with the property. Used for debugging purposes only.
@@ -57,7 +55,7 @@ trait SimpleBooleanPropertyTracing
         val state: Boolean)
             extends Property {
 
-        def merge(otherProperty: DomainProperty): Update[DomainProperty] =
+        def join(otherProperty: DomainProperty): Update[DomainProperty] =
             this.state & otherProperty.state match {
                 case `state`  ⇒ NoUpdate
                 case newState ⇒ StructuralUpdate(new BooleanProperty(newState))

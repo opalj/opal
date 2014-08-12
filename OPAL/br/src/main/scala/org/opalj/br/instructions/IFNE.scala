@@ -37,11 +37,11 @@ package instructions
  */
 case class IFNE(
     branchoffset: Int)
-        extends ConditionalBranchInstruction {
+        extends IF0Instruction {
 
-    final override def opcode: Opcode = IFNE.opcode
+    final def opcode: Opcode = IFNE.opcode
 
-    final override def mnemonic: String = "ifne"
+    final def mnemonic: String = "ifne"
 
 }
 object IFNE {

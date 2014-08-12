@@ -45,7 +45,7 @@ import org.opalj.br.{ Type, ReferenceType, ObjectType, ArrayType, UpperTypeBound
  * @author Michael Eichberg
  */
 trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
-    domain: Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type DomainReferenceValue <: ReferenceValue
     type DomainSingleOriginReferenceValue <: SingleOriginReferenceValue with DomainReferenceValue
@@ -516,7 +516,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             })
         }
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target match {
 
                 case thatDomain: l1.ReferenceValues ⇒
@@ -738,7 +738,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         val lutb =
                             classHierarchy.joinObjectTypes(
                                 this.theUpperTypeBound, that.upperTypeBound, true)
-                        lutb.containsOneElement && (lutb.first() eq this.theUpperTypeBound)
+                        lutb.consistsOfOneElement && (lutb.first() eq this.theUpperTypeBound)
                     }
 
                 case _ ⇒
@@ -746,20 +746,18 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override def adapt(
-            targetDomain: Domain,
-            pc: PC): targetDomain.DomainValue = {
-            targetDomain match {
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
+            target match {
 
                 case thatDomain: l1.ReferenceValues ⇒
                     thatDomain.ObjectValue(pc, isNull, isPrecise, theUpperTypeBound).
-                        asInstanceOf[targetDomain.DomainValue]
+                        asInstanceOf[target.DomainValue]
 
                 case thatDomain: l0.DefaultTypeLevelReferenceValues ⇒
                     thatDomain.ReferenceValue(pc, theUpperTypeBound).
-                        asInstanceOf[targetDomain.DomainValue]
+                        asInstanceOf[target.DomainValue]
 
-                case _ ⇒ super.adapt(targetDomain, pc)
+                case _ ⇒ super.adapt(target, pc)
             }
         }
 
@@ -908,7 +906,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override def adapt(target: Domain, origin: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
             target match {
                 case td: ReferenceValues ⇒
                     td.ObjectValue(origin, isNull, this.upperTypeBound).
@@ -978,7 +976,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 var overallUTB = values.head.upperTypeBound
 
                 def currentUTBisUTBForArrays: Boolean =
-                    overallUTB.containsOneElement && overallUTB.first.isArrayType
+                    overallUTB.consistsOfOneElement && overallUTB.first.isArrayType
 
                 def asUTBForArrays: ArrayType =
                     overallUTB.first.asArrayType
@@ -1073,7 +1071,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue = {
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue = {
             // All values are mapped to one PC and – because a MultipleReference
             // Value only supports one Value per PC – hence, this is equivalent
             // to calculating a summary!

@@ -65,13 +65,7 @@ class DefaultVTACallGraphDomain[Source](
         with l0.TypeLevelFieldAccessInstructions
         with l1.DefaultIntegerRangeValues
         with l1.DefaultReferenceValuesBinding
-        with VTACallGraphDomain {
-
-    type Id = String
-
-    def id = classFile.thisType.toJava+"{ "+method.toJava+" }"
-
-}
-
+        with l0.DefaultPrimitiveValuesConversions
+        with VTACallGraphDomain 
 
 

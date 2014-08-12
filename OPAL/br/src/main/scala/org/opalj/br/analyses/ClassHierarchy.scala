@@ -1320,7 +1320,7 @@ class ClassHierarchy private (
                 newUpperTypeBound += Cloneable
             if (newUpperTypeBound.isEmpty)
                 UIDSet(Object)
-            else if (newUpperTypeBound.containsOneElement)
+            else if (newUpperTypeBound.consistsOfOneElement)
                 UIDSet(newUpperTypeBound.first)
             else
                 newUpperTypeBound
@@ -1417,7 +1417,7 @@ class ClassHierarchy private (
     def joinObjectTypesUntilSingleUpperBound(
         upperTypeBound: UIDSet[ObjectType],
         reflexive: Boolean): ObjectType = {
-        if (upperTypeBound.containsOneElement)
+        if (upperTypeBound.consistsOfOneElement)
             upperTypeBound.first
         else
             upperTypeBound reduce { (c, n) ⇒

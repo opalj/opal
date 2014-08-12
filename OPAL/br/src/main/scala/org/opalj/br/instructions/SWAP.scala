@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-
 /**
  * Swap the top two operand stack values.
  *
@@ -38,8 +37,8 @@ package instructions
  */
 case object SWAP extends StackManagementInstruction {
 
-    override final val opcode = 95
+    final val opcode = 95
 
-    def mnemonic: String = "swap"
+    final val mnemonic = "swap"
 
 }

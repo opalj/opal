@@ -223,15 +223,23 @@ class IincTracingDomain
     override def DoubleValue(pc: PC): DomainValue = MakeDoubleResult(pc)
     override def DoubleValue(pc: PC, value: Double): DomainValue = MakeDoubleResult(pc)
 
-    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer = Unknown
-    override def intIsSomeValueInRange(value: DomainValue, lowerBound: Int,
-                                       upperBound: Int): Answer = Unknown
-    override def intIsSomeValueNotInRange(value: DomainValue, lowerBound: Int,
-                                          upperBound: Int): Answer = Unknown
-    override def intIsLessThan(smallerValue: DomainValue,
-                               largerValue: DomainValue): Answer = Unknown
-    override def intIsLessThanOrEqualTo(smallerOrEqualValue: DomainValue,
-                                        equalOrLargerValue: DomainValue): Answer = Unknown
+    override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = Unknown
+    override def intIsSomeValueInRange(
+        pc: PC,
+        value: DomainValue,
+        lowerBound: Int, upperBound: Int): Answer = Unknown
+    override def intIsSomeValueNotInRange(
+        pc: PC,
+        value: DomainValue,
+        lowerBound: Int, upperBound: Int): Answer = Unknown
+    override def intIsLessThan(
+        pc: PC,
+        smallerValue: DomainValue,
+        largerValue: DomainValue): Answer = Unknown
+    override def intIsLessThanOrEqualTo(
+        pc: PC,
+        smallerOrEqualValue: DomainValue,
+        equalOrLargerValue: DomainValue): Answer = Unknown
 
     override def ineg(pc: PC, value: DomainValue) = MakeIntegerResult(pc, value)
     override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
@@ -398,10 +406,9 @@ class IincTracingDomain
  *
  * @author Daniel Klauer
  */
-class UselessIncrementInReturn[S]
-        extends MultipleResultsAnalysis[S, LineAndColumnBasedReport[S]] {
+class UselessIncrementInReturn[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String = "Reports useless increments after a return statement."
+    override def description: String = "Reports useless increments after a return statement."
 
     /**
      * Runs this analysis on the given project.
@@ -411,10 +418,10 @@ class UselessIncrementInReturn[S]
      * @return A list of reports, or an empty list.
      */
     def analyze(
-        project: Project[S],
-        parameters: Seq[String] = List.empty): Iterable[LineAndColumnBasedReport[S]] = {
+        project: Project[Source],
+        parameters: Seq[String] = List.empty): Iterable[LineAndColumnBasedReport[Source]] = {
 
-        var reports: List[LineAndColumnBasedReport[S]] = List.empty
+        var reports: List[LineAndColumnBasedReport[Source]] = List.empty
 
         for {
             classFile ← project.classFiles

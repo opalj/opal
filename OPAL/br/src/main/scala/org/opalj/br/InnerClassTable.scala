@@ -29,6 +29,9 @@
 package org.opalj
 package br
 
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
+
 /**
  * Attribute in a class' attribute table the encodes information about inner classes.
  *
@@ -48,7 +51,17 @@ object InnerClassTable {
 }
 
 case class InnerClass(
-    innerClassType: ObjectType,
-    outerClassType: Option[ObjectType],
-    innerName: Option[String],
-    innerClassAccessFlags: Int) 
+        innerClassType: ObjectType,
+        outerClassType: Option[ObjectType],
+        innerName: Option[String],
+        innerClassAccessFlags: Int) {
+
+    override def toString(): String = {
+        "InnerClass"+
+            "(type="+innerClassType.toJava+
+            ",outerType="+outerClassType.map(_.toJava)+
+            ",innerName="+innerName+
+            ",accessFlags=\""+AccessFlags.toString(innerClassAccessFlags, AccessFlagsContexts.INNER_CLASS)+"\""+
+            ")"
+    }
+}

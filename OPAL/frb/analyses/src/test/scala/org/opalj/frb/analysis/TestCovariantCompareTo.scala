@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestCovariantCompareTo extends AnalysisTest {
-    import TestCovariantCompareTo._
 
     behavior of "CovariantCompareTo"
+
+    val project = createProject("CovariantCompareTo.jar")
+    val results = new CovariantCompareTo[URL].analyze(project)
 
     def shouldReport(className: String) {
         val classType = ObjectType("CovariantCompareTo/"+className)
@@ -79,7 +81,3 @@ class TestCovariantCompareTo extends AnalysisTest {
     }
 }
 
-object TestCovariantCompareTo {
-    val project = makeProjectFromJar("CovariantCompareTo.jar")
-    val results = new CovariantCompareTo[URL].analyze(project)
-}

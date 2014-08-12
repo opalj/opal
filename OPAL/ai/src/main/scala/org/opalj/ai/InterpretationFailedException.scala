@@ -63,6 +63,7 @@ object InterpretationFailedException {
             theOperandsArray: theDomain.OperandsArray,
             theLocalsArray: theDomain.LocalsArray,
             theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIException with InterpretationFailedException = {
+
         new AIException("the interpretation failed", theCause) with InterpretationFailedException {
             def cause = super.getCause
             val domain: theDomain.type = theDomain
@@ -73,6 +74,7 @@ object InterpretationFailedException {
             val localsArray: theDomain.LocalsArray = theLocalsArray
             val memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
         }
+
     }
 }
 

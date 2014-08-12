@@ -36,8 +36,12 @@ package l1
  *
  * @author Michael Eichberg
  */
-trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRangeValues {
-    this: Configuration ⇒
+trait DefaultIntegerRangeValues
+        extends DefaultDomainValueBinding
+        with JoinStabilization
+        with IdentityBasedAliasBreakUpDetection
+        with IntegerRangeValues {
+    domain: Configuration with VMLevelExceptionsFactory ⇒
 
     /**
      * @note The functionality to propagate a constraint crucially depends on
@@ -51,12 +55,9 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
     class AnIntegerValue() extends super.AnIntegerValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
-            value match {
-                case _: IntegerRange ⇒
-                    MetaInformationUpdate(AnIntegerValue())
-                case _: AnIntegerValue ⇒
-                    MetaInformationUpdate(value /* this is the new value */ )
-            }
+            // we are not joining the "same" value; the join stabilization trait
+            // takes care of handling potential aliases
+            MetaInformationUpdate(AnIntegerValue())
         }
 
         override def abstractsOver(other: DomainValue): Boolean =
@@ -64,8 +65,10 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.IntegerValue(pc)
+
+        override def newInstance: AnIntegerValue = AnIntegerValue()
 
         override def hashCode: Int = 101
 
@@ -92,7 +95,7 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             val result = other match {
-                case that: AnIntegerValue ⇒ StructuralUpdate(that)
+                case that: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
                 case IntegerRange(otherLB, otherUB) ⇒
                     val newLowerBound = Math.min(this.lowerBound, otherLB)
                     val newUpperBound = Math.max(this.upperBound, otherUB)
@@ -106,16 +109,10 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
                         StructuralUpdate(AnIntegerValue())
 
                     else if (newLowerBound == lowerBound && newUpperBound == upperBound)
-                        // This is NOT a "NoUpdate" since we have to values that may
+                        // This is NOT a "NoUpdate" since we have two values that may
                         // have the same range, but which can still be two different
-                        // runtime values!
-                        if (newLowerBound == otherLB && newUpperBound == otherUB)
-                            MetaInformationUpdate(other)
-                        else
-                            MetaInformationUpdate(IntegerRange(newLowerBound, newUpperBound))
-
-                    else if (newLowerBound == otherLB && newUpperBound == otherUB)
-                        StructuralUpdate(other)
+                        // runtime values (they were not created at the same time!
+                        MetaInformationUpdate(IntegerRange(newLowerBound, newUpperBound))
                     else
                         StructuralUpdate(IntegerRange(newLowerBound, newUpperBound))
             }
@@ -133,16 +130,16 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(
-            targetDomain: Domain,
-            pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultIntegerRangeValues]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultIntegerRangeValues]
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
+            if (target.isInstanceOf[IntegerRangeValues]) {
+                val thatDomain = target.asInstanceOf[DefaultIntegerRangeValues]
                 thatDomain.IntegerRange(this.lowerBound, this.upperBound).
-                    asInstanceOf[targetDomain.DomainValue]
+                    asInstanceOf[target.DomainValue]
             } else {
-                targetDomain.IntegerValue(pc)
+                target.IntegerValue(pc)
             }
+
+        override def newInstance: IntegerRange = IntegerRange(lowerBound, upperBound)
 
         override def hashCode = this.lowerBound * 13 + this.upperBound
 
@@ -162,7 +159,7 @@ trait DefaultIntegerRangeValues extends DefaultDomainValueBinding with IntegerRa
         override def toString: String = "IntegerRange(lb="+lowerBound+", ub="+upperBound+")"
     }
 
-    override def IntegerRange(lb: Int, ub: Int): DomainValue = new IntegerRange(lb, ub)
+    override def IntegerRange(lb: Int, ub: Int): IntegerRange = new IntegerRange(lb, ub)
 
     override def BooleanValue(pc: PC): DomainValue = AnIntegerValue()
     override def BooleanValue(pc: PC, value: Boolean): DomainValue =

@@ -82,11 +82,11 @@ trait UShortSet {
     }
 
     def filter(f: UShort ⇒ Boolean): UShortSet = {
-        var result: mutable.UShortSet = mutable.UShortSet.empty 
+        var result: mutable.UShortSet = mutable.UShortSet.empty
         foreach(v ⇒ if (f(v)) result = v +≈: result)
         result
     }
-    
+
     /**
      * Returns a new `Iterator`. The iterator is primarily defined to facilitate
      * the integration with Scala's standard collections API.
@@ -95,7 +95,7 @@ trait UShortSet {
      *      (e.g., foreach and contains) as they are guaranteed to be optimized for
      *      performance.
      */
-    def iterator: Iterator[UShort] = iterable.iterator
+    def iterator: Iterator[UShort]
 
     /**
      * Returns a new `Iterable`. The method is primarily defined to facilitate
@@ -113,6 +113,11 @@ trait UShortSet {
     def max: UShort
 
     /**
+     * The minimum value.
+     */
+    def min: UShort
+
+    /**
      * The last value in this set which is also the maximum value.
      */
     def last: UShort = max
@@ -120,9 +125,10 @@ trait UShortSet {
     /**
      * The number of elements of this set.
      *
-     * @note The size is calculated using an iterator, hence its complexity is O(n).
+     * @note The size is calculated on demand and requires a traversal of this
+     *      data structure.
      */
-    def size: Int = iterator.size
+    def size: Int
 
     /**
      * Returns `true` if this set is empty.

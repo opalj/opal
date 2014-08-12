@@ -49,6 +49,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
             extends Domain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
+            with domain.l0.DefaultPrimitiveValuesConversions
             with domain.l0.DefaultTypeLevelLongValues
             with domain.l0.DefaultTypeLevelFloatValues
             with domain.l0.DefaultTypeLevelDoubleValues
@@ -61,10 +62,6 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
             with domain.TheProject[java.net.URL]
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy {
-
-        type Id = String
-
-        def id = "Domain used by the anaylsis CallsOfNativeMethodsWithBoundedValues"
 
         override def maxSizeOfIntegerRanges: Long = 128l
     }

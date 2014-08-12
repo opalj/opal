@@ -47,7 +47,7 @@ import org.opalj.br._
  * @author Michael Eichberg
  */
 trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
-    domain: Configuration with ConcreteIntegerValues with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // We do not refine the type DomainArrayValue any further since we also want
     // to use the super level ArrayValue class to represent arrays for which we have
@@ -188,7 +188,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
             }
         }
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target match {
 
                 case thatDomain: l1.ArrayValues ⇒
@@ -266,9 +266,9 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
         if (intValue.isDefined && reifyArray(pc, intValue.get, arrayType)) {
             val count = intValue.get
             if (count >= 1024)
-                println("[warn] tracking arrays ("+arrayType.toJava+
+                println(Console.YELLOW+"[warn] tracking arrays ("+arrayType.toJava+
                     ") with more than 1024 ("+count+
-                    ") elements is not officially supported")
+                    ") elements is not officially supported"+Console.RESET)
             var virtualPC = 65536 + pc * 1024
 
             val array: Array[DomainValue] = new Array[DomainValue](count)

@@ -30,10 +30,14 @@ package org.opalj
 package br
 package instructions
 
-import analyses.{ Project, SomeProject }
+import java.io.File
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-import java.io.File
+
+import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.bi.TestSupport.JRELibraryFolder
+
+import analyses.{ Project, SomeProject }
 import reader.{ Java8Framework, Java8LibraryFramework }
 
 /**
@@ -45,8 +49,8 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
 
     val InvokedMethod = ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethod")
 
-    val testResources = TestSupport.locateTestResources("classfiles/Lambdas.jar", "br")
-    val rtJar = new File(TestSupport.JRELibraryFolder, "rt.jar")
+    val testResources = locateTestResources("classfiles/Lambdas.jar", "br")
+    val rtJar = new File(JRELibraryFolder, "rt.jar")
 
     val project: SomeProject = Project(
         Java8Framework.ClassFiles(testResources),

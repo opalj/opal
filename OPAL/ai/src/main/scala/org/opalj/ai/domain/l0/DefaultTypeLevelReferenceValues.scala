@@ -31,18 +31,6 @@ package ai
 package domain
 package l0
 
-import scala.Iterable
-
-import org.opalj.ai.Computation
-import org.opalj.ai.Domain
-import org.opalj.ai.DomainException
-import org.opalj.ai.IsAReferenceValue
-import org.opalj.ai.IsPrimitiveValue
-import org.opalj.ai.NoUpdate
-import org.opalj.ai.Update
-import org.opalj.ai.domain.ClassHierarchy
-import org.opalj.ai.domain.Configuration
-import org.opalj.ai.domain.DefaultDomainValueBinding
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.util.Answer
@@ -61,7 +49,7 @@ import org.opalj.br.ReferenceType
 trait DefaultTypeLevelReferenceValues
         extends DefaultDomainValueBinding
         with TypeLevelReferenceValues {
-    domain: Configuration with ClassHierarchy ⇒
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -90,8 +78,7 @@ trait DefaultTypeLevelReferenceValues
         }
     }
 
-    protected[this] class ArrayValue(
-        override val theUpperTypeBound: ArrayType)
+    protected[this] class ArrayValue(override val theUpperTypeBound: ArrayType)
             extends super.ArrayValue with SReferenceValue[ArrayType] {
         this: DomainArrayValue ⇒
 
@@ -111,7 +98,7 @@ trait DefaultTypeLevelReferenceValues
             typeOfValue(value) match {
 
                 case IsPrimitiveValue(primitiveType) ⇒
-                    // The following is an overapproximation that makes it theoretically 
+                    // The following is an over approximation that makes it theoretically 
                     // possible to store an int value in a byte array. However, 
                     // such bytecode is illegal
                     Answer(
@@ -206,7 +193,7 @@ trait DefaultTypeLevelReferenceValues
             }
         }
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.ReferenceValue(pc, theUpperTypeBound)
     }
 
@@ -229,13 +216,13 @@ trait DefaultTypeLevelReferenceValues
                 StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
         }
 
-        override def load(pc: PC, index: DomainValue): ArrayLoadResult =
+        final override def load(pc: PC, index: DomainValue): ArrayLoadResult =
             throw DomainException("arrayload not possible; this is not an array value: "+this)
 
-        override def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult =
+        final override def store(pc: PC, value: DomainValue, index: DomainValue): ArrayStoreResult =
             throw DomainException("arraystore not possible; this is not an array value: "+this)
 
-        override def length(pc: PC): Computation[DomainValue, ExceptionValue] =
+        final override def length(pc: PC): Computation[DomainValue, ExceptionValue] =
             throw DomainException("arraylength not possible; this is not an array value: "+this)
     }
 
@@ -333,11 +320,11 @@ trait DefaultTypeLevelReferenceValues
                     val lutb =
                         classHierarchy.joinObjectTypes(
                             this.theUpperTypeBound, thatUpperTypeBound, true)
-                    lutb.containsOneElement && (lutb.first() eq this.theUpperTypeBound)
+                    lutb.consistsOfOneElement && (lutb.first() eq this.theUpperTypeBound)
             }
         }
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.ReferenceValue(pc, theUpperTypeBound)
 
     }
@@ -439,7 +426,7 @@ trait DefaultTypeLevelReferenceValues
             }
         }
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target match {
                 case td: TypeLevelReferenceValues ⇒
                     td.ObjectValue(pc, upperTypeBound).asInstanceOf[target.DomainValue]
@@ -447,7 +434,7 @@ trait DefaultTypeLevelReferenceValues
                     super.adapt(target, pc)
             }
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(pc: PC): this.type = this
 
         override def toString() =
             "ReferenceValue("+upperTypeBound.map(_.toJava).mkString(" with ")+")"

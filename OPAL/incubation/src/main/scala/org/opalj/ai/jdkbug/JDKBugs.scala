@@ -54,7 +54,7 @@ object JDKTaintAnalysis
 
     def ai = new AI[Domain with Report] {}
 
-    def description: String = "Finds unsafe Class.forName(...) calls."
+    override def description: String = "Finds unsafe Class.forName(...) calls."
 
     println(System.getProperty("java.version"));
 
@@ -167,6 +167,7 @@ trait TaintAnalysisDomain[Source]
         with DomainId
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
+        with DefaultPrimitiveValuesConversions
         with DefaultDomainValueBinding
         with DefaultTypeLevelLongValues
         with DefaultTypeLevelFloatValues

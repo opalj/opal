@@ -44,9 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestSwingMethodInvokedInSwingThread extends AnalysisTest {
-    import TestSwingMethodInvokedInSwingThread._
 
     behavior of "SwingMethodInvokedInSwingThread"
+
+    val project = createProject("SwingMethodInvokedInSwingThread.jar")
+    val results = new SwingMethodInvokedInSwingThread[URL].analyze(project).toSet
 
     it should "report a call to setVisible() on a javax/swing/JButton inside the main()"+
         " method in SwingMethodInvokedInSwingThread/BadSwingImplementation" in {
@@ -65,9 +67,4 @@ class TestSwingMethodInvokedInSwingThread extends AnalysisTest {
     it should "find exactly 1 issue in SwingMethodInvokedInSwingThread.jar" in {
         results.size should be(1)
     }
-}
-
-object TestSwingMethodInvokedInSwingThread {
-    val project = makeProjectFromJar("SwingMethodInvokedInSwingThread.jar")
-    val results = new SwingMethodInvokedInSwingThread[URL].analyze(project).toSet
 }

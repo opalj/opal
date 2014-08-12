@@ -30,7 +30,6 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-
 import bi.ACC_ABSTRACT
 import bi.ACC_ANNOTATION
 import bi.ACC_INTERFACE
@@ -39,6 +38,7 @@ import bi.ACC_FINAL
 import bi.ACC_PUBLIC
 import bi.AccessFlagsContexts
 import bi.AccessFlags
+import scala.util.control.ControlThrowable
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -135,11 +135,155 @@ final class ClassFile private (
     def enclosingMethod: Option[EnclosingMethod] =
         attributes collectFirst { case em: EnclosingMethod ⇒ em }
 
+    /**
+     * Returns the `inner classes attribute`, if defined.
+     *
+     * @note The inner classes attribute contains (for inner classes) also a reference
+     *      to its outer class. Furthermore, it contains references to other inner
+     *      classes that are not an inner class of this class.
+     *      If you are just interested in the inner classes
+     *      of this class, use the method nested classes.
+     * @see [[nestedClasses]]
+     */
     def innerClasses: Option[InnerClasses] =
         attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
 
     /**
-     * Each class has at most one explicit, direct outer type.
+     * Returns the set of all immediate nested classes of this class. I.e., returns those
+     * nested classes that are not defined in the scope of a nested class of this
+     * class.
+     */
+    def nestedClasses(classFileRepository: ClassFileRepository): Seq[ObjectType] = {
+        // From the Java __8__ specification:
+        // - every inner class must have an inner class attribute (at least for itself)
+        // - every class that has inner classes must have an innerclasses attribute
+        //   and the inner classes array must contain an entry
+        // - the InnerClasses attribute only encodes information about its immediate
+        //   inner classes
+        var outerClassType: Option[ObjectType] = enclosingMethod.map(_.clazz)
+        var isInnerType = false
+
+        def isThisType(innerClass: InnerClass): Boolean = {
+            if (innerClass.innerClassType eq thisType) {
+                if (innerClass.outerClassType.isDefined)
+                    outerClassType = innerClass.outerClassType
+                isInnerType = true
+                true
+            } else
+                false
+        }
+
+        val nestedClassesCandidates = innerClasses.map { innerClasses ⇒
+            innerClasses.filter(innerClass ⇒
+                // it does not describe this class:
+                (!isThisType(innerClass)) &&
+                    // it does not give information about an outer class:     
+                    (!this.fqn.startsWith(innerClass.innerClassType.fqn)) &&
+                    // it does not give information about some other inner class of this type:
+                    (
+                        innerClass.outerClassType.isEmpty ||
+                        (innerClass.outerClassType.get eq thisType)
+                    )
+            ).map(_.innerClassType)
+        }.getOrElse {
+            Nil
+        }
+
+        // THE FOLLOWING CODE IS NECESSARY TO COPE WITH BYTECODE GENERATED
+        // BY OLD JAVA COMPILERS (IN PARTICULAR JAVA 1.1); 
+        // IT BASICALLY TRIES TO RECREATE THE INNER-OUTERCLASSES STRUCTURE 
+        if (isInnerType && outerClassType.isEmpty) {
+            // let's try to find the outer class that refers to this class
+            val thisFQN = thisType.fqn
+            val innerTypeNameStartIndex = thisFQN.indexOf('$')
+            if (innerTypeNameStartIndex == -1) {
+                println(
+                    Console.YELLOW+"[warn] the inner class "+thisType.toJava+
+                        " does not use the standard naming schema"+
+                        "; the inner classes information may be incomplete"+
+                        Console.RESET
+                )
+                return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
+            }
+            val outerFQN = thisFQN.substring(0, innerTypeNameStartIndex)
+            classFileRepository.classFile(ObjectType(outerFQN)) match {
+                case Some(outerClass) ⇒
+
+                    def directNestedClasses(objectTypes: Iterable[ObjectType]): Set[ObjectType] = {
+                        var nestedTypes: Set[ObjectType] = Set.empty
+                        objectTypes.foreach { objectType ⇒
+                            classFileRepository.classFile(objectType) match {
+                                case Some(classFile) ⇒
+                                    nestedTypes ++= classFile.nestedClasses(classFileRepository)
+                                case None ⇒
+                                    println(
+                                        Console.YELLOW+"[warn] project information incomplete; "+
+                                            "cannot get informaton about "+objectType.toJava+
+                                            "; the inner classes information may be incomplete"+
+                                            Console.RESET
+                                    )
+                            }
+                        }
+                        nestedTypes
+                    }
+
+                    // let's filter those classes that are known innerclasses of this type's
+                    // (indirect) outertype (they cannot be innerclasses of this class..)
+                    var nestedClassesOfOuterClass = outerClass.nestedClasses(classFileRepository)
+                    while (!nestedClassesOfOuterClass.contains(thisType) &&
+                        !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains(_))) {
+                        // We are still lacking sufficient information to make a decision 
+                        // which class is a nested class of which other class
+                        // e.g. we might have the following situation:
+                        // class X { 
+                        //  class Y {                                // X$Y
+                        //      void m(){ 
+                        //          new Listener(){                  // X$Listener$1
+                        //              void event(){ 
+                        //                  new Listener(){...}}}}}} // X$Listener$2
+                        nestedClassesOfOuterClass = directNestedClasses(nestedClassesOfOuterClass).toSeq
+                    }
+                    val filteredNestedClasses = nestedClassesCandidates.filterNot(nestedClassesOfOuterClass.contains(_))
+                    return filteredNestedClasses
+                case None ⇒
+                    println(
+                        Console.YELLOW+"[warn] project information incomplete; "+
+                            "cannot identify outer type of "+thisType.toJava+
+                            "; the inner classes information may be incomplete"+
+                            Console.RESET
+                    )
+                    return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
+            }
+
+        }
+
+        nestedClassesCandidates
+    }
+
+    /**
+     * Iterates over '''all ''direct'' and ''indirect'' nested classes''' of this class file.
+     *
+     * @example To collect all nested types:
+     * {{{
+     *   var allNestedTypes: Set[ObjectType] = Set.empty
+     *   foreachNestedClasses(innerclassesProject, { nc ⇒ allNestedTypes += nc.thisType })
+     * }}}
+     */
+    def foreachNestedClass(
+        classFileRepository: ClassFileRepository,
+        f: (ClassFile) ⇒ Unit): Unit = {
+        nestedClasses(classFileRepository).foreach { nestedType ⇒
+            classFileRepository.classFile(nestedType).map { nestedClassFile ⇒
+                f(nestedClassFile)
+                nestedClassFile.foreachNestedClass(classFileRepository, f)
+            }
+        }
+    }
+
+    /**
+     * Each class has at most one explicit, direct outer type. Note that a local
+     * class (a class defined in the scope of a method) or an anonymous class
+     * do not specify an outer type.
      *
      * @return The object type of the outer type as well as the access flags of this
      *      inner class.
@@ -170,7 +314,7 @@ final class ClassFile private (
      * at most one `SourceDebugExtension` attribute. The data (which is modified UTF8
      * String may, however, not be representable using a String object (see the
      * spec. for further details.)
-     * 
+     *
      * The returned Array must not be mutated.
      */
     def sourceDebugExtension: Option[Array[Byte]] =
@@ -181,7 +325,33 @@ final class ClassFile private (
      *
      * (This does not include static initializers.)
      */
-    def constructors: Seq[Method] = methods.view filter { _.name == "<init>" }
+    def constructors: Iterator[Method] = {
+        new Iterator[Method] {
+            var i = -1
+
+            private def lookupNextConstructor() {
+                i += 1
+                if (i >= methods.size)
+                    i = -1
+                else {
+                    val methodName = methods(i).name
+                    if (methodName < "<init>")
+                        lookupNextConstructor()
+                    else if (methodName > "<init>")
+                        i = -1;
+                }
+            }
+
+            lookupNextConstructor()
+
+            def hasNext: Boolean = i >= 0
+            def next: Method = {
+                val m = methods(i)
+                lookupNextConstructor
+                m
+            }
+        }
+    }
 
     /**
      * The set of all instance methods. I.e., the set of methods that are not static,
@@ -324,14 +494,22 @@ final class ClassFile private (
         }
 
     override def toString: String = {
-        "ClassFile(\n\t"+
-            AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
-            thisType.toJava+"\n"+
-            superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
-            (if (interfaceTypes.nonEmpty) interfaceTypes.mkString("\t\twith ", " with ", "\n") else "") +
-            annotationsToJava(runtimeVisibleAnnotations, "\t", "\n") +
-            annotationsToJava(runtimeInvisibleAnnotations, "\t", "\n")+
-            "\t{version="+majorVersion+"."+minorVersion+"}\n)"
+        try {
+            "ClassFile(\n\t"+
+                AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
+                thisType.toJava+"\n"+
+                superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
+                (if (interfaceTypes.nonEmpty) interfaceTypes.mkString("\t\twith ", " with ", "\n") else "") +
+                annotationsToJava(runtimeVisibleAnnotations, "\t", "\n") +
+                annotationsToJava(runtimeInvisibleAnnotations, "\t", "\n")+
+                "\t{version="+majorVersion+"."+minorVersion+"}\n)"
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct
+            case e: Exception ⇒
+                throw new RuntimeException(
+                    "creating a string representation for "+thisType.toJava+" failed",
+                    e)
+        }
     }
 
     protected[br] def updateAttributes(newAttributes: Attributes): ClassFile = {
@@ -372,59 +550,6 @@ object ClassFile {
             methods sortWith { (m1, m2) ⇒ m1 < m2 },
             attributes)
     }
-
-    /**
-     * Creates a class that acts as a proxy for the specified class and that implements
-     * a single method that calls the specified method.
-     *
-     * I.e., a class is generated using the following template:
-     * {{{
-     * class <definingType.objectType>
-     *  extends <definingType.theSuperclassType>
-     *  implements <definingType.theSuperinterfaceTypes> {
-     *
-     *  private <calleeType> receiver;
-     *
-     *  public "<init>"( <calleeType> receiver) { // the constructor
-     *      this.receiver = receiver;
-     *  }
-     *
-     *  public <methodDescriptor.returnType> <methodName> <methodDescriptor.paramterTypes>{
-     *     return/*<= if the return type is not void*/ this.receiver.<calleMethodName>(<parameters>)
-     *  }
-     *  }
-     * }}}
-     * The class, the constructor and the method will be public. The field which holds
-     * the receiver object is private.
-     *
-     * If the receiver method is static, an empty '''default constructor''' is created
-     * and no field is generated.
-     *
-     * The synthetic access flag is always set, as well as the [[VirtualTypeFlag]]
-     * attribute.
-     *
-     * The used class file version is 49.0 (Java 5) (Using this version, we are not
-     * required to create the stack map table attribute to create a valid class file.)
-     */
-    //    def Proxy(
-    //        definingType: TypeDeclaration,
-    //        methodName: String,
-    //        methodDescriptor: MethodDescriptor,
-    //        calleeType: ObjectType,
-    //        calleeMethodName: String,
-    //        calleeMethodDescriptor: String): ClassFile = {
-    //
-    //        val field: Option[Field] = None
-    //        val method: Method = null
-    //        ClassFile(0, 49,
-    //            bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
-    //            definingType.objectType,
-    //            definingType.theSuperclassType,
-    //            definingType.theSuperinterfaceTypes.toSeq,
-    //            field.map(IndexedSeq(_)).getOrElse(IndexedSeq.empty),
-    //            IndexedSeq(method),
-    //            IndexedSeq(VirtualTypeFlag))
-    //    }
 
     def unapply(classFile: ClassFile): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
         import classFile._

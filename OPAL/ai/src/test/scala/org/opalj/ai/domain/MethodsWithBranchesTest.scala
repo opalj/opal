@@ -38,6 +38,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import br._
 import br.reader.Java8Framework.ClassFiles
 import l0._
@@ -67,6 +69,7 @@ class MethodsWithBranchesTest
             with DefaultTypeLevelLongValues
             with DefaultTypeLevelFloatValues
             with DefaultTypeLevelDoubleValues
+            with DefaultPrimitiveValuesConversions
             with TypeLevelFieldAccessInstructions
             with SimpleTypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
@@ -178,7 +181,7 @@ class MethodsWithBranchesTest
 }
 private object MethodsWithBranchesTest {
 
-    val classFiles = ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
 
     val classFile = classFiles.map(_._1).
         find(_.thisType.fqn == "ai/MethodsWithBranches").get

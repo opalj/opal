@@ -43,14 +43,13 @@ import br.instructions._
  * @author Ralf Mitschke
  * @author Peter Spieler
  */
-class ImplementsCloneableButNotClone[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
+class ImplementsCloneableButNotClone[Source] extends FindRealBugsAnalysis[Source] {
 
     /**
      * Returns a description text for this analysis.
      * @return analysis description
      */
-    def description: String =
+    override def description: String =
         "Reports classes that implement the interface cloneable, "+
             "but not the clone() method."
 

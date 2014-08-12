@@ -113,11 +113,11 @@ class DefaultPreciseIntegerValuesTest
         val v0 = IntegerValue(SomePC, 0)
         val v1 = IntegerValue(SomePC, 1)
 
-        intAreEqual(vconst0, v0) should be(Yes)
-        intAreEqual(v0, vconst0) should be(Yes)
+        intAreEqual(-1, vconst0, v0) should be(Yes)
+        intAreEqual(-1, v0, vconst0) should be(Yes)
 
-        intAreEqual(vconst0, v1) should be(No)
-        intAreEqual(v1, vconst0) should be(No)
+        intAreEqual(-1, vconst0, v1) should be(No)
+        intAreEqual(-1, v1, vconst0) should be(No)
 
     }
 
@@ -149,9 +149,10 @@ object DefaultPreciseIntegerValuesTest {
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultReferenceValuesBinding
+            with DefaultPreciseIntegerValues
+            with l0.DefaultPrimitiveValuesConversions
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
-            with DefaultPreciseIntegerValues
             with PredefinedClassHierarchy
             with DefaultHandlingOfMethodResults
             with RecordLastReturnedValues
@@ -162,7 +163,7 @@ object DefaultPreciseIntegerValuesTest {
     }
 
     val testClassFileName = "classfiles/ai.jar"
-    val testClassFile = org.opalj.br.TestSupport.locateTestResources(testClassFileName, "ai")
+    val testClassFile = org.opalj.bi.TestSupport.locateTestResources(testClassFileName, "ai")
     val project = org.opalj.br.analyses.Project(testClassFile)
     val ConditionalMath = project.classFile(ObjectType("ai/domain/ConditionalMath")).get
 

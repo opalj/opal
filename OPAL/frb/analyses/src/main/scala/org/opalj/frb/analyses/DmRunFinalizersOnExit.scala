@@ -43,15 +43,14 @@ import br.instructions._
  * @author Ralf Mitschke
  * @author Roberts Kolosovs
  */
-class DmRunFinalizersOnExit[Source]
-        extends MultipleResultsAnalysis[Source, MethodBasedReport[Source]] {
+class DmRunFinalizersOnExit[Source] extends FindRealBugsAnalysis[Source] {
 
     /**
      * Returns a description text for this analysis.
      * @return analysis description
      */
-    def description: String = "Detects calls of the System.runFinalizersOnExit /"+
-        "Runtime.runFinalizersOnExit method."
+    override def description: String = 
+        "Detects calls of System.runFinalizersOnExit/Runtime.runFinalizersOnExit."
 
     // runFinalizersOnExit() has a boolean parameter and returns void
     private val runFinalizersOnExitMethodDescriptor =

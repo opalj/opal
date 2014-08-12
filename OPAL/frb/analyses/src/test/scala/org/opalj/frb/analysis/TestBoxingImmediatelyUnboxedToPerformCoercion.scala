@@ -44,7 +44,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestBoxingImmediatelyUnboxedToPerformCoercion extends AnalysisTest {
-    import TestBoxingImmediatelyUnboxedToPerformCoercion._
+
+    behavior of "the analysis BoxingImmediatelyUnboxedToPerformCoercion"
+
+    val project = createProject("BoxingImmediatelyUnboxedToPerformCoercion.jar")
+    val results = new BoxingImmediatelyUnboxedToPerformCoercion[URL].analyze(project).toSet
 
     it should "detect that BoxingImmediatelyUnboxedToPerformCoercion/"+
         "NewIntegerToDoubleValue:40 creates a new Integer object (boxing) and "+
@@ -67,8 +71,3 @@ class TestBoxingImmediatelyUnboxedToPerformCoercion extends AnalysisTest {
     }
 }
 
-object TestBoxingImmediatelyUnboxedToPerformCoercion {
-    val project = makeProjectFromJar("BoxingImmediatelyUnboxedToPerformCoercion.jar")
-    val results =
-        new BoxingImmediatelyUnboxedToPerformCoercion[URL].analyze(project).toSet
-}

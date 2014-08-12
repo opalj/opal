@@ -43,9 +43,12 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestNonSerializableClassHasASerializableInnerClass extends AnalysisTest {
-    import TestNonSerializableClassHasASerializableInnerClass._
 
     behavior of "NonSerializableClassHasASerializableInnerClass"
+
+    val project = createProject("NonSerializableClassHasASerializableInnerClass.jar")
+    val results =
+        new NonSerializableClassHasASerializableInnerClass[URL].analyze(project).toSet
 
     it should "detect that NonSerializableOuterClass contains SerializableInnerClass" in {
         val nonSerializableOuter =
@@ -81,8 +84,3 @@ class TestNonSerializableClassHasASerializableInnerClass extends AnalysisTest {
         }
 }
 
-object TestNonSerializableClassHasASerializableInnerClass {
-    val project = makeProjectFromJar("NonSerializableClassHasASerializableInnerClass.jar")
-    val results =
-        new NonSerializableClassHasASerializableInnerClass[URL].analyze(project).toSet
-}

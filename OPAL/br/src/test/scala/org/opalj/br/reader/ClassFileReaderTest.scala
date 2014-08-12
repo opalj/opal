@@ -33,6 +33,8 @@ package reader
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 /**
  * Tests the reading of class files.
  *
@@ -46,14 +48,14 @@ class ClassFileReaderTest extends FlatSpec with Matchers {
     behavior of "ClassFile reader"
 
     it should "be able to read class files stored in jar files stored within jar files (nested jar files)" in {
-        val codeJARFile = TestSupport.locateTestResources("classfiles/AttributesAndCode.jar","bi")
+        val codeJARFile = locateTestResources("classfiles/AttributesAndCode.jar", "bi")
         if (!ClassFiles(codeJARFile).exists(_._1.fqn == "attributes/DeprecatedByAnnotation"))
             fail("could not find the class attributes.DeprecatedByAnnotation")
 
     }
 
     it should "not crash when trying to read an empty (0-byte) .jar" in {
-        val emptyJARFile = TestSupport.locateTestResources("classfiles/Empty.jar","bi")
+        val emptyJARFile = locateTestResources("classfiles/Empty.jar", "bi")
         emptyJARFile.length() should be(0)
         ClassFiles(emptyJARFile) should be(empty)
     }

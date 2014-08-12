@@ -74,7 +74,7 @@ trait ReflectiveInvoker extends JavaObjectConversion { this: Domain ⇒
                 operands foreach { op ⇒
                     operandCount += 1
                     val jObject =
-                        toJavaObject(op) match {
+                        toJavaObject(pc, op) match {
                             case Some(jObject) ⇒ jObject
                             case _             ⇒ return None /* <------- EARLY RETURN FROM METHOD */
                         }
@@ -95,18 +95,18 @@ trait ReflectiveInvoker extends JavaObjectConversion { this: Domain ⇒
                 case e: ClassNotFoundException ⇒
                     if (warnOnFailedReflectiveCalls)
                         Console.println(
-                            Console.RED+
-                                "[warn] Delegating calls to the concrete Java object is not possible: \""+
+                            Console.YELLOW+
+                                "[warn] calling the method \""+descriptor.toJava(name)+"\" is not possible ("+
                                 e.getMessage()+
-                                "\" class is not found on the JVM's classpath."+
+                                ") class is not found on the JVM's classpath."+
                                 Console.RESET
                         )
                     return None /* <------- EARLY RETURN FROM METHOD */
                 case e: NoSuchMethodException ⇒
                     if (warnOnFailedReflectiveCalls)
                         Console.println(
-                            Console.RED+
-                                "[warn] The method \""+descriptor.toJava(name)+
+                            Console.YELLOW+
+                                "[warn] the method \""+descriptor.toJava(name)+
                                 "\" is not defined by the class on the JVM's class path: "+
                                 declaringClass.toJava+"."+
                                 Console.RESET

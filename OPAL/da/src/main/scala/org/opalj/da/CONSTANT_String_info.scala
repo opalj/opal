@@ -34,7 +34,6 @@ package org.opalj
 package da
 
 /**
- *
  * @author Michael Eichberg
  */
 case class CONSTANT_String_info(
@@ -44,4 +43,7 @@ case class CONSTANT_String_info(
 
     override def toString(implicit cp: Constant_Pool): String =
         cp(string_index).toString
+
+    override def toLDCString(implicit cp: Constant_Pool): String =
+        '"' + cp(string_index).toString + '"'
 }

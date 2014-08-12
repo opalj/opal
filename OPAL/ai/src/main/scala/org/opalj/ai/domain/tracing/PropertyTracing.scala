@@ -46,10 +46,10 @@ import br._
  *
  * @author Michael Eichberg
  */
-trait PropertyTracing extends Domain { domain ⇒
+trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
 
     trait Property {
-        def merge(otherProperty: DomainProperty): Update[DomainProperty]
+        def join(otherProperty: DomainProperty): Update[DomainProperty]
     }
 
     type DomainProperty <: Property
@@ -91,24 +91,25 @@ trait PropertyTracing extends Domain { domain ⇒
      *
      * (Run `de...ai.util.InterpretMethod` with a domain that traces properties.)
      */
-    override def properties(pc: Int): Option[String] =
+    override def properties(pc: Int, valueToString: AnyRef ⇒ String): Option[String] =
         Option(propertiesArray(pc)).map(_.toString())
 
     override def flow(
         currentPC: PC,
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
+        wasJoinPerformed: Boolean,
         worklist: List[PC],
         operandsArray: OperandsArray,
         localsArray: LocalsArray,
         tracer: Option[AITracer]): List[PC] = {
 
         val forceScheduling: Boolean = {
-            if (propertiesArray(successorPC) eq null) {
+            if (!wasJoinPerformed /* weaker: || propertiesArray(successorPC) eq null*/ ) {
                 propertiesArray(successorPC) = propertiesArray(currentPC)
                 true
             } else {
-                propertiesArray(successorPC) merge propertiesArray(currentPC) match {
+                propertiesArray(successorPC) join propertiesArray(currentPC) match {
                     case NoUpdate ⇒ false
                     case StructuralUpdate(property) ⇒
                         propertiesArray(successorPC) = property

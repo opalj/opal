@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy, Project }
+import org.opalj.br.analyses.Project
 
 /**
  * Provides information about the underlying project.
@@ -44,14 +44,21 @@ import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy, Project }
  *
  * ==Providing Information about a Project==
  * A domain that provides information about the currently analyzed project should inherit
- * from this trait and implement the respective method. '''It is recommended that
- * the domain that provides the project information does not use the `override` access
- * flag.''' This way the compiler will issue a warning if two implementations are used
- * to create a final domain.
+ * from this trait and implement the respective method.
+ *
+ * ==Core Properties==
+ *  - Defines the public interface.
+ *  - Makes the analyzed [[org.opalj.br.analyses.Project]] available.
+ *  - Thread safe.
+ *
+ * @note '''It is recommended that the domain that provides the project information
+ *      does not use the `override` access flag.'''
+ *      This way the compiler will issue a warning if two implementations are used
+ *      to create a final domain.
  *
  * @author Michael Eichberg
  */
-trait TheProject[Source] { this: Domain ⇒
+trait TheProject[Source] {
 
     /**
      * Returns the project that is currently analyzed.

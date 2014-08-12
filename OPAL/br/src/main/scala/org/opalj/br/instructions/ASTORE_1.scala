@@ -35,14 +35,12 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object ASTORE_1
-        extends AStoreInstruction
-        with ImplicitLocalVariableIndex {
+case object ASTORE_1 extends AStoreInstruction with ImplicitLocalVariableIndex {
 
-    override def lvIndex = 1
+    final val lvIndex = 1
 
-    override final val opcode = 76
+    final val opcode = 76
 
-    override def mnemonic: String = "astore_1"
+    final val mnemonic = "astore_1"
 
 }

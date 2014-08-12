@@ -37,11 +37,11 @@ package instructions
  */
 case class IF_ACMPNE(
     branchoffset: Int)
-        extends ConditionalBranchInstruction {
+        extends IFACMPInstruction {
 
-    final override def opcode: Opcode = IF_ACMPNE.opcode
+    final def opcode: Opcode = IF_ACMPNE.opcode
 
-    final override def mnemonic: String = "if_acmpne"
+    final def mnemonic: String = "if_acmpne"
 
 }
 object IF_ACMPNE {

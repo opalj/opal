@@ -39,11 +39,16 @@ case class GOTO_W(
     branchoffset: Int)
         extends UnconditionalBranchInstruction {
 
-    final override def opcode: Opcode = GOTO_W.opcode
+    final def opcode: Opcode = GOTO_W.opcode
 
-    final override def mnemonic: String = "goto_w"
+    final def mnemonic: String = "goto_w"
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 5
 
 }

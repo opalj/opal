@@ -42,9 +42,12 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestBitNops extends AnalysisTest {
-    import TestBitNops._
 
-    behavior of "BitNops"
+    behavior of "the analysis BitNops"
+
+    val project = createProject("BitNops.jar")
+    val analysis = new BitNops[URL]
+    val reports = analysis.analyze(project).toSet
 
     it should "detect a useless 0 | x operation at BitNops/Or:44" in {
         reports should contain(
@@ -241,10 +244,4 @@ class TestBitNops extends AnalysisTest {
     it should "only find 12 issues in BitNops.jar" in {
         reports.size should be(12)
     }
-}
-
-object TestBitNops {
-    val project = makeProjectFromJar("BitNops.jar")
-    val analysis = new BitNops[URL]
-    val reports = analysis.analyze(project).toSet
 }

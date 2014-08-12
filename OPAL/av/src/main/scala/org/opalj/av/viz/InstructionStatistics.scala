@@ -47,7 +47,8 @@ object InstructionStatistics extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Collects information about the number of instructions per package."
+        override def description: String =
+            "Collects information about the number of instructions per package."
 
         def analyze(project: Project[URL], parameters: Seq[String]) = {
 

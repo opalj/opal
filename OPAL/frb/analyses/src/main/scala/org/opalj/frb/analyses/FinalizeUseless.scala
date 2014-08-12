@@ -42,14 +42,13 @@ import br.instructions._
  * @author Michael Eichberg
  * @author Daniel Klauer
  */
-class FinalizeUseless[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
+class FinalizeUseless[Source] extends FindRealBugsAnalysis[Source] {
 
     /**
      * Returns a description text for this analysis.
      * @return analysis description
      */
-    def description: String = "Reports useless finalize() methods."
+    override def description: String = "Reports useless finalize() methods."
 
     /**
      * Runs this analysis on the given project.
@@ -72,11 +71,13 @@ class FinalizeUseless[Source]
                 NoArgsAndReturnVoid) ← classFile.methods
             if finalizeMethod.body.isDefined
             instructions = finalizeMethod.body.get.instructions
-            if instructions.filter(_ != null).length == 3
-            if instructions.exists {
-                case INVOKESPECIAL(_, "finalize", NoArgsAndReturnVoid) ⇒ true
-                case _ ⇒ false
-            }
+            if instructions.length == 5
+            if (
+                instructions(1) match {
+                    case INVOKESPECIAL(_ /*a supertype */ , "finalize", NoArgsAndReturnVoid) ⇒ true
+                    case _ ⇒ false
+                }
+            )
         } yield {
             ClassBasedReport(
                 project.source(classFile.thisType),

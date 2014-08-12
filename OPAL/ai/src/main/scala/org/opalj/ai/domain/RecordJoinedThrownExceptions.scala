@@ -30,8 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import language.implicitConversions
-
 /**
  * Records the exception that is thrown by an instruction. If an instruction throws
  * multiple exceptions. The exceptions are `join`ed using the [[Domain#DomainValue]]'s
@@ -39,10 +37,10 @@ import language.implicitConversions
  *
  * This trait can be used to record the thrown exceptions independently of the
  * precision of the domain.
-
+ *
  * @author Michael Eichberg
  */
-trait RecordJoinedThrownExceptions extends RecordThrownExceptions {
+trait RecordJoinedThrownExceptions extends RecordThrownExceptions { domain: ValuesDomain ⇒
 
     type ThrownException = ExceptionValue
 

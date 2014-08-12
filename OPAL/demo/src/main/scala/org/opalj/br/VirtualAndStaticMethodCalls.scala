@@ -43,7 +43,8 @@ object VirtualAndStaticMethodCalls extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Counts the number of static and virtual method calls."
+        override def description: String =
+            "Counts the number of static and virtual method calls."
 
         def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
 

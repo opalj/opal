@@ -31,41 +31,12 @@ package ai
 
 /**
  * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of float values.
+ * that implements the functionality related to the handling of `float` values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait FloatValuesDomain { this: CoreDomain ⇒
-
-    // -----------------------------------------------------------------------------------
-    //
-    // FACTORY METHODS TO CREATE DOMAIN VALUES
-    //
-    // -----------------------------------------------------------------------------------
-
-    /**
-     * Factory method to create a `DomainValue` that was created (explicitly or
-     * implicitly) by the instruction with the specified program counter.
-     *
-     * The domain may ignore the information about the origin (`vo`).
-     */
-    def FloatValue(vo: ValueOrigin): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that represents the given float value
-     * and that was created (explicitly or implicitly) by the instruction with the
-     * specified program counter.
-     *
-     * The domain may ignore the information about the value and the origin (`vo`).
-     */
-    def FloatValue(vo: ValueOrigin, value: Float): DomainValue
-
-    // -----------------------------------------------------------------------------------
-    //
-    // ABSTRACTIONS RELATED TO INSTRUCTIONS
-    //
-    // -----------------------------------------------------------------------------------
+trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
 
     //
     // RELATIONAL OPERATORS
@@ -74,12 +45,12 @@ trait FloatValuesDomain { this: CoreDomain ⇒
     def fcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
     //
-    // UNARY EXPRESSIONS
+    // UNARY ARITHMETIC EXPRESSIONS
     //
     def fneg(pc: PC, value: DomainValue): DomainValue
 
     //
-    // BINARY EXPRESSIONS
+    // BINARY ARITHMETIC EXPRESSIONS
     //
     def fadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def fdiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue

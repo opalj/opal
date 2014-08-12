@@ -38,6 +38,9 @@ case class CONSTANT_Class_info(
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Class
 
-    override def toString(implicit cp: Constant_Pool): String =
-        cp(name_index).toString
+    def toString(implicit cp: Constant_Pool): String =
+        cp(name_index).toString.replace('/', '.')
+
+    def toLDCString(implicit cp: Constant_Pool): String =
+        "Class<"+cp(name_index).toString.replace('/', '.')+">"
 }

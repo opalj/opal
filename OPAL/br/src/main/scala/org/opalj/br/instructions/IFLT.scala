@@ -37,11 +37,11 @@ package instructions
  */
 case class IFLT(
     branchoffset: Int)
-        extends ConditionalBranchInstruction {
+        extends IF0Instruction {
 
-    final override def opcode: Opcode = IFLT.opcode
+    final def opcode: Opcode = IFLT.opcode
 
-    final override def mnemonic: String = "iflt"
+    final def mnemonic: String = "iflt"
 
 }
 object IFLT {

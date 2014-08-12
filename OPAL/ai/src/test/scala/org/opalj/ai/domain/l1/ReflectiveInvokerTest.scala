@@ -47,12 +47,7 @@ import br._
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ReflectiveInvokerTest
-        extends FlatSpec
-        with Matchers //with ParallelTestExecution 
-        {
-
-    behavior of "the RefleciveInvoker trait"
+class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestExecution*/ {
 
     private[this] val IrrelevantPC = Int.MinValue
 
@@ -63,6 +58,7 @@ class ReflectiveInvokerTest
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultPrimitiveValuesConversions
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             //    with DefaultReferenceValuesBinding
@@ -78,10 +74,6 @@ class ReflectiveInvokerTest
             with IgnoreSynchronization
             with ReflectiveInvoker {
 
-        type Id = String
-
-        def id = "ReflectiveInvokerTestDomain"
-
         override protected def maxUpdatesForIntegerValues = 25
 
         override def warnOnFailedReflectiveCalls: Boolean = false
@@ -90,14 +82,14 @@ class ReflectiveInvokerTest
 
         def lastValue(): Object = lastObject
 
-        override def toJavaObject(value: DomainValue): Option[Object] = {
+        override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
             value match {
                 case i: IntegerValue ⇒
                     Some(new java.lang.Integer(i.value))
                 case r: ReferenceValue if (r.upperTypeBound.contains(ObjectType("java/lang/StringBuilder"))) ⇒
                     Some(new java.lang.StringBuilder())
                 case _ ⇒
-                    super.toJavaObject(value)
+                    super.toJavaObject(pc, value)
             }
         }
 
@@ -108,6 +100,8 @@ class ReflectiveInvokerTest
     }
 
     def createDomain() = new ReflectiveInvokerTestDomain
+
+    behavior of "the RefleciveInvoker trait"
 
     it should ("be able to call a static method") in {
         val domain = createDomain()

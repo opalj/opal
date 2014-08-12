@@ -43,7 +43,8 @@ object ProjectIndexStatistics extends AnalysisExecutor {
 
         override def title: String = "Project Statistics"
 
-        override def description: String = "Statistics about the usage of field/method identifiers in a project."
+        override def description: String =
+            "Statistics about the usage of field/method identifiers in a project."
 
         override def analyze(project: Project[URL], parameters: Seq[String]) = {
 

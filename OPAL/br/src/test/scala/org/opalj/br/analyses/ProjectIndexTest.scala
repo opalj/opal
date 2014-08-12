@@ -37,6 +37,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import reader.Java8Framework.ClassFiles
 
 /**
@@ -124,11 +126,11 @@ private object ProjectIndexTest {
     //
     //
     val methodsProjectIndex =
-        Project(TestSupport.locateTestResources("classfiles/Methods.jar","bi")).
+        Project(locateTestResources("classfiles/Methods.jar", "bi")).
             get(ProjectIndexKey)
 
     val fieldsProjectIndex =
-        Project(TestSupport.locateTestResources("classfiles/Fields.jar","bi")).
+        Project(locateTestResources("classfiles/Fields.jar", "bi")).
             get(ProjectIndexKey)
 
 }

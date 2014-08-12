@@ -30,9 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import language.implicitConversions
-
-import collection.mutable.UShortSet
+import org.opalj.collection.mutable.UShortSet
 
 /**
  * Records the program counters of all instructions that lead to a (ab)normal
@@ -52,7 +50,8 @@ import collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-trait RecordReturnFromMethodInstructions extends Domain {
+trait RecordReturnFromMethodInstructions extends ReturnInstructionsDomain {
+    domain: ValuesDomain ⇒
 
     @volatile private[this] var returnFromMethodInstructions: UShortSet = UShortSet.empty
 

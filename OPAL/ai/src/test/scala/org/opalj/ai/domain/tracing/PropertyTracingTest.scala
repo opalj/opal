@@ -41,6 +41,8 @@ import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import br._
@@ -71,15 +73,14 @@ class PropertyTracingTest
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultTypeLevelLongValues
+            with l1.DefaultIntegerRangeValues
+            with l0.DefaultPrimitiveValuesConversions
+            with l1.DefaultReferenceValuesBinding
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions
-            with l1.DefaultReferenceValuesBinding
-            with l1.DefaultIntegerRangeValues
             with TheMethod {
 
         override def maxSizeOfIntegerRanges: Long = 16l
-
-        override def code: Code = method.body.get
 
         override def propertyName = "isSanitized"
 
@@ -181,7 +182,7 @@ class PropertyTracingTest
 
 private object PropertyTracingTest {
 
-    val classFiles = ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
 
     val classFile = classFiles.map(_._1).
         find(_.thisType.fqn == "ai/domain/Sanitization").get

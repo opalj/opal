@@ -56,8 +56,9 @@ private class BitNopsDomain
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultReferenceValuesBinding
         with li.DefaultPreciseIntegerValues
+        with l0.DefaultPrimitiveValuesConversions
         with IgnoreSynchronization {
-    
+
     /**
      * We're only interested in certain specific values (0 and -1). Thus, we don't need
      * to track values that are known to be within some range a..b at all.
@@ -109,10 +110,9 @@ private class BitNopsDomain
  *
  * @author Daniel Klauer
  */
-class BitNops[S]
-        extends MultipleResultsAnalysis[S, LineAndColumnBasedReport[S]] {
+class BitNops[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String = "Reports various useless bit operations."
+    override def description: String = "Reports various useless bit operations."
 
     /**
      * Runs this analysis on the given project.
@@ -122,10 +122,10 @@ class BitNops[S]
      * @return A list of reports, or an empty list.
      */
     def analyze(
-        project: Project[S],
-        parameters: Seq[String] = List.empty): Iterable[LineAndColumnBasedReport[S]] = {
+        project: Project[Source],
+        parameters: Seq[String] = List.empty): Iterable[LineAndColumnBasedReport[Source]] = {
 
-        var reports: List[LineAndColumnBasedReport[S]] = List.empty
+        var reports: List[LineAndColumnBasedReport[Source]] = List.empty
 
         for {
             classFile ← project.classFiles

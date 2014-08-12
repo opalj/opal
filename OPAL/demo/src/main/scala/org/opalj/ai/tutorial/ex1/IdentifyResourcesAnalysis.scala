@@ -46,6 +46,7 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
             extends Domain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
+            with domain.l0.DefaultPrimitiveValuesConversions
             with domain.l0.DefaultTypeLevelIntegerValues
             with domain.l0.DefaultTypeLevelLongValues
             with domain.l0.DefaultTypeLevelFloatValues
@@ -62,7 +63,7 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        override def title: String = "Identifies Resources"
+        override def title: String = "Creation of Resources Using Constant Strings"
 
         override def description: String =
             "Identifies java.io.File object instantiations using constant strings."

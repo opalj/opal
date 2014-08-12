@@ -41,6 +41,7 @@ package l0
 trait DefaultTypeLevelFloatValues
         extends DefaultDomainValueBinding
         with TypeLevelFloatValues {
+    domain: Configuration with IntegerValuesFactory ⇒
 
     case object AFloatValue extends super.FloatValue {
 
@@ -50,13 +51,15 @@ trait DefaultTypeLevelFloatValues
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.FloatValue(pc)
     }
 
-    override def FloatValue(pc: PC): FloatValue = AFloatValue
+    override def FloatValue(valueOrigin: ValueOrigin): FloatValue =
+        AFloatValue
 
-    override def FloatValue(pc: PC, value: Float): FloatValue = AFloatValue
+    override def FloatValue(valueOrigin: ValueOrigin, value: Float): FloatValue =
+        AFloatValue
 }
 
 

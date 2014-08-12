@@ -536,7 +536,7 @@ sealed abstract class BooleanType private () extends BaseType {
 
     final val id = Int.MinValue + atype
 
-    def toJava: String = "boolean"
+    final val toJava /*: String*/ = "boolean"
 
     override def toBinaryJavaName: String = "Z"
 
@@ -691,6 +691,8 @@ final object ObjectType {
     }
 
     final val Object = ObjectType("java/lang/Object")
+    final val ObjectId = 0
+    require(Object.id == ObjectId)
 
     final val Boolean = ObjectType("java/lang/Boolean")
     final val Byte = ObjectType("java/lang/Byte")
@@ -702,12 +704,15 @@ final object ObjectType {
     final val Double = ObjectType("java/lang/Double")
     require(Double.id - Boolean.id == 7)
 
+    final val String = ObjectType("java/lang/String")
+    final val StringId = 9
+    require(String.id == StringId)
+
     final val Class = ObjectType("java/lang/Class")
     final val Throwable = ObjectType("java/lang/Throwable")
     final val Error = ObjectType("java/lang/Error")
     final val Exception = ObjectType("java/lang/Exception")
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
-    final val String = ObjectType("java/lang/String")
 
     // Types related to the invokedynamic instruction
     final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")

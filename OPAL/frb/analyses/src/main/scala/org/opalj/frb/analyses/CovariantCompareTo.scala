@@ -60,10 +60,9 @@ import br.analyses._
  * @author Ralf Mitschke
  * @author Daniel Klauer
  */
-class CovariantCompareTo[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
+class CovariantCompareTo[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String = "Reports classes implementing java.lang.Comparable "+
+    override def description: String = "Reports classes implementing java.lang.Comparable "+
         "and one (or more) compareTo() methods, but without overriding compareTo(Object)."
 
     private val Comparable = ObjectType("java/lang/Comparable")

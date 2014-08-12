@@ -33,6 +33,8 @@ package project
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import br._
 import br.reader.Java8Framework
 
@@ -57,7 +59,7 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
     //
     // PROJECT SETUP
     //
-    def file = TestSupport.locateTestResources(testFileName, testFilePath)
+    def file = locateTestResources(testFileName, testFilePath)
     val classFiles = Java8Framework.ClassFiles(file)
     val project = br.analyses.Project(classFiles)
 

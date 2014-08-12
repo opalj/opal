@@ -48,7 +48,8 @@ object ObserverPatternUsage extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Loads all classes stored in the jar files and analyses the usage of the observer pattern."
+        override def description: String =
+            "Loads all classes stored in the jar files and analyses the usage of the observer pattern."
 
         def analyze(project: Project[URL], parameters: Seq[String]): BasicReport = {
             if (project.classHierarchy.rootTypes.tail.nonEmpty) {

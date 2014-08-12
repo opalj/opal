@@ -32,12 +32,16 @@ package domain
 package l2
 
 import scala.language.reflectiveCalls
+
 import org.junit.runner.RunWith
 import org.junit.Ignore
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
+
+import org.opalj.bi.TestSupport.locateTestResources
+
 import org.opalj.util._
 import br._
 import br.analyses.{ SomeProject, Project }
@@ -143,17 +147,18 @@ class PerformInvocationsWithRecursionDetectionTest
 
 object PerformInvocationsWithRecursionDetectionTestFixture {
 
-    abstract class BaseDomain(
-        override val project: Project[java.net.URL]) extends Domain
+    class BaseDomain(val project: Project[java.net.URL]) extends ValuesDomain
             with DefaultDomainValueBinding
             with TheProject[java.net.URL]
             with ProjectBasedClassHierarchy
-            with ThrowAllPotentialExceptionsConfiguration
+            with TypedValuesFactory
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l1.DefaultReferenceValuesBinding
-            with li.DefaultPreciseIntegerValues {
+            with li.DefaultPreciseIntegerValues
+            with l0.DefaultPrimitiveValuesConversions {
+        domain: Configuration ⇒
         override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
     }
 
@@ -169,19 +174,21 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             }
         }
 
-    abstract class InvocationDomain(
-        project: Project[java.net.URL],
-        val method: Method)
-            extends BaseDomain(project)
+    abstract class InvocationDomain(project: Project[java.net.URL], val method: Method)
+            extends BaseDomain(project) with Domain
+            with TheMethod
             with l0.TypeLevelInvokeInstructions
+            with ThrowAllPotentialExceptionsConfiguration
             with l0.TypeLevelFieldAccessInstructions
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
-            with TheMethod
             with PerformInvocationsWithRecursionDetection
             with RecordMethodCallResults {
+        callingDomain ⇒
 
-        /*ABSTRACT*/ val calledMethodsStore: CalledMethodsStore
+        def shouldInvocationBePerformed(
+            definingClass: ClassFile,
+            method: Method): Boolean = true
 
         def invokeExecutionHandler(
             pc: PC,
@@ -195,12 +202,12 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
                         InvocationDomain.this.calledMethodsStore
                 }
 
-                def ai: AI[_ >: domain.type] = BaseAI
+                def ai: AI[_ >: this.domain.type] = BaseAI
             }
     }
 
     val testClassFileName = "classfiles/performInvocations.jar"
-    val testClassFile = TestSupport.locateTestResources(testClassFileName, "ai")
+    val testClassFile = locateTestResources(testClassFileName, "ai")
     val project = Project(testClassFile)
     val StaticCalls = project.classFile(ObjectType("performInvocations/StaticCalls")).get
 

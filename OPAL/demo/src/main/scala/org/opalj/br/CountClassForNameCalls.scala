@@ -44,7 +44,8 @@ object CountClassForNameCalls extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Counts the number of times Class.forName is called."
+        override def description: String =
+            "Counts the number of times Class.forName is called."
 
         def analyze(project: Project[URL], parameters: Seq[String]) = {
             var classForNameCount = 0

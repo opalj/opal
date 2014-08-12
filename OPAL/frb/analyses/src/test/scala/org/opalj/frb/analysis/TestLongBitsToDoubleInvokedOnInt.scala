@@ -43,9 +43,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestLongBitsToDoubleInvokedOnInt extends AnalysisTest {
-    import TestLongBitsToDoubleInvokedOnInt._
 
     behavior of "LongBitsToDoubleInvokedOnInt"
+
+    val project = createProject("LongBitsToDoubleInvokedOnInt.jar")
+    val results = new LongBitsToDoubleInvokedOnInt[URL].analyze(project).toSet
 
     it should "detect a call to Double.longBitsToDouble() with int argument "+
         "at LongBitsToDoubleInvokedOnInt/IntBitsToDouble:45" in {
@@ -66,9 +68,4 @@ class TestLongBitsToDoubleInvokedOnInt extends AnalysisTest {
     it should "find 1 issue in total" in {
         results.size should be(1)
     }
-}
-
-object TestLongBitsToDoubleInvokedOnInt {
-    val project = makeProjectFromJar("LongBitsToDoubleInvokedOnInt.jar")
-    val results = new LongBitsToDoubleInvokedOnInt[URL].analyze(project).toSet
 }

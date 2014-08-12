@@ -39,16 +39,21 @@ case class CHECKCAST(
     referenceType: ReferenceType)
         extends Instruction {
 
-    final override def opcode: Opcode = CHECKCAST.opcode
+    final def opcode: Opcode = CHECKCAST.opcode
 
-    final override def mnemonic: String = "checkcast"
+    final def mnemonic: String = "checkcast"
 
-    final override def runtimeExceptions: List[ObjectType] = CHECKCAST.runtimeExceptions
+    final def runtimeExceptions: List[ObjectType] = CHECKCAST.runtimeExceptions
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 3
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs = {
+    final def nextInstructions(currentPC: PC, code: Code): PCs = {
         Instruction.nextInstructionOrExceptionHandler(
             this, currentPC, code, ObjectType.ClassCastException)
     }

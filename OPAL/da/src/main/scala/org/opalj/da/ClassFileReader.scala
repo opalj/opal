@@ -29,13 +29,15 @@
 package org.opalj
 package da
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 import org.opalj.bi.AttributeParent
 
 /**
  * Represents a .class file as is.
- *
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
 object ClassFileReader
         extends Constant_PoolBinding
@@ -43,9 +45,40 @@ object ClassFileReader
         with bi.reader.FieldsReader
         with bi.reader.MethodsReader
         with bi.reader.AttributesReader
+        with bi.reader.Code_attributeReader
+        with bi.reader.CodeReader
         with bi.reader.SourceFile_attributeReader
         with bi.reader.SkipUnknown_attributeReader
-        with bi.reader.Signature_attributeReader{
+        with bi.reader.Signature_attributeReader
+        with bi.reader.ConstantValue_attributeReader
+        with bi.reader.Synthetic_attributeReader
+        with bi.reader.Deprecated_attributeReader
+        with bi.reader.SourceDebugExtension_attributeReader
+        with bi.reader.InnerClasses_attributeReader
+        with bi.reader.Exceptions_attributeReader
+        with bi.reader.EnclosingMethod_attributeReader
+        with bi.reader.LineNumberTable_attributeReader
+        with bi.reader.LocalVariableTable_attributeReader
+        with bi.reader.LocalVariableTypeTable_attributeReader
+        with bi.reader.ElementValuePairsReader
+        with bi.reader.ParameterAnnotationsReader
+        with bi.reader.MethodParameters_attributeReader
+        with bi.reader.AnnotationsReader
+        with bi.reader.AnnotationDefault_attributeReader
+        with bi.reader.RuntimeVisibleAnnotations_attributeReader
+        with bi.reader.RuntimeInvisibleAnnotations_attributeReader
+        with bi.reader.RuntimeVisibleParameterAnnotations_attributeReader
+        with bi.reader.RuntimeInvisibleParameterAnnotations_attributeReader
+        with bi.reader.VerificationTypeInfoReader
+        with bi.reader.StackMapTable_attributeReader
+        with bi.reader.StackMapFrameReader
+        with bi.reader.TypeAnnotationTargetReader
+        with bi.reader.RuntimeInvisibleTypeAnnotations_attributeReader
+        with bi.reader.RuntimeVisibleTypeAnnotations_attributeReader
+        with bi.reader.TypeAnnotationPathReader
+        with bi.reader.TypeAnnotationsReader {
+
+    type CPIndex = Constant_Pool_Index
 
     type ClassFile = da.ClassFile
 
@@ -61,23 +94,26 @@ object ClassFileReader
     def ClassFile(
         cp: Constant_Pool,
         minor_version: Int, major_version: Int,
-        access_flags: Int, this_class: Constant_Pool_Index, super_class: Constant_Pool_Index,
-        interfaces: Interfaces, fields: Fields, methods: Methods, attributes: Attributes): ClassFile =
+        access_flags: Int, this_class: CPIndex, super_class: CPIndex,
+        interfaces: Interfaces, fields: Fields, methods: Methods,
+        attributes: Attributes): ClassFile =
         new ClassFile(
             cp, minor_version, major_version, access_flags,
             this_class, super_class, interfaces, fields, methods, attributes
         )
 
     def Field_Info(
-        constant_pool: Constant_Pool,
-        access_flags: Int, name_index: Int, descriptor_index: Int, attributes: Attributes): Field_Info =
+        cp: Constant_Pool,
+        access_flags: Int, name_index: Int, descriptor_index: Int,
+        attributes: Attributes): Field_Info =
         new Field_Info(
             access_flags, name_index, descriptor_index, attributes
         )
 
     def Method_Info(
-        constant_pool: Constant_Pool,
-        accessFlags: Int, name_index: Int, descriptor_index: Int, attributes: Attributes): Method_Info =
+        cp: Constant_Pool,
+        accessFlags: Int, name_index: Int, descriptor_index: Int,
+        attributes: Attributes): Method_Info =
         new Method_Info(
             accessFlags, name_index, descriptor_index, attributes
         )
@@ -87,577 +123,465 @@ object ClassFileReader
         cp: Constant_Pool,
         attribute_name_index: Int, sourceFile_index: Int): SourceFile_attribute =
         new SourceFile_attribute(attribute_name_index, sourceFile_index)
-    
-	type Signature_attribute = da.Signature_attribute    
-	def Signature_attribute (
-			cp: Constant_Pool,ap: AttributeParent,attribute_name_index : Int,signature_index : Int
-		):Signature_attribute = 
-			new Signature_attribute (attribute_name_index, signature_index)
-    /*
-    type ElementValue = org.opalj.bat.native.ElementValue
-
-    val VerificationTypeInfoManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.VerificationTypeInfo] = implicitly
-    val StackMapFrameManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.StackMapFrame]= implicitly
-    val ElementValuePairManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.ElementValuePair]= implicitly
-    val ElementValueManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.ElementValue]= implicitly
-    val AnnotationManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.Annotation]= implicitly
-    val ExceptionTableEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.ExceptionTableEntry]= implicitly
-    val LocalVariableTypeTableEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.LocalVariableTypeTableEntry]= implicitly
-    val LocalVariableTableEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.LocalVariableTableEntry]= implicitly
-    val LineNumberTableEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.LineNumberTableEntry]= implicitly
-    val InnerClassesEntryManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.InnerClassesEntry]= implicitly
-    val Exceptions_attributeManifest : ClassTag[org.opalj.bat.native.reader.BasicJava6Framework.Exceptions_attribute]= implicitly
-    */
-
-    /*	
-
-	case class SourceFile_attribute(
-		val attribute_name_index : Int,
-		val sourceFile_index : Int
-	) extends org.opalj.bat.native.SourceFile_attribute 
-
-	def SourceFile_attribute(
-		attribute_name_index : Int, sourceFile_index : Int
-	)( implicit constant_pool : Constant_Pool) : SourceFile_attribute = new SourceFile_attribute(attribute_name_index , sourceFile_index)
-
-
-	case class InnerClasses_attribute(
-		val attribute_name_index : Int,
-		val classes : InnerClassesEntries
-	) extends org.opalj.bat.native.InnerClasses_attribute	{
-
-		type Class = BasicJava6Framework.InnerClassesEntry
-
-	}
-
-	def InnerClasses_attribute(
-		attribute_name_index : Int, classes : InnerClassesEntries
-	)( implicit constant_pool : Constant_Pool) : InnerClasses_attribute = 
-		new InnerClasses_attribute( attribute_name_index, classes ) 
-
-
-	case class InnerClassesEntry( 
-		val inner_class_info_index : Int,
-		val outer_class_info_index : Int,
-		val inner_name_index : Int,
-		val inner_class_access_flags : Int
-	) extends org.opalj.bat.native.InnerClassesEntry	
-
-	def InnerClassesEntry(
-		inner_class_info_index : Int, outer_class_info_index : Int,
-		inner_name_index : Int,	inner_class_access_flags : Int	
-	)( implicit constant_pool : Constant_Pool) = 
-		new InnerClassesEntry (
-			inner_class_info_index, outer_class_info_index, 
-			inner_name_index, 
-			inner_class_access_flags 
-		) 
-
-
-	case class Signature_attribute(
-		val attribute_name_index : Int,
-		val signature_index : Int
-	) extends org.opalj.bat.native.Signature_attribute 
 
-	def Signature_attribute (
-		attribute_name_index : Int,signature_index : Int
-	)( implicit constant_pool : Constant_Pool) = 
-		new Signature_attribute (attribute_name_index, signature_index)
-
-
-	case class ConstantValue_attribute (
-		val attribute_name_index : Int,
-		val constantvalue_index : Int 
-	) extends org.opalj.bat.native.ConstantValue_attribute
-
-	def ConstantValue_attribute (
-		attribute_name_index : Int, constantvalue_index : Int 
-	)( implicit constant_pool : Constant_Pool) = new ConstantValue_attribute (attribute_name_index, constantvalue_index) 
-
-
-	case class Deprecated_attribute (
-		val attribute_name_index : Int
-	) extends org.opalj.bat.native.Deprecated_attribute
-
-	def Deprecated_attribute(attribute_name_index: Int)(implicit constant_pool : Constant_Pool) =
-		new Deprecated_attribute(attribute_name_index)
-
-
-	case class Synthetic_attribute (
-		val attribute_name_index : Int
-	) extends org.opalj.bat.native.Synthetic_attribute
-
-	def Synthetic_attribute (attribute_name_index : Int)( implicit constant_pool : Constant_Pool) =
- 		new Synthetic_attribute (attribute_name_index)
-
-
-	case class SourceDebugExtension_attribute (
-		val attribute_name_index : Int,
-		val debug_extension : String
-	) extends org.opalj.bat.native.SourceDebugExtension_attribute 
-
-	def SourceDebugExtension_attribute (
-		attribute_name_index : Int, attribute_length : Int, debug_extension : String
-	)( implicit constant_pool : Constant_Pool) : SourceDebugExtension_attribute =
-		new SourceDebugExtension_attribute (
-			attribute_name_index, debug_extension
-		) 
-
-
-	case class Exceptions_attribute (
-		val attribute_name_index : Int,
-		val exception_index_table : ExceptionIndexTable
-	) extends org.opalj.bat.native.Exceptions_attribute
-
-	def Exceptions_attribute (
-		attribute_name_index : Int, attribute_length : Int,
-		exception_index_table : ExceptionIndexTable	
-	)( implicit constant_pool : Constant_Pool) : Exceptions_attribute = 
-		new Exceptions_attribute(attribute_name_index, exception_index_table)	
-
-
-	case class EnclosingMethod_attribute(
-		val attribute_name_index : Int,
-		val class_index : Int,
-		val method_index : Int
-	) extends org.opalj.bat.native.EnclosingMethod_attribute
-
-	def EnclosingMethod_attribute(
-		attribute_name_index : Int, class_index : Int, method_index : Int
-	)( implicit constant_pool : Constant_Pool) : EnclosingMethod_attribute = 
-		new EnclosingMethod_attribute(
-			attribute_name_index, class_index, method_index
-		)
-
-
-	case class LineNumberTable_attribute(
-		val attribute_name_index : Int,
-		val line_number_table : LineNumberTable		
-	) extends org.opalj.bat.native.LineNumberTable_attribute {
-
-		type LineNumberTableEntry = BasicJava6Framework.LineNumberTableEntry
-
-	}
-
-	def LineNumberTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, line_number_table : LineNumberTable
-	)( implicit constant_pool : Constant_Pool) : LineNumberTable_attribute =
-		new LineNumberTable_attribute (
-			attribute_name_index, line_number_table
-		) 
-
-
- 	case class LineNumberTableEntry (
-		val start_pc : Int,
-		val line_number : Int
-	) extends org.opalj.bat.native.LineNumberTableEntry 
-
-	def LineNumberTableEntry (start_pc : Int, line_number : Int)( implicit constant_pool : Constant_Pool) = 
-		new LineNumberTableEntry (start_pc, line_number)
-
-
-	case class LocalVariableTableEntry(
-		val start_pc : Int,
-		val length : Int,
-		val name_index : Int,
-		val descriptor_index : Int,
-		val index : Int
-	) extends org.opalj.bat.native.LocalVariableTableEntry
-
-	def LocalVariableTableEntry (
-		start_pc : Int, length : Int,	name_index : Int,	descriptor_index : Int,	index : Int
-	)( implicit constant_pool : Constant_Pool) : LocalVariableTableEntry = 
-		new LocalVariableTableEntry (
-			start_pc, length,	name_index,	descriptor_index,	index
-		) 
-
-
-	case class LocalVariableTable_attribute (
-		val attribute_name_index : Int,
-		val local_variable_table : LocalVariableTable
-	) extends org.opalj.bat.native.LocalVariableTable_attribute {
-
-		type LocalVariableTableEntry = BasicJava6Framework.LocalVariableTableEntry
-
-	}
-
-	def LocalVariableTable_attribute (	
-		attribute_name_index : Int, attribute_length : Int, local_variable_table : LocalVariableTable
-	)( implicit constant_pool : Constant_Pool) : LocalVariableTable_attribute =
-		new LocalVariableTable_attribute (	
-			attribute_name_index, local_variable_table
-		) 
-
-
-	case class LocalVariableTypeTableEntry(
-		val start_pc : Int,
-		val length : Int,
-		val name_index : Int,
-		val signature_index : Int,
-		val index : Int
-	) extends org.opalj.bat.native.LocalVariableTypeTableEntry
-
-	def LocalVariableTypeTableEntry (
-		start_pc : Int, length : Int,	name_index : Int,	signature_index : Int,	index : Int
-	)( implicit constant_pool : Constant_Pool) : LocalVariableTypeTableEntry = 
-		new LocalVariableTypeTableEntry (
-			start_pc, length,	name_index,	signature_index,	index
-		) 
-
-
-	case class LocalVariableTypeTable_attribute (
-		val attribute_name_index : Int,
-		val local_variable_type_table : LocalVariableTypeTable
-	) extends org.opalj.bat.native.LocalVariableTypeTable_attribute {
-
-		type LocalVariableTypeTableEntry = BasicJava6Framework.LocalVariableTypeTableEntry
-
-	}
-
-	def LocalVariableTypeTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, 
-		local_variable_type_table : LocalVariableTypeTable
-	)( implicit constant_pool : Constant_Pool) =
- 		new LocalVariableTypeTable_attribute (	
-			attribute_name_index, local_variable_type_table
-		) 
-
-
-	case class Code ( val code : Array[Byte] )
-	def Code(code : Array[Byte])(implicit constant_pool : Constant_Pool) : Code =
-	  new Code(code)
-
-
-	case class Code_attribute (
-		val attribute_name_index : Int,
-		val attribute_length : Int,
-		val max_stack : Int,
-		val max_locals : Int,
-		val code : Code,
-		val exception_table : ExceptionTable,
-		val attributes : Attributes
-	) extends org.opalj.bat.native.Code_attribute {
-
-		//
-		// ABSTRACT DEFINITIONS
-		// 
-		type Code = BasicJava6Framework.Code
-		type ExceptionTableEntry = BasicJava6Framework.ExceptionTableEntry
-		type Attributes = BasicJava6Framework.Attributes
-
-	}
-
-	def Code_attribute (
-		attribute_name_index : Int, attribute_length : Int,
-		max_stack : Int, max_locals : Int, code : Code,
-		exception_table : ExceptionTable,
-		attributes : Attributes
-	)( implicit constant_pool : Constant_Pool) =
-		new Code_attribute (
-			attribute_name_index, attribute_length, max_stack, max_locals, code, exception_table, attributes
-		)
-
-
-	case class ExceptionTableEntry  (
-		val start_pc: Int,
-		val end_pc: Int,
-		val handler_pc : Int,
-		val catch_type : Int
-	) extends org.opalj.bat.native.ExceptionTableEntry		
-
-	def ExceptionTableEntry ( 
-		start_pc: Int, end_pc: Int, handler_pc : Int, catch_type : Int
-	)( implicit constant_pool : Constant_Pool) : ExceptionTableEntry =
-		new ExceptionTableEntry (start_pc, end_pc, handler_pc, catch_type)
-
-
-	case class ElementValuePair (
-		val element_name_index : Int,
-		val element_value : ElementValue
-	) extends org.opalj.bat.native.ElementValuePair {
-
-		type ElementValue = BasicJava6Framework.ElementValue
-	}
-
-	def ElementValuePair(
-		element_name_index : Int,element_value : ElementValue
-	)( implicit constant_pool : Constant_Pool) : ElementValuePair = 
-		new ElementValuePair(element_name_index,element_value)
-
-
-
-	case class ByteValue(val const_value_index : Int) extends org.opalj.bat.native.ByteValue
-	def ByteValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
-		new ByteValue(const_value_index)
-
-
-	case class CharValue(val const_value_index : Int) extends org.opalj.bat.native.CharValue
-	def CharValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
-		new CharValue(const_value_index)
-
-
-	case class DoubleValue(val const_value_index : Int) extends org.opalj.bat.native.DoubleValue
-	def DoubleValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
-		new DoubleValue(const_value_index)	
-
-
-	case class FloatValue(val const_value_index : Int) extends org.opalj.bat.native.FloatValue
-	def FloatValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
-		new FloatValue(const_value_index)
-
-
-	case class IntValue(val const_value_index : Int) extends org.opalj.bat.native.IntValue
-	def IntValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
-		new IntValue(const_value_index)
-
-
-	case class LongValue(val const_value_index : Int) extends org.opalj.bat.native.LongValue
-	def LongValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
-		new LongValue(const_value_index)
-
-
-	case class ShortValue(val const_value_index : Int) extends org.opalj.bat.native.ShortValue
-	def ShortValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
-		new ShortValue(const_value_index)
-
-
-	case class BooleanValue(val const_value_index : Int) extends org.opalj.bat.native.BooleanValue
-	def BooleanValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
-		new BooleanValue(const_value_index)
-
-
-	case class StringValue(val const_value_index : Int) extends org.opalj.bat.native.StringValue
-	def StringValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
-		new StringValue(const_value_index)
-
-
-	case class ClassValue(val const_value_index : Int) extends org.opalj.bat.native.ClassValue
-	def ClassValue(const_value_index : Int)(implicit constant_pool : Constant_Pool) : ElementValue = 
-		new ClassValue(const_value_index)
-
-
-	case class EnumValue(
-		val type_name_index : Int,
-		val const_name_index : Int
-	) extends org.opalj.bat.native.EnumValue
-
-	def EnumValue(
-		type_name_index : Int,const_name_index : Int
-	)( implicit constant_pool : Constant_Pool) : ElementValue = 
-		new EnumValue(type_name_index,const_name_index)
-
-
-	case class AnnotationValue (
-		val annotation : Annotation
-	) extends org.opalj.bat.native.AnnotationValue {
-
-		type Annotation = BasicJava6Framework.Annotation
-
-	}
-
-	def AnnotationValue(annotation : Annotation)( implicit constant_pool : Constant_Pool) : ElementValue = 
-		new AnnotationValue(annotation)
-
-
-	case class ArrayValue (val values : Seq[ElementValue]) extends org.opalj.bat.native.ArrayValue
-	def ArrayValue(values : ElementValues)( implicit constant_pool : Constant_Pool) : ElementValue = 
-		new ArrayValue(values)
-
-
-	case class Annotation ( val type_index : Int, val element_value_pairs : ElementValuePairs ) 
-	extends org.opalj.bat.native.Annotation {
-
-		type ElementValuePairs = BasicJava6Framework.ElementValuePairs
-
-	}
-
-	def Annotation (
-		type_index : Int, element_value_pairs : ElementValuePairs
-	)( implicit constant_pool : Constant_Pool) : Annotation = 
-		new Annotation (type_index, element_value_pairs)
-
-
-	case class AnnotationDefault_attribute (
-		val attribute_name_index : Int,
-		val attribute_length : Int,
-		val element_value : ElementValue	
-	) extends org.opalj.bat.native.AnnotationDefault_attribute {
-
-		type ElementValue = BasicJava6Framework.ElementValue
-
-	}
-
-	def AnnotationDefault_attribute (
-		attribute_name_index : Int, attribute_length : Int, element_value : ElementValue
-	)( implicit constant_pool : Constant_Pool) =
-		new AnnotationDefault_attribute(
-			attribute_name_index,attribute_length,element_value
-		)
-
-
-	case class RuntimeVisibleAnnotations_attribute (
-		val attribute_name_index : Int,
-		val attribute_length : Int,
-		val annotations : Annotations
-	) extends org.opalj.bat.native.RuntimeVisibleAnnotations_attribute {
-
-		type Annotations = BasicJava6Framework.Annotations
-	}
-
-	def RuntimeVisibleAnnotations_attribute (
-		attribute_name_index : Int, attribute_length : Int,	annotations : Annotations
-	)( implicit constant_pool : Constant_Pool) =	
-		new RuntimeVisibleAnnotations_attribute (
-			attribute_name_index, attribute_length,	annotations
-		) 
-
-
-	case class RuntimeInvisibleAnnotations_attribute (
-		val attribute_name_index : Int,
-		val attribute_length : Int,
-		val annotations : Annotations
-	) extends org.opalj.bat.native.RuntimeInvisibleAnnotations_attribute {
-
-		type Annotations = BasicJava6Framework.Annotations
-	}
-
-	def RuntimeInvisibleAnnotations_attribute (
-		attribute_name_index : Int, attribute_length : Int, annotations : Annotations
-	)( implicit constant_pool : Constant_Pool) =	
-		new RuntimeInvisibleAnnotations_attribute (
-			attribute_name_index, attribute_length,	annotations
-		)
-
-
-	case class RuntimeVisibleParameterAnnotations_attribute (
-		val attribute_name_index : Int, val attribute_length : Int,
-		val parameter_annotations : ParameterAnnotations
-	)
-	extends org.opalj.bat.native.RuntimeVisibleParameterAnnotations_attribute  {
-
-		type ParameterAnnotations = BasicJava6Framework.ParameterAnnotations
-
-	}
-
-	def RuntimeVisibleParameterAnnotations_attribute (
-		attribute_name_index : Int, attribute_length : Int, parameter_annotations : ParameterAnnotations
-	)( implicit constant_pool : Constant_Pool) =
-		new RuntimeVisibleParameterAnnotations_attribute(
-			attribute_name_index,attribute_length,parameter_annotations
-		)
-
-
-	case class RuntimeInvisibleParameterAnnotations_attribute (
-		val attribute_name_index : Int, val attribute_length : Int,
-		val parameter_annotations : ParameterAnnotations
-	)
-	extends org.opalj.bat.native.RuntimeInvisibleParameterAnnotations_attribute  {
-
-		type ParameterAnnotations = BasicJava6Framework.ParameterAnnotations
-
-	}
-
-	def RuntimeInvisibleParameterAnnotations_attribute (
-		attribute_name_index : Int, attribute_length : Int,parameter_annotations : ParameterAnnotations
-	)( implicit constant_pool : Constant_Pool) =
-		new RuntimeInvisibleParameterAnnotations_attribute(
-			attribute_name_index,attribute_length,parameter_annotations
-		)
-
-
-	case class StackMapTable_attribute (
-		val attribute_name_index : Int,
-		val attribute_length : Int,
-		val stack_map_frames : StackMapFrames
-	) extends org.opalj.bat.native.StackMapTable_attribute {
-
-		type StackMapFrames = BasicJava6Framework.StackMapFrames
-
-	}
-	
-	def StackMapTable_attribute (
-		attribute_name_index : Int, attribute_length : Int, stack_map_frames : StackMapFrames
-	)( implicit constant_pool : Constant_Pool) =
-		new StackMapTable_attribute (attribute_name_index, attribute_length, stack_map_frames )
-
-
-	trait StackMapFrame extends org.opalj.bat.native.StackMapFrame {
-		type VerificationTypeInfo = BasicJava6Framework.VerificationTypeInfo
-	}
-
-
-	case class SameFrame(val frame_type : Int) extends org.opalj.bat.native.SameFrame with StackMapFrame
-	def SameFrame(frame_type : Int) : StackMapFrame = new SameFrame(frame_type)
-
-
-	case class SameLocals1StackItemFrame(val frame_type : Int, val verification_type_info_stack : VerificationTypeInfo) extends org.opalj.bat.native.SameLocals1StackItemFrame with StackMapFrame
-	def SameLocals1StackItemFrame(
-		frame_type: Int,verification_type_info_stack : VerificationTypeInfo
-	) : StackMapFrame = new SameLocals1StackItemFrame(frame_type,verification_type_info_stack)
-
-
-	case class SameLocals1StackItemFrameExtended(val frame_type : Int, val offset_delta : Int, val verification_type_info_stack : VerificationTypeInfo) extends org.opalj.bat.native.SameLocals1StackItemFrameExtended with StackMapFrame
-	def SameLocals1StackItemFrameExtended(
-		frame_type: Int,
-		offset_delta: Int,
-		verification_type_info_stack : VerificationTypeInfo
-	) : StackMapFrame = new SameLocals1StackItemFrameExtended(frame_type,offset_delta,verification_type_info_stack)
-
-
-	case class ChopFrame(val frame_type : Int, val offset_delta : Int) extends org.opalj.bat.native.ChopFrame with StackMapFrame
-	def ChopFrame(frame_type: Int, offset_delta : Int ) : StackMapFrame = new ChopFrame(frame_type,offset_delta)
-
-
-	case class SameFrameExtended(val frame_type : Int, val offset_delta : Int) extends org.opalj.bat.native.SameFrameExtended with StackMapFrame
-	def SameFrameExtended( frame_type: Int, offset_delta : Int) : StackMapFrame = new SameFrameExtended(frame_type,offset_delta)
-
-
-	case class AppendFrame(val frame_type : Int, val offset_delta : Int, val verification_type_info_locals : VerificationTypeInfoLocals) extends org.opalj.bat.native.AppendFrame with StackMapFrame	
-	def AppendFrame(
-		frame_type: Int,	
-		offset_delta: Int, verification_type_info_locals : VerificationTypeInfoLocals
-	) : StackMapFrame = new AppendFrame(frame_type,offset_delta,verification_type_info_locals)
-
-
-	case class FullFrame(val frame_type : Int, val offset_delta : Int, val verification_type_info_locals : VerificationTypeInfoLocals, val verification_type_info_stack : VerificationTypeInfoStack) extends org.opalj.bat.native.FullFrame with StackMapFrame		
-	def FullFrame(
-		frame_type: Int,	
-		offset_delta: Int,
-		verification_type_info_locals : VerificationTypeInfoLocals,
-		verification_type_info_stack : VerificationTypeInfoStack
-	) : StackMapFrame = new FullFrame(frame_type,offset_delta,verification_type_info_locals,verification_type_info_stack)
-
-
-	type VerificationTypeInfo = org.opalj.bat.native.VerificationTypeInfo
-
-	case object TopVariableInfo extends org.opalj.bat.native.TopVariableInfo 
-	def TopVariableInfo () : VerificationTypeInfo = TopVariableInfo
-
-	case object IntegerVariableInfo extends org.opalj.bat.native.IntegerVariableInfo
-	def IntegerVariableInfo () : VerificationTypeInfo = IntegerVariableInfo
-
-	case object FloatVariableInfo extends org.opalj.bat.native.FloatVariableInfo
-	def FloatVariableInfo () : VerificationTypeInfo = FloatVariableInfo
-
-	case object LongVariableInfo extends org.opalj.bat.native.LongVariableInfo
-	def LongVariableInfo () : VerificationTypeInfo = LongVariableInfo
-
-	case object DoubleVariableInfo extends org.opalj.bat.native.DoubleVariableInfo
-	def DoubleVariableInfo () : VerificationTypeInfo = DoubleVariableInfo
-
-	case object NullVariableInfo extends org.opalj.bat.native.NullVariableInfo
-	def NullVariableInfo () : VerificationTypeInfo = NullVariableInfo
-
-	case object UninitializedThisVariableInfo extends org.opalj.bat.native.UninitializedThisVariableInfo
-	def UninitializedThisVariableInfo () : VerificationTypeInfo = UninitializedThisVariableInfo
-
-	case class UninitializedVariableInfo(val offset : Int) extends org.opalj.bat.native.UninitializedVariableInfo 
-	def UninitializedVariableInfo(offset : Int) : VerificationTypeInfo = 
-		new UninitializedVariableInfo(offset)
-		
-	case class ObjectVariableInfo(val cpool_index : Int) extends org.opalj.bat.native.ObjectVariableInfo
-	def ObjectVariableInfo(cpool_index : Int)(implicit constant_pool : Constant_Pool) : VerificationTypeInfo = 
-		new ObjectVariableInfo(cpool_index)		
-		*/
+    type Signature_attribute = da.Signature_attribute
+    def Signature_attribute(
+        cp: Constant_Pool, ap: AttributeParent, attribute_name_index: Int,
+        signature_index: Int): Signature_attribute =
+        new Signature_attribute(attribute_name_index, signature_index)
+
+    type ConstantValue_attribute = da.ConstantValue_attribute
+    def ConstantValue_attribute(
+        cp: Constant_Pool, attribute_name_index: Int,
+        constantvalue_index: Int): ConstantValue_attribute =
+        new ConstantValue_attribute(attribute_name_index, constantvalue_index)
+
+    type Synthetic_attribute = da.Synthetic_attribute
+    def Synthetic_attribute(cp: Constant_Pool, attribute_name_index: Int): Synthetic_attribute =
+        new Synthetic_attribute(attribute_name_index)
+
+    type Deprecated_attribute = da.Deprecated_attribute
+    def Deprecated_attribute(cp: Constant_Pool, attribute_name_index: Int): Deprecated_attribute =
+        new Deprecated_attribute(attribute_name_index)
+
+    type SourceDebugExtension_attribute = da.SourceDebugExtension_attribute
+    def SourceDebugExtension_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        debug_extension: Array[Byte]): SourceDebugExtension_attribute =
+        new SourceDebugExtension_attribute(attribute_name_index, debug_extension)
+
+    val InnerClassesEntryManifest: ClassTag[InnerClassesEntry] = implicitly
+
+    type InnerClasses_attribute = da.InnerClasses_attribute
+    def InnerClasses_attribute(
+        cp: Constant_Pool, attribute_name_index: Int,
+        classes: InnerClasses): InnerClasses_attribute =
+        new InnerClasses_attribute(attribute_name_index, classes)
+
+    type InnerClassesEntry = da.InnerClassesEntry
+    def InnerClassesEntry(
+        cp: Constant_Pool,
+        inner_class_info_index: Int,
+        outer_class_info_index: Int,
+        inner_name_index: Int,
+        inner_class_access_flags: Int): InnerClassesEntry =
+        new InnerClassesEntry(
+            inner_class_info_index, outer_class_info_index,
+            inner_name_index,
+            inner_class_access_flags
+        )
+
+    val Exceptions_attributeManifest: ClassTag[Exceptions_attribute] = implicitly
+
+    type Exceptions_attribute = da.Exceptions_attribute
+    def Exceptions_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        exception_index_table: ExceptionIndexTable): Exceptions_attribute =
+        new Exceptions_attribute(attribute_name_index, exception_index_table)
+
+    val ExceptionTableEntryManifest: ClassTag[ExceptionTableEntry] = implicitly
+
+    type Instructions = da.Code
+    def Instructions(
+        cp: Constant_Pool,
+        instructions: Array[Byte]): Instructions =
+        new Instructions(instructions)
+
+    type ExceptionTableEntry = da.ExceptionTableEntry
+    def ExceptionTableEntry(
+        cp: Constant_Pool,
+        start_pc: Int, end_pc: Int, handler_pc: Int, catch_type: Int): ExceptionTableEntry =
+        new ExceptionTableEntry(start_pc, end_pc, handler_pc, catch_type)
+
+    type Code_attribute = da.Code_attribute
+    def Code_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        max_stack: Int, max_locals: Int,
+        instructions: Instructions,
+        exception_table: ExceptionHandlers,
+        attributes: Attributes): Code_attribute =
+        new Code_attribute(
+            attribute_name_index, attribute_length,
+            max_stack, max_locals,
+            instructions,
+            exception_table,
+            attributes
+        )
+
+    type EnclosingMethod_attribute = da.EnclosingMethod_attribute
+    def EnclosingMethod_attribute(
+        cp: Constant_Pool, attribute_name_index: Int,
+        class_index: Int,
+        method_index: Int): EnclosingMethod_attribute =
+        new EnclosingMethod_attribute(attribute_name_index, class_index, method_index)
+
+    type LineNumberTable_attribute = da.LineNumberTable_attribute
+    def LineNumberTable_attribute(
+        cp: Constant_Pool,
+        attribute_name_index: Int, attribute_length: Int,
+        line_number_table: LineNumbers): LineNumberTable_attribute =
+        new LineNumberTable_attribute(attribute_name_index, line_number_table)
+
+    val LineNumberTableEntryManifest: ClassTag[LineNumberTableEntry] = implicitly
+    type LineNumberTableEntry = da.LineNumberTableEntry
+    def LineNumberTableEntry(start_pc: Int, line_number: Int): LineNumberTableEntry =
+        new LineNumberTableEntry(start_pc, line_number)
+
+    type LocalVariableTable_attribute = da.LocalVariableTable_attribute
+    def LocalVariableTable_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        local_variable_table: LocalVariables): LocalVariableTable_attribute =
+        new LocalVariableTable_attribute(attribute_name_index, local_variable_table)
+
+    val LocalVariableTableEntryManifest: ClassTag[LocalVariableTableEntry] = implicitly
+    type LocalVariableTableEntry = da.LocalVariableTableEntry
+    def LocalVariableTableEntry(
+        cp: Constant_Pool,
+        start_pc: Int, length: Int, name_index: Int, descriptor_index: Int, index: Int): LocalVariableTableEntry =
+        new LocalVariableTableEntry(start_pc, length, name_index, descriptor_index, index)
+
+    val LocalVariableTypeTableEntryManifest: ClassTag[LocalVariableTypeTableEntry] = implicitly
+
+    type LocalVariableTypeTable_attribute = da.LocalVariableTypeTable_attribute
+    def LocalVariableTypeTable_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        local_variable_type_table: LocalVariableTypes): LocalVariableTypeTable_attribute =
+        new LocalVariableTypeTable_attribute(
+            attribute_name_index, local_variable_type_table
+        )
+
+    type LocalVariableTypeTableEntry = da.LocalVariableTypeTableEntry
+    def LocalVariableTypeTableEntry(
+        cp: Constant_Pool,
+        start_pc: Int, length: Int, name_index: Int, signature_index: Int, index: Int): LocalVariableTypeTableEntry =
+        new LocalVariableTypeTableEntry(
+            start_pc, length, name_index, signature_index, index
+        )
+
+    val ElementValueManifest: ClassTag[ElementValue] = implicitly
+    val ElementValuePairManifest: ClassTag[ElementValuePair] = implicitly
+
+    type ElementValuePair = da.ElementValuePair
+    type ElementValue = da.ElementValue
+    def ElementValuePair(
+        cp: Constant_Pool,
+        element_name_index: Int, element_value: ElementValue): ElementValuePair =
+        new ElementValuePair(element_name_index, element_value)
+
+    def ByteValue(cp: Constant_Pool, const_value_index: Int): ElementValue =
+        new ByteValue(const_value_index)
+
+    def CharValue(cp: Constant_Pool, const_value_index: Int): ElementValue =
+        new CharValue(const_value_index)
+
+    def DoubleValue(cp: Constant_Pool, const_value_index: Int): ElementValue =
+        new DoubleValue(const_value_index)
+
+    def FloatValue(cp: Constant_Pool, const_value_index: Int): ElementValue =
+        new FloatValue(const_value_index)
+
+    def IntValue(cp: Constant_Pool, const_value_index: Int): ElementValue =
+        new IntValue(const_value_index)
+
+    def LongValue(cp: Constant_Pool, const_value_index: Int): ElementValue =
+        new LongValue(const_value_index)
+
+    def ShortValue(cp: Constant_Pool, const_value_index: Int): ElementValue =
+        new ShortValue(const_value_index)
+
+    def BooleanValue(cp: Constant_Pool, const_value_index: Int): ElementValue =
+        new BooleanValue(const_value_index)
+
+    def StringValue(cp: Constant_Pool, const_value_index: Int): ElementValue =
+        new StringValue(const_value_index)
+
+    def ClassValue(cp: Constant_Pool, const_value_index: Int): ElementValue =
+        new ClassValue(const_value_index)
+
+    def EnumValue(cp: Constant_Pool, type_name_index: Int, const_name_index: Int): ElementValue =
+        new EnumValue(type_name_index, const_name_index)
+
+    type Annotation = da.Annotation
+    def AnnotationValue(cp: Constant_Pool, annotation: Annotation): ElementValue =
+        new AnnotationValue(annotation)
+
+    def ArrayValue(cp: Constant_Pool, values: ElementValues): ElementValue =
+        new ArrayValue(values)
+
+    val AnnotationManifest: ClassTag[Annotation] = implicitly
+    def Annotation(
+        cp: Constant_Pool,
+        type_index: Int,
+        element_value_pairs: ElementValuePairs): Annotation =
+        new Annotation(type_index, element_value_pairs)
+
+    type AnnotationDefault_attribute = da.AnnotationDefault_attribute
+    def AnnotationDefault_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        element_value: ElementValue) =
+        new AnnotationDefault_attribute(attribute_name_index, attribute_length, element_value)
+
+    type RuntimeVisibleAnnotations_attribute = da.RuntimeVisibleAnnotations_attribute
+    def RuntimeVisibleAnnotations_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        annotations: Annotations) =
+        new RuntimeVisibleAnnotations_attribute(attribute_name_index, attribute_length, annotations)
+
+    type RuntimeInvisibleAnnotations_attribute = da.RuntimeInvisibleAnnotations_attribute
+    def RuntimeInvisibleAnnotations_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        annotations: Annotations) =
+        new RuntimeInvisibleAnnotations_attribute(attribute_name_index, attribute_length, annotations)
+
+    type RuntimeVisibleParameterAnnotations_attribute = da.RuntimeVisibleParameterAnnotations_attribute
+    def RuntimeVisibleParameterAnnotations_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        parameter_annotations: ParameterAnnotations) =
+        new RuntimeVisibleParameterAnnotations_attribute(
+            attribute_name_index, attribute_length, parameter_annotations)
+
+    type RuntimeInvisibleParameterAnnotations_attribute = da.RuntimeInvisibleParameterAnnotations_attribute
+    def RuntimeInvisibleParameterAnnotations_attribute(
+        cp: Constant_Pool, attribute_name_index: Int, attribute_length: Int,
+        parameter_annotations: ParameterAnnotations) =
+        new RuntimeInvisibleParameterAnnotations_attribute(
+            attribute_name_index, attribute_length, parameter_annotations
+        )
+
+    val StackMapFrameManifest: ClassTag[StackMapFrame] = implicitly
+
+    type StackMapFrame = da.StackMapFrame
+    type StackMapTable_attribute = da.StackMapTable_attribute
+    def StackMapTable_attribute(
+        cp: Constant_Pool,
+        attribute_name_index: Int, attribute_length: Int,
+        stack_map_frames: StackMapFrames) =
+        new StackMapTable_attribute(attribute_name_index, attribute_length, stack_map_frames)
+
+    def SameFrame(frame_type: Int): StackMapFrame = new SameFrame(frame_type)
+
+    val VerificationTypeInfoManifest: ClassTag[VerificationTypeInfo] = implicitly
+    type VerificationTypeInfo = da.VerificationTypeInfo
+
+    def SameLocals1StackItemFrame(
+        frame_type: Int,
+        verification_type_info_stack: VerificationTypeInfo): StackMapFrame =
+        new SameLocals1StackItemFrame(frame_type, verification_type_info_stack)
+
+    def ChopFrame(frame_type: Int, offset_delta: Int): StackMapFrame =
+        new ChopFrame(frame_type, offset_delta)
+
+    def SameFrameExtended(frame_type: Int, offset_delta: Int): StackMapFrame =
+        new SameFrameExtended(frame_type, offset_delta)
+
+    def AppendFrame(
+        frame_type: Int,
+        offset_delta: Int,
+        verification_type_info_locals: VerificationTypeInfoLocals): StackMapFrame =
+        new AppendFrame(frame_type, offset_delta, verification_type_info_locals)
+
+    def SameLocals1StackItemFrameExtended(
+        frame_type: Int,
+        offset_delta: Int,
+        verification_type_info_stack: VerificationTypeInfo): StackMapFrame =
+        new SameLocals1StackItemFrameExtended(frame_type, offset_delta, verification_type_info_stack)
+
+    def FullFrame(
+        frame_type: Int,
+        offset_delta: Int,
+        verification_type_info_locals: VerificationTypeInfoLocals,
+        verification_type_info_stack: VerificationTypeInfoStack): StackMapFrame =
+        new FullFrame(frame_type, offset_delta, verification_type_info_locals, verification_type_info_stack)
+
+    type TopVariableInfo = da.TopVariableInfo
+    def TopVariableInfo(): VerificationTypeInfo = new TopVariableInfo()
+
+    type IntegerVariableInfo = da.IntegerVariableInfo
+    def IntegerVariableInfo(): VerificationTypeInfo = new IntegerVariableInfo()
+
+    type FloatVariableInfo = da.FloatVariableInfo
+    def FloatVariableInfo(): VerificationTypeInfo = new FloatVariableInfo()
+
+    type LongVariableInfo = da.LongVariableInfo
+    def LongVariableInfo(): VerificationTypeInfo = new LongVariableInfo()
+
+    type DoubleVariableInfo = da.DoubleVariableInfo
+    def DoubleVariableInfo(): VerificationTypeInfo = new DoubleVariableInfo()
+
+    type NullVariableInfo = da.NullVariableInfo
+    def NullVariableInfo(): VerificationTypeInfo = new NullVariableInfo()
+
+    type UninitializedThisVariableInfo = da.UninitializedThisVariableInfo
+    def UninitializedThisVariableInfo(): VerificationTypeInfo = new UninitializedThisVariableInfo()
+
+    type UninitializedVariableInfo = da.UninitializedVariableInfo
+    def UninitializedVariableInfo(offset: Int): VerificationTypeInfo =
+        new UninitializedVariableInfo(offset)
+
+    type ObjectVariableInfo = da.ObjectVariableInfo
+    def ObjectVariableInfo(cp: Constant_Pool, cpool_index: Int): VerificationTypeInfo =
+        new ObjectVariableInfo(cpool_index)
+
+    val MethodParameterManifest: ClassTag[MethodParameter] = implicitly
+    val TypeAnnotationManifest: ClassTag[TypeAnnotation] = implicitly
+
+    type MethodParameters_attribute = da.MethodParameters_attribute
+    def MethodParameters_attribute(
+        cp: Constant_Pool,
+        attribute_name_index: CPIndex,
+        attribute_length: Int,
+        parameters: MethodParameters): MethodParameters_attribute =
+        new MethodParameters_attribute(attribute_name_index, attribute_length, parameters)
+
+    type MethodParameter = da.MethodParameter
+    def MethodParameter(
+        cp: Constant_Pool,
+        name_index: CPIndex,
+        access_flags: Int): MethodParameter =
+        new MethodParameter(name_index, access_flags)
+
+    type TypeAnnotationTarget = da.TypeAnnotationTarget
+    def ParameterDeclarationOfClassOrInterface(
+        type_parameter_index: Int): TypeAnnotationTarget =
+        new ParameterDeclarationOfClassOrInterface(type_parameter_index)
+
+    def ParameterDeclarationOfMethodOrConstructor(
+        type_parameter_index: Int): TypeAnnotationTarget =
+        new ParameterDeclarationOfMethodOrConstructor(type_parameter_index)
+
+    def SupertypeTarget(
+        supertype_index: Int): TypeAnnotationTarget =
+        new SupertypeTarget(supertype_index)
+
+    def TypeBoundOfParameterDeclarationOfClassOrInterface(
+        type_parameter_index: Int,
+        bound_index: Int): TypeAnnotationTarget =
+        new TypeBoundOfParameterDeclarationOfClassOrInterface(type_parameter_index, bound_index)
+
+    def TypeBoundOfParameterDeclarationOfMethodOrConstructor(
+        type_parameter_index: Int,
+        bound_index: Int): TypeAnnotationTarget =
+        new TypeBoundOfParameterDeclarationOfMethodOrConstructor(type_parameter_index, bound_index)
+
+    def FieldDeclaration: TypeAnnotationTarget =
+        new FieldDeclaration()
+    def ReturnType: TypeAnnotationTarget =
+        new ReturnType()
+    def ReceiverType: TypeAnnotationTarget =
+        new ReceiverType()
+
+    def FormalParameter(formal_parameter_index: Int): TypeAnnotationTarget =
+        new FormalParameter(formal_parameter_index)
+
+    def Throws(throws_type_index: Int): TypeAnnotationTarget =
+        new Throws(throws_type_index)
+
+    def Catch(exception_table_index: Int): TypeAnnotationTarget =
+        new Catch(exception_table_index)
+
+    type LocalvarTableEntry = da.LocalvarTableEntry
+    def LocalvarTableEntry(
+        start_pc: Int,
+        length: Int,
+        local_variable_table_index: Int): LocalvarTableEntry =
+        new LocalvarTableEntry(start_pc, length, local_variable_table_index)
+
+    def LocalvarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget =
+        new LocalvarDecl(localVarTable)
+
+    def ResourcevarDecl(localVarTable: LocalvarTable): TypeAnnotationTarget =
+        new ResourcevarDecl(localVarTable)
+
+    def InstanceOf(offset: Int): TypeAnnotationTarget =
+        new InstanceOf(offset)
+
+    def New(offset: Int): TypeAnnotationTarget =
+        new New(offset)
+
+    def MethodReferenceExpressionNew /*::New*/ (
+        offset: Int): TypeAnnotationTarget =
+        new MethodReferenceExpressionNew(offset)
+
+    def MethodReferenceExpressionIdentifier /*::Identifier*/ (
+        offset: Int): TypeAnnotationTarget =
+        new MethodReferenceExpressionIdentifier(offset)
+
+    def CastExpression(
+        offset: Int,
+        type_argument_index: Int): TypeAnnotationTarget =
+        new CastExpression(offset, type_argument_index)
+
+    def ConstructorInvocation(
+        offset: Int,
+        type_argument_index: Int): TypeAnnotationTarget =
+        new ConstructorInvocation(offset, type_argument_index)
+
+    def MethodInvocation(
+        offset: Int,
+        type_argument_index: Int): TypeAnnotationTarget =
+        new MethodInvocation(offset, type_argument_index)
+
+    def ConstructorInMethodReferenceExpression(
+        offset: Int,
+        type_argument_index: Int): TypeAnnotationTarget =
+        new ConstructorInMethodReferenceExpression(offset, type_argument_index)
+
+    def MethodInMethodReferenceExpression(
+        offset: Int,
+        type_argument_index: Int): TypeAnnotationTarget =
+        new MethodInMethodReferenceExpression(offset, type_argument_index)
+
+    type TypeAnnotationPath = da.TypeAnnotationPath
+    def TypeAnnotationDirectlyOnType: TypeAnnotationPath =
+        new TypeAnnotationDirectlyOnType()
+
+    type TypeAnnotationPathElement = da.TypeAnnotationPathElement
+    def TypeAnnotationPath(path: IndexedSeq[TypeAnnotationPathElement]): TypeAnnotationPath =
+        new TypeAnnotationPathElements(path)
+
+    /**
+     * The `type_path_kind` was `0` (and the type_argument_index was also `0`).
+     */
+    def TypeAnnotationDeeperInArrayType: TypeAnnotationPathElement =
+        new TypeAnnotationDeeperInArrayType()
+
+    /**
+     * The `type_path_kind` was `1` (and the type_argument_index was (as defined by the
+     * specification) also `0`).
+     */
+    def TypeAnnotationDeeperInNestedType: TypeAnnotationPathElement =
+        new TypeAnnotationDeeperInNestedType()
+
+    /**
+     * The `type_path_kind` was `2` (and the type_argument_index was (as defined by the
+     * specification) also `0`).
+     */
+    def TypeAnnotationOnBoundOfWildcardType: TypeAnnotationPathElement =
+        new TypeAnnotationOnBoundOfWildcardType()
+
+    def TypeAnnotationOnTypeArgument(type_argument_index: Int): TypeAnnotationPathElement =
+        new TypeAnnotationOnTypeArgument(type_argument_index)
+
+    type TypeAnnotation = da.TypeAnnotation
+    def TypeAnnotation(
+        cp: Constant_Pool,
+        target: TypeAnnotationTarget,
+        path: TypeAnnotationPath,
+        type_index: CPIndex,
+        element_value_pairs: ElementValuePairs): TypeAnnotation =
+        new TypeAnnotation(target, path, type_index, element_value_pairs)
+
+    type RuntimeInvisibleTypeAnnotations_attribute = da.RuntimeInvisibleTypeAnnotations_attribute
+    def RuntimeInvisibleTypeAnnotations_attribute(
+        cp: Constant_Pool, attribute_name_index: CPIndex, attribute_length: Int,
+        annotations: TypeAnnotations): RuntimeInvisibleTypeAnnotations_attribute =
+        new RuntimeInvisibleTypeAnnotations_attribute(attribute_name_index, attribute_length, annotations)
+
+    type RuntimeVisibleTypeAnnotations_attribute = da.RuntimeVisibleTypeAnnotations_attribute
+    def RuntimeVisibleTypeAnnotations_attribute(
+        cp: Constant_Pool,
+        attribute_name_index: CPIndex,
+        attribute_length: Int,
+        annotations: TypeAnnotations): RuntimeVisibleTypeAnnotations_attribute =
+        new RuntimeVisibleTypeAnnotations_attribute(attribute_name_index, attribute_length, annotations)
 }
-

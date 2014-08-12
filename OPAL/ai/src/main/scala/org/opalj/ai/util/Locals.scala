@@ -36,10 +36,14 @@ import scala.reflect.ClassTag
 import Locals._
 
 /**
- * An immutable vector that enables random access and which is heavily optimized for
+ * An immutable array that enables random access and which is heavily optimized for
  * small(er) collections (up to 12 elements) that are frequently compared and updated
  * and where sharing is beneficial.
  *
+ * A `Locals` array contains `null` values for all elements that are not yet set.
+ * Furthermore, a `Locals` array is not resizable.
+ *
+ * ==Usage Scenario==
  * For example, the median of the number of registers that are used per method is 2
  * (JDK and OPAL) and more then 99,5% of all methods have less than 20 elements.
  *
@@ -108,6 +112,9 @@ sealed trait Locals[T >: Null <: AnyRef] {
     /**
      * Creates a new vector which contains the mapped values as specified by the given
      * function `f`.
+     *
+     * @param f The function that converts this collection's elements. `f` has to
+     *      be able to handle `null` values if this collection may contain `null` values.
      */
     def mapToVector[X](f: T ⇒ X): scala.collection.immutable.Vector[X] = {
         var newLocals = scala.collection.immutable.Vector.empty[X]
@@ -125,8 +132,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
     }
 
     /**
-     * Converts this set into a sequence. The elements are sorted in ascending order
-     * using the unique ids of the elements.
+     * Creates a Scala sequence. The sequence may contain `null` values.
      */
     def toSeq: Seq[T] = {
         var seq = List.empty[T]
@@ -191,7 +197,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     override def hashCode: Int = {
         var hc = 1
-        foreach { e ⇒ hc * 41 + e.hashCode }
+        foreach { e ⇒ hc * 41 + { if (e ne null) e.hashCode else 7 } }
         hc
     }
 
@@ -208,7 +214,8 @@ sealed trait Locals[T >: Null <: AnyRef] {
             s + end
     }
 
-    override def toString: String = mkString("org.opalj.collection.immutable.Locals(", ",", ")")
+    override def toString: String =
+        mkString("org.opalj.collection.immutable.Locals(", ",", ")")
 
 }
 
@@ -671,21 +678,10 @@ private[util] final class Locals5[T >: Null <: AnyRef](
 
     override def apply(index: Int): T = {
         if (index < 2) vs1(index) else vs2(index - 2)
-        //        (index: @scala.annotation.switch) match {
-        //            case 0 | 1     ⇒ vs1(index)
-        //            case 2 | 3 | 4 ⇒ vs2(index - 2)
-        //            case _ ⇒
-        //                throw new IndexOutOfBoundsException("invalid index("+index+")")
-        //        }
     }
 
-    override def set(index: Int, value: T): Unit = {
-        (index: @scala.annotation.switch) match {
-            case 0 | 1     ⇒ vs1.set(index, value)
-            case 2 | 3 | 4 ⇒ vs2.set(index - 2, value)
-            case _ ⇒
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
-        }
+    override def set(index: Int, newValue: T): Unit = {
+        if (index < 2) vs1.set(index, newValue) else vs2.set(index - 2, newValue)
     }
 
     override def update(f: (T) ⇒ T): Unit = {
@@ -694,12 +690,10 @@ private[util] final class Locals5[T >: Null <: AnyRef](
     }
 
     override def updated(index: Int, newValue: T): Locals[T] = {
-        (index: @scala.annotation.switch) match {
-            case 0 | 1     ⇒ new Locals5(vs1.updated(index, newValue), vs2)
-            case 2 | 3 | 4 ⇒ new Locals5(vs1, vs2.updated(index - 2, newValue))
-            case _ ⇒
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
-        }
+        if (index < 2)
+            new Locals5(vs1.updated(index, newValue), vs2)
+        else
+            new Locals5(vs1, vs2.updated(index - 2, newValue))
     }
 
     override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals5[T] = {
@@ -764,21 +758,10 @@ private[util] final class Locals6[T >: Null <: AnyRef](
 
     override def apply(index: Int): T = {
         if (index < 3) vs1(index) else vs2(index - 3)
-        //        (index: @scala.annotation.switch) match {
-        //            case 0 | 1 | 2 ⇒ vs1(index)
-        //            case 3 | 4 | 5 ⇒ vs2(index - 3)
-        //            case _ ⇒
-        //                throw new IndexOutOfBoundsException("invalid index("+index+")")
-        //        }
     }
 
     override def set(index: Int, newValue: T): Unit = {
-        (index: @scala.annotation.switch) match {
-            case 0 | 1 | 2 ⇒ vs1.set(index, newValue)
-            case 3 | 4 | 5 ⇒ vs2.set(index - 3, newValue)
-            case _ ⇒
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
-        }
+        if (index < 3) vs1.set(index, newValue) else vs2.set(index - 3, newValue)
     }
 
     override def update(f: (T) ⇒ T): Unit = {
@@ -787,12 +770,10 @@ private[util] final class Locals6[T >: Null <: AnyRef](
     }
 
     override def updated(index: Int, newValue: T): Locals6[T] = {
-        (index: @scala.annotation.switch) match {
-            case 0 | 1 | 2 ⇒ new Locals6(vs1.updated(index, newValue), vs2)
-            case 3 | 4 | 5 ⇒ new Locals6(vs1, vs2.updated(index - 3, newValue))
-            case _ ⇒
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
-        }
+        if (index < 3)
+            new Locals6(vs1.updated(index, newValue), vs2)
+        else
+            new Locals6(vs1, vs2.updated(index - 3, newValue))
     }
 
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
@@ -857,21 +838,10 @@ private[util] final class Locals7[T >: Null <: AnyRef](
 
     override def apply(index: Int): T = {
         if (index < 3) vs1(index) else vs2(index - 3)
-        //        (index: @scala.annotation.switch) match {
-        //            case 0 | 1 | 2     ⇒ vs1(index)
-        //            case 3 | 4 | 5 | 6 ⇒ vs2(index - 3)
-        //            case _ ⇒
-        //                throw new IndexOutOfBoundsException("invalid index("+index+")")
-        //        }
     }
 
     override def set(index: Int, newValue: T): Unit = {
-        (index: @scala.annotation.switch) match {
-            case 0 | 1 | 2     ⇒ vs1.set(index, newValue)
-            case 3 | 4 | 5 | 6 ⇒ vs2.set(index - 3, newValue)
-            case _ ⇒
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
-        }
+        if (index < 3) vs1.set(index, newValue) else vs2.set(index - 3, newValue)
     }
 
     override def update(f: (T) ⇒ T): Unit = {
@@ -880,12 +850,10 @@ private[util] final class Locals7[T >: Null <: AnyRef](
     }
 
     override def updated(index: Int, newValue: T): Locals7[T] = {
-        (index: @scala.annotation.switch) match {
-            case 0 | 1 | 2     ⇒ new Locals7(vs1.updated(index, newValue), vs2)
-            case 3 | 4 | 5 | 6 ⇒ new Locals7(vs1, vs2.updated(index - 3, newValue))
-            case _ ⇒
-                throw new IndexOutOfBoundsException("invalid index("+index+")")
-        }
+        if (index < 3)
+            new Locals7(vs1.updated(index, newValue), vs2)
+        else
+            new Locals7(vs1, vs2.updated(index - 3, newValue))
     }
 
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
@@ -1392,8 +1360,6 @@ private[util] final class Locals11[T >: Null <: AnyRef](
     }
 }
 
-import scala.reflect.ClassTag
-
 private[util] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
         final val vs11: Locals11[T],
         final val vs12_N: Array[T]) extends LocalsX[T] {
@@ -1581,7 +1547,7 @@ object Locals {
                         data.drop(11).toArray
                     )
                 else
-                    throw new IllegalArgumentException("the size has to be larger than zero")
+                    throw new IllegalArgumentException("size has to be >= 0")
         }
     }
 
@@ -1603,7 +1569,7 @@ object Locals {
                 if (x > 11)
                     new Locals12_N[T](x)
                 else
-                    throw new IllegalArgumentException("the size has to be larger than zero")
+                    throw new IllegalArgumentException("size has to be >= 0")
         }
     }
 }

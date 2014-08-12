@@ -30,15 +30,16 @@ package org.opalj
 package br
 package analyses
 
-import util.{ Answer, Yes, No, Unknown }
-
-import reader.Java8Framework.ClassFiles
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
+
+import org.opalj.bi.TestSupport.locateTestResources
+
+import util.{ Answer, Yes, No, Unknown }
+import reader.Java8Framework.ClassFiles
 
 /**
  * Basic tests of the class hierarchy.
@@ -245,7 +246,7 @@ class ClassHierarchyTest
 
     val clusteringProject =
         Project(
-            ClassFiles(TestSupport.locateTestResources("classfiles/ClusteringTestProject.jar","bi"))
+            ClassFiles(locateTestResources("classfiles/ClusteringTestProject.jar", "bi"))
         )
 
     behavior of "the ClassHierarchy's method to traverse the class hierarchy"
@@ -287,7 +288,7 @@ class ClassHierarchyTest
 
     val fieldsProject =
         Project(
-            ClassFiles(TestSupport.locateTestResources("classfiles/Fields.jar","bi"))
+            ClassFiles(locateTestResources("classfiles/Fields.jar", "bi"))
         )
     import fieldsProject.classFile
 
@@ -368,7 +369,7 @@ class ClassHierarchyTest
 
     val methodsProject =
         Project(
-            ClassFiles(TestSupport.locateTestResources("classfiles/Methods.jar","bi"))
+            ClassFiles(locateTestResources("classfiles/Methods.jar", "bi"))
         )
 
     val superI = ObjectType("methods/b/SuperI")

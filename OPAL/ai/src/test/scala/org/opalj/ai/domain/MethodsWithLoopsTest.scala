@@ -37,8 +37,10 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import br._
-import br.reader.Java8Framework
+import br.reader.Java8Framework.ClassFiles
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -82,22 +84,20 @@ class MethodsWithLoopsTest
     it should "be able to analyze a method that never terminates" in {
 
         object MostBasicDomain
-                extends Domain
-                with DefaultDomainValueBinding
-                with ThrowAllPotentialExceptionsConfiguration
-                with l0.DefaultReferenceValuesBinding
-                with l0.DefaultTypeLevelIntegerValues
-                with l0.DefaultTypeLevelLongValues
-                with l0.DefaultTypeLevelFloatValues
-                with l0.DefaultTypeLevelDoubleValues
-                with l0.TypeLevelFieldAccessInstructions
-                with l0.SimpleTypeLevelInvokeInstructions
-                with PredefinedClassHierarchy
-                with DefaultHandlingOfMethodResults
-                with IgnoreSynchronization {
-            type Id = String
-            def id = "Most Basic Domain"
-        }
+            extends Domain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with l0.DefaultReferenceValuesBinding
+            with l0.DefaultTypeLevelIntegerValues
+            with l0.DefaultTypeLevelLongValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
+            with PredefinedClassHierarchy
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
 
         val method = findMethod("endless")
         val result = BaseAI(classFile, method, MostBasicDomain)
@@ -106,8 +106,7 @@ class MethodsWithLoopsTest
 }
 object MethodsWithLoopsTest {
 
-    val classFiles = Java8Framework.ClassFiles(
-        TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
 
     val classFile = classFiles.map(_._1).
         find(_.thisType.fqn == "ai/MethodsWithLoops").get

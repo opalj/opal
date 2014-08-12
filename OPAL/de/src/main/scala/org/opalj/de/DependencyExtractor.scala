@@ -111,10 +111,10 @@ class DependencyExtractor(
                     val EnclosingMethod(enclosingClass, name, descriptor) = attribute
                     // Check whether the enclosing method attribute refers to an enclosing 
                     // method or an enclosing class.
-                    if (name != null && descriptor != null)
+                    if (name.isDefined /*&& descriptor.isDefined*/ )
                         dependencyProcessor.processDependency(
                             vc,
-                            dependencyProcessor.asVirtualMethod(enclosingClass, name, descriptor),
+                            dependencyProcessor.asVirtualMethod(enclosingClass, name.get, descriptor.get),
                             ENCLOSED)
                     else
                         processDependency(
@@ -198,13 +198,15 @@ class DependencyExtractor(
                 case RuntimeInvisibleAnnotationTable.KindId
                     | RuntimeVisibleAnnotationTable.KindId ⇒
                     attribute.asInstanceOf[AnnotationTable].annotations foreach {
-                        process(vf, _, ANNOTATED_WITH, ANNOTATION_ELEMENT_TYPE)
+                        process(
+                            vf, _, /*the DECLARATION is*/ ANNOTATED_WITH, ANNOTATION_ELEMENT_TYPE
+                        )
                     }
 
                 case RuntimeInvisibleTypeAnnotationTable.KindId
                     | RuntimeVisibleTypeAnnotationTable.KindId ⇒
                     attribute.asInstanceOf[TypeAnnotationTable].typeAnnotations foreach {
-                        process(vf, _, ANNOTATED_WITH)
+                        process(vf, _, ANNOTATED_WITH) // TODO [IMPROVE] Should be TYPE_ANNOTATED_WITH
                     }
 
                 case ConstantInteger.KindId ⇒
@@ -565,7 +567,7 @@ class DependencyExtractor(
      *
      * @param declaringElement The (source) element with the annotation.
      * @param annotation The annotation that will be analyzed.
-     * @param dependencyType The type of the dependency; default: `ANNOTATED_WITH`.
+     * @param dependencyType The type of the dependency.
      */
     private def process(
         declaringElement: VirtualSourceElement,

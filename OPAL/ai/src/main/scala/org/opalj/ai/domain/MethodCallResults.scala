@@ -30,8 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import language.implicitConversions
-
 /**
  * Trait that can be mixed in if information is needed about all returned values and
  * the thrown exceptions. ''This information is, however, only available after the
@@ -39,7 +37,7 @@ import language.implicitConversions
  *
  * @author Michael Eichberg
  */
-trait MethodCallResults extends Domain {
+trait MethodCallResults { domain: ValuesDomain ⇒
 
     /**
      * `true` if the method returned due to a `("void"|a|i|l|f|d)return` instruction.
@@ -59,7 +57,7 @@ trait MethodCallResults extends Domain {
      * @note This method may only be called after the abstract interpretation of a
      * 		 method has completed.
      */
-    def returnedValue(target: Domain, callerPC: PC): Option[target.DomainValue]
+    def returnedValue(target: TargetDomain, callerPC: PC): Option[target.DomainValue]
 
     /**
      * Adapts and returns the exceptions that are thrown by the called method.
@@ -70,7 +68,7 @@ trait MethodCallResults extends Domain {
      * @note This method may only be called after the abstract interpretation of a
      * 		 method has completed.
      */
-    def thrownExceptions(target: Domain, callerPC: PC): target.ExceptionValues
+    def thrownExceptions(target: TargetDomain, callerPC: PC): target.ExceptionValues
 
 }
 

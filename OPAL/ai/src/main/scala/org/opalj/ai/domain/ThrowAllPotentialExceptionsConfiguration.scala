@@ -30,19 +30,18 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 /**
- * Centralizes all configuration options related to how a domain should handle
- * situations in which the information about a value is not completely available and
- * which could lead to some kind of exception.
- *
- * Basically all domains that perform some kind of abstraction should mix in this trait
- * and query the respective method to decide if a respective exception should be thrown
- * if it is possible that an exception may be thrown.
+ * A configuration that forces abstract interpretation to always create an exception
+ * if it is not possible to deduce that a specific exception will not be thrown.
  *
  * ==Usage==
- * If you need to adapt a setting just override the respective method in your domain.
+ * If you need to adapt a setting just override the respective method in your domain
+ * or create a class that inherits from [[Configuration]].
+ *
+ * ==Core Properties==
+ *  - Concrete base implementation of the [[Configuration]] trait that can 
+ *    be used to create a final domain.
+ *  - Thread safe.
  *
  * @author Michael Eichberg
  */
@@ -88,14 +87,14 @@ trait ThrowAllPotentialExceptionsConfiguration extends Configuration {
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwNullPointerExceptionOnMonitorAccess: Boolean = false
+    /*implements(not override!)*/ def throwNullPointerExceptionOnMonitorAccess: Boolean = true
 
     /**
      * @inheritdoc
      *
      * @return `true`
      */
-    /*implements(not override!)*/ def throwNullPointerExceptionOnArrayAccess: Boolean = false
+    /*implements(not override!)*/ def throwNullPointerExceptionOnArrayAccess: Boolean = true
 
     /**
      * @inheritdoc

@@ -37,22 +37,28 @@ package instructions
  */
 case class INVOKEINTERFACE(
     declaringClass: ObjectType, // an interface or class type to be precise
-    name: String, // an interface or class type to be precise
+    name: String,
     methodDescriptor: MethodDescriptor)
         extends VirtualMethodInvocationInstruction {
 
-    def opcode: Opcode = INVOKEINTERFACE.opcode
+    final def opcode: Opcode = INVOKEINTERFACE.opcode
 
-    def mnemonic: String = "invokeinterface"
+    final def mnemonic: String = "invokeinterface"
 
-    final override def runtimeExceptions: List[ObjectType] =
+    final def runtimeExceptions: List[ObjectType] =
         MethodInvocationInstruction.runtimeExceptions
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 5
 
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString
+
 }
 object INVOKEINTERFACE {
 

@@ -63,9 +63,9 @@ sealed abstract class MethodDescriptor
 
     /**
      * Selects the indexes of the parameters that pass the filter function.
-     * 
+     *
      * @note This index is not necessarily identical to the value used to identify
-     *      the origin of value (a parameter passed to a method.)  
+     *      the origin of value (a parameter passed to a method.)
      */
     def selectParameter(f: FieldType ⇒ Boolean): Seq[Int] = {
         var i = 0
@@ -360,7 +360,7 @@ object MethodDescriptor {
     def unapply(md: MethodDescriptor): Option[(IndexedSeq[FieldType], Type)] =
         Some((md.parameterTypes, md.returnType))
 
-    val NoArgsAndReturnVoid: MethodDescriptor = NoArgumentAndNoReturnValueMethodDescriptor
+    final val NoArgsAndReturnVoid: MethodDescriptor = NoArgumentAndNoReturnValueMethodDescriptor
 
     /**
      * The signature of a signature polymorphic method.
@@ -369,8 +369,37 @@ object MethodDescriptor {
      *      (params: Object[]) : Object
      * }}}
      */
-    val SignaturePolymorphicMethod: MethodDescriptor =
+    final val SignaturePolymorphicMethod: MethodDescriptor =
         new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
+
+    final val JustReturnsBoolean: MethodDescriptor = new NoArgumentMethodDescriptor(BooleanType)
+    final val JustReturnsByte: MethodDescriptor = new NoArgumentMethodDescriptor(ByteType)
+    final val JustReturnsShort: MethodDescriptor = new NoArgumentMethodDescriptor(ShortType)
+    final val JustReturnsChar: MethodDescriptor = new NoArgumentMethodDescriptor(CharType)
+    final val JustReturnsInteger: MethodDescriptor = new NoArgumentMethodDescriptor(IntegerType)
+    final val JustReturnsFloat: MethodDescriptor = new NoArgumentMethodDescriptor(FloatType)
+    final val JustReturnsDouble: MethodDescriptor = new NoArgumentMethodDescriptor(DoubleType)
+    final val JustReturnsLong: MethodDescriptor = new NoArgumentMethodDescriptor(LongType)
+    final val JustReturnsObject: MethodDescriptor = new NoArgumentMethodDescriptor(ObjectType.Object)
+    final val JustReturnsString: MethodDescriptor = new NoArgumentMethodDescriptor(ObjectType.String)
+
+    def withNoArgs(returnType: Type): MethodDescriptor = {
+        (returnType.id: @scala.annotation.switch) match {
+            case VoidType.id         ⇒ NoArgumentAndNoReturnValueMethodDescriptor
+            case BooleanType.id      ⇒ JustReturnsBoolean
+            case ByteType.id         ⇒ JustReturnsByte
+            case ShortType.id        ⇒ JustReturnsShort
+            case CharType.id         ⇒ JustReturnsChar
+            case IntegerType.id      ⇒ JustReturnsInteger
+            case LongType.id         ⇒ JustReturnsLong
+            case FloatType.id        ⇒ JustReturnsFloat
+            case DoubleType.id       ⇒ JustReturnsDouble
+            case ObjectType.ObjectId ⇒ JustReturnsObject
+            case ObjectType.StringId ⇒ JustReturnsString
+            case _ ⇒
+                new NoArgumentMethodDescriptor(returnType)
+        }
+    }
 
     def apply(parameterType: FieldType, returnType: Type): MethodDescriptor =
         new SingleArgumentMethodDescriptor(parameterType, returnType)
@@ -380,10 +409,7 @@ object MethodDescriptor {
         returnType: Type): MethodDescriptor = {
         (parameterTypes.size: @annotation.switch) match {
             case 0 ⇒
-                if (returnType == VoidType)
-                    NoArgumentAndNoReturnValueMethodDescriptor
-                else
-                    new NoArgumentMethodDescriptor(returnType)
+                withNoArgs(returnType)
             case 1 ⇒
                 new SingleArgumentMethodDescriptor(parameterTypes(0), returnType)
             case 2 ⇒

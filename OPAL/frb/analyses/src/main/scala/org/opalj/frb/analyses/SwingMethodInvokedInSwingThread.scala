@@ -50,10 +50,9 @@ import br.instructions._
  * @author Ralf Mitschke
  * @author Peter Spieler
  */
-class SwingMethodInvokedInSwingThread[Source]
-        extends MultipleResultsAnalysis[Source, MethodBasedReport[Source]] {
+class SwingMethodInvokedInSwingThread[Source] extends FindRealBugsAnalysis[Source] {
 
-    def description: String =
+    override def description: String =
         "Reports calls to certain Swing methods made from outside of the Swing thread."
 
     /**

@@ -30,7 +30,6 @@ package org.opalj
 package da
 
 /**
- *
  * @author Michael Eichberg
  */
 case class CONSTANT_Fieldref_info(
@@ -38,5 +37,4 @@ case class CONSTANT_Fieldref_info(
         name_and_type_index: Constant_Pool_Index) extends CONSTANT_Ref {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Fieldref
-
 }

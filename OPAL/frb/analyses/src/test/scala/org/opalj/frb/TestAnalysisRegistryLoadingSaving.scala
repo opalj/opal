@@ -37,6 +37,8 @@ import br._
 import java.io.IOException
 import java.io.File
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 /**
  * Tests for loading/saving of `AnalysisRegistry`s.
  *
@@ -45,8 +47,7 @@ import java.io.File
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestAnalysisRegistryLoadingSaving extends AnalysisTest {
 
-    def locateResource(filename: String): File =
-        TestSupport.locateTestResources(filename, "frb/analyses")
+    def locateResource(filename: String): File = locateTestResources(filename, "frb/analyses")
 
     behavior of "FindRealBugs.loadRegistry()"
 

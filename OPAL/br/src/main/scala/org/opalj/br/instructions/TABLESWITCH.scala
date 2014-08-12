@@ -42,19 +42,29 @@ case class TABLESWITCH(
     jumpOffsets: IndexedSeq[Int])
         extends CompoundConditionalBranchInstruction {
 
-    override def opcode: Opcode = TABLESWITCH.opcode
+    final def opcode: Opcode = TABLESWITCH.opcode
 
-    def mnemonic: String = "tableswitch"
+    final def mnemonic: String = "tableswitch"
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 1 + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
-    }
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs = {
+    final def nextInstructions(currentPC: PC, code: Code): PCs = {
         var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
         jumpOffsets foreach (offset ⇒ { (currentPC + offset) +≈: pcs })
         pcs
     }
+
+    override def toString: String =
+        "TABLESWITCH("+
+            (low to high).zip(jumpOffsets).map(e ⇒ e._1+"⤼"+e._2).mkString(",")+
+            ";default⤼"+defaultOffset+
+            ")"
 
     override def toString(pc: Int): String =
         "TABLESWITCH("+

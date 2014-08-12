@@ -29,12 +29,6 @@
 package org.opalj
 package ai
 
-import scala.reflect.ClassTag
-
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import org.opalj.br._
-
 /**
  * Defines the public interface between the abstract interpreter and the domain
  * that implements the functionality related to the handling of long values.
@@ -42,30 +36,7 @@ import org.opalj.br._
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait LongValuesDomain { this: CoreDomain ⇒
-
-    /**
-     * Factory method to create a `DomainValue` that was created (explicitly or
-     * implicitly) by the instruction with the specified program counter.
-     *
-     * The domain may ignore the information about the origin (`vo`).
-     */
-    def LongValue(vo: ValueOrigin): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that represents the given long value
-     * and that was created (explicitly or implicitly) by the instruction with the
-     * specified program counter.
-     *
-     * The domain may ignore the information about the value and the origin (`vo`).
-     */
-    def LongValue(vo: ValueOrigin, value: Long): DomainValue
-
-    // -----------------------------------------------------------------------------------
-    //
-    // ABSTRACTIONS RELATED TO INSTRUCTIONS
-    //
-    // -----------------------------------------------------------------------------------
+trait LongValuesDomain extends LongValuesFactory { domain ⇒
 
     //
     // RELATIONAL OPERATORS
@@ -81,7 +52,7 @@ trait LongValuesDomain { this: CoreDomain ⇒
     def lcmp(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
     //
-    // UNARY EXPRESSIONS
+    // UNARY ARITHMETIC EXPRESSIONS
     //
 
     /**
@@ -93,7 +64,7 @@ trait LongValuesDomain { this: CoreDomain ⇒
     def lneg(pc: PC, value: DomainValue): DomainValue
 
     //
-    // BINARY EXPRESSIONS
+    // BINARY ARITHMETIC EXPRESSIONS
     //
 
     type LongValueOrArithmeticException = Computation[DomainValue, ExceptionValue]

@@ -37,8 +37,8 @@ package instructions
  */
 case object DCMPL extends ComparisonInstruction {
 
-    override final val opcode = 151
+    final val opcode = 151
 
-    def mnemonic: String = "dcmpl"
+    final val mnemonic = "dcmpl"
 
 }

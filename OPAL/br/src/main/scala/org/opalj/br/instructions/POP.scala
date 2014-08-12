@@ -37,8 +37,8 @@ package instructions
  */
 case object POP extends StackManagementInstruction {
 
-    override final val opcode = 87
+    final val opcode = 87
 
-    def mnemonic: String = "pop"
+    final val mnemonic = "pop"
 
 }

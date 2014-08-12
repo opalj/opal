@@ -34,17 +34,15 @@ package l1
 import scala.collection.SortedSet
 
 import org.junit.runner.RunWith
-import org.junit.Ignore
 
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 
-import org.opalj.util._
+import org.opalj.util.{ No, Unknown }
 
-import org.opalj.br._
-import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.br.ObjectType
 
 /**
  * Unit tests for handling `StringValues`.
@@ -52,31 +50,24 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class StringValuesTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class StringValuesTest extends FlatSpec with Matchers with ParallelTestExecution {
 
     import PlainClassesTest._
 
-    object AnalysisDomain
-            extends Domain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with PredefinedClassHierarchy
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultStringValuesBinding
-            with l1.DefaultIntegerRangeValues {
-
-        type Id = String
-        def id = "Domain which tracks String Values"
-    }
+    object AnalysisDomain extends Domain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with PredefinedClassHierarchy
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l1.DefaultStringValuesBinding
+        with l1.DefaultIntegerRangeValues
+        with l0.DefaultPrimitiveValuesConversions
 
     import AnalysisDomain._
 

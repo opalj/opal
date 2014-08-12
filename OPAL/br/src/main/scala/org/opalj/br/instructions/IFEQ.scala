@@ -37,11 +37,11 @@ package instructions
  */
 case class IFEQ(
     branchoffset: Int)
-        extends ConditionalBranchInstruction {
+        extends IF0Instruction {
 
-    final override def opcode: Opcode = IFEQ.opcode
+    final def opcode: Opcode = IFEQ.opcode
 
-    final override def mnemonic: String = "ifeq"
+    final def mnemonic: String = "ifeq"
 
 }
 

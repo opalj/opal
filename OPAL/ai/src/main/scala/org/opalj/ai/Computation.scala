@@ -41,7 +41,7 @@ package ai
  * exception if the computation did not finish.
  *
  * ==Querying Computations==
- * Before accessing a computations result ([[result]] or [[exceptions]]) it first
+ * Before accessing a computation's result ([[result]] or [[exceptions]]) it first
  * has to be checked whether the computation returned normally ([[returnsNormally]])
  * or threw an exception ([[throwsException]]). Only if `returnsNormally` returns
  * `true` the methods `result` and `hasResult` are defined.
@@ -198,7 +198,10 @@ case object ComputationWithSideEffectOnly extends Computation[Nothing, Nothing] 
 
 /**
  * Indicates that the computation did not succeed. This is typically the case
- * for methods that contain a {{{ while(true){...} }}} loop.
+ * for methods that contain an endless loop, such as:
+ * {{{ 
+ *  while(true){.../* no break statements */} 
+ * }}}
  */
 case object ComputationFailed extends Computation[Nothing, Nothing] {
 

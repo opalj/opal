@@ -32,6 +32,11 @@ package br
 import org.scalatest.FunSuite
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
+import org.opalj.bi.TestSupport.locateTestResources
+import scala.util.control.ControlThrowable
+import org.scalatest.concurrent.TimeLimitedTests
+import org.scalatest.time.Millis
+import org.scalatest.time.Span
 
 /**
  * @author Michael Eichberg
@@ -41,7 +46,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
 
     import reader.Java8Framework.ClassFile
 
-    val codeJARFile = TestSupport.locateTestResources("classfiles/Code.jar", "bi")
+    val codeJARFile = locateTestResources("classfiles/Code.jar", "bi")
     val immutableList = ClassFile(codeJARFile, "code/ImmutableList.class")
     val boundedBuffer = ClassFile(codeJARFile, "code/BoundedBuffer.class")
     val quicksort = ClassFile(codeJARFile, "code/Quicksort.class")
@@ -64,7 +69,12 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
                     VoidType)
             ).isDefined
         )
+    }
 
+    test("test that all constructors are returned") {
+        assert(
+            immutableList.constructors.size == 2
+        )
     }
 
     test("test that it can find all other methods") {
@@ -95,6 +105,8 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
                 MethodDescriptor(IndexedSeq(), ObjectType.Object)
             ).isDefined
         )
+
+        assert(immutableList.instanceMethods.size == 4)
     }
 
     test("that findField on a class without fields does not fail") {
@@ -112,7 +124,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
         boundedBuffer.findField("size") should be('defined)
         boundedBuffer.findField("numberInBuffer") should be('defined)
     }
-    
+
     test("that findField does not find non-existing fields") {
         if (boundedBuffer.fields.size != 5)
             fail("expected five fields; found: "+boundedBuffer.fields)
@@ -124,4 +136,102 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
         boundedBuffer.findField("AnumberInBuffers") should be(None)
     }
 
+    val innerclassesJARFile = locateTestResources("classfiles/Innerclasses.jar", "bi")
+    val innerclassesProject = analyses.Project(innerclassesJARFile)
+    val outerClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass.class")
+    val innerPrinterOfXClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass$InnerPrinterOfX.class")
+    val formatterClass = ClassFile(innerclassesJARFile, "innerclasses/MyRootClass$Formatter.class")
+
+    test("that all direct nested classes of a top-level class are correctly identified") {
+        outerClass.nestedClasses(innerclassesProject).toSet should be(Set(
+            ObjectType("innerclasses/MyRootClass$1"),
+            ObjectType("innerclasses/MyRootClass$1MyInnerPrinter"),
+            ObjectType("innerclasses/MyRootClass$2"),
+            ObjectType("innerclasses/MyRootClass$Formatter"),
+            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX")
+        ))
+    }
+
+    test("that all direct nested classes of a member class are correctly identified") {
+        innerPrinterOfXClass.nestedClasses(innerclassesProject).toSet should be(Set(
+            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$1"),
+            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$InnerPrettyPrinter")
+        ))
+    }
+
+    test("that no supertype information is extracted") {
+        formatterClass.nestedClasses(innerclassesProject).toSet should be(Set.empty)
+    }
+
+    test("that all direct and indirect nested classes of a top-level class are correctly identified") {
+        val expectedNestedTypes = Set(
+            ObjectType("innerclasses/MyRootClass$2"),
+            ObjectType("innerclasses/MyRootClass$Formatter"),
+            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX"),
+            ObjectType("innerclasses/MyRootClass$1"),
+            ObjectType("innerclasses/MyRootClass$1MyInnerPrinter"),
+            ObjectType("innerclasses/MyRootClass$1$InnerPrinterOfAnonymousClass"),
+            ObjectType("innerclasses/MyRootClass$1$1"),
+            ObjectType("innerclasses/MyRootClass$1$1$1"),
+            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$InnerPrettyPrinter"),
+            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$1")
+        )
+
+        var foundNestedTypes: Set[ObjectType] = Set.empty
+        outerClass.foreachNestedClass(innerclassesProject, { nc ⇒ foundNestedTypes += nc.thisType })
+
+        foundNestedTypes.size should be(expectedNestedTypes.size)
+        foundNestedTypes should be(expectedNestedTypes)
+    }
+
+    private def testJARFile(jarFile: java.io.File) = {
+        val project = analyses.Project(jarFile)
+        var innerClassesCount = 0
+        var failures: List[String] = List.empty
+        val nestedTypes = for (classFile ← project.classFiles) yield {
+            try {
+                // should not time out or crash...
+                classFile.nestedClasses(project)
+                var nestedClasses: List[Type] = Nil
+                classFile.foreachNestedClass(project, { c ⇒
+                    nestedClasses = c.thisType :: nestedClasses
+                    innerClassesCount += 1
+                })
+                innerClassesCount += 1
+                Some((classFile.thisType, nestedClasses))
+            } catch {
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable ⇒
+                    failures =
+                        s"cannot calculate inner classes for ${classFile.fqn}: ${t.getClass().getSimpleName()} - ${t.getMessage()}" ::
+                            failures
+                    None
+            }
+        }
+        if (failures.nonEmpty) {
+            fail(failures.mkString("; "))
+        }
+
+        innerClassesCount should be > (0)
+        nestedTypes.flatten.toSeq.toMap
+    }
+
+    test("that it is possible to get the inner classes information for Apache ANT 1.8.4 - excerpt.jar") {
+        testJARFile(locateTestResources("classfiles/Apache ANT 1.8.4 - excerpt.jar", "bi"))
+    }
+
+    test("that it is possible to get the inner classes information for batik-DOMViewer 1.7.jar") {
+        val nestedTypeInformation = testJARFile(locateTestResources("classfiles/batik-DOMViewer 1.7.jar", "bi"))
+        val D$Panel = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$Panel")
+        val D$2 = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$2")
+        val D$3 = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$3")
+        nestedTypeInformation(D$Panel) should contain(D$2)
+        nestedTypeInformation(D$2) should contain(D$3)
+        nestedTypeInformation(D$3) should be('empty)
+    }
+
+    test("that it is possible to get the inner classes information for argouml-excerpt.jar") {
+        testJARFile(locateTestResources("classfiles/argouml-excerpt.jar", "bi"))
+
+    }
 }

@@ -36,13 +36,17 @@ import scala.collection.SortedSet
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.collection.immutable.UIDSet
 
-import br._
+import org.opalj.br.ObjectType
+import org.opalj.br.ArrayType
 
 /**
  * @author Michael Eichberg
  */
-trait DefaultReferenceValuesBinding extends l1.ReferenceValues {
-    domain: Configuration with ClassHierarchy ⇒
+trait DefaultReferenceValuesBinding
+        extends l1.ReferenceValues
+        with JoinStabilization
+        with DefaultVMLevelExceptionsFactory {
+    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
 
@@ -74,7 +78,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues {
         isNull: Answer,
         upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
 
-        if (upperTypeBound.containsOneElement)
+        if (upperTypeBound.consistsOfOneElement)
             ObjectValue(pc, isNull, false, upperTypeBound.first)
         else
             new MObjectValue(pc, isNull, upperTypeBound)

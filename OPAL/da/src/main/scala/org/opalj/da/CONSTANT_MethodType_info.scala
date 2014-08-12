@@ -37,4 +37,12 @@ case class CONSTANT_MethodType_info(
         descriptor_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_MethodType
+
+    def toString(implicit cp: Constant_Pool): String = {
+        s"CONSTANT_MethodType_info ($descriptor_index)"
+    }
+
+    def toLDCString(implicit cp: Constant_Pool): String =
+        s"MethodType(${cp(descriptor_index).toString(cp)})"
+
 }

@@ -28,9 +28,11 @@
  */
 package org.opalj
 
-import org.opalj.collection.immutable.UIDSet
+import scala.language.existentials
 
-import br._
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
 
 /**
  * Implementation of an abstract interpretation framework – also referred to as OPAL.
@@ -57,8 +59,6 @@ import br._
  * @author Michael Eichberg
  */
 package object ai {
-
-    import language.existentials
 
     /**
      * Type alias that can be used if the AI can use all kinds of domains.
@@ -103,6 +103,10 @@ package object ai {
      */
     type ValueOrigin = Int
 
+    type PrimitiveValuesFactory = IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
+    type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with VMLevelExceptionsFactory with TypedValuesFactory
+    type TargetDomain = ValuesDomain with ValuesFactory
+
     /**
      * Special value that is added to the work list/list of evaluated instructions
      * before the program counter of the first
@@ -139,14 +143,17 @@ package object ai {
      */
     final val ConstantValueOrigin: ValueOrigin = -257
 
-    type Operands[T >: Null <: CoreDomain#DomainValue] = List[T]
-    type AnOperandsArray[T >: Null <: CoreDomain#DomainValue] = Array[Operands[T]]
-    type TheOperandsArray[T >: Null <: (CoreDomain with Singleton)#Operands] = Array[T]
+    type Operands[T >: Null <: ValuesDomain#DomainValue] = List[T]
+    type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
+    type TheOperandsArray[T >: Null <: (ValuesDomain with Singleton)#Operands] = Array[T]
 
-    type Locals[T >: Null <: CoreDomain#DomainValue] = org.opalj.ai.util.Locals[T]
-    type ALocalsArray[T >: Null <: CoreDomain#DomainValue] = Array[Locals[T]]
-    type TheLocalsArray[T >: Null <: (CoreDomain with Singleton)#Locals] = Array[T]
+    type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.ai.util.Locals[T]
+    type ALocalsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Locals[T]]
+    type TheLocalsArray[T >: Null <: (ValuesDomain with Singleton)#Locals] = Array[T]
 
+    /**
+     * Creates a human-readable textual representation of the current memory layout.
+     */
     def memoryLayoutToText(
         domain: Domain)(
             operandsArray: domain.OperandsArray,
@@ -192,5 +199,27 @@ package object ai {
             currentIndex += 1
         }
         origin(localVariableIndex)
+    }
+
+    def collectWithOperandsAndIndex[B](
+        domain: Domain)(
+            code: Code, operandsArray: domain.OperandsArray)(
+                f: PartialFunction[(PC, Instruction, domain.Operands), B]): Seq[B] = {
+        val instructions = code.instructions
+        val max_pc = instructions.size
+        var pc = 0
+        var result: List[B] = List.empty
+        while (pc < max_pc) {
+			val instruction = instructions(pc)
+            val operands = operandsArray(pc)
+            if (operands ne null) {
+                val params = (pc, instruction, operands)
+                if (f.isDefinedAt(params)) {
+                    result = f(params) :: result
+                }
+            }
+            pc = instruction.indexOfNextInstruction(pc,code)
+        }
+        result.reverse
     }
 }

@@ -38,16 +38,40 @@ import org.opalj.br.BootstrapMethod
 import org.opalj.br.analyses.{ Project }
 
 /**
- * A `Domain` that is intended to be used to coordinate the exchange of values between
- * different domains. This domain does not prescribe the semantics of any values, but
+ * Can be mixed in to create a `Domain` that is intended to be used to coordinate the
+ * exchange of values between different domains.
+ *
+ * This domain does not prescribe the semantics of any values, but
  * instead implements all methods that perform computations.
+ *
+ * This domain directly inherits from [[Domain]] and can, thus, directly be used
+ * to create a final domain.
+ *
+ * ==Core Properties==
+ *  - Concrete base implementation of the following domains:
+ *      - [[Configuration]]
+ *      - [[MethodCallsDomain]]
+ *      - [[FieldAccessesDomain]]
+ *      - [[MonitorInstructionsDomain]]
+ *  - Thread safe.
+ *  - Reusable.
  *
  * @author Michael Eichberg
  */
-@deprecated("Will be removed soon; using the new modularization enables the construction of a precise domain.", "0.8.0M3")
-trait ValuesCoordinatingDomain
-        extends Domain
-        with ThrowAllPotentialExceptionsConfiguration /*ACTUALLY NOT RELEVANT*/ {
+trait ValuesCoordinatingDomain extends Domain with JoinStabilization with Configuration {
+
+    def throwAllHandledExceptionsOnMethodCall: Boolean = true
+    def throwNullPointerExceptionOnMethodCall: Boolean = true
+    def throwNullPointerExceptionOnFieldAccess: Boolean = true
+    def throwArithmeticExceptions: Boolean = true
+    def throwNullPointerExceptionOnMonitorAccess: Boolean = true
+    def throwIllegalMonitorStateException: Boolean = true
+    def throwNullPointerExceptionOnArrayAccess: Boolean = true
+    def throwArrayIndexOutOfBoundsException: Boolean = true
+    def throwArrayStoreException: Boolean = true
+    def throwNegativeArraySizeException: Boolean = true
+    def throwClassCastException: Boolean = true
+    def throwClassNotFoundException: Boolean = true
 
     /*override*/ def invokevirtual(
         pc: PC,

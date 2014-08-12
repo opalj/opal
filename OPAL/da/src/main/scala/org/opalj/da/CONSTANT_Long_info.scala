@@ -38,4 +38,7 @@ case class CONSTANT_Long_info(
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Long
 
+    def toString(implicit cp: Constant_Pool): String = value.toString
+
+    def toLDCString(implicit cp: Constant_Pool): String = value.toString+"l"
 }

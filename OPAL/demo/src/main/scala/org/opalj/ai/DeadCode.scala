@@ -30,13 +30,12 @@ package org.opalj
 package ai
 
 import java.net.URL
-
 import org.opalj.collection.immutable.{ UIDSet, UIDSet1 }
-
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.{ ReferenceType }
 import org.opalj.br.instructions.{ Instruction, ConditionalControlTransferInstruction }
+import org.opalj.br.MethodWithBody
 
 /**
  * A shallow analysis that tries to identify dead code based on the evaluation
@@ -44,7 +43,12 @@ import org.opalj.br.instructions.{ Instruction, ConditionalControlTransferInstru
  *
  * @author Michael Eichberg
  */
-object DeadCode extends AnalysisExecutor {
+object DeadCode extends AnalysisExecutor { analysis ⇒
+
+    // a value such as 16 reveals the same number of issues as a value such as 512
+    protected var maxCardinalityOfIntegerValuesSet: Int = 16
+
+    protected var maxSizeOfIntegerRanges: Long = 16l
 
     class AnalysisDomain(
         override val project: Project[java.net.URL],
@@ -52,29 +56,37 @@ object DeadCode extends AnalysisExecutor {
             extends Domain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultTypeLevelLongValues
             with domain.l0.DefaultTypeLevelFloatValues
             with domain.l0.DefaultTypeLevelDoubleValues
             with domain.l0.TypeLevelFieldAccessInstructions
             with domain.l0.TypeLevelInvokeInstructions
-            with domain.l1.DefaultIntegerRangeValues
             with domain.l1.DefaultReferenceValuesBinding
+            with domain.l1.DefaultIntegerRangeValues
+            with domain.l1.ConstraintsBetweenIntegerValues
+            // with domain.l1.DefaultIntegerSetValues
+            with domain.l1.DefaultLongValues
+            with domain.l1.LongValuesShiftOperators
+            with domain.l1.DefaultConcretePrimitiveValuesConversions
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
             with domain.TheProject[java.net.URL]
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy {
 
-        override protected def maxSizeOfIntegerRanges: Long = 64l
+        // a value larger than ~16 has no real effect (except of taking longer...)
+        override protected def maxSizeOfIntegerRanges: Long = analysis.maxSizeOfIntegerRanges 
+
+        // a value larger than ~10 has no real effect (except of taking longer...)
+        //        override protected final val maxCardinalityOfIntegerValuesSet: Int =
+        //            analysis.maxCardinalityOfIntegerValuesSet 
+
     }
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        override def title: String =
-            "Identifies Dead Code"
+        override def title: String = "Dead Code Identification"
 
-        override def description: String =
-            "Identifies dead code."
+        override def description: String = "Identifies dead code using abstract interpretation."
 
         override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
             import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
@@ -85,18 +97,15 @@ object DeadCode extends AnalysisExecutor {
                 for {
                     classFiles ← theProject.groupedClassFilesWithCode(cpus).par
                     classFile ← classFiles
-                    method ← classFile.methods
-                    if method.body.isDefined
-                    body = method.body.get
+                    method @ MethodWithBody(body) ← classFile.methods
                     domain = new AnalysisDomain(theProject, method)
                     result = BaseAI(classFile, method, domain)
-                    if !result.wasAborted
                     operandsArray = result.operandsArray
                     (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
                         case (ctiPC, instruction @ ConditionalControlTransferInstruction()) if operandsArray(ctiPC) != null ⇒
                             (ctiPC, instruction, instruction.nextInstructions(ctiPC, /*not required*/ null))
                     }
-                    branchTarget ← branchTargetPCs
+                    branchTarget ← branchTargetPCs.iterator
                     if operandsArray(branchTarget) == null
                 } { // using "yield" is more convenient but a bit slower if there is not much to yield...
                     val operands = operandsArray(ctiPC).take(2)

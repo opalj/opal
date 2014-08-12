@@ -53,31 +53,27 @@ class ConstantFieldValuesResolutionTest
         with ParallelTestExecution {
 
     class ConstantFieldValuesResolutionTestDomain(val project: Project[java.net.URL])
-            extends Domain
-            with DefaultDomainValueBinding
-            with TheProject[java.net.URL]
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultReferenceValuesBinding
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultIntegerRangeValues
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with ProjectBasedClassHierarchy
-            with RecordLastReturnedValues {
-
-        type Id = String
-
-        def id = "TestDomain"
-    }
+        extends Domain
+        with DefaultDomainValueBinding
+        with TheProject[java.net.URL]
+        with ProjectBasedClassHierarchy
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultReferenceValuesBinding
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l0.DefaultPrimitiveValuesConversions
+        with l1.DefaultIntegerRangeValues
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with RecordLastReturnedValues
 
     describe("Using ConstantFieldValuesResolution") {
 
         val testJAR = "classfiles/ai.jar"
-        val testFolder = org.opalj.br.TestSupport.locateTestResources(testJAR, "ai")
+        val testFolder = org.opalj.bi.TestSupport.locateTestResources(testJAR, "ai")
         val testProject = org.opalj.br.analyses.Project(testFolder)
         val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 

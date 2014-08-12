@@ -52,7 +52,7 @@ import org.opalj.ai.domain.ClassHierarchy
  * @author Michael Eichberg
  */
 trait VTACallGraphDomain extends CHACallGraphDomain {
-    domain: ClassHierarchy with TheMethod ⇒
+    domain: TheProject[_] with TheMethod with ClassHierarchy ⇒
 
     @inline override protected[this] def unresolvedCall(
         pc: PC,
@@ -84,7 +84,7 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
         // there may be additional calls
         if (isNull.isNoOrUnknown) {
             val upperTypeBound = value.upperTypeBound
-            if (upperTypeBound.containsOneElement) {
+            if (upperTypeBound.consistsOfOneElement) {
                 val theType = upperTypeBound.first
                 if (theType.isArrayType)
                     resolvedCall(pc, ObjectType.Object, name, descriptor, true, operands)
@@ -94,11 +94,11 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
                     domain.isSubtypeOf(declaringClassType, theType).isYes) {
                     // the invoke's declaring class type is "more" precise
                     println(
-                        "[warn] type information missing: "+
+                        Console.YELLOW+"[warn] type information missing: "+
                             theType.toJava+" (underlying value="+receiver+")"+
                             " should be a subtype of the type of the method's declaring class: "+
                             declaringClassType.toJava+ 
-                            " (but this cannot be deduced reliably from the project)")
+                            " (but this cannot be deduced reliably from the project)"+Console.RESET)
                     super.unresolvedCall(pc, declaringClassType, name, descriptor, operands)
                 } else {
                     super.unresolvedCall(pc, theType.asObjectType, name, descriptor, operands)
@@ -117,13 +117,13 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
                         domain.isSubtypeOf(declaringClassType, utb).isYes) {
                         // The invoke's declaring class type is "more" precise
                         println(
-                            "[warn] type information missing: "+
+                            Console.YELLOW+"[warn] type information missing: "+
                                 utb.toJava+"(underlying value="+receiver+")"+
                                 " part of the upper type bound "+
                                 upperTypeBound.map(_.toJava).mkString("(", ",", ")")+
                                 " should be a subtype of the type of the method's declaring class: "+
                                 declaringClassType.toJava+
-                                " (but this cannot be deduced reliably from the project)")
+                                " (but this cannot be deduced reliably from the project)"+Console.RESET)
                         doResolveCall(pc, declaringClassType, name, descriptor, operands)
                     } else {
                         val callees =

@@ -33,9 +33,9 @@ package l2
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-import br._
-import br.instructions._
-import br.analyses.{ Project, ClassHierarchy }
+import org.opalj.br._
+import org.opalj.br.instructions._
+import org.opalj.br.analyses.{ Project, ClassHierarchy }
 
 import org.opalj.ai.util.Locals
 
@@ -45,11 +45,8 @@ import org.opalj.ai.util.Locals
  *
  * @author Michael Eichberg
  */
-trait PerformInvocations
-        extends Domain
-        with l0.TypeLevelInvokeInstructions
-        with ProjectBasedClassHierarchy { 
-    callingDomain: TheProject[_] with Configuration with TheCode ⇒
+trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
+    callingDomain: ValuesFactory with ReferenceValuesDomain with MethodCallsDomain with Configuration with TheProject[_] with TheCode with domain.ClassHierarchy ⇒
 
     /**
      * Identifies recursive calls.
@@ -65,6 +62,10 @@ trait PerformInvocations
         method: Method,
         operands: Operands): Boolean
 
+    def shouldInvocationBePerformed(
+        definingClass: ClassFile,
+        method: Method): Boolean
+
     /**
      * Encapsulates the information required to perform the invocation of the target
      * method.
@@ -78,7 +79,7 @@ trait PerformInvocations
          * In general, explicit support is required to identify recursive calls
          * if the domain also follows method invocations,
          */
-        val domain: Domain with MethodCallResults
+        val domain: TargetDomain with MethodCallResults
 
         /**
          *  The abstract interpreter that will be used for the abstract interpretation.
@@ -89,10 +90,11 @@ trait PerformInvocations
             pc: PC,
             definingClass: ClassFile,
             method: Method,
-            parameters: org.opalj.ai.util.Locals[domain.DomainValue]): MethodCallResult = {
+            parameters: domain.Locals): MethodCallResult = {
 
             val aiResult =
-                ai.perform(method.body.get, domain)(List.empty[domain.DomainValue], parameters)
+                ai.perform(method.body.get, domain)(
+                    List.empty[domain.DomainValue], parameters)
             transformResult(pc, method, aiResult)
         }
 
@@ -185,15 +187,16 @@ trait PerformInvocations
             project) match {
                 case Some(method) if !method.isNative ⇒
                     val classFile = project.classFile(method)
-                    if (isRecursive(classFile, method, operands))
+                    if (!shouldInvocationBePerformed(classFile, method) ||
+                        isRecursive(classFile, method, operands))
                         fallback()
                     else
                         invokestatic(pc, classFile, method, operands)
                 case _ ⇒
                     println(
-                        "[info] method reference cannot be resolved: "+
+                        Console.YELLOW+"[warn] method reference cannot be resolved: "+
                             declaringClass.toJava+
-                            "{ static "+methodDescriptor.toJava(methodName)+"}")
+                            "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET)
                     fallback()
             }
     }
@@ -222,15 +225,73 @@ trait PerformInvocations
         operands: Operands): MethodCallResult = {
 
         val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
-        val parameters = util.Locals[executionHandler.domain.DomainValue](method.body.get.maxLocals)(executionHandler.domain.DomainValueTag)
-        var localVariableIndex = 0
-        for ((operand, index) ← operands.view.reverse.zipWithIndex) {
-            parameters.set(localVariableIndex,
-                operand.adapt(executionHandler.domain, -(index + 1)))
-            localVariableIndex += operand.computationalType.operandSize
-        }
+        import executionHandler.domain
+        val parameters = PerformInvocations.mapOperandsToParameters(operands, method, domain)
         val callResult = executionHandler.perform(pc, definingClass, method, parameters)
         // TODO [Improvement] Add support to map a value back to a parameter if a passed parameter is returned. (E.g. Math.min(a,b) will either return a or b.) 
         callResult
     }
 }
+/**
+ * General useful helper methods related to the invocation of methods.
+ */
+object PerformInvocations {
+
+    /**
+     * Maps a list of operands (e.g., as passed to the `invokeXXX` instructions) to
+     * the list of parameters for the given method. The parameters are stored in the
+     * local variables ([[Locals]])/registers of the method; i.e., this method
+     * creates an initial assignment for the local variables that can directly
+     * be used to pass them to [[AI]]'s 
+     * `perform(...)(<initialOperands = Nil>,initialLocals)` method.
+     *
+     * @param operands The list of operands used to call the given method. The length
+     *      of the list must be:
+     *      {{{
+     *      calledMethod.descriptor.parametersCount + { if (calledMethod.isStatic) 0 else 1 }
+     *      }}}.
+     *      I.e., the list of operands must contain one value per parameter and – 
+     *      in case of instance methods – the receiver object. The list __must not
+     *       contain additional values__. The latter is automatically ensured if this
+     *      method is called (in)directly by [[AI]] and the operands were just passed
+     *      through.
+     *      If two or more operands are (reference) identical then the adaptation will only
+     *      be performed once and the adapted value will be reused; this ensures that
+     *      the relation between values remains stable.
+     * @param calledMethod The method that will be evaluated using the given operands.
+     * @param targetDomain The [[Domain]] that will be use to perform the abstract
+     *      interpretation.
+     */
+    def mapOperandsToParameters[D <: ValuesDomain](
+        operands: Operands[D#DomainValue],
+        calledMethod: Method,
+        targetDomain: ValuesDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
+
+        implicit val domainValueTag = targetDomain.DomainValueTag
+        val parameters = util.Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
+        var localVariableIndex = 0
+        var index = 0
+        val operandsInParameterOrder = operands.reverse
+        for (operand ← operandsInParameterOrder) {
+            val parameter = {
+                // Was the same value (determined by "eq") already adapted?
+                var pOperands = operandsInParameterOrder
+                var p = 0
+                while (p < index && (pOperands.head ne operand)) {
+                    p += 1; pOperands = pOperands.tail
+                }
+                if (p < index)
+                    parameters(p)
+                else
+                    // the value was not previously adapted
+                    operand.adapt(targetDomain, -(index + 1))
+            }
+            parameters.set(localVariableIndex, parameter)
+            index += 1
+            localVariableIndex += operand.computationalType.operandSize
+        }
+
+        parameters
+    }
+}
+

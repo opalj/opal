@@ -50,7 +50,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait Origin { this: Domain ⇒
+trait Origin { domain: ValuesDomain ⇒
 
     implicit object SingleOriginValueOrdering extends Ordering[SingleOriginValue] {
 

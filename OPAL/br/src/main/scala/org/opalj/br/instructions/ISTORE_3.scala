@@ -39,10 +39,10 @@ case object ISTORE_3
         extends StoreLocalVariableInstruction
         with ImplicitLocalVariableIndex {
 
-    def lvIndex = 3
+    final val lvIndex = 3
 
-    override final val opcode = 62
+    final val opcode = 62
 
-    def mnemonic: String = "istore_3"
+    final val mnemonic = "istore_3"
 
 }

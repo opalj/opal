@@ -44,7 +44,7 @@ class DefaultConfigurableDomain[I, Source](
     val project: Project[Source],
     val classFile: ClassFile,
     val method: Method)
-        extends Domain
+        extends Domain with JoinStabilization
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with ProjectBasedClassHierarchy
@@ -54,7 +54,6 @@ class DefaultConfigurableDomain[I, Source](
         with IgnoreSynchronization
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultTypeLevelLongValues
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with l1.DefaultReferenceValuesBinding
@@ -62,7 +61,11 @@ class DefaultConfigurableDomain[I, Source](
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-        with l1.DefaultIntegerRangeValues {
+        with l1.DefaultIntegerRangeValues
+        with l1.ConstraintsBetweenIntegerValues
+        with l1.DefaultLongValues
+        with l1.LongValuesShiftOperators
+        with l1.DefaultConcretePrimitiveValuesConversions {
 
     type Id = I
 

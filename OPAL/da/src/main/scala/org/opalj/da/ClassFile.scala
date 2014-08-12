@@ -39,6 +39,9 @@ import org.opalj.bi.AccessFlagsContexts
 
 /**
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
 case class ClassFile(
         constant_pool: Constant_Pool,
@@ -52,92 +55,164 @@ case class ClassFile(
         methods: Methods,
         attributes: Attributes) {
 
+    def jdkVersion: String = {
+        // 52 == 8; ... 50 == 6
+        if (major_version >= 49) {
+            "Java "+(major_version - 44)
+        } else if (major_version > 45) {
+            "Java 2 Platform version 1."+(major_version - 44)
+        } else {
+            "JDK 1.1 (JDK 1.0.2)"
+        }
+    }
+
     private[this] implicit val cp = constant_pool
 
     /**
      * The fully qualified name of the class in Java notation (i.e., using dots
      * to seperate packages.)
      */
-    def fqn = cp(this_class).toString.replace('/', '.')
+    final val fqn = cp(this_class).toString
 
     /**
      * Converts the constant pool to (x)HTML5.
      */
-    def cpToXHTML = {
-        for { cpIndex ← (0 until constant_pool.length) if cp(cpIndex) != null } yield {
-            <li value={ cpIndex.toString }>{ cp(cpIndex).toString() }</li>
+    def cpToXHTML: Node = {
+        val cpEntries =
+            for {
+                cpIndex ← (1 until constant_pool.length)
+                if cp(cpIndex) != null
+            } yield {
+                <li value={ cpIndex.toString }>{ cp(cpIndex).toString() }</li>
+            }
+
+        <ol>{ cpEntries }</ol>
+    }
+
+    def attributesToXHTML: Seq[Node] = {
+        for (attribute ← attributes) yield attributeToXHTML(attribute)
+    }
+
+    def attributeToXHTML(attribute: Attribute): Node = {
+        attribute match {
+            case ica: InnerClasses_attribute ⇒ ica.toXHTML(fqn)
+            case _                           ⇒ attribute.toXHTML(cp)
         }
     }
 
-    def fieldsToXHTML: Node = {
-        <ul>{ for (field ← fields) yield field.toXHTML(cp) }</ul>
-    }
+    def fieldsToXHTML: Seq[Node] = for (field ← fields) yield field.toXHTML(cp)
 
-    def methodsToXHTML: Node = {
-        <ul>{ for (method ← methods) yield method.toXHTML(cp) }</ul>
-    }
-
-    protected def loadStyle: String = {
-        processSource {
-            val resource = getClass().getClassLoader().getResource("style.css").getPath()
-            Source.fromFile(resource)(scala.io.Codec.UTF8)
-        } { _.mkString }
-    }
-
-    protected def loadJavaScript(js: String): String = {
-
-        process(this.getClass().getResourceAsStream(js))(
-            scala.io.Source.fromInputStream(_).mkString
-        )
+    def methodsToXHTML: Seq[Node] = {
+        for ((method, index) ← methods.zipWithIndex) yield method.toXHTML(index)
     }
 
     protected def accessFlags: Node = {
-        <span class="AccessFlags">
-        Access Flags { AccessFlags.toString(access_flags, AccessFlagsContexts.CLASS) }
-        </span>
+        <span class="access_flags">{ AccessFlags.classFlagsToJava(access_flags) }</span>
+    }
+
+    protected def filter: Node = {
+        <details class="filter_settings">
+            <summary>Filter</summary>
+            <fieldset>
+                <input type="radio" name="visibility" value="private" onclick="toogleFilter();">private</input>
+                <input type="radio" name="visibility" value="default" onclick="toogleFilter();">&lt;default&gt;</input>
+                <input type="radio" name="visibility" value="protected" onclick="toogleFilter();">protected</input>
+                <input type="radio" name="visibility" value="public" onclick="toogleFilter();">public</input>
+            </fieldset>
+            <fieldset>
+                <input type="radio" name="final_or_abstract" value="final" onclick="toogleFilter();">final</input>
+                <input type="radio" name="final_or_abstract" value="abstract" onclick="toogleFilter();">abstract</input>
+            </fieldset>
+            <div class="java_flags">
+                <input type="checkbox" name="static" value="static" onclick="toogleFilter();">static</input>
+                <input type="checkbox" value="strict" onclick="toogleFilter();">strict</input>
+                <input type="checkbox" value="native" onclick="toogleFilter();">native</input>
+                <input type="checkbox" value="synchronized" onclick="toogleFilter();">synchronized</input>
+            </div>
+            <div class="jvm_flags">
+                <input type="checkbox" value="bridge" onclick="toogleFilter();">bridge</input>
+                <input type="checkbox" value="varargs" onclick="toogleFilter();">varargs</input>
+            </div>
+            <div class="name_filter">
+                Name:<input type="text" title='filter by method name' onkeyup="toogleFilter();"></input>
+            </div>
+            <button value="clear" onclick="clearFilter();">clear</button>
+        </details>
     }
 
     def toXHTML: Node =
         <html>
             <head>
-                <title>Opal ByteCode Disassembler</title>
-                <style type="text/css" >
-                    { scala.xml.Unparsed(loadStyle) }
-                </style>
+                <title>Java Bytecode of { fqn }</title>
+                <style type="text/css">{ scala.xml.Unparsed(ClassFile.ResetCSS) }</style>
+                <style type="text/css">{ scala.xml.Unparsed(ClassFile.TheCSS) }</style>
+                <script>{ scala.xml.Unparsed(ClassFile.FilterJS) }</script>
             </head>
             <body>
-            <p class="Summary">
-                 <b>{ fqn }</b> Version { minor_version + "." + major_version } 
-                 { accessFlags } <br/>
-            </p>
-                 <div >
-                     <div id="classFile">
-                         <div id="fields">
-                             <details>
-                             <summary>Fields</summary>
-                             <ol>
-                                 { fieldsToXHTML }
-                             </ol>
-                             </details>
-                         </div>
-                         <div id="methods">
-                            <details>
-                            <summary>Methods</summary>
-                            <ol>
-                                 { methodsToXHTML }
-                            </ol>
-                            </details>
-                         </div>
+                <div id="class_file">
+                    { accessFlags }
+                    &nbsp;<b>{ fqn }</b>
+                    <span class="tooltip">
+                        Version:&nbsp;{ major_version+"."+minor_version }
+                        <span>{ jdkVersion }</span>
+                    </span>
+                    <span class="constant_pool_link">
+                        <a href="#constant_pool" style="color:black;">ConstantPool</a>
+                    </span>
+                </div>
+                <div id="constant_pool">
+                    <div>
+                        <a href="#close" title="Close" class="close">X</a>
+                        { cpToXHTML }
                     </div>
                 </div>
-                <div id="constantPool">
-                    <details>
-                    <summary>Constant Pool</summary>
-                    <ol>
-                       { cpToXHTML }
-                    </ol>
-                    </details>
+                <div class="members">
+                    <div class="attributes">
+                        <details>
+                            <summary>Attributes</summary>
+                            { attributesToXHTML }
+                        </details>
+                    </div>
+                    <div class="fields">
+                        <details>
+                            <summary>Fields</summary>
+                            { fieldsToXHTML }
+                        </details>
+                    </div>
+                    <div class="methods">
+                        <details>
+                            <summary>Methods</summary>
+                            { filter }
+                            { methodsToXHTML }
+                        </details>
+                    </div>
                 </div>
-    	   </body>
+            </body>
         </html>
+}
+
+object ClassFile {
+
+    final val ResetCSS: String = {
+        process(this.getClass().getResourceAsStream("reset.css"))(
+            scala.io.Source.fromInputStream(_).mkString
+        )
+    }
+
+    final val TheCSS: String = {
+        process(this.getClass().getResourceAsStream("style.css"))(
+            scala.io.Source.fromInputStream(_).mkString
+        )
+    }
+
+    final val FilterJS = {
+        loadJavaScript("filter.js")
+    }
+
+    private def loadJavaScript(js: String): String = {
+        process(this.getClass().getResourceAsStream(js))(
+            scala.io.Source.fromInputStream(_).mkString
+        )
+    }
+
 }

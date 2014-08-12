@@ -31,41 +31,12 @@ package ai
 
 /**
  * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of double values.
+ * that implements the functionality related to the handling of `double` values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait DoubleValuesDomain { this: CoreDomain ⇒
-
-    // -----------------------------------------------------------------------------------
-    //
-    // FACTORY METHODS TO CREATE DOMAIN VALUES
-    //
-    // -----------------------------------------------------------------------------------
-
-    /**
-     * Factory method to create a `DomainValue` that was created (explicitly or
-     * implicitly) by the instruction with the specified program counter.
-     *
-     * The domain may ignore the information about the origin (`vo`).
-     */
-    def DoubleValue(vo: ValueOrigin): DomainValue
-
-    /**
-     * Factory method to create a `DomainValue` that represents the given double value
-     * and that was created (explicitly or implicitly) by the instruction with the
-     * specified program counter.
-     *
-     * The domain may ignore the information about the value and the origin (`vo`).
-     */
-    def DoubleValue(vo: ValueOrigin, value: Double): DomainValue
-
-    // -----------------------------------------------------------------------------------
-    //
-    // ABSTRACTIONS RELATED TO INSTRUCTIONS
-    //
-    // -----------------------------------------------------------------------------------
+trait DoubleValuesDomain extends DoubleValuesFactory { domain ⇒
 
     //
     // RELATIONAL OPERATORS
@@ -74,12 +45,12 @@ trait DoubleValuesDomain { this: CoreDomain ⇒
     def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
 
     //
-    // UNARY EXPRESSIONS
+    // UNARY ARITHMETIC EXPRESSIONS
     //
     def dneg(pc: PC, value: DomainValue): DomainValue
 
     //
-    // BINARY EXPRESSIONS
+    // BINARY ARITHMETIC EXPRESSIONS
     //
     def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
     def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue

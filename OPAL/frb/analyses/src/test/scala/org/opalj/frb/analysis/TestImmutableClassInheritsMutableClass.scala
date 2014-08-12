@@ -43,9 +43,13 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestImmutableClassInheritsMutableClass extends AnalysisTest {
-    import TestImmutableClassInheritsMutableClass._
 
     behavior of "ImmutableClassInheritsMutableClass"
+
+    val project = createProject(
+        Seq("JCIPAnnotations.jar", "ImmutableClassInheritsMutableClass.jar"))
+
+    val results = new ImmutableClassInheritsMutableClass[URL].analyze(project).toSet
 
     it should "report an immutable class JCIPAnnotatedInheritingFomMutable" in {
         val declaringClass = ObjectType(
@@ -61,11 +65,4 @@ class TestImmutableClassInheritsMutableClass extends AnalysisTest {
     it should "find 1 issues in total" in {
         results.size should be(1)
     }
-}
-
-object TestImmutableClassInheritsMutableClass {
-    val project = makeProjectFromJars(
-        Seq("JCIPAnnotations.jar", "ImmutableClassInheritsMutableClass.jar"))
-
-    val results = new ImmutableClassInheritsMutableClass[URL].analyze(project).toSet
 }

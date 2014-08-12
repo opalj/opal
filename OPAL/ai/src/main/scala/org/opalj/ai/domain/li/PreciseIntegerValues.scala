@@ -38,10 +38,12 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 /**
  * Domain to track integer values at a configurable level of precision.
  *
+ * This domain requires support for the concrete evaluation.
+ *
  * @author Michael Eichberg
  */
-trait PreciseIntegerValues extends Domain with ConcreteIntegerValues {
-    this: Configuration ⇒
+trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
+    this: VMLevelExceptionsFactory with Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -137,10 +139,11 @@ trait PreciseIntegerValues extends Domain with ConcreteIntegerValues {
             orElse
         }
 
-    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer =
+    override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer =
         intValues(value1, value2) { (v1, v2) ⇒ Answer(v1 == v2) } { Unknown }
 
     override def intIsSomeValueInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer = {
@@ -155,6 +158,7 @@ trait PreciseIntegerValues extends Domain with ConcreteIntegerValues {
     }
 
     override def intIsSomeValueNotInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer = {
@@ -169,6 +173,7 @@ trait PreciseIntegerValues extends Domain with ConcreteIntegerValues {
     }
 
     override def intIsLessThan(
+        pc: PC,
         smallerValue: DomainValue,
         largerValue: DomainValue): Answer =
         intValues(smallerValue, largerValue) { (v1, v2) ⇒
@@ -176,6 +181,7 @@ trait PreciseIntegerValues extends Domain with ConcreteIntegerValues {
         } { Unknown }
 
     override def intIsLessThanOrEqualTo(
+        pc: PC,
         smallerOrEqualValue: DomainValue,
         equalOrLargerValue: DomainValue): Answer =
         intValues(smallerOrEqualValue, equalOrLargerValue) { (v1, v2) ⇒
@@ -356,13 +362,5 @@ trait PreciseIntegerValues extends Domain with ConcreteIntegerValues {
     override def i2s(pc: PC, value: DomainValue): DomainValue =
         intValue(value)(v ⇒ ShortValue(pc, v.toShort))(ShortValue(pc))
 
-    override def i2d(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
-
-    override def i2f(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
-
-    override def i2l(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ LongValue(pc, v.toLong))(LongValue(pc))
 }
 

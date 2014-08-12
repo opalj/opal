@@ -31,13 +31,6 @@ package ai
 package domain
 package l0
 
-import org.opalj.ai.Domain
-import org.opalj.ai.IsBooleanValue
-import org.opalj.ai.IsByteValue
-import org.opalj.ai.IsCharValue
-import org.opalj.ai.IsIntegerValue
-import org.opalj.ai.IsShortValue
-import org.opalj.ai.domain.Configuration
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.util.Answer
@@ -71,7 +64,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait BooleanValue extends ComputationalTypeIntegerValue with IsBooleanValue {
         this: DomainValue ⇒
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.BooleanValue(vo)
 
     }
@@ -79,7 +72,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait ByteValue extends ComputationalTypeIntegerValue with IsByteValue {
         this: DomainValue ⇒
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.ByteValue(vo)
 
     }
@@ -87,7 +80,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait CharValue extends ComputationalTypeIntegerValue with IsCharValue {
         this: DomainValue ⇒
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.CharValue(vo)
 
     }
@@ -95,7 +88,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait ShortValue extends ComputationalTypeIntegerValue with IsShortValue {
         this: DomainValue ⇒
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.ShortValue(vo)
 
     }
@@ -103,7 +96,7 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     trait IntegerValue extends ComputationalTypeIntegerValue with IsIntegerValue {
         this: DomainValue ⇒
 
-        override def adapt(target: Domain, vo: ValueOrigin): target.DomainValue =
+        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target.IntegerValue(vo)
 
     }
@@ -112,25 +105,33 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     // QUESTION'S ABOUT VALUES
     //
 
-    override def intAreEqual(value1: DomainValue, value2: DomainValue): Answer =
+    override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer =
         Unknown
 
     override def intIsSomeValueInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer =
         Unknown
 
     override def intIsSomeValueNotInRange(
+        pc: PC,
         value: DomainValue,
         lowerBound: Int,
         upperBound: Int): Answer =
         Unknown
 
-    override def intIsLessThan(left: DomainValue, right: DomainValue): Answer =
+    override def intIsLessThan(
+        pc: PC,
+        left: DomainValue,
+        right: DomainValue): Answer =
         Unknown
 
-    override def intIsLessThanOrEqualTo(left: DomainValue, right: DomainValue): Answer =
+    override def intIsLessThanOrEqualTo(
+        pc: PC,
+        left: DomainValue,
+        right: DomainValue): Answer =
         Unknown
 
     // -----------------------------------------------------------------------------------
@@ -205,12 +206,6 @@ trait TypeLevelIntegerValues extends Domain { this: Configuration ⇒
     override def i2b(pc: PC, value: DomainValue): DomainValue = ByteValue(pc)
 
     override def i2c(pc: PC, value: DomainValue): DomainValue = CharValue(pc)
-
-    override def i2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
-
-    override def i2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
-
-    override def i2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 
     override def i2s(pc: PC, value: DomainValue): DomainValue = ShortValue(pc)
 

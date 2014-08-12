@@ -31,8 +31,6 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import org.opalj.br.{ ComputationalType, ComputationalTypeFloat }
 
 /**
@@ -43,7 +41,8 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeFloat }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelFloatValues extends Domain {
+trait TypeLevelFloatValues extends FloatValuesDomain {
+    this: ValuesDomain with Configuration with IntegerValuesFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -97,13 +96,6 @@ trait TypeLevelFloatValues extends Domain {
 
     override def fsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         FloatValue(pc)
-
-    //
-    // TYPE CONVERSIONS
-    //
-    override def f2d(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
-    override def f2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
-    override def f2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 
 }
 

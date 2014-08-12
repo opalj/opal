@@ -36,7 +36,7 @@ package domain
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
-trait DomainId { this: CoreDomain ⇒
+trait DomainId {
 
     /**
      * The type which is used to identify the domain or the domain's context.

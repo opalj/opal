@@ -29,8 +29,8 @@
 package org.opalj
 package ai
 
-import br._
-import br.instructions._
+import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
 
 /**
  * Defines the interface between the abstract interpreter and a module for tracing and
@@ -45,7 +45,7 @@ import br.instructions._
  *      used by the abstract interpreter.''' Hence, if a value is mutated (e.g., for
  *      debugging purposes) it has to be guaranteed that the VM's conditions are never
  *      violated. E.g., exchanging a integer value against a reference value will most
- *      likely crash the interpreter. 
+ *      likely crash the interpreter.
  *      However, using the [[AITracer]] it is possible to develop a debugger for OPAL and
  *      to enable the user to perform certain mutations.
  *
@@ -69,7 +69,7 @@ trait AITracer {
             alreadyEvaluated: List[PC],
             operandsArray: domain.OperandsArray,
             localsArray: domain.LocalsArray,
-            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)])
+            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]): Unit
 
     /**
      * Always called by OPAL before an instruction is evaluated.
@@ -155,7 +155,7 @@ trait AITracer {
             thisLocals: domain.Locals,
             otherOperands: domain.Operands,
             otherLocals: domain.Locals,
-            result: Update[(domain.Operands, domain.Locals)])
+            result: Update[(domain.Operands, domain.Locals)]): Unit
 
     /**
      * Called before a jump to a subroutine.
@@ -172,7 +172,7 @@ trait AITracer {
             pc: PC,
             returnAddress: PC,
             oldWorklist: List[PC],
-            newWorklist: List[PC])
+            newWorklist: List[PC]): Unit
 
     /**
      * Called when the evaluation of a subroutine (JSR/RET) as a whole is completed.
@@ -192,7 +192,7 @@ trait AITracer {
     def abruptMethodExecution(
         domain: Domain)(
             pc: PC,
-            exception: domain.DomainValue)
+            exception: domain.DomainValue): Unit
 
     /**
      * Called when the abstract interpretation of a method has completed/was
@@ -210,10 +210,24 @@ trait AITracer {
     def establishedConstraint(
         domain: Domain)(
             pc: PC,
-            effectivePC : PC,
+            effectivePC: PC,
             operands: domain.Operands,
             locals: domain.Locals,
             newOperands: domain.Operands,
-            newLocals: domain.Locals)
+            newLocals: domain.Locals): Unit
+
+    /**
+     * Called by the domain if something noteworthy was determined.
+     *
+     * @param domain The domain.
+     * @param source The class (typically the (partial) domain) that generated the message.
+     * @param typeID A `String` that identifies the message. This value must not be `null`,
+     *      but it can be the empty string.
+     * @param message The message; a non-null `String` that is formatted for the console.
+     */
+    def domainMessage(
+        domain: Domain,
+        source: Class[_], typeID: String,
+        pc: Option[PC], message: ⇒ String): Unit
 
 }

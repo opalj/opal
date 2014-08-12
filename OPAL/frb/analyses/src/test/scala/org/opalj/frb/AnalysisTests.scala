@@ -36,15 +36,26 @@ import org.scalatest._
 import java.io.File
 import java.net.URL
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 /**
  * Superclass for all analysis unit-tests.
  *
  * @author Florian Brandherm
  * @author Daniel Klauer
  */
-trait AnalysisTest extends FlatSpec
-    with Matchers
-    with ParallelTestExecution
+trait AnalysisTest extends FlatSpec with Matchers with ParallelTestExecution {
+
+    protected def println(m: String) { info(m) }
+
+    def createProject(jarFileName: String): Project[URL] = {
+        AnalysisTest.createProject(Seq(jarFileName), println)
+    }
+
+    def createProject(jarFileNames: Seq[String]): Project[URL] = {
+        AnalysisTest.createProject(jarFileNames, println)
+    }
+}
 
 /**
  * Helper functions used by various tests.
@@ -53,17 +64,6 @@ trait AnalysisTest extends FlatSpec
  * @author Daniel Klauer
  */
 object AnalysisTest {
-    /**
-     * Builds a project from a .jar file in src/test/resources/.
-     *
-     * @param filename The file name of the .jar file, containing the path relative to
-     * ext/findrealbugs/src/test/resources/.
-     * @param useJDK Whether the JDK classes should be added to the project, if available.
-     * @return A `Project` representing the class files from the provided .jar file.
-     */
-    def makeProjectFromJar(filename: String, useJDK: Boolean = false): Project[URL] = {
-        makeProjectFromJars(Seq(filename), useJDK)
-    }
 
     /**
      * Builds a project from one or more .jar files in src/test/resources/.
@@ -73,23 +73,15 @@ object AnalysisTest {
      * @param useJDK Whether the JDK classes should be added to the project, if available.
      * @return A `Project` representing the class files from the provided .jar file.
      */
-    def makeProjectFromJars(
-        filenames: Seq[String],
-        useJDK: Boolean = false): Project[URL] = {
+    def createProject(filenames: Seq[String], println: String ⇒ Unit): Project[URL] = {
 
         val classFiles = filenames.map(filename ⇒
             Java8Framework.ClassFiles(
-                TestSupport.locateTestResources("classfiles/analyses/"+filename,
-                    "frb/analyses")
+                locateTestResources("classfiles/analyses/"+filename, "frb/analyses")
             )
         ).flatten
 
-        if (useJDK) {
-            println("Creating Project: "+filenames.mkString(", ")+" and "+" the JRE.")
-            Project(classFiles, TestSupport.JREClassFiles)
-        } else {
-            println("Creating Project: "+filenames.mkString(", "))
-            Project(classFiles)
-        }
+        println("creating project: "+filenames.mkString(", "))
+        Project(classFiles)
     }
 }

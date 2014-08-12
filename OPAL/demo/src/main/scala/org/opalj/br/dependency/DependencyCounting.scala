@@ -43,7 +43,8 @@ object DependencyCounting extends AnalysisExecutor with Analysis[URL, BasicRepor
 
     val analysis = this
 
-    def description: String = "Counts the number of inter-source element dependencies."
+    override def description: String =
+        "Counts the number of inter-source element dependencies."
 
     def analyze(project: Project[URL], parameters: Seq[String]) = {
         println("Press enter to start the dependency collection.")

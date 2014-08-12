@@ -28,29 +28,54 @@
  */
 package org.opalj
 package da
+
 import scala.xml.Node
-import bi.AccessFlags
-import bi.AccessFlagsContexts
+
 /**
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
 case class Method_Info(
-        accessFlags: Int,
+        access_flags: Int,
         name_index: Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index,
         attributes: Attributes) {
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <li>
-            <div>
-                <span class="AccessFlags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.FIELD) }</span>
-                <span> { cp(name_index).asString } </span> 
-                <a href="#" class="tooltip">{ name_index } <span>{ cp(name_index) }</span></a> 
+    def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
+        val flags = methodAccessFlagsToString(access_flags)
+        val filter_flags =
+            org.opalj.bi.VisibilityModifier.get(access_flags) match {
+                case None ⇒
+                    val ac = flags
+                    if (ac.length() == 0)
+                        "default"
+                    else
+                        ac+" default"
+                case _ ⇒
+                    flags
+            }
+
+        val name = cp(name_index).toString(cp)
+        <div class="method" name={ name } flags={ filter_flags }>
+            <div class="method_signature">
+                <span class="access_flags">{ flags }</span>
+                <span>{ parseMethodDescriptor(name, cp(descriptor_index).asString) }</span>
+                <a href="#" class="tooltip">{ name_index } <span>{ cp(name_index) }</span></a>
             </div>
-       </li>
+            { attributesToXHTML(methodIndex) }
+        </div>
     }
 
-    def attributesToXHTML(implicit cp: Constant_Pool) = {
-        for (attribute ← attributes) yield attribute.toXHTML(cp)
+    private[this] def attributesToXHTML(methodIndex: Int)(implicit cp: Constant_Pool) = {
+        for (attribute ← attributes) yield {
+            attribute match {
+                case codeAttribute: Code_attribute ⇒
+                    codeAttribute.toXHTML(methodIndex)
+                case _ ⇒
+                    attribute.toXHTML(cp)
+            }
+        }
     }
 }

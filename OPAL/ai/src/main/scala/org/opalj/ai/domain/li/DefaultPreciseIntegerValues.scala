@@ -42,7 +42,7 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 trait DefaultPreciseIntegerValues
         extends DefaultDomainValueBinding
         with PreciseIntegerValues {
-    this: Configuration ⇒
+    domain: IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
 
     /**
      * @note The functionality to propagate a constraint crucially depends on
@@ -57,7 +57,7 @@ trait DefaultPreciseIntegerValues
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.IntegerValue(pc)
     }
 
@@ -78,7 +78,7 @@ trait DefaultPreciseIntegerValues
                         else
                             MetaInformationUpdate(TheIntegerValue(otherValue, Math.max(this.updateCount, otherUpdateCount)))
                     } else {
-                        val newUpdateCount = Math.max(this.updateCount, otherUpdateCount)+1
+                        val newUpdateCount = Math.max(this.updateCount, otherUpdateCount) + 1
                         if (newUpdateCount < maxUpdatesForIntegerValues)
                             StructuralUpdate(TheIntegerValue(otherValue, newUpdateCount))
                         else
@@ -89,14 +89,14 @@ trait DefaultPreciseIntegerValues
         override def summarize(pc: PC): DomainValue = this
 
         override def adapt(
-            targetDomain: Domain,
-            pc: PC): targetDomain.DomainValue =
-            if (targetDomain.isInstanceOf[DefaultPreciseIntegerValues]) {
-                val thatDomain = targetDomain.asInstanceOf[DefaultPreciseIntegerValues]
+            target: TargetDomain,
+            pc: PC): target.DomainValue =
+            if (target.isInstanceOf[DefaultPreciseIntegerValues]) {
+                val thatDomain = target.asInstanceOf[DefaultPreciseIntegerValues]
                 thatDomain.TheIntegerValue(this.value, this.updateCount).
-                    asInstanceOf[targetDomain.DomainValue]
+                    asInstanceOf[target.DomainValue]
             } else {
-                super.adapt(targetDomain, pc)
+                super.adapt(target, pc)
             }
 
         override def abstractsOver(other: DomainValue): Boolean = {

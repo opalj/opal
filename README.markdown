@@ -10,6 +10,8 @@ OPAL consists of several projects which are found in the folder OPAL:
 
 * **Bytecode Infrastructure**(OPAL/bi): The necessary infrastructure for parsing Java bytecode.  
 
+* **Bytecode Disassembler**(OPAL/da): A Java Bytecode Disassembler that creates a beautiful HTML file of the Java bytecode.
+
 * **Bytecode Representation**(OPAL/br): OPAL's primary representation of Java bytecode. Implements all functionality for creating a representation of Java class files.  
 
 * **Abstract Interpretation Framework**(OPAL/ai): Implementation of an abstract interpretation framework that can be used to easily implement analyses at very different levels of precision. 

@@ -30,8 +30,8 @@ package org.opalj
 package ai
 package domain
 
-import br.Code
-import br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy }
+import org.opalj.br.Code
+import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy }
 
 /**
  * This class uses OPAL's `preInitializedClassHierarchy` (see `ClassHierarchy` for details)
@@ -41,7 +41,7 @@ import br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy }
  *
  * @author Michael Eichberg
  */
-trait PredefinedClassHierarchy extends ClassHierarchy { this: Domain ⇒
+trait PredefinedClassHierarchy extends ClassHierarchy {
 
     /**
      * Returns the predefined class hierarchy unless explicitly overridden. OPAL's

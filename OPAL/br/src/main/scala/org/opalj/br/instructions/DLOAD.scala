@@ -35,13 +35,14 @@ package instructions
  *
  * @author Michael Eichberg
  */
-final class DLOAD( final override val lvIndex: Int)
+final class DLOAD(
+    final val lvIndex: Int)
         extends LoadLocalVariableInstruction
         with ExplicitLocalVariableIndex {
 
-    final override def opcode: Opcode = DLOAD.opcode
+    final def opcode: Opcode = DLOAD.opcode
 
-    final override def mnemonic: String = "dload"
+    final def mnemonic: String = "dload"
 
     override def equals(other: Any): Boolean =
         other match {

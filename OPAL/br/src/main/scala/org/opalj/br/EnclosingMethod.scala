@@ -32,15 +32,15 @@ package br
 /**
  * The optional enclosing method attribute of a class.
  *
- * @param name The name of the enclosing method. It may be `null`.
- * @param descriptor The method descriptor of the enclosing method. It may be `null`.
+ * @param name The name of the enclosing method.
+ * @param descriptor The method descriptor of the enclosing method.
  *
  * @author Michael Eichberg
  */
 case class EnclosingMethod(
     clazz: ObjectType,
-    name: String,
-    descriptor: MethodDescriptor)
+    name: Option[String],
+    descriptor: Option[MethodDescriptor])
         extends Attribute {
 
     override def kindId: Int = EnclosingMethod.KindId

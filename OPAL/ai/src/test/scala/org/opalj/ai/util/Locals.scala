@@ -201,4 +201,26 @@ class LocalsTest
         }
     }
 
+    it should ("be able to calculate a hashCode even if it is non-full") in {
+        val size = 25
+        var v = Locals[Integer](size)
+        for { i ← 0 until size } {
+            if (i % 2 == 0) v.set(i, i)
+        }
+
+        v.hashCode should not be (0)
+    }
+
+    it should ("be compareable to a non-full Locals collections") in {
+        val size = 25
+        var v1 = Locals[Integer](size)
+        var v2 = Locals[Integer](size)
+        for { i ← 0 until size } {
+            if (i % 2 == 0) v1.set(i, i)
+            if (i % 2 == 0) v2.set(i, i)
+        }
+
+        v1 should equal(v2)
+    }
+
 }

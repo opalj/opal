@@ -48,10 +48,7 @@ import org.scalatest.ParallelTestExecution
  * @author Riadh Chtara
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultPreciseLongValuesTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class DefaultPreciseLongValuesTest extends FlatSpec with Matchers with ParallelTestExecution {
 
     object LongValuesTestDomain
         extends Domain
@@ -64,6 +61,7 @@ class DefaultPreciseLongValuesTest
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with li.DefaultPreciseLongValues
+        with l0.DefaultPrimitiveValuesConversions
         with PredefinedClassHierarchy
         with DefaultHandlingOfMethodResults
         with RecordLastReturnedValues

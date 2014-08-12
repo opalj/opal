@@ -462,7 +462,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                     }
                 } catch {
                     case e: Exception ⇒
-                        exceptionHandler(e)
+                        exceptionHandler(new java.lang.Exception("cannot process "+filename, e))
                         Nil
                 }
             } else {

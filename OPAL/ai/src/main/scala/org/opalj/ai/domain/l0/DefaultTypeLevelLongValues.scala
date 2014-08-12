@@ -41,7 +41,7 @@ package l0
 trait DefaultTypeLevelLongValues
         extends DefaultDomainValueBinding
         with TypeLevelLongValues {
-    this: Configuration ⇒
+    this: PrimitiveValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
 
     case object ALongValue extends super.LongValue {
 
@@ -51,13 +51,13 @@ trait DefaultTypeLevelLongValues
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.LongValue(pc)
     }
 
-    override def LongValue(pc: PC): LongValue = ALongValue
+    override def LongValue(valueOrigin: ValueOrigin): LongValue = ALongValue
 
-    override def LongValue(pc: PC, value: Long): LongValue = ALongValue
+    override def LongValue(valueOrigin: ValueOrigin, value: Long): LongValue = ALongValue
 }
 
 

@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-
 /**
  * Compare long.
  *
@@ -38,8 +37,8 @@ package instructions
  */
 case object LCMP extends ComparisonInstruction {
 
-    override final val opcode = 148
+    final val opcode = 148
 
-    def mnemonic: String = "lcmp"
+    final val mnemonic = "lcmp"
 
 }

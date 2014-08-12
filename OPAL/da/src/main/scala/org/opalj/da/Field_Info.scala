@@ -30,11 +30,14 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import bi.AccessFlags
-import bi.AccessFlagsContexts
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 
 /**
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
 case class Field_Info(
         access_flags: Int,
@@ -43,19 +46,19 @@ case class Field_Info(
         attributes: Attributes) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <li><div class="code">
-            <span class="AccessFlags">{ AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }</span>
-            <span> { cp(descriptor_index).asString } </span>
-            <span> { cp(name_index).asString } </span>
-       </div></li>
-        // The STYLE WAS MISSING...            
-        // < a href="#" class="tooltip">{ name_index } 
-        // < span>{ cp(name_index) }</span> // ????
-        // </ a>
+        <div class="field">
+            <span class="access_flags">{ AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }</span>
+            <span> { parseFieldType(cp(descriptor_index).asString) } </span>
+            <span> { cp(name_index).asString } </span><span> { attributesToXHTML(cp) } </span>
+            <a href="#" class="tooltip">
+                { name_index }
+                <span>{ cp(name_index) }</span>
+            </a>
+        </div>
     }
 
     def attributesToXHTML(implicit cp: Constant_Pool) = {
-        <ul>{ for (attribute ← attributes) yield attribute.toXHTML(cp) }</ul>
+        for (attribute ← attributes) yield attribute.toXHTML(cp)
     }
 
 }

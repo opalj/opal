@@ -47,7 +47,7 @@ abstract class InvocationInstruction extends Instruction {
      * exceptions may be thrown we make the safe assumption that any handler
      * is a potential successor!
      */
-    final override def nextInstructions(currentPC: PC, code: Code): PCs = {
+    final def nextInstructions(currentPC: PC, code: Code): PCs = {
         val exceptionHandlerPCs = code.handlerInstructionsFor(currentPC)
         exceptionHandlerPCs + indexOfNextInstruction(currentPC, code)
     }
@@ -66,6 +66,10 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
     def asVirtualMethod: VirtualMethod =
         VirtualMethod(declaringClass, name, methodDescriptor)
 
+    /**
+     * Returns `true` if the called method is an instance method/if the called method
+     * is not static.
+     */
     def isVirtualMethodCall: Boolean
 
     override def toString: String =

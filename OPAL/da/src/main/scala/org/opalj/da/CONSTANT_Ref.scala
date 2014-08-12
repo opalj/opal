@@ -34,7 +34,6 @@ package org.opalj
 package da
 
 /**
- *
  * @author Michael Eichberg
  */
 trait CONSTANT_Ref extends Constant_Pool_Entry {
@@ -43,4 +42,11 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
 
     val name_and_type_index: Constant_Pool_Index
 
+    def toString(implicit cp: Constant_Pool): String = {
+        cp(class_index).toString(cp).replace('/', '.')+"{ "+
+            cp(name_and_type_index).toString(cp)+" }"
+    }
+
+    def toLDCString(implicit cp: Constant_Pool): String =
+        throw new UnsupportedOperationException
 }

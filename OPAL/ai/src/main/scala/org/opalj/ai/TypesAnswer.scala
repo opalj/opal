@@ -43,7 +43,13 @@ import org.opalj.br.{ FloatType, DoubleType }
  *
  * @author Michael Eichberg
  */
-sealed trait TypesAnswer
+sealed trait TypesAnswer {
+
+    def isReferenceValue: Boolean
+
+    def isPrimitiveValue: Boolean
+
+}
 
 /**
  * This answer is given when no specific/additional type information about a value
@@ -57,12 +63,22 @@ sealed trait TypesAnswer
  *
  * @author Michael Eichberg
  */
-case object TypeUnknown extends TypesAnswer
+case object TypeUnknown extends TypesAnswer {
+
+    def isReferenceValue: Boolean = throw DomainException("the type is unknown")
+
+    def isPrimitiveValue: Boolean = throw DomainException("the type is unknown")
+}
 
 /**
  * The value has the primitive type.
  */
 sealed trait IsPrimitiveValue extends TypesAnswer {
+
+    final def isReferenceValue: Boolean = false
+
+    final def isPrimitiveValue: Boolean = true
+
     def primitiveType: BaseType
 }
 
@@ -177,13 +193,13 @@ trait IsAReferenceValue {
     def isValueSubtypeOf(referenceType: ReferenceType): Answer
 
     /**
-     * Returns this reference value as a DomainValue.
+     * Returns this reference value as a `DomainValue` of its original domain.
      *
      * @param domain The domain that was used to create this object can be used
      *      to get/create a DomainValue.
      */
     @throws[UnsupportedOperationException](
-        "the given domain has to be equal to the domain that created this object"
+        "the given domain has to be equal to the domain that was used to creat this object"
     )
     def asDomainValue(implicit domain: Domain): domain.DomainValue
 }
@@ -212,6 +228,10 @@ trait IsReferenceValue extends TypesAnswer with IsAReferenceValue {
      * an upper bound can in turn consist of several interfaces and a class.
      */
     def referenceValues: Traversable[IsAReferenceValue]
+
+    final def isReferenceValue: Boolean = true
+
+    final def isPrimitiveValue: Boolean = false
 
 }
 

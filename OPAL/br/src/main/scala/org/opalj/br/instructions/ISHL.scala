@@ -37,8 +37,8 @@ package instructions
  */
 case object ISHL extends ShiftInstruction {
 
-    override final val opcode = 120
+    final val opcode = 120
 
-    def mnemonic: String = "ishl"
+    final val mnemonic = "ishl"
 
 }

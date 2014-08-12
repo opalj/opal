@@ -51,7 +51,7 @@ sealed abstract class AIResult {
     val domain: Domain
 
     /**
-     * The list of instructions that need to interpreted next. This list is empty
+     * The list of instructions that need to be interpreted next. This list is empty
      * if the abstract interpretation succeed.
      */
     val worklist: List[PC]
@@ -62,8 +62,8 @@ sealed abstract class AIResult {
     val evaluated: List[PC]
 
     /**
-     * The array of the operands in effect before the execution of the instruction with
-     * the respective pc.
+     * The array of the operand lists in effect before the execution of the 
+     * instruction with the respective program counter.
      *
      * For those instruction that were never executed (potentially dead code if the
      * abstract interpretation succeeded) the operands array will be empty (the

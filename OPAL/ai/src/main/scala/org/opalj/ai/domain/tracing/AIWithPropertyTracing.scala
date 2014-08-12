@@ -43,7 +43,7 @@ import br._
  *
  * @author Michael Eichberg
  */
-trait AIWithPropertyTracing[D <: PropertyTracing] extends AI[D] {
+trait AIWithPropertyTracing[D <: Domain with PropertyTracing] extends AI[D] {
 
     /**
      * Performs an abstract interpretation of the given code snippet.
@@ -51,7 +51,7 @@ trait AIWithPropertyTracing[D <: PropertyTracing] extends AI[D] {
      * Before actually starting the interpretation the domain is called to
      * let it initialize its properties.
      */
-    override protected[ai] def perform(
+    override def perform(
         code: Code,
         theDomain: D)(
             initialOperands: theDomain.Operands,

@@ -38,4 +38,11 @@ case class CONSTANT_InvokeDynamic_info(
         name_and_type_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_InvokeDynamic
+
+    def toString(implicit cp: Constant_Pool): String = {
+        s"CONSTANT_InvokeDynamic_info($bootstrap_method_attr_index,${cp(name_and_type_index).toString(cp)}/*$name_and_type_index */ )"
+    }
+
+    def toLDCString(implicit cp: Constant_Pool): String =
+        throw new UnsupportedOperationException
 }

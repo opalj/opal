@@ -31,8 +31,6 @@ package ai
 package domain
 package l0
 
-import org.opalj.ai.Domain
-import org.opalj.ai.IsDoubleValue
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeDouble
 
@@ -44,7 +42,8 @@ import org.opalj.br.ComputationalTypeDouble
  *
  * @author Michael Eichberg
  */
-trait TypeLevelDoubleValues extends Domain {
+trait TypeLevelDoubleValues extends DoubleValuesDomain {
+    domain: IntegerValuesFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -99,14 +98,6 @@ trait TypeLevelDoubleValues extends Domain {
     override def dsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         DoubleValue(pc)
 
-    //
-    // TYPE CONVERSION INSTRUCTIONS
-    //
-    override def d2f(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
-
-    override def d2i(pc: PC, value: DomainValue): DomainValue = IntegerValue(pc)
-
-    override def d2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 }
 
 

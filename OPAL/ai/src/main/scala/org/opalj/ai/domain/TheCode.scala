@@ -35,9 +35,17 @@ import org.opalj.br.Code
 /**
  * Provides information about the code block that is currently analyzed.
  *
+ * ==Core Properties==
+ *  - Defines the public interface.
+ *  - Defines no immediate state. However, the code block that is analyzed
+ *      is made available, which subsequently requires the final domain to have state.
+ *  - Thread-safe: Yes
+ *
+ * @see In many cases it may be meaningful to directly mixin the [[TheMethod]] trait.
+ *
  * @author Michael Eichberg
  */
-trait TheCode { this: Domain ⇒
+trait TheCode {
 
     /**
      * Returns the code block that is currently analyzed.

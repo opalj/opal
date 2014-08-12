@@ -42,7 +42,7 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        override def title: String = "File object creation using constant strings"
+        override def title: String = "File Object Creation Using Constant Strings"
 
         override def description: String =
             "Identifies java.io.File object instantiations using constant strings."
@@ -79,6 +79,7 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
                     with domain.TheMethod
                     with domain.DefaultDomainValueBinding
                     with domain.ThrowAllPotentialExceptionsConfiguration
+                    with domain.l0.DefaultPrimitiveValuesConversions
                     with domain.l0.DefaultTypeLevelIntegerValues
                     with domain.l0.DefaultTypeLevelLongValues
                     with domain.l0.DefaultTypeLevelFloatValues

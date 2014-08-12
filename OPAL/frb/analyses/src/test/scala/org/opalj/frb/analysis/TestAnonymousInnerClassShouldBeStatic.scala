@@ -43,30 +43,27 @@ import java.net.URL
  * @author Peter Spieler
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class TestAnonymousInnerClassShouldBeStatic extends AnalysisTest {
-    import TestAnonymousInnerClassShouldBeStatic._
+class AnonymousInnerClassShouldBeStaticTest extends AnalysisTest {
 
     behavior of "AnonymousInnerClassShouldBeStatic"
 
-    it should "detect an anonymous inner class "+
-        "that never references its parent object" in {
-            val classToReport =
-                ObjectType("AnonymousInnerClassShouldBeStatic/AnonymousInnerClass$1")
-            results should contain(
-                ClassBasedReport(project.source(classToReport),
-                    Severity.Info,
-                    classToReport,
-                    "This inner class should be made Static")
-            )
-        }
+    val project = createProject("AnonymousInnerClassShouldBeStatic.jar")
+    val results = new AnonymousInnerClassShouldBeStatic[URL].analyze(project).toSet
+
+    it should "detect a non-static inner class that does not use its outer class" in {
+        val classToReport =
+            ObjectType("AnonymousInnerClassShouldBeStatic/AnonymousInnerClass$1")
+
+        results should contain(
+            ClassBasedReport(project.source(classToReport),
+                Severity.Info,
+                classToReport,
+                "This inner class should be made Static")
+        )
+    }
 
     it should "find 1 issue in total" in {
         results.size should be(1)
     }
 
-}
-
-object TestAnonymousInnerClassShouldBeStatic {
-    val project = makeProjectFromJar("AnonymousInnerClassShouldBeStatic.jar")
-    val results = new AnonymousInnerClassShouldBeStatic[URL].analyze(project).toSet
 }

@@ -41,7 +41,7 @@ object NativeMethodsCounter extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Counts the number of native methods."
+        override def description: String = "Counts the number of native methods."
 
         def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
             val nativeMethods =

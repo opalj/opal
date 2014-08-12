@@ -38,8 +38,11 @@ package instructions
  */
 trait ExplicitLocalVariableIndex {
 
-    def indexOfNextInstruction(currentPC: Int, code: Code): Int = {
-        if (code.isModifiedByWide(currentPC))
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
+
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
+        if (modifiedByWide)
             currentPC + 3
         else
             currentPC + 2

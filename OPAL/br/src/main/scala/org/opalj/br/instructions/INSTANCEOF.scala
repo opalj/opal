@@ -39,16 +39,21 @@ case class INSTANCEOF(
     referenceType: ReferenceType)
         extends Instruction {
 
-    final override def opcode: Opcode = INSTANCEOF.opcode
+    final def opcode: Opcode = INSTANCEOF.opcode
 
-    final override def mnemonic: String = "instanceof"
+    final def mnemonic: String = "instanceof"
 
-    final override def runtimeExceptions: List[ObjectType] = Nil
+    final def runtimeExceptions: List[ObjectType] = Nil
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 3
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
 
     override def toString: String = "INSTANCEOF("+referenceType.toJava+")"

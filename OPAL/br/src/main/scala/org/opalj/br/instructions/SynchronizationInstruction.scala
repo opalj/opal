@@ -30,7 +30,6 @@ package org.opalj
 package br
 package instructions
 
-
 /**
  * A synchronization related instruction.
  *
@@ -38,7 +37,12 @@ package instructions
  */
 abstract class SynchronizationInstruction extends Instruction {
 
-    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int = 
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
         currentPC + 1
 
 }
@@ -47,8 +51,8 @@ object SynchronizationInstruction {
 
     /**
      * Extractor to match SynchronizationInstructions.
-     * 
-     * ==Example== 
+     *
+     * ==Example==
      * To use this matcher, do not forget the parentheses. E.g.,
      * {{{
      * case SynchronizationInstruction() => ...

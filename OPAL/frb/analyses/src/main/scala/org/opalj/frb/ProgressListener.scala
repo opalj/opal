@@ -44,9 +44,9 @@ trait ProgressListener {
     /**
      * Override this callback to be notified when a certain analysis is started.
      *
-     * Note: Since the analyses are executed in parallel, begin/end events may not
-     * necessarily be in order. Calls to this method may come from multiple threads.
-     * However, all calls to this method are synchronized.
+     * @note Since the analyses are executed in parallel, begin/end events may not
+     *      necessarily be in order. Calls to this method may come from multiple threads.
+     *      However, all calls to this method are synchronized.
      *
      * @param analysis The analysis.
      * @param position The analysis' start number. 1st analysis = 1, 2nd analysis = 2,
@@ -58,7 +58,7 @@ trait ProgressListener {
     /**
      * Override this callback to be notified when a certain analysis ends.
      *
-     * @see [[ProgressListener.startingAnalysis]]
+     * @see [[ProgressListener.analysisStarted]]
      *
      * @param analysis The analysis.
      * @param position The analysis' start number.

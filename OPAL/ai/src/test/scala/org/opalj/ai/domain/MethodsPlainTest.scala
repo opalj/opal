@@ -38,6 +38,8 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.matchers.MatchResult
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import org.opalj.br._
@@ -655,7 +657,7 @@ class MethodsPlainTest
         /*val result =*/ BaseAI(classFile, method, domain)
 
         domain.isValueSubtypeOf(domain.returnedValue.get, ObjectType("ai/MethodsPlain")) should be(Yes)
-        domain.refIsNull(domain.returnedValue.get) should not be (No)
+        domain.refIsNull(-1, domain.returnedValue.get) should not be (No)
     }
 
     //
@@ -666,7 +668,7 @@ class MethodsPlainTest
         /*val result =*/ BaseAI(classFile, method, domain)
 
         assert(
-            domain.refIsNull(domain.returnedValue.get).isYes,
+            domain.refIsNull(-1, domain.returnedValue.get).isYes,
             "unexpected nullness property of the returned value: "+domain.returnedValue.get)
     }
     it should "be able to analyze a push of byte value" in {
@@ -1007,6 +1009,7 @@ private object MethodsPlainTest {
             with DefaultTypeLevelLongValues
             with DefaultTypeLevelFloatValues
             with DefaultTypeLevelDoubleValues
+            with DefaultPrimitiveValuesConversions
             with TypeLevelFieldAccessInstructions
             with SimpleTypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
@@ -1027,6 +1030,6 @@ private object MethodsPlainTest {
     }
 
     val classFile =
-        ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ai")).map(_._1).
+        ClassFiles(locateTestResources("classfiles/ai.jar", "ai")).map(_._1).
             find(_.thisType.fqn == "ai/MethodsPlain").get
 }

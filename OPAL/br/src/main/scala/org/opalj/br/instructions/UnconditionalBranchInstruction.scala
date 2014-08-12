@@ -40,7 +40,7 @@ abstract class UnconditionalBranchInstruction extends ControlTransferInstruction
 
     def branchoffset: Int
 
-    final override def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(currentPC + branchoffset)
 
     override def toString(currentPC: Int) =

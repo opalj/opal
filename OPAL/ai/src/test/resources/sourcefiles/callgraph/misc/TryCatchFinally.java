@@ -246,9 +246,10 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 256),
-            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 258),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 260) })
+            @InvokedMethod(receiverType = TryCatchFinally.class, name = "createThrowable", lineNumber = 255),
+            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 257),
+            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 259),
+            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 261) })
     void callMethodBasedOnThrowableType() {
         try {
             throw createThrowable();
@@ -264,8 +265,9 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 273),
-            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 275) })
+            @InvokedMethod(receiverType = TryCatchFinally.class, name = "throwThrowablePartly", lineNumber = 273),
+            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 275),
+            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 277) })
     void callMethodBasedOnThrowableTypePartly() {
         try {
             throwThrowablePartly();
@@ -281,8 +283,9 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 290),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 291) })
+            @InvokedMethod(receiverType = TryCatchFinally.class, name = "canThrowNullPointerException", lineNumber = 291),
+            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 293),
+            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 294) })
     void possibleNullPointerException(Object o) {
         try {
             canThrowNullPointerException(o);
@@ -293,8 +296,9 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 302),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 303) })
+            @InvokedMethod(receiverType = TryCatchFinally.class, name = "canThrowNullPointerException", lineNumber = 304),
+            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 306),
+            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 307) })
     void possibleNullPointerExceptionCatchOtherExceptions(Object o) {
         try {
             canThrowNullPointerException(o);
@@ -302,6 +306,48 @@ public class TryCatchFinally {
             simple.implementedMethod();
             SimpleBase.staticMethod();
         } catch (Exception e) {
+            alternate.implementedMethod();
+        }
+    }
+
+    @InvokedMethods({
+            @InvokedMethod(receiverType = TryCatchFinally.class, name = "alwaysThrowsCheckedException", lineNumber = 318),
+            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", isStatic = true, lineNumber = 320) })
+    void callThrowCheckedException() {
+        try {
+            alwaysThrowsCheckedException();
+        } catch (IllegalAccessException e) {
+            alternate.implementedMethod();
+        }
+    }
+
+    @InvokedMethods({
+            @InvokedMethod(receiverType = TryCatchFinally.class, name = "mayThrowException", lineNumber = 331),
+            @InvokedMethod(receiverType = TryCatchFinally.class, name = "alwaysThrowsException", lineNumber = 332),
+            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 334),
+            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 336) })
+    void callMultipleMethodsInTry(Object o) {
+        try {
+            mayThrowException();
+            alwaysThrowsException();
+        } catch (IllegalArgumentException e) {
+            simple.implementedMethod();
+        } catch (RuntimeException e) {
+            alternate.implementedMethod();
+        }
+    }
+
+    @InvokedMethods({
+            @InvokedMethod(receiverType = TryCatchFinally.class, name = "alwaysThrowsException", lineNumber = 346),
+            @InvokedMethod(receiverType = TryCatchFinally.class, name = "mayThrowException", lineNumber = 347),
+            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 349) })
+    void callMultipleMethodsInTryAlternateOrder(Object o) {
+        try {
+            alwaysThrowsException();
+            mayThrowException();
+        } catch (IllegalArgumentException e) {
+            simple.implementedMethod();
+        } catch (RuntimeException e) {
             alternate.implementedMethod();
         }
     }
@@ -345,6 +391,24 @@ public class TryCatchFinally {
 
     void canThrowNullPointerException(Object o) {
         o.hashCode();
+    }
+
+    void mayThrowException() {
+        if (this.hashCode() % 2 == 0)
+            throw new IllegalArgumentException();
+    }
+
+    void mayThrowCheckedException() throws java.io.IOException {
+        if (this.hashCode() % 2 == 0)
+            throw new java.io.IOException();
+    }
+
+    void alwaysThrowsException() {
+        throw new RuntimeException();
+    }
+
+    void alwaysThrowsCheckedException() throws IllegalAccessException {
+        throw new IllegalAccessException();
     }
 
     // TODO more precise catch

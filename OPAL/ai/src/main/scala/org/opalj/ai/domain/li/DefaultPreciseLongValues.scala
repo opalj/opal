@@ -39,9 +39,8 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
  *
  * @author Riadh Chtara
  */
-trait DefaultPreciseLongValues
-        extends DefaultDomainValueBinding
-        with PreciseLongValues { this: Configuration ⇒
+trait DefaultPreciseLongValues extends DefaultDomainValueBinding with PreciseLongValues {
+    domain: ValuesFactory with Configuration ⇒
 
     // ATTENTION: The functionality to propagate a constraint crucially depends on
     // the fact two long values created at two different places are represented
@@ -54,8 +53,8 @@ trait DefaultPreciseLongValues
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(targetDomain: Domain, pc: PC): targetDomain.DomainValue =
-            targetDomain.LongValue(pc)
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
+            target.LongValue(pc)
     }
 
     case class LongRange(
@@ -96,7 +95,7 @@ trait DefaultPreciseLongValues
 
         override def summarize(pc: PC): DomainValue = this
 
-        override def adapt(target: Domain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             if (target.isInstanceOf[DefaultPreciseLongValues]) {
                 val thatDomain = target.asInstanceOf[DefaultPreciseLongValues]
                 thatDomain.LongRange(this.initial, this.value).

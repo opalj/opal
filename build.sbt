@@ -10,39 +10,37 @@ homepage in ThisBuild := Some(url("http://www.opal-project.de"))
 
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion in ThisBuild := "2.11.1"
+scalaVersion in ThisBuild := "2.11.2"
 
 scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature", "-unchecked", "-Xlint")
 
-scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library") 
+scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
 
-scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value) 
+scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 
 // Required to get relative links in the generated source code documentation.
-scalacOptions in (ScalaUnidoc, unidoc) <<= 
+scalacOptions in (ScalaUnidoc, unidoc) <<=
   baseDirectory map {
     bd => Seq ("-sourcepath", bd.getAbsolutePath)
   }
 
-scalacOptions in (ScalaUnidoc, unidoc) ++= 
+scalacOptions in (ScalaUnidoc, unidoc) ++=
   Opts.doc.sourceUrl(
 	"https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?at=master"
   )
 
-javacOptions in ThisBuild ++= Seq("-encoding", "utf8") 
+javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
 
-libraryDependencies in ThisBuild += "junit" % "junit" % "4.11" % "test"
-
-libraryDependencies in ThisBuild += "org.scalatest" %% "scalatest" % "2.2.0" % "test"
-
-testOptions in ThisBuild <<= 
-  baseDirectory map { 
+testOptions in ThisBuild <<=
+  baseDirectory map {
 	bd => Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/shippable/testresults"))
   }
 
 testOptions in ThisBuild += Tests.Argument("-o")
 
 EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
+
+EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE17)
 
 //
 //

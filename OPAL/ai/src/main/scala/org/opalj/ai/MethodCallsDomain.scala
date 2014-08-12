@@ -35,10 +35,11 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 
 /**
+ * Defines all method related to the invokation of other methods.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait MethodCallsDomain { this: CoreDomain ⇒
+trait MethodCallsDomain { this: ValuesDomain ⇒
 
     type MethodCallResult = Computation[DomainValue, ExceptionValues]
 

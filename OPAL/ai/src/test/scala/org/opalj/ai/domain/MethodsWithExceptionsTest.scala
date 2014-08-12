@@ -40,6 +40,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 
+import org.opalj.bi.TestSupport.locateTestResources
+
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
 import br._
@@ -63,7 +65,7 @@ class MethodsWithExceptionsTest
     import MethodsWithExceptionsTest._
     import org.opalj.collection.mutable.UShortSet
 
-    class DefaultRecordingDomain[I](val id: I)
+    class DefaultRecordingDomain(val id: String)
             extends Domain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
@@ -74,16 +76,15 @@ class MethodsWithExceptionsTest
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultTypeLevelLongValues
+            with l0.DefaultPrimitiveValuesConversions
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultReferenceValuesBinding
             /* => */ with RecordLastReturnedValues
             /* => */ with RecordAllThrownExceptions
-            /* => */ with RecordVoidReturns {
-        type Id = I
-    }
+            /* => */ with RecordVoidReturns 
 
-    private def evaluateMethod(name: String)(f: DefaultRecordingDomain[String] ⇒ Unit) {
+    private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit) {
         val domain = new DefaultRecordingDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
@@ -158,7 +159,7 @@ class MethodsWithExceptionsTest
 }
 private object MethodsWithExceptionsTest {
 
-    val classFiles = ClassFiles(TestSupport.locateTestResources("classfiles/ai.jar", "ai"))
+    val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
 
     val classFile = classFiles.map(_._1).
         find(_.thisType.fqn == "ai/MethodsWithExceptions").get

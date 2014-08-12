@@ -46,9 +46,11 @@ import java.net.URL
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class TestCovariantEquals extends AnalysisTest {
-    import TestCovariantEquals._
 
     behavior of "CovariantEquals"
+
+    val project = createProject("CovariantEquals.jar")
+    val results = new CovariantEquals[URL].analyze(project).toSet
 
     it should "find that class CovariantEqualsMethod defines a covariant eqals() method "+
         "(and does not define a correct one)." in {
@@ -62,9 +64,4 @@ class TestCovariantEquals extends AnalysisTest {
     it should "find exactly one issue in total" in {
         results.size should be(1)
     }
-}
-
-object TestCovariantEquals {
-    val project = makeProjectFromJar("CovariantEquals.jar")
-    val results = new CovariantEquals[URL].analyze(project).toSet
 }

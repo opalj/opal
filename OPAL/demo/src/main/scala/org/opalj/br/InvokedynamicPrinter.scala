@@ -43,18 +43,19 @@ object InvokedynamicPrinter extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
 
-        def description: String = "Prints information about invokedynamic instructions."
+        override def description: String =
+            "Prints information about invokedynamic instructions."
 
         def analyze(project: Project[URL], parameters: Seq[String]) = {
             val invokedynamics =
                 for {
                     classFile ← project.classFiles.par
-                    MethodWithBody(code) ← classFile.methods 
+                    MethodWithBody(code) ← classFile.methods
                     INVOKEDYNAMIC(bootstrap, name, descriptor) ← code.instructions
                 } yield {
-                    bootstrap.toJava + "\nArguments:\t" +
-                    bootstrap.bootstrapArguments.mkString("{",",","}") + "\nCalling:\t" +
-                    descriptor.toJava(name)
+                    bootstrap.toJava+"\nArguments:\t"+
+                        bootstrap.bootstrapArguments.mkString("{", ",", "}")+"\nCalling:\t"+
+                        descriptor.toJava(name)
                 }
 
             BasicReport(

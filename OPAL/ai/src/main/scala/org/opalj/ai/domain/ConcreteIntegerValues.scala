@@ -38,15 +38,14 @@ package domain
  * Provides information about an integer value's precise value, if this information
  * is available.
  *
- * The information about an integer value's range that is required by OPAL is defined
- * by the `Domain` trait.
- *
+ * @note The information about an integer value's range that is required by the
+ *      abstract interpreter is defined by the `Domain` trait.
  *
  * @note This functionality is not required by the OPAL core.
  *
  * @author Michael Eichberg
  */
-trait ConcreteIntegerValues { this: CoreDomain with IntegerValuesDomain ⇒
+trait ConcreteIntegerValues { this: ValuesDomain ⇒
 
     /**
      * If the given value encapsulates a precise integer value then the function
@@ -61,5 +60,9 @@ trait ConcreteIntegerValues { this: CoreDomain with IntegerValuesDomain ⇒
      *      Integer value or the precise value is not known. I.e., this method never fails.
      */
     def intValueOption(value: DomainValue): Option[Int]
+
+    object ConcreteIntegerValue {
+        def unapply(value: DomainValue): Option[Int] = intValueOption(value)
+    }
 
 }
