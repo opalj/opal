@@ -32,6 +32,10 @@ package reader
 
 import instructions._
 
+/**
+ * Mixin this trait to resolve links between `INVOKEDYNAMIC instructions and the
+ * [[BoostrapMethodTable]].
+ */
 trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBinding {
 
     override type Constant_Pool = Array[Constant_Pool_Entry]
