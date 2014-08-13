@@ -53,7 +53,7 @@ case class INVOKEINTERFACE(
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 5
 
     // Required to avoid that Scala generates a default toString method!

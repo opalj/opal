@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy, Project }
+import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy }
 
 /**
  * Delegates type hierarchy related queries to the project's class hierarchy.

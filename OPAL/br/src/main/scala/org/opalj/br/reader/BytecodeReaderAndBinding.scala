@@ -34,7 +34,7 @@ import instructions._
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and
- * to return an array of [[org.opalj.br.instructions.Instruction]]`s.
+ * to return an array of [[org.opalj.br.instructions.Instruction]]'s.
  *
  * The target array has the same size as the source array to make sure that branch offsets
  * etc. point to the correct instruction.
@@ -83,7 +83,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 189 ⇒ ANEWARRAY(cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType)
                 case 176 ⇒ ARETURN
                 case 190 ⇒ ARRAYLENGTH
-                case 58  ⇒ ASTORE(lvIndex)
+                case 58  ⇒ ASTORE(lvIndex())
                 case 75  ⇒ ASTORE_0
                 case 76  ⇒ ASTORE_1
                 case 77  ⇒ ASTORE_2
@@ -108,7 +108,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 14  ⇒ DCONST_0
                 case 15  ⇒ DCONST_1
                 case 111 ⇒ DDIV
-                case 24  ⇒ DLOAD(lvIndex)
+                case 24  ⇒ DLOAD(lvIndex())
                 case 38  ⇒ DLOAD_0
                 case 39  ⇒ DLOAD_1
                 case 40  ⇒ DLOAD_2
@@ -117,7 +117,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 119 ⇒ DNEG
                 case 115 ⇒ DREM
                 case 175 ⇒ DRETURN
-                case 57  ⇒ DSTORE(lvIndex)
+                case 57  ⇒ DSTORE(lvIndex())
                 case 71  ⇒ DSTORE_0
                 case 72  ⇒ DSTORE_1
                 case 73  ⇒ DSTORE_2
@@ -141,7 +141,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 12  ⇒ FCONST_1
                 case 13  ⇒ FCONST_2
                 case 110 ⇒ FDIV
-                case 23  ⇒ FLOAD(lvIndex)
+                case 23  ⇒ FLOAD(lvIndex())
                 case 34  ⇒ FLOAD_0
                 case 35  ⇒ FLOAD_1
                 case 36  ⇒ FLOAD_2
@@ -150,7 +150,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 118 ⇒ FNEG
                 case 114 ⇒ FREM
                 case 174 ⇒ FRETURN
-                case 56  ⇒ FSTORE(lvIndex)
+                case 56  ⇒ FSTORE(lvIndex())
                 case 67  ⇒ FSTORE_0
                 case 68  ⇒ FSTORE_1
                 case 69  ⇒ FSTORE_2
@@ -211,7 +211,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                         val constValue = in.readByte
                         IINC(lvIndex, constValue)
                     }
-                case 21  ⇒ ILOAD(lvIndex)
+                case 21  ⇒ ILOAD(lvIndex())
                 case 26  ⇒ ILOAD_0
                 case 27  ⇒ ILOAD_1
                 case 28  ⇒ ILOAD_2
@@ -253,7 +253,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 172 ⇒ IRETURN
                 case 120 ⇒ ISHL
                 case 122 ⇒ ISHR
-                case 54  ⇒ ISTORE(lvIndex)
+                case 54  ⇒ ISTORE(lvIndex())
                 case 59  ⇒ ISTORE_0
                 case 60  ⇒ ISTORE_1
                 case 61  ⇒ ISTORE_2
@@ -277,7 +277,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 19  ⇒ LDC_W(cp(in.readUnsignedShort).asConstantValue(cp))
                 case 20  ⇒ LDC2_W(cp(in.readUnsignedShort).asConstantValue(cp))
                 case 109 ⇒ LDIV
-                case 22  ⇒ LLOAD(lvIndex)
+                case 22  ⇒ LLOAD(lvIndex())
                 case 30  ⇒ LLOAD_0
                 case 31  ⇒ LLOAD_1
                 case 32  ⇒ LLOAD_2
@@ -298,7 +298,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 173 ⇒ LRETURN
                 case 121 ⇒ LSHL
                 case 123 ⇒ LSHR
-                case 55  ⇒ LSTORE(lvIndex)
+                case 55  ⇒ LSTORE(lvIndex())
                 case 63  ⇒ LSTORE_0
                 case 64  ⇒ LSTORE_1
                 case 65  ⇒ LSTORE_2

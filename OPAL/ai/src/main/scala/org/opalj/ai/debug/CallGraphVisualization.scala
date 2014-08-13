@@ -61,8 +61,6 @@ import org.opalj.util.writeAndOpenDesktopApplication
  */
 object CallGraphVisualization {
 
-    import java.net.URL
-
     /**
      * Traces the interpretation of a single method and prints out the results.
      *
@@ -118,7 +116,7 @@ object CallGraphVisualization {
                             ClassFileReader.ClassFiles(file)
                         } catch {
                             case e: Exception ⇒
-                                println(RED+"cannot read file: "+e.getMessage() + RESET)
+                                println(RED+"cannot read file: "+e.getMessage + RESET)
                                 sys.exit(-3)
                         }
                     cache = null
@@ -178,7 +176,7 @@ object CallGraphVisualization {
         // Let's create the visualization
         //
         import org.opalj.util.writeAndOpenDesktopApplication
-        import org.opalj.graphs.{ toDot, SimpleNode, Node }
+        import org.opalj.graphs.{ SimpleNode, Node }
         val nodes: Set[Node] = {
 
             var nodesForMethods = scala.collection.mutable.AnyRefMap.empty[Method, Node]

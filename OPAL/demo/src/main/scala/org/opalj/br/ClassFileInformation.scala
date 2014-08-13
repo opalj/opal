@@ -79,7 +79,7 @@ object ClassFileInformation {
 
             println(methods.map(_.toJava).mkString("\tMETHODS:\n\t", "\n\t", ""))
 
-            println
+            println()
         }
     }
 }

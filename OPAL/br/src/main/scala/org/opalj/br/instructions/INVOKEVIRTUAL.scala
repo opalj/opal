@@ -49,11 +49,11 @@ case class INVOKEVIRTUAL(
         MethodInvocationInstruction.runtimeExceptions
 
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
+        indexOfNextInstruction(currentPC, false)
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 3
 
     // Required to avoid that Scala generates a default toString method!

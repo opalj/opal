@@ -66,7 +66,7 @@ case class Code(
         new Iterator[PC] {
             var pc = 0 // there is always at least one instruction
 
-            def next = {
+            def next() = {
                 val next = pc
                 pc = pcOfNextInstruction(pc)
                 next
@@ -342,9 +342,11 @@ case class Code(
             val params = (pc, instructions(pc))
             if (f.isDefinedAt(params))
                 return Some(f(params))
+
             pc = pcOfNextInstruction(pc)
         }
-        return None
+
+        None
     }
 
     /**
@@ -355,12 +357,13 @@ case class Code(
         val max_pc = instructions.size
         var pc = 0
         while (pc < max_pc) {
-            if (f(instructions(pc))) {
+            if (f(instructions(pc)))
                 return Some(pc)
-            }
+
             pc = pcOfNextInstruction(pc)
         }
-        return None
+
+        None
     }
 
     /**

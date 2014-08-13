@@ -345,7 +345,8 @@ final class ClassFile private (
             lookupNextConstructor()
 
             def hasNext: Boolean = i >= 0
-            def next: Method = {
+
+            def next(): Method = {
                 val m = methods(i)
                 lookupNextConstructor
                 m

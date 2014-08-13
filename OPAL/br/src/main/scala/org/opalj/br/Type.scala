@@ -46,13 +46,13 @@ sealed abstract class ComputationalTypeCategory(
      */
     val id: Byte
 }
-final case object Category1ComputationalTypeCategory
+case object Category1ComputationalTypeCategory
         extends ComputationalTypeCategory(1) {
-    final val id: Byte = 1.toByte
+    final val id /*: Byte*/ = 1.toByte
 }
-final case object Category2ComputationalTypeCategory
+case object Category2ComputationalTypeCategory
         extends ComputationalTypeCategory(2) {
-    final val id: Byte = 2.toByte
+    final val id /*: Byte*/ = 2.toByte
 }
 
 /**
@@ -172,15 +172,15 @@ sealed abstract class Type extends UID with scala.math.Ordered[Type] {
 
     def asReferenceType: ReferenceType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to a ReferenceType")
+            "a "+this.getClass.getSimpleName+" cannot be cast to a ReferenceType")
 
     def asArrayType: ArrayType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to an ArrayType")
+            "a "+this.getClass.getSimpleName+" cannot be cast to an ArrayType")
 
     def asObjectType: ObjectType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to an ObjectType")
+            "a "+this.getClass.getSimpleName+" cannot be cast to an ObjectType")
 
     /**
      * A String representation of this type as it would be used in Java source code.
@@ -330,7 +330,7 @@ object ReferenceType {
         if (rt.charAt(0) == '[')
             ArrayType(FieldType(rt.substring(1)))
         else
-            ObjectType(rt);
+            ObjectType(rt)
     }
 }
 
@@ -392,7 +392,7 @@ sealed abstract class CharType private () extends BaseType {
     override def toString() = "CharType"
 
 }
-final case object CharType extends CharType
+case object CharType extends CharType
 
 sealed abstract class DoubleType private () extends BaseType {
 
@@ -590,7 +590,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
  *
  * @author Michael Eichberg
  */
-final object ObjectType {
+object ObjectType {
 
     import java.util.concurrent.atomic.AtomicInteger
     import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -853,7 +853,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
  *
  * @author Michael Eichberg
  */
-final object ArrayType {
+object ArrayType {
 
     import java.util.concurrent.atomic.AtomicInteger
     import java.util.WeakHashMap

@@ -30,11 +30,10 @@ package org.opalj
 package br
 package reader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
-import bi.reader.AnnotationAbstractions
-import bi.reader.AnnotationDefault_attributeReader
-import bi.reader.ElementValuePairsReader
+import org.opalj.bi.reader.AnnotationAbstractions
+import org.opalj.bi.reader.ElementValuePairsReader
 
 /**
  * Factory methods to create representations of Java annotations.

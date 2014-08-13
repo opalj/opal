@@ -80,7 +80,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case that: ClassValue if (this.value eq that.value) ⇒
+                case that: ClassValue if this.value eq that.value ⇒
                     NoUpdate
                 case _ ⇒
                     val answer = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)

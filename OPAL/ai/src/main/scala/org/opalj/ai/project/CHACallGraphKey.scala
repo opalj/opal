@@ -30,15 +30,8 @@ package org.opalj
 package ai
 package project
 
-import scala.collection.Set
-import scala.collection.Map
+import org.opalj.br.analyses._
 
-import br._
-import br.analyses._
-
-import domain._
-import domain.l0
-import domain.l1
 
 /**
  * The ''key'' object to get a call graph that was calculated using the CHA algorithm.

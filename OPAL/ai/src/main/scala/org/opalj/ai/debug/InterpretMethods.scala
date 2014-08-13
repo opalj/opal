@@ -32,13 +32,9 @@ package debug
 
 import java.io.File
 import java.net.URL
-import java.util.zip.ZipFile
-import java.io.DataInputStream
-import java.io.ByteArrayInputStream
 
 import scala.Console._
 import scala.util.control.ControlThrowable
-import scala.collection.JavaConversions.enumerationAsScalaIterator
 
 import org.opalj.br._
 import org.opalj.br.analyses._
@@ -168,7 +164,7 @@ object InterpretMethodsAnalysis {
                         None
                     } catch {
                         case ct: ControlThrowable ⇒ throw ct
-                        case t: Throwable ⇒ {
+                        case t: Throwable ⇒
                             // basically, we want to catch everything!
                             Some((
                                 project.source(classFile.thisType).get.toString,
@@ -176,7 +172,6 @@ object InterpretMethodsAnalysis {
                                 method,
                                 t)
                             )
-                        }
                     }
                 }
 

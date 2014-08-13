@@ -50,7 +50,7 @@ case class INSTANCEOF(
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 3
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =

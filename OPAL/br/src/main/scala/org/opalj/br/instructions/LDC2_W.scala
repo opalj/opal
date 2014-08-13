@@ -45,11 +45,11 @@ sealed abstract class LDC2_W[@specialized(Long, Double) T <: Any]
     final def mnemonic: String = "ldc2_w"
 
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
+        indexOfNextInstruction(currentPC, false)
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 1 + 2
 
 }

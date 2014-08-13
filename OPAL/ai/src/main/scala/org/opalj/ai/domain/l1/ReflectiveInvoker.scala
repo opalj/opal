@@ -97,7 +97,7 @@ trait ReflectiveInvoker extends JavaObjectConversion { this: Domain ⇒
                         Console.println(
                             Console.YELLOW+
                                 "[warn] calling the method \""+descriptor.toJava(name)+"\" is not possible ("+
-                                e.getMessage()+
+                                e.getMessage+
                                 ") class is not found on the JVM's classpath."+
                                 Console.RESET
                         )

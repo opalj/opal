@@ -147,7 +147,7 @@ sealed abstract class MethodDescriptor
 // (Done after a study of the heap memory usage)
 //
 
-private final object NoArgumentAndNoReturnValueMethodDescriptor
+private object NoArgumentAndNoReturnValueMethodDescriptor
         extends MethodDescriptor {
 
     override def returnType = VoidType
@@ -181,10 +181,8 @@ private final class NoArgumentMethodDescriptor(
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: NoArgumentMethodDescriptor ⇒
-                (that.returnType eq this.returnType)
-            case _ ⇒
-                false
+            case that: NoArgumentMethodDescriptor ⇒ that.returnType eq this.returnType
+            case _ ⇒ false
         }
     }
 }
@@ -275,12 +273,12 @@ private final class MultiArgumentsMethodDescriptor(
     override def parametersCount: Int = parameterTypes.size
 
     override def equalParameters(other: MethodDescriptor): Boolean =
-        (other.parameterTypes == this.parameterTypes)
+        other.parameterTypes == this.parameterTypes
 
-    final override val hashCode: Int =
+    override val hashCode: Int =
         (returnType.hashCode() * 13) + parameterTypes.hashCode
 
-    final override def equals(other: Any): Boolean = {
+    override def equals(other: Any): Boolean = {
         other match {
             case that: MethodDescriptor ⇒
                 this.parametersCount == that.parametersCount &&

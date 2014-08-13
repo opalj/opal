@@ -30,7 +30,7 @@ package org.opalj
 package br
 package reader
 
-import bi.reader.ConstantValue_attributeReader
+import org.opalj.bi.reader.ConstantValue_attributeReader
 
 /**
  * @author Michael Eichberg

@@ -32,7 +32,7 @@ package reader
 
 import scala.collection.concurrent.TrieMap
 
-import instructions._
+import org.opalj.br.instructions._
 
 class BytecodeInstructionsCache {
 

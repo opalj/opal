@@ -202,7 +202,7 @@ trait ValuesDomain {
          * @note It is in general not recommended/needed to override this method.
          *
          * @param pc The program counter of the instruction where the paths converge.
-         * @param value The "new" domain value with which this domain value should be
+         * @param that The "new" domain value with which this domain value should be
          *      joined. The caller has to ensure that the given value and `this` value
          *      are guaranteed to be two different objects.
          * @return [[MetaInformationUpdateIllegalValue]] or the result of calling
@@ -243,7 +243,7 @@ trait ValuesDomain {
          */
         def abstractsOver(other: DomainValue): Boolean = {
             if (this eq other)
-                return true;
+                return true
 
             val result = this.join(Int.MinValue /*Irrelevant*/ , other)
             result.isNoUpdate ||

@@ -84,7 +84,7 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 5
 
     final def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions

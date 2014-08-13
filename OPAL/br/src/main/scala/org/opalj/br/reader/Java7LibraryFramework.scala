@@ -30,8 +30,8 @@ package org.opalj
 package br
 package reader
 
-import bi.reader.AttributesReader
-import bi.reader.SkipUnknown_attributeReader
+import org.opalj.bi.reader.AttributesReader
+import org.opalj.bi.reader.SkipUnknown_attributeReader
 
 /**
  * This "framework" can be used to read in Java 7 (version 51) class files if only

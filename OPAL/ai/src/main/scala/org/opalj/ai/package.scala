@@ -160,13 +160,13 @@ package object ai {
             localsArray: domain.LocalsArray): String = {
         (
             for {
-                ((operands, locals), pc) ← (operandsArray.zip(localsArray)).zipWithIndex
+                ((operands, locals), pc) ← operandsArray.zip(localsArray).zipWithIndex
                 if operands != null /*|| locals != null*/
             } yield {
                 val localsWithIndex =
                     for {
                         (local, index) ← locals.zipWithIndex
-                        if (local != null)
+                        if local ne null
                     } yield {
                         "("+index+":"+local+")"
                     }

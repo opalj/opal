@@ -30,9 +30,7 @@ package org.opalj
 package br
 package reader
 
-import reflect.ClassTag
-
-import bi.reader.ClassFileReader
+import org.opalj.bi.reader.ClassFileReader
 
 /**
  *

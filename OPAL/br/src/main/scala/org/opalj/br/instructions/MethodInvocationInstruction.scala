@@ -73,7 +73,7 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
     def isVirtualMethodCall: Boolean
 
     override def toString: String =
-        this.getClass().getSimpleName()+"\n"+
+        this.getClass.getSimpleName+"\n"+
             declaringClass.toJava+"\n"+name+" "+methodDescriptor.toUMLNotation
 
 }

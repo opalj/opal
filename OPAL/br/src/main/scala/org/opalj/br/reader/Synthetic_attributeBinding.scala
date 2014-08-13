@@ -30,7 +30,7 @@ package org.opalj
 package br
 package reader
 
-import bi.reader.Synthetic_attributeReader
+import org.opalj.bi.reader.Synthetic_attributeReader
 
 /**
  * Represents Java's Synthetic attribute.

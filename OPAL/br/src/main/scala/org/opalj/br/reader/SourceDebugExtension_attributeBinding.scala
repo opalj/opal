@@ -30,7 +30,7 @@ package org.opalj
 package br
 package reader
 
-import bi.reader.SourceDebugExtension_attributeReader
+import org.opalj.bi.reader.SourceDebugExtension_attributeReader
 
 /**
  * Provides the factory method to create a source debug extension attribute.

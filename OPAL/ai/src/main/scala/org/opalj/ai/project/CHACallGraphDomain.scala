@@ -34,11 +34,8 @@ import scala.collection.Set
 import scala.collection.Map
 
 import br._
-import br.analyses.Project
 
 import domain._
-import domain.l0
-import domain.l1
 
 /**
  * Domain object that can be used to calculate a call graph using CHA. This domain
@@ -121,6 +118,8 @@ trait CHACallGraphDomain extends CallGraphDomain {
         }
     }
 
+
+    // FIXME The use of the parameter "isStaticMethod" does not seem to make sense in the following!
     // handles method calls where the target method can statically be resolved
     @inline protected[this] def resolvedCall(
         pc: PC,
@@ -246,7 +245,7 @@ trait CHACallGraphDomain extends CallGraphDomain {
         descriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
         // for invokespecial the dynamic type is not "relevant" (even for Java 8) 
-        resolvedCall(pc, declaringClass, name, descriptor, true, operands)
+        resolvedCall(pc, declaringClass, name, descriptor, staticMethod = true, operands)
         super.invokespecial(pc, declaringClass, name, descriptor, operands)
     }
 
@@ -259,7 +258,7 @@ trait CHACallGraphDomain extends CallGraphDomain {
         name: String,
         descriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
-        resolvedCall(pc, declaringClass, name, descriptor, false, operands)
+        resolvedCall(pc, declaringClass, name, descriptor, staticMethod = false, operands)
         super.invokestatic(pc, declaringClass, name, descriptor, operands)
     }
 }

@@ -30,7 +30,7 @@ package org.opalj
 package br
 package reader
 
-import instructions._
+import org.opalj.br.instructions._
 
 trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBinding {
 

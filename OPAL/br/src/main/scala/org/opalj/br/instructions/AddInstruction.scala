@@ -44,7 +44,7 @@ abstract class AddInstruction extends ArithmeticInstruction {
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 1
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =

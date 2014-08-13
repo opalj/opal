@@ -30,8 +30,8 @@ package org.opalj
 package br
 package reader
 
-import bi.{ AttributeParent, AttributesParent }
-import bi.reader.Signature_attributeReader
+import org.opalj.bi.AttributeParent
+import org.opalj.bi.reader.Signature_attributeReader
 
 /**
  * Implements the factory method defined and used by the generic signature attribute reader.

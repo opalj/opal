@@ -74,7 +74,7 @@ trait IdentityBasedAliasBreakUpDetection extends CoreDomainFunctionality {
 
             var opi = -1;
             oldOperands.foreach { op ⇒
-                val previousLocation = aliasInformation.get(op);
+                val previousLocation = aliasInformation.get(op)
                 if (previousLocation == null)
                     aliasInformation.put(op, opi)
                 else {
@@ -89,7 +89,7 @@ trait IdentityBasedAliasBreakUpDetection extends CoreDomainFunctionality {
             var li = 0;
             oldLocals.foreach { l ⇒
                 if ((l ne null) && (l ne TheIllegalValue)) {
-                    val previousLocation = aliasInformation.get(l);
+                    val previousLocation = aliasInformation.get(l)
                     if (previousLocation == null)
                         aliasInformation.put(l, li)
                     else {

@@ -30,7 +30,6 @@ package org.opalj
 package br
 
 import bi.ACC_ABSTRACT
-import bi.ACC_FINAL
 import bi.ACC_STRICT
 import bi.ACC_NATIVE
 import bi.ACC_BRIDGE
@@ -45,6 +44,9 @@ import org.opalj.bi.ACC_PUBLIC
  *
  * Method objects are constructed using the companion object's factory methods.
  *
+ * @note Methods have – by default – no link to their defining [[ClassFile]]. However,
+ *      if a [[analyses.Project]] is available then it is possible to get a `Method`'s
+ *      [[ClassFile]] by using `Project`'s `classFile(Method)` method.
  * @note Equality of methods is – by purpose – reference based.
  *
  * @param accessFlags The ''access flags'' of this method. Though it is possible to
@@ -171,7 +173,7 @@ final class Method private (
     override def toString(): String = {
         AccessFlags.toStrings(accessFlags, AccessFlagsContexts.METHOD).mkString("", " ", " ") +
             descriptor.toJava(name) +
-            attributes.view.map(_.getClass().getSimpleName()).mkString(" « ", ", ", " »")
+            attributes.view.map(_.getClass.getSimpleName).mkString(" « ", ", ", " »")
     }
 
 }

@@ -30,9 +30,9 @@ package org.opalj
 package br
 package reader
 
-import bi.reader.BootstrapMethods_attributeReader
+import org.opalj.bi.reader.BootstrapMethods_attributeReader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
 /**
  * Final bindings and factory methods for the ''BoostrapMethods'' attribute.

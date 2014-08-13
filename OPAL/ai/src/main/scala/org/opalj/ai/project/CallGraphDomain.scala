@@ -33,10 +33,10 @@ package project
 import scala.collection.Set
 import scala.collection.Map
 
-import domain._
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.ai.domain._
 
-import br._
-import br.analyses._
 
 /**
  * Common interface of all domains that collect the edges of a call graph

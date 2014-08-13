@@ -28,7 +28,6 @@
  */
 import org.opalj.br._
 import org.opalj.br.analyses._
-import org.opalj.br.instructions._
 
 object ClassHierarchy {
 

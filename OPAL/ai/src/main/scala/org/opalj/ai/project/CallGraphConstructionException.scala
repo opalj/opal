@@ -59,7 +59,7 @@ case class CallGraphConstructionException(
             }
 
         message += realCause.toString
-        message += realCause.getStackTrace().map(_.toString()).mkString("\n\t", "\n\t", "")
+        message += realCause.getStackTrace.map(_.toString()).mkString("\n\t", "\n\t", "")
         message
     }
 
@@ -70,18 +70,18 @@ case class CallGraphConstructionException(
                 case _                                  ⇒ cause
             }
 
-        val stacktrace = realCause.getStackTrace()
+        val stacktrace = realCause.getStackTrace
         val stacktraceExcerpt =
             if (stacktrace != null && stacktrace.size > 0) {
                 val top = stacktrace(0)
-                Some(top.getFileName()+"["+top.getClassName()+":"+top.getLineNumber()+"]")
+                Some(top.getFileName+"["+top.getClassName+":"+top.getLineNumber+"]")
             } else
                 None
         classFile.thisType.toJava+"{ "+
             method.toJava+" ⚡ "+
             RED +
-            realCause.getClass().getSimpleName()+": "+
-            realCause.getMessage() +
+            realCause.getClass.getSimpleName+": "+
+            realCause.getMessage +
             stacktraceExcerpt.map(": "+_).getOrElse("") +
             RESET+
             " }"

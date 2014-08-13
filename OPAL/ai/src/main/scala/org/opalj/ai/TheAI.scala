@@ -29,9 +29,6 @@
 package org.opalj
 package ai
 
-import org.opalj.br.Code
-import org.opalj.br.instructions.Instruction
-
 /**
  * Makes the instance of the abstract interpreter that performs the
  * abstract interpretation available.
