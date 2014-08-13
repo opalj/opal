@@ -67,7 +67,7 @@ sealed abstract class AIResult {
      *
      * For those instruction that were never executed (potentially dead code if the
      * abstract interpretation succeeded) the operands array will be empty (the
-     * value will be `null.).
+     * value will be `null`).
      */
     val operandsArray: domain.OperandsArray
 

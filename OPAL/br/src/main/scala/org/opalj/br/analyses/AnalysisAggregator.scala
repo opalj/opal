@@ -47,8 +47,6 @@ import java.net.URL
 class AnalysisAggregator[Source, AnalysisResult]
         extends Analysis[Source, Iterable[AnalysisResult]] {
 
-    import scala.collection.mutable.Set
-
     protected[this] var analyses = List.empty[Analysis[Source, AnalysisResult]]
 
     protected[this] var analyzeInParallel = true

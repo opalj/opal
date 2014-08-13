@@ -38,7 +38,7 @@ import org.opalj.br.ComputationalTypeInt
 
 /**
  * Base implementation of the `TypeLevelIntegerValues` trait that requires that
- * the domain`s `Value` trait is not extended. This implementation satisfies
+ * the domain's Value` trait is not extended. This implementation satisfies
  * the requirements of OPAL w.r.t. the domain's computational type. Additionally,
  * it collects information about a value's range, if possible.
  *
@@ -75,7 +75,7 @@ trait DefaultTypeLevelIntegerValues
                 case _             ⇒ StructuralUpdate(AnIntegerValue)
             }
 
-        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
+        override def abstractsOver(other: DomainValue): Boolean = other eq this
 
     }
 

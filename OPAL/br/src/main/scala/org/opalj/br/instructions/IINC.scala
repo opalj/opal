@@ -51,7 +51,7 @@ case class IINC(
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int = {
+        modifiedByWide: Boolean): Int = {
         if (modifiedByWide) {
             currentPC + 1 + 4
         } else {

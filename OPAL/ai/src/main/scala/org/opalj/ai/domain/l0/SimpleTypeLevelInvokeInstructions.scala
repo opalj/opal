@@ -31,12 +31,11 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+import org.opalj.util.{ Yes, Unknown }
 
-import org.opalj.br.{ Type, ObjectType, ReferenceType }
+import org.opalj.br.{ ObjectType, ReferenceType }
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.BootstrapMethod
-import org.opalj.br.analyses.{ Project, ClassHierarchy }
 
 /**
  * Most basic handling of method invocations that determines the value that is

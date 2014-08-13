@@ -55,19 +55,19 @@ case class UnpackedLineNumberTable(
         var lastLineNumber: LineNumber = null
         breakable {
             while (lnsIterator.hasNext) {
-                var currentLineNumber = lnsIterator.next
+                var currentLineNumber = lnsIterator.next()
                 if (currentLineNumber.startPC <= pc) {
                     lastLineNumber = currentLineNumber
                 } else {
-                    break
+                    break()
                 }
             }
         }
 
         if (lastLineNumber eq null)
-            return None
+            None
         else
-            return Some(lastLineNumber.lineNumber)
+            Some(lastLineNumber.lineNumber)
     }
 
 }

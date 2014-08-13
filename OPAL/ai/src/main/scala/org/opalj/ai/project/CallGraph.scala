@@ -30,13 +30,10 @@ package org.opalj
 package ai
 package project
 
-import scala.collection.Set
 import scala.collection.Map
 
-import br._
-import br.analyses.{ SomeProject, Project }
-
-import domain._
+import org.opalj.br._
+import org.opalj.br.analyses.SomeProject
 
 
 /**

@@ -38,11 +38,11 @@ package instructions
 abstract class SynchronizationInstruction extends Instruction {
 
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
+        indexOfNextInstruction(currentPC, false)
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 1
 
 }

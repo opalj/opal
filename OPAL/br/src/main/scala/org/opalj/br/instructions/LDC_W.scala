@@ -45,11 +45,11 @@ sealed abstract class LDC_W[@specialized(Int, Float) T]
     final def mnemonic: String = "ldc_w"
 
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
+        indexOfNextInstruction(currentPC, false)
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 3
 }
 
@@ -88,5 +88,4 @@ object LDC_W {
 
     def unapply[T](ldc: LDC_W[T]): Option[T] = Some(ldc.value)
 }
-
 

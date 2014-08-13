@@ -42,7 +42,7 @@ abstract class DivideInstruction extends ArithmeticInstruction {
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 1
 
 }

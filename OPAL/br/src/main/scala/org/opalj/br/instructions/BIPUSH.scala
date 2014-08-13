@@ -48,7 +48,7 @@ class BIPUSH private (
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 2
 
     override def equals(other: Any): Boolean = {

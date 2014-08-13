@@ -31,10 +31,6 @@ package ai
 package domain
 package l0
 
-import org.opalj.ai.Computation
-import org.opalj.ai.ComputationWithSideEffectOnly
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.Configuration
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.util.Unknown

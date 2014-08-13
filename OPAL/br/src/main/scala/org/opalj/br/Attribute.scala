@@ -29,8 +29,6 @@
 package org.opalj
 package br
 
-import java.util.concurrent.atomic.AtomicInteger
-
 /**
  * A class file attribute.
  *

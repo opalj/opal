@@ -139,11 +139,11 @@ object XHTML {
                     writeAndOpenDump(
                         dump(
                             classFile.get, method.get,
-                            "Dump generated due to exception: "+e.getMessage(),
+                            "Dump generated due to exception: "+e.getMessage,
                             result)
                     )
                 } else {
-                    Console.err.println("dump suppressed: "+e.getMessage())
+                    Console.err.println("dump suppressed: "+e.getMessage)
                 }
                 throw e
         }
@@ -232,7 +232,7 @@ object XHTML {
 
         try {
             if (Desktop.isDesktopSupported) {
-                val desktop = Desktop.getDesktop()
+                val desktop = Desktop.getDesktop
                 val file = File.createTempFile("OPAL-AI-Dump", ".html")
                 val fos = new FileOutputStream(file)
                 fos.write(node.toString.getBytes("UTF-8"))
@@ -251,17 +251,17 @@ object XHTML {
     }
 
     private def styles: String =
-        process(this.getClass().getResourceAsStream("dump.head.fragment.css"))(
+        process(this.getClass.getResourceAsStream("dump.head.fragment.css"))(
             scala.io.Source.fromInputStream(_).mkString
         )
 
     private def jquery: String =
-        process(this.getClass().getResourceAsStream("jquery.js"))(
+        process(this.getClass.getResourceAsStream("jquery.js"))(
             scala.io.Source.fromInputStream(_).mkString
         )
 
     private def colResizable: String =
-        process(this.getClass().getResourceAsStream("colResizable-1.3.min.js"))(
+        process(this.getClass.getResourceAsStream("colResizable-1.3.min.js"))(
             scala.io.Source.fromInputStream(_).mkString
         )
 
@@ -420,19 +420,19 @@ object XHTML {
 
     def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
         val node =
-            if (throwable.getStackTrace() == null ||
-                throwable.getStackTrace().size == 0) {
-                <div>{ throwable.getClass().getSimpleName()+" "+throwable.getMessage() }</div>
+            if (throwable.getStackTrace == null ||
+                throwable.getStackTrace.size == 0) {
+                <div>{ throwable.getClass.getSimpleName+" "+throwable.getMessage }</div>
             } else {
                 val stackElements =
-                    for { stackElement ← throwable.getStackTrace() } yield {
+                    for { stackElement ← throwable.getStackTrace } yield {
                         <tr>
-                            <td>{ stackElement.getClassName() }</td>
-                            <td>{ stackElement.getMethodName() }</td>
-                            <td>{ stackElement.getLineNumber() }</td>
+                            <td>{ stackElement.getClassName }</td>
+                            <td>{ stackElement.getMethodName }</td>
+                            <td>{ stackElement.getLineNumber }</td>
                         </tr>
                     }
-                val summary = throwable.getClass().getSimpleName()+" "+throwable.getMessage()
+                val summary = throwable.getClass.getSimpleName+" "+throwable.getMessage
 
                 <details>
                     <summary>{ summary }</summary>
@@ -440,8 +440,8 @@ object XHTML {
                 </details>
             }
 
-        if (throwable.getCause() ne null) {
-            val causedBy = throwableToXHTML(throwable.getCause())
+        if (throwable.getCause ne null) {
+            val causedBy = throwableToXHTML(throwable.getCause)
             <div style="background-color:yellow">{ node } <p>caused by:</p>{ causedBy }</div>
         } else {
             node
@@ -449,7 +449,7 @@ object XHTML {
     }
 
     def evaluatedInstructionsToXHTML(evaluated: List[PC]) = {
-        val header = "Evaluated instructions: "+evaluated.filter(_ >= 0).size+"<br>"
+        val header = "Evaluated instructions: "+evaluated.count(_ >= 0)+"<br>"
         val footer = ""
         val subroutineStart = "<details><summary>Subroutine</summary><div style=\"margin-left:2em;\">"
         val subroutineEnd = "</div></details>"

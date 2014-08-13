@@ -98,10 +98,10 @@ trait Analysis[Source, +AnalysisResult] {
      * The default is the simple name of the class implementing the analysis.
      */
     def title: String = {
-        if (this.getClass().isAnonymousClass() || this.getClass().isLocalClass()) {
-            this.getClass().getDeclaringClass().getSimpleName()
+        if (this.getClass.isAnonymousClass || this.getClass.isLocalClass) {
+            this.getClass.getDeclaringClass.getSimpleName
         } else {
-            val simpleName = this.getClass().getSimpleName()
+            val simpleName = this.getClass.getSimpleName
             if (simpleName.endsWith("$")) {
                 simpleName.init
             } else

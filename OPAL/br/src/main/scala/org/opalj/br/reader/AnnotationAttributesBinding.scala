@@ -30,16 +30,13 @@ package org.opalj
 package br
 package reader
 
-import reflect.ClassTag
-
-import bi.reader.AnnotationsReader
-import bi.reader.ParameterAnnotationsReader
-import bi.reader.RuntimeInvisibleAnnotations_attributeReader
-import bi.reader.RuntimeVisibleAnnotations_attributeReader
-import bi.reader.RuntimeInvisibleParameterAnnotations_attributeReader
-import bi.reader.RuntimeVisibleParameterAnnotations_attributeReader
-import bi.reader.ParameterAnnotationsReader
-import bi.reader.AnnotationDefault_attributeReader
+import org.opalj.bi.reader.AnnotationsReader
+import org.opalj.bi.reader.RuntimeInvisibleAnnotations_attributeReader
+import org.opalj.bi.reader.RuntimeVisibleAnnotations_attributeReader
+import org.opalj.bi.reader.RuntimeInvisibleParameterAnnotations_attributeReader
+import org.opalj.bi.reader.RuntimeVisibleParameterAnnotations_attributeReader
+import org.opalj.bi.reader.ParameterAnnotationsReader
+import org.opalj.bi.reader.AnnotationDefault_attributeReader
 
 /**
  * Factory methods to create representations of the attributes related to

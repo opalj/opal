@@ -98,7 +98,7 @@ trait MethodCallMethodHandle extends MethodHandle {
     def methodDescriptor: MethodDescriptor
 
     override def toJava: String = {
-        val handleType = getClass.getSimpleName.toString
+        val handleType = getClass.getSimpleName
         val typeName = receiverType.toJava
         val methodCall = name + methodDescriptor.toUMLNotation
         handleType+": "+typeName+"."+methodCall

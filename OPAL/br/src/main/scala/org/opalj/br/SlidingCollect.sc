@@ -250,12 +250,12 @@ object SlidingCollect {
                     case (
                         INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
                         INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
-                        ) ⇒ {
+                        ) ⇒
                         (receiver1 eq receiver2) &&
                             (returnType ne parameterType) && // coercion to another type performed
                             receiver1.isPrimitiveTypeWrapper &&
                             theMethods.contains(name)
-                    }
+
                     case _ ⇒ false
                 })
             } yield (classFile.fqn, method.toJava, pc)
@@ -362,11 +362,11 @@ object SlidingCollect {
                             instructions(next_pc) match {
                                 case INVOKEVIRTUAL(`receiver1`, name, NoArgumentMethodDescriptor(returnType: BaseType)) if (returnType ne parameterType) &&
                                     (receiver1.isPrimitiveTypeWrapper &&
-                                        theMethods.contains(name)) ⇒ {
+                                        theMethods.contains(name)) ⇒
                                     result = (classFile.fqn, method.toJava, pc) :: result
                                     // we have matched the sequence
                                     pc = body.pcOfNextInstruction(next_pc)
-                                }
+
                                 case _ ⇒
                                     pc = next_pc
                                     next_pc = body.pcOfNextInstruction(pc)

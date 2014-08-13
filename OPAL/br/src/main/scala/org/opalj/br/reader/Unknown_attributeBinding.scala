@@ -30,7 +30,7 @@ package org.opalj
 package br
 package reader
 
-import bi.reader.Unknown_attributeReader
+import org.opalj.bi.reader.Unknown_attributeReader
 
 /**
  * "Factory" to create unknown attributes which are used to represent class

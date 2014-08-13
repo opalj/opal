@@ -36,14 +36,6 @@ import scala.language.implicitConversions
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet0
 import org.opalj.collection.immutable.UIDSet1
-import org.opalj.ai.Domain
-import org.opalj.ai.DomainException
-import org.opalj.ai.IsAReferenceValue
-import org.opalj.ai.IsReferenceValue
-import org.opalj.ai.domain.ClassHierarchy
-import org.opalj.ai.domain.MethodCallResults
-import org.opalj.ai.domain.RecordAllThrownExceptions
-import org.opalj.ai.domain.RecordLastReturnedValues
 import org.opalj.br.ObjectType
 
 /**
@@ -102,7 +94,7 @@ trait RecordMethodCallResults
                                 exceptionType, Set.empty
                             ) + exceptionValue
                         )
-                    case utb ⇒ {
+                    case utb ⇒
                         val exceptionType =
                             classHierarchy.joinObjectTypesUntilSingleUpperBound(
                                 utb.asInstanceOf[UIDSet[ObjectType]],
@@ -113,7 +105,6 @@ trait RecordMethodCallResults
                                 exceptionType, Set.empty
                             ) + exceptionValue
                         )
-                    }
                 }
             }
 

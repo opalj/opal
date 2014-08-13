@@ -49,11 +49,11 @@ case class LOOKUPSWITCH(
     final def jumpOffsets = npairs.map(_._2) // TODO Do we want to use a stream here?
 
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
+        indexOfNextInstruction(currentPC, false)
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 1 + (3 - (currentPC % 4)) + 8 + npairs.size * 8
 
     final def nextInstructions(currentPC: PC, code: Code): PCs = {

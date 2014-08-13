@@ -40,11 +40,11 @@ abstract class ShiftInstruction extends ArithmeticInstruction {
     final def runtimeExceptions: List[ObjectType] = Nil
 
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
+        indexOfNextInstruction(currentPC, false)
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 1
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =

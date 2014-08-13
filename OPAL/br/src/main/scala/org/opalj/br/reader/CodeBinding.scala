@@ -30,7 +30,7 @@ package org.opalj
 package br
 package reader
 
-import instructions.Instruction
+import org.opalj.br.instructions.Instruction
 
 /**
  *

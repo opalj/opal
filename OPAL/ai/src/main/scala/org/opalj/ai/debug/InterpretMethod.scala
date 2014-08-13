@@ -121,7 +121,8 @@ object InterpretMethod {
                     classOf[Project[java.net.URL]],
                     classOf[ClassFile],
                     classOf[Method])
-            return constructor.newInstance(project, classFile, method)
+
+            constructor.newInstance(project, classFile, method)
         }
 
         val file = new java.io.File(fileName)
@@ -135,7 +136,7 @@ object InterpretMethod {
                 Project(file)
             } catch {
                 case e: Exception ⇒
-                    println(RED+"[error] Cannot process file: "+e.getMessage()+"."+RESET)
+                    println(RED+"[error] Cannot process file: "+e.getMessage+"."+RESET)
                     return ;
             }
 
@@ -188,7 +189,7 @@ object InterpretMethod {
                 method.body.get,
                 Some(
                     "Created: "+(new java.util.Date).toString+"<br>"+
-                        "Domain: "+domainClass.getName()+"<br>"+
+                        "Domain: "+domainClass.getName+"<br>"+
                         XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
                 result.domain)(
                     result.operandsArray,
@@ -197,9 +198,9 @@ object InterpretMethod {
         } catch {
             case ife: InterpretationFailedException ⇒
                 val resultHeader =
-                    Some("<p><b>"+domainClass.getName()+"</b></p>"+
-                        ife.cause.getMessage()+"<br>"+
-                        ife.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
+                    Some("<p><b>"+domainClass.getName+"</b></p>"+
+                        ife.cause.getMessage+"<br>"+
+                        ife.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                         "Current instruction: "+ife.pc+"<br>"+
                         XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
                         ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")

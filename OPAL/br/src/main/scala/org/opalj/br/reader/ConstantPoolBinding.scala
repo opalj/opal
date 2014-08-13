@@ -31,11 +31,11 @@ package org.opalj
 package br
 package reader
 
-import language.implicitConversions
-import reflect.ClassTag
+import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
-import bi.{ AttributeParent, AttributesParent }
-import bi.reader.Constant_PoolReader
+import org.opalj.bi.{ AttributeParent, AttributesParent }
+import org.opalj.bi.reader.Constant_PoolReader
 
 /**
  * A representation of the constant pool.

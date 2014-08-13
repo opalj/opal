@@ -29,11 +29,6 @@
 package org.opalj
 package ai
 
-import scala.collection.BitSet
-
-import org.opalj.br.Code
-import org.opalj.br.instructions.Instruction
-
 /**
  * Mixin this trait if access to the operands ([[Domain#OperandsArray]])
  * and locals ([[Domain#LocalsArray]]) is needed.

@@ -61,7 +61,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
         if (operands.nonEmpty) {
             val opIt = operands.iterator
             while (opIt.hasNext) {
-                val opValue = opIt.next
+                val opValue = opIt.next()
                 if (opValue eq oldValue) {
                     newOps = newValue :: newOps
                     opsUpdated = true
@@ -180,7 +180,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
 
         afterBaseJoin(pc)
 
-        val updateType = (operandsUpdated &: localsUpdated)
+        val updateType = operandsUpdated &: localsUpdated
         joinPostProcessing(updateType, pc, thisOperands, thisLocals, newOperands, newLocals)
     }
 

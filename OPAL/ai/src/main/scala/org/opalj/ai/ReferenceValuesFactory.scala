@@ -215,7 +215,7 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
      * Called by the AI framework for each load constant method type instruction to
      * get a domain-specific representation of the method descriptor as a `MethodType`.
      *
-     * @param handle A valid method descriptor.
+     * @param descriptor A valid method descriptor.
      * @return An `InitializedObjectValue(ObjectType.MethodType)`.
      *      Hence, this method needs to be overridden
      *      if resolution of MethodType based method calls should be performed.

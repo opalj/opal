@@ -31,7 +31,6 @@ package br
 
 import java.io.File
 import java.net.URL
-import java.io.IOException
 
 /**
  * Defines convenience methods related to reading in class files.

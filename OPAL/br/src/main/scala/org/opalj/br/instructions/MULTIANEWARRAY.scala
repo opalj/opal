@@ -45,11 +45,11 @@ case class MULTIANEWARRAY(
     final def mnemonic: String = "multianewarray"
 
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
+        indexOfNextInstruction(currentPC, false)
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 4
 
 }

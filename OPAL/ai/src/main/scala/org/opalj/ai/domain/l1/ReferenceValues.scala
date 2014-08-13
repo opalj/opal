@@ -780,7 +780,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         protected def canEqual(other: SObjectValue): Boolean = true
 
         override def hashCode: Int =
-            (((theUpperTypeBound.hashCode()) * 41 +
+            ((theUpperTypeBound.hashCode * 41 +
                 (if (isPrecise) 11 else 101)) * 13 +
                 isNull.hashCode()) * 79 +
                 origin
@@ -847,7 +847,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     val thatUpperTypeBound = that.upperTypeBound
                     classHierarchy.joinUpperTypeBounds(thisUpperTypeBound, thatUpperTypeBound, true) match {
                         case UIDSet1(newUpperTypeBound) ⇒
-                            val newIsNull = (this.isNull & that.isNull)
+                            val newIsNull = this.isNull & that.isNull
                             StructuralUpdate(
                                 ObjectValue(this.origin, newIsNull, false, newUpperTypeBound))
 
@@ -934,7 +934,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         protected def canEqual(other: MObjectValue): Boolean = true
 
         override lazy val hashCode: Int =
-            (((upperTypeBound.hashCode()) * 41 +
+            ((upperTypeBound.hashCode * 41 +
                 (if (isPrecise) 11 else 101)) * 13 +
                 isNull.hashCode()) * 79 +
                 origin
@@ -1024,11 +1024,11 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         private[this] def calculateIsPrecise(): Boolean = {
             val vIt = values.iterator
-            val firstV = vIt.next
+            val firstV = vIt.next()
             var isPrecise: Boolean = firstV.isPrecise
             var theUpperTypeBound: UpperTypeBound = firstV.upperTypeBound
             while (isPrecise && vIt.hasNext) {
-                val v = vIt.next
+                val v = vIt.next()
                 if (v.isPrecise) {
                     if (!v.isNull.isYes) {
                         val upperTypeBound = v.upperTypeBound
@@ -1048,9 +1048,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         private[this] def calculateIsNull(): Answer = {
             val vIt = values.iterator
-            var isNull: Answer = vIt.next.isNull
+            var isNull: Answer = vIt.next().isNull
             while (isNull.isYesOrNo && vIt.hasNext) {
-                isNull = isNull & vIt.next.isNull
+                isNull = isNull & vIt.next().isNull
             }
             isNull
         }
