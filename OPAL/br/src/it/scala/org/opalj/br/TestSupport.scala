@@ -47,8 +47,8 @@ object TestSupport {
      *
      * @return List of class files ready to be passed to a `IndexBasedProject`.
      */
-    def readJREClassFiles: Seq[(ClassFile, java.net.URL)] = {
-        val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
+    def readJREClassFiles(cache: BytecodeInstructionsCache = new BytecodeInstructionsCache): Seq[(ClassFile, java.net.URL)] = {
+        val reader = new Java8FrameworkWithCaching(cache)
         val classFiles = reader.ClassFiles(JRELibraryFolder)
         if (classFiles.isEmpty)
             sys.error(s"loading the JRE (${JRELibraryFolder}) failed")
@@ -56,6 +56,6 @@ object TestSupport {
         classFiles.toSeq
     }
 
-    def createJREProject: Project[java.net.URL] = Project(readJREClassFiles)
+    def createJREProject: Project[java.net.URL] = Project(readJREClassFiles())
 
 }
