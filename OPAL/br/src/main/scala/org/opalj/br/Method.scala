@@ -215,8 +215,8 @@ object Method {
     }
 
     /**
-     * Factory method for Method objects. 
-     * 
+     * Factory method for Method objects.
+     *
      * @example A new method that is public abstract that takes no parameters and
      * returns void and has the name "myMethod" can be created as shown next:
      * {{{
@@ -234,26 +234,4 @@ object Method {
 
     def unapply(method: Method): Option[(Int, String, MethodDescriptor)] =
         Some((method.accessFlags, method.name, method.descriptor))
-}
-/**
- * Provides pattern matching facilities for methods with bodies.
- *
- * @example
- * Matching all methods that have a method body:
- * {{{
- * for {
- *      classFile ← project.classFiles
- *      method @ MethodWithBody(code) ← classFile.methods
- * } {
- *      // the type of method is "..resolved.Method"
- *      // the type of code is "..resolved.Code"
- * }
- * }}}
- *
- * @author Michael Eichberg
- */
-object MethodWithBody {
-
-    def unapply(method: Method): Option[Code] = method.body
-
 }

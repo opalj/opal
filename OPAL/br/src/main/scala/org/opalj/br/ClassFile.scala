@@ -58,7 +58,7 @@ import scala.util.control.ControlThrowable
  *      and then by method descriptor.
  * @param attributes This class file's reified attributes. Which attributes
  *    are reified depends on the configuration of the class file reader; e.g.,
- *    [[org.opalj.br.reader.Java7Framework]].
+ *    [[org.opalj.br.reader.Java8Framework]].
  *    The JVM specification defines the following attributes:
  *    - ''InnerClasses''
  *    - ''EnclosingMethod''
@@ -321,7 +321,7 @@ final class ClassFile private (
         attributes collectFirst { case SourceDebugExtension(s) ⇒ s }
 
     /**
-     * All constructors/instance initialization methods defined by this class.
+     * All constructors/instance initialization methods (`<init>`) defined by this class.
      *
      * (This does not include static initializers.)
      */
@@ -355,7 +355,7 @@ final class ClassFile private (
     }
 
     /**
-     * The set of all instance methods. I.e., the set of methods that are not static,
+     * All defined instance methods. I.e., all methods that are not static,
      * constructors, or static initializers.
      */
     def instanceMethods: Iterable[Method] =
