@@ -218,7 +218,7 @@ object XHTML {
         createXHTML(
             title,
             Seq[Node](
-                title.map(t => <h1>{ t }</h1>).getOrElse(Text("")),
+                title.map(t ⇒ <h1>{ t }</h1>).getOrElse(Text("")),
                 annotations,
                 scala.xml.Unparsed(resultHeader.getOrElse("")),
                 dumpTable(code, domain)(operandsArray, localsArray)
@@ -292,19 +292,37 @@ object XHTML {
             id.intValue()
         }
 
+        // We cannot create "reasonable output in case of VERY VERY large methods"
+        // E.g., a method with 30000 instructions and 1000 locals would create
+        // a table with ~ 30.000.000 rows...
+        val rowsCount = localsArray.size * localsArray(0).size
+        val operandsOnly = rowsCount > 100000
+        val disclaimer =
+            if (operandsOnly) {
+                <b>Output is restricted to the operands as the number of rows would be too large otherwise: { rowsCount } </b>
+            } else
+                NodeSeq.Empty
+
         <div>
+            { disclaimer }
             <table>
                 <thead>
                     <tr>
                         <th class="pc">PC</th>
                         <th class="instruction">Instruction</th>
                         <th class="stack">Operand Stack</th>
-                        <th class="registers">Registers</th>
-                        <th class="properties">Properties</th>
+                        {
+                            if (operandsOnly)
+                                NodeSeq.Empty
+                            else {
+                                <th class="registers">Registers</th>
+                                <th class="properties">Properties</th>
+                            }
+                        }
                     </tr>
                 </thead>
                 <tbody>
-                    { dumpInstructions(code, domain)(operandsArray, localsArray)(Some(idsLookup)) }
+                    { dumpInstructions(code, domain, operandsOnly)(operandsArray, localsArray)(Some(idsLookup)) }
                 </tbody>
             </table>
             { exceptionHandlers }
@@ -329,10 +347,12 @@ object XHTML {
 
     private def dumpInstructions(
         code: Code,
-        domain: Domain)(
+        domain: Domain,
+        operandsOnly: Boolean)(
             operandsArray: TheOperandsArray[domain.Operands],
             localsArray: TheLocalsArray[domain.Locals])(
                 implicit ids: Option[AnyRef ⇒ Int]): Array[Node] = {
+
         val indexedExceptionHandlers = indexExceptionHandlers(code)
         val joinInstructions = code.joinInstructions
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
@@ -342,7 +362,8 @@ object XHTML {
             dumpInstruction(
                 pc, code.lineNumber(pc), instruction, joinInstructions.contains(pc),
                 Some(exceptionHandlers),
-                domain)(
+                domain,
+                operandsOnly)(
                     operands, locals)
         }
     }
@@ -353,10 +374,12 @@ object XHTML {
         instruction: Instruction,
         isJoinInstruction: Boolean,
         exceptionHandlers: Option[String],
-        domain: Domain)(
+        domain: Domain,
+        operandsOnly: Boolean)(
             operands: domain.Operands,
             locals: domain.Locals)(
                 implicit ids: Option[AnyRef ⇒ Int]): Node = {
+
         val pcAsXHTML = Unparsed(
             (if (isJoinInstruction) "⇶ " else "") +
                 pc.toString +
@@ -370,8 +393,15 @@ object XHTML {
             <td class="pc">{ pcAsXHTML }</td>
             <td class="instruction">{ Unparsed(instruction.toString(pc).replace("\n", "<br>")) }</td>
             <td class="stack">{ dumpStack(operands) }</td>
-            <td class="locals">{ dumpLocals(locals) }</td>
-            <td class="properties">{ properties }</td>
+            {
+                if (operandsOnly)
+                    NodeSeq.Empty
+                else {
+
+                    <td class="locals">{ dumpLocals(locals) }</td>
+                    <td class="properties">{ properties }</td>
+                }
+            }
         </tr>
     }
 

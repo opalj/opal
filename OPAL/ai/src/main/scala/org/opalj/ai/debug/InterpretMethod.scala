@@ -180,8 +180,16 @@ object InterpretMethod {
             val result =
                 if (doTrace)
                     AI(classFile, method, createDomain(project, classFile, method))
-                else
-                    BaseAI(classFile, method, createDomain(project, classFile, method))
+                else {
+                    val body = method.body.get
+                    println("Starting abstract interpretation of: ")
+                    println("\t"+classFile.thisType.toJava+"{")
+                    println("\t\t"+method.toJava+"[instructions="+body.instructions.size+"; #max_stack="+body.maxStack+"; #locals="+body.maxLocals+"]")
+                    println("\t}")
+                    val result = BaseAI(classFile, method, createDomain(project, classFile, method))
+                    println("Finished abstract interpretation.")
+                    result
+                }
             val domain = result.domain
             writeAndOpenDump(dump(
                 Some(classFile),
