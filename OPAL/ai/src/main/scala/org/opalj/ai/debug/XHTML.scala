@@ -295,7 +295,7 @@ object XHTML {
         // We cannot create "reasonable output in case of VERY VERY large methods"
         // E.g., a method with 30000 instructions and 1000 locals would create
         // a table with ~ 30.000.000 rows...
-        val rowsCount = localsArray.size * localsArray(0).size
+        val rowsCount = code.instructionsCount * code.maxLocals
         val operandsOnly = rowsCount > 100000
         val disclaimer =
             if (operandsOnly) {

@@ -76,6 +76,20 @@ case class Code(
         }
 
     /**
+     * Calculates the number of instructions. This operation has complexity O(n).
+     */
+    def instructionsCount: Int = {
+        var c = 0
+        var pc = 0
+        val max = instructions.size
+        while (pc < max) {
+            c += 1
+            pc = pcOfNextInstruction(pc)
+        }
+        c
+    }
+
+    /**
      * Returns the set of all program counters where two or more control flow
      * paths joins.
      *
@@ -99,7 +113,7 @@ case class Code(
         var pc = 0
         while (pc < instructionsCount) {
             val instruction = instructions(pc)
-            val nextPC = instruction.indexOfNextInstruction(pc, this)
+            val nextPC = pcOfNextInstruction(pc)
             @inline def runtimeSuccessor(pc: PC) {
                 if (isReached.contains(pc))
                     joinInstructions += pc
@@ -191,27 +205,27 @@ case class Code(
      *      program counter will be equivalent to the length of the Code/Instructions
      *      array.
      */
-    @inline final def pcOfNextInstruction(currentPC: PC): PC =
+    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
         instructions(currentPC).indexOfNextInstruction(currentPC, this)
-    // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!        
-    //    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
-    //        val max_pc = instructions.size
-    //        var nextPC = currentPC + 1
-    //        while (nextPC < max_pc && (instructions(nextPC) eq null))
-    //            nextPC += 1
-    //
-    //        nextPC
-    //    }
+        // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!        
+        //    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
+        //        val max_pc = instructions.size
+        //        var nextPC = currentPC + 1
+        //        while (nextPC < max_pc && (instructions(nextPC) eq null))
+        //            nextPC += 1
+        //
+        //        nextPC
+        //    }
+    }
 
     /**
      * Returns the line number table - if any.
      *
-     * ==Note==
-     * A code attribute is allowed to have multiple line number tables. However, all
-     * tables are merged into one by OPAL at class loading time.
+     * @note A code attribute is allowed to have multiple line number tables. However, all
+     *      tables are merged into one by OPAL at class loading time.
      *
-     * Depending on the configuration of the reader for `ClassFile`s this
-     * attribute may not be reified.
+     * @note Depending on the configuration of the reader for `ClassFile`s this
+     *      attribute may not be reified.
      */
     def lineNumberTable: Option[LineNumberTable] =
         attributes collectFirst { case lnt: LineNumberTable ⇒ lnt }
@@ -221,7 +235,7 @@ case class Code(
      * it is available.
      *
      * @param pc Index of the instruction for which we want to get the line number.
-     * @return `Some` line number or `None` if it's unavailable.
+     * @return `Some` line number or `None` if no line-number information is available.
      */
     def lineNumber(pc: PC): Option[Int] =
         lineNumberTable.flatMap(_.lookupLineNumber(pc))
@@ -259,7 +273,7 @@ case class Code(
      *
      * @param pc A valid index in the code array.
      */
-    def isModifiedByWide(pc: PC): Boolean = pc > 0 && instructions(pc - 1) == WIDE
+    @inline def isModifiedByWide(pc: PC): Boolean = pc > 0 && instructions(pc - 1) == WIDE
 
     /**
      * Collects all instructions for which the given function is defined.
