@@ -67,7 +67,7 @@ abstract class BaseDomain[Source](val project: Project[Source])
         with domain.l0.DefaultPrimitiveValuesConversions {
     domain : Configuration =>
 
-    override protected def maxSizeOfIntegerRanges: Long = 25l
+    override protected def maxCardinalityOfIntegerRanges: Long = 20l
 
 }
 

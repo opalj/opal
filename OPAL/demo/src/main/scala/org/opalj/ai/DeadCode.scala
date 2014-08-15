@@ -46,9 +46,9 @@ import org.opalj.br.MethodWithBody
 object DeadCode extends AnalysisExecutor { analysis ⇒
 
     // a value such as 16 reveals the same number of issues as a value such as 512
-    protected var maxCardinalityOfIntegerValuesSet: Int = 16
+    protected var maxCardinalityOfIntegerSets: Int = 16
 
-    protected var maxSizeOfIntegerRanges: Long = 16l
+    protected var maxCardinalityOfIntegerRanges: Long = 16l
 
     class AnalysisDomain(
         override val project: Project[java.net.URL],
@@ -74,11 +74,11 @@ object DeadCode extends AnalysisExecutor { analysis ⇒
             with domain.ProjectBasedClassHierarchy {
 
         // a value larger than ~16 has no real effect (except of taking longer...)
-        override protected def maxSizeOfIntegerRanges: Long = analysis.maxSizeOfIntegerRanges 
+        override protected def maxCardinalityOfIntegerRanges: Long = analysis.maxCardinalityOfIntegerRanges 
 
         // a value larger than ~10 has no real effect (except of taking longer...)
-        //        override protected final val maxCardinalityOfIntegerValuesSet: Int =
-        //            analysis.maxCardinalityOfIntegerValuesSet 
+        //        override protected final val maxCardinalityOfIntegerSets: Int =
+        //            analysis.maxCardinalityOfIntegerSets 
 
     }
 

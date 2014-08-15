@@ -64,7 +64,7 @@ object UselessComputations extends AnalysisExecutor {
             with domain.l1.LongValuesShiftOperators
             with domain.ProjectBasedClassHierarchy {
 
-        override protected def maxSizeOfIntegerRanges: Long = 4l
+        override protected def maxCardinalityOfIntegerRanges: Long = 4l
     }
 
     val analysis = new Analysis[URL, BasicReport] {
