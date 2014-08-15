@@ -60,7 +60,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
      * In many cases a rather (4-16) small number is completely sufficient to
      * capture typically variability.
      */
-    protected def maxCardinalityOfIntegerValuesSet: Int = 8
+    protected def maxCardinalityOfIntegerSets: Int = 8
 
     /**
      * Abstracts over all values with computational type `integer`.
@@ -438,7 +438,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                     for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue + rightValue
                     }
-                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
                     IntegerValue(pc)
@@ -461,7 +461,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue - rightValue
                 }
-                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
                     IntegerValue(pc)
@@ -477,7 +477,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue * rightValue
                 }
-                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
                     IntegerValue(pc)
@@ -492,7 +492,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
         exception: Boolean,
         results: SortedSet[Int]): IntegerValueOrArithmeticException = {
         if (results.size > 0) {
-            if (results.size <= maxCardinalityOfIntegerValuesSet) {
+            if (results.size <= maxCardinalityOfIntegerSets) {
                 if (exception)
                     ComputedValueOrException(IntegerSet(results), ArithmeticException(pc))
                 else
@@ -584,7 +584,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue & rightValue
                 }
-                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
                     IntegerValue(pc)
@@ -600,7 +600,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue | rightValue
                 }
-                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
                     IntegerValue(pc)
@@ -616,7 +616,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue << rightValue
                 }
-                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
                     IntegerValue(pc)
@@ -632,7 +632,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue >> rightValue
                 }
-                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
                     IntegerValue(pc)
@@ -649,7 +649,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                     for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue >>> rightValue
                     }
-                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
                     IntegerValue(pc)
@@ -666,7 +666,7 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
                     for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue ^ rightValue
                     }
-                if (results.size <= maxCardinalityOfIntegerValuesSet)
+                if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
                     IntegerValue(pc)

@@ -133,7 +133,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
     /**
      * Determines the maximum number of values captured by an integer value range.
      */
-    protected def maxSizeOfIntegerRanges: Long = 16l
+    protected def maxCardinalityOfIntegerRanges: Long = 16l
 
     /**
      * Abstracts over all values with computational type `integer`.

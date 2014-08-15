@@ -80,7 +80,7 @@ class DefaultPerInstructionPostProcessingTest
             with l1.DefaultIntegerRangeValues
             with l0.DefaultPrimitiveValuesConversions {
 
-        override protected def maxSizeOfIntegerRanges: Long = 25l
+        override protected def maxCardinalityOfIntegerRanges: Long = 16l
     }
 
     private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit) {

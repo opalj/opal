@@ -85,7 +85,7 @@ trait DefaultIntegerSetValues
                         // will be NO further constraints
                         NoUpdate
 
-                    else if (newValues.size > maxCardinalityOfIntegerValuesSet)
+                    else if (newValues.size > maxCardinalityOfIntegerSets)
                         StructuralUpdate(AnIntegerValue())
 
                     else if (newValues.size == this.values.size)

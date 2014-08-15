@@ -51,7 +51,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
     final val IrrelevantPC = Int.MinValue
 
     class IntegerRangesTestDomain(
-        override val maxSizeOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
+        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
             extends Domain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
