@@ -345,6 +345,8 @@ trait CoreDomainFunctionality extends ValuesDomain {
      * By default this method does nothing.
      */
     def abstractInterpretationEnded(
-        aiResult: AIResult { val domain: CoreDomainFunctionality.this.type }): Unit = { /* Nothing */ }
+        aiResult: AIResult { val domain: CoreDomainFunctionality.this.type }): Unit = {
+        /* Nothing */
+    }
 
 }

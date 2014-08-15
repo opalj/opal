@@ -148,27 +148,6 @@ trait LongValues extends l0.TypeLevelLongValues with ConcreteLongValues {
             LongValue(pc)
         }
 
-    override def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
-            LongValue(pc, v1 & v2)
-        } {
-            LongValue(pc)
-        }
-
-    override def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
-            LongValue(pc, v1 | v2)
-        } {
-            LongValue(pc)
-        }
-
-    override def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
-            LongValue(pc, v1 ^ v2)
-        } {
-            LongValue(pc)
-        }
-
     override def ldiv(
         pc: PC,
         left: DomainValue,
@@ -209,6 +188,27 @@ trait LongValues extends l0.TypeLevelLongValues with ConcreteLongValues {
                 ComputedValue(LongValue(pc))
         }
     }
+
+    override def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
+            LongValue(pc, v1 & v2)
+        } {
+            LongValue(pc)
+        }
+
+    override def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
+            LongValue(pc, v1 | v2)
+        } {
+            LongValue(pc)
+        }
+
+    override def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
+            LongValue(pc, v1 ^ v2)
+        } {
+            LongValue(pc)
+        }
 }
 
 
