@@ -64,6 +64,40 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
                 set.contains(i) should be(false)
         }
 
+        it("it should be possible to iterate over a set with just one value") {
+            var set = UShortSet.empty
+            set = 232 +≈: set
+
+            set.iterator.toSet should be(Set(232))
+        }
+
+        it("it should be possible to iterate over a set with just two values") {
+            var set = UShortSet.empty
+            set = 232 +≈: set
+            set = 23 +≈: set
+
+            set.iterator.toSet should be(Set(23, 232))
+        }
+
+        it("it should be possible to iterate over a set with just three values") {
+            var set = UShortSet.empty
+            set = 232 +≈: set
+            set = 3 +≈: set
+            set = 23 +≈: set
+
+            set.iterator.toSet should be(Set(3, 23, 232))
+        }
+
+        it("it should be possible to iterate over a set with just four values") {
+            var set = UShortSet.empty
+            set = 232 +≈: set
+            set = 3 +≈: set
+            set = 23 +≈: set
+            set = 2 +≈: set
+
+            set.iterator.toSet should be(Set(2, 3, 23, 232))
+        }
+
         it("it should be possible – though the datastructure is not intended to be used for that – to store a larger number of different values in the set") {
             val seed = 72387238787323390l
             val ValuesCount = 100000
@@ -72,12 +106,12 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
 
             rnd.setSeed(seed)
             for (i ← (0 until ValuesCount))
-                uShortSet = rnd.nextInt(0xFFFF+1) +≈: uShortSet
+                uShortSet = rnd.nextInt(0xFFFF + 1) +≈: uShortSet
 
             var scalaSet = Set.empty[Int]
             rnd.setSeed(seed)
             for (i ← (0 until ValuesCount))
-                scalaSet += rnd.nextInt(0xFFFF+1)
+                scalaSet += rnd.nextInt(0xFFFF + 1)
 
             uShortSet.size should equal(scalaSet.size) // we use a random number generator...
             info(s"stored ${scalaSet.size} elemets - using 100000 insertions and ${uShortSet.nodeCount} nodes - in the set")
@@ -85,7 +119,7 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
 
             rnd.setSeed(seed)
             for (i ← (0 until ValuesCount)) {
-                val value = rnd.nextInt(0xFFFF+1)
+                val value = rnd.nextInt(0xFFFF + 1)
                 if (!uShortSet.contains(value)) fail(s"the $i. value ($value) was not stored in the set")
             }
         }
@@ -126,7 +160,7 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
             var valueToBeAdded: UShort = 0
             try {
                 for (i ← (0 until ValuesCount)) {
-                    valueToBeAdded = rnd.nextInt(0xFFFF+1)
+                    valueToBeAdded = rnd.nextInt(0xFFFF + 1)
                     uShortSet = valueToBeAdded +≈: uShortSet
                 }
             } catch {
