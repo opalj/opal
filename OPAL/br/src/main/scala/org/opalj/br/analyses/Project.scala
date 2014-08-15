@@ -197,7 +197,7 @@ class Project[Source] private (
             if classFile.methods.exists(_.body.isDefined)
         } {
             // we distribute the classfiles among the different bins
-            // to avoid that one bin accidientally just contains
+            // to avoid that one bin accidentally just contains
             // interfaces
             groups(nextGroupId) += classFile
             nextGroupId = (nextGroupId + 1) % groupsCount

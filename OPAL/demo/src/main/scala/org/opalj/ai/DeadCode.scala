@@ -30,12 +30,17 @@ package org.opalj
 package ai
 
 import java.net.URL
+
+import scala.xml.Node
+
 import org.opalj.collection.immutable.{ UIDSet, UIDSet1 }
+import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.{ ReferenceType }
 import org.opalj.br.instructions.{ Instruction, ConditionalControlTransferInstruction }
 import org.opalj.br.MethodWithBody
+import org.opalj.ai.debug.XHTML
 
 /**
  * A shallow analysis that tries to identify dead code based on the evaluation
@@ -45,76 +50,19 @@ import org.opalj.br.MethodWithBody
  */
 object DeadCode extends AnalysisExecutor { analysis ⇒
 
-    // a value such as 16 reveals the same number of issues as a value such as 512
-    protected var maxCardinalityOfIntegerSets: Int = 16
-
-    protected var maxCardinalityOfIntegerRanges: Long = 16l
-
-    class AnalysisDomain(
-        override val project: Project[java.net.URL],
-        val method: Method)
-            extends Domain
-            with domain.DefaultDomainValueBinding
-            with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultTypeLevelFloatValues
-            with domain.l0.DefaultTypeLevelDoubleValues
-            with domain.l0.TypeLevelFieldAccessInstructions
-            with domain.l0.TypeLevelInvokeInstructions
-            with domain.l1.DefaultReferenceValuesBinding
-            with domain.l1.DefaultIntegerRangeValues
-            with domain.l1.ConstraintsBetweenIntegerValues
-            // with domain.l1.DefaultIntegerSetValues
-            with domain.l1.DefaultLongValues
-            with domain.l1.LongValuesShiftOperators
-            with domain.l1.DefaultConcretePrimitiveValuesConversions
-            with domain.DefaultHandlingOfMethodResults
-            with domain.IgnoreSynchronization
-            with domain.TheProject[java.net.URL]
-            with domain.TheMethod
-            with domain.ProjectBasedClassHierarchy {
-
-        // a value larger than ~16 has no real effect (except of taking longer...)
-        override protected def maxCardinalityOfIntegerRanges: Long = analysis.maxCardinalityOfIntegerRanges 
-
-        // a value larger than ~10 has no real effect (except of taking longer...)
-        //        override protected final val maxCardinalityOfIntegerSets: Int =
-        //            analysis.maxCardinalityOfIntegerSets 
-
-    }
-
+    private final val deadCodeAnalysis = new DeadCodeAnalysis
     val analysis = new Analysis[URL, BasicReport] {
 
-        override def title: String = "Dead Code Identification"
+        override def title: String = deadCodeAnalysis.title
 
-        override def description: String = "Identifies dead code using abstract interpretation."
+        override def description: String = deadCodeAnalysis.description
 
         override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
-            import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
+            val results @ (analysisTime, methodsWithDeadCode) =
+                deadCodeAnalysis.analyze(theProject, parameters)
 
-            val cpus = Runtime.getRuntime().availableProcessors()
-            val methodsWithDeadCode = time {
-                val results = new java.util.concurrent.ConcurrentLinkedQueue[DeadCode]()
-                for {
-                    classFiles ← theProject.groupedClassFilesWithCode(cpus).par
-                    classFile ← classFiles
-                    method @ MethodWithBody(body) ← classFile.methods
-                    domain = new AnalysisDomain(theProject, method)
-                    result = BaseAI(classFile, method, domain)
-                    operandsArray = result.operandsArray
-                    (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
-                        case (ctiPC, instruction @ ConditionalControlTransferInstruction()) if operandsArray(ctiPC) != null ⇒
-                            (ctiPC, instruction, instruction.nextInstructions(ctiPC, /*not required*/ null))
-                    }
-                    branchTarget ← branchTargetPCs.iterator
-                    if operandsArray(branchTarget) == null
-                } { // using "yield" is more convenient but a bit slower if there is not much to yield...
-                    val operands = operandsArray(ctiPC).take(2)
-                    results.add(
-                        DeadCode(classFile, method, ctiPC, body.lineNumber(ctiPC), instruction, operands)
-                    )
-                }
-                scala.collection.JavaConversions.collectionAsScalaIterable(results)
-            } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
+            val doc = XHTML.createXHTML(Some(title), DeadCodeAnalysis.resultsAsXHTML(results))
+            XHTML.writeAndOpenDump(doc)
 
             BasicReport(
                 methodsWithDeadCode.toList.sortWith((l, r) ⇒
@@ -122,24 +70,138 @@ object DeadCode extends AnalysisExecutor { analysis ⇒
                         (l.classFile.thisType == r.classFile.thisType && (
                             l.method < r.method || (
                                 l.method == r.method &&
-                                l.ctiInstruction < r.ctiInstruction
+                                l.ctiPC < r.ctiPC
                             )
                         ))
                 ).mkString(
                     "Dead code (number of dead branches: "+methodsWithDeadCode.size+"): \n",
                     "\n",
-                    "\n"))
+                    f"%nIdentified in: ${ns2sec(analysisTime)}%2.2f seconds."))
+
         }
+    }
+}
+
+class DeadCodeAnalysisDomain(
+    override val project: Project[java.net.URL],
+    override val method: Method,
+    override val maxCardinalityOfIntegerRanges: Long = 16l)
+        extends Domain
+        with domain.DefaultDomainValueBinding
+        with domain.ThrowAllPotentialExceptionsConfiguration
+        with domain.l0.DefaultTypeLevelFloatValues
+        with domain.l0.DefaultTypeLevelDoubleValues
+        with domain.l0.TypeLevelFieldAccessInstructions
+        with domain.l0.TypeLevelInvokeInstructions
+        with domain.l1.DefaultReferenceValuesBinding
+        with domain.l1.DefaultIntegerRangeValues
+        with domain.l1.ConstraintsBetweenIntegerValues
+        // with domain.l1.DefaultIntegerSetValues
+        with domain.l1.DefaultLongValues
+        with domain.l1.LongValuesShiftOperators
+        with domain.l1.DefaultConcretePrimitiveValuesConversions
+        with domain.DefaultHandlingOfMethodResults
+        with domain.IgnoreSynchronization
+        with domain.TheProject[java.net.URL]
+        with domain.TheMethod
+        with domain.ProjectBasedClassHierarchy
+
+class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
+
+    override def title: String = "Dead/Useless/Buggy Code Identification"
+
+    override def description: String = "Identifies dead/useless/buggy code using abstract interpretation."
+
+    override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
+
+        val cpus = Runtime.getRuntime().availableProcessors()
+        var analysisTime: Long = 0l
+        val methodsWithDeadCode = time {
+            val results = new java.util.concurrent.ConcurrentLinkedQueue[DeadCode]()
+            for {
+                classFiles ← theProject.groupedClassFilesWithCode(cpus).par
+                classFile ← classFiles
+                method @ MethodWithBody(body) ← classFile.methods
+                domain = new DeadCodeAnalysisDomain(theProject, method)
+                result = BaseAI(classFile, method, domain)
+                operandsArray = result.operandsArray
+                (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
+                    case (ctiPC, instruction @ ConditionalControlTransferInstruction()) if operandsArray(ctiPC) != null ⇒
+                        (ctiPC, instruction, instruction.nextInstructions(ctiPC, /*not required*/ null))
+                }
+                branchTarget ← branchTargetPCs.iterator
+                if operandsArray(branchTarget) == null
+            } { // using "yield" is more convenient but a bit slower if there is not much to yield...
+                val operands = operandsArray(ctiPC).take(2)
+                results.add(
+                    DeadCode(
+                        classFile, method,
+                        ctiPC, instruction, operands,
+                        branchTarget)
+                )
+            }
+            scala.collection.JavaConversions.collectionAsScalaIterable(results)
+        } { t ⇒ analysisTime = t }
+
+        (analysisTime, methodsWithDeadCode)
+    }
+}
+
+object DeadCodeAnalysis {
+
+    def resultsAsXHTML(results: (Long, Iterable[DeadCode])): Node = {
+        val (analysisTime, methodsWithDeadCode) = results
+
+        <table>
+            <tr>
+                <th>Class</th>
+                <th>Method</th>
+                <th class="pc">Program Counter /<br/>Line Number</th>
+                <th>Message</th>
+            </tr>
+            {
+            import scala.collection.SortedMap
+                val groupedMessages = 
+                    SortedMap.empty[String,Seq[DeadCode]] ++ 
+                    methodsWithDeadCode.groupBy(dc ⇒ dc.classFile.thisType.packageName)
+                for { (pkg, mdc) ← groupedMessages } yield {
+                    Seq(
+                        <td class="caption" colspan="4">{ pkg.replace('/', '.') }</td>,
+                        mdc.toSeq.sorted(DeadCodeOrdering).map(_.toXHTML)
+                    )
+                }.flatten
+            }
+        </table>
     }
 }
 
 case class DeadCode(
         classFile: ClassFile,
         method: Method,
-        ctiInstruction: PC,
-        lineNumber: Option[Int],
-        instruction: Instruction,
-        operands: List[_]) {
+        ctiPC: PC,
+        ctiInstruction: Instruction,
+        operands: List[_],
+        deadPC: PC) {
+
+    def ctiLineNumber: Option[PC] =
+        method.body.get.lineNumber(ctiPC)
+
+    def deadLineNumber: Option[PC] =
+        method.body.get.lineNumber(deadPC)
+
+    def toXHTML: Node = {
+        <tr>
+            <td>
+                <span class="tooltip">
+                    { classFile.thisType.simpleName }
+                    <span class="fqn">{ classFile.thisType.toJava }</span>
+                </span>
+            </td>
+            <td>{ method.toJava }</td>
+            <td>{ ctiPC+" / "+ctiLineNumber.getOrElse("N/A") }</td>
+            <td>{ ctiInstruction }</td>
+        </tr>
+    }
 
     override def toString = {
         import Console._
@@ -147,12 +209,29 @@ case class DeadCode(
 
         "Dead code in "+BOLD + BLUE +
             declaringClassOfMethod+"{ "+method.toJava+"{ "+
-            GREEN+"PC: "+ctiInstruction + lineNumber.map("; Line: "+_+" - ").getOrElse("; Line: N/A - ") +
-            instruction + operands.reverse.mkString("(", ",", ")") +
+            GREEN+"PC: "+ctiPC + ctiLineNumber.map("; Line: "+_+" - ").getOrElse("; Line: N/A - ") +
+            ctiInstruction + operands.reverse.mkString("(", ",", ")") +
             RESET+" }}"
     }
-
 }
 
+object DeadCodeOrdering extends scala.math.Ordering[DeadCode] {
+    def compare(x: DeadCode, y: DeadCode): Int = {
+        if (x.classFile.fqn < y.classFile.fqn) {
+            -1
+        } else if (x.classFile.fqn == y.classFile.fqn) {
+            val methodComparison = x.method.compare(y.method)
+            if (methodComparison == 0) {
+                if (x.ctiLineNumber.isDefined)
+                    x.ctiLineNumber.get - y.ctiLineNumber.get
+                else
+                    x.ctiPC - y.ctiPC
+            } else {
+                methodComparison
+            }
+        } else {
+            1
+        }
 
-
+    }
+}
