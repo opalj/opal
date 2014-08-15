@@ -57,7 +57,7 @@ package ai
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait JoinStabilization extends CoreDomainFunctionality {
-    /*
+    /* OLD USING A MAP OF MAPS
     import java.util.{ IdentityHashMap ⇒ IDMap }
 
     private[this] val leftValues =
@@ -94,9 +94,10 @@ trait JoinStabilization extends CoreDomainFunctionality {
     import scala.collection.mutable.Map
 
     private[this] val joinedValues =
-        Map.empty[IdentityPair, Update[DomainValue]]
+        Map.empty[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]
 
-    abstract override protected[this] def joinValues(
+    /* NOT "abstract override" - this trait is by purpose not stackable! */
+    override protected[this] def joinValues(
         pc: PC,
         left: DomainValue, right: DomainValue): Update[DomainValue] = {
 
@@ -105,32 +106,10 @@ trait JoinStabilization extends CoreDomainFunctionality {
             super.joinValues(pc, left, right))
     }
 
-    abstract override protected[this] def afterBaseJoin(pc: PC): Unit = {
+    /* NOT "abstract override" - this trait is by purpose not stackable! */
+    override protected[this] def afterBaseJoin(pc: PC): Unit = {
         super.afterBaseJoin(pc)
         joinedValues.clear()
     }
 }
 
-/**
- * Encapsulates a pair of values. Compared to a standard pair (Tuple2), however,
- * comparison of two `IdentityPair` objects is done by doing a reference-based
- * comparison of the stored values.
- *
- * @param A A non-null value.
- * @param b A non-null value.
- * @Michael Eichberg
- */
-final class IdentityPair(
-        final val a: Object,
-        final val b: Object) {
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: IdentityPair ⇒ (this.a eq that.a) && (this.b eq that.b)
-            case _                  ⇒ false
-        }
-    }
-
-    override val hashCode: Int =
-        System.identityHashCode(a) * 113 + System.identityHashCode(b)
-}

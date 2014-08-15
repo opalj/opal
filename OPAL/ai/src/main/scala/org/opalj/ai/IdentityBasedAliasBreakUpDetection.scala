@@ -30,7 +30,7 @@ package org.opalj
 package ai
 
 /**
- * Identifies situations (based on a reference comparison of the domain values) 
+ * Identifies situations (based on a reference comparison of the domain values)
  * in which the memory layout changes such that an alias that
  * existed before a join no longer exists. In this case the [[UpdateType]] is set to
  * [[StructuralUpdateType]].
@@ -54,6 +54,7 @@ package ai
  */
 trait IdentityBasedAliasBreakUpDetection extends CoreDomainFunctionality {
 
+    /* NOT abstract override [this trait is by purpose NOT stackable] */
     protected[this] override def joinPostProcessing(
         updateType: UpdateType,
         pc: PC,
@@ -64,9 +65,7 @@ trait IdentityBasedAliasBreakUpDetection extends CoreDomainFunctionality {
 
         def liftUpdateType(v1Index: Int, v2Index: Int) = {
             //println(pc+": Lifted the udpate type; the following variables are no longer aliases: "+v1Index+" - "+v2Index)
-            super.joinPostProcessing(
-                StructuralUpdateType,
-                pc, oldOperands, oldLocals, newOperands, newLocals)
+            StructuralUpdate((newOperands, newLocals))
         }
 
         if (updateType.isMetaInformationUpdate) {
@@ -78,7 +77,7 @@ trait IdentityBasedAliasBreakUpDetection extends CoreDomainFunctionality {
                 if (previousLocation == null)
                     aliasInformation.put(op, opi)
                 else {
-                    // let's check if we can find the same alias 
+                    // let's check if we can no-longer find the same alias 
                     // relation in the new operands
                     if (newOperands(-previousLocation - 1) ne newOperands(-opi - 1))
                         return liftUpdateType(previousLocation, opi)
@@ -111,11 +110,8 @@ trait IdentityBasedAliasBreakUpDetection extends CoreDomainFunctionality {
                 }
                 li += 1;
             }
-
         }
 
-        super.joinPostProcessing(
-            updateType,
-            pc, oldOperands, oldLocals, newOperands, newLocals)
+        updateType((newOperands, newLocals))
     }
 }
