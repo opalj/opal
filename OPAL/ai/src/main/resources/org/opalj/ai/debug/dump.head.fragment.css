@@ -47,6 +47,18 @@ div.annotations{
 span.unused{
 	color: #999999;
 }
+span.keyword{
+	padding-right:0.25em;
+	color:rgb(155, 5, 151);
+}
+span.operator{
+	padding-left:0.25em;
+	padding-right:0.25em;
+	font-weight:bold;
+}
+span.value{
+	color:rgb(0,0,255);
+}
 th{
 	vertical-align: top;
 }
@@ -103,6 +115,11 @@ ol.registers li{
 
 td.pc{
 	background-color: #ffc;
+}
+
+span.method_parameters > span + span::before { 
+	content:", ";
+	color:#AA22FF;
 }
 
 .tooltip:hover > span{ 

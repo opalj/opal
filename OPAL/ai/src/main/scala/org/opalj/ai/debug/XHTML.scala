@@ -109,6 +109,35 @@ object XHTML {
         }
     }
 
+    def typeToXHTML(t: Type): Node = {
+        t match {
+            case ot: ObjectType ⇒
+                <span class="tooltip object_type">
+                    { ot.simpleName }<span class="fqn">{ ot.toJava }</span>
+                </span>
+            case at: ArrayType ⇒
+                <span class="array_type">
+                    { typeToXHTML(at.elementType) }{ (1 to at.dimensions).map(i ⇒ "[]") }
+                </span>
+            case bt: BaseType ⇒
+                <span class="base_type">{ bt.toJava }</span>
+            case vt: VoidType ⇒
+                <span class="void_type">void</span>
+        }
+    }
+
+    def methodToXHTML(name: String, descriptor: MethodDescriptor): Node = {
+        <span class="method_signature">
+            { typeToXHTML(descriptor.returnType) }
+            { name }
+            <span class="method_parameters">
+                (
+                { descriptor.parameterTypes.map(typeToXHTML(_)) }
+                )
+            </span>
+        </span>
+    }
+
     /**
      * In case that during the validation some exception is thrown, a dump of
      * the current memory layout is written to a temporary file and opened in a
@@ -158,6 +187,7 @@ object XHTML {
             <head>
                 { theTitle }
                 <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
+                <script type="text/javascript">NodeList.prototype.forEach = Array.prototype.forEach; </script>
                 <script type="text/javascript">{ scala.xml.Unparsed(jquery) }</script>
                 <script type="text/javascript">{ scala.xml.Unparsed(colResizable) }</script>
                 <script type="text/javascript">$(function(){{$('table').colResizable({{ liveDrag:true, minWidth:75 }});}});</script>
