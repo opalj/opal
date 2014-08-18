@@ -822,10 +822,11 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
      * Returns this array type's element type.
      *
      */
-    def elementType: FieldType = componentType match {
-        case at: ArrayType ⇒ at.elementType
-        case _             ⇒ componentType
-    }
+    def elementType: FieldType =
+        componentType match {
+            case at: ArrayType ⇒ at.elementType
+            case _             ⇒ componentType
+        }
 
     /**
      * The number of dimensions of this array. E.g. "Object[]" has one dimension and
