@@ -43,6 +43,7 @@ case class IF_ICMPLE(
 
     final def mnemonic: String = "if_icmple"
 
+    final def operator: String = "<="
 }
 object IF_ICMPLE {
 

@@ -43,6 +43,7 @@ case class IF_ACMPNE(
 
     final def mnemonic: String = "if_acmpne"
 
+    final def operator: String = "!="
 }
 object IF_ACMPNE {
 

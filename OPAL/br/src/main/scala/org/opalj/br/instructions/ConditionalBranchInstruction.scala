@@ -30,40 +30,15 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.{ UShortSet ⇒ MutableUShortSet }
-
 /**
- * Common superclass of all instructions that perform a conditional jump.
+ * Common super class of all compound conditional branch instructions (switch instructions!)
  *
  * @author Michael Eichberg
  */
 abstract class ConditionalBranchInstruction extends ControlTransferInstruction {
 
-    def branchoffset: Int
-
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, false)
-
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
-        currentPC + 3
-
-    final def nextInstructions(currentPC: PC, code: Code): PCs = {
-        MutableUShortSet(indexOfNextInstruction(currentPC, code), currentPC + branchoffset)
-    }
-
-    override def toString(currentPC: Int) =
-        getClass.getSimpleName+
-            "(true="+(currentPC + branchoffset) + (if (branchoffset >= 0) "↓" else "↑")+
-            ", false=↓)"
+    /**
+     * The number of operand values popped from the operand stack.
+     */
+    def operandCount: Int
 }
-
-abstract class IF0Instruction extends ConditionalBranchInstruction
-
-abstract class IFICMPInstruction extends ConditionalBranchInstruction
-
-abstract class IFACMPInstruction extends ConditionalBranchInstruction
-
-abstract class IFXNullInstruction extends ConditionalBranchInstruction
-

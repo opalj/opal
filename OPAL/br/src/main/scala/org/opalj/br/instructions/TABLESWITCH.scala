@@ -46,6 +46,20 @@ case class TABLESWITCH(
 
     final def mnemonic: String = "tableswitch"
 
+    def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean) = {
+        var caseValues = List.empty[Int]
+        var i = jumpOffsets.length - 1
+        while (i >= 0) {
+            if (jumpOffsets(i) == jumpOffset)
+                caseValues = high - i :: caseValues
+            i -= 1
+        }
+        (caseValues, jumpOffset == defaultOffset)
+    }
+
+    def caseValues: Seq[Int] =
+        (low to high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
+
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC, false)
 

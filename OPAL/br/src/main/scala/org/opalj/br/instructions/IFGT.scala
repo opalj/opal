@@ -43,6 +43,7 @@ case class IFGT(
 
     final def mnemonic: String = "ifgt"
 
+    final def operator: String = "> 0"
 }
 
 object IFGT {

@@ -134,7 +134,7 @@ case class Code(
                 case 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
                     153 | 154 | 155 | 156 | 157 | 158 ⇒
-                    runtimeSuccessor(pc + instruction.asInstanceOf[ConditionalBranchInstruction].branchoffset)
+                    runtimeSuccessor(pc + instruction.asInstanceOf[SimpleConditionalBranchInstruction].branchoffset)
                     runtimeSuccessor(nextPC)
 
                 case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
@@ -144,7 +144,8 @@ case class Code(
                         runtimeSuccessor(pc + jumpOffset)
                     }
 
-                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒ /*Nothing to do.*/
+                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒
+                /*Nothing to do. (no successor!)*/
 
                 case _ ⇒
                     runtimeSuccessor(nextPC)

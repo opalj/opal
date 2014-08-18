@@ -677,7 +677,7 @@ trait AI[D <: Domain] {
                          yesConstraint: SingleValueConstraint,
                          noConstraint: SingleValueConstraint) {
 
-                    val branchInstruction = as[ConditionalBranchInstruction](instruction)
+                    val branchInstruction = as[SimpleConditionalBranchInstruction](instruction)
                     val operand = operands.head
                     val rest = operands.tail
                     val nextPC = pcOfNextInstruction
@@ -721,7 +721,7 @@ trait AI[D <: Domain] {
                              yesConstraint: TwoValuesConstraint,
                              noConstraint: TwoValuesConstraint) {
 
-                    val branchInstruction = as[ConditionalBranchInstruction](instruction)
+                    val branchInstruction = as[SimpleConditionalBranchInstruction](instruction)
                     val right = operands.head
                     val remainingOperands = operands.tail
                     val left = remainingOperands.head

@@ -30,13 +30,54 @@ package org.opalj
 package br
 package instructions
 
-object ConditionalControlTransferInstruction {
+import org.opalj.collection.mutable.{ UShortSet ⇒ MutableUShortSet }
 
-    def unapply(instruction: Instruction): Boolean = {
-        instruction match {
-            case _: ConditionalBranchInstruction         ⇒ true
-            case _: CompoundConditionalBranchInstruction ⇒ true
-            case _                                       ⇒ false
-        }
+/**
+ * Common superclass of all instructions that perform a conditional jump.
+ *
+ * @author Michael Eichberg
+ */
+abstract class SimpleConditionalBranchInstruction extends ConditionalBranchInstruction {
+
+    def branchoffset: Int
+
+    /**
+     * The comparison operator (incl. the constant) underlying the if instruction.
+     * E.g., `<`, `< 0` or `!= null`.
+     */
+    def operator: String
+
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final def indexOfNextInstruction(
+        currentPC: PC,
+        modifiedByWide: Boolean = false): Int =
+        currentPC + 3
+
+    final def nextInstructions(currentPC: PC, code: Code): PCs = {
+        MutableUShortSet(indexOfNextInstruction(currentPC, code), currentPC + branchoffset)
     }
+
+    override def toString(currentPC: Int) =
+        getClass.getSimpleName+
+            "(true="+(currentPC + branchoffset) + (if (branchoffset >= 0) "↓" else "↑")+
+            ", false=↓)"
 }
+
+abstract class IF0Instruction extends SimpleConditionalBranchInstruction {
+    def operandCount = 1
+}
+
+abstract class IFICMPInstruction extends SimpleConditionalBranchInstruction {
+    def operandCount = 2
+}
+
+abstract class IFACMPInstruction extends SimpleConditionalBranchInstruction {
+    def operandCount = 2
+}
+
+abstract class IFXNullInstruction extends SimpleConditionalBranchInstruction {
+    def operandCount = 1
+}
+

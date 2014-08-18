@@ -43,6 +43,7 @@ case class IFLE(
 
     final def mnemonic: String = "ifle"
 
+    final def operator: String = "<= 0"
 }
 object IFLE {
 

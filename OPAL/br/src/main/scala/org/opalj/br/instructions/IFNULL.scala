@@ -43,6 +43,7 @@ case class IFNULL(
 
     final def mnemonic: String = "ifnull"
 
+    final def operator: String = "== null"
 }
 object IFNULL {
 

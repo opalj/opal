@@ -42,7 +42,8 @@ case class IFGE(
     final def opcode: Opcode = IFGE.opcode
 
     final def mnemonic: String = "ifge"
-
+    
+    final def operator: String = ">= 0"
 }
 
 object IFGE {

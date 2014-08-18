@@ -43,6 +43,7 @@ case class IF_ICMPEQ(
 
     final def mnemonic: String = "if_icmpeq"
 
+    final def operator: String = "=="
 }
 object IF_ICMPEQ {
 

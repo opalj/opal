@@ -43,6 +43,7 @@ case class IFLT(
 
     final def mnemonic: String = "iflt"
 
+    final def operator: String = "< 0"
 }
 object IFLT {
 

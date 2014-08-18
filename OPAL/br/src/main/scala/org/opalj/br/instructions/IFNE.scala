@@ -43,6 +43,7 @@ case class IFNE(
 
     final def mnemonic: String = "ifne"
 
+    final def operator: String = "!= 0"
 }
 object IFNE {
 

@@ -43,6 +43,7 @@ case class IFEQ(
 
     final def mnemonic: String = "ifeq"
 
+    final def operator: String = "== 0"
 }
 
 object IFEQ {

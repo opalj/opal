@@ -43,6 +43,7 @@ case class IF_ICMPGT(
 
     final def mnemonic: String = "if_icmpgt"
 
+    final def operator: String = ">"
 }
 object IF_ICMPGT {
 
