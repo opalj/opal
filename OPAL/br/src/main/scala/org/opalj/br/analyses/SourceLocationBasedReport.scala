@@ -75,7 +75,7 @@ case class ClassBasedReport[+S](
 case class MethodBasedReport[+S](
     source: Option[S],
     severity: Severity,
-    declaringClass: ObjectType,		
+    declaringClass: ObjectType,
     methodDescriptor: MethodDescriptor,
     methodName: String,
     message: String)
@@ -96,13 +96,13 @@ object MethodBasedReport {
     def apply[S](
         source: Option[S],
         severity: Severity,
-				declaringClass: ObjectType,
+        declaringClass: ObjectType,
         method: Method,
         message: String): MethodBasedReport[S] = {
-				new MethodBasedReport(
-						source, severity, 
-						declaringClass, method.descriptor, method.name, 
-						message)
+        new MethodBasedReport(
+            source, severity,
+            declaringClass, method.descriptor, method.name,
+            message)
     }
 }
 
@@ -148,9 +148,9 @@ object FieldBasedReport {
 case class LineAndColumnBasedReport[+S](
     source: Option[S],
     severity: Severity,
-		declaringClass: ObjectType,
-		methodDescriptor: MethodDescriptor,
-		methodName: String,
+    declaringClass: ObjectType,
+    methodDescriptor: MethodDescriptor,
+    methodName: String,
     line: Option[Int],
     column: Option[Int],
     message: String)

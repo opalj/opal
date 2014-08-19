@@ -85,7 +85,7 @@ package object br {
         before: String = "",
         after: String = ""): String = {
 
-        val annotationToJava : (Annotation) => String = { annotation: Annotation =>
+        val annotationToJava: (Annotation) ⇒ String = { annotation: Annotation ⇒
             val s = annotation.toJava
             if (s.length() > 50 && annotation.elementValuePairs.nonEmpty)
                 annotation.annotationType.toJava+"(...)"

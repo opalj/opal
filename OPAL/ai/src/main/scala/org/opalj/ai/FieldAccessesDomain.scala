@@ -34,7 +34,7 @@ import org.opalj.br.FieldType
 
 /**
  * Interface related to the handling of field access instructions.
- * 
+ *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait FieldAccessesDomain { this: ValuesDomain ⇒

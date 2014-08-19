@@ -121,11 +121,9 @@ trait CompactLineNumberTable_attributeBinding
             case Seq(lnt) ⇒ attributes
             case lnts ⇒
                 throw new UnsupportedOperationException(
-                        "multiple line number tables are not yet supported;"+
+                    "multiple line number tables are not yet supported;"+
                         "contact Michael Eichberg")
         }
     }
 }
-
-
 

@@ -48,7 +48,8 @@ case class Annotation(
 
         <div class="annotation">
             <span class="type">{ parseFieldType(cp(type_index).toString) }</span>
-            (<span class="element_value_pairs">{ element_value_pairs }</span>)
+            (<span class="element_value_pairs">{ element_value_pairs }</span>
+            )
         </div>
     }
 }

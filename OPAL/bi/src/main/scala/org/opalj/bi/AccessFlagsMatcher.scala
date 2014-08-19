@@ -140,4 +140,3 @@ object AccessFlagsMatcher {
     val PUBLIC___OR___PROTECTED_AND_NOT_FINAL = ACC_PUBLIC || (ACC_PROTECTED && NOT_FINAL)
 }
 
-

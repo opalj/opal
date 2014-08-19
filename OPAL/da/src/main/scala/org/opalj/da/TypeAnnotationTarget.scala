@@ -49,7 +49,7 @@ trait TypeAnnotationTarget {
 // type_parameter_target
 case class ParameterDeclarationOfClassOrInterface(
         type_parameter_index: Int) extends TypeAnnotationTarget {
-    
+
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="type_annotation_target">{ cp(type_parameter_index).toString(cp) }</span>
     }

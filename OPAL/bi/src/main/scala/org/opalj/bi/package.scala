@@ -29,9 +29,9 @@
 package org.opalj
 
 /**
- * Implementation of a library for parsing Java bytecode and creating arbitrary 
+ * Implementation of a library for parsing Java bytecode and creating arbitrary
  * representations.
- * 
+ *
  * OPAL's primary representation of Java byte code
  * is the [[org.opalj.br]] representation which is defined in the
  * respective package.

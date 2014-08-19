@@ -72,4 +72,3 @@ trait MethodCallResults { domain: ValuesDomain ⇒
 
 }
 
-

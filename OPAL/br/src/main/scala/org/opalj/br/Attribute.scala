@@ -55,7 +55,7 @@ trait Attribute {
      * ==Associating Unique Id==
      * The unique ids are manually associated with the attributes.
      * The attributes use the following IDs:
-     *  - (-1 **Unknown Attribute**) 
+     *  - (-1 **Unknown Attribute**)
      *  - 1-5  The ConstantValue Attribute
      *  - 6 The Code Attribute
      *  - 7 The StackMapTable Attribute
@@ -84,4 +84,3 @@ trait Attribute {
     def kindId: Int
 }
 
- 

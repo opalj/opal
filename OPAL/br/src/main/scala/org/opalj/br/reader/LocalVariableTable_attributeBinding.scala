@@ -72,4 +72,3 @@ trait LocalVariableTable_attributeBinding
 
 }
 
-

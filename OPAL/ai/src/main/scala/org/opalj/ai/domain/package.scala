@@ -30,7 +30,7 @@ package org.opalj
 package ai
 
 /**
- * This package contains definitions of common domains that can be used for the 
+ * This package contains definitions of common domains that can be used for the
  * implementation of analyses.
  *
  * ==Types of Domains==

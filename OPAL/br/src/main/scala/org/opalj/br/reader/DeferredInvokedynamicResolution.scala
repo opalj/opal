@@ -86,4 +86,3 @@ trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBindi
     }
 }
 
-

@@ -75,4 +75,3 @@ trait InnerClasses_attributeBinding
     }
 }
 
-

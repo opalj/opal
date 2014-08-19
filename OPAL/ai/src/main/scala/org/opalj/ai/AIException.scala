@@ -45,5 +45,3 @@ class AIException(
     writableStackTrace: Boolean = true)
         extends RuntimeException(message, cause, enableSuppression, writableStackTrace)
 
-
-

@@ -62,5 +62,3 @@ class Java8LibraryFrameworkWithCaching(
         with MethodParameters_attributeBinding
         with TypeAnnotationAttributesBinding
 
-
-

@@ -213,7 +213,7 @@ object Constraints extends Enumeration(1) {
 }
 
 /**
- * Exception that is if two constraints should be combined that are incompatible.  
+ * Exception that is if two constraints should be combined that are incompatible.
  */
 case class IncompatibleConstraints(
     constraint1: Constraints.Value,
@@ -221,8 +221,8 @@ case class IncompatibleConstraints(
         extends AIException(s"incompatible: $constraint1 and $constraint2")
 
 /**
- * Domain that traces the relationship between integer values.  
- * 
+ * Domain that traces the relationship between integer values.
+ *
  * @author Michael Eichberg
  */
 trait ConstraintsBetweenIntegerValues

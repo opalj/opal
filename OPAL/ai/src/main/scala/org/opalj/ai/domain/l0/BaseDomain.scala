@@ -82,4 +82,3 @@ class BaseDomain[Source](
             classFile,
             method)
 
-

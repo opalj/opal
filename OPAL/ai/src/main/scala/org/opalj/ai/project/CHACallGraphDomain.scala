@@ -118,7 +118,6 @@ trait CHACallGraphDomain extends CallGraphDomain {
         }
     }
 
-
     // FIXME The use of the parameter "isStaticMethod" does not seem to make sense in the following!
     // handles method calls where the target method can statically be resolved
     @inline protected[this] def resolvedCall(
@@ -262,8 +261,4 @@ trait CHACallGraphDomain extends CallGraphDomain {
         super.invokestatic(pc, declaringClass, name, descriptor, operands)
     }
 }
-
-
-
-
 

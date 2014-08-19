@@ -482,4 +482,3 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
 }
 
-

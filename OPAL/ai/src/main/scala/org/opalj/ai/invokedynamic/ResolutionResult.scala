@@ -35,7 +35,6 @@ import scala.language.existentials
 import org.opalj.br._
 import org.opalj.br.instructions.INVOKEDYNAMIC
 
-
 /**
  * Represents the result of the resolution of an `invokedynamic` instruction.
  *

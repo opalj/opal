@@ -35,7 +35,6 @@ import br._
 import br.instructions.INVOKEDYNAMIC
 import ai.invokedynamic._
 
-
 /**
  * Tests that the dependency extractor with support for invokedynamic does not miss some
  * dependencies and that it does not extract "unexpected" dependencies.

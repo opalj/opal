@@ -60,4 +60,3 @@ trait DefaultTypeLevelLongValues
     override def LongValue(valueOrigin: ValueOrigin, value: Long): LongValue = ALongValue
 }
 
-

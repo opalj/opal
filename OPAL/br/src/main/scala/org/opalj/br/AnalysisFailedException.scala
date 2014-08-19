@@ -35,7 +35,7 @@ package br
  * @param message The message that describes the reason.
  * @param code The code block for which the analysis failed.
  * @param pc The program counter of the last instruction that was tried to analyze.
- * 
+ *
  * @author Michael Eichberg
  */
 case class AnalysisFailedException(

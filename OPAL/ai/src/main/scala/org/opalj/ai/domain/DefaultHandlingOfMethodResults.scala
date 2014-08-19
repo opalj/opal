@@ -47,7 +47,3 @@ trait DefaultHandlingOfMethodResults
 
 }
 
-
-
-
-

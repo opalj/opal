@@ -37,7 +37,6 @@ import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.ai.domain._
 
-
 /**
  * Common interface of all domains that collect the edges of a call graph
  * that are associated with a specific method.
@@ -80,5 +79,4 @@ trait CallGraphDomain extends Domain { this: TheProject[_] with TheMethod ⇒
     def allUnresolvableMethodCalls: List[UnresolvedMethodCall]
 
 }
-
 

@@ -50,4 +50,3 @@ case class ExceptionTableEntry(
     }
 }
 
-

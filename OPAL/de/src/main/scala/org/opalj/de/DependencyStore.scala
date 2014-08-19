@@ -36,7 +36,6 @@ import br._
 import br.analyses.SomeProject
 import br.analyses.ProjectInformationKey
 
-
 /**
  * Stores extracted dependencies.
  *
@@ -80,6 +79,4 @@ object DependencyStore {
         initialize(classFiles, createDependencyExtractor)
     }
 }
-
-
 

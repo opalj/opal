@@ -208,5 +208,3 @@ case class CallWithBoundedMethodParameter(
 
 }
 
-
-

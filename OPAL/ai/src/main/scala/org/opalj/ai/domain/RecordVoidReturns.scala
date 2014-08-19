@@ -44,7 +44,7 @@ import org.opalj.collection.mutable.UShortSet
  * This domain forwards all instruction evaluation calls to the super trait.
  *
  * ==Core Properties==
- *  - Needs to be stacked upon a base implementation of the domain 
+ *  - Needs to be stacked upon a base implementation of the domain
  *    [[ReturnInstructionsDomain]].
  *  - Collects information directly associated with the analyzed code block.
  *  - Not thread-safe.
@@ -62,6 +62,4 @@ trait RecordVoidReturns extends ReturnInstructionsDomain { domain: ValuesDomain 
         super.returnVoid(pc)
     }
 }
-
-
 

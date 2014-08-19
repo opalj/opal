@@ -80,4 +80,3 @@ trait RecordReturnedValuesInfrastructure extends ReturnInstructionsDomain {
 
 }
 
-

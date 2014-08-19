@@ -39,7 +39,7 @@ package domain
  * or create a class that inherits from [[Configuration]].
  *
  * ==Core Properties==
- *  - Concrete base implementation of the [[Configuration]] trait that can 
+ *  - Concrete base implementation of the [[Configuration]] trait that can
  *    be used to create a final domain.
  *  - Thread safe.
  *

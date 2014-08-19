@@ -66,7 +66,6 @@ trait DataFlowProblem[Source, P] {
 
     val project: Project[Source]
 
-
     // __________________________________________________________________________________
     //
     // Functionality required to specify the taint-information flow 
@@ -163,7 +162,6 @@ trait DataFlowProblem[Source, P] {
     //
     //
 
-
     /**
      * Identifies the values that we want to track (by means of the origin of the
      * respective value) per relevant method.
@@ -201,7 +199,7 @@ trait DataFlowProblem[Source, P] {
     }
 
     def initializeSourcesAndSinks(): Unit
-    
+
     /**
      * Tries to find paths from the sources to the sinks.
      */

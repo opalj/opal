@@ -137,4 +137,3 @@ trait StackMapTable_attributeBinding
 
 }
 
-

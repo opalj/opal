@@ -38,7 +38,7 @@ import scala.collection.Set
 /**
  * Key that can be used to get a `DependencyStore` that contains all dependencies
  * except self dependencies.
- * 
+ *
  * ==Usage==
  * Just pass this object to a `Project` to get the [[DependencyStore]].
  *
@@ -58,5 +58,4 @@ object DependencyStoreWithoutSelfDependenciesKey extends ProjectInformationKey[D
         )
     }
 }
-
 

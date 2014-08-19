@@ -37,8 +37,8 @@ package br
 case class LocalVariableTable(
     localVariables: LocalVariables)
         extends Attribute {
-    
-       override def kindId: Int = LocalVariableTable.KindId
+
+    override def kindId: Int = LocalVariableTable.KindId
 
 }
 object LocalVariableTable {

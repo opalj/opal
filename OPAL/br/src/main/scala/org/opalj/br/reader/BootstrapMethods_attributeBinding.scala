@@ -74,4 +74,3 @@ trait BootstrapMethods_attributeBinding
     }
 }
 
-

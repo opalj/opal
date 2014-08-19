@@ -188,8 +188,5 @@ class B extends A {
         // do nothing
     }
 }
-*/ 
-
- 
-
+*/
 

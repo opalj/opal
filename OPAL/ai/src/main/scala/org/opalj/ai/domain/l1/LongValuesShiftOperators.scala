@@ -65,4 +65,3 @@ trait LongValuesShiftOperators extends LongValuesDomain {
     }
 }
 
-

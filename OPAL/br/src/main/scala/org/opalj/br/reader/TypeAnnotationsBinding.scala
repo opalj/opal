@@ -217,6 +217,3 @@ trait TypeAnnotationsBinding
 
 }
 
-
-
-

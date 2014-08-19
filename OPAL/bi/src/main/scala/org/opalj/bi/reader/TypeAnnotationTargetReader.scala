@@ -217,4 +217,3 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
     }
 }
 
-

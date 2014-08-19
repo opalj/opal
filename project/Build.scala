@@ -7,10 +7,15 @@ import scoverage.ScoverageSbtPlugin
 
 import com.typesafe.sbteclipse.plugin.EclipsePlugin._
 
-object OPALBuild extends Build {
+import com.typesafe.sbt.SbtScalariform
+import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import scalariform.formatter.preferences._
 
+object OPALBuild extends Build {
 	// Default settings without scoverage
 	lazy val buildSettings = Defaults.defaultSettings ++
+		SbtScalariform.scalariformSettingsWithIt ++
+		Seq(ScalariformKeys.preferences <<= baseDirectory.apply(getScalariformPreferences)) ++
 		Seq(Defaults.itSettings : _*) ++
 		Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest)) ++
 		Seq(libraryDependencies  ++= Seq(
@@ -20,6 +25,9 @@ object OPALBuild extends Build {
 	lazy val buildSettingsWithScoverage = 
 		buildSettings ++ 
 		ScoverageSbtPlugin.instrumentSettings
+
+	def getScalariformPreferences(dir: File) = PreferencesImporterExporter.loadPreferences(
+		(file("Scalariform Formatter Preferences.properties").getPath))
 
 	lazy val opal = Project(
 		id = "OPAL",

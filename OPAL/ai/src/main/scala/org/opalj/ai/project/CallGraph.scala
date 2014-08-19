@@ -35,7 +35,6 @@ import scala.collection.Map
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 
-
 /**
  * Basic representation of a (calculated) call graph.
  *

@@ -35,5 +35,5 @@ package ai
  *
  * @author Michael Eichberg
  */
-case class DomainException(message: String) extends AIException(message) 
+case class DomainException(message: String) extends AIException(message)
 

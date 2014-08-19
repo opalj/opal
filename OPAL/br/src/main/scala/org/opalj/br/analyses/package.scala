@@ -39,11 +39,11 @@ import java.net.URL
  * @author Michael Eichberg
  */
 package object analyses {
- 
+
     import language.implicitConversions
 
     /**
-     * Type alias for Project's with an arbitrary sources.  
+     * Type alias for Project's with an arbitrary sources.
      */
     type SomeProject = Project[_]
 
@@ -87,15 +87,13 @@ package object analyses {
     /**
      * An analysis that may produce a result.
      */
-    type SingleOptionalResultAnalysis[Source, +AnalysisResult] = 
-        Analysis[Source, Option[AnalysisResult]]
+    type SingleOptionalResultAnalysis[Source, +AnalysisResult] = Analysis[Source, Option[AnalysisResult]]
 
     /**
      * An analysis that may produce multiple results. E.g., an analysis that looks for
      * instances of bug patterns.
      */
-    type MultipleResultsAnalysis[Source, +AnalysisResult] = 
-        Analysis[Source, Iterable[AnalysisResult]]
+    type MultipleResultsAnalysis[Source, +AnalysisResult] = Analysis[Source, Iterable[AnalysisResult]]
 
     implicit def fileBasedAnalysisToAnalysisWithReportableResults(
         analysis: Analysis[File, Iterable[SourceLocationBasedReport[File]]]): Analysis[File, ReportableAnalysisResult] = {
@@ -149,7 +147,7 @@ package object analyses {
             analysis,
             result ⇒ result.consoleReport(urlToLocationIdentifier)
         )
-    } 
+    }
 
     implicit def urlBasedAnalysisWithOptionalResultToAnalysisWithReportableResults(
         analysis: Analysis[URL, Option[SourceLocationBasedReport[URL]]]): Analysis[URL, ReportableAnalysisResult] = {
@@ -160,7 +158,4 @@ package object analyses {
         )
     }
 }
-
-
-
 

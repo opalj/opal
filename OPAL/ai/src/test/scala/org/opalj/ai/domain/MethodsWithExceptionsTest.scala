@@ -66,23 +66,23 @@ class MethodsWithExceptionsTest
     import org.opalj.collection.mutable.UShortSet
 
     class DefaultRecordingDomain(val id: String)
-            extends Domain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with PredefinedClassHierarchy
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with l0.DefaultTypeLevelIntegerValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultPrimitiveValuesConversions
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultReferenceValuesBinding
-            /* => */ with RecordLastReturnedValues
-            /* => */ with RecordAllThrownExceptions
-            /* => */ with RecordVoidReturns 
+        extends Domain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with PredefinedClassHierarchy
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l1.DefaultReferenceValuesBinding
+        /* => */ with RecordLastReturnedValues
+        /* => */ with RecordAllThrownExceptions
+        /* => */ with RecordVoidReturns
 
     private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit) {
         val domain = new DefaultRecordingDomain(name)

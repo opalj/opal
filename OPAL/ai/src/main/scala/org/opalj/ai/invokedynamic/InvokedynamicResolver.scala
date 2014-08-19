@@ -34,10 +34,10 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
 
 /**
  * Basic interface for the resolution of invokedynamic instructions.
- * 
+ *
  * ==Thread Safety==
  * '''Implementations of this trait have to be thread-safe.'''
- * 
+ *
  * @author Arne Lottmann
  */
 trait InvokedynamicResolver {

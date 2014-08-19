@@ -126,6 +126,3 @@ object BootstrapMethods_attributeReader {
     val ATTRIBUTE_NAME = "BootstrapMethods"
 }
 
-
-
-

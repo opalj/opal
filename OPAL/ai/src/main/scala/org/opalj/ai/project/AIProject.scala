@@ -101,7 +101,7 @@ trait AIProject[Source, D <: Domain with Report] {
         project: Project[Source],
         parameters: Seq[String]): ReportableAnalysisResult = {
 
-        val analyze : ((ClassFile, Method)) => Option[String]  = { cf_m: (ClassFile, Method) =>
+        val analyze: ((ClassFile, Method)) ⇒ Option[String] = { cf_m: (ClassFile, Method) ⇒
             val (classFile: ClassFile, method: Method) = cf_m
             val theDomain = domain(project, classFile, method)
             ai(classFile, method, theDomain)

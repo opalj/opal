@@ -39,7 +39,7 @@ import org.opalj.bi.TestSupport.locateTestResources
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class AttributesTest extends FunSuite with ParallelTestExecution {
 
-    val attributesJARFile = locateTestResources("classfiles/Attributes.jar","bi")
+    val attributesJARFile = locateTestResources("classfiles/Attributes.jar", "bi")
 
     import reader.Java8Framework.ClassFile
 

@@ -59,7 +59,7 @@ case class SameLocals1StackItemFrame(
         verification_type_info_stack: VerificationTypeInfo) extends StackMapFrame {
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
-        <div >[pc: { initial_offset = previous_fram_Offset + frame_type -64 + 1; initial_offset },frame_type:SameLocals1StackItem,stack:[{ verification_type_info_stack.toXHTML(cp) }]]</div>
+        <div>[pc: { initial_offset = previous_fram_Offset + frame_type - 64 + 1; initial_offset },frame_type:SameLocals1StackItem,stack:[{ verification_type_info_stack.toXHTML(cp) }]]</div>
     }
 }
 
@@ -69,8 +69,11 @@ case class SameLocals1StackItemFrameExtended(
         verification_type_info_stack: VerificationTypeInfo) extends StackMapFrame {
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
-        <div >[pc: { initial_offset = previous_fram_Offset + offset_delta + 1; initial_offset }
-          ,SameLocals1StackItemFrameExtended,stack:[{ verification_type_info_stack.toXHTML(cp) }]]</div>
+        <div>
+            [pc:{ initial_offset = previous_fram_Offset + offset_delta + 1; initial_offset }
+            ,SameLocals1StackItemFrameExtended,stack:[{ verification_type_info_stack.toXHTML(cp) }
+            ]]
+        </div>
     }
 }
 
@@ -79,7 +82,7 @@ case class ChopFrame(
         offset_delta: Int) extends StackMapFrame {
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
-        <div >[pc: { initial_offset = previous_fram_Offset + offset_delta + 1; initial_offset },frame_type:Chop]</div>
+        <div>[pc: { initial_offset = previous_fram_Offset + offset_delta + 1; initial_offset },frame_type:Chop]</div>
     }
 }
 
@@ -88,8 +91,10 @@ case class SameFrameExtended(
         offset_delta: Int) extends StackMapFrame {
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
-        <div >[pc: { initial_offset = previous_fram_Offset + offset_delta + 1; initial_offset }
-          ,frame_type:SameFrameExtended]</div>
+        <div>
+            [pc:{ initial_offset = previous_fram_Offset + offset_delta + 1; initial_offset }
+            ,frame_type:SameFrameExtended]
+        </div>
     }
 }
 
@@ -103,8 +108,11 @@ case class AppendFrame(
     }
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
-        <div >[pc: { initial_offset = previous_fram_Offset + offset_delta + 1; initial_offset }
-          ,Append,locals:[{ localsToXHTML(cp) }]]</div>
+        <div>
+            [pc:{ initial_offset = previous_fram_Offset + offset_delta + 1; initial_offset }
+            ,Append,locals:[{ localsToXHTML(cp) }
+            ]]
+        </div>
     }
 
 }
@@ -124,8 +132,12 @@ case class FullFrame(
     }
 
     override def toXHTML(implicit cp: Constant_Pool, previous_fram_Offset: Int): Node = {
-        <div >[pc: { initial_offset = previous_fram_Offset + offset_delta + 1; initial_offset }
-          ,Full,locals:[{ localsToXHTML(cp) }],stack:[{ stackToXHTML(cp) }]]</div>
+        <div>
+            [pc:{ initial_offset = previous_fram_Offset + offset_delta + 1; initial_offset }
+            ,Full,locals:[{ localsToXHTML(cp) }
+            ],stack:[{ stackToXHTML(cp) }
+            ]]
+        </div>
     }
 
 }

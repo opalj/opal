@@ -69,6 +69,3 @@ object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
     }
 }
 
-
-
-

@@ -103,4 +103,3 @@ object InnerClasses_attributeReader {
     val ATTRIBUTE_NAME = "InnerClasses"
 }
 
-

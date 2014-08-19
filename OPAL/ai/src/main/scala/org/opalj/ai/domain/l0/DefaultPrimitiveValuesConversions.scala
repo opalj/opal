@@ -69,5 +69,3 @@ trait DefaultPrimitiveValuesConversions extends PrimitiveValuesConversionsDomain
     override def f2l(pc: PC, value: DomainValue): DomainValue = LongValue(pc)
 }
 
-
-
