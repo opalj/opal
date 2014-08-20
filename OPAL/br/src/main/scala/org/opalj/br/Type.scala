@@ -354,13 +354,13 @@ sealed abstract class ByteType private () extends BaseType {
 
     final val id = Int.MinValue + atype
 
+    final val WrapperType = ObjectType.Byte
+
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "byte"
 
     override def toBinaryJavaName: String = "B"
-
-    final val WrapperType = ObjectType.Byte
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Byte.TYPE
 
@@ -695,6 +695,7 @@ object ObjectType {
     require(Object.id == ObjectId)
 
     final val Boolean = ObjectType("java/lang/Boolean")
+
     final val Byte = ObjectType("java/lang/Byte")
     final val Char = ObjectType("java/lang/Char")
     final val Short = ObjectType("java/lang/Short")
@@ -751,6 +752,48 @@ object ObjectType {
 
     private final val javaLangBooleanId = Boolean.id
     private final val javaLangDoubleId = Double.id
+
+    /**
+     * Implicit mapping from a wrapper type to its primtive type.
+     * @example
+     * {{{
+     * scala> import org.opalj.br._
+     * scala> ObjectType.primitiveType(ObjectType.Integer.id)
+     * res1: org.opalj.br.FieldType = IntegerType
+     * }}}
+     */
+    private lazy val primitiveType: Array[BaseType] = {
+        val a = new Array[BaseType](Double.id + 1)
+        a(Boolean.id) = BooleanType
+        a(Byte.id) = ByteType
+        a(Char.id) = CharType
+        a(Short.id) = ShortType
+        a(Integer.id) = IntegerType
+        a(Long.id) = LongType
+        a(Float.id) = FloatType
+        a(Double.id) = DoubleType
+        a
+    }
+
+    /**
+     * Given a wrapper type (e.g., `java.lang.Integer`) the underlying primitive type
+     * is returned.
+     *
+     * @example
+     * {{{
+     * scala> import org.opalj.br._
+     * scala> ObjectType.primitiveType(ObjectType.Integer)
+     * res0: Option[org.opalj.br.BaseType] = Some(IntegerType)
+     * }}}
+     */
+    def primitiveType(wrapperType: ObjectType): Option[BaseType] = {
+        val wrapperId = wrapperType.id
+        if (wrapperId < 0 || wrapperId > Double.id) {
+            None
+        } else {
+            Some(primitiveType(wrapperId))
+        }
+    }
 
     def primitiveTypeWrapperMatcher[Args, T](
         booleanMatch: (Args) ⇒ T,
