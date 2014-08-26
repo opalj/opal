@@ -300,8 +300,8 @@ class ClassHierarchy private (
     def existsSubclass(objectType: ObjectType, project: SomeProject)(f: ClassFile ⇒ Boolean): Boolean = {
         foreachSubtype(objectType) { objectType ⇒
             project.classFile(objectType) map { cf ⇒
-              if (f(cf))
-                return true
+                if (f(cf))
+                    return true
             }
         }
 
@@ -1595,13 +1595,13 @@ object ClassHierarchy {
         /**
          * Analyzes the given class file and extends the current class hierarchy.
          */
-        val processClassFile : (ClassFile) => Unit = { classFile =>
-          process(
-           classFile.thisType,
-           classFile.isInterfaceDeclaration,
-           classFile.superclassType,
-           HashSet.empty ++ classFile.interfaceTypes
-          )
+        val processClassFile: (ClassFile) ⇒ Unit = { classFile ⇒
+            process(
+                classFile.thisType,
+                classFile.isInterfaceDeclaration,
+                classFile.superclassType,
+                HashSet.empty ++ classFile.interfaceTypes
+            )
         }
 
         classFiles foreach { processClassFile }
@@ -1617,5 +1617,4 @@ object ClassHierarchy {
         classHierarchy
     }
 }
-
 

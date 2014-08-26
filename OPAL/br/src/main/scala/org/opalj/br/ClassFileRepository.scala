@@ -30,7 +30,7 @@ package org.opalj
 package br
 
 /**
- * Enables the lookup of [[ClassFile]]s.  
+ * Enables the lookup of [[ClassFile]]s.
  *
  * @author Michael Eichberg
  */

@@ -54,4 +54,3 @@ trait Java7Framework
 
 object Java7Framework extends Java7Framework
 
-

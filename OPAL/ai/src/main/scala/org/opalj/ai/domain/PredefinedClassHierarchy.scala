@@ -56,4 +56,3 @@ trait PredefinedClassHierarchy extends ClassHierarchy {
 
 }
 
-

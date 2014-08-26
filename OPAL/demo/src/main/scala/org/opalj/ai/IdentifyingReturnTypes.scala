@@ -144,5 +144,3 @@ case class RefinedReturnType(
 
 }
 
-
-

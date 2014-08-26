@@ -41,7 +41,7 @@ case class MethodSignature(
     override def equals(other: Any): Boolean = {
         other match {
             case that: MethodSignature ⇒
-                 descriptor == that.descriptor && name == that.name
+                descriptor == that.descriptor && name == that.name
             case _ ⇒ false
         }
     }

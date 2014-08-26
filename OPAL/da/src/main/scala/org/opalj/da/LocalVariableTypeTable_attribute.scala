@@ -42,7 +42,7 @@ case class LocalVariableTypeTable_attribute(
     def attribute_length: Int = 2 + (local_variable_type_table.size * 10)
 
     // TODO Implement conversion to XHTML
-    
+
 }
 object LocalVariableTypeTable_attribute {
 
@@ -55,4 +55,4 @@ case class LocalVariableTypeTableEntry(
     length: Int,
     name_index: Int,
     signature_index: Int,
-    index: Int) 
+    index: Int)

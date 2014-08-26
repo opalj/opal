@@ -62,5 +62,3 @@ trait RecordJoinedThrownExceptions extends RecordThrownExceptions { domain: Valu
     }
 }
 
-
-

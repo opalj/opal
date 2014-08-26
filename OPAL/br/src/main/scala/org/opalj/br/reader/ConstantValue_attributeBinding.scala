@@ -50,4 +50,3 @@ trait ConstantValue_attributeBinding
     }
 }
 
-

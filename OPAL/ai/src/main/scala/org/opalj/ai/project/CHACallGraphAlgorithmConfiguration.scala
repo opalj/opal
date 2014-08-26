@@ -61,5 +61,3 @@ class CHACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration
         new DefaultCHACallGraphDomain(theProject, cache, classFile, method)
 }
 
-
-

@@ -87,4 +87,3 @@ trait ClassFileBinding extends ClassFileReader {
     registerClassFilePostProcessor(removeBootstrapMethodAttribute)
 }
 
-

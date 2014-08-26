@@ -281,7 +281,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
                 throw new UnsupportedOperationException(
                     "the given domain has to be equal to this value's domain")
 
-          this.asInstanceOf[targetDomain.DomainValue]
+            this.asInstanceOf[targetDomain.DomainValue]
         }
 
     }

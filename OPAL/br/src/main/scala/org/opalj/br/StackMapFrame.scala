@@ -79,4 +79,4 @@ final case class FullFrame(
     offsetDelta: Int,
     verificationTypeInfoLocals: VerificationTypeInfoLocals,
     verificationTypeInfoStack: VerificationTypeInfoStack)
-        extends StackMapFrame 
+        extends StackMapFrame

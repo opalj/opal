@@ -63,7 +63,7 @@ class InstructionCountBoundedAI[D <: Domain](
             println(Console.YELLOW+"[warn] effectively unbounded evaluation"+
                 "; instructions size="+code.instructions+
                 "; exception handlers="+code.exceptionHandlers.size+
-                "; maxEvaluationFactor="+maxEvaluationFactor+Console.RESET)
+                "; maxEvaluationFactor="+maxEvaluationFactor + Console.RESET)
         }
         max
     }

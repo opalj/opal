@@ -182,7 +182,7 @@ private final class NoArgumentMethodDescriptor(
     override def equals(other: Any): Boolean = {
         other match {
             case that: NoArgumentMethodDescriptor ⇒ that.returnType eq this.returnType
-            case _ ⇒ false
+            case _                                ⇒ false
         }
     }
 }
@@ -454,10 +454,4 @@ object MethodDescriptor {
         }
     }
 }
-
-
-
-
-
-
 

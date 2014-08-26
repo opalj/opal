@@ -97,7 +97,7 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
                         Console.YELLOW+"[warn] type information missing: "+
                             theType.toJava+" (underlying value="+receiver+")"+
                             " should be a subtype of the type of the method's declaring class: "+
-                            declaringClassType.toJava+ 
+                            declaringClassType.toJava+
                             " (but this cannot be deduced reliably from the project)"+Console.RESET)
                     super.unresolvedCall(pc, declaringClassType, name, descriptor, operands)
                 } else {
@@ -139,6 +139,4 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
         }
     }
 }
-
-
 

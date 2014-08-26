@@ -154,5 +154,3 @@ case class UselessComputation(
 
 }
 
-
-

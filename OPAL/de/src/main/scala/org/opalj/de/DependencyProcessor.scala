@@ -120,4 +120,3 @@ trait DependencyProcessor {
         VirtualMethod(declaringClassType, name, descriptor)
 }
 
-

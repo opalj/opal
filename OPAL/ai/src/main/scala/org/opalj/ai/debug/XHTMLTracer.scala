@@ -102,7 +102,7 @@ trait XHTMLTracer extends AITracer {
             }
 
         <span onclick={ openDialog } title={ instruction.toString(pc) }>
-    	{ instructionAsString }
+            { instructionAsString }
         </span>
     }
 
@@ -141,41 +141,41 @@ trait XHTMLTracer extends AITracer {
                 flowEntity ← path
             } yield {
                 val dialogId = "dialog"+flowEntity.flowId
-                <div id={ dialogId } title={ (index + 1) + " - " + flowEntity.pc + " (" + flowEntity.instruction.mnemonic + ")" }>
-        	<b>Stack</b><br/>
-        	{ dumpStack(flowEntity.operands)(Some(idsLookup)) }
-        	<b>Locals</b><br/>
-        	{ dumpLocals(flowEntity.locals)(Some(idsLookup)) }
-        	</div>
+                <div id={ dialogId } title={ (index + 1)+" - "+flowEntity.pc+" ("+flowEntity.instruction.mnemonic+")" }>
+                    <b>Stack</b><br/>
+                    { dumpStack(flowEntity.operands)(Some(idsLookup)) }
+                    <b>Locals</b><br/>
+                    { dumpLocals(flowEntity.locals)(Some(idsLookup)) }
+                </div>
             }
         def row(pc: PC) =
             for (path ← inOrderFlow) yield {
                 val flowEntity = path.find(_.pc == pc)
-                <td> 
-        		{ flowEntity.map(fe ⇒ instructionToNode(fe.flowId, pc, fe.instruction)).getOrElse(xml.Text(" ")) }
-        		</td>
+                <td>
+                    { flowEntity.map(fe ⇒ instructionToNode(fe.flowId, pc, fe.instruction)).getOrElse(xml.Text(" ")) }
+                </td>
             }
         val joinInstructions = code.joinInstructions
         val flowTable =
             for ((pc, rowIndex) ← pcsToRowIndex) yield {
                 <tr>
-            		<td>{ if (joinInstructions.contains(pc)) "⇶ " else "" } <b>{ pc }</b></td>
-            		{ row(pc) }
-            	</tr>
+                    <td>{ if (joinInstructions.contains(pc)) "⇶ " else "" } <b>{ pc }</b></td>
+                    { row(pc) }
+                </tr>
             }
 
         <html lang="en">
-        <head>
-        <meta charset="utf-8" />
-        <title>{ title + " (Paths: " + pathsCount + "; Flow Nodes: " + FlowEntity.lastFlowId + ")" }</title>
-        <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
-        <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
-        <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-        <script>
-        { dialogSetup }
-        </script> 
-        <style>
-        table {{
+            <head>
+                <meta charset="utf-8"/>
+                <title>{ title+" (Paths: "+pathsCount+"; Flow Nodes: "+FlowEntity.lastFlowId+")" }</title>
+                <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"/>
+                <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+                <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+                <script>
+                    { dialogSetup }
+                </script>
+                <style>
+                    table {{
 			width:100%;
 			font-size: 12px;
 			font-family: Tahoma;
@@ -214,30 +214,31 @@ trait XHTMLTracer extends AITracer {
         	font-family: Tahoma,Arial;
         	font-size: 11px; 
         }}
-		</style>
-        </head>
-        <body style="font-family:Tahoma;font-size:8px;">
-        <label for="filter">Filter</label>  
-        <input type="text" name="filter" value="" id="filter" title="Use a RegExp to filter(remove) elements. E.g.,'DUP|ASTORE|ALOAD'"/> 
-        <table>
-        	<thead><tr>
-        	<td>PC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-        	{ (1 to inOrderFlow.size).map(index ⇒ <td>{ index }</td>) }
-        	</tr></thead>
-        	<tbody>
-        	{ flowTable }
-        	</tbody>
-        </table>
-        { dialogs }
-        <script>
-        $('tbody tr').hover(function(){{  
+                </style>
+            </head>
+            <body style="font-family:Tahoma;font-size:8px;">
+                <label for="filter">Filter</label>
+                <input type="text" name="filter" value="" id="filter" title="Use a RegExp to filter(remove) elements. E.g.,'DUP|ASTORE|ALOAD'"/>
+                <table>
+                    <thead><tr>
+                               <td>PC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                               { (1 to inOrderFlow.size).map(index ⇒ <td>{ index }</td>) }
+                           </tr></thead>
+                    <tbody>
+                        { flowTable }
+                    </tbody>
+                </table>
+                { dialogs }
+                <script>
+                    $('tbody tr').hover(function(){{  
         	$(this).find('td').addClass('hovered');  
         }}, function(){{  
         	$(this).find('td').removeClass('hovered');  
         }});
         function filter(selector, query) {{  
         	$(selector).each(function() {{  
-        		($(this).text().search(new RegExp(query, 'i')) { xml.Unparsed("<") } 0) ? $(this).show().addClass('visible') : $(this).hide().removeClass('visible');  
+        		($(this).text().search(new RegExp(query, 'i')){ xml.Unparsed("<") }
+                    0) ? $(this).show().addClass('visible') : $(this).hide().removeClass('visible');  
         	}});  
         }};
         //default each row to visible  
@@ -256,9 +257,9 @@ trait XHTMLTracer extends AITracer {
         		else {{  
         			filter('tbody tr', $(this).val());  
         		}} 
-        }});      
-        </script>
-        </body>
+        }});
+                </script>
+            </body>
         </html>
     }
 

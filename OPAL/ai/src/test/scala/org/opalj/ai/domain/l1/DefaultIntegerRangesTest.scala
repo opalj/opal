@@ -927,7 +927,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.operandsArray(20).head should be(domain.AnIntegerValue)
             }
         }
-        
+
         describe("with constraint tracking between integer values") {
 
             it("it should handle cases where we constrain and compare unknown values (without join)") {

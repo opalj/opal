@@ -112,5 +112,3 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
     }
 }
 
-
-

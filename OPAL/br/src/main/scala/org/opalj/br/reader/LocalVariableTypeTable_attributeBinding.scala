@@ -73,4 +73,3 @@ trait LocalVariableTypeTable_attributeBinding
         new LocalVariableTypeTable(local_variable_type_table)
 }
 
-

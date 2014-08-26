@@ -58,7 +58,7 @@ class ArrayTypeTest extends FunSuite with ParallelTestExecution {
             case ArrayType(ArrayType(ShortType)) ⇒ /*OK*/
         }
     }
-    
+
     test("toJavaClass") {
         val at1 = FieldType("[Ljava/lang/Object;")
         val at1Class = at1.toJavaClass

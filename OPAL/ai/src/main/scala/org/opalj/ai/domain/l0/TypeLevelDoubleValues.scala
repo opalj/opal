@@ -100,5 +100,3 @@ trait TypeLevelDoubleValues extends DoubleValuesDomain {
 
 }
 
-
-

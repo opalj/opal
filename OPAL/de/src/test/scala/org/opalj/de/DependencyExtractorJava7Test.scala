@@ -36,7 +36,6 @@ import org.scalatest.FunSuite
 import br.reader.Java8Framework.ClassFiles
 import DependencyType._
 
-
 /**
  * Tests that the dependency extractor does not miss some dependencies and
  * that it does not extract "unexpected" dependencies.

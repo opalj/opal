@@ -83,4 +83,3 @@ trait SourceElementsMatcher { left ⇒
     }
 }
 
-

@@ -99,6 +99,3 @@ trait TypeLevelFloatValues extends FloatValuesDomain {
 
 }
 
-
-
-

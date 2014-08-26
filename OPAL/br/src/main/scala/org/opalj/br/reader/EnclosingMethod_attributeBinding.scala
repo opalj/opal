@@ -61,4 +61,3 @@ trait EnclosingMethod_attributeBinding
     }
 }
 
-

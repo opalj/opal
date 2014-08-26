@@ -66,6 +66,5 @@ class DefaultVTACallGraphDomain[Source](
         with l1.DefaultIntegerRangeValues
         with l1.DefaultReferenceValuesBinding
         with l0.DefaultPrimitiveValuesConversions
-        with VTACallGraphDomain 
-
+        with VTACallGraphDomain
 

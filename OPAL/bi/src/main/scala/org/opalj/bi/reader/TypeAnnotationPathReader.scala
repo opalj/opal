@@ -108,4 +108,3 @@ trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
     }
 }
 
-

@@ -62,4 +62,3 @@ trait DefaultTypeLevelFloatValues
         AFloatValue
 }
 
-

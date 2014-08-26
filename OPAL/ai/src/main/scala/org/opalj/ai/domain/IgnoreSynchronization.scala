@@ -85,7 +85,3 @@ trait IgnoreSynchronization extends MonitorInstructionsDomain {
     }
 }
 
-
-
-
-

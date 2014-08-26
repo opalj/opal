@@ -64,5 +64,3 @@ class VTACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration
         new DefaultVTACallGraphDomain(theProject, cache, classFile, method, 2)
 }
 
-
-

@@ -56,6 +56,3 @@ object ProjectIndexKey extends ProjectInformationKey[ProjectIndex] {
     }
 }
 
-
-
-

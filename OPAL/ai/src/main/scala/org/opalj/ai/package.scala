@@ -210,7 +210,7 @@ package object ai {
         var pc = 0
         var result: List[B] = List.empty
         while (pc < max_pc) {
-			val instruction = instructions(pc)
+            val instruction = instructions(pc)
             val operands = operandsArray(pc)
             if (operands ne null) {
                 val params = (pc, instruction, operands)
@@ -218,7 +218,7 @@ package object ai {
                     result = f(params) :: result
                 }
             }
-            pc = instruction.indexOfNextInstruction(pc,code)
+            pc = instruction.indexOfNextInstruction(pc, code)
         }
         result.reverse
     }

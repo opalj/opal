@@ -32,14 +32,13 @@ package project
 
 import org.opalj.br.analyses._
 
-
 /**
  * The ''key'' object to get a call graph that was calculated using the CHA algorithm.
  *
  * In general, a CHA call graph is only a very rough approximation of the ''ideal''
  * call graph and may contain a large number edges that will never (cannot) occur
- * at runtime.  
- * 
+ * at runtime.
+ *
  * @example
  *      To get the call graph object use the `Project`'s `get` method and pass in
  *      `this` object.
@@ -66,7 +65,4 @@ object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
             new CHACallGraphAlgorithmConfiguration())
     }
 }
-
-
-
 

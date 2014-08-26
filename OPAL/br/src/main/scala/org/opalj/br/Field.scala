@@ -37,7 +37,7 @@ import bi.AccessFlags
 /**
  * Represents a single field declaration/definition.
  *
-* @note Fields have – by default – no link to their defining [[ClassFile]]. However,
+ * @note Fields have – by default – no link to their defining [[ClassFile]]. However,
  *      if a [[analyses.Project]] is available then it is possible to get a `Field`'s
  *      [[ClassFile]] by using `Project`'s `classFile(Field)` method.
  * @note Identity (w.r.t. `equals`/`hashCode`) is intentionally by reference (default
@@ -127,7 +127,7 @@ object Field {
         accessFlags: Int,
         name: String,
         fieldType: FieldType,
-        attributes: Attributes): Field = {        
+        attributes: Attributes): Field = {
         new Field(
             accessFlags,
             name.intern(),

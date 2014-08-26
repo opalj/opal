@@ -71,4 +71,3 @@ trait DefaultTypeLevelDoubleValues
         ADoubleValue
 }
 
-

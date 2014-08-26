@@ -56,12 +56,12 @@ case class StackMapTable_attribute(
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div>
-	        <details>
-	            <summary>Stack map table:</summary>
-	            <span> number of frames:{ stack_map_frames.length }</span>
-	            { stack_map_framestoXHTML(cp) }
-	       </details>
-	    </div>
+            <details>
+                <summary>Stack map table:</summary>
+                <span> number of frames:{ stack_map_frames.length }</span>
+                { stack_map_framestoXHTML(cp) }
+            </details>
+        </div>
     }
 
     def stack_map_framestoXHTML(implicit cp: Constant_Pool): Node = {

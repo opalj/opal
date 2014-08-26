@@ -165,5 +165,3 @@ case object TAOnBoundOfWildcardType extends TypeAnnotationPathElement
 case class TAOnTypeArgument(
     type_argument_index: Int) extends TypeAnnotationPathElement
 
-
-

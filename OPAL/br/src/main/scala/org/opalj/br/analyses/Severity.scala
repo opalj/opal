@@ -45,12 +45,12 @@ abstract class Severity {
     /**
      * Returns a string using text and ANSI color codes suitable for console output to
      * allow humans to quickly identify the corresponding severity.
-     * 
+     *
      * @param suffix An additional suffix string that will be appended to the severity
      * text and will be colored in the same way. This is useful, for example, to append
      * ": " to achieve a formatting such as "<severity>: " where this whole string uses
      * the severity's color. This matches the colored formatting done by clang.
-     * 
+     *
      * @return Human-readable string identifying this severity level, ready to be printed
      * to the console.
      */
@@ -58,8 +58,8 @@ abstract class Severity {
 }
 
 /**
- * Basically an enumeration of different severity objects. 
- * 
+ * Basically an enumeration of different severity objects.
+ *
  * @author Daniel Klauer
  */
 object Severity {
@@ -68,7 +68,7 @@ object Severity {
      */
     case object Error extends Severity {
         def toAnsiColoredString(suffix: String): String =
-            Console.BOLD + Console.RED+"error"+suffix+Console.RESET
+            Console.BOLD + Console.RED+"error"+suffix + Console.RESET
     }
 
     /**
@@ -77,7 +77,7 @@ object Severity {
      */
     case object Warning extends Severity {
         def toAnsiColoredString(suffix: String): String =
-            Console.BOLD + Console.YELLOW+"warning"+suffix+Console.RESET
+            Console.BOLD + Console.YELLOW+"warning"+suffix + Console.RESET
     }
 
     /**
@@ -87,6 +87,6 @@ object Severity {
      */
     case object Info extends Severity {
         def toAnsiColoredString(suffix: String): String =
-            Console.BOLD + Console.BLUE+"info"+suffix+Console.RESET
+            Console.BOLD + Console.BLUE+"info"+suffix + Console.RESET
     }
 }

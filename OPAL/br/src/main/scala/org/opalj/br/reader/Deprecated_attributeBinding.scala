@@ -48,4 +48,3 @@ trait Deprecated_attributeBinding
 
 }
 
-

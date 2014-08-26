@@ -52,7 +52,7 @@ class LongBitsToDoubleInvokedOnInt[Source] extends FindRealBugsAnalysis[Source] 
      * Returns a description text for this analysis.
      * @return analysis description
      */
-    override def description: String = 
+    override def description: String =
         "Reports code passing ints to Double.longBitsToDouble(long)"
 
     private val doubleType = ObjectType("java/lang/Double")

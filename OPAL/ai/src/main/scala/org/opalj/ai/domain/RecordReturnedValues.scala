@@ -97,5 +97,3 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure {
     }
 }
 
-
-

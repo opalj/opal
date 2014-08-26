@@ -49,7 +49,7 @@ class DmRunFinalizersOnExit[Source] extends FindRealBugsAnalysis[Source] {
      * Returns a description text for this analysis.
      * @return analysis description
      */
-    override def description: String = 
+    override def description: String =
         "Detects calls of System.runFinalizersOnExit/Runtime.runFinalizersOnExit."
 
     // runFinalizersOnExit() has a boolean parameter and returns void

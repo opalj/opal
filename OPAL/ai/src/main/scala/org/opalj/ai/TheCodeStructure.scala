@@ -55,7 +55,7 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
 
     /**
      * Sets the code structure.
-     * 
+     *
      * This method is called by the AI framework.
      */
     def setCodeStructure(

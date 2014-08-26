@@ -62,4 +62,3 @@ trait AIWithPropertyTracing[D <: Domain with PropertyTracing] extends AI[D] {
     }
 }
 
-

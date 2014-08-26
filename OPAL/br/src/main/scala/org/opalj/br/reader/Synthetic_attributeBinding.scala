@@ -50,4 +50,3 @@ trait Synthetic_attributeBinding
 
 }
 
-

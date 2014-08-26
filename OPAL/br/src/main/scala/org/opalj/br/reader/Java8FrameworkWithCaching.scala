@@ -54,4 +54,3 @@ class Java8FrameworkWithCaching(cache: BytecodeInstructionsCache)
     with CachedBytecodeReaderAndBinding
     with CodeReader
 
-

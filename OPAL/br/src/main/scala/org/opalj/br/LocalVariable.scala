@@ -39,4 +39,4 @@ case class LocalVariable(
     length: Int,
     name: String,
     fieldType: FieldType,
-    index: Int) 
+    index: Int)
