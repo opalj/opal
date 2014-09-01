@@ -266,12 +266,9 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     override def toString() = "VoidType"
 
-}
-case object VoidType extends VoidType {
-
     final val id = Int.MinValue
-
 }
+case object VoidType extends VoidType
 
 /**
  * Supertype of all types except [[VoidType]].
@@ -353,6 +350,12 @@ sealed abstract class ByteType private () extends BaseType {
 
     final override def computationalType = ComputationalTypeInt
 
+    final val atype = 8
+
+    final val id = Int.MinValue + atype
+
+    final val WrapperType = ObjectType.Byte
+
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "byte"
@@ -363,16 +366,7 @@ sealed abstract class ByteType private () extends BaseType {
 
     override def toString() = "ByteType"
 }
-
-case object ByteType extends ByteType {
-
-    final val atype = 8
-
-    final val id = Int.MinValue + atype
-
-    final val WrapperType = ObjectType.Byte
-
-}
+case object ByteType extends ByteType
 
 sealed abstract class CharType private () extends BaseType {
 
@@ -382,9 +376,15 @@ sealed abstract class CharType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
+    final val atype = 5
+
+    final val id = Int.MinValue + atype
+
     def toJava: String = "char"
 
     override def toBinaryJavaName: String = "C"
+
+    final val WrapperType = ObjectType.Char
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Character.TYPE
@@ -392,15 +392,7 @@ sealed abstract class CharType private () extends BaseType {
     override def toString() = "CharType"
 
 }
-case object CharType extends CharType {
-
-    final val atype = 5
-
-    final val id = Int.MinValue + atype
-
-    final val WrapperType = ObjectType.Char
-
-}
+case object CharType extends CharType
 
 sealed abstract class DoubleType private () extends BaseType {
 
@@ -410,9 +402,15 @@ sealed abstract class DoubleType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
+    final val atype = 7
+
+    final val id = Int.MinValue + atype
+
     def toJava: String = "double"
 
     override def toBinaryJavaName: String = "D"
+
+    final val WrapperType = ObjectType.Double
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Double.TYPE
@@ -420,15 +418,7 @@ sealed abstract class DoubleType private () extends BaseType {
     override def toString() = "DoubleType"
 
 }
-case object DoubleType extends DoubleType {
-
-    final val atype = 7
-
-    final val id = Int.MinValue + atype
-
-    final val WrapperType = ObjectType.Double
-
-}
+case object DoubleType extends DoubleType
 
 sealed abstract class FloatType private () extends BaseType {
 
@@ -438,9 +428,15 @@ sealed abstract class FloatType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
+    final val atype = 6
+
+    final val id = Int.MinValue + atype
+
     def toJava: String = "float"
 
     override def toBinaryJavaName: String = "F"
+
+    final val WrapperType = ObjectType.Float
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Float.TYPE
@@ -448,15 +444,7 @@ sealed abstract class FloatType private () extends BaseType {
     override def toString() = "FloatType"
 
 }
-case object FloatType extends FloatType {
-
-    final val atype = 6
-
-    final val id = Int.MinValue + atype
-
-    final val WrapperType = ObjectType.Float
-
-}
+case object FloatType extends FloatType
 
 sealed abstract class ShortType private () extends BaseType {
 
@@ -466,9 +454,15 @@ sealed abstract class ShortType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
+    final val atype = 9
+
+    final val id = Int.MinValue + atype
+
     def toJava: String = "short"
 
     override def toBinaryJavaName: String = "S"
+
+    final val WrapperType = ObjectType.Short
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Short.TYPE
@@ -476,15 +470,7 @@ sealed abstract class ShortType private () extends BaseType {
     override def toString() = "ShortType"
 
 }
-case object ShortType extends ShortType {
-
-    final val atype = 9
-
-    final val id = Int.MinValue + atype
-
-    final val WrapperType = ObjectType.Short
-
-}
+case object ShortType extends ShortType
 
 sealed abstract class IntegerType private () extends BaseType {
 
@@ -494,9 +480,15 @@ sealed abstract class IntegerType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
+    final val atype = 10
+
+    final val id = Int.MinValue + atype
+
     def toJava: String = "int"
 
     override def toBinaryJavaName: String = "I"
+
+    final val WrapperType = ObjectType.Integer
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Integer.TYPE
@@ -504,14 +496,7 @@ sealed abstract class IntegerType private () extends BaseType {
     override def toString() = "IntegerType"
 
 }
-case object IntegerType extends IntegerType {
-
-    final val atype = 10
-
-    final val id = Int.MinValue + atype
-
-    final val WrapperType = ObjectType.Integer
-}
+case object IntegerType extends IntegerType
 
 sealed abstract class LongType private () extends BaseType {
 
@@ -521,9 +506,15 @@ sealed abstract class LongType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
+    final val atype = 11
+
+    final val id = Int.MinValue + atype
+
     def toJava: String = "long"
 
     override def toBinaryJavaName: String = "J"
+
+    final val WrapperType = ObjectType.Long
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Long.TYPE
@@ -531,14 +522,7 @@ sealed abstract class LongType private () extends BaseType {
     override def toString() = "LongType"
 
 }
-case object LongType extends LongType {
-
-    final val atype = 11
-
-    final val id = Int.MinValue + atype
-
-    final val WrapperType = ObjectType.Long
-}
+case object LongType extends LongType
 
 sealed abstract class BooleanType private () extends BaseType {
 
@@ -548,7 +532,15 @@ sealed abstract class BooleanType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
+    final val atype = 4
+
+    final val id = Int.MinValue + atype
+
+    final val toJava /*: String*/ = "boolean"
+
     override def toBinaryJavaName: String = "Z"
+
+    final val WrapperType = ObjectType.Boolean
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Boolean.TYPE
@@ -556,17 +548,7 @@ sealed abstract class BooleanType private () extends BaseType {
     override def toString() = "BooleanType"
 
 }
-case object BooleanType extends BooleanType {
-
-    final val atype = 4
-
-    final val id = Int.MinValue + atype
-
-    final val toJava /*: String*/ = "boolean"
-
-    final val WrapperType = ObjectType.Boolean
-
-}
+case object BooleanType extends BooleanType
 
 /**
  * Represents an `ObjectType`.
@@ -780,7 +762,7 @@ object ObjectType {
      * res1: org.opalj.br.FieldType = IntegerType
      * }}}
      */
-    private val primitiveType: Array[BaseType] = {
+    private[this] lazy val primitiveType: Array[BaseType] = {
         val a = new Array[BaseType](Double.id + 1)
         a(Boolean.id) = BooleanType
         a(Byte.id) = ByteType
