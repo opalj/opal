@@ -1274,7 +1274,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def toString() = {
             var s = values.mkString("OneOf(", ", ", ")")
-            s += upperTypeBound.map(_.toJava).mkString(";lutb=", " with ", "")
+            val lutb = upperTypeBound
+            if (lutb.nonEmpty)
+                s += lutb.map(_.toJava).mkString(";lutb=", " with ", "")
             if (!isPrecise) s += ";isUpperBound"
             s += ";isNull="+isNull
             s
