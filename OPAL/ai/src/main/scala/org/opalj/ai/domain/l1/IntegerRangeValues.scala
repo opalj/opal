@@ -39,7 +39,7 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * This domain enables the tracking of an integer value's range.
  *
  * The cardinality of the range can be configured to facilitate different needs with regard to the
- * desired precision ([[maxSizeOfIntegerRanges]]).
+ * desired precision ([[maxCardinalityOfIntegerRanges]]).
  * Often, a very small cardinality (e.g., between 2 and 8) may be
  * completely sufficient and a large cardinality does not add the overall precision
  * significantly.
