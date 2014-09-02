@@ -183,6 +183,7 @@ object DeadCodeAnalysis {
 
     def resultsAsXHTML(results: (Long, Iterable[DeadCode])): Node = {
         val (analysisTime, methodsWithDeadCode) = results
+        val methodWithDeadCodeCount = methodsWithDeadCode.size
 
         <div id="dead_code_results">
             <script type="text/javascript">
@@ -197,10 +198,15 @@ object DeadCodeAnalysis {
                         }""")
                 }
             </script>
-            Suppress messages with an accurarcy less than: 
-            1%
-            <input type="range" name="accuracy" id="accuracy" min="1" max="100" onchange="updateAccuracy(this.valueAsNumber)"/>
-            100%
+            <div>Number of identified issues: { methodWithDeadCodeCount }</div>
+            <div>
+                Suppress identified issues with an estimated
+                <span class="tooltip">importance<span>The importance is calculated using the available context information.<br/>E.g., a dead <i>default case</i> in a switch statement is often the result of defensive programming and, hence, not important.</span></span>
+                less than:
+                <span class="tooltip">1<span>The identified issue is probably not important or is just a technical artifact.</span></span>
+                <input type="range" name="accuracy" id="accuracy" min="1" max="100" onchange="updateAccuracy(this.valueAsNumber)"/>
+                <span class="tooltip">100<span>The identified issue is probably very important.</span></span>
+            </div>
             <table>
                 <tr>
                     <th>Class</th>
