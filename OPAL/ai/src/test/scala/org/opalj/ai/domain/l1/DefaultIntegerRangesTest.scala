@@ -424,6 +424,186 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
         }
 
+        describe("the behavior of irem") {
+
+            it("AnIntegerValue % AnIntegerValue => AnIntegerValue + Exception") {
+                val v1 = AnIntegerValue()
+                val v2 = AnIntegerValue()
+
+                val result = irem(-1, v1, v2)
+                result.result shouldBe an[AnIntegerValue]
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            it("(the dividend is known, but the divisor is 0) [0,3] % [0,0] => Exception") {
+                val v1 = IntegerRange(0, 3)
+                val v2 = IntegerRange(0, 0)
+
+                val result = irem(-1, v1, v2)
+                result.hasResult should be(false)
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            it("(the dividend is unknown, but the divisor is 0) AnIntegerValue % [0,0] => Exception") {
+                val v1 = AnIntegerValue()
+                val v2 = IntegerRange(0, 0)
+
+                val result = irem(-1, v1, v2)
+                result.hasResult should be(false)
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            it("(the dividend is unknown, but the divisor is known) AnIntegerValue % [0,22] =>  [-21,21] + Exception") {
+                val v1 = AnIntegerValue()
+                val v2 = IntegerRange(0, 22)
+
+                val result = irem(-1, v1, v2)
+                result.result should be(IntegerRange(-21, 21))
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            it("(the dividend is unknown, but the divisor is known) AnIntegerValue % [2,4] =>  [-3,3] + Exception") {
+                val v1 = AnIntegerValue()
+                val v2 = IntegerRange(2, 4)
+
+                val result = irem(-1, v1, v2)
+                result.result should be(IntegerRange(-3, 3))
+                result.throwsException should be(false)
+            }
+
+            it("(dividend and divisor are positive) [0,3] % [1,2] => [0,1]") {
+                val v1 = IntegerRange(0, 3)
+                val v2 = IntegerRange(1, 2)
+
+                val result = irem(-1, v1, v2)
+                val expected = ComputedValue(IntegerRange(0, 1))
+                result should be(expected)
+            }
+
+            it("(dividend and divisor are negative) [-10,-3] % [-2,-1] => [-1,0]") {
+                val v1 = IntegerRange(-10, -3)
+                val v2 = IntegerRange(-2, -1)
+
+                val result = irem(-1, v1, v2)
+                val expected = ComputedValue(IntegerRange(-1, 0))
+                result should be(expected)
+            }
+
+            it("(the dividend may be positive OR negative) [-10,3] % [1,2] => [-1,1]") {
+                val v1 = IntegerRange(-10, 3)
+                val v2 = IntegerRange(1, 2)
+
+                val result = irem(-1, v1, v2)
+                val expected = ComputedValue(IntegerRange(-1, 1))
+                result should be(expected)
+            }
+
+            it("(the dividend and the divisor may be positive OR negative) [-10,3] % [-3,4] => [-3,3] + Exception") {
+                val v1 = IntegerRange(-10, 3)
+                val v2 = IntegerRange(-3, 4)
+
+                val result = irem(-1, v1, v2)
+                result.result should be(IntegerRange(-3, 3))
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            describe("the behavior of ishl") {
+
+                it("AnIntegerValue << [2,2] => AnIntegerValue") {
+                    val v = AnIntegerValue
+                    val s = IntegerRange(2, 2)
+
+                    ishl(-1, v, s) should be(AnIntegerValue)
+                }
+
+                it("[2,2] << AnIntegerValue => AnIntegerValue") {
+                    val v = IntegerRange(2, 2)
+                    val s = AnIntegerValue
+
+                    ishl(-1, v, s) should be(AnIntegerValue)
+                }
+
+                it("[-1,1] << [2,2] => AnIntegerValue") {
+                    val v = IntegerRange(-1, 1)
+                    val s = IntegerRange(2, 2)
+
+                    ishl(-1, v, s) should be(AnIntegerValue)
+                }
+
+                it("[64,64] << [64,64] => [64,64]") {
+                    val v = IntegerRange(64, 64)
+                    val s = IntegerRange(64, 64)
+
+                    ishl(-1, v, s) should be(IntegerRange(64, 64))
+                }
+
+                it("[1,1] << [64,64] => [1,1]") {
+                    val v = IntegerRange(1, 1)
+                    val s = IntegerRange(64, 64)
+
+                    ishl(-1, v, s) should be(IntegerRange(1, 1))
+                }
+
+                it("[0,0] << [64,64] => [0,0]") {
+                    val v = IntegerRange(0, 0)
+                    val s = IntegerRange(64, 64)
+
+                    ishl(-1, v, s) should be(IntegerRange(0, 0))
+                }
+
+                it("[1,1] << [30,30] => [1073741824,1073741824]") {
+                    val v = IntegerRange(1, 1)
+                    val s = IntegerRange(30, 30)
+
+                    ishl(-1, v, s) should be(IntegerRange(1073741824, 1073741824))
+                }
+
+                it("[1,1] << [2,2] => [4,4]") {
+                    val v = IntegerRange(0, 2)
+                    val s = IntegerRange(2, 2)
+
+                    ishl(-1, v, s) should be(IntegerRange(0, 8))
+                }
+
+                it("[0,2] << [2,2] => [0,8]") {
+                    val v = IntegerRange(0, 2)
+                    val s = IntegerRange(2, 2)
+
+                    ishl(-1, v, s) should be(IntegerRange(0, 8))
+                }
+
+                it("[1,2] << [2,2] => [4,8]") {
+                    val v = IntegerRange(1, 2)
+                    val s = IntegerRange(2, 2)
+
+                    ishl(-1, v, s) should be(IntegerRange(4, 8))
+                }
+
+                it("[1,2] << [2,3] => [4,16]") {
+                    val v = IntegerRange(1, 2)
+                    val s = IntegerRange(2, 3)
+
+                    ishl(-1, v, s) should be(IntegerRange(4, 16))
+                }
+
+            }
+        }
+
         describe("the behavior of the i2b cast operator") {
 
             it("(byte)AnIntegerValue => [-128,+127]") {

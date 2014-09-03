@@ -162,11 +162,6 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         val lowerBound: Int // inclusive
 
         val upperBound: Int // inclusive
-
-        /**
-         * Creates a new `IntegerRange` that contains the given value.
-         */
-        def update(newValue: Int): DomainValue
     }
 
     /**
@@ -645,10 +640,39 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         pc: PC,
         left: DomainValue,
         right: DomainValue): IntegerValueOrArithmeticException = {
-        right match {
-            case IntegerRange(rightLB, rightUB) if rightLB > 0 || rightUB < 0 ⇒
-                // no div by "0"
-                ComputedValue(IntegerValue(pc))
+        // IMPROVE If the range of values is smaller than the "divisor-1" we could calculate a more precise bound; e.g., [13,14] % 5 => [3,4]
+
+        // RECALL: if the dividend(left) is smaller than zero, the result will be in the 
+        // range: [-|divisor]+1,0]
+        (left, right) match {
+            case (_, IntegerRange(0, 0)) ⇒
+                ThrowsException(ArithmeticException(pc))
+
+            case (IntegerRange(leftLB, leftUB), IntegerRange(rightLB, rightUB)) ⇒
+                val maxDividend = Math.max(Math.abs(rightLB), Math.abs(rightUB))
+                val newValue =
+                    if (leftLB < 0) {
+                        if (leftUB < 0)
+                            IntegerRange(-(maxDividend - 1), 0)
+                        else
+                            IntegerRange(-(maxDividend - 1), maxDividend - 1)
+                    } else
+                        IntegerRange(0, maxDividend - 1)
+                if (rightLB > 0 || rightUB < 0)
+                    ComputedValue(newValue)
+                else
+                    ComputedValueOrException(newValue, ArithmeticException(pc))
+
+            case (_, IntegerRange(rightLB, rightUB)) ⇒
+                val maxDividend = Math.max(Math.abs(rightLB), Math.abs(rightUB))
+                val newValue = IntegerRange(-(maxDividend - 1), maxDividend - 1)
+                if (rightLB > 0 || rightUB < 0) {
+                    // no div by "0"
+                    ComputedValue(newValue)
+                } else {
+                    ComputedValueOrException(newValue, ArithmeticException(pc))
+                }
+
             case _ ⇒
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(
@@ -658,14 +682,50 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         }
     }
 
-    override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+
+            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub ⇒
+                val r = vlb & slb
+                IntegerRange(r, r)
+
+            case (IntegerRange(lb1, ub1), IntegerRange(lb2, ub2)) ⇒
+                // TODO!!!!!!
+                //     println(s"$value1 & $value2")
+                IntegerValue(pc)
+
+            case (_, IntegerRange(0, 0))                  ⇒ IntegerRange(0, 0)
+            case (IntegerRange(0, 0), _)                  ⇒ IntegerRange(0, 0)
+            case (_, IntegerRange(lb2, ub2)) if (lb2 > 0) ⇒ IntegerRange(0, ub2)
+            case (IntegerRange(lb1, ub1), _) if (lb1 > 0) ⇒ IntegerRange(0, ub1)
+            case _                                        ⇒ IntegerValue(pc)
+        }
+    }
 
     override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
 
-    override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def ishl(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
+        // RECALL THAT ONLY THE FIVE LOWEST BITS OF THE SHIFT VALUE ARE CONSIDERED!
+        // I.E. THE SHIFT IS ALWAYS BETWEEN 0 AND 31 BITS
+        (value, shift) match {
+            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub ⇒
+                val r = vlb << slb
+                IntegerRange(r, r)
+
+            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb >= 0 ⇒
+                val maxShift = if (sub > 31 || sub < 0) 31 else sub
+                val minShift = if (slb >= 0 && slb <= 31 && sub <= 31) slb else 0
+                val max = vub.toLong << maxShift
+                if (max <= Int.MaxValue)
+                    IntegerRange(vlb << minShift, max.toInt)
+                else
+                    IntegerValue(pc)
+
+            case _ ⇒
+                IntegerValue(pc)
+        }
+    }
 
     override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
