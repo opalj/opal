@@ -77,7 +77,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
         domain.returnedNormally should be(false)
 
         val exs = domain.thrownExceptions(result.domain, -1)
-        exs.size should be(1)
+        if (exs.size != 1) fail("expected one exception: "+exs.mkString(", "))
         exs forall { ex ⇒
             ex match {
                 case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒
@@ -94,7 +94,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
         domain.returnedNormally should be(true)
 
         val exs = domain.thrownExceptions(result.domain, -1)
-        if (exs.size != 1) fail("expected one exception, found: "+exs)
+        if (exs.size != 1) fail("expected one exception: "+exs.mkString(", "))
         exs forall { ex ⇒
             ex match {
                 case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒
