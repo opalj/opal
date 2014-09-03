@@ -84,11 +84,10 @@ trait TypeLevelInvokeInstructions extends MethodCallsDomain {
         val exceptions = refIsNull(pc, operands.last) match {
             case Yes ⇒
                 return justThrows(NullPointerException(pc))
-            case _ ⇒
-                if (throwNullPointerExceptionOnMethodCall)
-                    NullPointerException(pc) :: getExceptions(pc)
-                else /*No or Unknown & DoNotThrowNullPointerException*/
-                    getExceptions(pc)
+            case Unknown if throwNullPointerExceptionOnMethodCall ⇒
+                NullPointerException(pc) :: getExceptions(pc)
+            case /*No or Unknown & DoNotThrowNullPointerException*/ _ ⇒
+                getExceptions(pc)
         }
         val returnType = methodDescriptor.returnType
         handleInvoke(pc, returnType, exceptions)
