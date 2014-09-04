@@ -48,8 +48,9 @@ class DeadCodeAnalysisDomain(
         with domain.l0.TypeLevelInvokeInstructions
         with domain.l1.DefaultReferenceValuesBinding
         with domain.l1.DefaultIntegerRangeValues
+        with domain.l1.MaxArrayLengthRefinement
         with domain.l1.ConstraintsBetweenIntegerValues
-        // with domain.l1.DefaultIntegerSetValues
+        //with domain.l1.DefaultIntegerSetValues
         with domain.l1.DefaultLongValues
         with domain.l1.LongValuesShiftOperators
         with domain.l1.DefaultConcretePrimitiveValuesConversions

@@ -33,6 +33,7 @@ import java.net.URL
 import scala.xml.Node
 import scala.xml.UnprefixedAttribute
 import scala.Console.BLUE
+import scala.Console.RED
 import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
@@ -114,7 +115,7 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
                     }
                 }
             }
-            Console.println(Console.RED+"METHODS: "+methodsCount.get+" INSTR: "+instrCount.get+" TRGTS: "+trgtsCount.get+" OPS: "+opsCount.get+"....RESULT SIZE====================="+results.size()+"...."+resultsCount.get)
+            println(RED+"METHODS: "+methodsCount.get+" INSTR: "+instrCount.get+" TRGTS: "+trgtsCount.get+" OPS: "+opsCount.get+"....RESULT SIZE====================="+results.size()+"...."+resultsCount.get)
             scala.collection.JavaConversions.collectionAsScalaIterable(results)
         } { t ⇒ analysisTime = t }
 

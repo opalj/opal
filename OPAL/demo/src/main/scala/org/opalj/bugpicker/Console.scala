@@ -43,7 +43,7 @@ import org.opalj.ai.debug.XHTML
  *
  * @author Michael Eichberg
  */
-object Main extends AnalysisExecutor { analysis ⇒
+object Console extends AnalysisExecutor { analysis ⇒
 
     private final val deadCodeAnalysis = new DeadCodeAnalysis
     val analysis = new Analysis[URL, BasicReport] {
