@@ -97,6 +97,9 @@ sealed trait Computation[+V, +E] {
      */
     def exceptions: E
 
+    def updateResult[X](result: X): Computation[X, E]
+
+    def updateExceptions[X](exceptions: X): Computation[V, X]
 }
 
 /**
@@ -111,12 +114,20 @@ final case class ComputedValue[+V](
 
     def hasResult: Boolean = true
 
+    def updateResult[X](r: X): ComputedValue[X] = ComputedValue(r)
+
     def throwsException: Boolean = false
 
     def exceptions: Nothing =
         throw new UnsupportedOperationException(
             "the computation succeeded without an exception"
         )
+
+    def updateExceptions[X](es: X): ComputedValue[V] =
+        throw new UnsupportedOperationException(
+            "the computation succeeded without an exception"
+        )
+
 }
 
 /**
@@ -132,7 +143,13 @@ final case class ComputedValueOrException[+V, +E](
 
     def hasResult: Boolean = true
 
+    def updateResult[X](result: X): ComputedValueOrException[X, E] =
+        ComputedValueOrException(result, exceptions)
+
     def throwsException: Boolean = true
+
+    def updateExceptions[X](exceptions: X): ComputedValueOrException[V, X] =
+        ComputedValueOrException(result, exceptions)
 }
 
 /**
@@ -149,7 +166,16 @@ final case class ThrowsException[+E](exceptions: E) extends Computation[Nothing,
             "the computation resulted in an exception"
         )
 
+    def updateResult[X](result: X): ThrowsException[E] =
+        throw new UnsupportedOperationException(
+            "the computation resulted in an exception"
+        )
+
     def throwsException: Boolean = true
+
+    def updateExceptions[X](exceptions: X): ThrowsException[X] =
+        ThrowsException(exceptions)
+
 }
 
 /**
@@ -164,6 +190,9 @@ final case class ComputationWithSideEffectOrException[+E](
 
     def hasResult: Boolean = false
 
+    def updateResult[X](result: X): ComputationWithSideEffectOrException[E] =
+        throw new UnsupportedOperationException("the computation only had side effects")
+
     def result: Nothing =
         throw new UnsupportedOperationException(
             "the computation was executed for its side effect only"
@@ -171,6 +200,8 @@ final case class ComputationWithSideEffectOrException[+E](
 
     def throwsException: Boolean = true
 
+    def updateExceptions[X](es: X): ComputationWithSideEffectOrException[X] =
+        ComputationWithSideEffectOrException(es)
 }
 
 /**
@@ -187,6 +218,9 @@ case object ComputationWithSideEffectOnly extends Computation[Nothing, Nothing] 
             "the computation was executed for its side effect only"
         )
 
+    def updateResult[X](result: X): ComputationWithSideEffectOnly.type =
+        throw new UnsupportedOperationException("the computation only had side effects")
+
     def throwsException: Boolean = false
 
     def exceptions: Nothing =
@@ -194,6 +228,10 @@ case object ComputationWithSideEffectOnly extends Computation[Nothing, Nothing] 
             "the computation succeeded without an exception"
         )
 
+    def updateExceptions[X](es: X): ComputationWithSideEffectOnly.type =
+        throw new UnsupportedOperationException(
+            "the computation succeeded without an exception"
+        )
 }
 
 /**
@@ -211,10 +249,15 @@ case object ComputationFailed extends Computation[Nothing, Nothing] {
 
     def result = throw new UnsupportedOperationException("the computation failed")
 
+    def updateResult[X](result: X): ComputationFailed.type =
+        throw new UnsupportedOperationException("the computation failed")
+
     def throwsException: Boolean = false
 
     def exceptions = throw new UnsupportedOperationException("the computation failed")
 
+    def updateExceptions[X](es: X): ComputationFailed.type =
+        throw new UnsupportedOperationException("the computation failed")
 }
 
 object ComputationWithResultAndException {
