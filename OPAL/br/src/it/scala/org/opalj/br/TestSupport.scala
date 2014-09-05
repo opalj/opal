@@ -31,6 +31,7 @@ package org.opalj
 package br
 
 import org.opalj.bi.TestSupport.JRELibraryFolder
+import org.opalj.bi.TestSupport.RTJar
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -47,7 +48,8 @@ object TestSupport {
      *
      * @return List of class files ready to be passed to a `IndexBasedProject`.
      */
-    def readJREClassFiles(cache: BytecodeInstructionsCache = new BytecodeInstructionsCache): Seq[(ClassFile, java.net.URL)] = {
+    def readJREClassFiles(
+        cache: BytecodeInstructionsCache = new BytecodeInstructionsCache): Seq[(ClassFile, java.net.URL)] = {
         val reader = new Java8FrameworkWithCaching(cache)
         val classFiles = reader.ClassFiles(JRELibraryFolder)
         if (classFiles.isEmpty)
@@ -56,6 +58,18 @@ object TestSupport {
         classFiles.toSeq
     }
 
+    def readRTJarClassFiles(
+        cache: BytecodeInstructionsCache = new BytecodeInstructionsCache): Seq[(ClassFile, java.net.URL)] = {
+        val reader = new Java8FrameworkWithCaching(cache)
+        val classFiles = reader.ClassFiles(RTJar)
+        if (classFiles.isEmpty)
+            sys.error(s"loading the JRE (${JRELibraryFolder}) failed")
+
+        classFiles.toSeq
+    }
+
     def createJREProject: Project[java.net.URL] = Project(readJREClassFiles())
+
+    def createRTJarProject: Project[java.net.URL] = Project(readRTJarClassFiles())
 
 }
