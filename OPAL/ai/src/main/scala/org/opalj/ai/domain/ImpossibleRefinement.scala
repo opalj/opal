@@ -39,4 +39,4 @@ case class ImpossibleRefinement(
     value: AnyRef,
     refinementGoal: String)
         extends AIException(
-            "refining "+value+" failed: "+refinementGoal) //,null, true, false)                                    
+            "refining "+value+" failed: "+refinementGoal) //,null, true, false)                                                
