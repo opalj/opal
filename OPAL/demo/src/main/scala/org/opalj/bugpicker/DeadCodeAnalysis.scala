@@ -64,18 +64,12 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
 
         var analysisTime: Long = 0l
         val methodsWithDeadCode = time {
-            /*D*/ val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
-            /*D*/ val instrCount = new java.util.concurrent.atomic.AtomicInteger(0)
-            /*D*/ val trgtsCount = new java.util.concurrent.atomic.AtomicInteger(0)
-            /*D*/ val opsCount = new java.util.concurrent.atomic.AtomicInteger(0)
-            /*D*/ val resultsCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
             val results = new java.util.concurrent.ConcurrentLinkedQueue[DeadCode]()
             for {
                 classFile ← theProject.classFiles.par
                 method @ MethodWithBody(body) ← classFile.methods
             } {
-                methodsCount.incrementAndGet()
                 val domain = new DeadCodeAnalysisDomain(theProject, method)
                 val result = BaseAI(classFile, method, domain)
                 val operandsArray = result.operandsArray
@@ -85,13 +79,9 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
                             case (ctiPC, i: ConditionalBranchInstruction) if operandsArray(ctiPC) != null ⇒
                                 (ctiPC, i, i.nextInstructions(ctiPC, /*not required*/ null))
                         }
-                        i = instrCount.incrementAndGet()
                         branchTarget ← branchTargetPCs.iterator
-                        j = trgtsCount.incrementAndGet()
                         if operandsArray(branchTarget) == null
-                        k = opsCount.incrementAndGet()
                     } yield {
-                        resultsCount.incrementAndGet()
                         val operands = operandsArray(ctiPC).take(instruction.operandCount)
                         DeadCode(classFile, method, ctiPC, operands, branchTarget, None)
                     }
@@ -115,7 +105,6 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
                     }
                 }
             }
-            println(RED+"METHODS: "+methodsCount.get+" INSTR: "+instrCount.get+" TRGTS: "+trgtsCount.get+" OPS: "+opsCount.get+"....RESULT SIZE====================="+results.size()+"...."+resultsCount.get)
             scala.collection.JavaConversions.collectionAsScalaIterable(results)
         } { t ⇒ analysisTime = t }
 
