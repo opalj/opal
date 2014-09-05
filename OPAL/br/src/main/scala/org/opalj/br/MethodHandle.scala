@@ -103,6 +103,8 @@ trait MethodCallMethodHandle extends MethodHandle {
         val methodCall = name + methodDescriptor.toUMLNotation
         handleType+": "+typeName+"."+methodCall
     }
+
+    def opcodeOfUnderlyingInstruction: Opcode
 }
 
 object MethodCallMethodHandle {
@@ -116,28 +118,43 @@ case class InvokeVirtualMethodHandle(
     receiverType: ReferenceType,
     name: String,
     methodDescriptor: MethodDescriptor)
-        extends MethodCallMethodHandle
+        extends MethodCallMethodHandle {
+
+    override val opcodeOfUnderlyingInstruction = instructions.INVOKEVIRTUAL.opcode
+}
 
 case class InvokeStaticMethodHandle(
     receiverType: ReferenceType,
     name: String,
     methodDescriptor: MethodDescriptor)
-        extends MethodCallMethodHandle
+        extends MethodCallMethodHandle {
+
+    override val opcodeOfUnderlyingInstruction = instructions.INVOKESTATIC.opcode
+}
 
 case class InvokeSpecialMethodHandle(
     receiverType: ReferenceType,
     name: String,
     methodDescriptor: MethodDescriptor)
-        extends MethodCallMethodHandle
+        extends MethodCallMethodHandle {
+
+    override val opcodeOfUnderlyingInstruction = instructions.INVOKESPECIAL.opcode
+}
 
 case class NewInvokeSpecialMethodHandle(
     receiverType: ReferenceType,
     name: String,
     methodDescriptor: MethodDescriptor)
-        extends MethodCallMethodHandle
+        extends MethodCallMethodHandle {
+
+    override val opcodeOfUnderlyingInstruction = instructions.INVOKESPECIAL.opcode
+}
 
 case class InvokeInterfaceMethodHandle(
     receiverType: ReferenceType,
     name: String,
     methodDescriptor: MethodDescriptor)
-        extends MethodCallMethodHandle
+        extends MethodCallMethodHandle {
+
+    override val opcodeOfUnderlyingInstruction = instructions.INVOKEINTERFACE.opcode
+}
