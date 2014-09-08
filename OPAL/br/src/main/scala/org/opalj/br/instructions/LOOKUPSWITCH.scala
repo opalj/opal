@@ -60,9 +60,7 @@ case class LOOKUPSWITCH(
     def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC, false)
 
-    def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean): Int =
+    def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 1 + (3 - (currentPC % 4)) + 8 + npairs.size * 8
 
     def nextInstructions(currentPC: PC, code: Code): PCs = {

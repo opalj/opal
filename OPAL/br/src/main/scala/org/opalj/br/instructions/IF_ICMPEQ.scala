@@ -35,15 +35,14 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IF_ICMPEQ(
-    branchoffset: Int)
-        extends IFICMPInstruction {
+case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction {
 
     final def opcode: Opcode = IF_ICMPEQ.opcode
 
     final def mnemonic: String = "if_icmpeq"
 
     final def operator: String = "=="
+
 }
 object IF_ICMPEQ {
 

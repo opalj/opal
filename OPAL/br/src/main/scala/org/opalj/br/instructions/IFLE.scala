@@ -35,15 +35,14 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFLE(
-    branchoffset: Int)
-        extends IF0Instruction {
+case class IFLE(branchoffset: Int) extends IF0Instruction {
 
     final def opcode: Opcode = IFLE.opcode
 
     final def mnemonic: String = "ifle"
 
     final def operator: String = "<= 0"
+
 }
 object IFLE {
 

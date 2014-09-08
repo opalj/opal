@@ -35,15 +35,14 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IF_ICMPLT(
-    branchoffset: Int)
-        extends IFICMPInstruction {
+case class IF_ICMPLT(branchoffset: Int) extends IFICMPInstruction {
 
     final def opcode: Opcode = IF_ICMPLT.opcode
 
     final def mnemonic: String = "if_icmplt"
 
     final def operator: String = "<"
+
 }
 object IF_ICMPLT {
 

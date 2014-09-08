@@ -35,14 +35,4 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class RemainderInstruction extends ArithmeticInstruction {
-
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
-
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
-        currentPC + 1
-
-}
+abstract class RemainderInstruction extends StackBasedArithmeticInstruction

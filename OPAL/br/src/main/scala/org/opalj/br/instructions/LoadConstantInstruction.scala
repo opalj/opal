@@ -30,12 +30,16 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * Puts a constant value on the stack.
  *
  * @author Michael Eichberg
  */
-abstract class LoadConstantInstruction[T] extends Instruction {
+abstract class LoadConstantInstruction[T]
+        extends Instruction
+        with ConstantLengthInstruction {
 
     /**
      * The value that is put onto the stack.
@@ -45,7 +49,7 @@ abstract class LoadConstantInstruction[T] extends Instruction {
     final def runtimeExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
-        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+        UShortSet(indexOfNextInstruction(currentPC, code))
 
 }
 /**
@@ -55,6 +59,23 @@ abstract class LoadConstantInstruction[T] extends Instruction {
  * @author Michael Eichberg
  */
 object LoadConstantInstruction {
+
+    /**
+     * Returns the instruction that puts the given constant integer value on top of the
+     * stack.
+     */
+    def apply(i: Int): LoadConstantInstruction[Int] =
+        (i: @scala.annotation.switch) match {
+            case 0                        ⇒ ICONST_0
+            case 1                        ⇒ ICONST_1
+            case 2                        ⇒ ICONST_2
+            case 3                        ⇒ ICONST_3
+            case 4                        ⇒ ICONST_4
+            case 5                        ⇒ ICONST_5
+            case _ if i <= Byte.MaxValue  ⇒ BIPUSH(i)
+            case _ if i <= Short.MaxValue ⇒ SIPUSH(i)
+            case _                        ⇒ LoadInt(i)
+        }
 
     /**
      * Returns the instruction that puts the constant value on top of the stack

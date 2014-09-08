@@ -35,15 +35,14 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFGT(
-    branchoffset: Int)
-        extends IF0Instruction {
+case class IFGT(branchoffset: Int) extends IF0Instruction {
 
     final def opcode: Opcode = IFGT.opcode
 
     final def mnemonic: String = "ifgt"
 
     final def operator: String = "> 0"
+
 }
 
 object IFGT {

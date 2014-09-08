@@ -35,9 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IF_ICMPNE(
-    branchoffset: Int)
-        extends IFICMPInstruction {
+case class IF_ICMPNE(branchoffset: Int) extends IFICMPInstruction {
 
     final def opcode: Opcode = IF_ICMPNE.opcode
 

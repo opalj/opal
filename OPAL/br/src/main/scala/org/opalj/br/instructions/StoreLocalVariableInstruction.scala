@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * An instruction that stores the top-most stack value in a local variable.
  *
@@ -41,7 +43,7 @@ abstract class StoreLocalVariableInstruction extends Instruction {
 
     def runtimeExceptions: List[ObjectType] = Nil
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs = {
-        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
-    }
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
+        UShortSet(indexOfNextInstruction(currentPC, code))
+
 }

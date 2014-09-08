@@ -51,6 +51,8 @@ case class ANEWARRAY(
         modifiedByWide: Boolean): Int =
         currentPC + 3
 
+    final def length: Int = 3
+
 }
 
 object ANEWARRAY {

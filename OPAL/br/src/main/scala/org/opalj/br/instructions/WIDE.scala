@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object WIDE extends Instruction {
+case object WIDE extends Instruction with ConstantLengthInstruction {
 
     final val opcode = 196
 
@@ -50,6 +50,8 @@ case object WIDE extends Instruction {
         currentPC: PC,
         modifiedByWide: Boolean): Int =
         currentPC + 1
+
+    final def length: Int = 1
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))

@@ -35,7 +35,9 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class CreateNewArrayInstruction extends Instruction {
+abstract class CreateNewArrayInstruction
+        extends Instruction
+        with ConstantLengthInstruction {
 
     final def runtimeExceptions: List[ObjectType] =
         CreateNewArrayInstruction.runtimeExceptions

@@ -37,7 +37,7 @@ package instructions
  */
 case class INSTANCEOF(
     referenceType: ReferenceType)
-        extends Instruction {
+        extends Instruction with ConstantLengthInstruction {
 
     final def opcode: Opcode = INSTANCEOF.opcode
 
@@ -48,10 +48,10 @@ case class INSTANCEOF(
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC, false)
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean): Int =
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 3
+
+    final def length: Int = 3
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))

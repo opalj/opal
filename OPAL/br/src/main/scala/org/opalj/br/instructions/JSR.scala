@@ -35,9 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class JSR(
-    branchoffset: Int)
-        extends JSRInstruction {
+case class JSR(branchoffset: Int) extends JSRInstruction {
 
     final def opcode: Opcode = JSR.opcode
 
@@ -46,10 +44,10 @@ case class JSR(
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC, false)
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean): Int =
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 3
+
+    final def length: Int = 3
 
 }
 object JSR {

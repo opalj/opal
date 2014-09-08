@@ -35,15 +35,14 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFGE(
-    branchoffset: Int)
-        extends IF0Instruction {
+case class IFGE(branchoffset: Int) extends IF0Instruction {
 
     final def opcode: Opcode = IFGE.opcode
 
     final def mnemonic: String = "ifge"
 
     final def operator: String = ">= 0"
+
 }
 
 object IFGE {

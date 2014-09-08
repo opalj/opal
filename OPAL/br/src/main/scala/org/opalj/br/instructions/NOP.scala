@@ -30,12 +30,14 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * Do nothing.
  *
  * @author Michael Eichberg
  */
-case object NOP extends Instruction {
+case object NOP extends Instruction with ConstantLengthInstruction {
 
     final val opcode = 0
 
@@ -46,12 +48,12 @@ case object NOP extends Instruction {
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC)
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean = false): Int =
         currentPC + 1
 
+    final def length: Int = 1
+
     final def nextInstructions(currentPC: PC, code: Code): PCs =
-        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+        UShortSet(indexOfNextInstruction(currentPC, code))
 
 }

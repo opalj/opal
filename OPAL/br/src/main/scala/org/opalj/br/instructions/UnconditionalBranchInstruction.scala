@@ -30,18 +30,22 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * Super class of all bytecode instructions that always jump to a specific
  * target instruction.
  *
  * @author Michael Eichberg
  */
-abstract class UnconditionalBranchInstruction extends ControlTransferInstruction {
+abstract class UnconditionalBranchInstruction
+        extends ControlTransferInstruction
+        with ConstantLengthInstruction {
 
     def branchoffset: Int
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
-        collection.mutable.UShortSet(currentPC + branchoffset)
+        UShortSet(currentPC + branchoffset)
 
     override def toString(currentPC: Int) =
         getClass.getSimpleName+" "+

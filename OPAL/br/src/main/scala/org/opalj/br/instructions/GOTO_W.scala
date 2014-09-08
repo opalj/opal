@@ -35,9 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class GOTO_W(
-    branchoffset: Int)
-        extends UnconditionalBranchInstruction {
+case class GOTO_W(branchoffset: Int) extends UnconditionalBranchInstruction {
 
     final def opcode: Opcode = GOTO_W.opcode
 
@@ -46,10 +44,10 @@ case class GOTO_W(
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC, false)
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean = false): Int =
         currentPC + 5
+
+    final def length: Int = 5
 
 }
 

@@ -30,51 +30,18 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
-
 /**
- * An instruction that loads a local variable and puts it on top of the stack.
+ * Common interface of all instructions that have a fixed length (including operands!).
+ *
+ * Hence, instructions that may be modified by wide or where the length depends on
+ * the position in the code array are never `ConstantLengthInstruction`s.
  *
  * @author Michael Eichberg
  */
-abstract class LoadLocalVariableInstruction extends Instruction {
+trait ConstantLengthInstruction { this: Instruction ⇒
 
     /**
-     * The index of the local variable(register) that is loaded and put on top
-     * of the operand stack.
+     * The number of bytes (in the [[Code]] array) used by the instruction.
      */
-    def lvIndex: Int
-
-    final def runtimeExceptions: List[ObjectType] = Nil
-
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
-
-}
-/**
- * Defines a factory method for `LoadLocalVariableInstruction`s.
- *
- * @author Arne Lottmann
- * @author Michael Eichberg
- */
-object LoadLocalVariableInstruction {
-
-    /**
-     * Returns the `xLoad` instruction that puts value stored at the given index with
-     * the specified type on top of the stack.
-     */
-    def apply(
-        fieldType: FieldType,
-        lvIndex: Int): LoadLocalVariableInstruction =
-        (fieldType.id: @scala.annotation.switch) match {
-            case IntegerType.id ⇒ ILOAD(lvIndex)
-            case ByteType.id    ⇒ ILOAD(lvIndex)
-            case ShortType.id   ⇒ ILOAD(lvIndex)
-            case CharType.id    ⇒ ILOAD(lvIndex)
-            case BooleanType.id ⇒ ILOAD(lvIndex)
-            case LongType.id    ⇒ LLOAD(lvIndex)
-            case FloatType.id   ⇒ FLOAD(lvIndex)
-            case DoubleType.id  ⇒ DLOAD(lvIndex)
-            case _              ⇒ ALOAD(lvIndex)
-        }
+    def length: Int
 }

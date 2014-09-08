@@ -36,14 +36,13 @@ package instructions
  *
  * @author Michael Eichberg
  */
-trait ImplicitLocalVariableIndex {
+trait ImplicitLocalVariableIndex extends ConstantLengthInstruction { this: Instruction ⇒
 
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC)
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean = false): Int =
         currentPC + 1
 
+    final def length: Int = 1
 }

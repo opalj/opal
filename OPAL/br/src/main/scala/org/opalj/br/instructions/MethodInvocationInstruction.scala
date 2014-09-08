@@ -36,7 +36,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class InvocationInstruction extends Instruction {
+abstract class InvocationInstruction extends Instruction with ConstantLengthInstruction {
 
     def name: String
 

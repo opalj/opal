@@ -37,7 +37,8 @@ package instructions
  */
 case class CHECKCAST(
     referenceType: ReferenceType)
-        extends Instruction {
+        extends Instruction
+        with ConstantLengthInstruction {
 
     final def opcode: Opcode = CHECKCAST.opcode
 
@@ -48,10 +49,10 @@ case class CHECKCAST(
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC, false)
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean): Int =
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 3
+
+    final def length: Int = 3
 
     final def nextInstructions(currentPC: PC, code: Code): PCs = {
         Instruction.nextInstructionOrExceptionHandler(

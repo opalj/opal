@@ -33,48 +33,21 @@ package instructions
 import org.opalj.collection.mutable.UShortSet
 
 /**
- * An instruction that loads a local variable and puts it on top of the stack.
+ * An arithmetic instruction that takes all its operands from the stack and, hence,
+ * the constant length "1"; i.e., only one byte is needed to encode the instruction.
  *
  * @author Michael Eichberg
  */
-abstract class LoadLocalVariableInstruction extends Instruction {
+abstract class StackBasedArithmeticInstruction
+        extends ArithmeticInstruction
+        with ConstantLengthInstruction {
 
-    /**
-     * The index of the local variable(register) that is loaded and put on top
-     * of the operand stack.
-     */
-    def lvIndex: Int
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
 
-    final def runtimeExceptions: List[ObjectType] = Nil
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
+        currentPC + 1
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
+    final def length: Int = 1
 
-}
-/**
- * Defines a factory method for `LoadLocalVariableInstruction`s.
- *
- * @author Arne Lottmann
- * @author Michael Eichberg
- */
-object LoadLocalVariableInstruction {
-
-    /**
-     * Returns the `xLoad` instruction that puts value stored at the given index with
-     * the specified type on top of the stack.
-     */
-    def apply(
-        fieldType: FieldType,
-        lvIndex: Int): LoadLocalVariableInstruction =
-        (fieldType.id: @scala.annotation.switch) match {
-            case IntegerType.id ⇒ ILOAD(lvIndex)
-            case ByteType.id    ⇒ ILOAD(lvIndex)
-            case ShortType.id   ⇒ ILOAD(lvIndex)
-            case CharType.id    ⇒ ILOAD(lvIndex)
-            case BooleanType.id ⇒ ILOAD(lvIndex)
-            case LongType.id    ⇒ LLOAD(lvIndex)
-            case FloatType.id   ⇒ FLOAD(lvIndex)
-            case DoubleType.id  ⇒ DLOAD(lvIndex)
-            case _              ⇒ ALOAD(lvIndex)
-        }
 }

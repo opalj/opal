@@ -30,24 +30,18 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * An instruction that multiplies two primitive values.
  *
  * @author Michael Eichberg
  */
-abstract class MultiplyInstruction extends ArithmeticInstruction {
+abstract class MultiplyInstruction extends StackBasedArithmeticInstruction {
 
     final def runtimeExceptions: List[ObjectType] = Nil
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, false)
-
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean): Int =
-        currentPC + 1
-
     final def nextInstructions(currentPC: PC, code: Code): PCs =
-        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+        UShortSet(indexOfNextInstruction(currentPC, code))
 
 }

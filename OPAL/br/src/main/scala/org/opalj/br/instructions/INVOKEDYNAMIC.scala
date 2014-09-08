@@ -61,6 +61,8 @@ case object INCOMPLETE_INVOKEDYNAMIC extends InvocationInstruction {
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 5
 
+    final def length: Int = 5
+
     final def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
 
 }
@@ -84,6 +86,8 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
 
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 5
+
+    final def length: Int = 5
 
     final def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
 
