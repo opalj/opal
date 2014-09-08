@@ -66,15 +66,15 @@ object LoadConstantInstruction {
      */
     def apply(i: Int): LoadConstantInstruction[Int] =
         (i: @scala.annotation.switch) match {
-            case 0                        ⇒ ICONST_0
-            case 1                        ⇒ ICONST_1
-            case 2                        ⇒ ICONST_2
-            case 3                        ⇒ ICONST_3
-            case 4                        ⇒ ICONST_4
-            case 5                        ⇒ ICONST_5
-            case _ if i <= Byte.MaxValue  ⇒ BIPUSH(i)
-            case _ if i <= Short.MaxValue ⇒ SIPUSH(i)
-            case _                        ⇒ LoadInt(i)
+            case 0 ⇒ ICONST_0
+            case 1 ⇒ ICONST_1
+            case 2 ⇒ ICONST_2
+            case 3 ⇒ ICONST_3
+            case 4 ⇒ ICONST_4
+            case 5 ⇒ ICONST_5
+            case _ if i >= Byte.MinValue && i <= Byte.MaxValue ⇒ BIPUSH(i)
+            case _ if i >= Short.MinValue && i <= Short.MaxValue ⇒ SIPUSH(i)
+            case _ ⇒ LoadInt(i)
         }
 
     /**
