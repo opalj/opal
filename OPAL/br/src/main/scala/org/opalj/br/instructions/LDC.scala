@@ -43,12 +43,6 @@ sealed abstract class LDC[@specialized(Int, Float) T] extends LoadConstantInstru
 
     final def mnemonic: String = "ldc"
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, false)
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
-        currentPC + 2
-
     final def length: Int = 2
 }
 

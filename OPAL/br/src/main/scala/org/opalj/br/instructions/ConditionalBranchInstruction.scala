@@ -41,4 +41,5 @@ abstract class ConditionalBranchInstruction extends ControlTransferInstruction {
      * The number of operand values popped from the operand stack.
      */
     def operandCount: Int
+
 }

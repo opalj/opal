@@ -35,13 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-trait ImplicitValue extends ConstantLengthInstruction { this: Instruction ⇒
-
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, false)
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
-        currentPC + 1
+trait ImplicitValue extends ConstantLengthInstruction {
 
     final def length: Int = 1
 

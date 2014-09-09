@@ -38,7 +38,16 @@ package instructions
  *
  * @author Michael Eichberg
  */
-trait ConstantLengthInstruction { this: Instruction ⇒
+trait ConstantLengthInstruction extends Instruction {
+
+    final override def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final override def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
+        currentPC + length
+
+    final def indexOfNextInstruction(currentPC: PC): Int =
+        currentPC + length
 
     /**
      * The number of bytes (in the [[Code]] array) used by the instruction.

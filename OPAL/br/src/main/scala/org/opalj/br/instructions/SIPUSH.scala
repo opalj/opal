@@ -41,12 +41,6 @@ case class SIPUSH(value: Int) extends LoadConstantInstruction[Int] {
 
     final def mnemonic: String = "sipush"
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean = false): Int =
-        currentPC + 3
-
     final def length: Int = 3
 
 }

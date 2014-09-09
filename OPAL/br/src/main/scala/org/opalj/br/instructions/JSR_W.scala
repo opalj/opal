@@ -41,13 +41,8 @@ case class JSR_W(branchoffset: Int) extends JSRInstruction {
 
     final def mnemonic: String = "jsr_w"
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, false)
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
-        currentPC + 5
-
     final def length: Int = 5
+
 }
 object JSR_W {
 

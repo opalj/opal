@@ -43,12 +43,6 @@ case class RET(lvIndex: Int)
 
     final def mnemonic: String = "ret"
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean = false): Int =
-        currentPC + 2
-
     final def length: Int = 2
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =

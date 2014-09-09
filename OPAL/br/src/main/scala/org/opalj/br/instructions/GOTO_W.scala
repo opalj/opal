@@ -41,12 +41,6 @@ case class GOTO_W(branchoffset: Int) extends UnconditionalBranchInstruction {
 
     final def mnemonic: String = "goto_w"
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, false)
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean = false): Int =
-        currentPC + 5
-
     final def length: Int = 5
 
 }

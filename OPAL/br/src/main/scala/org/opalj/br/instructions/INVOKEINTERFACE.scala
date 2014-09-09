@@ -48,12 +48,6 @@ case class INVOKEINTERFACE(
     final def runtimeExceptions: List[ObjectType] =
         MethodInvocationInstruction.runtimeExceptions
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, false)
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
-        currentPC + 5
-
     final def length: Int = 5
 
     // Required to avoid that Scala generates a default toString method!

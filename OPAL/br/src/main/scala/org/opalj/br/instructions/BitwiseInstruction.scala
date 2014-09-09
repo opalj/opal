@@ -43,4 +43,5 @@ abstract class BitwiseInstruction extends StackBasedArithmeticInstruction {
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
+
 }
