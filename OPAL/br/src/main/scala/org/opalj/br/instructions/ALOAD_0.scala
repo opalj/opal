@@ -42,4 +42,5 @@ case object ALOAD_0 extends LoadLocalVariableInstruction with ImplicitLocalVaria
     final val opcode = 42
 
     final val mnemonic = "aload_0"
+
 }

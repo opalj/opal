@@ -47,12 +47,6 @@ case class INVOKESTATIC(
 
     final def runtimeExceptions: List[ObjectType] = Nil
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, false)
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
-        currentPC + 3
-
     final def length: Int = 3
 
     // Required to avoid that Scala generates a default toString method!

@@ -37,12 +37,6 @@ package instructions
  */
 abstract class ArrayAccessInstruction extends Instruction with ConstantLengthInstruction {
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, false)
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
-        currentPC + 1
-
     final def length: Int = 1
 
 }

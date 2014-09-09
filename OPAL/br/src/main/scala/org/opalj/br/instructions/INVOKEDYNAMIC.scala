@@ -55,12 +55,6 @@ case object INCOMPLETE_INVOKEDYNAMIC extends InvocationInstruction {
 
     final def mnemonic: String = "invokedynamic"
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, false)
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
-        currentPC + 5
-
     final def length: Int = 5
 
     final def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
@@ -80,12 +74,6 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
     final def opcode: Opcode = INVOKEDYNAMIC.opcode
 
     final def mnemonic: String = "invokedynamic"
-
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, false)
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
-        currentPC + 5
 
     final def length: Int = 5
 

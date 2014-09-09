@@ -67,14 +67,14 @@ object LoadLocalVariableInstruction {
         fieldType: FieldType,
         lvIndex: Int): LoadLocalVariableInstruction =
         (fieldType.id: @scala.annotation.switch) match {
-            case IntegerType.id ⇒ ILOAD(lvIndex)
-            case ByteType.id    ⇒ ILOAD(lvIndex)
-            case ShortType.id   ⇒ ILOAD(lvIndex)
-            case CharType.id    ⇒ ILOAD(lvIndex)
-            case BooleanType.id ⇒ ILOAD(lvIndex)
-            case LongType.id    ⇒ LLOAD(lvIndex)
-            case FloatType.id   ⇒ FLOAD(lvIndex)
-            case DoubleType.id  ⇒ DLOAD(lvIndex)
-            case _              ⇒ ALOAD(lvIndex)
+            case IntegerType.id ⇒ ILOAD.canonicalRepresentation(lvIndex)
+            case ByteType.id    ⇒ ILOAD.canonicalRepresentation(lvIndex)
+            case ShortType.id   ⇒ ILOAD.canonicalRepresentation(lvIndex)
+            case CharType.id    ⇒ ILOAD.canonicalRepresentation(lvIndex)
+            case BooleanType.id ⇒ ILOAD.canonicalRepresentation(lvIndex)
+            case LongType.id    ⇒ LLOAD.canonicalRepresentation(lvIndex)
+            case FloatType.id   ⇒ FLOAD.canonicalRepresentation(lvIndex)
+            case DoubleType.id  ⇒ DLOAD.canonicalRepresentation(lvIndex)
+            case _              ⇒ ALOAD.canonicalRepresentation(lvIndex)
         }
 }
