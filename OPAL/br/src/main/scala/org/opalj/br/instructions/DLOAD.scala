@@ -51,7 +51,7 @@ case class DLOAD(lvIndex: Int)
 
     override def hashCode: Int = DLOAD.opcode * 97 + lvIndex
 
-    override def toString: String = "DLOAD_"+lvIndex
+    override def toString: String = s"DLOAD($lvIndex)"
 }
 
 object DLOAD {

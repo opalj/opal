@@ -51,7 +51,7 @@ case class ILOAD(lvIndex: Int)
 
     override def hashCode: Int = ILOAD.opcode * 71 + lvIndex
 
-    override def toString: String = "ILOAD_"+lvIndex
+    override def toString: String = s"ILOAD($lvIndex)"
 }
 
 object ILOAD {
