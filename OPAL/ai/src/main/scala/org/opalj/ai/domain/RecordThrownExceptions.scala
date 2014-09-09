@@ -105,5 +105,3 @@ trait RecordThrownExceptions extends ReturnInstructionsDomain { domain: ValuesDo
     }
 }
 
-
-

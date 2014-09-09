@@ -68,12 +68,15 @@ class LoadClassFilesInParallelUsingCachingTest
     behavior of "OPAL"
 
     val jreLibFolder: File = org.opalj.bi.TestSupport.JRELibraryFolder
+    val biClassfilesFolder: File = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
+
     val cache = new BytecodeInstructionsCache
     val reader = new Java8FrameworkWithCaching(cache)
+    val libraryReader = new Java8LibraryFrameworkWithCaching(cache)
 
     for {
-        file ← jreLibFolder.listFiles
-        if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
+        file ← jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()
+        if file.isFile && file.canRead && file.getName.endsWith(".jar")
     } {
         it should ("be able to completely read all classes in the jar file "+file.getPath+" in parallel using caching") in {
             reader.ClassFiles(file) foreach { cs ⇒
@@ -81,8 +84,9 @@ class LoadClassFilesInParallelUsingCachingTest
                 commonValidator(cf, s)
             }
         }
+
         it should ("be able to read the public interface of all classes in the jar file "+file.getPath+" in parallel using caching") in {
-            reader.ClassFiles(file) foreach { cs ⇒
+            libraryReader.ClassFiles(file) foreach { cs ⇒
                 val (cf, s) = cs
                 interfaceValidator(cf, s)
             }

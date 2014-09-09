@@ -480,6 +480,13 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             }
         }
     }
+
+    def AllClassFiles(
+        files: Traversable[File],
+        exceptionHandler: (Exception) ⇒ Unit = ClassFileReader.defaultExceptionHandler): Seq[(ClassFile, URL)] = {
+
+        files.map(ClassFiles(_, exceptionHandler)).flatten.toSeq
+    }
 }
 /**
  * Helper methods related to reading class files.

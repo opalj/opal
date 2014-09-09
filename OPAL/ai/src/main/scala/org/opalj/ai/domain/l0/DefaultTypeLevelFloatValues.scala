@@ -33,7 +33,7 @@ package l0
 
 /**
  * Base implementation of the `TypeLevelFloatValues` trait that requires that
- * the domain`s `Value` trait is not extended. This implementation just satisfies
+ * the domain's Value` trait is not extended. This implementation just satisfies
  * the basic requirements of OPAL w.r.t. the domain's computational type.
  *
  * @author Michael Eichberg
@@ -47,7 +47,7 @@ trait DefaultTypeLevelFloatValues
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = NoUpdate
 
-        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
+        override def abstractsOver(other: DomainValue): Boolean = other eq this
 
         override def summarize(pc: PC): DomainValue = this
 
@@ -61,5 +61,4 @@ trait DefaultTypeLevelFloatValues
     override def FloatValue(valueOrigin: ValueOrigin, value: Float): FloatValue =
         AFloatValue
 }
-
 

@@ -43,9 +43,8 @@ class Java8FrameworkWithCaching(cache: BytecodeInstructionsCache)
     extends Java8LibraryFrameworkWithCaching(cache)
     with CodeAttributeBinding
     with SourceDebugExtension_attributeBinding
-    // THOUGH THE BOOTSTRAP.. IS A CLASS-LEVEL ATTRIBUTE
-    // IT IS OF NO USE IF WE DO NOT ALSO REIFY
-    // THE METHOD BODY
+    // THOUGH THE BOOTSTRAPMETHODS ATTRIBTUE IS A CLASS-LEVEL ATTRIBUTE
+    // IT IS OF NO USE IF WE DO NOT ALSO REIFY THE METHOD BODY
     with BootstrapMethods_attributeBinding
     with StackMapTable_attributeBinding
     with CompactLineNumberTable_attributeBinding
@@ -54,5 +53,4 @@ class Java8FrameworkWithCaching(cache: BytecodeInstructionsCache)
     with Exceptions_attributeBinding
     with CachedBytecodeReaderAndBinding
     with CodeReader
-
 

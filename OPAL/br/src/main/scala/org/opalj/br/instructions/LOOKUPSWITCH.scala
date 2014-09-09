@@ -46,17 +46,24 @@ case class LOOKUPSWITCH(
 
     final def mnemonic: String = "lookupswitch"
 
-    final def jumpOffsets = npairs.map(_._2) // TODO Do we want to use a stream here?
+    def jumpOffsets = npairs.map(_._2)
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
+    def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean) = {
+        (
+            npairs.filter(_._2 == jumpOffset).map(_._1),
+            jumpOffset == defaultOffset
+        )
+    }
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+    def caseValues: Seq[Int] = npairs.map(_._1)
+
+    def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 1 + (3 - (currentPC % 4)) + 8 + npairs.size * 8
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs = {
+    def nextInstructions(currentPC: PC, code: Code): PCs = {
         var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
         npairs foreach (npair ⇒ { val (_, offset) = npair; (currentPC + offset) +≈: pcs })
         pcs

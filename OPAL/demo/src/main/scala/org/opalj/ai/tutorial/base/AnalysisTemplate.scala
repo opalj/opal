@@ -45,5 +45,3 @@ object AnalysisTemplate extends AnalysisExecutor {
     }
 }
 
-
-

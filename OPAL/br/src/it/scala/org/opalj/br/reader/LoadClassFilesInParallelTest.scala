@@ -68,10 +68,11 @@ class LoadClassFilesInParallelTest
     behavior of "OPAL"
 
     val jreLibFolder: File = org.opalj.bi.TestSupport.JRELibraryFolder
+    val biClassfilesFolder: File = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
 
     for {
-        file ← jreLibFolder.listFiles
-        if (file.isFile && file.canRead && file.getName.endsWith(".jar"))
+        file ← jreLibFolder.listFiles() ++ biClassfilesFolder.listFiles()
+        if file.isFile && file.canRead && file.getName.endsWith(".jar")
     } {
         it should ("be able to completely read all classes in the jar file "+file.getPath+" in parallel") in {
             reader.Java8Framework.ClassFiles(file) foreach { cs ⇒
@@ -79,6 +80,7 @@ class LoadClassFilesInParallelTest
                 commonValidator(cf, s)
             }
         }
+
         it should ("be able to read the public interface of all classes in the jar file "+file.getPath+" in parallel") in {
             reader.Java8LibraryFramework.ClassFiles(file) foreach { cs ⇒
                 val (cf, s) = cs

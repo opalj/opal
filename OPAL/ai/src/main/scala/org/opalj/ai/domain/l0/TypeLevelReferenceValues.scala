@@ -86,7 +86,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             remainingv2s find (domain.asObjectValue(_).upperTypeBound == v1UTB) match {
                 case Some(v2) ⇒
                     remainingv2s = remainingv2s filterNot (_ == v2)
-                    v = (mergeDomainValues(pc, v1, v2)) :: v
+                    v = mergeDomainValues(pc, v1, v2) :: v
                 case None ⇒
                     v = v1 :: v
             }
@@ -277,11 +277,11 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
          */
         final override def asDomainValue(
             implicit targetDomain: Domain): targetDomain.DomainValue = {
-            if (targetDomain == domain)
-                return this.asInstanceOf[targetDomain.DomainValue];
-            else
+            if (targetDomain ne domain)
                 throw new UnsupportedOperationException(
                     "the given domain has to be equal to this value's domain")
+
+            this.asInstanceOf[targetDomain.DomainValue]
         }
 
     }
@@ -755,7 +755,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
      * array (non-null) with the size determined by count that is empty.
      *
      * ==Typical Usage==
-     * This factory method is (implicitly) used, e.g., by OPAL when a `newarray
+     * This factory method is (implicitly) used, e.g., by OPAL when a `newarray`
      * instruction is found.
      *
      * ==Summary==

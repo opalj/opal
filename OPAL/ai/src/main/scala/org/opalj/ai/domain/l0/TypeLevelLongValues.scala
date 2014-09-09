@@ -31,9 +31,6 @@ package ai
 package domain
 package l0
 
-import org.opalj.ai.Domain
-import org.opalj.ai.IsLongValue
-import org.opalj.ai.domain.Configuration
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeLong
 
@@ -205,6 +202,4 @@ trait TypeLevelLongValues extends LongValuesDomain {
         LongValue(pc)
 
 }
-
-
 

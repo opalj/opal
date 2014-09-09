@@ -81,7 +81,10 @@ object Constraints extends Enumeration(1) {
      * Calculates the constraint that is in effect if both constraints need to be
      * satisfied at the same time.
      *
-     * @note This a narrowing operation.
+     * @note This a '''narrowing''' operation.
+     * @return The combined constraint.
+     * @throws IncompatibleConstraints exception if the combination of the constraints
+     *      doesn't make sense.
      */
     def combine(c1: Value, c2: Value): Value = {
         (c1.id: @scala.annotation.switch) match {
@@ -145,7 +148,7 @@ object Constraints extends Enumeration(1) {
      * Joins the given constraints. I.e., returns the constraint that still has to
      * hold if either `c1` or `c2` holds.
      *
-     * @note This is a widening operation.
+     * @note This is a '''widening''' operation.
      */
     def join(c1: Value, c2: Value): Option[Value] = {
         (c1.id: @scala.annotation.switch) match {
@@ -213,7 +216,7 @@ object Constraints extends Enumeration(1) {
 }
 
 /**
- * Exception that is if two constraints should be combined that are incompatible.  
+ * Exception that is if two constraints should be combined that are incompatible.
  */
 case class IncompatibleConstraints(
     constraint1: Constraints.Value,
@@ -221,8 +224,8 @@ case class IncompatibleConstraints(
         extends AIException(s"incompatible: $constraint1 and $constraint2")
 
 /**
- * Domain that traces the relationship between integer values.  
- * 
+ * Domain that traces the relationship between integer values.
+ *
  * @author Michael Eichberg
  */
 trait ConstraintsBetweenIntegerValues

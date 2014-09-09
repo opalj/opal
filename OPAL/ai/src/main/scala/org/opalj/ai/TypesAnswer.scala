@@ -88,35 +88,35 @@ object IsPrimitiveValue {
 }
 
 trait IsBooleanValue extends IsPrimitiveValue {
-    final def primitiveType = BooleanType
+    final def primitiveType: BooleanType = BooleanType
 }
 
 trait IsByteValue extends IsPrimitiveValue {
-    final def primitiveType = ByteType
+    final def primitiveType: ByteType = ByteType
 }
 
 trait IsCharValue extends IsPrimitiveValue {
-    final def primitiveType = CharType
+    final def primitiveType: CharType = CharType
 }
 
 trait IsShortValue extends IsPrimitiveValue {
-    final def primitiveType = ShortType
+    final def primitiveType: ShortType = ShortType
 }
 
 trait IsIntegerValue extends IsPrimitiveValue {
-    final def primitiveType = IntegerType
+    final def primitiveType: IntegerType = IntegerType
 }
 
 trait IsFloatValue extends IsPrimitiveValue {
-    final def primitiveType = FloatType
+    final def primitiveType: FloatType = FloatType
 }
 
 trait IsLongValue extends IsPrimitiveValue {
-    final def primitiveType = LongType
+    final def primitiveType: LongType = LongType
 }
 
 trait IsDoubleValue extends IsPrimitiveValue {
-    final def primitiveType = DoubleType
+    final def primitiveType: DoubleType = DoubleType
 }
 
 /**

@@ -35,13 +35,13 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFLT(
-    branchoffset: Int)
-        extends IF0Instruction {
+case class IFLT(branchoffset: Int) extends IF0Instruction {
 
     final def opcode: Opcode = IFLT.opcode
 
     final def mnemonic: String = "iflt"
+
+    final def operator: String = "< 0"
 
 }
 object IFLT {

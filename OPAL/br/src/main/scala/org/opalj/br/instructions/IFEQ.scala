@@ -35,13 +35,13 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFEQ(
-    branchoffset: Int)
-        extends IF0Instruction {
+case class IFEQ(branchoffset: Int) extends IF0Instruction {
 
     final def opcode: Opcode = IFEQ.opcode
 
     final def mnemonic: String = "ifeq"
+
+    final def operator: String = "== 0"
 
 }
 

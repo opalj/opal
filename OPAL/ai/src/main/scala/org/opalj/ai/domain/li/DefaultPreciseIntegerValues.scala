@@ -62,8 +62,8 @@ trait DefaultPreciseIntegerValues
     }
 
     case class TheIntegerValue(
-        val value: Int,
-        val updateCount: Int = 0)
+        value: Int,
+        updateCount: Int = 0)
             extends super.IntegerValue {
 
         def update(newValue: Int): DomainValue = TheIntegerValue(newValue, updateCount + 1)
@@ -101,7 +101,8 @@ trait DefaultPreciseIntegerValues
 
         override def abstractsOver(other: DomainValue): Boolean = {
             if (this eq other)
-                return true;
+                return true
+
             val thisValue = this.value
             other match {
                 case TheIntegerValue(`thisValue`, _) ⇒ true

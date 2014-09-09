@@ -35,13 +35,13 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class IFNULL(
-    branchoffset: Int)
-        extends IFXNullInstruction {
+case class IFNULL(branchoffset: Int) extends IFXNullInstruction {
 
     final def opcode: Opcode = IFNULL.opcode
 
     final def mnemonic: String = "ifnull"
+
+    final def operator: String = "== null"
 
 }
 object IFNULL {

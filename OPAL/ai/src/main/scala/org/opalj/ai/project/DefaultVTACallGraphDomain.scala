@@ -50,7 +50,7 @@ class DefaultVTACallGraphDomain[Source](
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method: Method,
-    override val maxSizeOfIntegerRanges: Long)
+    override val maxCardinalityOfIntegerRanges: Long)
         extends DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject[Source]
@@ -66,6 +66,5 @@ class DefaultVTACallGraphDomain[Source](
         with l1.DefaultIntegerRangeValues
         with l1.DefaultReferenceValuesBinding
         with l0.DefaultPrimitiveValuesConversions
-        with VTACallGraphDomain 
-
+        with VTACallGraphDomain
 

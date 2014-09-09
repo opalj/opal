@@ -35,8 +35,8 @@ import scala.collection.{ Map, Set, SeqView }
 import scala.collection.mutable.HashSet
 
 import util.{ Answer, Yes, No, Unknown }
-import graphs.{ Node, toDot }
-import collection.immutable.{ UIDSet, UIDSet1 }
+import graphs.Node
+import collection.immutable.UIDSet
 
 import ObjectType.Object
 
@@ -258,7 +258,7 @@ class ClassHierarchy private (
                 allSubtypes = allSubtypes.tail
                 val subtypesIterator = subtypes.iterator
                 while (subtypesIterator.hasNext) {
-                    val subtype = subtypesIterator.next
+                    val subtype = subtypesIterator.next()
                     f(subtype)
 
                     val id = subtype.id
@@ -299,9 +299,13 @@ class ClassHierarchy private (
      */
     def existsSubclass(objectType: ObjectType, project: SomeProject)(f: ClassFile ⇒ Boolean): Boolean = {
         foreachSubtype(objectType) { objectType ⇒
-            project.classFile(objectType) map { cf ⇒ if (f(cf)) return true }
+            project.classFile(objectType) map { cf ⇒
+                if (f(cf))
+                    return true
+            }
         }
-        return false
+
+        false
     }
 
     /**
@@ -444,7 +448,7 @@ class ClassHierarchy private (
      * implemented by the caller of this method.
      *
      * @param subtype Any `ObjectType`.
-     * @param supertype Any `ObjectType`.
+     * @param theSupertype Any `ObjectType`.
      * @return `Yes` if `subtype` is a subtype of the given `supertype`. `No`
      *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
      *      not conclusive. The latter can happen if the class hierarchy is not
@@ -1167,7 +1171,7 @@ class ClassHierarchy private (
      * If `reflexive` is `false`, no two types across both sets have to be in
      * an inheritance relation; if in doubt use `true`.
      *
-     * @param upperTypeBoundB A list (set) of `ObjectType`s that are not in an
+     * @param upperTypeBoundsB A list (set) of `ObjectType`s that are not in an
      *      inheritance relation.
      */
     def joinUpperTypeBounds(
@@ -1343,7 +1347,7 @@ class ClassHierarchy private (
         // Foo[] and int[][] => Object[]
         // int[] and Object[][] => SerializableAndCloneable
 
-        import ObjectType.{ SerializableAndCloneable }
+        import ObjectType.SerializableAndCloneable
 
         if (thisUpperTypeBound eq thatUpperTypeBound)
             return Left(thisUpperTypeBound)
@@ -1468,9 +1472,9 @@ object ClassHierarchy {
     def apply(
         classFiles: Traversable[ClassFile],
         predefinedClassHierarchies: Seq[() ⇒ java.io.InputStream] = List(
-            () ⇒ { getClass().getResourceAsStream("ClassHierarchyJLS.ths") },
-            () ⇒ { getClass().getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
-            () ⇒ { getClass().getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
+            () ⇒ { getClass.getResourceAsStream("ClassHierarchyJLS.ths") },
+            () ⇒ { getClass.getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
+            () ⇒ { getClass.getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
         )): ClassHierarchy = {
 
         import scala.collection.mutable.HashSet
@@ -1538,17 +1542,6 @@ object ClassHierarchy {
         val ObjectId = ObjectType.Object.id
 
         /**
-         * Analyzes the given class file and extends the current class hierarchy.
-         */
-        def processClassFile(classFile: ClassFile) =
-            process(
-                classFile.thisType,
-                classFile.isInterfaceDeclaration,
-                classFile.superclassType,
-                HashSet.empty ++ classFile.interfaceTypes
-            )
-
-        /**
          * Extends the class hierarchy.
          */
         def process(
@@ -1562,7 +1555,7 @@ object ClassHierarchy {
             //
             knownTypesMap(objectType.id) = objectType
             interfaceTypesMap(objectType.id) = isInterfaceType
-            superclassTypeMap(objectType.id) = theSuperclassType.getOrElse(null)
+            superclassTypeMap(objectType.id) = theSuperclassType.orNull
             superinterfaceTypesMap(objectType.id) = theSuperinterfaceTypes
 
             //
@@ -1598,7 +1591,20 @@ object ClassHierarchy {
                 typeDecl.theSuperclassType,
                 typeDecl.theSuperinterfaceTypes)
         }
-        classFiles foreach { processClassFile(_) }
+
+        /**
+         * Analyzes the given class file and extends the current class hierarchy.
+         */
+        val processClassFile: (ClassFile) ⇒ Unit = { classFile ⇒
+            process(
+                classFile.thisType,
+                classFile.isInterfaceDeclaration,
+                classFile.superclassType,
+                HashSet.empty ++ classFile.interfaceTypes
+            )
+        }
+
+        classFiles foreach { processClassFile }
 
         val classHierarchy = new ClassHierarchy(
             knownTypesMap,
@@ -1611,5 +1617,4 @@ object ClassHierarchy {
         classHierarchy
     }
 }
-
 

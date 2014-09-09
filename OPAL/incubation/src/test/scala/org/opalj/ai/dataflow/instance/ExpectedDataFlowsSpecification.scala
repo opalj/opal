@@ -49,4 +49,3 @@ trait ExpectedDataFlowsSpecification {
     def paths: List[SourcesAndSinks] = thePaths
 }
 
-

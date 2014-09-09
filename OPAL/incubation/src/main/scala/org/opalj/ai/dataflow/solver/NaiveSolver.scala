@@ -65,12 +65,11 @@ abstract class BaseDomain[Source](val project: Project[Source])
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
         with domain.l1.DefaultIntegerRangeValues
         with domain.l0.DefaultPrimitiveValuesConversions {
-    domain : Configuration =>
+    domain: Configuration ⇒
 
-    override protected def maxSizeOfIntegerRanges: Long = 25l
+    override protected def maxCardinalityOfIntegerRanges: Long = 20l
 
 }
-
 
 //class BaseDomain[Source](
 //    val project: Project[Source],

@@ -34,7 +34,6 @@ import scala.collection.{ Set }
 import br._
 import br.analyses.SomeProject
 
-
 /**
  * A source element matcher determines a set of source elements that matches a given query.
  *

@@ -30,25 +30,29 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * An instruction that converts between a numeric value of primitive type A and
  * primitive type B.
  *
  * @author Michael Eichberg
  */
-abstract class NumericConversionInstruction extends Instruction {
+abstract class NumericConversionInstruction
+        extends Instruction
+        with ConstantLengthInstruction {
 
     final def runtimeExceptions: List[ObjectType] = Nil
 
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC)
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean = false): Int =
         currentPC + 1
 
+    final def length: Int = 1
+
     final def nextInstructions(currentPC: PC, code: Code): PCs =
-        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+        UShortSet(indexOfNextInstruction(currentPC, code))
 
 }

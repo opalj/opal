@@ -35,14 +35,4 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class DivideInstruction extends ArithmeticInstruction {
-
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, false)
-
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
-        currentPC + 1
-
-}
+abstract class DivideInstruction extends StackBasedArithmeticInstruction

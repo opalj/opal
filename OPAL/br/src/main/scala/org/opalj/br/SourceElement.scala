@@ -37,9 +37,9 @@ package br
  */
 trait SourceElement extends CommonSourceElementAttributes {
     def isClass = false
-    def isMethod = false;
-    def isField = false;
-    
+    def isMethod = false
+    def isField = false
+
     def isVirtual = false
 
     def asClassFile: ClassFile = throw new UnsupportedOperationException

@@ -30,11 +30,8 @@ package org.opalj
 package br
 package reader
 
-import reflect.ClassTag
-
-import bi.reader.AnnotationsReader
-import bi.reader.RuntimeInvisibleTypeAnnotations_attributeReader
-import bi.reader.RuntimeVisibleTypeAnnotations_attributeReader
+import org.opalj.bi.reader.RuntimeInvisibleTypeAnnotations_attributeReader
+import org.opalj.bi.reader.RuntimeVisibleTypeAnnotations_attributeReader
 
 /**
  * Factory methods to create representations of the attributes related to
@@ -69,5 +66,4 @@ trait TypeAnnotationAttributesBinding
     }
 
 }
-
 

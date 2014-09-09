@@ -26,7 +26,7 @@ thead {
 	color: white;
 	background-color: gray;
 }
-caption{
+caption {
 	font-weight: light;
 	font-size: 1.1em;
 	border: 1px solid gray;
@@ -36,11 +36,28 @@ caption{
 	color : white;
 	text-align: left;
 }
+td.caption {
+	background-color: rgb(159, 162, 183);
+	color : white;
+	padding: 0.3em;	
+}
 div.annotations{
 	font-size: 0.8em;
 }
 span.unused{
 	color: #999999;
+}
+span.keyword{
+	padding-right:0.25em;
+	color:rgb(155, 5, 151);
+}
+span.operator{
+	padding-left:0.25em;
+	padding-right:0.25em;
+	font-weight:bold;
+}
+span.value{
+	color:rgb(0,0,255);
 }
 th{
 	vertical-align: top;
@@ -98,4 +115,33 @@ ol.registers li{
 
 td.pc{
 	background-color: #ffc;
+}
+
+span.method_parameters > span + span::before { 
+	content:", ";
+	color:#AA22FF;
+}
+
+.tooltip:hover > span{ 
+	display:inline; 
+	position:absolute; 
+	color:#111; 
+	border:1px solid #DCA; 
+	background:#fffAF0;
+}
+
+.tooltip > span { 
+	color:gray;
+	z-index:10;
+	display:none; 
+	padding:0.5em 0.5em; 
+	margin-top:-0.5em; 
+	margin-left:0.5em;  
+	line-height:1.5em;
+	border-radius:4px;
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+	-moz-box-shadow: 5px 5px 8px #CCC;
+	-webkit-box-shadow: 5px 5px 8px #CCC;
+	box-shadow: 5px 5px 8px #CCC;
 }

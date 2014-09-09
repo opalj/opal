@@ -29,7 +29,8 @@
 package org.opalj
 package br
 package reader
-import bi.reader.Deprecated_attributeReader
+
+import org.opalj.bi.reader.Deprecated_attributeReader
 
 /**
  * @author Michael Eichberg
@@ -46,5 +47,4 @@ trait Deprecated_attributeBinding
         attribute_name_index: Constant_Pool_Index) = br.Deprecated
 
 }
-
 

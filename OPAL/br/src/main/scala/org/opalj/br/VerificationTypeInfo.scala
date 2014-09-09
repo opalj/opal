@@ -52,4 +52,4 @@ case object UninitializedThisVariableInfo extends VerificationTypeInfo
 
 case class UninitializedVariableInfo(offset: Int) extends VerificationTypeInfo
 
-case class ObjectVariableInfo(clazz: ReferenceType) extends VerificationTypeInfo 
+case class ObjectVariableInfo(clazz: ReferenceType) extends VerificationTypeInfo

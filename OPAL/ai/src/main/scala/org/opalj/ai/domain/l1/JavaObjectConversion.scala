@@ -35,7 +35,6 @@ package ai
 package domain
 package l1
 
-import org.opalj.ai.Domain
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 
@@ -51,7 +50,7 @@ import org.opalj.br.ObjectType
  * The latter, however, does not work for classes on the bootclasspath (e.g.,
  * `java.lang.String`). In that case it is necessary to check that the code of the
  * analyzed application is compatible with the one on the class path.
- * ''To avoid accidental
+ * '''To avoid accidental
  * imprecision in the analysis you should use this features only for stable classes
  * belonging to the core JDK (`java.lang...`.)'''
  *
@@ -112,9 +111,9 @@ trait JavaObjectConversion { domain: ReferenceValuesDomain ⇒
         if (value == null)
             return NullValue(pc)
 
-        val clazz = value.getClass()
-        val fqnInBinaryNotation = clazz.getName().replace('.', '/')
-        if (clazz.isArray()) {
+        val clazz = value.getClass
+        val fqnInBinaryNotation = clazz.getName.replace('.', '/')
+        if (clazz.isArray) {
             val array: Array[_] = value.asInstanceOf[Array[_]]
             InitializedArrayValue(
                 pc,

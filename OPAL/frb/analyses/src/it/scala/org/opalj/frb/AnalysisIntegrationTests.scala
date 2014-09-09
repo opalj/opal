@@ -76,6 +76,6 @@ object AnalysisIntegrationTest {
         ).flatten
 
         println("Creating Project: "+filenames.mkString(", ")+" and "+" the JRE.")
-        Project(classFiles, TestSupport.readJREClassFiles)
+        Project(classFiles, TestSupport.readJREClassFiles())
     }
 }

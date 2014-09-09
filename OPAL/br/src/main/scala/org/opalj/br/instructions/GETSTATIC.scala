@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * Getstatic ﬁeld from class.
  *
@@ -51,7 +53,7 @@ case class GETSTATIC(
     final def runtimeExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
-        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+        UShortSet(indexOfNextInstruction(currentPC, code))
 
     override def toString =
         "get static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava

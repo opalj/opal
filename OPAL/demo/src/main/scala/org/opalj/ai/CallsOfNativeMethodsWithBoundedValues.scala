@@ -63,7 +63,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy {
 
-        override def maxSizeOfIntegerRanges: Long = 128l
+        override def maxCardinalityOfIntegerRanges: Long = 128l
     }
 
     val analysis = new Analysis[URL, BasicReport] {
@@ -207,6 +207,4 @@ case class CallWithBoundedMethodParameter(
     }
 
 }
-
-
 

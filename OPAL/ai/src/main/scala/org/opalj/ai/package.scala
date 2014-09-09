@@ -160,13 +160,13 @@ package object ai {
             localsArray: domain.LocalsArray): String = {
         (
             for {
-                ((operands, locals), pc) ← (operandsArray.zip(localsArray)).zipWithIndex
+                ((operands, locals), pc) ← operandsArray.zip(localsArray).zipWithIndex
                 if operands != null /*|| locals != null*/
             } yield {
                 val localsWithIndex =
                     for {
                         (local, index) ← locals.zipWithIndex
-                        if (local != null)
+                        if local ne null
                     } yield {
                         "("+index+":"+local+")"
                     }
@@ -210,7 +210,7 @@ package object ai {
         var pc = 0
         var result: List[B] = List.empty
         while (pc < max_pc) {
-			val instruction = instructions(pc)
+            val instruction = instructions(pc)
             val operands = operandsArray(pc)
             if (operands ne null) {
                 val params = (pc, instruction, operands)
@@ -218,7 +218,7 @@ package object ai {
                     result = f(params) :: result
                 }
             }
-            pc = instruction.indexOfNextInstruction(pc,code)
+            pc = instruction.indexOfNextInstruction(pc, code)
         }
         result.reverse
     }

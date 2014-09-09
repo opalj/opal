@@ -46,12 +46,24 @@ case class TABLESWITCH(
 
     final def mnemonic: String = "tableswitch"
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
+    def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean) = {
+        var caseValues = List.empty[Int]
+        var i = jumpOffsets.length - 1
+        while (i >= 0) {
+            if (jumpOffsets(i) == jumpOffset)
+                caseValues = high - i :: caseValues
+            i -= 1
+        }
+        (caseValues, jumpOffset == defaultOffset)
+    }
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+    def caseValues: Seq[Int] =
+        (low to high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
+
+    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
+        indexOfNextInstruction(currentPC, false)
+
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 1 + (3 - (currentPC % 4)) + 12 + jumpOffsets.size * 4
 
     final def nextInstructions(currentPC: PC, code: Code): PCs = {

@@ -31,7 +31,7 @@ package br
 package instructions
 
 /**
- * Duplicate the top operand stack value and insert two values down..
+ * Duplicate the top operand stack value and insert two values down.
  *
  * @author Michael Eichberg
  */

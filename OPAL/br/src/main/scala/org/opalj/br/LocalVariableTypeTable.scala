@@ -52,4 +52,4 @@ case class LocalVariableType(
     length: Int,
     name: String,
     signature: FieldTypeSignature,
-    index: Int) 
+    index: Int)

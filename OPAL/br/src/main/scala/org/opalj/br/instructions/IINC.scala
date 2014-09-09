@@ -30,15 +30,14 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * Increment local variable by constant.
  *
  * @author Michael Eichberg
  */
-case class IINC(
-    lvIndex: Int,
-    constValue: Int)
-        extends ArithmeticInstruction {
+case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def opcode: Opcode = IINC.opcode
 
@@ -49,9 +48,7 @@ case class IINC(
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int = {
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
         if (modifiedByWide) {
             currentPC + 1 + 4
         } else {
@@ -59,9 +56,8 @@ case class IINC(
         }
     }
 
-    override def nextInstructions(currentPC: PC, code: Code): PCs = {
-        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
-    }
+    override def nextInstructions(currentPC: PC, code: Code): PCs =
+        UShortSet(indexOfNextInstruction(currentPC, code))
 
     override def toString = "IINC(lvIndex="+lvIndex+", "+constValue+")"
 

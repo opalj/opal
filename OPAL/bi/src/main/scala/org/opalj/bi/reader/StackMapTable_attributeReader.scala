@@ -91,4 +91,3 @@ object StackMapTable_attributeReader {
 
 }
 
-

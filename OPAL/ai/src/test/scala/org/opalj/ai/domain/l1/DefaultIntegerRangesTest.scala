@@ -39,7 +39,6 @@ import org.scalatest.ParallelTestExecution
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.{ ObjectType, ArrayType, IntegerType }
-import org.opalj.br.analyses.Project
 
 /**
  * Tests the IntegerRanges Domain.
@@ -52,7 +51,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
     final val IrrelevantPC = Int.MinValue
 
     class IntegerRangesTestDomain(
-        override val maxSizeOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
+        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
             extends Domain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
@@ -63,6 +62,25 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultIntegerRangeValues // <----- The one we are going to test
+            with l0.DefaultPrimitiveValuesConversions
+            with DefaultHandlingOfMethodResults
+            with IgnoreSynchronization
+            with PredefinedClassHierarchy
+            with RecordLastReturnedValues
+
+    class IntegerRangesWithInterIntegerConstraintsTestDomain(
+        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
+            extends Domain
+            with DefaultDomainValueBinding
+            with ThrowAllPotentialExceptionsConfiguration
+            with l0.DefaultTypeLevelLongValues
+            with l0.DefaultTypeLevelFloatValues
+            with l0.DefaultTypeLevelDoubleValues
+            with l0.DefaultReferenceValuesBinding
+            with l0.TypeLevelFieldAccessInstructions
+            with l0.SimpleTypeLevelInvokeInstructions
+            with l1.DefaultIntegerRangeValues // <----- The one we are going to test
+            with l1.ConstraintsBetweenIntegerValues // <----- The one we are going to test
             with l0.DefaultPrimitiveValuesConversions
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
@@ -406,6 +424,186 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
         }
 
+        describe("the behavior of irem") {
+
+            it("AnIntegerValue % AnIntegerValue => AnIntegerValue + Exception") {
+                val v1 = AnIntegerValue()
+                val v2 = AnIntegerValue()
+
+                val result = irem(-1, v1, v2)
+                result.result shouldBe an[AnIntegerValue]
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            it("(the dividend is known, but the divisor is 0) [0,3] % [0,0] => Exception") {
+                val v1 = IntegerRange(0, 3)
+                val v2 = IntegerRange(0, 0)
+
+                val result = irem(-1, v1, v2)
+                result.hasResult should be(false)
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            it("(the dividend is unknown, but the divisor is 0) AnIntegerValue % [0,0] => Exception") {
+                val v1 = AnIntegerValue()
+                val v2 = IntegerRange(0, 0)
+
+                val result = irem(-1, v1, v2)
+                result.hasResult should be(false)
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            it("(the dividend is unknown, but the divisor is known) AnIntegerValue % [0,22] =>  [-21,21] + Exception") {
+                val v1 = AnIntegerValue()
+                val v2 = IntegerRange(0, 22)
+
+                val result = irem(-1, v1, v2)
+                result.result should be(IntegerRange(-21, 21))
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            it("(the dividend is unknown, but the divisor is known) AnIntegerValue % [2,4] =>  [-3,3] + Exception") {
+                val v1 = AnIntegerValue()
+                val v2 = IntegerRange(2, 4)
+
+                val result = irem(-1, v1, v2)
+                result.result should be(IntegerRange(-3, 3))
+                result.throwsException should be(false)
+            }
+
+            it("(dividend and divisor are positive) [0,3] % [1,2] => [0,1]") {
+                val v1 = IntegerRange(0, 3)
+                val v2 = IntegerRange(1, 2)
+
+                val result = irem(-1, v1, v2)
+                val expected = ComputedValue(IntegerRange(0, 1))
+                result should be(expected)
+            }
+
+            it("(dividend and divisor are negative) [-10,-3] % [-2,-1] => [-1,0]") {
+                val v1 = IntegerRange(-10, -3)
+                val v2 = IntegerRange(-2, -1)
+
+                val result = irem(-1, v1, v2)
+                val expected = ComputedValue(IntegerRange(-1, 0))
+                result should be(expected)
+            }
+
+            it("(the dividend may be positive OR negative) [-10,3] % [1,2] => [-1,1]") {
+                val v1 = IntegerRange(-10, 3)
+                val v2 = IntegerRange(1, 2)
+
+                val result = irem(-1, v1, v2)
+                val expected = ComputedValue(IntegerRange(-1, 1))
+                result should be(expected)
+            }
+
+            it("(the dividend and the divisor may be positive OR negative) [-10,3] % [-3,4] => [-3,3] + Exception") {
+                val v1 = IntegerRange(-10, 3)
+                val v2 = IntegerRange(-3, 4)
+
+                val result = irem(-1, v1, v2)
+                result.result should be(IntegerRange(-3, 3))
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            describe("the behavior of ishl") {
+
+                it("AnIntegerValue << [2,2] => AnIntegerValue") {
+                    val v = AnIntegerValue
+                    val s = IntegerRange(2, 2)
+
+                    ishl(-1, v, s) should be(AnIntegerValue)
+                }
+
+                it("[2,2] << AnIntegerValue => AnIntegerValue") {
+                    val v = IntegerRange(2, 2)
+                    val s = AnIntegerValue
+
+                    ishl(-1, v, s) should be(AnIntegerValue)
+                }
+
+                it("[-1,1] << [2,2] => AnIntegerValue") {
+                    val v = IntegerRange(-1, 1)
+                    val s = IntegerRange(2, 2)
+
+                    ishl(-1, v, s) should be(AnIntegerValue)
+                }
+
+                it("[64,64] << [64,64] => [64,64]") {
+                    val v = IntegerRange(64, 64)
+                    val s = IntegerRange(64, 64)
+
+                    ishl(-1, v, s) should be(IntegerRange(64, 64))
+                }
+
+                it("[1,1] << [64,64] => [1,1]") {
+                    val v = IntegerRange(1, 1)
+                    val s = IntegerRange(64, 64)
+
+                    ishl(-1, v, s) should be(IntegerRange(1, 1))
+                }
+
+                it("[0,0] << [64,64] => [0,0]") {
+                    val v = IntegerRange(0, 0)
+                    val s = IntegerRange(64, 64)
+
+                    ishl(-1, v, s) should be(IntegerRange(0, 0))
+                }
+
+                it("[1,1] << [30,30] => [1073741824,1073741824]") {
+                    val v = IntegerRange(1, 1)
+                    val s = IntegerRange(30, 30)
+
+                    ishl(-1, v, s) should be(IntegerRange(1073741824, 1073741824))
+                }
+
+                it("[1,1] << [2,2] => [4,4]") {
+                    val v = IntegerRange(0, 2)
+                    val s = IntegerRange(2, 2)
+
+                    ishl(-1, v, s) should be(IntegerRange(0, 8))
+                }
+
+                it("[0,2] << [2,2] => [0,8]") {
+                    val v = IntegerRange(0, 2)
+                    val s = IntegerRange(2, 2)
+
+                    ishl(-1, v, s) should be(IntegerRange(0, 8))
+                }
+
+                it("[1,2] << [2,2] => [4,8]") {
+                    val v = IntegerRange(1, 2)
+                    val s = IntegerRange(2, 2)
+
+                    ishl(-1, v, s) should be(IntegerRange(4, 8))
+                }
+
+                it("[1,2] << [2,3] => [4,16]") {
+                    val v = IntegerRange(1, 2)
+                    val s = IntegerRange(2, 3)
+
+                    ishl(-1, v, s) should be(IntegerRange(4, 16))
+                }
+
+            }
+        }
+
         describe("the behavior of the i2b cast operator") {
 
             it("(byte)AnIntegerValue => [-128,+127]") {
@@ -673,255 +871,260 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
     }
 
-    describe("Using IntegerRange values") {
+    describe("using IntegerRangeValues") {
 
         val testJAR = "classfiles/ai.jar"
         val testFolder = org.opalj.bi.TestSupport.locateTestResources(testJAR, "ai")
         val testProject = org.opalj.br.analyses.Project(testFolder)
         val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
-        it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing") {
-            val domain = new IntegerRangesTestDomain
-            val method = IntegerValues.findMethod("aliasingMax5").get
-            val result = BaseAI(IntegerValues, method, domain)
-            if (domain.allReturnedValues.size != 2)
-                fail("expected two results; found: "+domain.allReturnedValues)
+        describe("without constraint tracking between values") {
 
-            val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
-            summary should be(domain.IntegerRange(Int.MinValue, 5))
-        }
+            it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing") {
+                val domain = new IntegerRangesTestDomain
+                val method = IntegerValues.findMethod("aliasingMax5").get
+                val result = BaseAI(IntegerValues, method, domain)
+                if (domain.allReturnedValues.size != 2)
+                    fail("expected two results; found: "+domain.allReturnedValues)
 
-        it("it should be able to adapt (<=) the bounds of an IntegerRange value in the presences of aliasing") {
-            val domain = new IntegerRangesTestDomain
-            val method = IntegerValues.findMethod("aliasingMax6").get
-            val result = BaseAI(IntegerValues, method, domain)
-            if (domain.allReturnedValues.size != 2)
-                fail("expected two results; found: "+domain.allReturnedValues)
-
-            val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
-            summary should be(domain.IntegerRange(Int.MinValue, 6))
-        }
-
-        it("it should be able to adapt (>=) the bounds of an IntegerRange value in the presences of aliasing") {
-            val domain = new IntegerRangesTestDomain
-            val method = IntegerValues.findMethod("aliasingMinM1").get
-            val result = BaseAI(IntegerValues, method, domain)
-            if (domain.allReturnedValues.size != 2)
-                fail("expected two results; found: "+domain.allReturnedValues)
-
-            val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
-            summary should be(domain.IntegerRange(-1, Int.MaxValue))
-        }
-
-        it("it should be able to adapt (>) the bounds of an IntegerRange value in the presences of aliasing") {
-            val domain = new IntegerRangesTestDomain
-            val method = IntegerValues.findMethod("aliasingMin0").get
-            val result = BaseAI(IntegerValues, method, domain)
-            if (domain.allReturnedValues.size != 2)
-                fail("expected two results; found: "+domain.allReturnedValues)
-
-            val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
-            summary should be(domain.IntegerRange(0, Int.MaxValue))
-        }
-
-        it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
-            val domain = new IntegerRangesTestDomain
-            val method = IntegerValues.findMethod("someSwitch").get
-            val result = BaseAI(IntegerValues, method, domain)
-            if (domain.allReturnedValues.size != 1)
-                fail("expected one result; found: "+domain.allReturnedValues)
-
-            domain.allReturnedValues.head._2 should be(domain.IntegerRange(0, 8))
-        }
-
-        it("it should be able to detect contradicting conditions") {
-            val domain = new IntegerRangesTestDomain
-            val method = IntegerValues.findMethod("someComparisonThatReturns5").get
-            val result = BaseAI(IntegerValues, method, domain)
-            if (domain.allReturnedValues.size != 2)
-                fail("expected one result; found: "+domain.allReturnedValues)
-
-            val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
-            summary should be(domain.IntegerRange(5, 5))
-        }
-
-        it("it should be able to track integer values such that it is possible to potentially identify an array index out of bounds exception") {
-            val domain = new IntegerRangesTestDomain(20) // the array has a maximum size of 10
-            val method = IntegerValues.findMethod("array10").get
-            val result = BaseAI(IntegerValues, method, domain)
-            if (domain.allReturnedValues.size != 1)
-                fail("expected one result; found: "+domain.allReturnedValues)
-
-            // we don't know the size of the array
-            domain.allReturnedValues.head._2 abstractsOver (
-                domain.InitializedArrayValue(2, List(10), ArrayType(IntegerType))
-            ) should be(true)
-
-            // get the loop counter at the "icmple instruction" which controls the 
-            // loops that initializes the array
-            result.operandsArray(20).tail.head should be(domain.IntegerRange(0, 11))
-        }
-
-        it("it should be possible to identify dead code - even for complex conditions") {
-            val domain = new IntegerRangesTestDomain
-            val method = IntegerValues.findMethod("deadCode").get
-            val result = BaseAI(IntegerValues, method, domain)
-            result.operandsArray(47) should be(null)
-            result.operandsArray(48) should be(null)
-            result.operandsArray(50) should be(null)
-
-            result.operandsArray(62) should be(null)
-            result.operandsArray(62) should be(null)
-            result.operandsArray(65) should be(null)
-            result.operandsArray(68) should be(null)
-            //...
-            result.operandsArray(89) should be(null)
-
-        }
-
-        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v1)") {
-            val domain = new IntegerRangesTestDomain(8)
-            val method = IntegerValues.findMethod("cfDependentValues1_v1").get
-            val result = BaseAI(IntegerValues, method, domain)
-
-            if (result.operandsArray(37) != null) {
-                result.operandsArray(37).head should be(domain.AnIntegerValue)
-                result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
-            } else {
-                // OK - the code is dead, however, we cannot identify this, but the
-                // above is a safe approximation!
+                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                summary should be(domain.IntegerRange(Int.MinValue, 5))
             }
-        }
 
-        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v2)") {
-            val domain = new IntegerRangesTestDomain(8)
-            val method = IntegerValues.findMethod("cfDependentValues1_v2").get
-            val result = BaseAI(IntegerValues, method, domain)
+            it("it should be able to adapt (<=) the bounds of an IntegerRange value in the presences of aliasing") {
+                val domain = new IntegerRangesTestDomain
+                val method = IntegerValues.findMethod("aliasingMax6").get
+                val result = BaseAI(IntegerValues, method, domain)
+                if (domain.allReturnedValues.size != 2)
+                    fail("expected two results; found: "+domain.allReturnedValues)
 
-            if (result.operandsArray(37) != null) {
-                result.operandsArray(37).head should be(domain.AnIntegerValue)
-                result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
-            } else {
-                // OK - the code is dead, however, we cannot identify this, but the
-                // above is a safe approximation!
+                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                summary should be(domain.IntegerRange(Int.MinValue, 6))
             }
-        }
 
-        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v3)") {
-            val domain = new IntegerRangesTestDomain(8)
-            val method = IntegerValues.findMethod("cfDependentValues1_v3").get
-            val result = BaseAI(IntegerValues, method, domain)
+            it("it should be able to adapt (>=) the bounds of an IntegerRange value in the presences of aliasing") {
+                val domain = new IntegerRangesTestDomain
+                val method = IntegerValues.findMethod("aliasingMinM1").get
+                val result = BaseAI(IntegerValues, method, domain)
+                if (domain.allReturnedValues.size != 2)
+                    fail("expected two results; found: "+domain.allReturnedValues)
 
-            if (result.operandsArray(38) != null) {
+                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                summary should be(domain.IntegerRange(-1, Int.MaxValue))
+            }
+
+            it("it should be able to adapt (>) the bounds of an IntegerRange value in the presences of aliasing") {
+                val domain = new IntegerRangesTestDomain
+                val method = IntegerValues.findMethod("aliasingMin0").get
+                val result = BaseAI(IntegerValues, method, domain)
+                if (domain.allReturnedValues.size != 2)
+                    fail("expected two results; found: "+domain.allReturnedValues)
+
+                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                summary should be(domain.IntegerRange(0, Int.MaxValue))
+            }
+
+            it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
+                val domain = new IntegerRangesTestDomain
+                val method = IntegerValues.findMethod("someSwitch").get
+                val result = BaseAI(IntegerValues, method, domain)
+                if (domain.allReturnedValues.size != 1)
+                    fail("expected one result; found: "+domain.allReturnedValues)
+
+                domain.allReturnedValues.head._2 should be(domain.IntegerRange(0, 8))
+            }
+
+            it("it should be able to detect contradicting conditions") {
+                val domain = new IntegerRangesTestDomain
+                val method = IntegerValues.findMethod("someComparisonThatReturns5").get
+                val result = BaseAI(IntegerValues, method, domain)
+                if (domain.allReturnedValues.size != 2)
+                    fail("expected one result; found: "+domain.allReturnedValues)
+
+                val summary = domain.summarize(-1, domain.allReturnedValues.toIterable.map(_._2))
+                summary should be(domain.IntegerRange(5, 5))
+            }
+
+            it("it should be able to track integer values such that it is possible to potentially identify an array index out of bounds exception") {
+                val domain = new IntegerRangesTestDomain(20) // the array has a maximum size of 10
+                val method = IntegerValues.findMethod("array10").get
+                val result = BaseAI(IntegerValues, method, domain)
+                if (domain.allReturnedValues.size != 1)
+                    fail("expected one result; found: "+domain.allReturnedValues)
+
+                // we don't know the size of the array
+                domain.allReturnedValues.head._2 abstractsOver (
+                    domain.InitializedArrayValue(2, List(10), ArrayType(IntegerType))
+                ) should be(true)
+
+                // get the loop counter at the "icmple instruction" which controls the 
+                // loops that initializes the array
+                result.operandsArray(20).tail.head should be(domain.IntegerRange(0, 11))
+            }
+
+            it("it should be possible to identify dead code - even for complex conditions") {
+                val domain = new IntegerRangesTestDomain
+                val method = IntegerValues.findMethod("deadCode").get
+                val result = BaseAI(IntegerValues, method, domain)
+                result.operandsArray(47) should be(null)
+                result.operandsArray(48) should be(null)
+                result.operandsArray(50) should be(null)
+
+                result.operandsArray(62) should be(null)
+                result.operandsArray(62) should be(null)
+                result.operandsArray(65) should be(null)
+                result.operandsArray(68) should be(null)
+                //...
+                result.operandsArray(89) should be(null)
+
+            }
+
+            it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v1)") {
+                val domain = new IntegerRangesTestDomain(8)
+                val method = IntegerValues.findMethod("cfDependentValues1_v1").get
+                val result = BaseAI(IntegerValues, method, domain)
+
+                if (result.operandsArray(37) != null) {
+                    result.operandsArray(37).head should be(domain.AnIntegerValue)
+                    result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
+                } else {
+                    // OK - the code is dead, however, we cannot identify this, but the
+                    // above is a safe approximation!
+                }
+            }
+
+            it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v2)") {
+                val domain = new IntegerRangesTestDomain(8)
+                val method = IntegerValues.findMethod("cfDependentValues1_v2").get
+                val result = BaseAI(IntegerValues, method, domain)
+
+                if (result.operandsArray(37) != null) {
+                    result.operandsArray(37).head should be(domain.AnIntegerValue)
+                    result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
+                } else {
+                    // OK - the code is dead, however, we cannot identify this, but the
+                    // above is a safe approximation!
+                }
+            }
+
+            it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v3)") {
+                val domain = new IntegerRangesTestDomain(8)
+                val method = IntegerValues.findMethod("cfDependentValues1_v3").get
+                val result = BaseAI(IntegerValues, method, domain)
+
+                if (result.operandsArray(38) != null) {
+                    result.operandsArray(38).head should be(domain.AnIntegerValue)
+                    result.operandsArray(42).head should be(domain.IntegerRange(0, 0))
+                } else {
+                    // OK - the code is dead, however, we cannot identify this, but the
+                    // above is a safe approximation!
+                }
+            }
+
+            it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues2)") {
+                val domain = new IntegerRangesTestDomain(8)
+                val method = IntegerValues.findMethod("cfDependentValues2").get
+                val result = BaseAI(IntegerValues, method, domain)
                 result.operandsArray(38).head should be(domain.AnIntegerValue)
                 result.operandsArray(42).head should be(domain.IntegerRange(0, 0))
-            } else {
-                // OK - the code is dead, however, we cannot identify this, but the
-                // above is a safe approximation!
+            }
+
+            it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues3)") {
+                val domain = new IntegerRangesTestDomain(8)
+                val method = IntegerValues.findMethod("cfDependentValues3").get
+                val result = BaseAI(IntegerValues, method, domain)
+                result.operandsArray(45).head should be(domain.AnIntegerValue)
+                result.operandsArray(49).head should be(domain.IntegerRange(0, 0))
+            }
+
+            it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues4)") {
+                val domain = new IntegerRangesTestDomain(8)
+                val method = IntegerValues.findMethod("cfDependentValues4").get
+                val result = BaseAI(IntegerValues, method, domain)
+                result.operandsArray(46).head should be(domain.IntegerRange(2, 2))
+                result.operandsArray(50).head should be(domain.AnIntegerValue)
+                result.operandsArray(54).head should be(domain.AnIntegerValue)
+                if (result.operandsArray(50).head eq result.operandsArray(54).head)
+                    fail("unequal values are made equal")
+            }
+
+            it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues5)") {
+                val domain = new IntegerRangesTestDomain(8)
+                val method = IntegerValues.findMethod("cfDependentValues5").get
+                val result = BaseAI(IntegerValues, method, domain)
+                result.operandsArray(47).head should be(domain.IntegerRange(2, 2))
+                result.operandsArray(51).head should be(domain.IntegerRange(0, 1))
+                result.operandsArray(55).head should be(domain.AnIntegerValue)
+            }
+
+            it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues6)") {
+                val domain = new IntegerRangesTestDomain(8)
+                val method = IntegerValues.findMethod("cfDependentValues6").get
+                val result = BaseAI(IntegerValues, method, domain)
+
+                result.operandsArray(77).head should be(domain.IntegerRange(0, 0))
+                result.operandsArray(81).head should be(domain.AnIntegerValue)
+                result.operandsArray(85).head should be(domain.AnIntegerValue)
+                result.operandsArray(89).head should be(domain.IntegerRange(0, 0))
+
+                result.operandsArray(97).head should be(domain.AnIntegerValue)
+                result.operandsArray(101).head should be(domain.IntegerRange(0, 0))
+                result.operandsArray(105).head should be(domain.AnIntegerValue)
+                result.operandsArray(109).head should be(domain.IntegerRange(0, 0))
+
+                result.operandsArray(117).head should be(domain.AnIntegerValue)
+                result.operandsArray(121).head should be(domain.AnIntegerValue)
+                result.operandsArray(125).head should be(domain.IntegerRange(0, 0))
+                result.operandsArray(129).head should be(domain.IntegerRange(0, 0))
+            }
+
+            it("it should not perform useless evaluations") {
+                val domain = new IntegerRangesTestDomain(8)
+                val method = IntegerValues.findMethod("complexLoop").get
+                val result = BaseAI(IntegerValues, method, domain)
+                result.operandsArray(35).head should be(domain.IntegerRange(0, 2))
+                // when we perform a depth-first evaluation we do not want to 
+                // evaluate the same instruction with the same abstract state
+                // multiple times
+                result.evaluated.head should be(24)
+                result.evaluated.tail.head should be(23)
+                result.evaluated.tail.tail.head should be(20)
+            }
+
+            it("it should handle casts correctly") {
+                val domain = new IntegerRangesTestDomain(8)
+                val method = IntegerValues.findMethod("casts").get
+                val result = BaseAI(IntegerValues, method, domain)
+                // we primarily test that the top-level domain value is updated 
+                result.operandsArray(26).head should be(domain.IntegerRange(-128, 126))
+            }
+
+            it("it should handle cases where we have more complex aliasing") {
+                val domain = new IntegerRangesTestDomain(4)
+                val method = IntegerValues.findMethod("moreComplexAliasing").get
+                val result = BaseAI(IntegerValues, method, domain)
+
+                result.operandsArray(20).head should be(domain.AnIntegerValue)
             }
         }
 
-        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues2)") {
-            val domain = new IntegerRangesTestDomain(8)
-            val method = IntegerValues.findMethod("cfDependentValues2").get
-            val result = BaseAI(IntegerValues, method, domain)
-            result.operandsArray(38).head should be(domain.AnIntegerValue)
-            result.operandsArray(42).head should be(domain.IntegerRange(0, 0))
+        describe("with constraint tracking between integer values") {
+
+            it("it should handle cases where we constrain and compare unknown values (without join)") {
+                val domain = new IntegerRangesWithInterIntegerConstraintsTestDomain(4)
+                val method = IntegerValues.findMethod("multipleConstraints1").get
+                val result = BaseAI(IntegerValues, method, domain)
+
+                result.operandsArray(29) should be(null)
+            }
+
+            it("it should handle cases where we constrain and compare unknown values (with join)") {
+                val domain = new IntegerRangesWithInterIntegerConstraintsTestDomain(4)
+                val method = IntegerValues.findMethod("multipleConstraints2").get
+                val result = BaseAI(IntegerValues, method, domain)
+
+                result.operandsArray(25) should be(null)
+            }
         }
-
-        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues3)") {
-            val domain = new IntegerRangesTestDomain(8)
-            val method = IntegerValues.findMethod("cfDependentValues3").get
-            val result = BaseAI(IntegerValues, method, domain)
-            result.operandsArray(45).head should be(domain.AnIntegerValue)
-            result.operandsArray(49).head should be(domain.IntegerRange(0, 0))
-        }
-
-        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues4)") {
-            val domain = new IntegerRangesTestDomain(8)
-            val method = IntegerValues.findMethod("cfDependentValues4").get
-            val result = BaseAI(IntegerValues, method, domain)
-            result.operandsArray(46).head should be(domain.IntegerRange(2, 2))
-            result.operandsArray(50).head should be(domain.AnIntegerValue)
-            result.operandsArray(54).head should be(domain.AnIntegerValue)
-            if (result.operandsArray(50).head eq result.operandsArray(54).head)
-                fail("unequal values are made equal")
-        }
-
-        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues5)") {
-            val domain = new IntegerRangesTestDomain(8)
-            val method = IntegerValues.findMethod("cfDependentValues5").get
-            val result = BaseAI(IntegerValues, method, domain)
-            result.operandsArray(47).head should be(domain.IntegerRange(2, 2))
-            result.operandsArray(51).head should be(domain.IntegerRange(0, 1))
-            result.operandsArray(55).head should be(domain.AnIntegerValue)
-        }
-
-        it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues6)") {
-            val domain = new IntegerRangesTestDomain(8)
-            val method = IntegerValues.findMethod("cfDependentValues6").get
-            val result = BaseAI(IntegerValues, method, domain)
-
-            result.operandsArray(77).head should be(domain.IntegerRange(0, 0))
-            result.operandsArray(81).head should be(domain.AnIntegerValue)
-            result.operandsArray(85).head should be(domain.AnIntegerValue)
-            result.operandsArray(89).head should be(domain.IntegerRange(0, 0))
-
-            result.operandsArray(97).head should be(domain.AnIntegerValue)
-            result.operandsArray(101).head should be(domain.IntegerRange(0, 0))
-            result.operandsArray(105).head should be(domain.AnIntegerValue)
-            result.operandsArray(109).head should be(domain.IntegerRange(0, 0))
-
-            result.operandsArray(117).head should be(domain.AnIntegerValue)
-            result.operandsArray(121).head should be(domain.AnIntegerValue)
-            result.operandsArray(125).head should be(domain.IntegerRange(0, 0))
-            result.operandsArray(129).head should be(domain.IntegerRange(0, 0))
-        }
-
-        it("it should not perform useless evaluations") {
-            val domain = new IntegerRangesTestDomain(8)
-            val method = IntegerValues.findMethod("complexLoop").get
-            val result = BaseAI(IntegerValues, method, domain)
-            result.operandsArray(35).head should be(domain.IntegerRange(0, 2))
-            // when we perform a depth-first evaluation we do not want to 
-            // evaluate the same instruction with the same abstract state
-            // multiple times
-            result.evaluated.head should be(24)
-            result.evaluated.tail.head should be(23)
-            result.evaluated.tail.tail.head should be(20)
-        }
-
-        it("it should handle casts correctly") {
-            val domain = new IntegerRangesTestDomain(8)
-            val method = IntegerValues.findMethod("casts").get
-            val result = BaseAI(IntegerValues, method, domain)
-            // we primarily test that the top-level domain value is updated 
-            result.operandsArray(26).head should be(domain.IntegerRange(-128, 126))
-        }
-
-        it("it should handle cases where we have more complex aliasing") {
-            val domain = new IntegerRangesTestDomain(4)
-            val method = IntegerValues.findMethod("moreComplexAliasing").get
-            val result = BaseAI(IntegerValues, method, domain)
-
-            result.operandsArray(20).head should be(domain.AnIntegerValue)
-        }
-
-        //        it("it should handle cases where we constrain and compare unknown values (without join)") {
-        //            val domain = new IntegerRangesTestDomain(4)
-        //            val method = IntegerValues.findMethod("multipleConstraints1").get
-        //            val result = BaseAI(IntegerValues, method, domain)
-        //
-        //            result.operandsArray(20).head should be(domain.AnIntegerValue)
-        //        }
-        //
-        //        it("it should handle cases where we constrain and compare unknown values (with join)") {
-        //            val domain = new IntegerRangesTestDomain(4)
-        //            val method = IntegerValues.findMethod("multipleConstraints2").get
-        //            val result = BaseAI(IntegerValues, method, domain)
-        //
-        //            result.operandsArray(20).head should be(domain.AnIntegerValue)
-        //        }
-
     }
 }

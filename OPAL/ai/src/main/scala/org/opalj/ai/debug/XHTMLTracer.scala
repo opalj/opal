@@ -30,8 +30,6 @@ package org.opalj
 package ai
 package debug
 
-import scala.collection.immutable.SortedMap
-import scala.collection.immutable.SortedSet
 import scala.language.existentials
 
 import org.opalj.ai.debug.XHTML.dumpLocals
@@ -46,11 +44,11 @@ import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.StaticMethodInvocationInstruction
 
 case class FlowEntity(
-        val pc: PC,
-        val instruction: Instruction,
-        val operands: Operands[_ >: Null <: Domain#DomainValue],
-        val locals: Locals[_ >: Null <: Domain#DomainValue],
-        val properties: Option[String]) {
+        pc: PC,
+        instruction: Instruction,
+        operands: Operands[_ >: Null <: Domain#DomainValue],
+        locals: Locals[_ >: Null <: Domain#DomainValue],
+        properties: Option[String]) {
     val flowId = FlowEntity.nextFlowId
 }
 
@@ -74,7 +72,7 @@ trait XHTMLTracer extends AITracer {
     }
     private[this] def addFlowEntity(flowEntity: FlowEntity) {
         if (flow.head.exists(_.pc == flowEntity.pc))
-            newBranch();
+            newBranch()
 
         flow = (flowEntity :: flow.head) :: flow.tail
     }
@@ -97,14 +95,14 @@ trait XHTMLTracer extends AITracer {
                 case fieldAccess: FieldAccess ⇒
                     fieldAccess.mnemonic+" "+fieldAccess.name
                 case invoke: StaticMethodInvocationInstruction ⇒
-                    val declaringClass = invoke.declaringClass.toJava;
+                    val declaringClass = invoke.declaringClass.toJava
                     "…"+declaringClass.substring(declaringClass.lastIndexOf('.') + 1)+" "+
                         invoke.name+"(…)"
                 case _ ⇒ instruction.toString(pc)
             }
 
         <span onclick={ openDialog } title={ instruction.toString(pc) }>
-    	{ instructionAsString }
+            { instructionAsString }
         </span>
     }
 
@@ -120,7 +118,7 @@ trait XHTMLTracer extends AITracer {
                 pcs += entity.pc
             }
         }
-        val pcsToRowIndex = SortedMap.empty[Int, Int] ++ (pcs.zipWithIndex)
+        val pcsToRowIndex = SortedMap.empty[Int, Int] ++ pcs.zipWithIndex
         val ids = new java.util.IdentityHashMap[AnyRef, Integer]
         var nextId = 1
         val idsLookup = (value: AnyRef) ⇒ {
@@ -143,41 +141,41 @@ trait XHTMLTracer extends AITracer {
                 flowEntity ← path
             } yield {
                 val dialogId = "dialog"+flowEntity.flowId
-                <div id={ dialogId } title={ (index + 1) + " - " + flowEntity.pc + " (" + flowEntity.instruction.mnemonic + ")" }>
-        	<b>Stack</b><br/>
-        	{ dumpStack(flowEntity.operands)(Some(idsLookup)) }
-        	<b>Locals</b><br/>
-        	{ dumpLocals(flowEntity.locals)(Some(idsLookup)) }
-        	</div>
+                <div id={ dialogId } title={ (index + 1)+" - "+flowEntity.pc+" ("+flowEntity.instruction.mnemonic+")" }>
+                    <b>Stack</b><br/>
+                    { dumpStack(flowEntity.operands)(Some(idsLookup)) }
+                    <b>Locals</b><br/>
+                    { dumpLocals(flowEntity.locals)(Some(idsLookup)) }
+                </div>
             }
         def row(pc: PC) =
             for (path ← inOrderFlow) yield {
-                val flowEntity = path.find(_.pc == pc);
-                <td> 
-        		{ flowEntity.map(fe ⇒ instructionToNode(fe.flowId, pc, fe.instruction)).getOrElse(xml.Text(" ")) }
-        		</td>
+                val flowEntity = path.find(_.pc == pc)
+                <td>
+                    { flowEntity.map(fe ⇒ instructionToNode(fe.flowId, pc, fe.instruction)).getOrElse(xml.Text(" ")) }
+                </td>
             }
         val joinInstructions = code.joinInstructions
         val flowTable =
             for ((pc, rowIndex) ← pcsToRowIndex) yield {
                 <tr>
-            		<td>{ if (joinInstructions.contains(pc)) "⇶ " else "" } <b>{ pc }</b></td>
-            		{ row(pc) }
-            	</tr>
+                    <td>{ if (joinInstructions.contains(pc)) "⇶ " else "" } <b>{ pc }</b></td>
+                    { row(pc) }
+                </tr>
             }
 
         <html lang="en">
-        <head>
-        <meta charset="utf-8" />
-        <title>{ title + " (Paths: " + pathsCount + "; Flow Nodes: " + FlowEntity.lastFlowId + ")" }</title>
-        <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
-        <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
-        <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-        <script>
-        { dialogSetup }
-        </script> 
-        <style>
-        table {{
+            <head>
+                <meta charset="utf-8"/>
+                <title>{ title+" (Paths: "+pathsCount+"; Flow Nodes: "+FlowEntity.lastFlowId+")" }</title>
+                <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"/>
+                <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+                <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+                <script>
+                    { dialogSetup }
+                </script>
+                <style>
+                    table {{
 			width:100%;
 			font-size: 12px;
 			font-family: Tahoma;
@@ -216,30 +214,31 @@ trait XHTMLTracer extends AITracer {
         	font-family: Tahoma,Arial;
         	font-size: 11px; 
         }}
-		</style>
-        </head>
-        <body style="font-family:Tahoma;font-size:8px;">
-        <label for="filter">Filter</label>  
-        <input type="text" name="filter" value="" id="filter" title="Use a RegExp to filter(remove) elements. E.g.,'DUP|ASTORE|ALOAD'"/> 
-        <table>
-        	<thead><tr>
-        	<td>PC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-        	{ (1 to inOrderFlow.size).map(index ⇒ <td>{ index }</td>) }
-        	</tr></thead>
-        	<tbody>
-        	{ flowTable }
-        	</tbody>
-        </table>
-        { dialogs }
-        <script>
-        $('tbody tr').hover(function(){{  
+                </style>
+            </head>
+            <body style="font-family:Tahoma;font-size:8px;">
+                <label for="filter">Filter</label>
+                <input type="text" name="filter" value="" id="filter" title="Use a RegExp to filter(remove) elements. E.g.,'DUP|ASTORE|ALOAD'"/>
+                <table>
+                    <thead><tr>
+                               <td>PC&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                               { (1 to inOrderFlow.size).map(index ⇒ <td>{ index }</td>) }
+                           </tr></thead>
+                    <tbody>
+                        { flowTable }
+                    </tbody>
+                </table>
+                { dialogs }
+                <script>
+                    $('tbody tr').hover(function(){{  
         	$(this).find('td').addClass('hovered');  
         }}, function(){{  
         	$(this).find('td').removeClass('hovered');  
         }});
         function filter(selector, query) {{  
         	$(selector).each(function() {{  
-        		($(this).text().search(new RegExp(query, 'i')) { xml.Unparsed("<") } 0) ? $(this).show().addClass('visible') : $(this).hide().removeClass('visible');  
+        		($(this).text().search(new RegExp(query, 'i')){ xml.Unparsed("<") }
+                    0) ? $(this).show().addClass('visible') : $(this).hide().removeClass('visible');  
         	}});  
         }};
         //default each row to visible  
@@ -258,15 +257,15 @@ trait XHTMLTracer extends AITracer {
         		else {{  
         			filter('tbody tr', $(this).val());  
         		}} 
-        }});      
-        </script>
-        </body>
+        }});
+                </script>
+            </body>
         </html>
     }
 
     private var code: Code = null
 
-    override def continuingInterpretation(
+    def continuingInterpretation(
         code: Code,
         domain: Domain)(
             initialWorkList: List[PC],
@@ -283,7 +282,7 @@ trait XHTMLTracer extends AITracer {
 
     private[this] var continuingWithBranch = true
 
-    override def flow(
+    def flow(
         domain: Domain)(
             currentPC: PC,
             successorPC: PC,
@@ -291,9 +290,9 @@ trait XHTMLTracer extends AITracer {
         continuingWithBranch = currentPC < successorPC
     }
 
-    override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = { /*EMPTY*/ }
+    def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = { /*EMPTY*/ }
 
-    override def rescheduled(
+    def rescheduled(
         domain: Domain)(
             sourcePC: PC,
             targetPC: PC,
@@ -301,7 +300,7 @@ trait XHTMLTracer extends AITracer {
         /*ignored for now*/
     }
 
-    override def instructionEvalution(
+    def instructionEvalution(
         domain: Domain)(
             pc: PC,
             instruction: Instruction,
@@ -322,7 +321,7 @@ trait XHTMLTracer extends AITracer {
         continuingWithBranch = false
     }
 
-    override def join(
+    def join(
         domain: Domain)(
             pc: PC,
             thisOperands: domain.Operands,
@@ -331,7 +330,7 @@ trait XHTMLTracer extends AITracer {
             otherLocals: domain.Locals,
             result: Update[(domain.Operands, domain.Locals)]): Unit = { /*ignored*/ }
 
-    override def establishedConstraint(
+    def establishedConstraint(
         domain: Domain)(
             pc: PC,
             effectivePC: PC,
@@ -340,16 +339,16 @@ trait XHTMLTracer extends AITracer {
             newOperands: domain.Operands,
             newLocals: domain.Locals): Unit = { /*ignored*/ }
 
-    override def abruptMethodExecution(
+    def abruptMethodExecution(
         domain: Domain)(
             pc: Int,
             exception: domain.DomainValue): Unit = { /*ignored*/ }
 
-    override def jumpToSubroutine(
+    def jumpToSubroutine(
         domain: Domain)(
             pc: PC, target: PC, nestingLevel: Int): Unit = { /* ignored */ }
 
-    override def returnFromSubroutine(
+    def returnFromSubroutine(
         domain: Domain)(
             pc: PC,
             returnAddress: PC,
@@ -358,19 +357,19 @@ trait XHTMLTracer extends AITracer {
     /**
      * Called when a ret instruction is encountered.
      */
-    override def ret(
+    def ret(
         domain: Domain)(
             pc: PC,
             returnAddress: PC,
             oldWorklist: List[PC],
             newWorklist: List[PC]): Unit = { /*ignored*/ }
 
-    override def domainMessage(
+    def domainMessage(
         domain: Domain,
         source: Class[_], typeID: String,
         pc: Option[PC], message: ⇒ String): Unit = { /*EMPTY*/ }
 
-    override def result(result: AIResult): Unit = {
+    def result(result: AIResult): Unit = {
         writeAndOpenDump(dumpXHTML((new java.util.Date).toString()))
     }
 

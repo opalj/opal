@@ -101,4 +101,30 @@ object TestSupport {
         new File(libPath)
     }
 
+    /**
+     * Tries to locate the JRE's library folder. (I.e., the
+     * location in which the rt.jar file and the other jar files belonging to the
+     * Java runtime environment can be found).
+     */
+    lazy val RTJar: File = {
+        val paths =
+            System.getProperties().getProperty("sun.boot.class.path").split(File.pathSeparator)
+        val rtJarPath =
+            paths.find(_.endsWith("rt.jar")).getOrElse("null")
+
+        if (rtJarPath == null) {
+            val rtJarCandidates =
+                new File(System.getProperty("sun.boot.library.path")).listFiles(
+                    new java.io.FilenameFilter() {
+                        def accept(dir: File, name: String) = name == "rt.jar"
+                    }
+                )
+            if (rtJarCandidates.length != 1) {
+                throw new RuntimeException("cannot locate the JRE libraries")
+            }
+            rtJarCandidates(0)
+        } else
+            new File(rtJarPath)
+    }
+
 }

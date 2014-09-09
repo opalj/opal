@@ -83,6 +83,3 @@ object UselessComputationsMinimal extends AnalysisExecutor with Analysis[URL, Ba
     }
 }
 
-
-
-

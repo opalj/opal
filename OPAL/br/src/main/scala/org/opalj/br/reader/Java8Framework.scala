@@ -43,4 +43,3 @@ trait Java8Framework
 
 object Java8Framework extends Java8Framework
 
-

@@ -132,4 +132,3 @@ case class UninitializedVariableInfo(val offset: Int) extends VerificationTypeIn
     }
 }
 
-

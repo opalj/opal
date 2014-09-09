@@ -32,7 +32,6 @@ package project
 
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.domain._
 
 case class ComputedCallGraph(
     callGraph: CallGraph,
@@ -86,7 +85,6 @@ object CallGraphFactory {
         type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException])
 
         import java.util.concurrent.Callable
-        import java.util.concurrent.Future
         import java.util.concurrent.Executors
         import java.util.concurrent.ExecutorCompletionService
 
@@ -119,7 +117,7 @@ object CallGraphFactory {
                 override def initialSize: Int = theProject.methodsCount
             }
         val executorService =
-            Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() /*+ 1*/ )
+            Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() /*+ 1*/ )
         val completionService =
             new ExecutorCompletionService[MethodAnalysisResult](executorService)
 
@@ -127,7 +125,7 @@ object CallGraphFactory {
             if (methodSubmitted.contains(method))
                 return
 
-            methodSubmitted += (method)
+            methodSubmitted += method
             futuresCount += 1
             completionService.submit(doAnalyzeMethod(method))
         }
@@ -190,8 +188,5 @@ class B extends A {
         // do nothing
     }
 }
-*/ 
-
- 
-
+*/
 

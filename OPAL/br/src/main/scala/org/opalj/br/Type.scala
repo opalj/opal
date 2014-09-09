@@ -46,13 +46,13 @@ sealed abstract class ComputationalTypeCategory(
      */
     val id: Byte
 }
-final case object Category1ComputationalTypeCategory
+case object Category1ComputationalTypeCategory
         extends ComputationalTypeCategory(1) {
-    final val id: Byte = 1.toByte
+    final val id /*: Byte*/ = 1.toByte
 }
-final case object Category2ComputationalTypeCategory
+case object Category2ComputationalTypeCategory
         extends ComputationalTypeCategory(2) {
-    final val id: Byte = 2.toByte
+    final val id /*: Byte*/ = 2.toByte
 }
 
 /**
@@ -172,15 +172,15 @@ sealed abstract class Type extends UID with scala.math.Ordered[Type] {
 
     def asReferenceType: ReferenceType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to a ReferenceType")
+            "a "+this.getClass.getSimpleName+" cannot be cast to a ReferenceType")
 
     def asArrayType: ArrayType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to an ArrayType")
+            "a "+this.getClass.getSimpleName+" cannot be cast to an ArrayType")
 
     def asObjectType: ObjectType =
         throw new ClassCastException(
-            "a "+this.getClass().getSimpleName()+" cannot be cast to an ObjectType")
+            "a "+this.getClass.getSimpleName+" cannot be cast to an ObjectType")
 
     /**
      * A String representation of this type as it would be used in Java source code.
@@ -330,7 +330,7 @@ object ReferenceType {
         if (rt.charAt(0) == '[')
             ArrayType(FieldType(rt.substring(1)))
         else
-            ObjectType(rt);
+            ObjectType(rt)
     }
 }
 
@@ -354,13 +354,13 @@ sealed abstract class ByteType private () extends BaseType {
 
     final val id = Int.MinValue + atype
 
+    final val WrapperType = ObjectType.Byte
+
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "byte"
 
     override def toBinaryJavaName: String = "B"
-
-    final val WrapperType = ObjectType.Byte
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Byte.TYPE
 
@@ -392,7 +392,7 @@ sealed abstract class CharType private () extends BaseType {
     override def toString() = "CharType"
 
 }
-final case object CharType extends CharType
+case object CharType extends CharType
 
 sealed abstract class DoubleType private () extends BaseType {
 
@@ -590,7 +590,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
  *
  * @author Michael Eichberg
  */
-final object ObjectType {
+object ObjectType {
 
     import java.util.concurrent.atomic.AtomicInteger
     import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -695,6 +695,7 @@ final object ObjectType {
     require(Object.id == ObjectId)
 
     final val Boolean = ObjectType("java/lang/Boolean")
+
     final val Byte = ObjectType("java/lang/Byte")
     final val Char = ObjectType("java/lang/Char")
     final val Short = ObjectType("java/lang/Short")
@@ -751,6 +752,48 @@ final object ObjectType {
 
     private final val javaLangBooleanId = Boolean.id
     private final val javaLangDoubleId = Double.id
+
+    /**
+     * Implicit mapping from a wrapper type to its primtive type.
+     * @example
+     * {{{
+     * scala> import org.opalj.br._
+     * scala> ObjectType.primitiveType(ObjectType.Integer.id)
+     * res1: org.opalj.br.FieldType = IntegerType
+     * }}}
+     */
+    private[this] lazy val primitiveType: Array[BaseType] = {
+        val a = new Array[BaseType](Double.id + 1)
+        a(Boolean.id) = BooleanType
+        a(Byte.id) = ByteType
+        a(Char.id) = CharType
+        a(Short.id) = ShortType
+        a(Integer.id) = IntegerType
+        a(Long.id) = LongType
+        a(Float.id) = FloatType
+        a(Double.id) = DoubleType
+        a
+    }
+
+    /**
+     * Given a wrapper type (e.g., `java.lang.Integer`) the underlying primitive type
+     * is returned.
+     *
+     * @example
+     * {{{
+     * scala> import org.opalj.br._
+     * scala> ObjectType.primitiveType(ObjectType.Integer)
+     * res0: Option[org.opalj.br.BaseType] = Some(IntegerType)
+     * }}}
+     */
+    def primitiveType(wrapperType: ObjectType): Option[BaseType] = {
+        val wrapperId = wrapperType.id
+        if (wrapperId < 0 || wrapperId > Double.id) {
+            None
+        } else {
+            Some(primitiveType(wrapperId))
+        }
+    }
 
     def primitiveTypeWrapperMatcher[Args, T](
         booleanMatch: (Args) ⇒ T,
@@ -822,10 +865,11 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
      * Returns this array type's element type.
      *
      */
-    def elementType: FieldType = componentType match {
-        case at: ArrayType ⇒ at.elementType
-        case _             ⇒ componentType
-    }
+    def elementType: FieldType =
+        componentType match {
+            case at: ArrayType ⇒ at.elementType
+            case _             ⇒ componentType
+        }
 
     /**
      * The number of dimensions of this array. E.g. "Object[]" has one dimension and
@@ -853,7 +897,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
  *
  * @author Michael Eichberg
  */
-final object ArrayType {
+object ArrayType {
 
     import java.util.concurrent.atomic.AtomicInteger
     import java.util.WeakHashMap

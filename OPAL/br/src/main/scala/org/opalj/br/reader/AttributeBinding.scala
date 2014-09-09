@@ -30,9 +30,9 @@ package org.opalj
 package br
 package reader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
-import bi.reader.AttributesAbstractions
+import org.opalj.bi.reader.AttributesAbstractions
 
 /**
  * Defines the common bindings for all "resolved" attributes.
@@ -46,5 +46,4 @@ trait AttributeBinding extends AttributesAbstractions {
     val AttributeManifest: ClassTag[Attribute] = implicitly
 
 }
-
 

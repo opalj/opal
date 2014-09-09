@@ -66,7 +66,7 @@ trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
     def UninitializedVariableInfo(offset: Int): VerificationTypeInfo
 
     /**
-     * The Object_variable_info type indicates that the location contains an instance 
+     * The Object_variable_info type indicates that the location contains an instance
      * of the class referenced by the constant pool entry.
      */
     def ObjectVariableInfo(
@@ -132,6 +132,4 @@ object VerificationTypeInfoItem extends Enumeration {
     final val ITEM_Object = Value(7)
     final val ITEM_Unitialized = Value(8)
 }
-
-
 

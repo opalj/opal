@@ -35,10 +35,21 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class CompoundConditionalBranchInstruction extends ControlTransferInstruction {
+abstract class CompoundConditionalBranchInstruction extends ConditionalBranchInstruction {
+
+    def operandCount: Int = 1
 
     def defaultOffset: Int
 
     def jumpOffsets: Seq[Int]
+
+    /**
+     * Returns the case value(s) that are associated with the given jumpOffset.
+     * If the jumpOffset is also the defaultOffset, the return value's second
+     * value is true.
+     */
+    def caseValueOfJumpOffset(jumpOffset: Int): (Seq[Int], Boolean)
+
+    def caseValues: Seq[Int]
 
 }

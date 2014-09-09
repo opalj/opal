@@ -62,12 +62,12 @@ sealed abstract class AIResult {
     val evaluated: List[PC]
 
     /**
-     * The array of the operand lists in effect before the execution of the 
+     * The array of the operand lists in effect before the execution of the
      * instruction with the respective program counter.
      *
      * For those instruction that were never executed (potentially dead code if the
      * abstract interpretation succeeded) the operands array will be empty (the
-     * value will be `null.).
+     * value will be `null`).
      */
     val operandsArray: domain.OperandsArray
 

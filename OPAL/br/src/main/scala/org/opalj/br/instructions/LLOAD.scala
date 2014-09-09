@@ -53,6 +53,7 @@ final class LLOAD(
     override def hashCode: Int = LLOAD.opcode * 41 + lvIndex
 
     override def toString: String = "LLOAD_"+lvIndex
+
 }
 object LLOAD {
 

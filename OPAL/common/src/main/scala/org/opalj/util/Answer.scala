@@ -166,5 +166,3 @@ final case object Unknown extends Answer {
     override def ifUnknown(f: ⇒ Answer): Answer = f
 }
 
-
-

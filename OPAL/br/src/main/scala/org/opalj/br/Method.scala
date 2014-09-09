@@ -30,7 +30,6 @@ package org.opalj
 package br
 
 import bi.ACC_ABSTRACT
-import bi.ACC_FINAL
 import bi.ACC_STRICT
 import bi.ACC_NATIVE
 import bi.ACC_BRIDGE
@@ -45,6 +44,9 @@ import org.opalj.bi.ACC_PUBLIC
  *
  * Method objects are constructed using the companion object's factory methods.
  *
+ * @note Methods have – by default – no link to their defining [[ClassFile]]. However,
+ *      if a [[analyses.Project]] is available then it is possible to get a `Method`'s
+ *      [[ClassFile]] by using `Project`'s `classFile(Method)` method.
  * @note Equality of methods is – by purpose – reference based.
  *
  * @param accessFlags The ''access flags'' of this method. Though it is possible to
@@ -171,7 +173,7 @@ final class Method private (
     override def toString(): String = {
         AccessFlags.toStrings(accessFlags, AccessFlagsContexts.METHOD).mkString("", " ", " ") +
             descriptor.toJava(name) +
-            attributes.view.map(_.getClass().getSimpleName()).mkString(" « ", ", ", " »")
+            attributes.view.map(_.getClass.getSimpleName).mkString(" « ", ", ", " »")
     }
 
 }
@@ -213,8 +215,8 @@ object Method {
     }
 
     /**
-     * Factory method for Method objects. 
-     * 
+     * Factory method for Method objects.
+     *
      * @example A new method that is public abstract that takes no parameters and
      * returns void and has the name "myMethod" can be created as shown next:
      * {{{
@@ -232,26 +234,4 @@ object Method {
 
     def unapply(method: Method): Option[(Int, String, MethodDescriptor)] =
         Some((method.accessFlags, method.name, method.descriptor))
-}
-/**
- * Provides pattern matching facilities for methods with bodies.
- *
- * @example
- * Matching all methods that have a method body:
- * {{{
- * for {
- *      classFile ← project.classFiles
- *      method @ MethodWithBody(code) ← classFile.methods
- * } {
- *      // the type of method is "..resolved.Method"
- *      // the type of code is "..resolved.Code"
- * }
- * }}}
- *
- * @author Michael Eichberg
- */
-object MethodWithBody {
-
-    def unapply(method: Method): Option[Code] = method.body
-
 }

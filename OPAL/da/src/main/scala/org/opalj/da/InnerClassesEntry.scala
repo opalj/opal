@@ -95,18 +95,24 @@ case class InnerClassesEntry(
                 } else
                     outerClassFQN
 
-            <div class={ "inner_class" + { if (definedType == definingClassFQN) " selfRef" else "" } }>
+            <div class={ "inner_class"+{ if (definedType == definingClassFQN) " selfRef" else "" } }>
                 <span class="fqn">
                     { outerName }
                     {{
                     <span class="access_flags">{ accessFlags } </span>
-                    { if (innerName != "") { <span class="sn tooltip">
+                    {
+                        if (innerName != "") {
+                            <span class="sn tooltip">
                                 { innerName }
                                 <span class="fqn">{ definedType }</span>
-                            </span> } else { <span class="fqn tooltip">
+                            </span>
+                        } else {
+                            <span class="fqn tooltip">
                                 { definedType }
                                 <span>Anonymous Type</span>
-                            </span> } }
+                            </span>
+                        }
+                    }
                     }}
                 </span>
             </div>
@@ -114,5 +120,4 @@ case class InnerClassesEntry(
         }
     }
 }
-
 

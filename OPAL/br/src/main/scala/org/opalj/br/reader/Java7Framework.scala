@@ -30,7 +30,7 @@ package org.opalj
 package br
 package reader
 
-import bi.reader.CodeReader
+import org.opalj.bi.reader.CodeReader
 
 /**
  * This "framework" can be used to read in Java 7 (version 51) class files. All
@@ -53,5 +53,4 @@ trait Java7Framework
     with CodeReader
 
 object Java7Framework extends Java7Framework
-
 

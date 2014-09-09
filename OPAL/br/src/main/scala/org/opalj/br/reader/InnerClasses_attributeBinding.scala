@@ -30,9 +30,9 @@ package org.opalj
 package br
 package reader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
-import bi.reader.InnerClasses_attributeReader
+import org.opalj.bi.reader.InnerClasses_attributeReader
 
 /**
  * The factory methods to create inner classes attributes and entries.
@@ -74,5 +74,4 @@ trait InnerClasses_attributeBinding
         )
     }
 }
-
 

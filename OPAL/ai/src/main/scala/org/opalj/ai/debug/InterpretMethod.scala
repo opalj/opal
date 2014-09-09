@@ -121,7 +121,8 @@ object InterpretMethod {
                     classOf[Project[java.net.URL]],
                     classOf[ClassFile],
                     classOf[Method])
-            return constructor.newInstance(project, classFile, method)
+
+            constructor.newInstance(project, classFile, method)
         }
 
         val file = new java.io.File(fileName)
@@ -135,7 +136,7 @@ object InterpretMethod {
                 Project(file)
             } catch {
                 case e: Exception ⇒
-                    println(RED+"[error] Cannot process file: "+e.getMessage()+"."+RESET)
+                    println(RED+"[error] Cannot process file: "+e.getMessage+"."+RESET)
                     return ;
             }
 
@@ -179,8 +180,16 @@ object InterpretMethod {
             val result =
                 if (doTrace)
                     AI(classFile, method, createDomain(project, classFile, method))
-                else
-                    BaseAI(classFile, method, createDomain(project, classFile, method))
+                else {
+                    val body = method.body.get
+                    println("Starting abstract interpretation of: ")
+                    println("\t"+classFile.thisType.toJava+"{")
+                    println("\t\t"+method.toJava+"[instructions="+body.instructions.size+"; #max_stack="+body.maxStack+"; #locals="+body.maxLocals+"]")
+                    println("\t}")
+                    val result = BaseAI(classFile, method, createDomain(project, classFile, method))
+                    println("Finished abstract interpretation.")
+                    result
+                }
             val domain = result.domain
             writeAndOpenDump(dump(
                 Some(classFile),
@@ -188,7 +197,7 @@ object InterpretMethod {
                 method.body.get,
                 Some(
                     "Created: "+(new java.util.Date).toString+"<br>"+
-                        "Domain: "+domainClass.getName()+"<br>"+
+                        "Domain: "+domainClass.getName+"<br>"+
                         XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
                 result.domain)(
                     result.operandsArray,
@@ -197,9 +206,9 @@ object InterpretMethod {
         } catch {
             case ife: InterpretationFailedException ⇒
                 val resultHeader =
-                    Some("<p><b>"+domainClass.getName()+"</b></p>"+
-                        ife.cause.getMessage()+"<br>"+
-                        ife.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
+                    Some("<p><b>"+domainClass.getName+"</b></p>"+
+                        ife.cause.getMessage+"<br>"+
+                        ife.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                         "Current instruction: "+ife.pc+"<br>"+
                         XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
                         ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")

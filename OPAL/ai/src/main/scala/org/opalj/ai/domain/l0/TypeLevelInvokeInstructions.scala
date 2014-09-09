@@ -50,18 +50,31 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
 trait TypeLevelInvokeInstructions extends MethodCallsDomain {
     domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode ⇒
 
-    protected[this] def getExceptions(pc: PC): Set[ExceptionValue] = {
-        var exceptionTypes: Set[ExceptionValue] = Set.empty
-        code.handlersFor(pc) foreach { h ⇒
-            exceptionTypes +=
-                (h.catchType match {
-                    // We don't know the true type of the exception, we just
-                    // know the upper bound!
-                    case None     ⇒ NonNullObjectValue(pc, ObjectType.Throwable)
-                    case Some(ex) ⇒ NonNullObjectValue(pc, ex)
-                })
+    protected[this] def getExceptions(pc: PC): List[ExceptionValue] = {
+        var exceptionTypes: Set[ObjectType] = Set.empty
+        var exceptionValues: List[ExceptionValue] = List.empty
+
+        def add(exceptionType: ObjectType) {
+
+            if (!exceptionTypes.contains(exceptionType)) {
+                exceptionTypes += exceptionType
+                // We don't know the true type of the exception, we just
+                // know the upper bound!
+                exceptionValues = NonNullObjectValue(pc, exceptionType) :: exceptionValues
+            }
         }
-        exceptionTypes
+
+        code.handlersFor(pc) foreach { h ⇒
+            h.catchType match {
+                case None     ⇒ add(ObjectType.Throwable)
+                case Some(ex) ⇒ add(ex)
+            }
+        }
+        // The list of exception values is in reverse order when compared to the handlers!
+        // This is by purpose to foster a faster overall evaluation. (I.e., we want
+        // to perform the abstract interpretation using more abstract values first. (<=>
+        // exceptions with types higher-up in the type hierarchy) 
+        exceptionValues
     }
 
     protected[this] def handleInstanceBasedInvoke(
@@ -72,7 +85,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsDomain {
             case Yes ⇒
                 return justThrows(NullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnMethodCall ⇒
-                getExceptions(pc) + NullPointerException(pc)
+                NullPointerException(pc) :: getExceptions(pc)
             case /*No or Unknown & DoNotThrowNullPointerException*/ _ ⇒
                 getExceptions(pc)
         }
@@ -83,7 +96,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsDomain {
     protected[this] def handleInvoke(
         pc: PC,
         returnType: Type,
-        exceptions: Set[ExceptionValue]): MethodCallResult = {
+        exceptions: Iterable[ExceptionValue]): MethodCallResult = {
         if (returnType.isVoidType) {
             if (exceptions.isEmpty)
                 ComputationWithSideEffectOnly

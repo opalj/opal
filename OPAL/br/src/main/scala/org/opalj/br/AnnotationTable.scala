@@ -32,10 +32,10 @@ package br
 /**
  * The runtime (in)visible annotations of a class, method, or field.
  *
- * @note At the JVM level, repeating annotations (as supported by Java 8) 
+ * @note At the JVM level, repeating annotations (as supported by Java 8)
  *    ([[http://docs.oracle.com/javase/tutorial/java/annotations/repeating.html]])
  *    have no explicit support.
- *    
+ *
  * @author Michael Eichberg
  */
 trait AnnotationTable extends Attribute {

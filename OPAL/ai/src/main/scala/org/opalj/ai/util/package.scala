@@ -29,10 +29,6 @@
 package org.opalj
 package ai
 
-import org.opalj.util.Answer
-
-import scala.collection.Set
-
 /**
  * Common utility functionality.
  *

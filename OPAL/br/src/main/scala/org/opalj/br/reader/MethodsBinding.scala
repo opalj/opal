@@ -30,9 +30,9 @@ package org.opalj
 package br
 package reader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
-import bi.reader.MethodsReader
+import org.opalj.bi.reader.MethodsReader
 
 /**
  *

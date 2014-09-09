@@ -132,8 +132,4 @@ object ConstantString {
     final val KindId = 5
 
 }
-    
-
-
-
 

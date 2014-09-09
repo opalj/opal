@@ -36,8 +36,8 @@ package br
  * @author Arne Lottmann
  */
 case class ElementValuePair(
-    name: String,
-    value: ElementValue) {
-    
-    def toJava: String = name + "=" + value.toJava
+        name: String,
+        value: ElementValue) {
+
+    def toJava: String = name+"="+value.toJava
 }

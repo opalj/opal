@@ -109,6 +109,35 @@ object XHTML {
         }
     }
 
+    def typeToXHTML(t: Type): Node = {
+        t match {
+            case ot: ObjectType ⇒
+                <span class="tooltip object_type">
+                    { ot.simpleName }<span class="fqn">{ ot.toJava }</span>
+                </span>
+            case at: ArrayType ⇒
+                <span class="array_type">
+                    { typeToXHTML(at.elementType) }{ (1 to at.dimensions).map(i ⇒ "[]") }
+                </span>
+            case bt: BaseType ⇒
+                <span class="base_type">{ bt.toJava }</span>
+            case vt: VoidType ⇒
+                <span class="void_type">void</span>
+        }
+    }
+
+    def methodToXHTML(name: String, descriptor: MethodDescriptor): Node = {
+        <span class="method_signature">
+            { typeToXHTML(descriptor.returnType) }
+            { name }
+            <span class="method_parameters">
+                (
+                { descriptor.parameterTypes.map(typeToXHTML(_)) }
+                )
+            </span>
+        </span>
+    }
+
     /**
      * In case that during the validation some exception is thrown, a dump of
      * the current memory layout is written to a temporary file and opened in a
@@ -139,11 +168,11 @@ object XHTML {
                     writeAndOpenDump(
                         dump(
                             classFile.get, method.get,
-                            "Dump generated due to exception: "+e.getMessage(),
+                            "Dump generated due to exception: "+e.getMessage,
                             result)
                     )
                 } else {
-                    Console.err.println("dump suppressed: "+e.getMessage())
+                    Console.err.println("dump suppressed: "+e.getMessage)
                 }
                 throw e
         }
@@ -158,6 +187,7 @@ object XHTML {
             <head>
                 { theTitle }
                 <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
+                <script type="text/javascript">NodeList.prototype.forEach = Array.prototype.forEach; </script>
                 <script type="text/javascript">{ scala.xml.Unparsed(jquery) }</script>
                 <script type="text/javascript">{ scala.xml.Unparsed(colResizable) }</script>
                 <script type="text/javascript">$(function(){{$('table').colResizable({{ liveDrag:true, minWidth:75 }});}});</script>
@@ -218,7 +248,7 @@ object XHTML {
         createXHTML(
             title,
             Seq[Node](
-                title.map(t => <h1>{ t }</h1>).getOrElse(Text("")),
+                title.map(t ⇒ <h1>{ t }</h1>).getOrElse(Text("")),
                 annotations,
                 scala.xml.Unparsed(resultHeader.getOrElse("")),
                 dumpTable(code, domain)(operandsArray, localsArray)
@@ -232,7 +262,7 @@ object XHTML {
 
         try {
             if (Desktop.isDesktopSupported) {
-                val desktop = Desktop.getDesktop()
+                val desktop = Desktop.getDesktop
                 val file = File.createTempFile("OPAL-AI-Dump", ".html")
                 val fos = new FileOutputStream(file)
                 fos.write(node.toString.getBytes("UTF-8"))
@@ -251,17 +281,17 @@ object XHTML {
     }
 
     private def styles: String =
-        process(this.getClass().getResourceAsStream("dump.head.fragment.css"))(
+        process(this.getClass.getResourceAsStream("dump.head.fragment.css"))(
             scala.io.Source.fromInputStream(_).mkString
         )
 
     private def jquery: String =
-        process(this.getClass().getResourceAsStream("jquery.js"))(
+        process(this.getClass.getResourceAsStream("jquery.js"))(
             scala.io.Source.fromInputStream(_).mkString
         )
 
     private def colResizable: String =
-        process(this.getClass().getResourceAsStream("colResizable-1.3.min.js"))(
+        process(this.getClass.getResourceAsStream("colResizable-1.3.min.js"))(
             scala.io.Source.fromInputStream(_).mkString
         )
 
@@ -292,19 +322,37 @@ object XHTML {
             id.intValue()
         }
 
+        // We cannot create "reasonable output in case of VERY VERY large methods"
+        // E.g., a method with 30000 instructions and 1000 locals would create
+        // a table with ~ 30.000.000 rows...
+        val rowsCount = code.instructionsCount * code.maxLocals
+        val operandsOnly = rowsCount > 100000
+        val disclaimer =
+            if (operandsOnly) {
+                <b>Output is restricted to the operands as the number of rows would be too large otherwise: { rowsCount } </b>
+            } else
+                NodeSeq.Empty
+
         <div>
+            { disclaimer }
             <table>
                 <thead>
                     <tr>
                         <th class="pc">PC</th>
                         <th class="instruction">Instruction</th>
                         <th class="stack">Operand Stack</th>
-                        <th class="registers">Registers</th>
-                        <th class="properties">Properties</th>
+                        {
+                            if (operandsOnly)
+                                NodeSeq.Empty
+                            else {
+                                <th class="registers">Registers</th>
+                                <th class="properties">Properties</th>
+                            }
+                        }
                     </tr>
                 </thead>
                 <tbody>
-                    { dumpInstructions(code, domain)(operandsArray, localsArray)(Some(idsLookup)) }
+                    { dumpInstructions(code, domain, operandsOnly)(operandsArray, localsArray)(Some(idsLookup)) }
                 </tbody>
             </table>
             { exceptionHandlers }
@@ -329,10 +377,12 @@ object XHTML {
 
     private def dumpInstructions(
         code: Code,
-        domain: Domain)(
+        domain: Domain,
+        operandsOnly: Boolean)(
             operandsArray: TheOperandsArray[domain.Operands],
             localsArray: TheLocalsArray[domain.Locals])(
                 implicit ids: Option[AnyRef ⇒ Int]): Array[Node] = {
+
         val indexedExceptionHandlers = indexExceptionHandlers(code)
         val joinInstructions = code.joinInstructions
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
@@ -342,7 +392,8 @@ object XHTML {
             dumpInstruction(
                 pc, code.lineNumber(pc), instruction, joinInstructions.contains(pc),
                 Some(exceptionHandlers),
-                domain)(
+                domain,
+                operandsOnly)(
                     operands, locals)
         }
     }
@@ -353,10 +404,12 @@ object XHTML {
         instruction: Instruction,
         isJoinInstruction: Boolean,
         exceptionHandlers: Option[String],
-        domain: Domain)(
+        domain: Domain,
+        operandsOnly: Boolean)(
             operands: domain.Operands,
             locals: domain.Locals)(
                 implicit ids: Option[AnyRef ⇒ Int]): Node = {
+
         val pcAsXHTML = Unparsed(
             (if (isJoinInstruction) "⇶ " else "") +
                 pc.toString +
@@ -370,8 +423,15 @@ object XHTML {
             <td class="pc">{ pcAsXHTML }</td>
             <td class="instruction">{ Unparsed(instruction.toString(pc).replace("\n", "<br>")) }</td>
             <td class="stack">{ dumpStack(operands) }</td>
-            <td class="locals">{ dumpLocals(locals) }</td>
-            <td class="properties">{ properties }</td>
+            {
+                if (operandsOnly)
+                    NodeSeq.Empty
+                else {
+
+                    <td class="locals">{ dumpLocals(locals) }</td>
+                    <td class="properties">{ properties }</td>
+                }
+            }
         </tr>
     }
 
@@ -420,19 +480,19 @@ object XHTML {
 
     def throwableToXHTML(throwable: Throwable): scala.xml.Node = {
         val node =
-            if (throwable.getStackTrace() == null ||
-                throwable.getStackTrace().size == 0) {
-                <div>{ throwable.getClass().getSimpleName()+" "+throwable.getMessage() }</div>
+            if (throwable.getStackTrace == null ||
+                throwable.getStackTrace.size == 0) {
+                <div>{ throwable.getClass.getSimpleName+" "+throwable.getMessage }</div>
             } else {
                 val stackElements =
-                    for { stackElement ← throwable.getStackTrace() } yield {
+                    for { stackElement ← throwable.getStackTrace } yield {
                         <tr>
-                            <td>{ stackElement.getClassName() }</td>
-                            <td>{ stackElement.getMethodName() }</td>
-                            <td>{ stackElement.getLineNumber() }</td>
+                            <td>{ stackElement.getClassName }</td>
+                            <td>{ stackElement.getMethodName }</td>
+                            <td>{ stackElement.getLineNumber }</td>
                         </tr>
                     }
-                val summary = throwable.getClass().getSimpleName()+" "+throwable.getMessage()
+                val summary = throwable.getClass.getSimpleName+" "+throwable.getMessage
 
                 <details>
                     <summary>{ summary }</summary>
@@ -440,8 +500,8 @@ object XHTML {
                 </details>
             }
 
-        if (throwable.getCause() ne null) {
-            val causedBy = throwableToXHTML(throwable.getCause())
+        if (throwable.getCause ne null) {
+            val causedBy = throwableToXHTML(throwable.getCause)
             <div style="background-color:yellow">{ node } <p>caused by:</p>{ causedBy }</div>
         } else {
             node
@@ -449,7 +509,7 @@ object XHTML {
     }
 
     def evaluatedInstructionsToXHTML(evaluated: List[PC]) = {
-        val header = "Evaluated instructions: "+evaluated.filter(_ >= 0).size+"<br>"
+        val header = "Evaluated instructions: "+evaluated.count(_ >= 0)+"<br>"
         val footer = ""
         val subroutineStart = "<details><summary>Subroutine</summary><div style=\"margin-left:2em;\">"
         val subroutineEnd = "</div></details>"

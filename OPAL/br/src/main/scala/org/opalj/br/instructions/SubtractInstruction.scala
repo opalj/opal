@@ -30,24 +30,18 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * An instruction that subtracts two primitive values.
  *
  * @author Michael Eichberg
  */
-abstract class SubtractInstruction extends ArithmeticInstruction {
+abstract class SubtractInstruction extends StackBasedArithmeticInstruction {
 
     final def runtimeExceptions: List[ObjectType] = Nil
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
-
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
-        currentPC + 1
-
     final def nextInstructions(currentPC: PC, code: Code): PCs =
-        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+        UShortSet(indexOfNextInstruction(currentPC, code))
 
 }

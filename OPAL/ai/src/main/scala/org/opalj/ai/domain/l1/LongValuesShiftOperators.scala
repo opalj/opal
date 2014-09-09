@@ -31,12 +31,6 @@ package ai
 package domain
 package l1
 
-import org.opalj.ai.Domain
-import org.opalj.ai.IsLongValue
-import org.opalj.ai.domain.Configuration
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeLong
-
 /**
  * Implements the shift operators for long values.
  *
@@ -70,5 +64,4 @@ trait LongValuesShiftOperators extends LongValuesDomain {
         }
     }
 }
-
 

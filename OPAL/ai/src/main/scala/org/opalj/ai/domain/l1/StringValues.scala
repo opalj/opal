@@ -117,4 +117,3 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
 
 }
 
-

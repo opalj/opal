@@ -112,13 +112,13 @@ trait AnalysisExecutor {
 
         // transform parameters input to allow parameters like -param="in put"
         // -param="the input" is transformed into -param=the input
-        val quotedParams = """(-[\w.]+="[\w:./\\ ]+")""".r
-        val unqoutedParams = """(-[\w.]+=[\w:./\\]+)""".r
+        val quotedParams = """(-[\w.]+="[\w-_:./\\ ]+")""".r
+        val unqoutedParams = """(-[\w.]+=[\w-_:./\\]+)""".r
         val input = unparsedArgs.mkString(" ")
         val args =
             (
                 quotedParams.findAllMatchIn(input).map { p ⇒
-                    val paramMatcher = """(-\w+=)"([\w:./\\ ]*)"""".r
+                    val paramMatcher = """(-\w+=)"([\w-_:./\\ ]*)"""".r
                     val paramMatcher(kind, value) = p.matched
                     kind + value
                 } ++

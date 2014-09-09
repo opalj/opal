@@ -32,10 +32,10 @@ package instructions
 
 /**
  * Represents an "incomplete" invoke dynamic instruction. Here, incomplete refers
- * to the fact that no all information are yet available because they are not
- * yet loaded. In case of invokedynamic instructions it is necessary
+ * to the fact that not all information is yet available because it is not
+ * yet loaded. In case of `invokedynamic` instructions it is necessary
  * to read a class file's attributes which are read in at the very end. This requires
- * that invoke dynamic instructions can only be completed in a second step.
+ * to resolve INVOKEDYNAMIC instructions in a two step process.
  *
  * @author Michael Eichberg
  */
@@ -61,6 +61,8 @@ case object INCOMPLETE_INVOKEDYNAMIC extends InvocationInstruction {
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 5
 
+    final def length: Int = 5
+
     final def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
 
 }
@@ -82,10 +84,10 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC, false)
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 5
+
+    final def length: Int = 5
 
     final def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
 

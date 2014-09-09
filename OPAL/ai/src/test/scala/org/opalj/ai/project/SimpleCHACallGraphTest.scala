@@ -34,7 +34,7 @@ package project
  * Tests the generation of the call graph for a small project.
  *
  * @author Marco Jacobasch
- * @author Michael Eichberg 
+ * @author Michael Eichberg
  */
 class SimpleCHACallGraphTest extends AbstractCallGraphTest {
 

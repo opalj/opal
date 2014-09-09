@@ -34,10 +34,10 @@ import scala.collection.Set
 import scala.collection.Map
 
 /**
- * An index that enables the efficient lookup of source elements (methods and fields) 
+ * An index that enables the efficient lookup of source elements (methods and fields)
  * given the method's/field's name and the descriptor/field type.
- * 
- * Basically an index of the source elements (methods and fields) of a project. 
+ *
+ * Basically an index of the source elements (methods and fields) of a project.
  *
  * To get an instance of a project index call [[Project.get]] and pass in
  * the [[ProjectIndexKey]] object.
@@ -168,7 +168,4 @@ object ProjectIndex {
     }
 
 }
-
-
-
 

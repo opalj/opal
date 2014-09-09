@@ -65,7 +65,7 @@ case class CompactLineNumberTable(
                         ((lineNumbers(index + 2) & 0xFF) << 8) + (lineNumbers(index + 3) & 0xFF)
                     lastLineNumber = Some(currentLineNumber)
                 } else {
-                    break
+                    break()
                 }
                 e += 1
             }

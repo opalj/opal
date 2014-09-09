@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * An instruction that loads a local variable and puts it on top of the stack.
  *
@@ -46,7 +48,7 @@ abstract class LoadLocalVariableInstruction extends Instruction {
     final def runtimeExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
-        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+        UShortSet(indexOfNextInstruction(currentPC, code))
 
 }
 /**

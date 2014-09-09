@@ -48,10 +48,10 @@ sealed abstract class NEWARRAY extends CreateNewArrayInstruction {
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC)
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean = false): Int =
         currentPC + 2
+
+    final def length: Int = 2
 
     final override def toString: String = "NEWARRAY("+elementType.toJava+"[])"
 

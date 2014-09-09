@@ -30,9 +30,6 @@ package org.opalj
 package br
 package analyses
 
-import java.net.URL
-import java.io.File
-
 /**
  * Result of some analysis that just consists of some text.
  *

@@ -30,7 +30,7 @@ package org.opalj
 package br
 package reader
 
-import bi.reader.EnclosingMethod_attributeReader
+import org.opalj.bi.reader.EnclosingMethod_attributeReader
 
 /**
  *
@@ -60,5 +60,4 @@ trait EnclosingMethod_attributeBinding
         }
     }
 }
-
 

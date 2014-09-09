@@ -39,6 +39,6 @@ case object BASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAc
 
     final val opcode = 84
 
-   final val mnemonic = "bastore"
+    final val mnemonic = "bastore"
 
 }

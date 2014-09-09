@@ -56,7 +56,3 @@ trait DefaultHandlingForThrownExceptions extends ReturnInstructionsDomain {
     }
 }
 
-
-
-
-

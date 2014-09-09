@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-class ALOAD(
+final class ALOAD(
     final val lvIndex: Int)
         extends LoadLocalVariableInstruction
         with ExplicitLocalVariableIndex {
@@ -45,8 +45,8 @@ class ALOAD(
     final def mnemonic: String = "aload"
 
     override def equals(other: Any): Boolean = other match {
-        case ALOAD(index) ⇒ index == lvIndex
-        case _            ⇒ false
+        case that: ALOAD ⇒ this.lvIndex == that.lvIndex
+        case _           ⇒ false
     }
 
     override def hashCode: Int = 47 * lvIndex

@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-sealed abstract class FieldAccess extends Instruction {
+sealed abstract class FieldAccess extends Instruction with ConstantLengthInstruction {
 
     def declaringClass: ObjectType
 
@@ -50,8 +50,10 @@ sealed abstract class FieldAccess extends Instruction {
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 3
+
+    final def length: Int = 3
 
 }
 

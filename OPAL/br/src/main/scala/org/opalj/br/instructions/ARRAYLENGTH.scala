@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object ARRAYLENGTH extends Instruction {
+case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction {
 
     final val opcode = 190
 
@@ -49,8 +49,10 @@ case object ARRAYLENGTH extends Instruction {
 
     final def indexOfNextInstruction(
         currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+        modifiedByWide: Boolean): Int =
         currentPC + 1
+
+    final def length: Int = 1
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         Instruction.nextInstructionOrExceptionHandler(

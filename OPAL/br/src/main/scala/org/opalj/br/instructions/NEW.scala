@@ -35,9 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class NEW(
-    objectType: ObjectType)
-        extends Instruction {
+case class NEW(objectType: ObjectType) extends Instruction with ConstantLengthInstruction {
 
     final def opcode: Opcode = NEW.opcode
 
@@ -46,19 +44,21 @@ case class NEW(
     final def runtimeExceptions: List[ObjectType] = Nil
 
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
+        indexOfNextInstruction(currentPC, false)
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 3
+
+    final def length: Int = 3
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         Instruction.nextInstructionOrExceptionHandler(
             this, currentPC, code, ObjectType.OutOfMemoryError)
 
     override def toString: String = "NEW "+objectType.toJava
+
 }
+
 object NEW {
 
     final val opcode = 187

@@ -41,7 +41,7 @@ package ai
 class TimeBoundedAI[D <: Domain](
         val maxEffortInNs: Long = 150l /*ms*/ * 1000l * 1000l) extends AI[D] {
 
-    private[this] final val CheckInterval = 100;
+    private[this] final val CheckInterval = 100
 
     private[this] var evaluationCount = -1 // we don't check the p
 

@@ -32,7 +32,7 @@ package analyses
 
 /**
  * Thrown if we identify that the project is not consistent.
- * 
+ *
  * @author Michael Eichberg
  */
 case class InconsistentProjectException(

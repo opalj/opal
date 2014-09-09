@@ -54,10 +54,7 @@ import br.reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PropertyTracingTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecution {
 
     import debug.XHTML.dumpOnFailureDuringValidation
     import PropertyTracingTest._
@@ -80,7 +77,7 @@ class PropertyTracingTest
             with l0.TypeLevelInvokeInstructions
             with TheMethod {
 
-        override def maxSizeOfIntegerRanges: Long = 16l
+        override def maxCardinalityOfIntegerRanges: Long = 16l
 
         override def propertyName = "isSanitized"
 

@@ -105,7 +105,7 @@ trait DefaultIntegerRangeValues
                         // will be NO further constraints
                         NoUpdate
 
-                    else if (newUpperBound.toLong - newLowerBound.toLong > maxSizeOfIntegerRanges)
+                    else if (newUpperBound.toLong - newLowerBound.toLong > maxCardinalityOfIntegerRanges)
                         StructuralUpdate(AnIntegerValue())
 
                     else if (newLowerBound == lowerBound && newUpperBound == upperBound)

@@ -63,7 +63,7 @@ trait AIProject[Source, D <: Domain with Report] {
      * Returns the (initial) domain object that will be used to analyze an entry point.
      *
      * The analysis of all entry points may happen concurrently unless
-     * [[analyzeInParallel]] is `false.
+     * [[analyzeInParallel]] is `false`.
      */
     def domain(project: Project[Source], classFile: ClassFile, method: Method): D
 
@@ -101,7 +101,7 @@ trait AIProject[Source, D <: Domain with Report] {
         project: Project[Source],
         parameters: Seq[String]): ReportableAnalysisResult = {
 
-        def analyze(cf_m: (ClassFile, Method)) = {
+        val analyze: ((ClassFile, Method)) ⇒ Option[String] = { cf_m: (ClassFile, Method) ⇒
             val (classFile: ClassFile, method: Method) = cf_m
             val theDomain = domain(project, classFile, method)
             ai(classFile, method, theDomain)
@@ -110,9 +110,9 @@ trait AIProject[Source, D <: Domain with Report] {
 
         val reports =
             if (analyzeInParallel)
-                (entryPoints(project).par map { analyze(_) }).seq
+                (entryPoints(project).par map { analyze }).seq
             else
-                entryPoints(project) map { analyze(_) }
+                entryPoints(project) map { analyze }
 
         val theReports = reports.filter(_.isDefined).map(_.get)
         br.analyses.BasicReport(

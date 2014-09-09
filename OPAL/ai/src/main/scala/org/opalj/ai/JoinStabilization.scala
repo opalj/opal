@@ -30,8 +30,8 @@ package org.opalj
 package ai
 
 /**
- * Ensures that the same value is used whenever we merge the same two identical domain
- * values. This ensures that the relation between the values remains the same.
+ * Ensures that the '''same `DomainValue`''' is used whenever we merge the same
+ * pair of domain values. This ensures that the relation between the values remains the same.
  *
  * For example, given the following two stacks:
  *  - `AnIntegerValue[#1]` <- `AnIntegerValue[#1]` <- `IntegerRange(lb=0,ub=10)[#2]` <- ...
@@ -57,7 +57,7 @@ package ai
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait JoinStabilization extends CoreDomainFunctionality {
-
+    /* OLD USING A MAP OF MAPS
     import java.util.{ IdentityHashMap ⇒ IDMap }
 
     private[this] val leftValues =
@@ -89,4 +89,27 @@ trait JoinStabilization extends CoreDomainFunctionality {
         super.afterBaseJoin(pc)
         leftValues.clear()
     }
+	*/
+
+    import scala.collection.mutable.Map
+
+    private[this] val joinedValues =
+        Map.empty[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]
+
+    /* NOT "abstract override" - this trait is by purpose not stackable! */
+    override protected[this] def joinValues(
+        pc: PC,
+        left: DomainValue, right: DomainValue): Update[DomainValue] = {
+
+        joinedValues.getOrElseUpdate(
+            new IdentityPair(left, right),
+            super.joinValues(pc, left, right))
+    }
+
+    /* NOT "abstract override" - this trait is by purpose not stackable! */
+    override protected[this] def afterBaseJoin(pc: PC): Unit = {
+        super.afterBaseJoin(pc)
+        joinedValues.clear()
+    }
 }
+

@@ -37,20 +37,19 @@ import language.existentials
  *
  * @author Michael Eichberg
  */
-sealed abstract class LDC[@specialized(Int, Float) T]
-        extends LoadConstantInstruction[T] {
+sealed abstract class LDC[@specialized(Int, Float) T] extends LoadConstantInstruction[T] {
 
     final def opcode: Opcode = LDC.opcode
 
     final def mnemonic: String = "ldc"
 
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
+        indexOfNextInstruction(currentPC, false)
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 2
+
+    final def length: Int = 2
 }
 
 final case class LoadInt(value: Int) extends LDC[Int]

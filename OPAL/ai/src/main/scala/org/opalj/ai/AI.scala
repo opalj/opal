@@ -126,7 +126,7 @@ trait AI[D <: Domain] {
      *  @param method A non-native, non-abstract method of the given class file that
      *      will be analyzed. All parameters are automatically initialized with sensible
      *      default values.
-     *  @param domain The domain that will be used to perform computations related
+     *  @param theDomain The domain that will be used to perform computations related
      *  	to values.
      */
     def apply(
@@ -246,7 +246,7 @@ trait AI[D <: Domain] {
      *      the method is an instance method.
      * @param method A non-abstract, non-native method of the given class file. I.e.,
      *      a method with a body.
-     * @param domain The abstract domain that will be used for the abstract interpretation
+     * @param theDomain The abstract domain that will be used for the abstract interpretation
      *      of the given method.
      * @param someLocals The initial register assignment (the parameters passed to the
      * 		method). If the values passed to a method are already known, the
@@ -340,10 +340,10 @@ trait AI[D <: Domain] {
      *
      * @param code The bytecode that will be interpreted using the given domain.
      *
-     * @param domain The domain that will be used to perform the domain
+     * @param theDomain The domain that will be used to perform the domain
      *      dependent computations.
      *
-     * @param initialWorklist The list of program counters with which the interpretation
+     * @param initialWorkList The list of program counters with which the interpretation
      *      will continue. If the method was never analyzed before, the list should just
      *      contain the value "0"; i.e., we start with the interpretation of the
      *      first instruction.
@@ -360,7 +360,7 @@ trait AI[D <: Domain] {
      *      This list is primarily needed to correctly resolve jumps to sub routines
      *      (`JSR(_W)` and `RET` instructions.)
      *
-     * @param operandsArray The array that contains the operand stacks. Each value
+     * @param theOperandsArray The array that contains the operand stacks. Each value
      *      in the array contains the operand stack before the instruction with the
      *      corresponding index is executed. This array can be empty except of the
      *      indexes that are referred to by the `initialWorklist`.
@@ -368,7 +368,7 @@ trait AI[D <: Domain] {
      *      __recommended that a `Domain` does not directly mutate the state of
      *      this array__.'''
      *
-     * @param localsArray The array that contains the local variable assignments.
+     * @param theLocalsArray The array that contains the local variable assignments.
      *      Each value in the array contains the local variable assignments before
      *      the instruction with the corresponding program counter is executed.
      *      '''The `localsArray` data structure is mutated by OPAL-AI and it is
@@ -677,7 +677,7 @@ trait AI[D <: Domain] {
                          yesConstraint: SingleValueConstraint,
                          noConstraint: SingleValueConstraint) {
 
-                    val branchInstruction = as[ConditionalBranchInstruction](instruction)
+                    val branchInstruction = as[SimpleConditionalBranchInstruction](instruction)
                     val operand = operands.head
                     val rest = operands.tail
                     val nextPC = pcOfNextInstruction
@@ -721,7 +721,7 @@ trait AI[D <: Domain] {
                              yesConstraint: TwoValuesConstraint,
                              noConstraint: TwoValuesConstraint) {
 
-                    val branchInstruction = as[ConditionalBranchInstruction](instruction)
+                    val branchInstruction = as[SimpleConditionalBranchInstruction](instruction)
                     val right = operands.head
                     val remainingOperands = operands.tail
                     val left = remainingOperands.head

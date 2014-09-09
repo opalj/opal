@@ -47,4 +47,4 @@ case class ExceptionHandler(
     startPC: Int,
     endPC: Int,
     handlerPC: Int,
-    catchType: Option[ObjectType]) 
+    catchType: Option[ObjectType])

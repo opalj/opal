@@ -31,7 +31,6 @@ package ai
 
 import scala.collection.BitSet
 
-import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
 
 /**
@@ -56,7 +55,7 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
 
     /**
      * Sets the code structure.
-     * 
+     *
      * This method is called by the AI framework.
      */
     def setCodeStructure(

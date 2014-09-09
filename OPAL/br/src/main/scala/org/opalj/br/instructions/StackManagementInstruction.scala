@@ -30,25 +30,29 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * An instruction that directly manipulates the operand stack.
  *
  * @author Michael Eichberg
  */
-abstract class StackManagementInstruction extends Instruction {
+abstract class StackManagementInstruction
+        extends Instruction
+        with ConstantLengthInstruction {
 
     def runtimeExceptions: List[ObjectType] = Nil
 
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC)
+        indexOfNextInstruction(currentPC, false)
 
-    final def indexOfNextInstruction(
-        currentPC: PC,
-        modifiedByWide: Boolean = false): Int =
+    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 1
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs = {
-        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
-    }
+    final def length: Int = 1
+
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
+        UShortSet(indexOfNextInstruction(currentPC, code))
+
 }
 

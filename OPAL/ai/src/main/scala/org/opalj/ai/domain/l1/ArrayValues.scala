@@ -280,7 +280,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
             }
             ArrayValue(pc, arrayType, array)
         } else {
-            ArrayValue(pc, No, true, arrayType)
+            ArrayValue(pc, No, isPrecise = true, arrayType)
         }
     }
 

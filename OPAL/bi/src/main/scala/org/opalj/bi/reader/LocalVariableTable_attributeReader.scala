@@ -123,10 +123,3 @@ object LocalVariableTable_attributeReader {
 
 }
 
-
-
-
-
-
-
-

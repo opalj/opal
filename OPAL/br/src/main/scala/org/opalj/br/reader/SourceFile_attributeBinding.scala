@@ -30,7 +30,7 @@ package org.opalj
 package br
 package reader
 
-import bi.reader.SourceFile_attributeReader
+import org.opalj.bi.reader.SourceFile_attributeReader
 
 /**
  * The factory method to create the source file attribute.
@@ -52,5 +52,4 @@ trait SourceFile_attributeBinding
     }
 
 }
-
 

@@ -29,9 +29,10 @@
 package org.opalj
 package br
 package reader
-import reflect.ClassTag
 
-import bi.reader.FieldsReader
+import scala.reflect.ClassTag
+
+import org.opalj.bi.reader.FieldsReader
 
 /**
  *

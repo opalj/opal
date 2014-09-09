@@ -35,9 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object ILOAD_2
-        extends LoadLocalVariableInstruction
-        with ImplicitLocalVariableIndex {
+case object ILOAD_2 extends LoadLocalVariableInstruction with ImplicitLocalVariableIndex {
 
     final val lvIndex = 2
 

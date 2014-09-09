@@ -74,7 +74,7 @@ class ControlAbstractionsTest extends FlatSpec with Matchers with ParallelTestEx
     }
 
     behavior of "The ControlAbstractions.repeat macro"
-  
+
     it should "return a empty seq when the number of times is 0" in {
         val result = repeat(0) { 1 }
         result.isEmpty should be(true)

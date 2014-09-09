@@ -30,9 +30,9 @@ package org.opalj
 package br
 package reader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
-import bi.reader.Exceptions_attributeReader
+import org.opalj.bi.reader.Exceptions_attributeReader
 
 /**
  * The factory method to create a method's exception attribute.
@@ -57,5 +57,4 @@ trait Exceptions_attributeBinding
         )
     }
 }
-
 

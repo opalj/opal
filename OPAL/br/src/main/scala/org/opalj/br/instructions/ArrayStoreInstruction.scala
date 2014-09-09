@@ -35,6 +35,5 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class ArrayStoreInstruction extends ArrayAccessInstruction 
-
+abstract class ArrayStoreInstruction extends ArrayAccessInstruction
 

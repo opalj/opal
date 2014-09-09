@@ -109,5 +109,4 @@ case object REF_invokeInterface extends ReferenceKind {
     final val referenceKind = 9
     final val referenceKindName = "REF_invokeInterface"
 }
-  
 

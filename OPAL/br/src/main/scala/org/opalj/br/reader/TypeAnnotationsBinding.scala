@@ -30,11 +30,11 @@ package org.opalj
 package br
 package reader
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
 
-import bi.reader.TypeAnnotationsReader
-import bi.reader.TypeAnnotationTargetReader
-import bi.reader.TypeAnnotationPathReader
+import org.opalj.bi.reader.TypeAnnotationsReader
+import org.opalj.bi.reader.TypeAnnotationTargetReader
+import org.opalj.bi.reader.TypeAnnotationPathReader
 
 /**
  * Factory methods to create representations of Java type annotations.
@@ -216,7 +216,4 @@ trait TypeAnnotationsBinding
         TAOnTypeArgument(type_argument_index)
 
 }
-
-
-
 

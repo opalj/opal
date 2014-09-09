@@ -33,7 +33,7 @@ package l0
 
 /**
  * Base implementation of the `TypeLevelDoubleValues` trait that requires that
- * the domain`s `Value` trait is not extended. This implementation just satisfies
+ * the domain's `Value` trait is not extended. This implementation just satisfies
  * the basic requirements of OPAL w.r.t. the domain's computational type.
  *
  * @author Michael Eichberg
@@ -55,7 +55,7 @@ trait DefaultTypeLevelDoubleValues
             // NoUpdate. 
             NoUpdate
 
-        override def abstractsOver(other: DomainValue): Boolean = (other eq this)
+        override def abstractsOver(other: DomainValue): Boolean = other eq this
 
         override def summarize(pc: PC): DomainValue = this
 
@@ -70,5 +70,4 @@ trait DefaultTypeLevelDoubleValues
     final override def DoubleValue(valueOrigin: ValueOrigin, value: Double): DoubleValue =
         ADoubleValue
 }
-
 

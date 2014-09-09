@@ -32,13 +32,8 @@ package debug
 
 import java.io.File
 import java.net.URL
-import java.util.zip.ZipFile
-import java.io.DataInputStream
-import java.io.ByteArrayInputStream
 
-import scala.Console._
 import scala.util.control.ControlThrowable
-import scala.collection.JavaConversions.enumerationAsScalaIterator
 
 import org.opalj.br._
 import org.opalj.br.analyses._
@@ -113,12 +108,18 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
 object InterpretMethodsAnalysis {
 
+    def println(s: String) {
+        Console.out.println(s)
+        Console.flush()
+    }
+
     def interpret[Source](
         project: Project[Source],
         domainClass: Class[_ <: Domain],
         beVerbose: Boolean,
         maxEvaluationFactor: Int = 10): (String, Option[File]) = {
 
+        import Console.{ BOLD, RED, YELLOW, GREEN, RESET }
         import org.opalj.util.PerformanceEvaluation.ns2sec
         val performanceEvaluationContext = new org.opalj.util.PerformanceEvaluation
         import performanceEvaluationContext.{ time, getTime }
@@ -132,12 +133,11 @@ object InterpretMethodsAnalysis {
             source: String,
             classFile: ClassFile): Seq[(String, ClassFile, Method, Throwable)] = {
 
-            if (beVerbose) println(classFile.thisType.toJava)
-
             val collectedExceptions =
                 for (method @ MethodWithBody(body) ← classFile.methods) yield {
                     try {
-                        if (beVerbose) println("  started:  "+method.toJava)
+                        if (beVerbose)
+                            println(classFile.thisType.toJava+"{ "+method.toJava + YELLOW+"[started]"+RESET+" }")
                         time('AI) {
                             val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor)
                             val result =
@@ -148,12 +148,13 @@ object InterpretMethodsAnalysis {
                                 )
                             if (result.wasAborted) {
                                 if (beVerbose)
-                                    println(Console.RED+
-                                        "  aborted:  "+method.toJava+
-                                        " after evaluating "+ai.currentEvaluationCount+
-                                        " instructions (size of instructions array="+body.instructions.size+
-                                        "; max="+ai.maxEvaluationCount+")"+
-                                        Console.RESET)
+                                    println(
+                                        classFile.thisType.toJava+"{ "+method.toJava +
+                                            RED+"[aborted after evaluating "+
+                                            ai.currentEvaluationCount+
+                                            " instructions (size of instructions array="+body.instructions.size+
+                                            "; max="+ai.maxEvaluationCount+")]"+
+                                            RESET+" }")
 
                                 throw new InterruptedException(
                                     "evaluation bound (max="+ai.maxEvaluationCount+
@@ -161,14 +162,12 @@ object InterpretMethodsAnalysis {
                             }
                         }
                         if (beVerbose)
-                            println(Console.GREEN+
-                                "  finished:  "+method.toJava +
-                                Console.RESET)
+                            println(classFile.thisType.toJava+"{ "+method.toJava + GREEN+"[finished]"+RESET+" }")
                         methodsCount.incrementAndGet()
                         None
                     } catch {
                         case ct: ControlThrowable ⇒ throw ct
-                        case t: Throwable ⇒ {
+                        case t: Throwable ⇒
                             // basically, we want to catch everything!
                             Some((
                                 project.source(classFile.thisType).get.toString,
@@ -176,7 +175,6 @@ object InterpretMethodsAnalysis {
                                 method,
                                 t)
                             )
-                        }
                     }
                 }
 
@@ -187,7 +185,7 @@ object InterpretMethodsAnalysis {
             val result = (
                 for { (source, classFile) ← project.classFilesWithSources.par } yield {
 
-                    if (beVerbose) print(BOLD + source.toString + RESET+" – ")
+                    if (beVerbose) println(BOLD + source.toString + RESET)
 
                     analyzeClassFile(source.toString, classFile)
                 }

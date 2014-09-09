@@ -152,8 +152,8 @@ private class UShortSet2(private var value: Int) extends UShortSet {
         else
             new Iterator[UShort] {
                 private var i = 0
-                def hasNext = i < 2
-                def next = if (i == 0) { i += 1; value1 } else value2
+                def hasNext = i == 0 || (i == 1 && !notFull)
+                def next = { i += 1; if (i == 1) value1 else value2 }
             }
 
     def iterable: Iterable[UShort] =
