@@ -47,3 +47,28 @@ abstract class StoreLocalVariableInstruction extends Instruction {
         UShortSet(indexOfNextInstruction(currentPC, code))
 
 }
+
+/**
+ * Factory for `StoreLocalVariableInstruction`s.
+ *
+ * @author Arne Lottmann
+ */
+object StoreLocalVariableInstruction {
+
+    /**
+     * Returns the `xStore` instruction that stores the variable at the top of the stack
+     * of the specified type in the local variable at the given index.
+     */
+    def apply(fieldType: FieldType, lvIndex: Int): StoreLocalVariableInstruction =
+        (fieldType.id: @scala.annotation.switch) match {
+            case IntegerType.id ⇒ ISTORE.cannonicalRepresentation(lvIndex)
+            case ByteType.id    ⇒ ISTORE.cannonicalRepresentation(lvIndex)
+            case ShortType.id   ⇒ ISTORE.cannonicalRepresentation(lvIndex)
+            case CharType.id    ⇒ ISTORE.cannonicalRepresentation(lvIndex)
+            case BooleanType.id ⇒ ISTORE.cannonicalRepresentation(lvIndex)
+            case LongType.id    ⇒ LSTORE.cannonicalRepresentation(lvIndex)
+            case FloatType.id   ⇒ FSTORE.cannonicalRepresentation(lvIndex)
+            case DoubleType.id  ⇒ DSTORE.cannonicalRepresentation(lvIndex)
+            case _              ⇒ ASTORE.cannonicalRepresentation(lvIndex)
+        }
+}

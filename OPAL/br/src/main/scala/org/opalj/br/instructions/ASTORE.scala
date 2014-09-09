@@ -35,10 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class ASTORE(
-    lvIndex: Int)
-        extends AStoreInstruction
-        with ExplicitLocalVariableIndex {
+case class ASTORE(lvIndex: Int) extends AStoreInstruction with ExplicitLocalVariableIndex {
 
     final def opcode: Opcode = ASTORE.opcode
 
@@ -50,4 +47,12 @@ object ASTORE {
 
     final val opcode = 58
 
+    def cannonicalRepresentation(lvIndex: Int): StoreLocalVariableInstruction =
+        (lvIndex: @scala.annotation.switch) match {
+            case 0 ⇒ ASTORE_0
+            case 1 ⇒ ASTORE_1
+            case 2 ⇒ ASTORE_2
+            case 3 ⇒ ASTORE_3
+            case _ ⇒ new ASTORE(lvIndex)
+        }
 }

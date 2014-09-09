@@ -42,4 +42,5 @@ object AStoreInstruction {
 
     def unapply(instruction: AStoreInstruction): Some[Int] =
         Some(instruction.lvIndex)
+
 }
