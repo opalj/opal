@@ -27,40 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package util
+
+import java.io.File
 
 /**
- * Creates a `dot` (Graphviz) based representation of the class hierarchy.
+ * Exception that is thrown if the OS cannot does not know how/is not able to open
+ * the respective file.
  *
  * @author Michael Eichberg
  */
-object ClassHierarchyVisualizer {
-
-    def main(args: Array[String]) {
-
-        import graphs.{ Node, toDot }
-
-        import reader.Java8Framework.ClassFiles
-
-        if (!args.forall(_.endsWith(".jar"))) {
-            println("Usage: java …ClassHierarchy <JAR file>+")
-            println("(c) 2014 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
-            sys.exit(-1)
-        }
-
-        val classHierarchy =
-            if (args.size == 0)
-                ClassHierarchy.preInitializedClassHierarchy
-            else {
-                val classFiles =
-                    (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
-                        cfs ++ ClassFiles(new java.io.File(filename))
-                    }
-                ClassHierarchy(classFiles.view.map(_._1))
-            }
-
-        val dotGraph = toDot.generateDot(Set(classHierarchy.toGraph), "back")
-        org.opalj.util.writeAndOpen(dotGraph, "ClassHiearachy", ".dot")
-    }
-}
+case class OpeningFileFailedException(
+    file: File,
+    cause: Throwable) extends Exception(s"cannot open file $file", cause)

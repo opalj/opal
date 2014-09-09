@@ -106,7 +106,7 @@ class DisassemblerTest extends FlatSpec with Matchers {
             }
             writer.flush()
             val file =
-                org.opalj.util.writeAndOpenDesktopApplication(
+                org.opalj.util.writeAndOpen(
                     new String(out.toByteArray()),
                     "bytecode disassembler - exceptions", ".txt"
                 )

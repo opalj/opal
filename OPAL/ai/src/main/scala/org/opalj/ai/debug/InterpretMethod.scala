@@ -174,7 +174,8 @@ object InterpretMethod {
                         return ;
                 }
 
-        import debug.XHTML.{ dump, writeAndOpenDump }
+        import debug.XHTML.dump
+        import org.opalj.util.writeAndOpen
 
         try {
             val result =
@@ -191,7 +192,7 @@ object InterpretMethod {
                     result
                 }
             val domain = result.domain
-            writeAndOpenDump(dump(
+            writeAndOpen(dump(
                 Some(classFile),
                 Some(method),
                 method.body.get,
@@ -201,7 +202,9 @@ object InterpretMethod {
                         XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
                 result.domain)(
                     result.operandsArray,
-                    result.localsArray)
+                    result.localsArray),
+                "AIResult",
+                ".html"
             )
         } catch {
             case ife: InterpretationFailedException ⇒
@@ -218,7 +221,7 @@ object InterpretMethod {
                         Some(classFile), Some(method), method.body.get,
                         resultHeader, ife.domain)(
                             ife.operandsArray, ife.localsArray)
-                writeAndOpenDump(evaluationDump)
+                writeAndOpen(evaluationDump, "StateOfCrashedAbstractInterpretation", ".html")
                 throw ife
         }
     }

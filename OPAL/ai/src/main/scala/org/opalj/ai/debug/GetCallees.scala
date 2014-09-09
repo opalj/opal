@@ -138,7 +138,7 @@ object GetCallees {
                 new DefaultCHACallGraphDomain(project, cache, classFile, method)
             }
 
-        import debug.XHTML.{ dump, writeAndOpenDump }
+        import org.opalj.ai.debug.XHTML.dump
 
         try {
             val result = AI(classFile, method, domain)
@@ -171,7 +171,10 @@ object GetCallees {
                         header,
                         ife.domain)(
                             ife.operandsArray, ife.localsArray)
-                writeAndOpenDump(evaluationDump)
+                org.opalj.util.writeAndOpen(
+                    evaluationDump,
+                    "StateOfFailedAbstractInterpretation",
+                    ".html")
                 throw ife
         }
     }

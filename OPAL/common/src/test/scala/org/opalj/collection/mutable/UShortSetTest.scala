@@ -135,7 +135,7 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
 
             if (uShortSet.nodeCount > 3) {
                 val file =
-                    org.opalj.util.writeAndOpenDesktopApplication(
+                    org.opalj.util.writeAndOpen(
                         org.opalj.graphs.toDot((
                             for (i ← (4 to values.size)) yield {
                                 var uShortSet = UShortSet.empty
@@ -165,7 +165,7 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
                 }
             } catch {
                 case e: Exception ⇒
-                    org.opalj.util.writeAndOpenDesktopApplication(
+                    org.opalj.util.writeAndOpen(
                         org.opalj.graphs.toDot(Set(uShortSet.asGraph)),
                         "UShortSet-CREATION_FAILED_FOR_VALUE_"+valueToBeAdded+"-"+ValuesCount,
                         ".dot")
@@ -173,7 +173,7 @@ class UShortSetTest extends FunSpec with Matchers with ParallelTestExecution {
             }
             val nodeCount = uShortSet.nodeCount
             if (!(nodeCount < (ValuesCount / 3))) {
-                val file = org.opalj.util.writeAndOpenDesktopApplication(
+                val file = org.opalj.util.writeAndOpen(
                     org.opalj.graphs.toDot(Set(uShortSet.asGraph)),
                     "UShortSet-"+ValuesCount,
                     ".dot")

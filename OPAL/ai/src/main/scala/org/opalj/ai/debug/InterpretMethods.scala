@@ -219,7 +219,10 @@ object InterpretMethodsAnalysis {
                 XHTML.createXHTML(
                     Some("Exceptions Thrown During Interpretation"),
                     scala.xml.NodeSeq.fromSeq(body.toSeq))
-            val file = XHTML.writeAndOpenDump(node)
+            val file =
+                org.opalj.util.writeAndOpen(
+                    node,
+                    "ExceptionsOfCrashedAbstractInterpretations", ".html")
 
             (
                 "During the interpretation of "+
@@ -227,7 +230,7 @@ object InterpretMethodsAnalysis {
                 project.classFilesCount+" classes (real time: "+ns2sec(getTime('OVERALL))+
                 "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
                 "secs.)"+collectedExceptions.size+" exceptions occured.",
-                file
+                Some(file)
             )
         } else {
             (

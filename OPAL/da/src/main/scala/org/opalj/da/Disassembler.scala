@@ -29,6 +29,9 @@
 package org.opalj
 package da
 
+import org.opalj.util.writeAndOpen
+import org.opalj.util.OpeningFileFailedException
+
 /**
  * Disassembles the specified class file(s).
  *
@@ -52,10 +55,15 @@ object Disassembler {
         }
 
         def processClassFile(classFile: ClassFile) {
-            org.opalj.util.writeAndOpenDesktopApplication(
-                classFile.toXHTML.toString,
-                classFile.fqn,
-                ".html")
+            try {
+                writeAndOpen(classFile.toXHTML.toString, classFile.fqn, ".html")
+            } catch {
+                case OpeningFileFailedException(file, cause) ⇒
+                    println(
+                        s"Opening the html file $file failed: ${cause.getMessage()}"
+                    )
+                case ex: Throwable ⇒ throw ex
+            }
         }
 
         if (args.length == 1) {

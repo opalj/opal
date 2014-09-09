@@ -34,6 +34,7 @@ import java.net.URL
 import scala.collection.SortedMap
 
 import org.opalj.util.PerformanceEvaluation.ns2sec
+import org.opalj.util.writeAndOpen
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import org.opalj.ai.debug.XHTML
 
@@ -57,7 +58,7 @@ object Console extends AnalysisExecutor { analysis ⇒
                 deadCodeAnalysis.analyze(theProject, parameters)
 
             val doc = XHTML.createXHTML(Some(title), DeadCodeAnalysis.resultsAsXHTML(results))
-            XHTML.writeAndOpenDump(doc)
+            writeAndOpen(doc, "DeadCodeAnalysisResults", ".html")
 
             //            BasicReport(
             //                methodsWithDeadCode.toList.sortWith((l, r) ⇒

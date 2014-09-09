@@ -43,8 +43,9 @@ import scala.xml.Unparsed
 import scala.xml.Text
 import scala.xml.Unparsed
 
-import br._
-import br.instructions._
+import org.opalj.util.writeAndOpen
+import org.opalj.br._
+import org.opalj.br.instructions._
 
 /**
  * Several utility methods to facilitate the development of the abstract interpreter/
@@ -101,7 +102,7 @@ object XHTML {
                             title,
                             theDomain
                         )(operandsArray, localsArray)
-                    XHTML.writeAndOpenDump(dump) //.map(_.deleteOnExit)
+                    writeAndOpen(dump, "StateOfIncompleteAbstractInterpretation", ".html")
                 } else {
                     Console.err.println("[info] dump suppressed: "+e.getMessage())
                 }
@@ -165,11 +166,13 @@ object XHTML {
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - lastDump) > minimumDumpInterval) {
                     lastDump = currentTime
-                    writeAndOpenDump(
+                    writeAndOpen(
                         dump(
                             classFile.get, method.get,
                             "Dump generated due to exception: "+e.getMessage,
-                            result)
+                            result),
+                        "AIResult",
+                        ".html"
                     )
                 } else {
                     Console.err.println("dump suppressed: "+e.getMessage)
@@ -254,30 +257,6 @@ object XHTML {
                 dumpTable(code, domain)(operandsArray, localsArray)
             )
         )
-    }
-
-    def writeAndOpenDump(node: Node): Option[File] = {
-        import java.awt.Desktop
-        import java.io.FileOutputStream
-
-        try {
-            if (Desktop.isDesktopSupported) {
-                val desktop = Desktop.getDesktop
-                val file = File.createTempFile("OPAL-AI-Dump", ".html")
-                val fos = new FileOutputStream(file)
-                fos.write(node.toString.getBytes("UTF-8"))
-                fos.close()
-                desktop.open(file)
-                return Some(file)
-            }
-            println("No desktop support available - cannot open the dump in a browser.")
-        } catch {
-            case e: Exception ⇒
-                println("Opening the AI dump in the OS's default app failed: "+e.getMessage)
-        }
-        println(node.toString)
-
-        None
     }
 
     private def styles: String =

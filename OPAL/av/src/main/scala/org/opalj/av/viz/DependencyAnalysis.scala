@@ -231,7 +231,7 @@ object DependencyAnalysis extends AnalysisExecutor {
             htmlDocument = htmlDocument.replace("<%PACKAGES%>", "["+packages.foldRight("")(
                 (name, json) ⇒
                     s"""{ "name": "$name", "color": "${Random.shuffle(colors.toList).head}"},\n"""+json)+"]")
-            util.writeAndOpenDesktopApplication(checkDocument(htmlDocument), "DependencyAnalysis", ".html")
+            org.opalj.util.writeAndOpen(checkDocument(htmlDocument), "DependencyAnalysis", ".html")
 
             BasicReport(packages)
         }
