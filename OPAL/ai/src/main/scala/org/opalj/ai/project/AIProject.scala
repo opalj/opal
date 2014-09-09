@@ -43,7 +43,7 @@ import org.opalj.br.analyses.{ Project, ReportableAnalysisResult }
  *
  * @author Michael Eichberg
  */
-trait AIProject[Source, D <: Domain with Report] {
+trait AIProject[Source, D <: Domain with OptionalReport] {
 
     /**
      * Returns the abstract interpreter that should be used for performing the abstract

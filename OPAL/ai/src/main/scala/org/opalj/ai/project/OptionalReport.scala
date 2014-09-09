@@ -37,7 +37,7 @@ package project
  *
  * @author Michael Eichberg
  */
-trait Report {
+trait OptionalReport {
 
     /**
      * Returns `Some(&lt;String&gt;)` if there is something to report and `None`

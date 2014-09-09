@@ -35,7 +35,7 @@ import org.opalj.graphs._
 import br._
 import org.opalj.br.instructions._
 import org.opalj.br.analyses.{ Project, Analysis, AnalysisExecutor, ReportableAnalysisResult }
-import project.{ AIProject, Report }
+import project.{ AIProject, OptionalReport }
 import domain._
 import domain.l0._
 import domain.l1._
@@ -48,11 +48,11 @@ import debug.XHTML._
  * @author Lars Schulte
  */
 object JDKTaintAnalysis
-        extends AIProject[URL, Domain with Report]
+        extends AIProject[URL, Domain with OptionalReport]
         with Analysis[URL, ReportableAnalysisResult]
         with AnalysisExecutor {
 
-    def ai = new AI[Domain with Report] {}
+    def ai = new AI[Domain with OptionalReport] {}
 
     override def description: String = "Finds unsafe Class.forName(...) calls."
 
@@ -113,7 +113,7 @@ object JDKTaintAnalysis
     def domain(
         project: analyses.Project[URL],
         classFile: ClassFile,
-        method: Method): Domain with Report = {
+        method: Method): Domain with OptionalReport = {
         new RootTaintAnalysisDomain[URL](project, List.empty, CallStackEntry(classFile, method), false)
     }
 }
@@ -181,7 +181,7 @@ trait TaintAnalysisDomain[Source]
         with TheProject[Source]
         with TheCode
         with ProjectBasedClassHierarchy
-        with Report { thisDomain ⇒
+        with OptionalReport { thisDomain ⇒
 
     type Id = CallStackEntry
 
