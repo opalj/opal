@@ -82,7 +82,7 @@ object LoadConstantInstruction {
      * that represents the default value that is used to initialize fields
      * of the corresponding type.
      */
-    def apply(fieldType: FieldType): LoadConstantInstruction[_] =
+    def defaultValue(fieldType: FieldType): LoadConstantInstruction[_] =
         (fieldType.id: @scala.annotation.switch) match {
             case IntegerType.id ⇒ ICONST_0
             case ByteType.id    ⇒ ICONST_0
