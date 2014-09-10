@@ -50,7 +50,7 @@ object DSTORE {
 
     final val opcode = 57
 
-    def cannonicalRepresentation(lvIndex: Int): StoreLocalVariableInstruction =
+    def canonicalRepresentation(lvIndex: Int): StoreLocalVariableInstruction =
         (lvIndex: @scala.annotation.switch) match {
             case 0 ⇒ DSTORE_0
             case 1 ⇒ DSTORE_1

@@ -61,14 +61,14 @@ object StoreLocalVariableInstruction {
      */
     def apply(fieldType: FieldType, lvIndex: Int): StoreLocalVariableInstruction =
         (fieldType.id: @scala.annotation.switch) match {
-            case IntegerType.id ⇒ ISTORE.cannonicalRepresentation(lvIndex)
-            case ByteType.id    ⇒ ISTORE.cannonicalRepresentation(lvIndex)
-            case ShortType.id   ⇒ ISTORE.cannonicalRepresentation(lvIndex)
-            case CharType.id    ⇒ ISTORE.cannonicalRepresentation(lvIndex)
-            case BooleanType.id ⇒ ISTORE.cannonicalRepresentation(lvIndex)
-            case LongType.id    ⇒ LSTORE.cannonicalRepresentation(lvIndex)
-            case FloatType.id   ⇒ FSTORE.cannonicalRepresentation(lvIndex)
-            case DoubleType.id  ⇒ DSTORE.cannonicalRepresentation(lvIndex)
-            case _              ⇒ ASTORE.cannonicalRepresentation(lvIndex)
+            case IntegerType.id ⇒ ISTORE.canonicalRepresentation(lvIndex)
+            case ByteType.id    ⇒ ISTORE.canonicalRepresentation(lvIndex)
+            case ShortType.id   ⇒ ISTORE.canonicalRepresentation(lvIndex)
+            case CharType.id    ⇒ ISTORE.canonicalRepresentation(lvIndex)
+            case BooleanType.id ⇒ ISTORE.canonicalRepresentation(lvIndex)
+            case LongType.id    ⇒ LSTORE.canonicalRepresentation(lvIndex)
+            case FloatType.id   ⇒ FSTORE.canonicalRepresentation(lvIndex)
+            case DoubleType.id  ⇒ DSTORE.canonicalRepresentation(lvIndex)
+            case _              ⇒ ASTORE.canonicalRepresentation(lvIndex)
         }
 }
