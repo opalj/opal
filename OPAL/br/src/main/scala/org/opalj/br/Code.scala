@@ -56,7 +56,8 @@ case class Code(
     instructions: Array[Instruction],
     exceptionHandlers: ExceptionHandlers,
     attributes: Attributes)
-        extends Attribute {
+        extends Attribute
+        with CommonAttributes {
 
     /**
      * Returns a new iterator to iterate over the program counters of the instructions
