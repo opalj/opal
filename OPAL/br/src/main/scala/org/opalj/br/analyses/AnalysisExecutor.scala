@@ -101,8 +101,8 @@ trait AnalysisExecutor {
     protected def printUsage() {
         println("Usage: java "+
             this.getClass().getName()+"\n"+
-            "[-cp=<Directories or JAR files containing class files> (If no class path is specified the current folder is used.)]\n"+
-            "[-libcp=<Directories or JAR files containing class files>]\n"+
+            "[-cp=<Directories or *.jar/*.class files> (If no class path is specified the current folder is used.)]\n"+
+            "[-libcp=<Directories or *.jar/*.class files>]\n"+
             analysisSpecificParametersDescription)
         println(analysis.description)
         println(analysis.copyright)
@@ -128,22 +128,38 @@ trait AnalysisExecutor {
         //
         // 1. check arguments
         //
-        def checkIfFilesAreReadableAndReturnThem(filenames: Array[String]): Array[File] = {
-            for (filename ← filenames) yield checkIfFileIsReadableAndReturnIt(filename)
+        // Input files must be either directories, or *.class/*.jar files.
+        //
+        def verifyFiles(filenames: Array[String]): Array[File] = {
+            filenames.map(verifyFile(_))
         }
-        def checkIfFileIsReadableAndReturnIt(filename: String): File = {
+        def verifyFile(filename: String): File = {
             val file = new File(filename)
-            if (!file.exists ||
-                !file.canRead ||
-                !(filename.endsWith(".jar") ||
-                    filename.endsWith(".class") ||
-                    file.isDirectory())) {
-                println(Console.RED+
-                    "[error] The file: "+file+" cannot be read or is not valid."+
-                    Console.RESET)
+
+            def showErrorAndExit(message: String) {
+                println(Console.RED+"[error] "+Console.RESET + message)
                 printUsage()
                 sys.exit(-2)
             }
+
+            def workingDirMessage: String = {
+                " (working directory: "+System.getProperty("user.dir")+")"
+            }
+
+            if (file.isDirectory()) {
+                if (!file.canRead) {
+                    showErrorAndExit("Cannot read input directory: "+file + workingDirMessage)
+                }
+            } else {
+                if (!file.exists || !file.canRead) {
+                    showErrorAndExit("Cannot read input file: "+file + workingDirMessage)
+                }
+
+                if (!filename.endsWith(".jar") && !filename.endsWith(".class")) {
+                    showErrorAndExit("Input file is not a *.class or *.jar file: "+file)
+                }
+            }
+
             file
         }
 
@@ -156,7 +172,7 @@ trait AnalysisExecutor {
                 }
             }
         }
-        val cpFiles = checkIfFilesAreReadableAndReturnThem(cp)
+        val cpFiles = verifyFiles(cp)
 
         val (libcp, args2) = {
             args1.partition(_.startsWith("-libcp=")) match {
@@ -167,7 +183,7 @@ trait AnalysisExecutor {
                     result
             }
         }
-        val libcpFiles = checkIfFilesAreReadableAndReturnThem(libcp)
+        val libcpFiles = verifyFiles(libcp)
 
         if (!checkAnalysisSpecificParameters(args2)) {
             println(Console.RED+
