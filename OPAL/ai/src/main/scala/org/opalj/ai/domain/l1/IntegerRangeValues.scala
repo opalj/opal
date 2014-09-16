@@ -643,7 +643,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         // IMPROVE If the range of values is smaller than the "divisor-1" we could calculate a more precise bound; e.g., [13,14] % 5 => [3,4]
 
         // RECALL: if the dividend(left) is smaller than zero, the result will be in the 
-        // range: [-|divisor]+1,0]
+        // range: [-|divisor|+1,0]
         (left, right) match {
             case (_, IntegerRange(0, 0)) ⇒
                 ThrowsException(ArithmeticException(pc))
