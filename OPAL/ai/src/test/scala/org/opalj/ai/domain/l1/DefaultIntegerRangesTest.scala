@@ -522,86 +522,102 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
 
-            describe("the behavior of ishl") {
+            it("(the dividend and the divisor are positive) [0,Int.MaxValue] % [16,16] => [0,15]") {
+                val v1 = IntegerRange(0, Int.MaxValue)
+                val v2 = IntegerRange(16, 16)
 
-                it("AnIntegerValue << [2,2] => AnIntegerValue") {
-                    val v = AnIntegerValue
-                    val s = IntegerRange(2, 2)
-
-                    ishl(-1, v, s) should be(AnIntegerValue)
-                }
-
-                it("[2,2] << AnIntegerValue => AnIntegerValue") {
-                    val v = IntegerRange(2, 2)
-                    val s = AnIntegerValue
-
-                    ishl(-1, v, s) should be(AnIntegerValue)
-                }
-
-                it("[-1,1] << [2,2] => AnIntegerValue") {
-                    val v = IntegerRange(-1, 1)
-                    val s = IntegerRange(2, 2)
-
-                    ishl(-1, v, s) should be(AnIntegerValue)
-                }
-
-                it("[64,64] << [64,64] => [64,64]") {
-                    val v = IntegerRange(64, 64)
-                    val s = IntegerRange(64, 64)
-
-                    ishl(-1, v, s) should be(IntegerRange(64, 64))
-                }
-
-                it("[1,1] << [64,64] => [1,1]") {
-                    val v = IntegerRange(1, 1)
-                    val s = IntegerRange(64, 64)
-
-                    ishl(-1, v, s) should be(IntegerRange(1, 1))
-                }
-
-                it("[0,0] << [64,64] => [0,0]") {
-                    val v = IntegerRange(0, 0)
-                    val s = IntegerRange(64, 64)
-
-                    ishl(-1, v, s) should be(IntegerRange(0, 0))
-                }
-
-                it("[1,1] << [30,30] => [1073741824,1073741824]") {
-                    val v = IntegerRange(1, 1)
-                    val s = IntegerRange(30, 30)
-
-                    ishl(-1, v, s) should be(IntegerRange(1073741824, 1073741824))
-                }
-
-                it("[1,1] << [2,2] => [4,4]") {
-                    val v = IntegerRange(0, 2)
-                    val s = IntegerRange(2, 2)
-
-                    ishl(-1, v, s) should be(IntegerRange(0, 8))
-                }
-
-                it("[0,2] << [2,2] => [0,8]") {
-                    val v = IntegerRange(0, 2)
-                    val s = IntegerRange(2, 2)
-
-                    ishl(-1, v, s) should be(IntegerRange(0, 8))
-                }
-
-                it("[1,2] << [2,2] => [4,8]") {
-                    val v = IntegerRange(1, 2)
-                    val s = IntegerRange(2, 2)
-
-                    ishl(-1, v, s) should be(IntegerRange(4, 8))
-                }
-
-                it("[1,2] << [2,3] => [4,16]") {
-                    val v = IntegerRange(1, 2)
-                    val s = IntegerRange(2, 3)
-
-                    ishl(-1, v, s) should be(IntegerRange(4, 16))
-                }
-
+                val result = irem(-1, v1, v2)
+                result.result should be(IntegerRange(0, 15))
             }
+
+            it("(the dividend and the divisor are point values) [2,2] % [16,16] => [0,1]") {
+                val v1 = IntegerRange(2, 2)
+                val v2 = IntegerRange(16, 16)
+
+                val result = irem(-1, v1, v2)
+                result.result should be(IntegerRange(2, 2))
+            }
+        }
+
+        describe("the behavior of ishl") {
+
+            it("AnIntegerValue << [2,2] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2, 2)
+
+                ishl(-1, v, s) should be(AnIntegerValue)
+            }
+
+            it("[2,2] << AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(2, 2)
+                val s = AnIntegerValue
+
+                ishl(-1, v, s) should be(AnIntegerValue)
+            }
+
+            it("[-1,1] << [2,2] => AnIntegerValue") {
+                val v = IntegerRange(-1, 1)
+                val s = IntegerRange(2, 2)
+
+                ishl(-1, v, s) should be(AnIntegerValue)
+            }
+
+            it("[64,64] << [64,64] => [64,64]") {
+                val v = IntegerRange(64, 64)
+                val s = IntegerRange(64, 64)
+
+                ishl(-1, v, s) should be(IntegerRange(64, 64))
+            }
+
+            it("[1,1] << [64,64] => [1,1]") {
+                val v = IntegerRange(1, 1)
+                val s = IntegerRange(64, 64)
+
+                ishl(-1, v, s) should be(IntegerRange(1, 1))
+            }
+
+            it("[0,0] << [64,64] => [0,0]") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(64, 64)
+
+                ishl(-1, v, s) should be(IntegerRange(0, 0))
+            }
+
+            it("[1,1] << [30,30] => [1073741824,1073741824]") {
+                val v = IntegerRange(1, 1)
+                val s = IntegerRange(30, 30)
+
+                ishl(-1, v, s) should be(IntegerRange(1073741824, 1073741824))
+            }
+
+            it("[1,1] << [2,2] => [4,4]") {
+                val v = IntegerRange(0, 2)
+                val s = IntegerRange(2, 2)
+
+                ishl(-1, v, s) should be(IntegerRange(0, 8))
+            }
+
+            it("[0,2] << [2,2] => [0,8]") {
+                val v = IntegerRange(0, 2)
+                val s = IntegerRange(2, 2)
+
+                ishl(-1, v, s) should be(IntegerRange(0, 8))
+            }
+
+            it("[1,2] << [2,2] => [4,8]") {
+                val v = IntegerRange(1, 2)
+                val s = IntegerRange(2, 2)
+
+                ishl(-1, v, s) should be(IntegerRange(4, 8))
+            }
+
+            it("[1,2] << [2,3] => [4,16]") {
+                val v = IntegerRange(1, 2)
+                val s = IntegerRange(2, 3)
+
+                ishl(-1, v, s) should be(IntegerRange(4, 16))
+            }
+
         }
 
         describe("the behavior of the i2b cast operator") {
