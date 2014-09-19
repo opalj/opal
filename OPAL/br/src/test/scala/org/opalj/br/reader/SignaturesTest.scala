@@ -68,10 +68,10 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
     }
 
     import Java8Framework.ClassFile
-    private val classA = ClassFile(locateTestResources("classfiles/Signatures.jar", "bi"), "signatures/A.class")
+    private val classA = ClassFile(locateTestResources("classfiles/Signatures.jar", "bi"), "signatures/A.class").head
     assert(classA ne null)
 
-    private val classB = ClassFile(locateTestResources("classfiles/Signatures.jar", "bi"), "signatures/B.class")
+    private val classB = ClassFile(locateTestResources("classfiles/Signatures.jar", "bi"), "signatures/B.class").head
     assert(classB ne null)
 
     test("parsing the class signatures") {
