@@ -33,7 +33,7 @@ import java.net.URL
 
 import org.opalj.collection.immutable.{ UIDSet, UIDSet1 }
 
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
+import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.{ ReferenceType }
 
@@ -91,7 +91,7 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
         }
     }
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def title: String =
             "Derives Information About Returned Values"
@@ -99,7 +99,10 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
         override def description: String =
             "Identifies methods where we can – statically – derive more precise return type information."
 
-        override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
+        override def doAnalyze(
+            theProject: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
             val methodsWithRefinedReturnTypes = time {

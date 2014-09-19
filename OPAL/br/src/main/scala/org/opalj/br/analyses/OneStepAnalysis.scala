@@ -28,47 +28,43 @@
  */
 package org.opalj
 package br
-
-import java.net.URL
-
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEDYNAMIC
+package analyses
 
 /**
- * Prints out the immediately available information about invokedynamic instructions.
+ * An analysis that performs all computations in one step. Only very short-running
+ * analyses should use this interface!
  *
- * @author Arne Lottmann
+ * @author Michael Eichberg
  */
-object InvokedynamicPrinter extends AnalysisExecutor {
+trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, AnalysisResult] {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    def doAnalyze(
+        project: Project[Source],
+        parameters: Seq[String] = List.empty,
+        isInterrupted: () ⇒ Boolean): AnalysisResult
 
-        override def description: String =
-            "Prints information about invokedynamic instructions."
+    final def analyze(
+        project: Project[Source],
+        parameters: Seq[String] = List.empty,
+        initProgressManagement: (Int) ⇒ ProgressManagement = ProgressManagement.None): AnalysisResult = {
 
-        def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            val invokedynamics =
-                for {
-                    classFile ← project.classFiles.par
-                    MethodWithBody(code) ← classFile.methods
-                    INVOKEDYNAMIC(bootstrap, name, descriptor) ← code.instructions
-                } yield {
-                    bootstrap.toJava+"\nArguments:\t"+
-                        bootstrap.bootstrapArguments.mkString("{", ",", "}")+"\nCalling:\t"+
-                        descriptor.toJava(name)
-                }
-
-            BasicReport(
-                invokedynamics.size+" invokedynamic instructions found.\n"+
-                    invokedynamics.mkString("\n", "\n\n", "\n"))
+        val pm = initProgressManagement(1)
+        pm.progress(1, EventType.Start, Some(title))
+        var wasKilled = false
+        def isInterrupted(): Boolean = {
+            wasKilled = pm.isInterrupted()
+            wasKilled
         }
+
+        val result = doAnalyze(project, parameters, isInterrupted)
+
+        if (wasKilled)
+            pm.progress(-1, EventType.Killed, None)
+        else
+            pm.progress(1, EventType.End, None)
+
+        result
     }
+
 }
+

@@ -211,7 +211,8 @@ trait AnalysisExecutor {
         // 3. execute analysis
         //
         println("[info] Executing analysis: "+analysis.title+".")
-        val result = analysis.analyze(project, args2)
+        // TODO Add progressmanagement.
+        val result = analysis.analyze(project, args2, ProgressManagement.None)
         println(result.consoleReport)
     }
 

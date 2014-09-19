@@ -29,8 +29,14 @@
 package org.opalj
 package br
 
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
+
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 
 /**
  * Counts the number of methods that override a concrete method.
@@ -46,12 +52,15 @@ import java.net.URL
  */
 object CountOverridingMethods extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description: String =
             "Counts the number of methods that override a method."
 
-        def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
+        def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             import project.classHierarchy
 
             var methodsCount = 0

@@ -64,9 +64,10 @@ class UninitializedFieldAccessDuringStaticInitialization[Source]
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def analyze(
+    def doAnalyze(
         project: Project[Source],
-        parameters: Seq[String] = List.empty): Iterable[LineAndColumnBasedReport[Source]] = {
+        parameters: Seq[String] = List.empty,
+        isInterrupted: () ⇒ Boolean): Iterable[LineAndColumnBasedReport[Source]] = {
 
         /*
          * Analyze the method currently active in the given context. Any methods called

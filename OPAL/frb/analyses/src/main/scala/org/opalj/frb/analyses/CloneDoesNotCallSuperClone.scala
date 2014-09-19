@@ -87,9 +87,10 @@ class CloneDoesNotCallSuperClone[Source] extends FindRealBugsAnalysis[Source] {
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def analyze(
+    def doAnalyze(
         project: Project[Source],
-        parameters: Seq[String] = List.empty): Iterable[MethodBasedReport[Source]] = {
+        parameters: Seq[String] = List.empty,
+        isInterrupted: () ⇒ Boolean): Iterable[MethodBasedReport[Source]] = {
 
         // For each clone() methods that doesn't contain a call to super.clone()...
         for {

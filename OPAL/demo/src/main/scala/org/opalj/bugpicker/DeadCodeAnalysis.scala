@@ -40,6 +40,7 @@ import scala.Console.RESET
 import scala.collection.SortedMap
 import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.MethodWithBody
 import org.opalj.ai.debug.XHTML
@@ -60,48 +61,51 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
 
     override def analyze(
         theProject: Project[URL],
-        parameters: Seq[String]): (Long, Iterable[DeadCode]) = {
+        parameters: Seq[String],
+        initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[DeadCode]) = {
 
         var analysisTime: Long = 0l
         val methodsWithDeadCode = time {
 
             val results = new java.util.concurrent.ConcurrentLinkedQueue[DeadCode]()
-            for {
-                classFile ← theProject.classFiles.par
-                method @ MethodWithBody(body) ← classFile.methods
-            } {
-                val domain = new DeadCodeAnalysisDomain(theProject, method)
-                val result = BaseAI(classFile, method, domain)
-                val operandsArray = result.operandsArray
-                val methodWithDeadCode =
-                    for {
-                        (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
-                            case (ctiPC, i: ConditionalBranchInstruction) if operandsArray(ctiPC) != null ⇒
-                                (ctiPC, i, i.nextInstructions(ctiPC, /*not required*/ null))
-                        }
-                        branchTarget ← branchTargetPCs.iterator
-                        if operandsArray(branchTarget) == null
-                    } yield {
-                        val operands = operandsArray(ctiPC).take(instruction.operandCount)
-                        DeadCode(classFile, method, ctiPC, operands, branchTarget, None)
-                    }
-                for ((ln, dc) ← methodWithDeadCode.groupBy(_.ctiLineNumber)) {
-                    ln match {
-                        case None ⇒
-                            if (dc.tail.isEmpty) {
-                                // we have just one message, but since we have 
-                                // no line number we are still "doubtful"
-                                results.add(dc.head.copy(accuracy = Some(Percentage(75))))
-                            } else {
-                                dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(5)))))
-                            }
+            val classFilesCount = theProject.projectClassFilesCount
+            val progressManagement = initProgressManagement(classFilesCount)
+            for (classFile ← theProject.projectClassFiles.par) {
+                for (method @ MethodWithBody(body) ← classFile.methods) {
 
-                        case Some(ln) ⇒
-                            if (dc.tail.isEmpty)
-                                // we have just one message,...
-                                results.add(dc.head.copy(accuracy = Some(Percentage(100))))
-                            else
-                                dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(10)))))
+                    val domain = new DeadCodeAnalysisDomain(theProject, method)
+                    val result = BaseAI(classFile, method, domain)
+                    val operandsArray = result.operandsArray
+                    val methodWithDeadCode =
+                        for {
+                            (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
+                                case (ctiPC, i: ConditionalBranchInstruction) if operandsArray(ctiPC) != null ⇒
+                                    (ctiPC, i, i.nextInstructions(ctiPC, /*not required*/ null))
+                            }
+                            branchTarget ← branchTargetPCs.iterator
+                            if operandsArray(branchTarget) == null
+                        } yield {
+                            val operands = operandsArray(ctiPC).take(instruction.operandCount)
+                            DeadCode(classFile, method, ctiPC, operands, branchTarget, None)
+                        }
+                    for ((ln, dc) ← methodWithDeadCode.groupBy(_.ctiLineNumber)) {
+                        ln match {
+                            case None ⇒
+                                if (dc.tail.isEmpty) {
+                                    // we have just one message, but since we have 
+                                    // no line number we are still "doubtful"
+                                    results.add(dc.head.copy(accuracy = Some(Percentage(75))))
+                                } else {
+                                    dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(5)))))
+                                }
+
+                            case Some(ln) ⇒
+                                if (dc.tail.isEmpty)
+                                    // we have just one message,...
+                                    results.add(dc.head.copy(accuracy = Some(Percentage(100))))
+                                else
+                                    dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(10)))))
+                        }
                     }
                 }
             }

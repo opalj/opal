@@ -29,8 +29,14 @@
 package org.opalj
 package br
 
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
+
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 
 /**
  * Counts the number of native methods.
@@ -68,12 +74,15 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisExecutor {
         "org/jcp/xml/dsig/internal/",
         "com/sun/java/accessibility/")
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description =
             "Counts the number of public methods in non-restricted packages."
 
-        def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
+        def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             val methods =
                 for {
                     classFile ← project.classFiles

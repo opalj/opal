@@ -57,9 +57,10 @@ class FinalizeUseless[Source] extends FindRealBugsAnalysis[Source] {
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def analyze(
+    def doAnalyze(
         project: Project[Source],
-        parameters: Seq[String] = List.empty): Iterable[ClassBasedReport[Source]] = {
+        parameters: Seq[String] = List.empty,
+        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
 
         import MethodDescriptor.NoArgsAndReturnVoid
 

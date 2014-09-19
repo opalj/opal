@@ -35,22 +35,34 @@ package br
 
 import java.net.URL
 
-import br._
-import br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-import br.instructions._
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
+
+import ObjectType.Class
+import ObjectType.String
+import br.analyses.AnalysisExecutor
+import br.analyses.BasicReport
+import br.analyses.OneStepAnalysis
+import br.analyses.Project
+import br.instructions.LoadMethodHandle
+import br.instructions.LoadMethodHandle_W
+import br.instructions.LoadMethodType
+import br.instructions.LoadMethodType_W
 
 /**
  * @author Michael Eichberg
  */
 object LoadConstantOfMethodHandlOrMethodType extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description: String =
             "Prints information about loads of method handles and types."
 
-        def analyze(project: Project[URL], parameters: Seq[String]) = {
-            import ObjectType.{ String, Class }
+        def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             val descriptor = MethodDescriptor(String, Class)
             val loads =
                 for {

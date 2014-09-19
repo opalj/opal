@@ -39,14 +39,17 @@ import br.analyses._
  *
  * @author Michael Eichberg
  */
-object DependencyCounting extends AnalysisExecutor with Analysis[URL, BasicReport] {
+object DependencyCounting extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
 
     val analysis = this
 
     override def description: String =
         "Counts the number of inter-source element dependencies."
 
-    def analyze(project: Project[URL], parameters: Seq[String]) = {
+    def doAnalyze(
+        project: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
         println("Press enter to start the dependency collection.")
         scala.io.StdIn.readLine
 

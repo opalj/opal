@@ -36,6 +36,10 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
+import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.br.reader.Java8LibraryFramework.{ ClassFiles ⇒ LibraryClassFiles }
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.analyses.{ Project, ProgressManagement }
 import org.opalj.ai.debug.InterpretMethodsAnalysis.interpret
 
 /**
@@ -48,16 +52,39 @@ import org.opalj.ai.debug.InterpretMethodsAnalysis.interpret
 @RunWith(classOf[JUnitRunner])
 class DefaultDomainTest extends FlatSpec with Matchers {
 
+    import org.opalj.br.analyses.ProgressManagement.None
     behavior of "the l1.DefaultDomain"
 
     it should ("be able to perform an abstract interpretation of the JRE's classes") in {
         val project = org.opalj.br.TestSupport.createJREProject
 
-        val (message, source) = interpret(project, classOf[DefaultDomain[_]], false, 10)
+        val (message, source) =
+            interpret(project, classOf[DefaultDomain[_]], false, None, 10)
 
         if (source.nonEmpty)
             fail(message+" (details: "+source+")")
         else
             info(message)
     }
+
+    // TODO Add a test to test that we can analyze "more" projects!
+//    it should ("be able to perform an abstract interpretation of the OPAL snapshot") in {
+//        val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
+//        import reader.AllClassFiles
+//        val classFilesFolder = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
+//        val opalJARs = classFilesFolder.listFiles(new java.io.FilenameFilter() {
+//            def accept(dir: java.io.File, name: String) = name.startsWith("OPAL-")
+//        })
+//        info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
+//        opalJARs.size should not be (0)
+//        val project = Project(AllClassFiles(opalJARs))
+//
+//        val (message, source) =
+//            interpret(project, classOf[DefaultDomain[_]], false, None, 10)
+//
+//        if (source.nonEmpty)
+//            fail(message+" (details: "+source+")")
+//        else
+//            info(message)
+//    }
 }

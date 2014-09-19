@@ -45,7 +45,7 @@ import java.net.URL
  * @author Michael Eichberg
  */
 class CovariantEqualsMethodDefined[Source]
-        extends MultipleResultsAnalysis[Source, ClassBasedReport[Source]] {
+        extends OneStepAnalysis[Source, Iterable[ClassBasedReport[Source]]] {
 
     //
     // Meta-data
@@ -58,9 +58,10 @@ class CovariantEqualsMethodDefined[Source]
     // Implementation
     //
 
-    def analyze(
+    def doAnalyze(
         project: Project[Source],
-        parameters: Seq[String] = List.empty): Iterable[ClassBasedReport[Source]] = {
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
 
         val mutex = new Object
         var reports = List[ClassBasedReport[Source]]()

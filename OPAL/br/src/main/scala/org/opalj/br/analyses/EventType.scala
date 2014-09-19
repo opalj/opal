@@ -28,47 +28,31 @@
  */
 package org.opalj
 package br
-
-import java.net.URL
-
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.br.instructions.INVOKEDYNAMIC
+package analyses
 
 /**
- * Prints out the immediately available information about invokedynamic instructions.
+ * Characterizes the type of an event related to a running analysis.
  *
- * @author Arne Lottmann
+ * @author Michael Eichberg
  */
-object InvokedynamicPrinter extends AnalysisExecutor {
+object EventType extends Enumeration {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    /**
+     * Used to signal the start of a (longer-running) computation.
+     * Each computation that signals a start must also signal an end of the computation.
+     */
+    val Start = Value
 
-        override def description: String =
-            "Prints information about invokedynamic instructions."
+    /**
+     * Used to signal the end of a computation.
+     */
+    val End = Value
 
-        def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            val invokedynamics =
-                for {
-                    classFile ← project.classFiles.par
-                    MethodWithBody(code) ← classFile.methods
-                    INVOKEDYNAMIC(bootstrap, name, descriptor) ← code.instructions
-                } yield {
-                    bootstrap.toJava+"\nArguments:\t"+
-                        bootstrap.bootstrapArguments.mkString("{", ",", "}")+"\nCalling:\t"+
-                        descriptor.toJava(name)
-                }
-
-            BasicReport(
-                invokedynamics.size+" invokedynamic instructions found.\n"+
-                    invokedynamics.mkString("\n", "\n\n", "\n"))
-        }
-    }
+    /**
+     * Use to signal that a computation was killed.
+     *
+     * '''After signaling a `Killed` event the underlying computation is not
+     * allowed to signal any further events.'''
+     */
+    val Killed = Value
 }

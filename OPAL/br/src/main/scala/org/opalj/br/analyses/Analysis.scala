@@ -50,10 +50,43 @@ trait Analysis[Source, +AnalysisResult] {
 
     /**
      * Analyzes the given project and reports the result(s).
+     *
+     * @param initProgressManagement A function to get a [[org.opalj.br.analyses.ProgressManagement]] object.
+     *      The function is called by the analysis for each major analysis with the
+     *      number of steps (Int) that will be performed . The analysis will subsequently
+     *      use that object to report status information (related to that part of the analysis)
+     *      and to check the interrupted status.
+     *      The number of steps is at lest 1.
+     *      The analysis may call this function multiple times. However, the '''last `End`
+     *      event always has be signaled using the first `ProgressManagement` object'''.
+     *      In other words, logically nested calls are supported, but chaining is not.
+     *      A legal call sequence could be:
+     *      {{{
+     *      val pouter = initProgressManagement(2)
+     *      pouter.progress(1,Start,Some("call graph analysis"))
+     *          // ... construct call graph
+     *      pouter.progress(1,End,None)
+     *      pouter.progress(2,Start,Some("analyzing class files"))
+     *          val p2 = initProgressManagement(500)
+     *          // SEVERAL CLASS FILES ARE ANALYZED IN PARALLEL:
+     *          p2.progress(1,Start,Some("java.lang.Object"))
+     *          p2.progress(2,Start,Some("java.util.ArrayList"))
+     *          p2.progress(3,Start,Some("java.lang.String"))
+     *          p2.progress(2,End,Some("java.util.ArrayList"))
+     *          p2.progress(4,Start,Some("java.util.Date"))
+     *          ...
+     *          p2.progress(500,End,None)
+     *      pouter.progress(2,End,None)
+     *      }}}
+     *
+     * @return The analysis' result. If the analysis was aborted/killed the analysis
+     *      should return an appropriate result (which might be `null`) and this
+     *      has to be specifed/documented by the analysis.
      */
     def analyze(
         project: Project[Source],
-        parameters: Seq[String] = List.empty): AnalysisResult
+        parameters: Seq[String] = List.empty,
+        initProgressManagement: (Int) ⇒ ProgressManagement): AnalysisResult
 
     /**
      * A textual description of this analysis.
@@ -109,3 +142,4 @@ trait Analysis[Source, +AnalysisResult] {
         }
     }
 }
+

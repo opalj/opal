@@ -40,14 +40,17 @@ import org.opalj.ai._
  */
 object IdentifyResourcesAnalysis extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def title: String = "File Object Creation Using Constant Strings"
 
         override def description: String =
             "Identifies java.io.File object instantiations using constant strings."
 
-        override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
+        override def doAnalyze(
+            theProject: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             // Step 1
             // Find all methods that create "java.io.File(<String>)" objects.
             val callSites = (for {

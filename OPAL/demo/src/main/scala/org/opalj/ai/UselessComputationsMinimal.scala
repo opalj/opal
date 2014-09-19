@@ -40,7 +40,9 @@ import org.opalj.br.instructions.IFICMPInstruction
  *
  * @author Michael Eichberg
  */
-object UselessComputationsMinimal extends AnalysisExecutor with Analysis[URL, BasicReport] {
+object UselessComputationsMinimal
+        extends AnalysisExecutor
+        with OneStepAnalysis[URL, BasicReport] {
 
     val analysis = this
 
@@ -63,7 +65,10 @@ object UselessComputationsMinimal extends AnalysisExecutor with Analysis[URL, Ba
         with domain.TheMethod
         with domain.ProjectBasedClassHierarchy
 
-    def analyze(theProject: Project[URL], parameters: Seq[String]) = {
+    def doAnalyze(
+        theProject: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
 
         val results = (for {
             classFile ← theProject.classFiles.par

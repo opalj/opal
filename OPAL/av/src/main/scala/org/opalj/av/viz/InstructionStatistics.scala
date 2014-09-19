@@ -34,7 +34,7 @@ import java.net.URL
 
 import br._
 import br.instructions._
-import br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 
 /**
  * Counts the number of instructions aggregated per package.
@@ -45,12 +45,15 @@ import br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 
 object InstructionStatistics extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description: String =
             "Collects information about the number of instructions per package."
 
-        def analyze(project: Project[URL], parameters: Seq[String]) = {
+        def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean): BasicReport = {
 
             import scala.collection.mutable.{ HashSet, HashMap }
 
@@ -67,6 +70,9 @@ object InstructionStatistics extends AnalysisExecutor {
                         body.programCounters.size
                 )
             }
+
+            if (isInterrupted())
+                return null
 
             def processSubPackages(
                 rootFQPN: String,

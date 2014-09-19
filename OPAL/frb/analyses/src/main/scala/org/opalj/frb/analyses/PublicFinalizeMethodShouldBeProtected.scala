@@ -55,9 +55,10 @@ class PublicFinalizeMethodShouldBeProtected[Source] extends FindRealBugsAnalysis
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def analyze(
+    def doAnalyze(
         project: Project[Source],
-        parameters: Seq[String] = List.empty): Iterable[MethodBasedReport[Source]] = {
+        parameters: Seq[String] = List.empty,
+        isInterrupted: () ⇒ Boolean): Iterable[MethodBasedReport[Source]] = {
 
         // For all public finalize() methods...
         for {

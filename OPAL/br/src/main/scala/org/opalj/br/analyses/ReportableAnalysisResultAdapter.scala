@@ -48,7 +48,10 @@ case class ReportableAnalysisAdapter[Source, AnalysisResult](
 
     override def analyze(
         project: Project[Source],
-        parameters: Seq[String]): ReportableAnalysisResult = {
-        new BasicReport(converter(analysis.analyze(project, parameters)))
+        parameters: Seq[String],
+        initProgressManagement: (Int) ⇒ ProgressManagement): ReportableAnalysisResult = {
+        new BasicReport(
+            converter(analysis.analyze(project, parameters, initProgressManagement))
+        )
     }
 }

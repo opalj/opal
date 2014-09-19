@@ -59,9 +59,10 @@ class SyncSetUnsyncGet[Source] extends FindRealBugsAnalysis[Source] {
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def analyze(
+    def doAnalyze(
         project: Project[Source],
-        parameters: Seq[String] = List.empty): Iterable[MethodBasedReport[Source]] = {
+        parameters: Seq[String] = List.empty,
+        isInterrupted: () ⇒ Boolean): Iterable[MethodBasedReport[Source]] = {
 
         // Look through non-static methods of all classes, collecting lists of
         // unsynchronized getters and synchronized setters.
