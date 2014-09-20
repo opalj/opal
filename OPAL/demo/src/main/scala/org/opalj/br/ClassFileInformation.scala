@@ -54,7 +54,7 @@ object ClassFileInformation {
             // the file inside the archive.)
             // The JavaXFramework defines multiple other methods that make it convenient
             // to load class files stored in folders or in jars within jars.
-            val classFile = ClassFileReader(args(0), classFileName)
+            val classFile = ClassFileReader(args(0), classFileName).head
             import classFile._
 
             // print the name of the type defined by this class file

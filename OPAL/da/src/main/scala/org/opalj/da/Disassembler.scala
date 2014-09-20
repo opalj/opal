@@ -50,7 +50,7 @@ object Disassembler {
         }
 
         def process(classFileName: String) {
-            val classFile = ClassFileReader.ClassFile(args(0), classFileName)
+            val classFile = ClassFileReader.ClassFile(args(0), classFileName).head
             processClassFile(classFile)
         }
 
