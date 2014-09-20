@@ -57,6 +57,16 @@ public class MethodReferences {
 		java.util.Comparator<Value> comparator = Value::compare;
 		System.out.println(comparator.compare(new Value("a"), new Value("b")));
 	}
+	
+	public interface ValueCreator {
+		Value newValue(String value);
+	}
+	
+	@InvokedMethod(resolution = DYNAMIC, receiverType = Value.class, name = "<init>", lineNumber = 68)
+	public Value newValue(String value) {
+		ValueCreator v = Value::new;
+		return v.newValue(value);
+	}
 
 	public static class Value {
 		private String value;
