@@ -38,8 +38,6 @@ import org.opalj.br.Code
  * @param maxEvaluationFactor Determines the maximum number of instruction evaluations
  *      before the evaluation of the method is automatically interrupted.
  *
- * @note This domain is thread safe.
- *
  * @author Michael Eichberg
  */
 class InstructionCountBoundedAI[D <: Domain](
