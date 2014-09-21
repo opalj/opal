@@ -1961,12 +1961,14 @@ trait AI[D <: Domain] {
                 case cause @ DomainException(message) ⇒
                     throw InterpretationFailedException(
                         cause, theDomain)(
+                            this,
                             pc, worklist, evaluated,
                             operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
 
                 case cause: Throwable ⇒
                     throw InterpretationFailedException(
                         cause, theDomain)(
+                            this,
                             pc, worklist, evaluated,
                             operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
             }
