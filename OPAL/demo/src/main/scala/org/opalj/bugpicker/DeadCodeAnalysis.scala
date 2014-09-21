@@ -32,6 +32,7 @@ package bugpicker
 import java.net.URL
 import scala.xml.Node
 import scala.xml.UnprefixedAttribute
+import scala.xml.Unparsed
 import scala.Console.BLUE
 import scala.Console.RED
 import scala.Console.BOLD
@@ -46,12 +47,15 @@ import org.opalj.br.MethodWithBody
 import org.opalj.ai.debug.XHTML
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
+import org.opalj.br.Code
+import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.domain
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ConditionalBranchInstruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import scala.xml.Unparsed
+import org.opalj.br.AnalysisFailedException
+import org.opalj.ai.InterpretationFailedException
 
 class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
 
@@ -64,49 +68,83 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
         parameters: Seq[String],
         initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[DeadCode]) = {
 
+        val maxEvaluationFactor = 2 // the default value
+
+        // related to managing the analysis progress
+        val classFilesCount = theProject.projectClassFilesCount
+        val progressManagement = initProgressManagement(classFilesCount)
+        val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
+
+        val results = new java.util.concurrent.ConcurrentLinkedQueue[DeadCode]()
+        def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
+            val domain = new DeadCodeAnalysisDomain(theProject, method)
+            val ai =
+                new BoundedInterruptableAI[domain.type](
+                    body, maxEvaluationFactor,
+                    doInterrupt)
+            val result = ai(classFile, method, domain)
+            if (!result.wasAborted) {
+                val operandsArray = result.operandsArray
+                val methodWithDeadCode =
+                    for {
+                        (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
+                            case (ctiPC, i: ConditionalBranchInstruction) if operandsArray(ctiPC) != null ⇒
+                                (ctiPC, i, i.nextInstructions(ctiPC, /*not required*/ null))
+                        }
+                        branchTarget ← branchTargetPCs.iterator
+                        if operandsArray(branchTarget) == null
+                    } yield {
+                        val operands = operandsArray(ctiPC).take(instruction.operandCount)
+                        DeadCode(classFile, method, ctiPC, operands, branchTarget, None)
+                    }
+                for ((ln, dc) ← methodWithDeadCode.groupBy(_.ctiLineNumber)) {
+                    ln match {
+                        case None ⇒
+                            if (dc.tail.isEmpty) {
+                                // we have just one message, but since we have 
+                                // no line number we are still "doubtful"
+                                results.add(dc.head.copy(accuracy = Some(Percentage(75))))
+                            } else {
+                                dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(5)))))
+                            }
+
+                        case Some(ln) ⇒
+                            if (dc.tail.isEmpty)
+                                // we have just one message,...
+                                results.add(dc.head.copy(accuracy = Some(Percentage(100))))
+                            else
+                                dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(10)))))
+                    }
+                }
+            } else {
+                println(
+                    s"[error] analysis of ${method.fullyQualifiedSignature(classFile.thisType)} aborted "+
+                        s"after ${ai.currentEvaluationCount} steps "+
+                        s"(code size: ${method.body.get.instructions.length})")
+            }
+        }
+
         var analysisTime: Long = 0l
         val methodsWithDeadCode = time {
+            val stepIds = new java.util.concurrent.atomic.AtomicInteger(0)
 
-            val results = new java.util.concurrent.ConcurrentLinkedQueue[DeadCode]()
-            val classFilesCount = theProject.projectClassFilesCount
-            val progressManagement = initProgressManagement(classFilesCount)
             for (classFile ← theProject.projectClassFiles.par) {
-                for (method @ MethodWithBody(body) ← classFile.methods) {
-
-                    val domain = new DeadCodeAnalysisDomain(theProject, method)
-                    val result = BaseAI(classFile, method, domain)
-                    val operandsArray = result.operandsArray
-                    val methodWithDeadCode =
-                        for {
-                            (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
-                                case (ctiPC, i: ConditionalBranchInstruction) if operandsArray(ctiPC) != null ⇒
-                                    (ctiPC, i, i.nextInstructions(ctiPC, /*not required*/ null))
-                            }
-                            branchTarget ← branchTargetPCs.iterator
-                            if operandsArray(branchTarget) == null
-                        } yield {
-                            val operands = operandsArray(ctiPC).take(instruction.operandCount)
-                            DeadCode(classFile, method, ctiPC, operands, branchTarget, None)
-                        }
-                    for ((ln, dc) ← methodWithDeadCode.groupBy(_.ctiLineNumber)) {
-                        ln match {
-                            case None ⇒
-                                if (dc.tail.isEmpty) {
-                                    // we have just one message, but since we have 
-                                    // no line number we are still "doubtful"
-                                    results.add(dc.head.copy(accuracy = Some(Percentage(75))))
-                                } else {
-                                    dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(5)))))
-                                }
-
-                            case Some(ln) ⇒
-                                if (dc.tail.isEmpty)
-                                    // we have just one message,...
-                                    results.add(dc.head.copy(accuracy = Some(Percentage(100))))
-                                else
-                                    dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(10)))))
+                val stepId = stepIds.incrementAndGet()
+                try {
+                    progressManagement.start(stepId, classFile.thisType.toJava)
+                    for (method @ MethodWithBody(body) ← classFile.methods) {
+                        try {
+                            analyzeMethod(classFile, method, body)
+                        } catch {
+                            case afe: InterpretationFailedException ⇒
+                                val ms = method.fullyQualifiedSignature(classFile.thisType)
+                                val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
+                                println(
+                                    s"[error] the analysis of ${ms} failed after $steps steps: "+afe.cause)
                         }
                     }
+                } finally {
+                    progressManagement.end(stepId)
                 }
             }
             scala.collection.JavaConversions.collectionAsScalaIterable(results)
