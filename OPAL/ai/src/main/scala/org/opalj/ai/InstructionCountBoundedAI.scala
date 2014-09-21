@@ -35,35 +35,19 @@ import org.opalj.br.Code
  * An abstract interpreter that interrupts itself after the evaluation of
  * the given number of instructions.
  *
- * @param maxEvaluationFactor Determines the maximum number of instruction evaluations
- *      before the evaluation of the method is automatically interrupted.
- *
  * @author Michael Eichberg
  */
-class InstructionCountBoundedAI[D <: Domain](
-        val code: Code,
-        val maxEvaluationFactor: Int) extends AI[D] {
+class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extends AI[D] {
 
-    val maxEvaluationCount = {
-        // instructinos * ~2
-        var max = code.instructions.size
+    require(maxEvaluationCount > 0)
 
-        // we use a "slowly" growing log function to accommodate for extra complexity in long methods
-        max = max * Math.max(Math.log(max).toInt, 1)
+    /**
+     * @param maxEvaluationFactor Determines the maximum number of instruction evaluations
+     * before the evaluation of the method is automatically interrupted.
+     */
+    def this(code: Code, maxEvaluationFactor: Int) = {
 
-        // exception handling usually leads to a large number of evaluations
-        max = max * Math.max(code.exceptionHandlers.size, 1)
-
-        // to accommodate for analysis specific factors
-        max = max * maxEvaluationFactor
-        if (max < 0) {
-            max = Int.MaxValue
-            println(Console.YELLOW+"[warn] effectively unbounded evaluation"+
-                "; instructions size="+code.instructions+
-                "; exception handlers="+code.exceptionHandlers.size+
-                "; maxEvaluationFactor="+maxEvaluationFactor + Console.RESET)
-        }
-        max
+        this(InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor))
     }
 
     private[this] val evaluationCount = new java.util.concurrent.atomic.AtomicInteger(0)
@@ -80,6 +64,40 @@ class InstructionCountBoundedAI[D <: Domain](
             newCount = count + 1
         }
         count >= maxEvaluationCount
+    }
+
+}
+
+object InstructionCountBoundedAI {
+
+    def calculateMaxEvaluationCount(
+        code: Code,
+        maxEvaluationFactor: Int): Int = {
+        // this is roughly the number of instructions * ~2
+        var max = code.instructions.size
+
+        // to accommodate for the reduced complexity of long methods
+        max = max * Math.min(48, Math.pow(65535 / max, 2d / 3d)).toInt
+
+        // exception handling usually leads to a large number of evaluations
+        max = max * Math.log(code.exceptionHandlers.size + 2 * Math.E).toInt
+
+        // to accommodate for analysis specific factors
+        max = max * maxEvaluationFactor
+        if (max < 0) {
+            max = Int.MaxValue
+            println(Console.YELLOW+"[warn] effectively unbounded evaluation"+
+                "; instructions size="+code.instructions.size+
+                "; exception handlers="+code.exceptionHandlers.size+
+                "; maxEvaluationFactor="+maxEvaluationFactor + Console.RESET)
+        }
+        if (max > 65535 /*Max Length*/ * 10) {
+            println(Console.YELLOW+"[warn] evaluation (up to: "+max+" instructions) may take execessively long"+
+                "; instructions size="+code.instructions.size+
+                "; exception handlers="+code.exceptionHandlers.size+
+                "; maxEvaluationFactor="+maxEvaluationFactor + Console.RESET)
+        }
+        max
     }
 
 }
