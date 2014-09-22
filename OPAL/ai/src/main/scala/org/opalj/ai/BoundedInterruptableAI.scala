@@ -45,7 +45,7 @@ class BoundedInterruptableAI[D <: Domain](
 
     def this(
         code: Code,
-        maxEvaluationFactor: Int,
+        maxEvaluationFactor: Double,
         doInterrupt: () ⇒ Boolean) =
         this(
             InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),

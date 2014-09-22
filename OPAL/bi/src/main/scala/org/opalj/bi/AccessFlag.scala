@@ -64,6 +64,13 @@ sealed trait AccessFlag extends PrimitiveAccessFlagsMatcher {
      */
     def unapply(accessFlags: Int): Boolean = (accessFlags & mask) == mask
 
+    /**
+     * Checks if `this` access flag is set in the given access flags bit vector.
+     *
+     * @note This method is just a more intuitively named alias for the [[unapply]] method.
+     */
+    def isSet(accessFlags: Int): Boolean = unapply(accessFlags)
+
 }
 
 /**

@@ -33,7 +33,7 @@ package reader
 import org.opalj.br.instructions._
 
 /**
- * Mixin this trait to resolve links between `INVOKEDYNAMIC instructions and the
+ * Mixin this trait to resolve links between `invokedynamic` instructions and the
  * [[BootstrapMethodTable]].
  */
 trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBinding {
@@ -42,7 +42,7 @@ trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBindi
 
     /**
      * Resolves an `invokedynamic` instruction using the
-     * [[org.opalj.br.BootstrapMethodTable]] of the class.
+     * [[BootstrapMethodTable]] of the class.
      *
      * Deferred resolution is necessary since the [[BootstrapMethodTable]] – which
      * is an attribute of the class file – is loaded after the methods.
@@ -62,9 +62,9 @@ trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBindi
      * @param cp The class file's [[Constant_Pool]].
      * @param cpEntry The `invokedynamic` instruction's constant pool entry.
      * @param instructions This method's array of [[instructions.Instruction]]s.
-     * 		(The array eturned by the [[#Instructions]] method.)
-     * @param index The index in the `instructions` array that refers to the `invokedynamic`
-     * 		instruction.
+     * 		(The array returned by the [[#Instructions]] method.)
+     * @param index The index in the `instructions` array that refers to the
+     * 		`invokedynamic` instruction.
      */
     protected def deferredInvokedynamicResolution(
         classFile: ClassFile,
