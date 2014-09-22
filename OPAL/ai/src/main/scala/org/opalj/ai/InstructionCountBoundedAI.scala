@@ -72,32 +72,32 @@ object InstructionCountBoundedAI {
 
     def calculateMaxEvaluationCount(
         code: Code,
-        maxEvaluationFactor: Int): Int = {
+        maxEvaluationFactor: Double): Int = {
         // this is roughly the number of instructions * ~2
-        var max = code.instructions.size
+        var max: Double = code.instructions.size
 
         // to accommodate for the reduced complexity of long methods
-        max = max * Math.min(48, Math.pow(65535 / max, 2d / 3d)).toInt
+        max = max * Math.min(48, Math.pow(65535 / max, 2d / 3d))
 
         // exception handling usually leads to a large number of evaluations
-        max = max * Math.log(code.exceptionHandlers.size + 2 * Math.E).toInt
+        max = max * Math.log(code.exceptionHandlers.size + 2 * Math.E)
 
         // to accommodate for analysis specific factors
-        max = max * maxEvaluationFactor
-        if (max < 0) {
+        max = (max * maxEvaluationFactor)
+        if (max < 0.0) {
             max = Int.MaxValue
             println(Console.YELLOW+"[warn] effectively unbounded evaluation"+
                 "; instructions size="+code.instructions.size+
                 "; exception handlers="+code.exceptionHandlers.size+
                 "; maxEvaluationFactor="+maxEvaluationFactor + Console.RESET)
         }
-        if (max > 65535 /*Max Length*/ * 10) {
+        if (max > 65535.0 /*Max Length*/ * 10.0) {
             println(Console.YELLOW+"[warn] evaluation (up to: "+max+" instructions) may take execessively long"+
                 "; instructions size="+code.instructions.size+
                 "; exception handlers="+code.exceptionHandlers.size+
                 "; maxEvaluationFactor="+maxEvaluationFactor + Console.RESET)
         }
-        max
+        max.toInt
     }
 
 }
