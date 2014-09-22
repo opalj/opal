@@ -66,8 +66,10 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
     /**
      * Executes the analysis of the projects concrete methods.
      *
-     * @parameters Either an empty sequence or a sequence that contains a string
-     *      that matches the following pattern: `-maxEvalFactor=(\d+(?:.\d+)?)`.
+     * @param Either an empty sequence or a sequence that contains a string
+     *      that matches the following pattern: `-maxEvalFactor=(\d+(?:.\d+)?)`; e.g.,
+     *      `-maxEvalFactor=0.5` or `-maxEvalFactor=1.5`. A value below 0.05 is usually
+     *      not useable.
      */
     override def analyze(
         theProject: Project[URL],
