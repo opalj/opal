@@ -164,6 +164,7 @@ sealed abstract class Type extends UID with Ordered[Type] {
     def isReferenceType: Boolean = false
     def isArrayType: Boolean = false
     def isObjectType: Boolean = false
+    def isNumericType: Boolean = false
 
     /**
      * The computational type of values of this type.
@@ -197,6 +198,11 @@ sealed abstract class Type extends UID with Ordered[Type] {
     def asFieldType: FieldType =
         throw new ClassCastException(
             "a "+this.getClass().getSimpleName()+" cannot be cast to a FieldType")
+
+    @throws[ClassCastException]("if this is not a numeric type")
+    def asNumericType: NumericType =
+        throw new ClassCastException(
+            "a "+this.getClass().getSimpleName()+" cannot be cast to a NumericType")
 
     /**
      * A String representation of this type as it would be used in Java source code.
@@ -461,6 +467,10 @@ sealed abstract class NumericType protected () extends BaseType {
      * }}}
      */
     def isWiderThan(targetType: NumericType): Boolean
+
+    override def isNumericType = true
+
+    override def asNumericType: this.type = this
 
 }
 
