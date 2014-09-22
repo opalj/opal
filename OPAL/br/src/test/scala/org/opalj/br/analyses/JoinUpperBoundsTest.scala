@@ -219,9 +219,9 @@ class JoinUpperBoundsTest
                 }
 
                 it("join of several indirect subinterfaces should result in the superinterface (reflexive)") {
-                    //     testJoinUpperTypeBounds("SubSubID", Set("SubID2", "SubID3"), true, "ID")
-                    testJoinUpperTypeBounds(Set("SubSubID", "SubID2"), Set("SubID", "SubID3"), true, "ID")
-                    //    testJoinUpperTypeBounds(Set("SubSubID", "SubID3"), Set("SubID", "SubID2"), true, "ID")
+                    testJoinUpperTypeBounds("SubSubID", Set("SubID2", "SubID3"), true, "ID")
+                    testJoinUpperTypeBounds(Set("SubSubID", "SubID2"), Set("SubID", "SubID3"), true, "SubID")
+                    testJoinUpperTypeBounds(Set("SubSubID", "SubID3"), Set("SubID", "SubID2"), true, "SubID")
                 }
 
                 it("join of several indirect subinterfaces should result in the superinterface (non-reflexive)") {
