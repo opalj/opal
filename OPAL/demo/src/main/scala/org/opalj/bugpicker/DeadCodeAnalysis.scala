@@ -63,12 +63,29 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
 
     override def description: String = "Identifies dead/useless/buggy code using abstract interpretation."
 
+    /**
+     * Executes the analysis of the projects concrete methods.
+     *
+     * @parameters Either an empty sequence or a sequence that contains a string
+     *      that matches the following pattern: `-maxEvalFactor=(\d+(?:.\d+)?)`.
+     */
     override def analyze(
         theProject: Project[URL],
         parameters: Seq[String],
         initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[DeadCode]) = {
 
-        val maxEvaluationFactor = 2 // the default value
+        // we want to match expressions such as:
+        // -maxEvalFactor=1
+        // -maxEvalFactor=20
+        // -maxEvalFactor=1.25
+        // -maxEvalFactor=10.5
+        val maxEvalFactor: Double =
+            parameters.collectFirst {
+                case DeadCodeAnalysis.maxEvalFactorPattern(d) ⇒
+                    java.lang.Double.parseDouble(d).toDouble
+            }.getOrElse(
+                DeadCodeAnalysis.defaultMaxEvalFactor
+            )
 
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
@@ -79,9 +96,7 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
             val domain = new DeadCodeAnalysisDomain(theProject, method)
             val ai =
-                new BoundedInterruptableAI[domain.type](
-                    body, maxEvaluationFactor,
-                    doInterrupt)
+                new BoundedInterruptableAI[domain.type](body, maxEvalFactor, doInterrupt)
             val result = ai(classFile, method, domain)
             if (!result.wasAborted) {
                 val operandsArray = result.operandsArray
@@ -118,7 +133,7 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
                 }
             } else {
                 println(
-                    s"[error] analysis of ${method.fullyQualifiedSignature(classFile.thisType)} aborted "+
+                    s"[warn] analysis of ${method.fullyQualifiedSignature(classFile.thisType)} aborted "+
                         s"after ${ai.currentEvaluationCount} steps "+
                         s"(code size: ${method.body.get.instructions.length})")
             }
@@ -155,6 +170,10 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
 }
 
 object DeadCodeAnalysis {
+
+    final val maxEvalFactorPattern = """-maxEvalFactor=(\d+(?:.\d+)?)""".r
+
+    final val defaultMaxEvalFactor = 1.75d
 
     def resultsAsXHTML(results: (Long, Iterable[DeadCode])): Node = {
         val (analysisTime, methodsWithDeadCode) = results
