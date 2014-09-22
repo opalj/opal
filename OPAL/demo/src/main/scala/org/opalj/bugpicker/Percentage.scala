@@ -32,7 +32,7 @@ package bugpicker
 case class Percentage(val value: Int) extends AnyVal {
 
     /**
-     * The lower the percentage, the "whiter" the color. If the percentage is 100%
+     * The lower the value, the "whiter" the color. If the value is 100
      * then the color will be black.
      */
     def asHTMLColor = {
