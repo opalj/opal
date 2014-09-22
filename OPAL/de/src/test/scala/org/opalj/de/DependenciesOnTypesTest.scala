@@ -94,11 +94,8 @@ class DependenciesOnTypesTest extends FlatSpec with Matchers {
     // EXERCISE
     //
     //
-    dependencyExtractor.process(
-        ClassFile(
-            locateTestResources("classfiles/Types.jar", "de"),
-            "types/TypeDeclarations.class")
-    )
+    val classFiles = ClassFile(locateTestResources("classfiles/Types.jar", "de"), "types/TypeDeclarations.class")
+    classFiles foreach (classFile ⇒ dependencyExtractor.process(classFile))
 
     //
     //

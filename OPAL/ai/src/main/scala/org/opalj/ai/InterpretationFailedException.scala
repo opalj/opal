@@ -40,6 +40,7 @@ package ai
 sealed trait InterpretationFailedException {
     def cause: Throwable
     val domain: Domain
+    val ai: AI[_ >: domain.type]
     val pc: PC
     val worklist: List[PC]
     val evaluated: List[PC]
@@ -57,6 +58,7 @@ object InterpretationFailedException {
     def apply(
         theCause: Throwable,
         theDomain: Domain)(
+            theAI: AI[_ >: theDomain.type],
             thePc: PC,
             theWorklist: List[PC],
             theEvaluated: List[PC],
@@ -66,6 +68,7 @@ object InterpretationFailedException {
 
         new AIException("the interpretation failed", theCause) with InterpretationFailedException {
             def cause = super.getCause
+            val ai: AI[_ >: theDomain.type] = theAI
             val domain: theDomain.type = theDomain
             val pc: PC = thePc
             val worklist: List[PC] = theWorklist

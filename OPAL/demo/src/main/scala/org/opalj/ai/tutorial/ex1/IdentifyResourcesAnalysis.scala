@@ -61,14 +61,17 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def title: String = "Creation of Resources Using Constant Strings"
 
         override def description: String =
             "Identifies java.io.File object instantiations using constant strings."
 
-        override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
+        override def doAnalyze(
+            theProject: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
             // Step 1

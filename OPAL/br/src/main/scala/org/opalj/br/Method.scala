@@ -170,6 +170,10 @@ final class Method private (
 
     def toJava(): String = descriptor.toJava(name)
 
+    def fullyQualifiedSignature(declaringClassType: ObjectType): String = {
+        descriptor.toJava(declaringClassType.toJava+"."+name)
+    }
+
     override def toString(): String = {
         AccessFlags.toStrings(accessFlags, AccessFlagsContexts.METHOD).mkString("", " ", " ") +
             descriptor.toJava(name) +

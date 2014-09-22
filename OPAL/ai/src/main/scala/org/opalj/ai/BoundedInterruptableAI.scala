@@ -26,51 +26,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package lambdas;
+package org.opalj
+package ai
 
-import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
-import static org.opalj.ai.test.invokedynamic.annotations.TargetResolution.*;
+import org.opalj.br.Code
 
 /**
- * This class contains a few simple examples for method references introduced in Java 8.
+ * An abstract interpreter that interrupts itself after the evaluation of
+ * the given number of instructions or if the callback function `doInterrupt` returns
+ * false.
  *
- * <!--
- * 
- * 
- * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
- * SPECIFIED LINE NUMBERS ARE STABLE.
- * 
- * 
- * -->
- *
- * @author Arne Lottmann
+ * @author Michael Eichberg
  */
-public class MethodReferences {
-    @InvokedMethod(resolution = DYNAMIC, receiverType = Value.class, name = "isEmpty", lineNumber = 52)
-	public void filterOutEmptyValues() {
-		java.util.List<Value> values = java.util.Arrays.asList(new Value("foo"), new Value(""));
-		values.stream().filter(Value::isEmpty);
-	}
+class BoundedInterruptableAI[D <: Domain](
+    maxEvaluationCount: Int,
+    val doInterrupt: () ⇒ Boolean)
+        extends InstructionCountBoundedAI[D](maxEvaluationCount) {
 
-	@InvokedMethod(resolution = DYNAMIC, receiverType = Value.class, name = "compare", lineNumber = 58, isStatic = true)
-	public void compareValues() {
-		java.util.Comparator<Value> comparator = Value::compare;
-		System.out.println(comparator.compare(new Value("a"), new Value("b")));
-	}
+    def this(
+        code: Code,
+        maxEvaluationFactor: Int,
+        doInterrupt: () ⇒ Boolean) =
+        this(
+            InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
+            doInterrupt)
 
-	public static class Value {
-		private String value;
+    override def isInterrupted = super.isInterrupted || doInterrupt()
 
-		public Value(String value) {
-			this.value = value;
-		}
-
-		public boolean isEmpty() {
-			return value.isEmpty();
-		}
-
-		public static int compare(Value a, Value b) {
-			return a.value.compareTo(b.value);
-		}
-	}
-}	
+}

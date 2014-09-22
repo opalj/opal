@@ -77,7 +77,7 @@ class LoadClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
                 if (!jarEntry.isDirectory && jarEntry.getName.endsWith(".class")) {
                     val data = new Array[Byte](jarEntry.getSize().toInt)
                     process(new DataInputStream(jarFile.getInputStream(jarEntry))) { _.readFully(data) }
-                    simpleValidator(Java8Framework.ClassFile(new DataInputStream(new ByteArrayInputStream(data))))
+                    Java8Framework.ClassFile(new DataInputStream(new ByteArrayInputStream(data))) foreach simpleValidator
                 }
             }
         }

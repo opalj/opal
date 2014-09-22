@@ -29,8 +29,14 @@
 package org.opalj
 package br
 
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
+
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
+
+import analyses.AnalysisExecutor
+import analyses.BasicReport
+import analyses.Project
 
 /**
  * Prints out the method-level annotations of all methods. (I.e., class, field and
@@ -41,13 +47,16 @@ import java.net.URL
  */
 object MethodAnnotationsPrinter extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def title: String = "Collect Method-level Annotations"
 
         override def description: String = "Prints out the annotations of methods."
 
-        def analyze(project: Project[URL], parameters: Seq[String]) = {
+        def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             val annotations =
                 for {
                     classFile ← project.classFiles

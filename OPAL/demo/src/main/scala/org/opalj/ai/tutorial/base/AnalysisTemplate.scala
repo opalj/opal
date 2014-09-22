@@ -37,9 +37,12 @@ import org.opalj.ai._
 
 object AnalysisTemplate extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
-        override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
+        override def doAnalyze(
+            theProject: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             BasicReport(theProject.statistics.mkString("\n"))
         }
     }

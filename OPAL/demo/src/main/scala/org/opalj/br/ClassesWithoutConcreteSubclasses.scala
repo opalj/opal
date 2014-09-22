@@ -29,7 +29,7 @@
 package org.opalj
 package br
 
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
 import scala.collection.SortedSet
 
@@ -41,12 +41,15 @@ import scala.collection.SortedSet
  */
 object ClassesWithoutConcreteSubclasses extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description: String =
             "Abstract classes and interfaces that have no concrete subclass in the given jars."
 
-        def analyze(project: Project[URL], parameters: Seq[String]) = {
+        def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             val classTypes =
                 for {
                     classFile ← project.classFiles

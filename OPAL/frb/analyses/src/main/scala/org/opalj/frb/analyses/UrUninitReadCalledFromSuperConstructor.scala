@@ -77,9 +77,10 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def analyze(
+    def doAnalyze(
         project: Project[Source],
-        parameters: Seq[String] = Seq.empty): Iterable[SourceLocationBasedReport[Source]] = {
+        parameters: Seq[String] = Seq.empty,
+        isInterrupted: () ⇒ Boolean): Iterable[SourceLocationBasedReport[Source]] = {
 
         import project.classHierarchy
 

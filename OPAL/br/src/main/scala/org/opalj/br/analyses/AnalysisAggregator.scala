@@ -31,6 +31,7 @@ package br
 package analyses
 
 import java.net.URL
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Aggregates several analyses such that they are treated as one afterwards.
@@ -61,16 +62,19 @@ class AnalysisAggregator[Source, AnalysisResult]
 
     def analyze(
         project: Project[Source],
-        parameters: Seq[String]): Iterable[AnalysisResult] =
+        parameters: Seq[String],
+        initProgressManagement: (Int) ⇒ ProgressManagement): Iterable[AnalysisResult] =
         this.synchronized {
             if (analyzeInParallel) {
-                (
+                {
                     for (analysis ← analyses.par) yield {
-                        analysis.analyze(project, parameters)
+                        analysis.analyze(project, parameters, initProgressManagement)
                     }
-                ).seq
+                }.seq
             } else {
-                for (analysis ← analyses) yield { analysis.analyze(project, parameters) }
+                for (analysis ← analyses) yield {
+                    analysis.analyze(project, parameters, initProgressManagement)
+                }
             }
         }
 

@@ -34,7 +34,9 @@ import java.net.URL
 import scala.collection.SortedMap
 
 import org.opalj.util.PerformanceEvaluation.ns2sec
+import org.opalj.util.writeAndOpen
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.debug.XHTML
 
 /**
@@ -52,12 +54,15 @@ object Console extends AnalysisExecutor { analysis ⇒
 
         override def description: String = deadCodeAnalysis.description
 
-        override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
+        override def analyze(
+            theProject: Project[URL],
+            parameters: Seq[String],
+            initProgressManagement: (Int) ⇒ ProgressManagement) = {
             val results @ (analysisTime, methodsWithDeadCode) =
-                deadCodeAnalysis.analyze(theProject, parameters)
+                deadCodeAnalysis.analyze(theProject, parameters, initProgressManagement)
 
             val doc = XHTML.createXHTML(Some(title), DeadCodeAnalysis.resultsAsXHTML(results))
-            XHTML.writeAndOpenDump(doc)
+            writeAndOpen(doc, "DeadCodeAnalysisResults", ".html")
 
             //            BasicReport(
             //                methodsWithDeadCode.toList.sortWith((l, r) ⇒

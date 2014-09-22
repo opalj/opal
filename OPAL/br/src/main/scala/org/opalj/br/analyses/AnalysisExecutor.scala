@@ -33,9 +33,9 @@ package analyses
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
-
 import java.net.URL
 import java.io.File
+import org.opalj.util.OpeningFileFailedException
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -101,8 +101,8 @@ trait AnalysisExecutor {
     protected def printUsage() {
         println("Usage: java "+
             this.getClass().getName()+"\n"+
-            "[-cp=<Directories or JAR files containing class files> (If no class path is specified the current folder is used.)]\n"+
-            "[-libcp=<Directories or JAR files containing class files>]\n"+
+            "[-cp=<Directories or JAR/class files> (If no class path is specified the current folder is used.)]\n"+
+            "[-libcp=<Directories or JAR/class files>]\n"+
             analysisSpecificParametersDescription)
         println(analysis.description)
         println(analysis.copyright)
@@ -113,7 +113,7 @@ trait AnalysisExecutor {
         // transform parameters input to allow parameters like -param="in put"
         // -param="the input" is transformed into -param=the input
         val quotedParams = """(-[\w.]+="[\w-_:./\\ ]+")""".r
-        val unqoutedParams = """(-[\w.]+=[\w-_:./\\]+)""".r
+        val unqoutedParams = """(-[\w.]+=[\w-_:./\\]+)|(-[\w]+(?: |$))""".r
         val input = unparsedArgs.mkString(" ")
         val args =
             (
@@ -128,46 +128,69 @@ trait AnalysisExecutor {
         //
         // 1. check arguments
         //
-        def checkIfFilesAreReadableAndReturnThem(filenames: Array[String]): Array[File] = {
-            for (filename ← filenames) yield checkIfFileIsReadableAndReturnIt(filename)
-        }
-        def checkIfFileIsReadableAndReturnIt(filename: String): File = {
+        // Input files must be either directories, or class/jar files.
+        //
+        def verifyFile(filename: String): Option[File] = {
             val file = new File(filename)
-            if (!file.exists ||
-                !file.canRead ||
-                !(filename.endsWith(".jar") ||
-                    filename.endsWith(".class") ||
-                    file.isDirectory())) {
-                println(Console.RED+
-                    "[error] The file: "+file+" cannot be read or is not valid."+
-                    Console.RESET)
-                printUsage()
-                sys.exit(-2)
+
+            def showError(message: String) {
+                println(Console.RED+"[error] "+Console.RESET + message)
             }
-            file
+
+            def workingDirectory: String = {
+                s"(working directory: ${System.getProperty("user.dir")})"
+            }
+
+            if (!file.exists) {
+                showError(s"File does not exist: $file $workingDirectory")
+                None
+            } else if (!file.canRead) {
+                showError(s"Cannot read: $file $workingDirectory")
+                None
+            } else if (!file.isDirectory() &&
+                !filename.endsWith(".jar") && !filename.endsWith(".class")) {
+                showError("Input file is neither a directory nor a class or JAR file: "+file)
+                None
+            } else
+                Some(file)
+        }
+
+        def verifyFiles(filenames: Array[String]): Seq[File] = {
+            filenames.toVector.map(verifyFile).flatten
         }
 
         val (cp, args1) = {
+            def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
+
             args.partition(_.startsWith("-cp=")) match {
-                case (Array(), args1) ⇒
-                    (Array(System.getProperty("user.dir")), args1)
-                case (Array(cpParam), args1) ⇒ {
-                    (cpParam.substring(4).split(File.pathSeparator), args1)
-                }
+                case (Array(), notCPArgs) ⇒
+                    (Array(System.getProperty("user.dir")), notCPArgs)
+                case (Array(cpParam), notCPArgs) ⇒
+                    (splitCPath(cpParam), notCPArgs)
+                case (cpParams: Array[String], notCPArgs) ⇒
+                    (cpParams.map(splitCPath).flatten, notCPArgs)
             }
         }
-        val cpFiles = checkIfFilesAreReadableAndReturnThem(cp)
+        val cpFiles = verifyFiles(cp)
+        if (cpFiles.isEmpty) {
+            println(Console.RED+"[error] Nothing to analyze."+Console.RESET)
+            printUsage()
+            sys.exit(1)
+        }
 
         val (libcp, args2) = {
+            def splitLibCPath(path: String) = path.substring(7).split(File.pathSeparator)
+
             args1.partition(_.startsWith("-libcp=")) match {
-                case (Array(libParam), args2) ⇒ {
-                    (libParam.substring(7).split(File.pathSeparator), args2)
-                }
-                case result ⇒
-                    result
+                case noLibs @ (Array(), args2) ⇒
+                    noLibs
+                case (Array(libParam), args2) ⇒
+                    (splitLibCPath(libParam), args2)
+                case (libParams: Array[String], args2) ⇒
+                    (libParams.map(splitLibCPath).flatten, args2)
             }
         }
-        val libcpFiles = checkIfFilesAreReadableAndReturnThem(libcp)
+        val libcpFiles = verifyFiles(libcp)
 
         if (!checkAnalysisSpecificParameters(args2)) {
             println(Console.RED+
@@ -176,7 +199,7 @@ trait AnalysisExecutor {
                 "; parsed: \""+args.mkString(" ")+"\""+
                 Console.RESET)
             printUsage()
-            sys.exit(-3)
+            sys.exit(2)
         }
 
         //
@@ -188,7 +211,8 @@ trait AnalysisExecutor {
         // 3. execute analysis
         //
         println("[info] Executing analysis: "+analysis.title+".")
-        val result = analysis.analyze(project, args2)
+        // TODO Add progressmanagement.
+        val result = analysis.analyze(project, args2, ProgressManagement.None)
         println(result.consoleReport)
     }
 
@@ -208,7 +232,7 @@ trait AnalysisExecutor {
 
         val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
-                println("[info]Reading library class files (found in):")
+                println("[info] Reading library class files (found in):")
                 reader.readClassFiles(
                     libcpFiles,
                     Java8LibraryClassFileReader.ClassFiles,
@@ -229,8 +253,11 @@ trait AnalysisExecutor {
             }
             pout.flush
             val message = new String(out.toByteArray())
-            util.writeAndOpenDesktopApplication(message, "Exceptions", ".txt") foreach { f ⇒
-                Console.err.println("Details can be found in: "+f.toString)
+            try {
+                util.writeAndOpen(message, "Exceptions", ".txt")
+            } catch {
+                case OpeningFileFailedException(file, _) ⇒
+                    Console.err.println("Details can be found in: "+file.toString)
             }
         }
 

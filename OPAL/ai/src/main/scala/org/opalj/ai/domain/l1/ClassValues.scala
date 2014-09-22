@@ -193,16 +193,16 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
 
         if (name == "TYPE") {
             declaringClass match {
-                case ObjectType.Boolean ⇒ ComputedValue(ClassValue(pc, BooleanType))
-                case ObjectType.Byte    ⇒ ComputedValue(ClassValue(pc, ByteType))
-                case ObjectType.Char    ⇒ ComputedValue(ClassValue(pc, CharType))
-                case ObjectType.Short   ⇒ ComputedValue(ClassValue(pc, ShortType))
-                case ObjectType.Integer ⇒ ComputedValue(ClassValue(pc, IntegerType))
-                case ObjectType.Long    ⇒ ComputedValue(ClassValue(pc, LongType))
-                case ObjectType.Float   ⇒ ComputedValue(ClassValue(pc, FloatType))
-                case ObjectType.Double  ⇒ ComputedValue(ClassValue(pc, DoubleType))
+                case ObjectType.Boolean   ⇒ ComputedValue(ClassValue(pc, BooleanType))
+                case ObjectType.Byte      ⇒ ComputedValue(ClassValue(pc, ByteType))
+                case ObjectType.Character ⇒ ComputedValue(ClassValue(pc, CharType))
+                case ObjectType.Short     ⇒ ComputedValue(ClassValue(pc, ShortType))
+                case ObjectType.Integer   ⇒ ComputedValue(ClassValue(pc, IntegerType))
+                case ObjectType.Long      ⇒ ComputedValue(ClassValue(pc, LongType))
+                case ObjectType.Float     ⇒ ComputedValue(ClassValue(pc, FloatType))
+                case ObjectType.Double    ⇒ ComputedValue(ClassValue(pc, DoubleType))
 
-                case _                  ⇒ super.getstatic(pc, declaringClass, name, fieldType)
+                case _                    ⇒ super.getstatic(pc, declaringClass, name, fieldType)
             }
         } else {
             super.getstatic(pc, declaringClass, name, fieldType)

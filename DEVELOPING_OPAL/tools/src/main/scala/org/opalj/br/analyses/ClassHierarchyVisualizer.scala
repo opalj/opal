@@ -39,7 +39,6 @@ object ClassHierarchyVisualizer {
 
     def main(args: Array[String]) {
 
-        import util.writeAndOpenDesktopApplication
         import graphs.{ Node, toDot }
 
         import reader.Java8Framework.ClassFiles
@@ -61,9 +60,7 @@ object ClassHierarchyVisualizer {
                 ClassHierarchy(classFiles.view.map(_._1))
             }
 
-        val classHierarchyDescription =
-            writeAndOpenDesktopApplication(
-                toDot.generateDot(Set(classHierarchy.toGraph), "back"),
-                "ClassHiearachy", ".dot")
+        val dotGraph = toDot.generateDot(Set(classHierarchy.toGraph), "back")
+        org.opalj.util.writeAndOpen(dotGraph, "ClassHiearachy", ".dot")
     }
 }

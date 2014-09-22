@@ -65,9 +65,12 @@ trait DataFlowProblemRunner extends AnalysisExecutor {
 
         override def analyze(
             project: Project[URL],
-            parameters: Seq[String] = List.empty): ReportableAnalysisResult = {
+            parameters: Seq[String],
+            initProgressManagement: (Int) ⇒ ProgressManagement): ReportableAnalysisResult = {
             import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
+            val pm = initProgressManagement(2)
+            pm.start(1, "setup")
             val initializedDataFlowProblem = time {
                 val params = dataFlowProblemFactory.processAnalysisParameters(parameters)
                 val dataFlowProblem = dataFlowProblemFactory.create(project, params)
@@ -78,12 +81,18 @@ trait DataFlowProblemRunner extends AnalysisExecutor {
             } { t ⇒
                 println(f"[info] Setup of the data-flow problem took ${ns2sec(t)}%.4f seconds.")
             }
+            pm.end(1)
 
+            if (pm.isInterrupted())
+                return null
+
+            pm.start(2, "solving data-flow problem")
             val result = time {
                 initializedDataFlowProblem.solve()
             } { t ⇒
                 println(f"[info] Solving the data-flow problem took ${ns2sec(t)}%.4f seconds.")
             }
+            pm.end(2)
 
             BasicReport(result)
         }

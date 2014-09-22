@@ -37,7 +37,7 @@ import br.analyses._
  * @author Daniel Klauer
  */
 trait FindRealBugsAnalysis[Source]
-        extends MultipleResultsAnalysis[Source, SourceLocationBasedReport[Source]] {
+        extends OneStepAnalysis[Source, Iterable[SourceLocationBasedReport[Source]]] {
 
     import FindRealBugsAnalysis._
 

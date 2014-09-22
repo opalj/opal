@@ -34,13 +34,34 @@ import java.net.URL
 import org.opalj.graphs._
 import br._
 import org.opalj.br.instructions._
-import org.opalj.br.analyses.{ Project, Analysis, AnalysisExecutor, ReportableAnalysisResult }
-import project.{ AIProject, Report }
+import org.opalj.br.analyses.{ Project, OneStepAnalysis, AnalysisExecutor, ReportableAnalysisResult }
+import project.{ AIProject, OptionalReport }
 import domain._
 import domain.l0._
 import domain.l1._
 import domain.tracing._
 import debug.XHTML._
+import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
+import org.opalj.ai.domain.DefaultHandlingOfMethodResults
+import org.opalj.ai.domain.l1.DefaultStringValuesBinding
+import org.opalj.ai.BaseAI
+import org.opalj.ai.project.OptionalReport
+import org.opalj.ai.domain.DefaultDomainValueBinding
+import org.opalj.ai.domain.DomainId
+import org.opalj.ai.project.AIProject
+import org.opalj.ai.domain.l0.TypeLevelInvokeInstructions
+import org.opalj.ai.domain.TheCode
+import org.opalj.ai.domain.l0.DefaultTypeLevelLongValues
+import org.opalj.ai.domain.l0.DefaultTypeLevelIntegerValues
+import org.opalj.ai.domain.ProjectBasedClassHierarchy
+import org.opalj.ai.domain.TheProject
+import org.opalj.ai.domain.IgnoreSynchronization
+import org.opalj.ai.domain.l0.DefaultTypeLevelDoubleValues
+import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.l0.TypeLevelReferenceValues
+import org.opalj.ai.domain.l0.DefaultPrimitiveValuesConversions
+import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
 
 /**
  * Searches for occurrences of the Class.forName bug in the JDK
@@ -48,11 +69,11 @@ import debug.XHTML._
  * @author Lars Schulte
  */
 object JDKTaintAnalysis
-        extends AIProject[URL, Domain with Report]
-        with Analysis[URL, ReportableAnalysisResult]
+        extends AIProject[URL, Domain with OptionalReport]
+        with OneStepAnalysis[URL, ReportableAnalysisResult]
         with AnalysisExecutor {
 
-    def ai = new AI[Domain with Report] {}
+    def ai = new AI[Domain with OptionalReport] {}
 
     override def description: String = "Finds unsafe Class.forName(...) calls."
 
@@ -73,9 +94,10 @@ object JDKTaintAnalysis
             new java.io.File(javaSecurityFile).exists()
         }
 
-    override def analyze(
+    override def doAnalyze(
         project: analyses.Project[URL],
-        parameters: Seq[String]): ReportableAnalysisResult = {
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean): ReportableAnalysisResult = {
         restrictedPackages = process(new java.io.FileInputStream(javaSecurityFile)) { in ⇒
             val properties = new java.util.Properties()
             properties.load(in)
@@ -113,7 +135,7 @@ object JDKTaintAnalysis
     def domain(
         project: analyses.Project[URL],
         classFile: ClassFile,
-        method: Method): Domain with Report = {
+        method: Method): Domain with OptionalReport = {
         new RootTaintAnalysisDomain[URL](project, List.empty, CallStackEntry(classFile, method), false)
     }
 }
@@ -181,7 +203,7 @@ trait TaintAnalysisDomain[Source]
         with TheProject[Source]
         with TheCode
         with ProjectBasedClassHierarchy
-        with Report { thisDomain ⇒
+        with OptionalReport { thisDomain ⇒
 
     type Id = CallStackEntry
 

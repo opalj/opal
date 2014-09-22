@@ -57,9 +57,10 @@ class BadlyOverriddenAdapter[Source] extends FindRealBugsAnalysis[Source] {
      * @param parameters Options for the analysis. Currently unused.
      * @return An `Iterable` of reports that can be empty.
      */
-    def analyze(
+    def doAnalyze(
         project: Project[Source],
-        parameters: Seq[String] = List.empty): Iterable[SourceLocationBasedReport[Source]] = {
+        parameters: Seq[String] = List.empty,
+        isInterrupted: () ⇒ Boolean): Iterable[SourceLocationBasedReport[Source]] = {
 
         /*
          * Heuristic to check whether a type is an Adapter.

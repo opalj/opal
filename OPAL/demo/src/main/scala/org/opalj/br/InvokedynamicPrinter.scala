@@ -29,10 +29,15 @@
 package org.opalj
 package br
 
-import instructions._
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-
 import java.net.URL
+
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.INVOKEDYNAMIC
 
 /**
  * Prints out the immediately available information about invokedynamic instructions.
@@ -41,12 +46,15 @@ import java.net.URL
  */
 object InvokedynamicPrinter extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description: String =
             "Prints information about invokedynamic instructions."
 
-        def analyze(project: Project[URL], parameters: Seq[String]) = {
+        def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             val invokedynamics =
                 for {
                     classFile ← project.classFiles.par

@@ -136,7 +136,13 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
     /**
      * Factory method to create the `ClassFile` object that represents the class
-     * file as a whole.
+     * file as a whole, plus any `ClassFile`s that have been synthesized in the process
+     * of parsing it.
+     *
+     * The result will always contain at least one `ClassFile` object, namely the one that
+     * is created from this method's parameters. Regardless of how many `ClassFile`s the
+     * result contains, the `ClassFile` created from this method's parameters will always
+     * be the result's first element.
      */
     protected def ClassFile(
         cp: Constant_Pool,
@@ -154,7 +160,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     // IMPLEMENTATION
     //
 
-    private[this] var classFilePostProcessors: List[ClassFile ⇒ ClassFile] = Nil
+    private[this] var classFilePostProcessors: List[Seq[ClassFile] ⇒ Seq[ClassFile]] = Nil
 
     /**
      * Register a class file post processor. A class file post processor
@@ -162,8 +168,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * can only be registered before the usage of a class file reader. '''Registering
      * new `ClassFilePostProcessors` while processing class files is not supported
      * and the behavior is undefined'''.
+     *
+     * PostProcessors will be executed in last-in-first-out order.
      */
-    def registerClassFilePostProcessor(p: ClassFile ⇒ ClassFile): Unit = {
+    def registerClassFilePostProcessor(p: Seq[ClassFile] ⇒ Seq[ClassFile]): Unit = {
         classFilePostProcessors = p :: classFilePostProcessors
     }
 
@@ -201,7 +209,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      *    '''It is highly recommended that the stream is buffered; otherwise the
      *    performance will be terrible!'''
      */
-    def ClassFile(in: DataInputStream): ClassFile = {
+    def ClassFile(in: DataInputStream): Seq[ClassFile] = {
         // magic
         val readMagic = in.readInt
         require(
@@ -248,11 +256,12 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         classFile = applyDeferredActions(cp, classFile)
 
         // Perform general transformations on class files.
+        var classFiles = Seq(classFile)
         classFilePostProcessors foreach { postProcessor ⇒
-            classFile = postProcessor(classFile)
+            classFiles = postProcessor(classFiles)
         }
 
-        classFile
+        classFiles
     }
 
     //
@@ -271,7 +280,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      *  The created input stream will automatically be wrapped by OPAL to enable
      *  efficient reading of the class file.
      */
-    def ClassFile(create: () ⇒ InputStream): ClassFile = {
+    def ClassFile(create: () ⇒ InputStream): Seq[ClassFile] = {
         process(create() match {
             case dis: DataInputStream     ⇒ dis
             case bis: BufferedInputStream ⇒ new DataInputStream(bis)
@@ -279,7 +288,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         }) { in ⇒ ClassFile(in) }
     }
 
-    protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): ClassFile = {
+    protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): Seq[ClassFile] = {
         process(
             new DataInputStream(new BufferedInputStream(jarFile.getInputStream(jarEntry)))
         ) { in ⇒ ClassFile(in) }
@@ -292,7 +301,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * @param jarFileEntryName The name of a class file stored in the specified ZIP/JAR file.
      */
     @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
-    def ClassFile(jarFile: File, jarFileEntryName: String): ClassFile = {
+    def ClassFile(jarFile: File, jarFileEntryName: String): Seq[ClassFile] = {
         if (jarFile.length() == 0)
             throw new java.io.IOException("the file "+jarFile+" is empty")
 
@@ -312,7 +321,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
      * @param jarFileEntryName the name of a class file stored in the specified ZIP/JAR file.
      */
     @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
-    def ClassFile(jarFilename: String, jarFileEntryName: String): ClassFile = {
+    def ClassFile(jarFilename: String, jarFileEntryName: String): Seq[ClassFile] = {
         ClassFile(new File(jarFilename), jarFileEntryName)
     }
 
@@ -377,8 +386,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                 if (jarEntryName.endsWith(".class")) {
                     try {
                         val url = new URL(jarFileURL + jarEntry.getName())
-                        val classFile = ClassFile(jarFile, jarEntry)
-                        classFileHandler(classFile, url)
+                        val classFiles = ClassFile(jarFile, jarEntry)
+                        classFiles foreach (classFile ⇒ classFileHandler(classFile, url))
                     } catch {
                         case e: Exception ⇒
                             exceptionHandler(new java.io.IOException("cannot process: "+jarEntryName, e))
@@ -458,7 +467,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             } else if (filename.endsWith(".class")) {
                 try {
                     process(new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) { in ⇒
-                        List((ClassFile(in), file.toURI().toURL()))
+                        ClassFile(in).map(classFile ⇒ (classFile, file.toURI().toURL()))
                     }
                 } catch {
                     case e: Exception ⇒

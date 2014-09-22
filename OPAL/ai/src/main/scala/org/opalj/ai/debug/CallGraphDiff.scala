@@ -47,11 +47,13 @@ import org.opalj.ai.project.VTACallGraphDomain
 import org.opalj.ai.project.DefaultVTACallGraphDomain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.analyses.Analysis
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Event
 import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.ProgressManagement
 import org.opalj.util.PerformanceEvaluation.ns2sec
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.project.CallGraph
@@ -63,14 +65,17 @@ import org.opalj.ai.project.CallGraph
  */
 object CallGraphDiff extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def title: String = "Identify differences between two call graphs."
 
         override def description: String = "Identifies methods that do not have the same call graph information."
 
-        override def analyze(project: Project[URL], parameters: Seq[String]) = {
-            val (unexpected, additional) = callGraphDiff(project, Console.println)
+        override def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
+            val (unexpected, additional) = callGraphDiff(project, Console.println, isInterrupted)
             if (unexpected.nonEmpty || additional.nonEmpty) {
                 var r = "Found the following difference(s):\n"
                 if (additional.nonEmpty) {
@@ -84,9 +89,12 @@ object CallGraphDiff extends AnalysisExecutor {
                 BasicReport("No differences found.")
         }
     }
+
     def callGraphDiff(
         project: Project[_],
-        println: String ⇒ Unit): (List[CallGraphDifferenceReport], List[CallGraphDifferenceReport]) = {
+        println: String ⇒ Unit,
+        isInterrupted: () ⇒ Boolean): (List[CallGraphDifferenceReport], List[CallGraphDifferenceReport]) = {
+        // TODO Add support for interrupting the calculation of the control-flow graph
         import CallGraphFactory.defaultEntryPointsForLibraries
         val entryPoints = defaultEntryPointsForLibraries(project)
         val ComputedCallGraph(lessPreciseCG, _, _) = time {
@@ -107,6 +115,9 @@ object CallGraphDiff extends AnalysisExecutor {
             )
         } { t ⇒ println("creating the less precise call graph took: "+ns2sec(t)) }
 
+        if (isInterrupted())
+            return null;
+
         val ComputedCallGraph(morePreciseCG, _, _) = time {
             CallGraphFactory.create(
                 project,
@@ -122,6 +133,10 @@ object CallGraphDiff extends AnalysisExecutor {
                         ) with domain.ConstantFieldValuesResolution[Source]
                 })
         } { t ⇒ println("creating the more precise call graph took: "+ns2sec(t)) }
+
+        if (isInterrupted())
+            return null;
+
         CallGraphComparison(project, lessPreciseCG, morePreciseCG)
     }
 }

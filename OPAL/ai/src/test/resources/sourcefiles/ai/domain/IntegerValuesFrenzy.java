@@ -506,7 +506,7 @@ public class IntegerValuesFrenzy {
         return hashlast; // 0 if 0 right from the start; non-zero in all other cases
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////////////////////////////////////
     // To catch the bugs in the following a "relational domain" (that puts two
     // difference values in relation) is needed.
     //
@@ -533,4 +533,16 @@ public class IntegerValuesFrenzy {
         else
             throw new Error();
     }
+
+    // Inspired by: java.awt.font.StyledParagraph.findRunContaining
+    static int findRunContaining(int index, int[] starts) {
+
+        for (int i = 1; true; i++) {
+            if (starts[i] > index) {
+                return i - 1;
+            }
+        }
+    }
+    // ORIGINAL ISSUE: LED TO AN EXCESSIVE NUMBER OF CONSTRAINTS BETWEEN INTEGER VALUES!
+
 }

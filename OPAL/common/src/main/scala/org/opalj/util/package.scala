@@ -29,6 +29,10 @@
 package org.opalj
 
 import java.io.File
+import java.io.IOException
+
+import scala.xml.Node
+import scala.util.control.ControlThrowable
 
 /**
  * Various helper methods.
@@ -38,10 +42,34 @@ import java.io.File
 package object util {
 
     /**
+     * Writes the XML document to a temporary file and opens the file in the
+     * OS's default application.
+     *
+     * @param filenamePrefix A string the identifies the content of the file. (E.g.,
+     *      "ClassHierarchy" or "CHACallGraph")
+     * @param filenameSuffix The suffix of the file that identifies the used file format.
+     *      (E.g., ".xhtml")
+     * @return The name of the file if it was possible to write the file and open
+     *      the native application.
+     */
+    @throws[IOException]("if it is not possible to create a temporary file")
+    @throws[OpeningFileFailedException]("if it is not possible to open the file")
+    def writeAndOpen(
+        node: Node,
+        filenamePrefix: String,
+        filenameSuffix: String): File = {
+
+        val data = node.toString
+        writeAndOpen(data, filenamePrefix, filenameSuffix)
+    }
+
+    /**
      * Writes the given string (`data`) to a temporary file using the given prefix and suffix.
      * Afterwards the system's native application that claims to be able to handle
      * files with the given suffix is opened. If this fails, the string is printed to
      * the console.
+     *
+     * The string is always written using UTF-8 as the encoding.
      *
      * @param filenamePrefix A string the identifies the content of the file. (E.g.,
      *      "ClassHierarchy" or "CHACallGraph")
@@ -49,29 +77,35 @@ package object util {
      *      (E.g., ".txt")
      * @return The name of the file if it was possible to write the file and open
      *      the native application.
+     * @example
+     *      Exemplary usage:
+     *      {{{
+     *      try {
+     *          util.writeAndOpen("The Message", "Result", ".txt")
+     *      } catch {
+     *          case OpeningFileFailedException(file, _) ⇒
+     *              Console.err.println("Details can be found in: "+file.toString)
+     *      }}}
      */
-    def writeAndOpenDesktopApplication(
+    @throws[IOException]("if it is not possible to create a temporary file")
+    @throws[OpeningFileFailedException]("if it is not possible to open the file")
+    def writeAndOpen(
         data: String,
         filenamePrefix: String,
-        filenameSuffix: String): Option[File] = {
+        filenameSuffix: String): File = {
+
+        val file = File.createTempFile(filenamePrefix, filenameSuffix)
+        process { new java.io.FileOutputStream(file) } { fos ⇒
+            fos.write(data.getBytes("UTF-8"))
+        }
 
         try {
-            val desktop = java.awt.Desktop.getDesktop()
-            val file = File.createTempFile(filenamePrefix, filenameSuffix)
-            process { new java.io.FileOutputStream(file) } { fos ⇒
-                fos.write(data.getBytes("UTF-8"))
-            }
-            desktop.open(file)
-            Some(file)
+            java.awt.Desktop.getDesktop().open(file)
         } catch {
-            case ct: scala.util.control.ControlThrowable ⇒ throw ct
-            case t: Throwable ⇒ {
-                Console.err.println(
-                    "An exception occured while writing/opening the file: "+
-                        t.getLocalizedMessage())
-                println(data)
-                None
-            }
+            case ct: ControlThrowable ⇒ throw ct
+            case t: Throwable         ⇒ new OpeningFileFailedException(file, t)
         }
+
+        file
     }
 }

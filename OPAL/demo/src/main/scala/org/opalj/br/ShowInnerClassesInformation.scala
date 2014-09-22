@@ -31,7 +31,7 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.Analysis
+import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -44,13 +44,14 @@ import org.opalj.br.analyses.Project
  */
 object ShowInnerClassesInformation extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description: String = "Prints out the inner classes tables."
 
-        def analyze(
+        def doAnalyze(
             project: Project[URL],
-            parameters: Seq[String] = List.empty): BasicReport = {
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean): BasicReport = {
 
             val messages =
                 for {

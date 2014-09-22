@@ -32,7 +32,7 @@ package ai
 import java.net.URL
 
 import org.opalj.collection.immutable.{ UIDSet, UIDSet1 }
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
+import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.{ ReferenceType }
 import org.opalj.br.MethodWithBody
@@ -67,13 +67,16 @@ object UselessComputations extends AnalysisExecutor {
         override protected def maxCardinalityOfIntegerRanges: Long = 4l
     }
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def title: String = "Useless Computations Identification"
 
         override def description: String = "Identifies computations that are useless, e.g., comparison against null if the value is known not be null."
 
-        override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
+        override def doAnalyze(
+            theProject: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
 
             val results = {
                 val results = for {

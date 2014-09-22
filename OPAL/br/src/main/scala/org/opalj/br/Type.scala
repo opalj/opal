@@ -29,71 +29,35 @@
 package org.opalj
 package br
 
+import java.lang.ref.WeakReference
+import java.util.WeakHashMap
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.ReentrantReadWriteLock
+
+import scala.math.Ordered
+import scala.collection.SortedSet
+
 import org.opalj.collection.UID
 import org.opalj.collection.immutable.UIDSet
-
-/**
- * The computational type category of a value on the operand stack.
- *
- * (cf. JVM Spec. 2.11.1 Types and the Java Virtual Machine).
- *
- * @author Michael Eichberg
- */
-sealed abstract class ComputationalTypeCategory(
-        val operandSize: Byte) {
-    /**
-     * Identifies the computational type category.
-     */
-    val id: Byte
-}
-case object Category1ComputationalTypeCategory
-        extends ComputationalTypeCategory(1) {
-    final val id /*: Byte*/ = 1.toByte
-}
-case object Category2ComputationalTypeCategory
-        extends ComputationalTypeCategory(2) {
-    final val id /*: Byte*/ = 2.toByte
-}
-
-/**
- * The computational type of a value on the operand stack.
- *
- * (cf. JVM Spec. 2.11.1 Types and the Java Virtual Machine).
- */
-sealed abstract class ComputationalType(
-        computationTypeCategory: ComputationalTypeCategory) {
-
-    def operandSize = computationTypeCategory.operandSize
-
-    def isComputationalTypeReturnAddress: Boolean
-
-    def category = computationTypeCategory.id
-
-}
-case object ComputationalTypeInt
-        extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isComputationalTypeReturnAddress = false
-}
-case object ComputationalTypeFloat
-        extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isComputationalTypeReturnAddress = false
-}
-case object ComputationalTypeReference
-        extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isComputationalTypeReturnAddress = false
-}
-case object ComputationalTypeReturnAddress
-        extends ComputationalType(Category1ComputationalTypeCategory) {
-    def isComputationalTypeReturnAddress = true
-}
-case object ComputationalTypeLong
-        extends ComputationalType(Category2ComputationalTypeCategory) {
-    def isComputationalTypeReturnAddress = false
-}
-case object ComputationalTypeDouble
-        extends ComputationalType(Category2ComputationalTypeCategory) {
-    def isComputationalTypeReturnAddress = false
-}
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.CHECKCAST
+import org.opalj.br.instructions.D2F
+import org.opalj.br.instructions.D2I
+import org.opalj.br.instructions.D2L
+import org.opalj.br.instructions.F2D
+import org.opalj.br.instructions.F2I
+import org.opalj.br.instructions.F2L
+import org.opalj.br.instructions.I2B
+import org.opalj.br.instructions.I2C
+import org.opalj.br.instructions.I2D
+import org.opalj.br.instructions.I2F
+import org.opalj.br.instructions.I2L
+import org.opalj.br.instructions.I2S
+import org.opalj.br.instructions.L2D
+import org.opalj.br.instructions.L2F
+import org.opalj.br.instructions.L2I
 
 /**
  * Represents a JVM type.
@@ -129,7 +93,7 @@ case object ComputationalTypeDouble
  *
  * @author Michael Eichberg
  */
-sealed abstract class Type extends UID with scala.math.Ordered[Type] {
+sealed abstract class Type extends UID with Ordered[Type] {
 
     /**
      * Returns `true` if this type can be used by fields. Returns `true` unless
@@ -146,41 +110,93 @@ sealed abstract class Type extends UID with scala.math.Ordered[Type] {
      * Returns `true` if this type is a base type (also called primitive type).
      */
     def isBaseType: Boolean = false
+
+    /**
+     * Returns `true` if this type is the primitive type `byte`.
+     */
     def isByteType: Boolean = false
+
+    /**
+     * Returns `true` if this type is the primitive type `char` (Range: [0..65535].
+     */
     def isCharType: Boolean = false
+
+    /**
+     * Returns `true` if this type is the primitive type `short`.
+     */
     def isShortType: Boolean = false
+
+    /**
+     * Returns `true` if this type is the primitive type `int`.
+     */
     def isIntegerType: Boolean = false
+
+    /**
+     * Returns `true` if this type is the primitive type `long`.
+     */
     def isLongType: Boolean = false
+
+    /**
+     * Returns `true` if this type is the primitive type `float`.
+     */
     def isFloatType: Boolean = false
+
+    /**
+     * Returns `true` if this type is the primitive type `double`.
+     */
     def isDoubleType: Boolean = false
+
+    /**
+     * Returns `true` if this type is the primitive type `boolean`.
+     */
     def isBooleanType: Boolean = false
 
     /**
      * Returns `true` if this type is a reference type; that is, an array type or an
      * object type (class/interface type).
-     * Each type is either:
      *
-     *  - a base type,
-     *  - a reference type or
+     * @note
+     * In general, we can distinguish the following three categories of types:
+     *  - base types,
+     *  - reference types,
      *  - the type void.
      */
     def isReferenceType: Boolean = false
     def isArrayType: Boolean = false
     def isObjectType: Boolean = false
 
+    /**
+     * The computational type of values of this type.
+     */
+    @throws[UnsupportedOperationException](
+        "if this type has no associated computational type(i.e., if this type represents void)"
+    )
     def computationalType: ComputationalType
 
+    @throws[ClassCastException]("if this type is not a reference type")
     def asReferenceType: ReferenceType =
         throw new ClassCastException(
             "a "+this.getClass.getSimpleName+" cannot be cast to a ReferenceType")
 
+    @throws[ClassCastException]("if this type is not an array type")
     def asArrayType: ArrayType =
         throw new ClassCastException(
             "a "+this.getClass.getSimpleName+" cannot be cast to an ArrayType")
 
+    @throws[ClassCastException]("if this type is not an object type")
     def asObjectType: ObjectType =
         throw new ClassCastException(
             "a "+this.getClass.getSimpleName+" cannot be cast to an ObjectType")
+
+    @throws[ClassCastException]("if this type is not a base type")
+    def asBaseType: BaseType =
+        throw new ClassCastException(
+            "a "+this.getClass().getSimpleName()+" cannot be cast to a BaseType")
+
+    @throws[ClassCastException]("if this type is not a field type")
+    def asFieldType: FieldType =
+        throw new ClassCastException(
+            "a "+this.getClass().getSimpleName()+" cannot be cast to a FieldType")
 
     /**
      * A String representation of this type as it would be used in Java source code.
@@ -191,14 +207,18 @@ sealed abstract class Type extends UID with scala.math.Ordered[Type] {
      * Returns the binary name of this type as used by the Java runtime. Basically
      * returns the same name as produced by `Class.getName`.
      */
+    @throws[UnsupportedOperationException](
+        "if this type has not binary name(i.e., if this type represents void)"
+    )
     def toBinaryJavaName: String
 
     /**
      * Returns the Java class object representing this type.
      *
-     * This is generally only useful in very special cases and – to be meaningful at all –
-     * it is necessary that the class path used for running the static analysis also
-     * contains the classes that are analyzed. This is (often) only the case for the JDK.
+     * '''This is generally only useful in very special cases and – to be meaningful at
+     * all – it is necessary that the class path used for running the static analysis also
+     * contains the classes that are analyzed. This is (often) only the case for the
+     * JDK. '''
      *
      * However, one example where this is useful is the creation of a real object of
      * a specific type and to use that object when a method is called on that object.
@@ -219,6 +239,13 @@ sealed abstract class Type extends UID with scala.math.Ordered[Type] {
      */
     def id: Int
 
+    /**
+     * Compares this type with the given type.
+     *
+     * Comparison of types is implemented by comparing the associated ids. I.e.,
+     * the result of the comparison of two types is '''not stable''' across multiple
+     * runs of OPAL.
+     */
     override def compare(that: Type): Int = {
         if (this eq that)
             0
@@ -228,13 +255,11 @@ sealed abstract class Type extends UID with scala.math.Ordered[Type] {
             1
     }
 
-    /**
-     * Compares this type with the other type by comparing their ids.
-     */
     override def <(other: Type) = this.id < other.id
     override def >(other: Type) = this.id > other.id
     override def >=(other: Type) = this.id >= other.id
     override def <=(other: Type) = this.id <= other.id
+
 }
 
 object ReturnType {
@@ -244,29 +269,30 @@ object ReturnType {
 }
 
 /**
- * Represents the Java keyword `void`.
+ * Represents the Java type/keyword `void`.
  *
  * @author Michael Eichberg
  */
 sealed abstract class VoidType private () extends Type with ReturnTypeSignature {
 
+    final val id = Int.MinValue
+
     final override def isVoidType = true
 
     final override def computationalType: ComputationalType =
-        throw new UnsupportedOperationException("\"void\" does not have a computational type")
+        throw new UnsupportedOperationException("void does not have a computational type")
 
     final override def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def toJava: String = "void"
 
     override def toBinaryJavaName: String =
-        throw new UnsupportedOperationException("the void type does not have a Java binary name")
+        throw new UnsupportedOperationException("void does not have a binary name")
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Void.TYPE
 
     override def toString() = "VoidType"
 
-    final val id = Int.MinValue
 }
 case object VoidType extends VoidType
 
@@ -278,9 +304,22 @@ case object VoidType extends VoidType
 sealed abstract class FieldType extends Type {
 
     final override def isFieldType = true
+
+    final override def asFieldType: this.type = this
+
+    /**
+     * Returns the sequence of instructions that adapts values of `this` type to values
+     * of the target type.
+     *
+     * This method supports the following kind of adaptations:
+     *  - boxing
+     *  - unboxing
+     */
+    @throws[IllegalArgumentException]("if a(n) (un)boxing to the targetType is not possible")
+    def adapt(targetType: Type): Array[Instruction]
 }
 /**
- * Factory object to parse field type (descriptors) to get field type objects.
+ * Factory to parse field type (descriptors) to get field type objects.
  */
 object FieldType {
 
@@ -317,7 +356,7 @@ sealed abstract class ReferenceType extends FieldType {
 
 }
 /**
- * Defines a factory method to create instances of `ReferenceType`
+ * Factory to create instances of `ReferenceType`.
  */
 object ReferenceType {
 
@@ -338,23 +377,127 @@ sealed abstract class BaseType extends FieldType with TypeSignature {
 
     final override def isBaseType = true
 
+    final override def asBaseType: this.type = this
+
+    /**
+     * The atype value of the base type. The atype value uniquely identifies a base
+     * type and is used primarily by the [instruction.NEWARRAY] instruction.
+     */
     def atype: Int
 
     val WrapperType: ObjectType
 
+    def boxValue: Array[Instruction]
+
+    final override def adapt(targetType: Type): Array[Instruction] =
+        if ((targetType eq `WrapperType`) || (targetType eq ObjectType.Object))
+            boxValue
+        else
+            throw new IllegalArgumentException(
+                s"adaptation of ${this.toJava} to ${targetType} is not supported"
+            )
 }
 
-sealed abstract class ByteType private () extends BaseType {
+/**
+ * Common constants related to base types (aka. primitive types).
+ */
+object BaseType {
 
-    final override def isByteType = true
+    implicit val BaseTypeOrdering =
+        new Ordering[BaseType] {
+            def compare(a: BaseType, b: BaseType): Int = a.compare(b)
+        }
 
-    final override def computationalType = ComputationalTypeInt
+    /**
+     * The set of [BaseType]s sorted by the type's id.
+     */
+    final val baseTypes: SortedSet[BaseType] =
+        SortedSet[BaseType](
+            BooleanType,
+            ByteType, CharType, ShortType, IntegerType, // <= "IntLike" values
+            LongType,
+            FloatType,
+            DoubleType)
+}
+
+sealed abstract class NumericType protected () extends BaseType {
+
+    /**
+     * Returns the instruction sequence that can convert a value of the current
+     * type to `targetType`.
+     *
+     * For primitive values the appropriate instructions that perform the necessary
+     * widening/narrowing are returned. If this type
+     * is a primitive type and the target type is a wrapper type, then the object of
+     * the corresponding wrapper type is created and returned.
+     *
+     * @note The functionality implemented here, basically implements the logic
+     *      for handling boxing and unboxing operations.
+     *
+     * @return This default implementation throws an `IllegalArgumentException`.
+     */
+    def convertTo(targetType: NumericType): Array[Instruction]
+
+    /**
+     * Determines if the range of values captured by `this` type is a '''strict'''
+     * superset of the range of values captured by values of type `targetType`. Here,
+     * strict superset means that – except of rounding issues – the value is conceptually
+     * representable by `this` type. For example, a conversion from a `long` value to a
+     * `double` value may loose some precision related to the least significant bits,
+     * but the value is still representable.
+     *
+     * In general, the result of `isWiderThan` is comparable to the result of determing
+     * if a conversion of a value of this type to the given type is an explicit/implicit
+     * widening conversion.
+     *
+     * @example
+     * {{{
+     * assert(IntegerType.isWiderThan(IntegerType) == false)
+     * assert(IntegerType.isWiderThan(LongType) == false)
+     * assert(IntegerType.isWiderThan(ByteType) == true)
+     * assert(LongType.isWiderThan(FloatType) == false)
+     * assert(ByteType.isWiderThan(CharType) == false)
+     * assert(LongType.isWiderThan(ShortType) == true)
+     * }}}
+     */
+    def isWiderThan(targetType: NumericType): Boolean
+
+}
+
+object NumericType {
+
+    final val IntToByte: Array[Instruction] = Array(I2B)
+    final val IntToChar: Array[Instruction] = Array(I2C)
+    final val IntToDouble: Array[Instruction] = Array(I2D)
+    final val IntToFloat: Array[Instruction] = Array(I2F)
+    final val IntToLong: Array[Instruction] = Array(I2L)
+    final val IntToShort: Array[Instruction] = Array(I2S)
+
+}
+
+/**
+ * An IntLikeType is every type (byte, char, short and int) that uses a primtive int
+ * to store the current value and which has explicit support in the JVM.
+ *
+ * @note `Boolean` values are (at least conceptually) also stored in ints. However, the
+ *      JVM has basically no explicit support for booleans (e.g., a conversion of an int
+ *      value to a boolean is not directly supported).
+ */
+sealed abstract class IntLikeType protected () extends NumericType {
+
+}
+
+sealed abstract class ByteType private () extends IntLikeType {
 
     final val atype = 8
 
     final val id = Int.MinValue + atype
 
     final val WrapperType = ObjectType.Byte
+
+    final override def isByteType = true
+
+    final override def computationalType = ComputationalTypeInt
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -365,10 +508,52 @@ sealed abstract class ByteType private () extends BaseType {
     override def toJavaClass: java.lang.Class[_] = java.lang.Byte.TYPE
 
     override def toString() = "ByteType"
-}
-case object ByteType extends ByteType
 
-sealed abstract class CharType private () extends BaseType {
+    override def isWiderThan(targetType: NumericType): Boolean = false
+
+    override def convertTo(targetType: NumericType): Array[Instruction] = {
+        (targetType.id: @scala.annotation.switch) match {
+            case ByteType.id |
+                ShortType.id |
+                IntegerType.id ⇒ Array.empty
+            case CharType.id   ⇒ NumericType.IntToChar
+            case LongType.id   ⇒ NumericType.IntToLong
+            case FloatType.id  ⇒ NumericType.IntToFloat
+            case DoubleType.id ⇒ NumericType.IntToDouble
+        }
+    }
+
+    override def boxValue: Array[Instruction] = ByteType.primitiveByteToLangByte
+
+}
+case object ByteType extends ByteType {
+
+    final lazy val langByteToPrimitiveByte: Array[Instruction] =
+        Array(
+            INVOKEVIRTUAL(
+                ObjectType.Byte,
+                "byteValue",
+                MethodDescriptor.JustReturnsByte),
+            null,
+            null)
+
+    final lazy val primitiveByteToLangByte: Array[Instruction] =
+        Array(
+            INVOKESTATIC(
+                ObjectType.Byte,
+                "valueOf",
+                MethodDescriptor(ByteType, ObjectType.Byte)),
+            null,
+            null)
+}
+
+sealed abstract class CharType private () extends IntLikeType {
+
+    final val atype = 5
+
+    final val id = Int.MinValue + atype
+
+    final val WrapperType = ObjectType.Character
 
     final override def isCharType = true
 
@@ -376,25 +561,52 @@ sealed abstract class CharType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-    final val atype = 5
-
-    final val id = Int.MinValue + atype
-
     def toJava: String = "char"
 
     override def toBinaryJavaName: String = "C"
 
-    final val WrapperType = ObjectType.Char
-
-    override def toJavaClass: java.lang.Class[_] =
-        java.lang.Character.TYPE
+    override def toJavaClass: java.lang.Class[_] = java.lang.Character.TYPE
 
     override def toString() = "CharType"
 
-}
-case object CharType extends CharType
+    override def isWiderThan(targetType: NumericType): Boolean = false
 
-sealed abstract class DoubleType private () extends BaseType {
+    override def convertTo(targetType: NumericType): Array[Instruction] = {
+        (targetType.id: @scala.annotation.switch) match {
+            case ByteType.id                  ⇒ NumericType.IntToByte
+            case ShortType.id                 ⇒ NumericType.IntToShort
+            case CharType.id | IntegerType.id ⇒ Array.empty
+            case LongType.id                  ⇒ NumericType.IntToLong
+            case FloatType.id                 ⇒ NumericType.IntToFloat
+            case DoubleType.id                ⇒ NumericType.IntToDouble
+        }
+    }
+
+    override def boxValue: Array[Instruction] = CharType.primitiveCharToLangCharacter
+
+}
+case object CharType extends CharType {
+
+    final lazy val langCharacterToPrimitiveChar: Array[Instruction] =
+        Array(
+            INVOKEVIRTUAL(
+                ObjectType.Character,
+                "charValue",
+                MethodDescriptor.JustReturnsChar),
+            null,
+            null)
+
+    final lazy val primitiveCharToLangCharacter: Array[Instruction] =
+        Array(
+            INVOKESTATIC(
+                ObjectType.Character,
+                "valueOf",
+                MethodDescriptor(CharType, ObjectType.Character)),
+            null,
+            null)
+}
+
+sealed abstract class DoubleType private () extends NumericType {
 
     final override def isDoubleType = true
 
@@ -417,10 +629,58 @@ sealed abstract class DoubleType private () extends BaseType {
 
     override def toString() = "DoubleType"
 
-}
-case object DoubleType extends DoubleType
+    override def isWiderThan(targetType: NumericType): Boolean = targetType ne this
 
-sealed abstract class FloatType private () extends BaseType {
+    override def convertTo(targetType: NumericType): Array[Instruction] = {
+        (targetType.id: @scala.annotation.switch) match {
+            case ByteType.id    ⇒ DoubleType.Double2Byte
+            case CharType.id    ⇒ DoubleType.Double2Char
+            case ShortType.id   ⇒ DoubleType.Double2Short
+            case IntegerType.id ⇒ DoubleType.Double2Integer
+            case LongType.id    ⇒ DoubleType.Double2Long
+            case FloatType.id   ⇒ DoubleType.Double2Float
+            case DoubleType.id  ⇒ Array.empty
+        }
+    }
+
+    override def boxValue: Array[Instruction] = DoubleType.primitiveDoubleToLangDouble
+
+}
+case object DoubleType extends DoubleType {
+
+    final val Double2Byte: Array[Instruction] = Array(D2I, I2B)
+    final val Double2Char: Array[Instruction] = Array(D2I, I2C)
+    final val Double2Short: Array[Instruction] = Array(D2I, I2S)
+    final val Double2Float: Array[Instruction] = Array(D2F)
+    final val Double2Integer: Array[Instruction] = Array(D2I)
+    final val Double2Long: Array[Instruction] = Array(D2L)
+
+    final lazy val langDoubleToPrimitiveDouble: Array[Instruction] =
+        Array(
+            INVOKEVIRTUAL(
+                ObjectType.Double,
+                "doubleValue",
+                MethodDescriptor.JustReturnsDouble),
+            null,
+            null)
+
+    final lazy val primitiveDoubleToLangDouble: Array[Instruction] =
+        Array(
+            INVOKESTATIC(
+                ObjectType.Double,
+                "valueOf",
+                MethodDescriptor(DoubleType, ObjectType.Double)),
+            null,
+            null)
+}
+
+sealed abstract class FloatType private () extends NumericType {
+
+    final val atype = 6
+
+    final val id = Int.MinValue + atype
+
+    final val WrapperType = ObjectType.Float
 
     final override def isFloatType = true
 
@@ -428,25 +688,67 @@ sealed abstract class FloatType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-    final val atype = 6
-
-    final val id = Int.MinValue + atype
-
     def toJava: String = "float"
 
     override def toBinaryJavaName: String = "F"
 
-    final val WrapperType = ObjectType.Float
-
-    override def toJavaClass: java.lang.Class[_] =
-        java.lang.Float.TYPE
+    override def toJavaClass: java.lang.Class[_] = java.lang.Float.TYPE
 
     override def toString() = "FloatType"
 
-}
-case object FloatType extends FloatType
+    override def isWiderThan(targetType: NumericType): Boolean =
+        (targetType ne DoubleType) && (targetType ne this)
 
-sealed abstract class ShortType private () extends BaseType {
+    override def convertTo(targetType: NumericType): Array[Instruction] = {
+        (targetType.id: @scala.annotation.switch) match {
+            case ByteType.id    ⇒ FloatType.Float2Byte
+            case CharType.id    ⇒ FloatType.Float2Char
+            case ShortType.id   ⇒ FloatType.Float2Short
+            case IntegerType.id ⇒ FloatType.Float2Integer
+            case LongType.id    ⇒ FloatType.Float2Long
+            case FloatType.id   ⇒ Array.empty
+            case DoubleType.id  ⇒ FloatType.Float2Double
+        }
+    }
+
+    override def boxValue: Array[Instruction] = FloatType.primitiveFloatToLangFloat
+
+}
+case object FloatType extends FloatType {
+
+    final val Float2Byte: Array[Instruction] = Array(F2I, I2B)
+    final val Float2Char: Array[Instruction] = Array(F2I, I2C)
+    final val Float2Short: Array[Instruction] = Array(F2I, I2S)
+    final val Float2Double: Array[Instruction] = Array(F2D)
+    final val Float2Integer: Array[Instruction] = Array(F2I)
+    final val Float2Long: Array[Instruction] = Array(F2L)
+
+    final lazy val langFloatToPrimitiveFloat: Array[Instruction] =
+        Array(
+            INVOKEVIRTUAL(
+                ObjectType.Float,
+                "floatValue",
+                MethodDescriptor.JustReturnsFloat),
+            null,
+            null)
+
+    final lazy val primitiveFloatToLangFloat: Array[Instruction] =
+        Array(
+            INVOKESTATIC(
+                ObjectType.Float,
+                "valueOf",
+                MethodDescriptor(FloatType, ObjectType.Float)),
+            null,
+            null)
+}
+
+sealed abstract class ShortType private () extends IntLikeType {
+
+    final val atype = 9
+
+    final val id = Int.MinValue + atype
+
+    final val WrapperType = ObjectType.Short
 
     final override def isShortType = true
 
@@ -454,25 +756,59 @@ sealed abstract class ShortType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-    final val atype = 9
-
-    final val id = Int.MinValue + atype
-
     def toJava: String = "short"
 
     override def toBinaryJavaName: String = "S"
 
-    final val WrapperType = ObjectType.Short
-
-    override def toJavaClass: java.lang.Class[_] =
-        java.lang.Short.TYPE
+    override def toJavaClass: java.lang.Class[_] = java.lang.Short.TYPE
 
     override def toString() = "ShortType"
 
-}
-case object ShortType extends ShortType
+    override def isWiderThan(targetType: NumericType): Boolean = targetType eq ByteType
 
-sealed abstract class IntegerType private () extends BaseType {
+    override def convertTo(targetType: NumericType): Array[Instruction] = {
+        (targetType.id: @scala.annotation.switch) match {
+            case ByteType.id    ⇒ NumericType.IntToByte
+            case ShortType.id   ⇒ Array.empty
+            case CharType.id    ⇒ NumericType.IntToChar
+            case IntegerType.id ⇒ Array.empty
+            case LongType.id    ⇒ NumericType.IntToLong
+            case FloatType.id   ⇒ NumericType.IntToFloat
+            case DoubleType.id  ⇒ NumericType.IntToDouble
+        }
+    }
+
+    override def boxValue: Array[Instruction] = ShortType.primitiveShortToLangShort
+
+}
+case object ShortType extends ShortType {
+
+    final lazy val langShortToPrimitiveShort: Array[Instruction] =
+        Array(
+            INVOKEVIRTUAL(
+                ObjectType.Short,
+                "shortValue",
+                MethodDescriptor.JustReturnsShort),
+            null,
+            null)
+
+    final lazy val primitiveShortToLangShort: Array[Instruction] =
+        Array(
+            INVOKESTATIC(
+                ObjectType.Short,
+                "valueOf",
+                MethodDescriptor(ShortType, ObjectType.Short)),
+            null,
+            null)
+}
+
+sealed abstract class IntegerType private () extends IntLikeType {
+
+    final val atype = 10
+
+    final val id = Int.MinValue + atype
+
+    final val WrapperType = ObjectType.Integer
 
     final override def isIntegerType = true
 
@@ -480,25 +816,63 @@ sealed abstract class IntegerType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-    final val atype = 10
-
-    final val id = Int.MinValue + atype
-
     def toJava: String = "int"
 
     override def toBinaryJavaName: String = "I"
 
-    final val WrapperType = ObjectType.Integer
-
-    override def toJavaClass: java.lang.Class[_] =
-        java.lang.Integer.TYPE
+    override def toJavaClass: java.lang.Class[_] = java.lang.Integer.TYPE
 
     override def toString() = "IntegerType"
 
-}
-case object IntegerType extends IntegerType
+    override def isWiderThan(targetType: NumericType): Boolean =
+        (targetType.id: @scala.annotation.switch) match {
+            case ShortType.id | CharType.id | ByteType.id ⇒ true
+            case _                                        ⇒ false
+        }
 
-sealed abstract class LongType private () extends BaseType {
+    override def convertTo(targetType: NumericType): Array[Instruction] = {
+        (targetType.id: @scala.annotation.switch) match {
+            case ByteType.id    ⇒ NumericType.IntToByte
+            case ShortType.id   ⇒ NumericType.IntToShort
+            case CharType.id    ⇒ NumericType.IntToChar
+            case IntegerType.id ⇒ Array.empty
+            case LongType.id    ⇒ NumericType.IntToLong
+            case FloatType.id   ⇒ NumericType.IntToFloat
+            case DoubleType.id  ⇒ NumericType.IntToDouble
+        }
+    }
+
+    override def boxValue: Array[Instruction] = IntegerType.primitiveIntToLangInteger
+
+}
+case object IntegerType extends IntegerType {
+
+    final lazy val langIntegerToPrimitiveInt: Array[Instruction] =
+        Array(
+            INVOKEVIRTUAL(
+                ObjectType.Integer,
+                "intValue",
+                MethodDescriptor.JustReturnsInteger),
+            null,
+            null)
+
+    final lazy val primitiveIntToLangInteger: Array[Instruction] =
+        Array(
+            INVOKESTATIC(
+                ObjectType.Integer,
+                "valueOf",
+                MethodDescriptor(IntegerType, ObjectType.Integer)),
+            null,
+            null)
+}
+
+sealed abstract class LongType private () extends NumericType {
+
+    final val atype = 11
+
+    final val id = Int.MinValue + atype
+
+    final val WrapperType = ObjectType.Long
 
     final override def isLongType = true
 
@@ -506,25 +880,74 @@ sealed abstract class LongType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-    final val atype = 11
-
-    final val id = Int.MinValue + atype
-
     def toJava: String = "long"
 
     override def toBinaryJavaName: String = "J"
 
-    final val WrapperType = ObjectType.Long
-
-    override def toJavaClass: java.lang.Class[_] =
-        java.lang.Long.TYPE
+    override def toJavaClass: java.lang.Class[_] = java.lang.Long.TYPE
 
     override def toString() = "LongType"
 
-}
-case object LongType extends LongType
+    override def isWiderThan(targetType: NumericType): Boolean =
+        targetType.isInstanceOf[IntLikeType]
 
+    override def convertTo(targetType: NumericType): Array[Instruction] = {
+        (targetType.id: @scala.annotation.switch) match {
+            case ByteType.id    ⇒ LongType.Long2Byte
+            case CharType.id    ⇒ LongType.Long2Char
+            case ShortType.id   ⇒ LongType.Long2Short
+            case IntegerType.id ⇒ LongType.Long2Integer
+            case LongType.id    ⇒ Array.empty
+            case FloatType.id   ⇒ LongType.Long2Float
+            case DoubleType.id  ⇒ LongType.Long2Double
+        }
+    }
+
+    override def boxValue: Array[Instruction] = LongType.primitiveLongToLangLong
+
+}
+case object LongType extends LongType {
+
+    final val Long2Byte: Array[Instruction] = Array(L2I, I2B)
+    final val Long2Char: Array[Instruction] = Array(L2I, I2C)
+    final val Long2Short: Array[Instruction] = Array(L2I, I2S)
+    final val Long2Double: Array[Instruction] = Array(L2D)
+    final val Long2Float: Array[Instruction] = Array(L2F)
+    final val Long2Integer: Array[Instruction] = Array(L2I)
+
+    final lazy val langLongToPrimitiveLong: Array[Instruction] =
+        Array(
+            INVOKEVIRTUAL(
+                ObjectType.Long,
+                "longValue",
+                MethodDescriptor.JustReturnsLong),
+            null,
+            null)
+
+    final lazy val primitiveLongToLangLong: Array[Instruction] =
+        Array(
+            INVOKESTATIC(
+                ObjectType.Long,
+                "valueOf",
+                MethodDescriptor(LongType, ObjectType.Long)),
+            null,
+            null)
+}
+
+/**
+ * The type of boolean values (true=1, false=0).
+ *
+ * Though the JVM internally uses an int value to store a boolean value the VM offers
+ * no special further support for handling booleans. In particular the conversion of
+ * some "byte|short|char|int" value to an int value is not directly supported.
+ */
 sealed abstract class BooleanType private () extends BaseType {
+
+    final val atype = 4
+
+    final val id = Int.MinValue + atype
+
+    final val WrapperType = ObjectType.Boolean
 
     final override def isBooleanType = true
 
@@ -532,23 +955,37 @@ sealed abstract class BooleanType private () extends BaseType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
-    final val atype = 4
-
-    final val id = Int.MinValue + atype
-
     final val toJava /*: String*/ = "boolean"
 
     override def toBinaryJavaName: String = "Z"
 
-    final val WrapperType = ObjectType.Boolean
-
-    override def toJavaClass: java.lang.Class[_] =
-        java.lang.Boolean.TYPE
+    override def toJavaClass: java.lang.Class[_] = java.lang.Boolean.TYPE
 
     override def toString() = "BooleanType"
 
+    override def boxValue: Array[Instruction] = BooleanType.primitiveBooleanToLangBoolean
+
 }
-case object BooleanType extends BooleanType
+case object BooleanType extends BooleanType {
+
+    final lazy val langBooleanToPrimitiveBoolean: Array[Instruction] =
+        Array(
+            INVOKEVIRTUAL(
+                ObjectType.Boolean,
+                "booleanValue",
+                MethodDescriptor.JustReturnsBoolean),
+            null,
+            null)
+
+    final lazy val primitiveBooleanToLangBoolean: Array[Instruction] =
+        Array(
+            INVOKESTATIC(
+                ObjectType.Boolean,
+                "valueOf",
+                MethodDescriptor(BooleanType, ObjectType.Boolean)),
+            null,
+            null)
+}
 
 /**
  * Represents an `ObjectType`.
@@ -571,6 +1008,9 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
         thisId <= ObjectType.javaLangDoubleId && thisId >= ObjectType.javaLangBooleanId
     }
 
+    final def isPrimitiveTypeWrapperOf(baseType: BaseType): Boolean =
+        isPrimitiveTypeWrapper && (ObjectType.primitiveType(this).get eq baseType)
+
     def simpleName: String = ObjectType.simpleName(fqn)
 
     def packageName: String = ObjectType.packageName(fqn)
@@ -581,6 +1021,11 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJavaClass: java.lang.Class[_] =
         classOf[Type].getClassLoader().loadClass(toJava)
+
+    def unboxValue: Array[Instruction] = ObjectType.unboxValue(this)
+
+    override def adapt(targetType: Type): Array[Instruction] =
+        ObjectType.unboxValue(targetType)
 
     override def toString = "ObjectType("+fqn+")"
 
@@ -697,7 +1142,7 @@ object ObjectType {
     final val Boolean = ObjectType("java/lang/Boolean")
 
     final val Byte = ObjectType("java/lang/Byte")
-    final val Char = ObjectType("java/lang/Char")
+    final val Character = ObjectType("java/lang/Character")
     final val Short = ObjectType("java/lang/Short")
     final val Integer = ObjectType("java/lang/Integer")
     final val Long = ObjectType("java/lang/Long")
@@ -766,13 +1211,36 @@ object ObjectType {
         val a = new Array[BaseType](Double.id + 1)
         a(Boolean.id) = BooleanType
         a(Byte.id) = ByteType
-        a(Char.id) = CharType
+        a(Character.id) = CharType
         a(Short.id) = ShortType
         a(Integer.id) = IntegerType
         a(Long.id) = LongType
         a(Float.id) = FloatType
         a(Double.id) = DoubleType
         a
+    }
+
+    private[this] lazy val unboxInstructions: Array[Array[Instruction]] = {
+        val a = new Array[Array[Instruction]](Double.id + 1)
+        a(Boolean.id) = BooleanType.langBooleanToPrimitiveBoolean
+        a(Byte.id) = ByteType.langByteToPrimitiveByte
+        a(Character.id) = CharType.langCharacterToPrimitiveChar
+        a(Short.id) = ShortType.langShortToPrimitiveShort
+        a(Integer.id) = IntegerType.langIntegerToPrimitiveInt
+        a(Long.id) = LongType.langLongToPrimitiveLong
+        a(Float.id) = FloatType.langFloatToPrimitiveFloat
+        a(Double.id) = DoubleType.langDoubleToPrimitiveDouble
+        a
+    }
+
+    def unboxValue(wrapperType: Type): Array[Instruction] = {
+        val wid = wrapperType.id
+        if (wid >= Boolean.id && wid <= Double.id)
+            unboxInstructions(wid)
+        else
+            throw new UnsupportedOperationException(
+                s"unboxing ${wrapperType.toJava} values is not supported"
+            )
     }
 
     /**
@@ -882,14 +1350,15 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toBinaryJavaName: String = "["+componentType.toBinaryJavaName
 
-    override def toJavaClass: java.lang.Class[_] = {
+    override def toJavaClass: java.lang.Class[_] =
         java.lang.Class.forName(toBinaryJavaName)
-    }
+
+    override def adapt(targetType: Type): Array[Instruction] =
+        throw new UnsupportedOperationException("adaptation of array values is not supported")
 
     // The default equals and hashCode methods are a perfect fit.
 
     override def toString = "ArrayType("+componentType.toString+")"
-
 }
 
 /**

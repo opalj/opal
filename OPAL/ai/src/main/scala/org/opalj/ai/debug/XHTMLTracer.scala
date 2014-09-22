@@ -32,9 +32,7 @@ package debug
 
 import scala.language.existentials
 
-import org.opalj.ai.debug.XHTML.dumpLocals
-import org.opalj.ai.debug.XHTML.dumpStack
-import org.opalj.ai.debug.XHTML.writeAndOpenDump
+import org.opalj.util.writeAndOpen
 import org.opalj.br.Code
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.br.instructions.FieldAccess
@@ -42,6 +40,8 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.StaticMethodInvocationInstruction
+import org.opalj.ai.debug.XHTML.dumpLocals
+import org.opalj.ai.debug.XHTML.dumpStack
 
 case class FlowEntity(
         pc: PC,
@@ -370,7 +370,11 @@ trait XHTMLTracer extends AITracer {
         pc: Option[PC], message: ⇒ String): Unit = { /*EMPTY*/ }
 
     def result(result: AIResult): Unit = {
-        writeAndOpenDump(dumpXHTML((new java.util.Date).toString()))
+        writeAndOpen(
+            dumpXHTML((new java.util.Date).toString()),
+            "TraceOfAbstractInterpretation",
+            ".html"
+        )
     }
 
 }

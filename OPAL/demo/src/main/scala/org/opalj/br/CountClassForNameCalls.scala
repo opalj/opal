@@ -31,7 +31,7 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 import org.opalj.br.instructions.INVOKESTATIC
 
 /**
@@ -42,12 +42,15 @@ import org.opalj.br.instructions.INVOKESTATIC
 // Demonstrates how to do pattern matching of instructions and how to use the `AnalysisExecutor`.
 object CountClassForNameCalls extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description: String =
             "Counts the number of times Class.forName is called."
 
-        def analyze(project: Project[URL], parameters: Seq[String]) = {
+        def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             var classForNameCount = 0
 
             import ObjectType.{ String, Class }

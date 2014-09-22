@@ -29,7 +29,7 @@
 package org.opalj
 package br
 
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
 
 /**
@@ -37,12 +37,16 @@ import java.net.URL
  */
 object MaxLocalsEvaluation extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description: String =
             "Collects information about the maxium number of registers required per method."
 
-        def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
+        def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
+
             import scala.collection.immutable.TreeMap // <= Sorted...
             var methodParametersDistribution: Map[Int, Int] = TreeMap.empty
             var maxLocalsDistrbution: Map[Int, Int] = TreeMap.empty

@@ -370,16 +370,35 @@ object MethodDescriptor {
     final val SignaturePolymorphicMethod: MethodDescriptor =
         new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
 
-    final val JustReturnsBoolean: MethodDescriptor = new NoArgumentMethodDescriptor(BooleanType)
-    final val JustReturnsByte: MethodDescriptor = new NoArgumentMethodDescriptor(ByteType)
-    final val JustReturnsShort: MethodDescriptor = new NoArgumentMethodDescriptor(ShortType)
-    final val JustReturnsChar: MethodDescriptor = new NoArgumentMethodDescriptor(CharType)
-    final val JustReturnsInteger: MethodDescriptor = new NoArgumentMethodDescriptor(IntegerType)
-    final val JustReturnsFloat: MethodDescriptor = new NoArgumentMethodDescriptor(FloatType)
-    final val JustReturnsDouble: MethodDescriptor = new NoArgumentMethodDescriptor(DoubleType)
-    final val JustReturnsLong: MethodDescriptor = new NoArgumentMethodDescriptor(LongType)
-    final val JustReturnsObject: MethodDescriptor = new NoArgumentMethodDescriptor(ObjectType.Object)
-    final val JustReturnsString: MethodDescriptor = new NoArgumentMethodDescriptor(ObjectType.String)
+    final val JustReturnsBoolean: MethodDescriptor =
+        new NoArgumentMethodDescriptor(BooleanType)
+
+    final val JustReturnsByte: MethodDescriptor =
+        new NoArgumentMethodDescriptor(ByteType)
+
+    final val JustReturnsShort: MethodDescriptor =
+        new NoArgumentMethodDescriptor(ShortType)
+
+    final val JustReturnsChar: MethodDescriptor =
+        new NoArgumentMethodDescriptor(CharType)
+
+    final val JustReturnsInteger: MethodDescriptor =
+        new NoArgumentMethodDescriptor(IntegerType)
+
+    final val JustReturnsFloat: MethodDescriptor =
+        new NoArgumentMethodDescriptor(FloatType)
+
+    final val JustReturnsDouble: MethodDescriptor =
+        new NoArgumentMethodDescriptor(DoubleType)
+
+    final val JustReturnsLong: MethodDescriptor =
+        new NoArgumentMethodDescriptor(LongType)
+
+    final val JustReturnsObject: MethodDescriptor =
+        new NoArgumentMethodDescriptor(ObjectType.Object)
+
+    final val JustReturnsString: MethodDescriptor =
+        new NoArgumentMethodDescriptor(ObjectType.String)
 
     def withNoArgs(returnType: Type): MethodDescriptor = {
         (returnType.id: @scala.annotation.switch) match {

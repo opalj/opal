@@ -83,7 +83,10 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
     override def description = "Performs an abstract interpretation of all methods."
 
-    override def analyze(project: Project[Source], parameters: Seq[String] = List.empty) = {
+    override def analyze(
+        project: Project[Source],
+        parameters: Seq[String] = List.empty,
+        initProgressManagement: (Int) ⇒ ProgressManagement) = {
         val verbose = parameters.size > 0 &&
             (parameters(0) == "-verbose=true" ||
                 (parameters.size == 2 && parameters.tail.head == "-verbose=true"))
@@ -92,12 +95,14 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
                 InterpretMethodsAnalysis.interpret(
                     project,
                     Class.forName(parameters.head.substring(8)).asInstanceOf[Class[_ <: Domain]],
-                    verbose)
+                    verbose,
+                    initProgressManagement)
             } else {
                 InterpretMethodsAnalysis.interpret(
                     project,
                     classOf[domain.l0.BaseDomain[java.net.URL]],
-                    verbose)
+                    verbose,
+                    initProgressManagement)
 
             }
         BasicReport(
@@ -117,7 +122,10 @@ object InterpretMethodsAnalysis {
         project: Project[Source],
         domainClass: Class[_ <: Domain],
         beVerbose: Boolean,
+        initProgressManagement: (Int) ⇒ ProgressManagement,
         maxEvaluationFactor: Int = 10): (String, Option[File]) = {
+
+        // TODO Add support for reporting the progress and to interrupt the analysis.
 
         import Console.{ BOLD, RED, YELLOW, GREEN, RESET }
         import org.opalj.util.PerformanceEvaluation.ns2sec
@@ -219,7 +227,10 @@ object InterpretMethodsAnalysis {
                 XHTML.createXHTML(
                     Some("Exceptions Thrown During Interpretation"),
                     scala.xml.NodeSeq.fromSeq(body.toSeq))
-            val file = XHTML.writeAndOpenDump(node)
+            val file =
+                org.opalj.util.writeAndOpen(
+                    node,
+                    "ExceptionsOfCrashedAbstractInterpretations", ".html")
 
             (
                 "During the interpretation of "+
@@ -227,7 +238,7 @@ object InterpretMethodsAnalysis {
                 project.classFilesCount+" classes (real time: "+ns2sec(getTime('OVERALL))+
                 "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
                 "secs.)"+collectedExceptions.size+" exceptions occured.",
-                file
+                Some(file)
             )
         } else {
             (

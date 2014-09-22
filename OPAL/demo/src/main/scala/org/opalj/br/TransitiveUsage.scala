@@ -31,9 +31,15 @@ package br
 
 import java.net.URL
 
-import br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 
-import de._
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.de.DependencyExtractor
+import org.opalj.de.DependencyProcessorAdapter
+import org.opalj.de.DependencyType
 
 /**
  * Calculates the transitive closure of all classes referred to by a given class.
@@ -92,13 +98,16 @@ object TransitiveUsage extends AnalysisExecutor {
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
         parameters.size == 1 && parameters.head.startsWith("-class=")
 
-    override val analysis = new Analysis[URL, BasicReport] {
+    override val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override val description: String =
             "Calculates the transitive closure of all classes used by a specific class. "+
                 "(Does not take reflective usages into relation)."
 
-        override def analyze(project: Project[URL], parameters: Seq[String]) = {
+        override def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
 
             val baseType = ObjectType(parameters.head.substring(7).replace('.', '/'))
             extractedTypes += baseType

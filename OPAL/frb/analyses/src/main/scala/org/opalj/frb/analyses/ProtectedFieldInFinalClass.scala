@@ -51,9 +51,10 @@ class ProtectedFieldInFinalClass[Source] extends FindRealBugsAnalysis[Source] {
      * @param parameters Options for the analysis. Currently unused.
      * @return A list of reports, or an empty list.
      */
-    def analyze(
+    def doAnalyze(
         project: Project[Source],
-        parameters: Seq[String] = List.empty): Iterable[FieldBasedReport[Source]] = {
+        parameters: Seq[String] = List.empty,
+        isInterrupted: () ⇒ Boolean): Iterable[FieldBasedReport[Source]] = {
         // For all protected fields from final classes...
         for {
             classFile ← project.classFiles if classFile.isFinal

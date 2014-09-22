@@ -29,7 +29,7 @@
 package org.opalj
 package br
 
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
 
 /**
@@ -39,11 +39,14 @@ import java.net.URL
  */
 object NativeMethodsCounter extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description: String = "Counts the number of native methods."
 
-        def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
+        def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             val nativeMethods =
                 for {
                     classFile ← project.classFiles;

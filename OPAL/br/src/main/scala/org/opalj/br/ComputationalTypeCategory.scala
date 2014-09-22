@@ -27,22 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package project
+package br
 
 /**
- * Defines a method to optionally report some result.
+ * The computational type category of a value on the operand stack.
  *
- * Primarily intended to be mixed-in by domains that are used by an `AIProject`.
+ * (cf. JVM Spec. 2.11.1 Types and the Java Virtual Machine).
  *
  * @author Michael Eichberg
  */
-trait Report {
-
+sealed abstract class ComputationalTypeCategory(
+        val operandSize: Byte) {
     /**
-     * Returns `Some(&lt;String&gt;)` if there is something to report and `None`
-     * otherwise.
+     * Identifies the computational type category.
      */
-    def report: Option[String]
-
+    val id: Byte
 }
+case object Category1ComputationalTypeCategory
+        extends ComputationalTypeCategory(1) {
+    final val id /*: Byte*/ = 1.toByte
+}
+case object Category2ComputationalTypeCategory
+        extends ComputationalTypeCategory(2) {
+    final val id /*: Byte*/ = 2.toByte
+}
+

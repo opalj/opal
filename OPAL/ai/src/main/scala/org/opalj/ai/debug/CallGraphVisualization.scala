@@ -49,7 +49,7 @@ import org.opalj.util.PerformanceEvaluation.asMB
 import org.opalj.util.PerformanceEvaluation.memory
 import org.opalj.util.PerformanceEvaluation.ns2sec
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.writeAndOpenDesktopApplication
+import org.opalj.util.writeAndOpen
 
 /**
  * Visualizes call graphs using Graphviz.
@@ -175,7 +175,6 @@ object CallGraphVisualization {
         //
         // Let's create the visualization
         //
-        import org.opalj.util.writeAndOpenDesktopApplication
         import org.opalj.graphs.{ SimpleNode, Node }
         val nodes: Set[Node] = {
 
@@ -243,9 +242,10 @@ object CallGraphVisualization {
         if (exceptions.size > 0) {
             println("Exceptions: "+exceptions.size)
             //            println(exceptions.mkString("Exceptions that occured while analyzing...:\n\t", "\n\t", "\t"))
-            writeAndOpenDesktopApplication(
+            writeAndOpen(
                 exceptions.map(_.toFullString).mkString("Exceptions that occured while creating the call graph...:\n", "\n\n", ""),
-                "Logged exceptions", ".txt"
+                "ExceptionsThrownDuringCallGraphConstruction",
+                ".txt"
             )
         }
 
@@ -261,13 +261,13 @@ object CallGraphVisualization {
         println("Number of edges: "+edges)
 
         // Write out the statistics about the calls relation
-        //        writeAndOpenDesktopApplication(
+        //        writeAndOpen(
         //            callGraph.callsStatistics(),
         //            "CallGraphStatistics(calls)",
         //            ".tsv.txt")
 
         // Write out the statistics about the called-by relation
-        //        writeAndOpenDesktopApplication(
+        //        writeAndOpen(
         //            callGraph.calledByStatistics(),
         //            "CallGraphStatistics(calledBy)",
         //            ".tsv.txt")

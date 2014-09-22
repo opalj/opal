@@ -140,6 +140,16 @@ object FindRealBugs {
         progressListener: Option[ProgressListener] = None,
         progressController: Option[ProgressController] = None): Map[Analysis, AnalysisReports] = {
 
+        val progressManagement =
+            new ProgressManagement {
+                def progress(step: Int, event: Event, message: Option[String]): Unit = {
+                    // DO NOTHING
+                }
+                def isInterrupted(): Boolean = {
+                    progressController.map(_.isCancelled).getOrElse(false)
+                }
+            }
+
         import scala.collection.JavaConversions._
 
         val results: scala.collection.concurrent.Map[Analysis, AnalysisReports] =
@@ -161,7 +171,11 @@ object FindRealBugs {
                 import util.PerformanceEvaluation.{ run, ns2sec }
 
                 run {
-                    val reports = analysis.analyze(project, Seq.empty).toSet
+                    val reports =
+                        analysis.analyze(
+                            project,
+                            Seq.empty,
+                            (stepCount) ⇒ progressManagement).toSet
                     if (reports.nonEmpty) {
                         results += analysis -> reports
                     }

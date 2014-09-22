@@ -46,12 +46,15 @@ import java.net.URL
  */
 object ObserverPatternUsage extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description: String =
             "Loads all classes stored in the jar files and analyses the usage of the observer pattern."
 
-        def analyze(project: Project[URL], parameters: Seq[String]): BasicReport = {
+        def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean): BasicReport = {
             if (project.classHierarchy.rootTypes.tail.nonEmpty) {
                 Console.err.println(
                     "Warning: Class Hierarchy Not Complete: "+

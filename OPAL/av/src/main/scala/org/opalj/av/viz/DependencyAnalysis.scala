@@ -31,17 +31,30 @@ package av
 package viz
 
 import java.net.URL
-import br._
-import br.instructions._
-import br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-import org.opalj.de._
-import org.w3c.dom.html.HTMLDocument
-import scala.util.Random
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.language.reflectiveCalls
-import scala.collection.SortedSet
-import scala.collection.immutable.TreeSet
-import java.io.File
+import scala.collection.mutable.HashMap
+import scala.util.Random
+
+import org.opalj.util.writeAndOpen
+import org.opalj.br.analyses.Analysis
+import org.opalj.br.analyses.Project
+import org.opalj.de.DependencyExtractor
+import org.opalj.de.DependencyProcessor
+import org.opalj.de.DependencyType
+
+import org.opalj.br.ArrayType
+import org.opalj.br.BaseType
+import org.opalj.br.ObjectType
+import org.opalj.br.VirtualClass
+import org.opalj.br.VirtualSourceElement
+import org.opalj.br.analyses.Analysis
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.ProgressManagement
+import org.opalj.br.analyses.EventType
+import org.opalj.br.analyses.Project
 
 /**
  * @author Tobias Becker
@@ -111,7 +124,13 @@ object DependencyAnalysis extends AnalysisExecutor {
         override def description: String =
             "Collects information about the number of dependencies on others packages per package."
 
-        def analyze(project: Project[URL], parameters: Seq[String]) = {
+        def analyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            initProgressManagement: (Int) ⇒ ProgressManagement) = {
+
+            val pm = initProgressManagement(3)
+            pm.progress(1, EventType.Start, Some("setup"))
 
             import scala.collection.mutable.{ HashSet, HashMap }
             // Collect the number of outgoing dependencies per package 
@@ -181,14 +200,19 @@ object DependencyAnalysis extends AnalysisExecutor {
             } // dependencyCount(source,target,anzahl)
             val dependencyExtractor = new DependencyExtractor(dependencyProcessor)
 
+            pm.progress(1, EventType.End, None)
+
+            pm.progress(2, EventType.Start, Some("extracting dependencies"))
             for {
                 classFile ← project.classFiles
                 packageName = classFile.thisType.packageName
             } {
                 dependencyExtractor.process(classFile)
             }
+            pm.progress(2, EventType.End, None)
 
             // create html file from template
+            pm.progress(3, EventType.Start, Some("creating HTML"))
 
             // get packages and sort them
             var packages = dependencyProcessor.currentPackages.toSeq.sorted
@@ -231,7 +255,9 @@ object DependencyAnalysis extends AnalysisExecutor {
             htmlDocument = htmlDocument.replace("<%PACKAGES%>", "["+packages.foldRight("")(
                 (name, json) ⇒
                     s"""{ "name": "$name", "color": "${Random.shuffle(colors.toList).head}"},\n"""+json)+"]")
-            util.writeAndOpenDesktopApplication(checkDocument(htmlDocument), "DependencyAnalysis", ".html")
+            writeAndOpen(checkDocument(htmlDocument), "DependencyAnalysis", ".html")
+
+            pm.progress(3, EventType.End, None)
 
             BasicReport(packages)
         }

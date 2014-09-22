@@ -56,7 +56,8 @@ case class Code(
     instructions: Array[Instruction],
     exceptionHandlers: ExceptionHandlers,
     attributes: Attributes)
-        extends Attribute {
+        extends Attribute
+        with CommonAttributes {
 
     /**
      * Returns a new iterator to iterate over the program counters of the instructions
@@ -257,6 +258,15 @@ case class Code(
      * 	    attribute may not be reified.
      */
     def localVariableTypeTable: Seq[LocalVariableTypes] =
+        attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
+
+    /**
+     * Collects all local variable type tables.
+     *
+     * @note Depending on the configuration of the reader for `ClassFile`s this
+     *      attribute may not be reified.
+     */
+    def runtimeVisibleType: Seq[LocalVariableTypes] =
         attributes collect { case LocalVariableTypeTable(lvtt) ⇒ lvtt }
 
     /**

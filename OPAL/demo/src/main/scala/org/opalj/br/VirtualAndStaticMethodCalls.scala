@@ -32,7 +32,7 @@ package br
 import java.net.URL
 
 import instructions._
-import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 
 /**
  * Counts the number of static and virtual method calls.
@@ -41,12 +41,15 @@ import analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
  */
 object VirtualAndStaticMethodCalls extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def description: String =
             "Counts the number of static and virtual method calls."
 
-        def analyze(project: Project[URL], parameters: Seq[String] = List.empty) = {
+        def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String] = List.empty,
+            isInterrupted: () ⇒ Boolean) = {
 
             import util.PerformanceEvaluation.{ time, ns2sec }
             var staticCalls = 0

@@ -31,7 +31,7 @@ package ai
 
 import java.net.URL
 
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
+import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.Method
 import org.opalj.br.{ ReferenceType, ObjectType, IntegerType }
 
@@ -66,7 +66,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
         override def maxCardinalityOfIntegerRanges: Long = 128l
     }
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def title: String =
             "Calls of native Methods with Bounded Integer Values"
@@ -74,7 +74,10 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
         override def description: String =
             "Identifies calls of native methods with bounded integer parameters."
 
-        override def analyze(theProject: Project[URL], parameters: Seq[String]) = {
+        override def doAnalyze(
+            theProject: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
             println("Calculating CallGraph")
             val project.ComputedCallGraph(callGraph, /*we don't care about unresolved methods etc. */ _, _) =
                 theProject.get(project.VTACallGraphKey)

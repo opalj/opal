@@ -47,6 +47,8 @@ package object analyses {
      */
     type SomeProject = Project[_]
 
+    type Event = EventType.Value
+
     /**
      * Shortens an absolute path to one relative to the current working directory.
      */

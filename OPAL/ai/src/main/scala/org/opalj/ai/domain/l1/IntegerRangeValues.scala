@@ -640,28 +640,33 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         pc: PC,
         left: DomainValue,
         right: DomainValue): IntegerValueOrArithmeticException = {
-        // IMPROVE If the range of values is smaller than the "divisor-1" we could calculate a more precise bound; e.g., [13,14] % 5 => [3,4]
 
         // RECALL: if the dividend(left) is smaller than zero, the result will be in the 
-        // range: [-|divisor]+1,0]
+        // range: [-|divisor|+1,0]
         (left, right) match {
             case (_, IntegerRange(0, 0)) ⇒
                 ThrowsException(ArithmeticException(pc))
 
             case (IntegerRange(leftLB, leftUB), IntegerRange(rightLB, rightUB)) ⇒
-                val maxDividend = Math.max(Math.abs(rightLB), Math.abs(rightUB))
-                val newValue =
-                    if (leftLB < 0) {
-                        if (leftUB < 0)
-                            IntegerRange(-(maxDividend - 1), 0)
-                        else
-                            IntegerRange(-(maxDividend - 1), maxDividend - 1)
-                    } else
-                        IntegerRange(0, maxDividend - 1)
-                if (rightLB > 0 || rightUB < 0)
-                    ComputedValue(newValue)
-                else
-                    ComputedValueOrException(newValue, ArithmeticException(pc))
+                if (leftLB == leftUB && rightLB == rightUB) {
+                    // two point ranges...
+                    val result = leftLB % rightLB
+                    ComputedValue(IntegerRange(result, result))
+                } else {
+                    val maxDividend = Math.max(Math.abs(rightLB), Math.abs(rightUB))
+                    val newValue =
+                        if (leftLB < 0) {
+                            if (leftUB < 0)
+                                IntegerRange(-(maxDividend - 1), 0)
+                            else
+                                IntegerRange(-(maxDividend - 1), maxDividend - 1)
+                        } else
+                            IntegerRange(0, maxDividend - 1)
+                    if (rightLB > 0 || rightUB < 0)
+                        ComputedValue(newValue)
+                    else
+                        ComputedValueOrException(newValue, ArithmeticException(pc))
+                }
 
             case (_, IntegerRange(rightLB, rightUB)) ⇒
                 val maxDividend = Math.max(Math.abs(rightLB), Math.abs(rightUB))

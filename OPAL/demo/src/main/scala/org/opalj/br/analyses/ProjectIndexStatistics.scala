@@ -39,14 +39,17 @@ import java.net.URL
  */
 object ProjectIndexStatistics extends AnalysisExecutor {
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
         override def title: String = "Project Statistics"
 
         override def description: String =
             "Statistics about the usage of field/method identifiers in a project."
 
-        override def analyze(project: Project[URL], parameters: Seq[String]) = {
+        override def doAnalyze(
+            project: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean) = {
 
             BasicReport(
                 project.get(ProjectIndexKey).
