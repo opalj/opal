@@ -757,30 +757,30 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
     }
 
     override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            case (v: IntegerRange, s: IntegerRange) ⇒
-                println(s"$v ishr $s")
-            case _ ⇒
-        }
+        //        (value1, value2) match {
+        //            case (v: IntegerRange, s: IntegerRange) ⇒
+        //                println(s"$v ishr $s")
+        //            case _ ⇒
+        //        }
 
         IntegerValue(pc)
     }
 
     override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            case (v: IntegerRange, s: IntegerRange) ⇒
-                println(s"$v iushr $s")
-            case _ ⇒
-        }
+        //        (value1, value2) match {
+        //            case (v: IntegerRange, s: IntegerRange) ⇒
+        //                println(s"$v iushr $s")
+        //            case _ ⇒
+        //        }
         IntegerValue(pc)
     }
 
     override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            case (v: IntegerRange, s: IntegerRange) ⇒
-                println(s"$v ixor $s")
-            case _ ⇒
-        }
+        //        (value1, value2) match {
+        //            case (v: IntegerRange, s: IntegerRange) ⇒
+        //                println(s"$v ixor $s")
+        //            case _ ⇒
+        //        }
         IntegerValue(pc)
     }
 
