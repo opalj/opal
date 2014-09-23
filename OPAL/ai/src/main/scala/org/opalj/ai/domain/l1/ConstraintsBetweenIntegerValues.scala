@@ -80,17 +80,15 @@ trait ConstraintsBetweenIntegerValues
     //
 
     def putConstraintInStore(
-        constraints: ConstraintsStore,
-        v1: IntegerLikeValue,
-        v2: IntegerLikeValue,
-        c: Constraint): ConstraintsStore = {
+        store: ConstraintsStore,
+        v1: IntegerLikeValue, v2: IntegerLikeValue, c: Constraint): ConstraintsStore = {
 
         require(v1 ne v2)
 
-        var m = constraints.get(v1)
+        var m = store.get(v1)
         if (m == null) {
             m = new IDMap()
-            constraints.put(v1, m)
+            store.put(v1, m)
             m.put(v2, c)
         } else {
             val old_c = m.get(v2)
@@ -99,26 +97,24 @@ trait ConstraintsBetweenIntegerValues
             else
                 m.put(v2, NumericConstraints.combine(old_c, c))
         }
-        constraints
+        store
     }
 
     def establishConstraint(
         pc: PC,
-        v1: IntegerLikeValue,
-        v2: IntegerLikeValue,
-        c: Constraint): ConstraintsStore = {
+        v1: IntegerLikeValue, v2: IntegerLikeValue, c: Constraint): ConstraintsStore = {
 
-        val constraints = {
-            val constraints = this.constraints(pc)
-            if (constraints == null) {
-                val constraints = new ConstraintsStore()
-                this.constraints(pc) = constraints
-                constraints
+        val store = {
+            val store = this.constraints(pc)
+            if (store == null) {
+                val store = new ConstraintsStore()
+                this.constraints(pc) = store
+                store
             } else {
-                constraints
+                store
             }
         }
-        putConstraintInStore(constraints, v1, v2, c)
+        putConstraintInStore(store, v1, v2, c)
     }
 
     private[this] def addConstraint(
@@ -233,7 +229,6 @@ trait ConstraintsBetweenIntegerValues
 
             // IMPROVE The join of inter-integer-value constraints
             constraints(successorPC) = null
-
         }
 
         this.lastConstraint = None
@@ -347,6 +342,9 @@ trait ConstraintsBetweenIntegerValues
         locals: Locals): (Operands, Locals) = {
 
         val result = super.intEstablishValue(pc, theValue, value, operands, locals)
+
+        // we do not need to add a constraint
+
         updatedValues.clear
         result
     }
@@ -359,6 +357,8 @@ trait ConstraintsBetweenIntegerValues
         locals: Locals): (Operands, Locals) = {
 
         val result = super.intEstablishAreEqual(pc, value1, value2, operands, locals)
+
+        // we do not need to add a constraint; this situation is handled by the domain 
 
         updatedValues.clear
         result
