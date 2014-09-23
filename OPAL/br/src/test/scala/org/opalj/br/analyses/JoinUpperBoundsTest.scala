@@ -29,10 +29,13 @@ class JoinUpperBoundsTest
         def mkString(param: UIDSet[ObjectType]) = {
             param.toSeq.map(_.toJava).mkString("{", ",", "}")
         }
-        if (classhierachy.joinUpperTypeBounds(param1, param2, reflexive) != expected)
-            fail(s"${mkString(param1)} join${if (reflexive) "(reflexive)" else ""} ${mkString(param2)} is not ${mkString(expected)}")
-        if (classhierachy.joinUpperTypeBounds(param2, param1, reflexive) != expected)
-            fail(s"${mkString(param2)} join${if (reflexive) "(reflexive)" else ""} ${mkString(param1)} is not ${mkString(expected)}")
+        val result1_2 = classhierachy.joinUpperTypeBounds(param1, param2, reflexive)
+        if (result1_2 != expected)
+            fail(s"${mkString(param1)} join${if (reflexive) "(reflexive)" else ""} ${mkString(param2)} is ${mkString(result1_2)}; expected ${mkString(expected)}")
+
+        val result2_1 = classhierachy.joinUpperTypeBounds(param2, param1, reflexive)
+        if (result2_1 != expected)
+            fail(s"${mkString(param2)} join${if (reflexive) "(reflexive)" else ""} ${mkString(param1)} is ${mkString(result2_1)}; expected ${mkString(expected)}")
 
     }
 
@@ -216,9 +219,9 @@ class JoinUpperBoundsTest
                 }
 
                 it("join of several indirect subinterfaces should result in the superinterface (reflexive)") {
-                    //     testJoinUpperTypeBounds("SubSubID", Set("SubID2", "SubID3"), true, "ID")
-                    testJoinUpperTypeBounds(Set("SubSubID", "SubID2"), Set("SubID", "SubID3"), true, "ID")
-                    //    testJoinUpperTypeBounds(Set("SubSubID", "SubID3"), Set("SubID", "SubID2"), true, "ID")
+                    testJoinUpperTypeBounds("SubSubID", Set("SubID2", "SubID3"), true, "ID")
+                    testJoinUpperTypeBounds(Set("SubSubID", "SubID2"), Set("SubID", "SubID3"), true, "SubID")
+                    testJoinUpperTypeBounds(Set("SubSubID", "SubID3"), Set("SubID", "SubID2"), true, "SubID")
                 }
 
                 it("join of several indirect subinterfaces should result in the superinterface (non-reflexive)") {
