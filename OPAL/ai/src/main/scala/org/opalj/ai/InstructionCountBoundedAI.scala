@@ -85,7 +85,6 @@ object InstructionCountBoundedAI {
 
         // to accommodate for analysis specific factors
         upperBound = (upperBound * maxEvaluationFactor)
-        upperBound = Math.max(min, upperBound)
         if (upperBound < 0.0) {
             upperBound = Int.MaxValue
             println(Console.YELLOW+"[warn] effectively unbounded evaluation"+
@@ -93,13 +92,15 @@ object InstructionCountBoundedAI {
                 "; exception handlers="+code.exceptionHandlers.size+
                 "; maxEvaluationFactor="+maxEvaluationFactor + Console.RESET)
         }
+
         if (upperBound > 65535.0 /*Max Length*/ * 10.0) {
             println(Console.YELLOW+"[warn] evaluation (up to: "+upperBound+" instructions) may take execessively long"+
                 "; instructions size="+code.instructions.size+
                 "; exception handlers="+code.exceptionHandlers.size+
                 "; maxEvaluationFactor="+maxEvaluationFactor + Console.RESET)
         }
-        upperBound.toInt
+
+        Math.max(min, upperBound).toInt
     }
 
 }
