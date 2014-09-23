@@ -68,25 +68,6 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             with PredefinedClassHierarchy
             with RecordLastReturnedValues
 
-    class IntegerRangesWithInterIntegerConstraintsTestDomain(
-        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
-            extends Domain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultReferenceValuesBinding
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultIntegerRangeValues // <----- The one we are going to test
-            with l1.ConstraintsBetweenIntegerValues // <----- The one we are going to test
-            with l0.DefaultPrimitiveValuesConversions
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with PredefinedClassHierarchy
-            with RecordLastReturnedValues
-
     describe("central properties of domains that use IntegerRange values") {
 
         val theDomain = new IntegerRangesTestDomain
@@ -424,6 +405,92 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
         }
 
+        describe("the behavior of idiv") {
+
+            it("[1,3] / [2,2] => [0,1]") {
+                val v1 = IntegerRange(1, 3)
+                val v2 = IntegerRange(2, 2)
+
+                idiv(-1, v1, v2) should be(ComputedValue(IntegerRange(0, 1)))
+            }
+
+            it("[1,3] / [1,1] => [1,3]") {
+                val v1 = IntegerRange(1, 3)
+                val v2 = IntegerRange(1, 1)
+
+                idiv(-1, v1, v2) should be(ComputedValue(IntegerRange(1, 3)))
+            }
+
+            it("[1,3] / [0,0] => ThrowsException") {
+                val v1 = IntegerRange(1, 3)
+                val v2 = IntegerRange(0, 0)
+
+                val result = idiv(-1, v1, v2)
+                result.hasResult should be(false)
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            it("[1,3] / [-1,-1] => ComputedValue") {
+                val v1 = IntegerRange(1, 3)
+                val v2 = IntegerRange(-1, -1)
+
+                idiv(-1, v1, v2) should be(ComputedValue(AnIntegerValue()))
+            }
+
+            it("AnIntegerValue / [0,0] => ThrowsException") {
+                val v1 = AnIntegerValue()
+                val v2 = IntegerRange(0, 0)
+
+                val result = idiv(-1, v1, v2)
+                result.hasResult should be(false)
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            it("AnIntegerValue / AnIntegerValue => Value and ThrowsException") {
+                val v1 = AnIntegerValue()
+                val v2 = AnIntegerValue()
+
+                val result = idiv(-1, v1, v2)
+                result.result shouldBe an[AnIntegerValue]
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            it("[-1,200] / AnIntegerValue => Value and ThrowsException") {
+                val v1 = IntegerRange(-1, 200)
+                val v2 = AnIntegerValue
+
+                val result = idiv(-1, v1, v2)
+                result.result shouldBe an[AnIntegerValue]
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expect ArithmeticException; found $v")
+                }
+            }
+
+            it("[Int.MinValue,-1] / Int.MaxValue => [1,1]") {
+                val v1 = IntegerRange(Int.MinValue, -1)
+                val v2 = IntegerRange(Int.MaxValue, Int.MaxValue)
+
+                idiv(-1, v1, v2) should be(ComputedValue(IntegerRange(-1, 0)))
+            }
+
+            it("[Int.MinValue,Int.MaxValue] / Int.MaxValue => [1,1]") {
+                val v1 = IntegerRange(Int.MinValue, Int.MaxValue)
+                val v2 = IntegerRange(Int.MaxValue, Int.MaxValue)
+
+                idiv(-1, v1, v2) should be(ComputedValue(IntegerRange(-1, 1)))
+            }
+        }
+
         describe("the behavior of irem") {
 
             it("AnIntegerValue % AnIntegerValue => AnIntegerValue + Exception") {
@@ -536,6 +603,51 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 val result = irem(-1, v1, v2)
                 result.result should be(IntegerRange(2, 2))
+            }
+        }
+
+        describe("the behavior of iand") {
+
+            it("[3,3] & [255,255] => [0,0]") {
+                val v = IntegerRange(3, 3)
+                val s = IntegerRange(255, 255)
+
+                iand(-1, v, s) should be(IntegerRange(3, 3))
+            }
+
+            it("[4,4] & [2,2] => [0,0]") {
+                val v = IntegerRange(4, 4)
+                val s = IntegerRange(2, 2)
+
+                iand(-1, v, s) should be(IntegerRange(0, 0))
+            }
+
+            it("[2,2] & [4,4] => [0,0]") {
+                val v = IntegerRange(2, 2)
+                val s = IntegerRange(4, 4)
+
+                iand(-1, v, s) should be(IntegerRange(0, 0))
+            }
+
+            it("AnIntegerValue & [2,2] => [0,2]") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2, 2)
+
+                iand(-1, v, s) should be(IntegerRange(0, 2))
+            }
+
+            it("[2,2] & AnIntegerValue  => [0,2]") {
+                val v = IntegerRange(2, 2)
+                val s = AnIntegerValue
+
+                iand(-1, v, s) should be(IntegerRange(0, 2))
+            }
+
+            it("[-2,-2] & AnIntegerValue  => [0,2]") {
+                val v = IntegerRange(-2, -2)
+                val s = AnIntegerValue
+
+                iand(-1, v, s) should be(AnIntegerValue)
             }
         }
 
@@ -1121,25 +1233,6 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val result = BaseAI(IntegerValues, method, domain)
 
                 result.operandsArray(20).head should be(domain.AnIntegerValue)
-            }
-        }
-
-        describe("with constraint tracking between integer values") {
-
-            it("it should handle cases where we constrain and compare unknown values (without join)") {
-                val domain = new IntegerRangesWithInterIntegerConstraintsTestDomain(4)
-                val method = IntegerValues.findMethod("multipleConstraints1").get
-                val result = BaseAI(IntegerValues, method, domain)
-
-                result.operandsArray(29) should be(null)
-            }
-
-            it("it should handle cases where we constrain and compare unknown values (with join)") {
-                val domain = new IntegerRangesWithInterIntegerConstraintsTestDomain(4)
-                val method = IntegerValues.findMethod("multipleConstraints2").get
-                val result = BaseAI(IntegerValues, method, domain)
-
-                result.operandsArray(25) should be(null)
             }
         }
     }

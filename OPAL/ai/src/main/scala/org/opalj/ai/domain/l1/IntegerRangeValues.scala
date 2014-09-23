@@ -38,17 +38,18 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 /**
  * This domain enables the tracking of an integer value's range.
  *
- * The cardinality of the range can be configured to facilitate different needs with regard to the
- * desired precision ([[maxCardinalityOfIntegerRanges]]).
+ * The cardinality of the range can be configured to facilitate different needs with
+ * regard to the desired precision ([[maxCardinalityOfIntegerRanges]]).
  * Often, a very small cardinality (e.g., between 2 and 8) may be
  * completely sufficient and a large cardinality does not add the overall precision
  * significantly.
  *
- * This domain supports the most common math operations.
+ * This domain supports the most relevant operantions related to the most common math
+ * operations.
  *
  * ==Constraint Propagation==
  *
- * Additionally, it supports constraint propagation (e.g.,
+ * This domain supports constraint propagation (e.g.,
  * [[intEstablishValue]], [[intEstablishIsLessThan]],...) w.r.t. those values
  * that were created at the same point in time by the same operation. For example,
  * in case of the following sequence:
@@ -163,6 +164,8 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
 
         val upperBound: Int // inclusive
     }
+
+    // IMPROVE [IntegerRangeValues] Add explicit support for `ConcreteIntegerValue`s
 
     /**
      * Creates a new IntegerRange value with the lower and upper bound set to the
@@ -540,7 +543,8 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                 else
                     IntegerRange(lb.toInt, ub.toInt)
             case _ ⇒
-                // we have to create a new instance... even if we just add "0"
+                // we have to create a new instance (to track aliasing relations) 
+                // even if we just add "0"
                 IntegerValue(pc)
         }
     }
@@ -584,11 +588,26 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         numerator: DomainValue,
         denominator: DomainValue): IntegerValueOrArithmeticException = {
         denominator match {
-            case IntegerRange(1, 1) ⇒
-                ComputedValue(numerator.asInstanceOf[IntegerLikeValue].newInstance)
-            case IntegerRange(lb, ub) if lb > 0 || ub < 0 ⇒
+
+            case IntegerRange(dlb, dub) if dlb > 0 ⇒
                 // no div by "0"
+                numerator match {
+                    case IntegerRange(nlb, nub) ⇒
+                        ComputedValue(IntegerRange(nlb / dlb, nub / dlb))
+                    case _ ⇒
+                        ComputedValue(IntegerValue(pc))
+                }
+
+            case IntegerRange(0, 0) ⇒
+                // IMPROVE [IntegerRangeValues] log suspicious div by zero    
+                ThrowsException(ArithmeticException(pc))
+
+            case IntegerRange(dlb, dub) if dub < 0 ⇒
+                // IMPROVE [IntegerRangeValues] handling of negative divisors (does not seem to be widely used)
                 ComputedValue(IntegerValue(pc))
+
+            // IMPROVE [IntegerRangeValues] handling of divisors that span values in the range[-X,+Y]
+
             case _ ⇒
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(
@@ -690,14 +709,19 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
     override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
 
-            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub ⇒
-                val r = vlb & slb
-                IntegerRange(r, r)
+            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
+                if (vlb == vub && slb == sub) {
+                    // "two point values"
+                    val r = vlb & slb
+                    IntegerRange(r, r)
+                } else if (vlb > 0 && vlb == vub) {
+                    IntegerRange(0, vub)
+                } else if (slb > 0 && slb == sub) {
+                    IntegerRange(0, sub)
+                } else
+                    IntegerValue(pc)
 
-            case (IntegerRange(lb1, ub1), IntegerRange(lb2, ub2)) ⇒
-                // TODO!!!!!!
-                //     println(s"$value1 & $value2")
-                IntegerValue(pc)
+            // IMPROVE [IntegerRangeValues] General handling of "and" for two integer range values
 
             case (_, IntegerRange(0, 0))                  ⇒ IntegerRange(0, 0)
             case (IntegerRange(0, 0), _)                  ⇒ IntegerRange(0, 0)
@@ -716,7 +740,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         (value, shift) match {
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub ⇒
                 val r = vlb << slb
-                IntegerRange(r, r)
+                IntegerRange(r)
 
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb >= 0 ⇒
                 val maxShift = if (sub > 31 || sub < 0) 31 else sub
@@ -732,14 +756,33 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         }
     }
 
-    override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        IntegerValue(pc)
+    override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (v: IntegerRange, s: IntegerRange) ⇒
+                println(s"$v ishr $s")
+            case _ ⇒
+        }
 
-    override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
+    }
 
-    override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (v: IntegerRange, s: IntegerRange) ⇒
+                println(s"$v iushr $s")
+            case _ ⇒
+        }
         IntegerValue(pc)
+    }
+
+    override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (v: IntegerRange, s: IntegerRange) ⇒
+                println(s"$v ixor $s")
+            case _ ⇒
+        }
+        IntegerValue(pc)
+    }
 
     //
     // TYPE CONVERSION INSTRUCTIONS
