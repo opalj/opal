@@ -100,7 +100,7 @@ case class ClassFile(
                 <li value={ cpIndex.toString }>{ cp(cpIndex).toString() }</li>
             }
 
-        <ol>{ cpEntries }</ol>
+        <ol class="constant_pool_entries">{ cpEntries }</ol>
     }
 
     def attributesToXHTML: Seq[Node] = {
