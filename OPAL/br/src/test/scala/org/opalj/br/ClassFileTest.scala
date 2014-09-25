@@ -216,12 +216,20 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
         nestedTypes.flatten.toSeq.toMap
     }
 
-    test("that it is possible to get the inner classes information for Apache ANT 1.8.4 - excerpt.jar") {
-        testJARFile(locateTestResources("classfiles/Apache ANT 1.8.4 - excerpt.jar", "bi"))
+    test("that it is possible to get the inner classes information for batik-AbstractJSVGComponent.jar") {
+        val resources = locateTestResources("classfiles/batik-AbstractJSVGComponent.jar", "bi")
+        val nestedTypeInformation = testJARFile(resources)
+        val o = ObjectType("org/apache/batik/swing/svg/AbstractJSVGComponent")
+        val o$1 = ObjectType("org/apache/batik/swing/svg/AbstractJSVGComponent$1")
+        val o$1$q = ObjectType("org/apache/batik/swing/svg/AbstractJSVGComponent$1$Query")
+        nestedTypeInformation(o) should contain(o$1)
+        nestedTypeInformation(o$1) should contain(o$1$q)
+        nestedTypeInformation(o$1$q) should be('empty)
     }
 
     test("that it is possible to get the inner classes information for batik-DOMViewer 1.7.jar") {
-        val nestedTypeInformation = testJARFile(locateTestResources("classfiles/batik-DOMViewer 1.7.jar", "bi"))
+        val resources = locateTestResources("classfiles/batik-DOMViewer 1.7.jar", "bi")
+        val nestedTypeInformation = testJARFile(resources)
         val D$Panel = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$Panel")
         val D$2 = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$2")
         val D$3 = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$3")
@@ -230,8 +238,12 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
         nestedTypeInformation(D$3) should be('empty)
     }
 
+    test("that it is possible to get the inner classes information for Apache ANT 1.8.4 - excerpt.jar") {
+        testJARFile(locateTestResources("classfiles/Apache ANT 1.8.4 - excerpt.jar", "bi"))
+    }
+
     test("that it is possible to get the inner classes information for argouml-excerpt.jar") {
         testJARFile(locateTestResources("classfiles/argouml-excerpt.jar", "bi"))
-
     }
+
 }

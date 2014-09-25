@@ -31,197 +31,13 @@ package ai
 package domain
 package l1
 
+import java.util.{ IdentityHashMap ⇒ IDMap }
+
 import scala.collection.BitSet
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 import org.opalj.br.instructions.Instruction
-
-/**
- * Enumeration of all possible relations/constraints between two arbitrary integer values.
- *
- * @author Michael Eichberg
- */
-object Constraints extends Enumeration(1) {
-
-    final val LT = 1
-    final val < : Value = Value(LT, "<")
-    final val LE = 2
-    final val <= : Value = Value(LE, "<=")
-
-    final val GT = 3
-    final val > : Value = Value(GT, ">")
-    final val GE = 4
-    final val >= : Value = Value(GE, ">=")
-
-    final val EQ = 5
-    final val == : Value = Value(EQ, "==")
-    final val NE = 6
-    final val != : Value = Value(NE, "!=")
-
-    nextId = 7
-
-    /**
-     * Returns the relation when we swap the operands.
-     *
-     * E.g., `inverse(x ? y) = x ?' y`
-     */
-    def inverse(relation: Value): Value = {
-        (relation.id: @scala.annotation.switch) match {
-            case LT ⇒ >
-            case LE ⇒ >=
-            case GT ⇒ <
-            case GE ⇒ <=
-            case EQ ⇒ ==
-            case NE ⇒ !=
-        }
-    }
-
-    /**
-     * Calculates the constraint that is in effect if both constraints need to be
-     * satisfied at the same time.
-     *
-     * @note This a '''narrowing''' operation.
-     * @return The combined constraint.
-     * @throws IncompatibleConstraints exception if the combination of the constraints
-     *      doesn't make sense.
-     */
-    def combine(c1: Value, c2: Value): Value = {
-        (c1.id: @scala.annotation.switch) match {
-            case LT ⇒
-                (c2.id: @scala.annotation.switch) match {
-                    case LT ⇒ <
-                    case LE ⇒ <
-                    case NE ⇒ <
-                    case _  ⇒ throw IncompatibleConstraints(c1, c2)
-                }
-
-            case LE ⇒
-                (c2.id: @scala.annotation.switch) match {
-                    case LT ⇒ <
-                    case LE ⇒ <=
-                    case GE ⇒ ==
-                    case EQ ⇒ ==
-                    case NE ⇒ <
-                    case _  ⇒ throw IncompatibleConstraints(c1, c2)
-                }
-
-            case GT ⇒
-                (c2.id: @scala.annotation.switch) match {
-                    case GT ⇒ >
-                    case GE ⇒ >
-                    case NE ⇒ >
-                    case _  ⇒ throw IncompatibleConstraints(c1, c2)
-                }
-
-            case GE ⇒
-                (c2.id: @scala.annotation.switch) match {
-                    case LE ⇒ ==
-                    case GT ⇒ >
-                    case GE ⇒ >=
-                    case EQ ⇒ ==
-                    case NE ⇒ >
-                    case _  ⇒ throw IncompatibleConstraints(c1, c2)
-                }
-
-            case EQ ⇒
-                (c2.id: @scala.annotation.switch) match {
-                    case LE ⇒ ==
-                    case GE ⇒ ==
-                    case EQ ⇒ ==
-                    case _  ⇒ throw IncompatibleConstraints(c1, c2)
-                }
-
-            case NE ⇒
-                (c2.id: @scala.annotation.switch) match {
-                    case LT ⇒ <
-                    case LE ⇒ <
-                    case GT ⇒ >
-                    case GE ⇒ >
-                    case NE ⇒ !=
-                    case _  ⇒ throw IncompatibleConstraints(c1, c2)
-                }
-        }
-    }
-
-    /**
-     * Joins the given constraints. I.e., returns the constraint that still has to
-     * hold if either `c1` or `c2` holds.
-     *
-     * @note This is a '''widening''' operation.
-     */
-    def join(c1: Value, c2: Value): Option[Value] = {
-        (c1.id: @scala.annotation.switch) match {
-            case LT ⇒
-                (c2.id: @scala.annotation.switch) match {
-                    case LT ⇒ Some(<)
-                    case LE ⇒ Some(<=)
-                    case GT ⇒ Some(!=)
-                    case GE ⇒ None
-                    case NE ⇒ Some(!=)
-                    case EQ ⇒ Some(<=)
-                }
-
-            case LE ⇒
-                (c2.id: @scala.annotation.switch) match {
-                    case LT ⇒ Some(<=)
-                    case LE ⇒ Some(<=)
-                    case GT ⇒ None
-                    case GE ⇒ None
-                    case NE ⇒ None
-                    case EQ ⇒ Some(<=)
-                }
-
-            case GT ⇒
-                (c2.id: @scala.annotation.switch) match {
-                    case LT ⇒ Some(!=)
-                    case LE ⇒ None
-                    case GT ⇒ Some(>)
-                    case GE ⇒ Some(>=)
-                    case NE ⇒ Some(!=)
-                    case EQ ⇒ Some(>=)
-                }
-
-            case GE ⇒
-                (c2.id: @scala.annotation.switch) match {
-                    case LT ⇒ None
-                    case LE ⇒ None
-                    case GT ⇒ Some(>=)
-                    case GE ⇒ Some(>=)
-                    case NE ⇒ None
-                    case EQ ⇒ Some(>=)
-                }
-
-            case EQ ⇒
-                (c2.id: @scala.annotation.switch) match {
-                    case LT ⇒ Some(<=)
-                    case LE ⇒ Some(<=)
-                    case GT ⇒ Some(>=)
-                    case GE ⇒ Some(>=)
-                    case NE ⇒ None
-                    case EQ ⇒ Some(==)
-                }
-
-            case NE ⇒
-                (c2.id: @scala.annotation.switch) match {
-                    case LT ⇒ Some(!=)
-                    case LE ⇒ None
-                    case GT ⇒ Some(!=)
-                    case GE ⇒ None
-                    case NE ⇒ Some(!=)
-                    case EQ ⇒ None
-                }
-        }
-    }
-}
-
-/**
- * Exception that is if two constraints should be combined that are incompatible.
- */
-case class IncompatibleConstraints(
-    constraint1: Constraints.Value,
-    constraint2: Constraints.Value)
-        extends AIException(s"incompatible: $constraint1 and $constraint2")
 
 /**
  * Domain that traces the relationship between integer values.
@@ -230,13 +46,11 @@ case class IncompatibleConstraints(
  */
 trait ConstraintsBetweenIntegerValues
         extends CoreDomainFunctionality
-        with IntegerRangeValues
+        with IntegerRangeValues // IMRPOVE [ConstraintsBetweenIntegerValues] Define a common trait that specifies that the values support aliasing analyses
         with TheCodeStructure {
     domain: JoinStabilization with IdentityBasedAliasBreakUpDetection with Configuration with VMLevelExceptionsFactory ⇒
 
-    import java.util.{ IdentityHashMap ⇒ IDMap }
-
-    type Constraint = Constraints.Value
+    type Constraint = NumericConstraints.Value
 
     type ConstraintsStore = IDMap[IntegerLikeValue, IDMap[IntegerLikeValue, Constraint]]
 
@@ -246,6 +60,7 @@ trait ConstraintsBetweenIntegerValues
     //
     //
 
+    // We store the constraints that are in effect for each instruction
     private[this] var constraints: Array[ConstraintsStore] = null
 
     abstract override def setCodeStructure(
@@ -265,45 +80,41 @@ trait ConstraintsBetweenIntegerValues
     //
 
     def putConstraintInStore(
-        constraints: ConstraintsStore,
-        v1: IntegerLikeValue,
-        v2: IntegerLikeValue,
-        c: Constraint): ConstraintsStore = {
+        store: ConstraintsStore,
+        v1: IntegerLikeValue, v2: IntegerLikeValue, c: Constraint): ConstraintsStore = {
 
         require(v1 ne v2)
 
-        var m = constraints.get(v1)
+        var m = store.get(v1)
         if (m == null) {
             m = new IDMap()
-            constraints.put(v1, m)
+            store.put(v1, m)
             m.put(v2, c)
         } else {
             val old_c = m.get(v2)
             if (old_c == null)
                 m.put(v2, c)
             else
-                m.put(v2, Constraints.combine(old_c, c))
+                m.put(v2, NumericConstraints.combine(old_c, c))
         }
-        constraints
+        store
     }
 
     def establishConstraint(
         pc: PC,
-        v1: IntegerLikeValue,
-        v2: IntegerLikeValue,
-        c: Constraint): ConstraintsStore = {
+        v1: IntegerLikeValue, v2: IntegerLikeValue, c: Constraint): ConstraintsStore = {
 
-        val constraints = {
-            val constraints = this.constraints(pc)
-            if (constraints == null) {
-                val constraints = new ConstraintsStore()
-                this.constraints(pc) = constraints
-                constraints
+        val store = {
+            val store = this.constraints(pc)
+            if (store == null) {
+                val store = new ConstraintsStore()
+                this.constraints(pc) = store
+                store
             } else {
-                constraints
+                store
             }
         }
-        putConstraintInStore(constraints, v1, v2, c)
+        putConstraintInStore(store, v1, v2, c)
     }
 
     private[this] def addConstraint(
@@ -312,7 +123,7 @@ trait ConstraintsBetweenIntegerValues
         v2: IntegerLikeValue,
         c: Constraint): Unit = {
 
-        // let's collect the constraints
+        // let's collect the constraint(s)
         this.lastConstraint = Some((v1, v2, c))
     }
 
@@ -322,7 +133,8 @@ trait ConstraintsBetweenIntegerValues
         v2: DomainValue,
         c: Constraint): Unit = {
         addConstraint(
-            pc, v1.asInstanceOf[IntegerLikeValue], v2.asInstanceOf[IntegerLikeValue], c)
+            pc,
+            v1.asInstanceOf[IntegerLikeValue], v2.asInstanceOf[IntegerLikeValue], c)
     }
 
     private[this] def getConstraint(
@@ -347,8 +159,7 @@ trait ConstraintsBetweenIntegerValues
         v2: DomainValue): Option[Constraint] = {
         getConstraint(
             pc,
-            v1.asInstanceOf[IntegerLikeValue],
-            v2.asInstanceOf[IntegerLikeValue])
+            v1.asInstanceOf[IntegerLikeValue], v2.asInstanceOf[IntegerLikeValue])
     }
 
     def cloneConstraintsStore(store: ConstraintsStore): ConstraintsStore = {
@@ -410,7 +221,7 @@ trait ConstraintsBetweenIntegerValues
             if (lastConstraintOption.isDefined) {
                 val (v1, v2, c) = lastConstraintOption.get
                 val constraintsStore = establishConstraint(successorPC, v1, v2, c)
-                putConstraintInStore(constraintsStore, v2, v1, Constraints.inverse(c))
+                putConstraintInStore(constraintsStore, v2, v1, NumericConstraints.inverse(c))
             }
         } else {
             // We only keep constraints for values where we have constraints on
@@ -418,7 +229,6 @@ trait ConstraintsBetweenIntegerValues
 
             // IMPROVE The join of inter-integer-value constraints
             constraints(successorPC) = null
-
         }
 
         this.lastConstraint = None
@@ -467,11 +277,11 @@ trait ConstraintsBetweenIntegerValues
                 val constraint = getConstraint(pc, value1, value2)
                 if (constraint.isDefined)
                     constraint.get match {
-                        case Constraints.!= ⇒ No
-                        case Constraints.>  ⇒ No
-                        case Constraints.<  ⇒ No
-                        case Constraints.== ⇒ Yes
-                        case _              ⇒ Unknown
+                        case NumericConstraints.!= ⇒ No
+                        case NumericConstraints.>  ⇒ No
+                        case NumericConstraints.<  ⇒ No
+                        case NumericConstraints.== ⇒ Yes
+                        case _                     ⇒ Unknown
                     }
                 else
                     Unknown
@@ -486,11 +296,11 @@ trait ConstraintsBetweenIntegerValues
                 val constraint = getConstraint(pc, left, right)
                 if (constraint.isDefined)
                     constraint.get match {
-                        case Constraints.>  ⇒ No
-                        case Constraints.>= ⇒ No
-                        case Constraints.<  ⇒ Yes
-                        case Constraints.== ⇒ No
-                        case _              ⇒ Unknown
+                        case NumericConstraints.>  ⇒ No
+                        case NumericConstraints.>= ⇒ No
+                        case NumericConstraints.<  ⇒ Yes
+                        case NumericConstraints.== ⇒ No
+                        case _                     ⇒ Unknown
                     }
                 else
                     Unknown
@@ -505,11 +315,11 @@ trait ConstraintsBetweenIntegerValues
                 val constraint = getConstraint(pc, left, right)
                 if (constraint.isDefined)
                     constraint.get match {
-                        case Constraints.>  ⇒ No
-                        case Constraints.<  ⇒ Yes
-                        case Constraints.<= ⇒ Yes
-                        case Constraints.== ⇒ Yes
-                        case _              ⇒ Unknown
+                        case NumericConstraints.>  ⇒ No
+                        case NumericConstraints.<  ⇒ Yes
+                        case NumericConstraints.<= ⇒ Yes
+                        case NumericConstraints.== ⇒ Yes
+                        case _                     ⇒ Unknown
                     }
                 else
                     Unknown
@@ -532,6 +342,9 @@ trait ConstraintsBetweenIntegerValues
         locals: Locals): (Operands, Locals) = {
 
         val result = super.intEstablishValue(pc, theValue, value, operands, locals)
+
+        // we do not need to add a constraint
+
         updatedValues.clear
         result
     }
@@ -544,6 +357,9 @@ trait ConstraintsBetweenIntegerValues
         locals: Locals): (Operands, Locals) = {
 
         val result = super.intEstablishAreEqual(pc, value1, value2, operands, locals)
+
+        // we do not need to add a constraint; this situation is handled by the domain 
+
         updatedValues.clear
         result
     }
@@ -557,7 +373,7 @@ trait ConstraintsBetweenIntegerValues
 
         val result = super.intEstablishAreNotEqual(pc, value1, value2, operands, locals)
 
-        addConstraint(pc, currentValue(value1), currentValue(value2), Constraints.!=)
+        addConstraint(pc, currentValue(value1), currentValue(value2), NumericConstraints.!=)
 
         updatedValues.clear
         result
@@ -570,10 +386,9 @@ trait ConstraintsBetweenIntegerValues
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
 
-        val result =
-            super.intEstablishIsLessThan(pc, left, right, operands, locals)
+        val result = super.intEstablishIsLessThan(pc, left, right, operands, locals)
 
-        addConstraint(pc, currentValue(left), currentValue(right), Constraints.<)
+        addConstraint(pc, currentValue(left), currentValue(right), NumericConstraints.<)
 
         updatedValues.clear
         result
@@ -589,7 +404,7 @@ trait ConstraintsBetweenIntegerValues
         val result =
             super.intEstablishIsLessThanOrEqualTo(pc, left, right, operands, locals)
 
-        addConstraint(pc, currentValue(left), currentValue(right), Constraints.<=)
+        addConstraint(pc, currentValue(left), currentValue(right), NumericConstraints.<=)
 
         updatedValues.clear
         result
@@ -772,9 +587,8 @@ trait ConstraintsBetweenIntegerValues
         valueToString: AnyRef ⇒ String): Option[String] = {
         val superProperties = super.properties(pc)
         if (constraints(pc) != null) {
-            Some(
-                superProperties.map(_+"\n").getOrElse("") +
-                    constraintsToText(pc, valueToString))
+            val otherProperties = superProperties.map(_+"\n").getOrElse("")
+            Some(otherProperties + constraintsToText(pc, valueToString))
         } else {
             superProperties
         }

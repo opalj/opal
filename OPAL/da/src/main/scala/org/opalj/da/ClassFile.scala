@@ -74,6 +74,20 @@ case class ClassFile(
      */
     final val fqn = cp(this_class).toString
 
+    final val superTypeFQNs = {
+        {
+            if (super_class != 0)
+                "extends "+cp(super_class).toString+" "
+            else
+                ""
+        } + {
+            if (interfaces.nonEmpty)
+                interfaces.map(i ⇒ cp(i).toString).mkString("implements ", ", ", "")
+            else
+                ""
+        }
+    }
+
     /**
      * Converts the constant pool to (x)HTML5.
      */
@@ -86,7 +100,7 @@ case class ClassFile(
                 <li value={ cpIndex.toString }>{ cp(cpIndex).toString() }</li>
             }
 
-        <ol>{ cpEntries }</ol>
+        <ol class="constant_pool_entries">{ cpEntries }</ol>
     }
 
     def attributesToXHTML: Seq[Node] = {
@@ -152,13 +166,16 @@ case class ClassFile(
                 <div id="class_file">
                     { accessFlags }
                     &nbsp;<b>{ fqn }</b>
-                    <span class="tooltip">
-                        Version:&nbsp;{ major_version+"."+minor_version }
-                        <span>{ jdkVersion }</span>
-                    </span>
+                    &nbsp;{ superTypeFQNs }
                     <span class="constant_pool_link">
                         <a href="#constant_pool" style="color:black;">ConstantPool</a>
                     </span>
+                    <div>
+                        <span class="tooltip">
+                            Version:&nbsp;{ major_version+"."+minor_version }
+                            <span>{ jdkVersion }</span>
+                        </span>
+                    </div>
                 </div>
                 <div id="constant_pool">
                     <div>

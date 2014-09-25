@@ -1,0 +1,26 @@
+class A extends java/lang/Object implements IA
+class B extends java/lang/Object implements IB
+class C extends java/lang/Object implements IC
+class D extends java/lang/Object implements IA, SubIB, IC
+class E extends java/lang/Object
+interface IA extends java/lang/Object
+interface IB extends java/lang/Object
+interface SubIB extends java/lang/Object implements IB
+interface IC extends java/lang/Object
+interface ID extends java/lang/Object
+interface IE extends java/lang/Object
+interface SubID extends java/lang/Object implements ID
+interface SubID2 extends java/lang/Object implements ID
+interface SubID3 extends java/lang/Object implements ID
+interface SubSubID extends java/lang/Object implements SubID
+class SubA extends A implements SubID3
+class SubA2 extends A
+class SubA3 extends A implements IC
+class SubA4 extends A implements ID
+class SubSubA extends SubA implements IB, IC, ID
+class SubSubA2 extends SubA2 implements IE
+class SubB extends B implements SubIB
+class SubB2 extends B implements SubIB, IB
+class SubC extends C implements SubIB
+class SubD extends D
+class SubE extends E

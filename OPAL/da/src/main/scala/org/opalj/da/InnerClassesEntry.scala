@@ -83,7 +83,7 @@ case class InnerClassesEntry(
                     else {
                         // named inner type of an anonymous outer type
                         val outerName =
-                            definedType.substring(0, definedType.length() - innerName.length())
+                            definedType.substring(0, definedType.length() - innerName.length() + 1)
 
                         if (outerName.length < definingClassFQN.length)
                             outerName.substring(0, outerName.length() - 1)

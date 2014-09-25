@@ -8,7 +8,12 @@ body{
 	overflow-y: scroll;
 }
 
-div,fieldset{
+div{
+	margin-bottom:0.25em;
+	margin-top:0.25em;
+}
+
+fieldset{
 	padding:0.15em;
 	margin-bottom:0.25em;
 }
@@ -64,6 +69,13 @@ div,fieldset{
 	background: -moz-linear-gradient(0 ,#00F700);
 	background: -webkit-linear-gradient(0   ,#00F700);
 	background: -o-linear-gradient(0   ,#00F700);
+}
+
+.simple_attribute{
+	padding-left: 1em;
+	padding-right: 1em;
+	padding-top: 1em;
+	padding-bottom: 0em;
 }
 
 details {
@@ -185,9 +197,9 @@ th.pc, td.pc, th.line, td.line {
 	background: rgba(104,171,194,0.5);
 	z-index: 99999;
 	opacity:0;
-	-webkit-transition: opacity 800ms ease-in;
-	-moz-transition: opacity 800ms ease-in;
-	transition: opacity 800ms ease-in;
+	-webkit-transition: opacity 500ms ease-in;
+	-moz-transition: opacity 500ms ease-in;
+	transition: opacity 500ms ease-in;
 	pointer-events: none;
 }
 
@@ -198,19 +210,26 @@ th.pc, td.pc, th.line, td.line {
 }
 
 #constant_pool > div {
-    border: 1px solid rgba(147, 184, 189, 0.8);
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(105, 108, 109, 0.7), 0 0 8px 5px rgba(208, 223, 226, 0.4) inset;	
-	width: 40%;
+	width: 60%;
 	min-width:400px;
 	position: relative;
-	margin: 10% auto;
-	padding: 5px 20px 13px 20px;
+	margin: 4% auto;
 	border-radius: 10px;
 	background: none repeat scroll 0 0 #F7F7F7;
-	background: -moz-linear-gradient(0 ,#F7F7F7);
-	background: -webkit-linear-gradient(0   ,#F7F7F7);
-	background: -o-linear-gradient(0   ,#F7F7F7);
+	background: -moz-linear-gradient(0, #F7F7F7);
+	background: -webkit-linear-gradient(0, #F7F7F7);
+	background: -o-linear-gradient(0, #F7F7F7);
+}
+
+ol.constant_pool_entries {
+	padding-left: 2.5em;
+	padding-top:1em;
+	padding-bottom: 1em;
+	padding-right: 0em;
+}
+
+ol.constant_pool_entries > li {
+	padding-top:0.5em;
 }
 
 .close {

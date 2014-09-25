@@ -62,7 +62,7 @@ case class InnerClasses_attribute(
     }
 
     def toXHTML(definingClassFQN: String)(implicit cp: Constant_Pool): Node = {
-        <div id="#innerClasses">
+        <div id="inner_classes">
             <details>
                 <summary class="attribute_name">{ cp(attribute_name_index).toString }</summary>
                 {

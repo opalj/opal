@@ -27,27 +27,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
-
-import scala.xml.Node
+package ai
+package domain
+package l1
 
 /**
- * @author Michael Eichberg
- * @author Wael Alkhatib
- * @author Isbel Isbel
- * @author Noorulla Sharief
+ * Exception that is if two constraints should be combined that are incompatible.
  */
-case class SourceFile_attribute(
-        attribute_name_index: Int,
-        sourceFile_index: Int) extends Attribute {
+case class IncompatibleNumericConstraints(
+    constraint1: NumericConstraints.Value,
+    constraint2: NumericConstraints.Value)
+        extends AIException(s"incompatible: $constraint1 and $constraint2")
 
-    def attribute_length = 2
-
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="simple_attribute">
-            <span class="attribute_name">SourceFile: </span>
-            { cp(sourceFile_index).asString }
-        </div>
-    }
-
-}

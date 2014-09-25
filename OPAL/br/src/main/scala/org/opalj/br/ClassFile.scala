@@ -230,7 +230,8 @@ final class ClassFile private (
                     // let's filter those classes that are known innerclasses of this type's
                     // (indirect) outertype (they cannot be innerclasses of this class..)
                     var nestedClassesOfOuterClass = outerClass.nestedClasses(classFileRepository)
-                    while (!nestedClassesOfOuterClass.contains(thisType) &&
+                    while (nestedClassesOfOuterClass.nonEmpty &&
+                        !nestedClassesOfOuterClass.contains(thisType) &&
                         !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains(_))) {
                         // We are still lacking sufficient information to make a decision 
                         // which class is a nested class of which other class
