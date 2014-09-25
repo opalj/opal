@@ -55,7 +55,7 @@ import scala.annotation.tailrec
 object InfiniteRecursions extends AnalysisExecutor {
 
     val analysis = new Analysis[URL, BasicReport] {
-        
+
         val iterationDepth = 5
         val minCountOfConsecutivelyUnchangedOperands = 3
 
@@ -73,7 +73,7 @@ object InfiniteRecursions extends AnalysisExecutor {
             // Select every method which invokes itself (static, virtual, special or interface)
             val result = for {
                 classFile ← theProject.classFiles
-                if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
+                if !classFile.isAnnotationDeclaration
                 method @ MethodWithBody(body) ← classFile.methods
                 objecType = classFile.thisType
                 pcs = body.collectWithIndex {
@@ -122,9 +122,9 @@ object InfiniteRecursions extends AnalysisExecutor {
                     if (lastAiResult.operandsArray(pc) != null)
                 } yield {
                     // Abstract Interpretation
-                    val value = PerformInvocations mapOperandsToParameters (lastAiResult.operandsArray(pc), method, domain)
-                    val perform = BaseAI.perform(body, domain)(Nil, value)
-                    val combinedAIResults = (pc, perform) +: aiResults
+                    val params = PerformInvocations mapOperandsToParameters (lastAiResult.operandsArray(pc), method, domain)
+                    val aiResult = BaseAI.perform(body, domain)(Nil, params)
+                    val combinedAIResults = (pc, aiResult) +: aiResults
 
                     // Analyse Result
                     val operandsOfInterpretedBranches = combinedAIResults filter {
@@ -137,11 +137,12 @@ object InfiniteRecursions extends AnalysisExecutor {
                             PerformInvocations.mapOperandsToParameters(operandsToAdapt, method, domain)
                     }
 
-                    val operandsComparedForEquality = for {
-                        Seq(currentOperands, followingOperands) ← adaptedOperands.sliding(2)
-                    } yield {
-                        currentOperands == followingOperands
-                    }
+                    val operandsComparedForEquality =
+                        for {
+                            Seq(currentOperands, followingOperands) ← adaptedOperands.take(3).sliding(2)
+                        } yield {
+                            currentOperands == followingOperands
+                        }
 
                     val isInfiniteRecursion = operandsComparedForEquality.fold(adaptedOperands.length >= minCountOfUnchangedArguments)(_ && _)
                     if (isInfiniteRecursion) {
