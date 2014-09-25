@@ -30,7 +30,7 @@ package org.opalj
 package ai
 
 /**
- * Identifies situations (based on a reference comparison of the domain values)
+ * Identifies situations (based on a '''reference comparison of the domain values''')
  * in which the memory layout changes such that an alias that
  * existed before a join no longer exists. In this case the [[UpdateType]] is set to
  * [[StructuralUpdateType]].
@@ -43,9 +43,16 @@ package ai
  *
  *  `AnIntegerValue[#2]` <- `AnIntegerValue[#3]` <- `IntegerRange(lb=0,ub=10)[#2]` <- ...
  *
- * Hence, the two top-most stack values are no aliases and – if the result of an
+ * Hence, the two top-most stack values are now different values and – if the result of an
  * analysis/domain is influenced by aliasing information – the continuation of the
  * abstract interpretation is enforced.
+ *
+ * This trait requires that updates to a value that do not influence the represented
+ * value as such, but which may influence its ''aliasing information'', have to create a
+ * [[MetaInformationUpdate]]. Here, ''aliasing information'' is used in a broader sense:
+ *  - two reference values that refer to the '''same object''' are considered aliases
+ *  - two local variables that are guaranteed to be identical in all cases, and, hence
+ *    are subject to the same constraints are also aliases.
  *
  * @note Mixing in this trait is strictly necessary when aliases are traced using a
  *      a DomainValue's reference.
