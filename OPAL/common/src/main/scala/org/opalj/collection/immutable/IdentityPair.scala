@@ -27,13 +27,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
+package collection
+package immutable
 
 /**
  * Encapsulates a pair of values that is intended to be used as a key in Maps.
  * Compared to a standard pair (Tuple2), however, comparison of two `IdentityPair`
- * objects is done by doing a reference-based
- * comparison of the stored values.
+ * objects is done by doing a reference-based comparison of the stored values.
+ *
+ * {{{
+ * val a = new String("fooBar")
+ * val b = "foo"+"Bar"
+ * val p1 = new IdentityPair(a,b) // #1
+ * val p2 = new IdentityPair(a,a) // #2
+ * val p3 = new IdentityPair(a,b) // #3
+ * p1 == p2 // => false (though (a,b) == (a,a) would be true
+ * p1 == p3 // => true
+ * }}}
  *
  * @param _1 A non-null value.
  * @param _2 A non-null value.
@@ -41,8 +51,8 @@ package ai
  * @author Michael Eichberg
  */
 final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
-        final val _1: T1,
-        final val _2: T2) extends Product2[T1, T2] {
+        _1: T1,
+        _2: T2) extends Product2[T1, T2] {
 
     override def canEqual(other: Any): Boolean = other.isInstanceOf[IdentityPair[_, _]]
 
@@ -53,6 +63,6 @@ final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
         }
     }
 
-    override val hashCode: Int =
+    override def hashCode: Int =
         System.identityHashCode(_1) * 113 + System.identityHashCode(_2)
 }
