@@ -74,7 +74,7 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
                 }
 
             val locals: Locals = localsArray(successorPC)
-            locals.update { l ⇒
+            localsArray(successorPC) = locals.transform { l ⇒
                 if (l ne null)
                     updaters.tail.foldLeft(updaters.head.apply(l))((c, u) ⇒ u.apply(c))
                 else
