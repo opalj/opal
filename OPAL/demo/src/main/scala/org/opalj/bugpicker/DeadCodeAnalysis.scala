@@ -145,7 +145,10 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
         val methodsWithDeadCode = time {
             val stepIds = new java.util.concurrent.atomic.AtomicInteger(0)
 
-            for (classFile ← theProject.projectClassFiles.par) {
+            for {
+                classFile ← theProject.projectClassFiles.par
+                if !progressManagement.isInterrupted()
+            } {
                 val stepId = stepIds.incrementAndGet()
                 try {
                     progressManagement.start(stepId, classFile.thisType.toJava)
