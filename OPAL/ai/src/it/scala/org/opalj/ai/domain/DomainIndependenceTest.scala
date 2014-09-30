@@ -173,7 +173,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
             (classFile, source) ← org.opalj.br.TestSupport.readJREClassFiles().par
             method @ MethodWithBody(body) ← classFile.methods
         } {
-            def TheAI() = new InstructionCountBoundedAI[Domain](body, 10)
+            def TheAI() = new InstructionCountBoundedAI[Domain](body)
 
             val a1 = TheAI()
             val r1 = a1(classFile, method, new Domain1(body))

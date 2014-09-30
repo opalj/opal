@@ -123,7 +123,7 @@ object InterpretMethodsAnalysis {
         domainClass: Class[_ <: Domain],
         beVerbose: Boolean,
         initProgressManagement: (Int) ⇒ ProgressManagement,
-        maxEvaluationFactor: Int = 10): (String, Option[File]) = {
+        maxEvaluationFactor: Double = 3d): (String, Option[File]) = {
 
         // TODO Add support for reporting the progress and to interrupt the analysis.
 

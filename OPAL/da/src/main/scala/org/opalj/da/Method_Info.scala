@@ -43,6 +43,9 @@ case class Method_Info(
         descriptor_index: Constant_Pool_Index,
         attributes: Attributes) {
 
+    /**
+     * @param definingTypeFQN The FQN of the class defining this field.
+     */
     def toXHTML(methodIndex: Int)(implicit cp: Constant_Pool): Node = {
         val flags = methodAccessFlagsToString(access_flags)
         val filter_flags =

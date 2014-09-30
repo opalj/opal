@@ -59,7 +59,7 @@ class DefaultDomainTest extends FlatSpec with Matchers {
         val project = org.opalj.br.TestSupport.createJREProject
 
         val (message, source) =
-            interpret(project, classOf[DefaultDomain[_]], false, None, 10)
+            interpret(project, classOf[DefaultDomain[_]], false, None, 3d)
 
         if (source.nonEmpty)
             fail(message+" (details: "+source+")")

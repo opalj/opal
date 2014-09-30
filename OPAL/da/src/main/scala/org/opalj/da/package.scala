@@ -28,6 +28,8 @@
  */
 package org.opalj
 
+import scala.xml.Node
+
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 
@@ -94,7 +96,10 @@ package object da {
         }
     }
 
-    def parseMethodDescriptor(methodName: String, descriptor: String): String = {
+    def parseMethodDescriptor(
+        //definingTypeFQN: String,
+        methodName: String,
+        descriptor: String): String = {
         var index = 1 // we are not interested in the leading '('
         var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
         while (descriptor.charAt(index) != ')') {
@@ -133,6 +138,18 @@ package object da {
 
     def methodAccessFlagsToString(access_flags: Int): String =
         AccessFlags.toString(access_flags, AccessFlagsContexts.METHOD)
+
+    def abbreviateFQN(definingTypeFQN: String, memberTypeFQN: String): Node = {
+        val abbreviatedMemberTypeFQN =
+            org.opalj.abbreviateFQN(definingTypeFQN, memberTypeFQN, '.')
+
+        if (abbreviatedMemberTypeFQN == memberTypeFQN)
+            <span class="fqn"> { memberTypeFQN } </span>
+        else
+            <span class="fqn tooltip">
+                { abbreviatedMemberTypeFQN }<span>{ memberTypeFQN }</span>
+            </span>
+    }
 
 }
 
