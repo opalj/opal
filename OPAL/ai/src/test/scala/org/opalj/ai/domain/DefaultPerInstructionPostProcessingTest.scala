@@ -45,7 +45,7 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br._
 
 /**
- * Tests the `PerInstructionPostProcessing`.
+ * Tests the `DefaultPerInstructionPostProcessing`.
  *
  * @author Michael Eichberg
  */
