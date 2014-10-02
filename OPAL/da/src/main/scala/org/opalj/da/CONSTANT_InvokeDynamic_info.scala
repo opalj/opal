@@ -29,6 +29,8 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  *
  * @author Michael Eichberg
@@ -38,6 +40,16 @@ case class CONSTANT_InvokeDynamic_info(
         name_and_type_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_InvokeDynamic
+
+    def toNode(implicit cp: Constant_Pool): Node =
+        <span class="cp_entry">
+            { this.getClass().getSimpleName }
+            (bootstrap_method_attr_index={ bootstrap_method_attr_index }
+            ,name_and_type_index={ name_and_type_index }
+            /*
+            <span class="cp_ref">{ cp(name_and_type_index).toNode(cp) }</span>
+            */)
+        </span>
 
     def toString(implicit cp: Constant_Pool): String = {
         s"CONSTANT_InvokeDynamic_info($bootstrap_method_attr_index,${cp(name_and_type_index).toString(cp)}/*$name_and_type_index */ )"

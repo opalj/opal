@@ -33,6 +33,8 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  * @author Michael Eichberg
  */
@@ -40,6 +42,14 @@ case class CONSTANT_String_info(
         string_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_String
+
+    def toNode(implicit cp: Constant_Pool): Node =
+        <span class="cp_entry">
+            CONSTANT_String_info(string_index={ string_index }
+            &laquo;
+            <span class="cp_ref">{ cp(string_index).toNode(cp) }</span>
+            &raquo;)
+        </span>
 
     override def toString(implicit cp: Constant_Pool): String =
         cp(string_index).toString

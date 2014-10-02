@@ -29,21 +29,39 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 case class CONSTANT_NameAndType_info(
         name_index: Constant_Pool_Index,
         descriptor_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_NameAndType
 
+    def toNode(implicit cp: Constant_Pool): Node =
+        <div class="cp_entry">
+            { this.getClass().getSimpleName }
+            (
+            <div class="cp_ref">
+                name_index={ name_index }
+                &laquo;
+                { cp(name_index).toNode(cp) }
+                &raquo;
+            </div>
+            <div class="cp_ref">
+                descriptor_index={ descriptor_index }
+                &laquo;
+                { cp(descriptor_index).toNode(cp) }
+                &raquo;
+            </div>
+            )
+        </div>
+
     def toString(implicit cp: Constant_Pool): String = {
-        // TODO Validate the implementation - looks confusing
-        if (!(cp(descriptor_index).toString(cp).charAt(0) == '('))
-            cp(name_index).toString(cp)+" : "+parseFieldType(cp(descriptor_index).asString)
-        else if ("<init>" == cp(name_index).asString)
-            cp(name_index).toString(cp)
+        val descriptor = cp(descriptor_index).toString(cp)
+        if (descriptor.charAt(0) != '(')
+            parseFieldType(cp(descriptor_index).asString)+" "+cp(name_index).toString(cp)
         else
-            "."+cp(name_index).toString(cp)+" : "+
-                parseMethodDescriptor(cp(name_index).asString, cp(descriptor_index).asString)
+            parseMethodDescriptor(cp(name_index).asString, cp(descriptor_index).asString)
     }
 
     def toLDCString(implicit cp: Constant_Pool): String =

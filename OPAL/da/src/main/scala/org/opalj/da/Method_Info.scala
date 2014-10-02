@@ -65,7 +65,6 @@ case class Method_Info(
             <div class="method_signature">
                 <span class="access_flags">{ flags }</span>
                 <span>{ parseMethodDescriptor(name, cp(descriptor_index).asString) }</span>
-                <a href="#" class="tooltip">{ name_index } <span>{ cp(name_index) }</span></a>
             </div>
             { attributesToXHTML(methodIndex) }
         </div>

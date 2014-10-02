@@ -29,6 +29,8 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  *
  * @author Michael Eichberg
@@ -37,6 +39,9 @@ case class CONSTANT_Float_info(
         value: Float) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Float
+
+    def toNode(implicit cp: Constant_Pool): Node =
+        <span class="cp_entry">CONSTANT_Float_info(<span class="constant_value">{ value }f</span>)</span>
 
     def toString(implicit cp: Constant_Pool): String = value.toString
 

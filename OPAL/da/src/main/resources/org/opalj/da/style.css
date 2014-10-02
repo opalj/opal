@@ -41,7 +41,22 @@ fieldset{
 	font-weight:400;
 }
 
-.methods,.fields,.attributes {
+.field_name{
+	font-style:italic;
+	color:#66AA66;
+}
+
+table.fields tr {
+	padding:0.1em;
+}
+
+table.fields td {
+	padding-top: 0.25em;
+	padding-right: 0.5em
+}
+
+
+div.methods,div.fields,div.attributes,div.constant_pool {
 	border-top: 1px solid #cccccc;
 }
 
@@ -95,7 +110,7 @@ div#class_file {
 	padding: 1em 1em 1em 1em;
 }
 	
-.selfRef {
+.selfref {
 	color:#888888;
 }
 
@@ -157,7 +172,7 @@ th.pc, td.pc, th.line, td.line {
 	color: #0000ff;
 }
 		
-.ConstantValue,.attribute_name{
+.constant_value,.attribute_name{
 	color: #FFA500;
 }
 
@@ -185,51 +200,25 @@ th.pc, td.pc, th.line, td.line {
 	box-shadow: 5px 5px 8px #CCC;
 }
 
-
-#constant_pool {
-	word-wrap: break-word;
-	position: fixed;
-
-	top: 0;
-	right: 0;
-	bottom: 0;
-	left: 0;
-	background: rgba(104,171,194,0.5);
-	z-index: 99999;
-	opacity:0;
-	-webkit-transition: opacity 500ms ease-in;
-	-moz-transition: opacity 500ms ease-in;
-	transition: opacity 500ms ease-in;
-	pointer-events: none;
-}
-
-#constant_pool:target {
-	opacity:1;
-	pointer-events: auto;
-	overflow-y: scroll;
-}
-
-#constant_pool > div {
-	width: 60%;
-	min-width:400px;
-	position: relative;
-	margin: 4% auto;
-	border-radius: 10px;
-	background: none repeat scroll 0 0 #F7F7F7;
-	background: -moz-linear-gradient(0, #F7F7F7);
-	background: -webkit-linear-gradient(0, #F7F7F7);
-	background: -o-linear-gradient(0, #F7F7F7);
-}
-
-ol.constant_pool_entries {
+ol.cp_entries, ol.exception_table {
 	padding-left: 2.5em;
 	padding-top:1em;
 	padding-bottom: 1em;
 	padding-right: 0em;
 }
 
-ol.constant_pool_entries > li {
+ol.cp_entries > li {
 	padding-top:0.5em;
+	white-space: nowrap;
+}
+
+div.cp_ref {
+	margin-left:1em;
+}
+
+div.cp_ref > div.cp_entry{
+	border-left:1px solid #666666;
+	padding-left:0.5em;
 }
 
 .close {

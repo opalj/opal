@@ -33,6 +33,8 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  * @author Michael Eichberg
  */
@@ -41,6 +43,24 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
     val class_index: Constant_Pool_Index
 
     val name_and_type_index: Constant_Pool_Index
+
+    def toNode(implicit cp: Constant_Pool): Node =
+        <div class="cp_entry">
+            { this.getClass().getSimpleName }
+            (<div class="cp_ref">
+                 class_index={ class_index }
+                 &laquo;
+                 { cp(class_index).toNode(cp) }
+                 &raquo;
+             </div>
+            <div class="cp_ref">
+                name_and_type_index={ name_and_type_index }
+                &laquo;
+                { cp(name_and_type_index).toNode(cp) }
+                &raquo;
+            </div>
+            )
+        </div>
 
     def toString(implicit cp: Constant_Pool): String = {
         cp(class_index).toString(cp).replace('/', '.')+"{ "+

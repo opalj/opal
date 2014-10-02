@@ -33,6 +33,8 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  * @author Michael Eichberg
  */
@@ -42,6 +44,9 @@ case class CONSTANT_Utf8_info(
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Utf8
 
     override def asString = value
+
+    def toNode(implicit cp: Constant_Pool): Node =
+        <span class="cp_entry">CONSTANT_Utf8_info("<span class="constant_value">{ value }</span>")</span>
 
     def toString(implicit cp: Constant_Pool): String = value
 

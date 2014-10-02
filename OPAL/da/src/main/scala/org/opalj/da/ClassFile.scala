@@ -95,12 +95,15 @@ case class ClassFile(
         val cpEntries =
             for {
                 cpIndex ← (1 until constant_pool.length)
-                if cp(cpIndex) != null
+                if cp(cpIndex) != null /*<= need for constant_double/_long entries*/
             } yield {
-                <li value={ cpIndex.toString }>{ cp(cpIndex).toString() }</li>
+                <li value={ cpIndex.toString }>{ cp(cpIndex).toNode }</li>
             }
 
-        <ol class="constant_pool_entries">{ cpEntries }</ol>
+        <ol class="cp_entries">
+            <li value="0"> &lt;UNUSED&gt;</li>
+            { cpEntries }
+        </ol>
     }
 
     def attributesToXHTML: Seq[Node] = {
@@ -115,8 +118,7 @@ case class ClassFile(
     }
 
     def fieldsToXHTML: Seq[Node] =
-        for (field ← fields)
-            yield field.toXHTML(fqn)
+        <table class="fields">{ for (field ← fields) yield field.toXHTML(fqn) }</table>
 
     def methodsToXHTML: Seq[Node] =
         for ((method, index) ← methods.zipWithIndex)
@@ -127,7 +129,7 @@ case class ClassFile(
     }
 
     protected def filter: Node = {
-        <details class="filter_settings">
+        <details class="filter_settings" open="true">
             <summary>Filter</summary>
             <fieldset>
                 <input type="radio" name="visibility" value="private" onclick="toogleFilter();">private</input>
@@ -169,21 +171,15 @@ case class ClassFile(
                     { accessFlags }
                     &nbsp;<b>{ fqn }</b>
                     &nbsp;{ superTypeFQNs }
-                    <span class="constant_pool_link">
-                        <a href="#constant_pool" style="color:black;">ConstantPool</a>
-                    </span>
-                    <div>
-                        <span class="tooltip">
-                            Version:&nbsp;{ major_version+"."+minor_version }
-                            <span>{ jdkVersion }</span>
-                        </span>
+                    <div id="class_file_version">
+                        Version:&nbsp;{ s"$major_version.$minor_version ($jdkVersion)" }
                     </div>
                 </div>
-                <div id="constant_pool">
-                    <div>
-                        <a href="#close" title="Close" class="close">X</a>
+                <div class="constant_pool">
+                    <details>
+                        <summary>Constant Pool</summary>
                         { cpToXHTML }
-                    </div>
+                    </details>
                 </div>
                 <div class="members">
                     <div class="attributes">

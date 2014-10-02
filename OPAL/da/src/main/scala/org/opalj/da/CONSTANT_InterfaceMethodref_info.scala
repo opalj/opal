@@ -28,6 +28,7 @@
  */
 package org.opalj
 package da
+import scala.xml.Node
 
 /**
  *
