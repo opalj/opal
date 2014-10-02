@@ -41,4 +41,5 @@ case object DCMPL extends ComparisonInstruction {
 
     final val mnemonic = "dcmpl"
 
+    final def operator: String = "cmpl"
 }

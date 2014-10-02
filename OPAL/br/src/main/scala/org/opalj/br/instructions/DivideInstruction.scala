@@ -35,4 +35,8 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class DivideInstruction extends StackBasedArithmeticInstruction
+abstract class DivideInstruction extends StackBasedArithmeticInstruction {
+
+    final def operator: String = "/"
+
+}

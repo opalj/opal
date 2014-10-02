@@ -41,6 +41,8 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def opcode: Opcode = IINC.opcode
 
+    final def operator: String = "+ "+constValue
+
     final def mnemonic: String = "iinc"
 
     final def runtimeExceptions: List[ObjectType] = Nil

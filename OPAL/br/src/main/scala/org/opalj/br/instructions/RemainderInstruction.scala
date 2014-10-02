@@ -35,4 +35,8 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class RemainderInstruction extends StackBasedArithmeticInstruction
+abstract class RemainderInstruction extends StackBasedArithmeticInstruction {
+
+    final def operator: String = "%"
+
+}

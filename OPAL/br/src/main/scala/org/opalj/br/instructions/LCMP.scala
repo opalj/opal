@@ -41,4 +41,5 @@ case object LCMP extends ComparisonInstruction {
 
     final val mnemonic = "lcmp"
 
+    final def operator: String = "cmp"
 }

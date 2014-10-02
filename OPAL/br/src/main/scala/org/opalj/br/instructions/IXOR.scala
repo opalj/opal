@@ -41,4 +41,5 @@ case object IXOR extends BitwiseInstruction {
 
     final val mnemonic = "ixor"
 
+    final def operator: String = "^"
 }

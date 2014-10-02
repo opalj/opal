@@ -41,4 +41,6 @@ case object IAND extends BitwiseInstruction {
 
     final val mnemonic = "iand"
 
+    final def operator: String = "&"
+
 }

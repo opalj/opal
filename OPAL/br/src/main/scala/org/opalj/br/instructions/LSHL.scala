@@ -41,4 +41,5 @@ case object LSHL extends ShiftInstruction {
 
     final val mnemonic = "lshl"
 
+    final def operator: String = "<<"
 }

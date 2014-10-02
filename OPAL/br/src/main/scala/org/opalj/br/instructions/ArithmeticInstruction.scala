@@ -35,7 +35,11 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class ArithmeticInstruction extends Instruction
+abstract class ArithmeticInstruction extends Instruction {
+
+    def operator: String
+
+}
 
 /**
  * Defines values and methods common to arithmetic instructions.

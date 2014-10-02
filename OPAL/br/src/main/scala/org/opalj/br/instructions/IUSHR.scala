@@ -41,4 +41,5 @@ case object IUSHR extends ShiftInstruction {
 
     final val mnemonic = "iushr"
 
+    final def operator: String = ">>>"
 }

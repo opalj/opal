@@ -41,4 +41,5 @@ case object FCMPL extends ComparisonInstruction {
 
     final val mnemonic = "fcmpl"
 
+    final def operator: String = "cmpl"
 }
