@@ -48,6 +48,7 @@ import org.opalj.ai.debug.XHTML
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.br.Code
+import org.opalj.ai.collectWithOperandsAndIndex
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.domain
 import org.opalj.br.instructions.Instruction
@@ -56,8 +57,9 @@ import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import org.opalj.br.AnalysisFailedException
 import org.opalj.ai.InterpretationFailedException
+import org.opalj.br.instructions.ArithmeticInstruction
 
-class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
+class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
 
     override def title: String = "Dead/Useless/Buggy Code Identification"
 
@@ -74,13 +76,8 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
     override def analyze(
         theProject: Project[URL],
         parameters: Seq[String],
-        initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[DeadCode]) = {
+        initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[BugReport]) = {
 
-        // we want to match expressions such as:
-        // -maxEvalFactor=1
-        // -maxEvalFactor=20
-        // -maxEvalFactor=1.25
-        // -maxEvalFactor=10.5
         val maxEvalFactor: Double =
             parameters.collectFirst {
                 case DeadCodeAnalysis.maxEvalFactorPattern(d) ⇒
@@ -94,7 +91,7 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
         val progressManagement = initProgressManagement(classFilesCount)
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
-        val results = new java.util.concurrent.ConcurrentLinkedQueue[DeadCode]()
+        val results = new java.util.concurrent.ConcurrentLinkedQueue[BugReport]()
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
             val domain = new DeadCodeAnalysisDomain(theProject, method)
             val ai =
@@ -102,19 +99,19 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
             val result = ai(classFile, method, domain)
             if (!result.wasAborted) {
                 val operandsArray = result.operandsArray
-                val methodWithDeadCode =
-                    for {
-                        (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
-                            case (ctiPC, i: ConditionalBranchInstruction) if operandsArray(ctiPC) != null ⇒
-                                (ctiPC, i, i.nextInstructions(ctiPC, /*not required*/ null))
-                        }
-                        branchTarget ← branchTargetPCs.iterator
-                        if operandsArray(branchTarget) == null
-                    } yield {
-                        val operands = operandsArray(ctiPC).take(instruction.operandCount)
-                        DeadCode(classFile, method, ctiPC, operands, branchTarget, None)
+
+                val methodWithDeadCode = for {
+                    (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
+                        case (ctiPC, i: ConditionalBranchInstruction) if operandsArray(ctiPC) != null ⇒
+                            (ctiPC, i, i.nextInstructions(ctiPC, /*not required*/ null))
                     }
-                for ((ln, dc) ← methodWithDeadCode.groupBy(_.ctiLineNumber)) {
+                    branchTarget ← branchTargetPCs.iterator
+                    if operandsArray(branchTarget) == null
+                } yield {
+                    val operands = operandsArray(ctiPC).take(instruction.operandCount)
+                    DeadCode(classFile, method, ctiPC, operands, branchTarget, None)
+                }
+                for ((ln, dc) ← methodWithDeadCode.groupBy(_.line)) {
                     ln match {
                         case None ⇒
                             if (dc.tail.isEmpty) {
@@ -133,12 +130,37 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
                                 dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(10)))))
                     }
                 }
-            } else {
+
+                val methodsWithUselessComputations = {
+                    import result.domain.ConcreteIntegerValue
+                    import result.domain.ConcreteLongValue
+                    collectWithOperandsAndIndex(result.domain)(body, result.operandsArray) {
+                        case (
+                            pc,
+                            instr: ArithmeticInstruction,
+                            Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
+                            ) ⇒
+                            val message = s"Constant computation: $a ${instr.operator} $b."
+                            UselessComputation(classFile, method, pc, message)
+                        case (
+                            pc,
+                            instr: ArithmeticInstruction,
+                            Seq(ConcreteLongValue(a), ConcreteLongValue(b), _*)
+                            ) ⇒
+                            val message = s"Constant computation: ${a}l ${instr.operator} ${b}l."
+                            UselessComputation(classFile, method, pc, message)
+                    }
+                }
+                results.addAll(
+                    scala.collection.JavaConversions.asJavaCollection(methodsWithUselessComputations)
+                )
+
+            } else if (!doInterrupt()) {
                 println(
                     s"[warn] analysis of ${method.fullyQualifiedSignature(classFile.thisType)} aborted "+
                         s"after ${ai.currentEvaluationCount} steps "+
                         s"(code size: ${method.body.get.instructions.length})")
-            }
+            } /* else (doInterrupt === true) the analysis as such was interrupted*/
         }
 
         var analysisTime: Long = 0l
@@ -176,11 +198,16 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[DeadCode])] {
 
 object DeadCodeAnalysis {
 
+    // we want to match expressions such as:
+    // -maxEvalFactor=1
+    // -maxEvalFactor=20
+    // -maxEvalFactor=1.25
+    // -maxEvalFactor=10.5
     final val maxEvalFactorPattern = """-maxEvalFactor=(\d+(?:.\d+)?)""".r
 
     final val defaultMaxEvalFactor = 1.75d
 
-    def resultsAsXHTML(results: (Long, Iterable[DeadCode])): Node = {
+    def resultsAsXHTML(results: (Long, Iterable[BugReport])): Node = {
         val (analysisTime, methodsWithDeadCode) = results
         val methodWithDeadCodeCount = methodsWithDeadCode.size
 
@@ -221,7 +248,7 @@ object DeadCodeAnalysis {
                     for { (pkg, mdc) ← groupedMessages } yield {
                         Seq(
                             <tr><td class="caption" colspan="4">{ pkg.replace('/', '.') }</td></tr>,
-                            mdc.toSeq.sorted(DeadCodeOrdering).map(_.toXHTML)
+                            mdc.toSeq.sorted(BugReportOrdering).map(_.toXHTML)
                         )
                     }.flatten
                 }

@@ -50,12 +50,16 @@ case class DeadCode(
         ctiPC: PC,
         operands: List[_],
         deadPC: PC,
-        accuracy: Option[Percentage]) {
+        accuracy: Option[Percentage]) extends BugReport {
 
     def ctiInstruction = method.body.get.instructions(ctiPC)
 
+    def pc = ctiPC
+
     def ctiLineNumber: Option[PC] =
         method.body.get.lineNumber(ctiPC)
+
+    def line = ctiLineNumber
 
     def deadLineNumber: Option[PC] =
         method.body.get.lineNumber(deadPC)
@@ -65,16 +69,18 @@ case class DeadCode(
             case i: SimpleConditionalBranchInstruction ⇒
                 val conditionIsAlwaysTrue =
                     method.body.get.pcOfNextInstruction(ctiPC) == deadPC
-                "the condition is always "+conditionIsAlwaysTrue
+                s"the condition (${i.operator}) is always $conditionIsAlwaysTrue; "+
+                    s"the instruction with program counter $deadPC "+
+                    s"${deadLineNumber.map(l ⇒ s"(line ${l}) ").getOrElse("")}is never reached"
             case i: CompoundConditionalBranchInstruction ⇒
                 val (caseValues, defaultCase) = i.caseValueOfJumpOffset(deadPC - ctiPC)
                 var message = ""
                 if (caseValues.nonEmpty)
-                    message += "dead case "+caseValues.mkString(" or ")
+                    message += "the case "+caseValues.mkString(" or ")+" is never reached"
                 if (defaultCase) {
                     if (message.nonEmpty)
                         message += "; "
-                    message += "default case is dead"
+                    message += "the switch statement's default case is dead"
                 }
 
                 message
@@ -82,6 +88,35 @@ case class DeadCode(
     }
 
     def toXHTML: Node = {
+
+        val message: Node = {
+            ctiInstruction match {
+                case i: SimpleConditionalBranchInstruction ⇒
+                    val conditionIsAlwaysTrue =
+                        method.body.get.pcOfNextInstruction(ctiPC) == deadPC
+
+                    <div>
+                        The condition (&nbsp;{ i.operator }
+                        ) is always&nbsp;{ conditionIsAlwaysTrue }
+                        .<br/>
+                        The instruction with program counter&nbsp;{ deadPC }
+                        { deadLineNumber.map(l ⇒ s"(line ${l}) ").getOrElse("") }
+                        is never reached.
+                    </div>
+                case i: CompoundConditionalBranchInstruction ⇒
+                    val (caseValues, defaultCase) = i.caseValueOfJumpOffset(deadPC - ctiPC)
+                    var message = ""
+                    if (caseValues.nonEmpty)
+                        message += "dead case "+caseValues.mkString(" or ")
+                    if (defaultCase) {
+                        if (message.nonEmpty)
+                            message += "; "
+                        message += "default case is dead"
+                    }
+
+                    <div>{ message }</div>
+            }
+        }
 
         val iNode =
             ctiInstruction match {

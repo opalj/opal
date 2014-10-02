@@ -29,18 +29,18 @@
 package org.opalj
 package bugpicker
 
-object DeadCodeOrdering extends scala.math.Ordering[DeadCode] {
+object BugReportOrdering extends scala.math.Ordering[BugReport] {
 
-    def compare(x: DeadCode, y: DeadCode): Int = {
+    def compare(x: BugReport, y: BugReport): Int = {
         if (x.classFile.fqn < y.classFile.fqn) {
             -1
         } else if (x.classFile.fqn == y.classFile.fqn) {
             val methodComparison = x.method.compare(y.method)
             if (methodComparison == 0) {
-                if (x.ctiLineNumber.isDefined)
-                    x.ctiLineNumber.get - y.ctiLineNumber.get
+                if (x.line.isDefined)
+                    x.line.get - y.line.get
                 else
-                    x.ctiPC - y.ctiPC
+                    x.pc - y.pc
             } else {
                 methodComparison
             }
