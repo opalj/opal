@@ -77,10 +77,11 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
     /**
      * Executes the analysis of the projects concrete methods.
      *
-     * @param Either an empty sequence or a sequence that contains a string
-     *      that matches the following pattern: `-maxEvalFactor=(\d+(?:.\d+)?)`; e.g.,
+     * @param Either an empty sequence or a sequence that contains one or more of the following parameters:
+     *      - a string that matches the following pattern: `-maxEvalFactor=(\d+(?:.\d+)?)`; e.g.,
      *      `-maxEvalFactor=0.5` or `-maxEvalFactor=1.5`. A value below 0.05 is usually
      *      not useable.
+     *      - a string that machtes the following pattern: `-maxCardinalityOfIntegerRanges=(\d+)`.
      */
     override def analyze(
         theProject: Project[URL],
@@ -94,6 +95,17 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
             }.getOrElse(
                 DeadCodeAnalysis.defaultMaxEvalFactor
             )
+        val maxCardinalityOfIntegerRanges: Int =
+            parameters.collectFirst {
+                case DeadCodeAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
+                    java.lang.Integer.parseInt(i).toInt
+            }.getOrElse(
+                DeadCodeAnalysis.defaultMaxCardinalityOfIntegerRanges
+            )
+
+        println("Settings:")
+        println(s"\tmaxEvalFactor=$maxEvalFactor")
+        println(s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges")
 
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
@@ -102,10 +114,12 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
 
         val results = new java.util.concurrent.ConcurrentLinkedQueue[BugReport]()
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
-            val domain = new DeadCodeAnalysisDomain(theProject, method)
+            val domain =
+                new DeadCodeAnalysisDomain(theProject, method, maxCardinalityOfIntegerRanges)
             val ai =
                 new BoundedInterruptableAI[domain.type](body, maxEvalFactor, doInterrupt)
             val result = ai(classFile, method, domain)
+
             if (!result.wasAborted) {
                 val operandsArray = result.operandsArray
 
@@ -205,11 +219,9 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
                         s"(code size: ${method.body.get.instructions.length})")
             } /* else (doInterrupt === true) the analysis as such was interrupted*/
         }
-            
-            java.lang.Math.max(10, 11)
 
         var analysisTime: Long = 0l
-        val methodsWithDeadCode = time {
+        val identifiedIssues = time {
             val stepIds = new java.util.concurrent.atomic.AtomicInteger(0)
 
             for {
@@ -237,7 +249,7 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
             scala.collection.JavaConversions.collectionAsScalaIterable(results)
         } { t ⇒ analysisTime = t }
 
-        (analysisTime, methodsWithDeadCode)
+        (analysisTime, identifiedIssues)
     }
 }
 
@@ -248,9 +260,15 @@ object DeadCodeAnalysis {
     // -maxEvalFactor=20
     // -maxEvalFactor=1.25
     // -maxEvalFactor=10.5
-    final val maxEvalFactorPattern = """-maxEvalFactor=(\d+(?:.\d+)?)""".r
+    final val maxEvalFactorPattern =
+        """-maxEvalFactor=(\d+(?:.\d+)?)""".r
 
     final val defaultMaxEvalFactor = 1.75d
+
+    final val maxCardinalityOfIntegerRangesPattern =
+        """-maxCardinalityOfIntegerRanges=(\d+)""".r
+
+    final val defaultMaxCardinalityOfIntegerRanges = 16
 
     def resultsAsXHTML(results: (Long, Iterable[BugReport])): Node = {
         val (analysisTime, methodsWithDeadCode) = results
