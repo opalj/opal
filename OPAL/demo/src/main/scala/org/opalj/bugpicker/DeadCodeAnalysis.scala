@@ -58,6 +58,15 @@ import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import org.opalj.br.AnalysisFailedException
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.br.instructions.ArithmeticInstruction
+import org.opalj.br.instructions.BinaryArithmeticInstruction
+import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.ComputationalTypeLong
+import org.opalj.br.instructions.UnaryArithmeticInstruction
+import org.opalj.br.instructions.LNEG
+import org.opalj.br.instructions.INEG
+import org.opalj.br.instructions.IINC
+import org.opalj.br.instructions.ShiftInstruction
+import org.opalj.br.instructions.INSTANCEOF
 
 class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
 
@@ -135,20 +144,54 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
                     import result.domain.ConcreteIntegerValue
                     import result.domain.ConcreteLongValue
                     collectWithOperandsAndIndex(result.domain)(body, result.operandsArray) {
+
+                        // HANDLING INT VALUES 
+                        //
                         case (
                             pc,
-                            instr: ArithmeticInstruction,
+                            instr @ BinaryArithmeticInstruction(ComputationalTypeInt),
                             Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                             ) ⇒
-                            val message = s"Constant computation: $a ${instr.operator} $b."
-                            UselessComputation(classFile, method, pc, message)
+                            (pc, s"Constant computation: $a ${instr.operator} $b.")
+
+                        case (pc, instr: INEG.type, Seq(ConcreteIntegerValue(a), _*)) ⇒
+                            (pc, s"Constant computation: -${a}")
+
+                        case (pc, instr @ IINC(_, v), Seq(ConcreteIntegerValue(a), _*)) ⇒
+                            (pc, s"Constant computation: ${a} + $v")
+
+                        // HANDLING LONG VALUES 
+                        //
                         case (
                             pc,
-                            instr: ArithmeticInstruction,
+                            instr @ BinaryArithmeticInstruction(ComputationalTypeLong),
                             Seq(ConcreteLongValue(a), ConcreteLongValue(b), _*)
                             ) ⇒
-                            val message = s"Constant computation: ${a}l ${instr.operator} ${b}l."
-                            UselessComputation(classFile, method, pc, message)
+                            (pc, s"Constant computation: ${a}l ${instr.operator} ${b}l.")
+                        case (
+                            pc,
+                            instr @ ShiftInstruction(ComputationalTypeLong),
+                            Seq(ConcreteLongValue(a), ConcreteIntegerValue(b), _*)
+                            ) ⇒
+                            (pc, s"Constant computation: ${a}l ${instr.operator} ${b}l.")
+
+                        case (pc, instr: LNEG.type, Seq(ConcreteLongValue(a), _*)) ⇒
+                            (pc, s"Constant computation: -${a}l")
+
+                        // HANDLING REFERENCE VALUES
+                        //
+
+                        case (
+                            pc,
+                            INSTANCEOF(referenceType),
+                            Seq(rv: domain.ReferenceValue, _*)
+                            ) if result.domain.intValueOption(
+                            result.operandsArray(pc + INSTANCEOF.length).head).isDefined ⇒
+                            (pc, s"Useless type test: ${rv.upperTypeBound.map(_.toJava).mkString("", " with ", "")} instanceof ${referenceType.toJava}")
+
+                    }.map { result ⇒
+                        val (pc, message) = result
+                        UselessComputation(classFile, method, pc, message)
                     }
                 }
                 results.addAll(
