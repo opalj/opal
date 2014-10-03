@@ -41,4 +41,5 @@ case object INEG extends NegateInstruction {
 
     final val mnemonic = "ineg"
 
+    final val computationalType = ComputationalTypeInt
 }

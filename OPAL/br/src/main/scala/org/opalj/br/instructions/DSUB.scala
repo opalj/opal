@@ -41,4 +41,6 @@ case object DSUB extends SubtractInstruction {
 
     final val mnemonic = "dsub"
 
+    final val computationalType = ComputationalTypeDouble
+
 }

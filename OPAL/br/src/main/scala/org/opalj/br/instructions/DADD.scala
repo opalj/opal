@@ -41,4 +41,5 @@ case object DADD extends AddInstruction {
 
     final val mnemonic = "dadd"
 
+    final val computationalType = ComputationalTypeDouble
 }

@@ -37,11 +37,9 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
+case class IINC(lvIndex: Int, constValue: Int) extends UnaryArithmeticInstruction {
 
     final def opcode: Opcode = IINC.opcode
-
-    final def operator: String = "+ "+constValue
 
     final def mnemonic: String = "iinc"
 
@@ -57,9 +55,16 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
             currentPC + 1 + 2
         }
     }
-
     override def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
+
+    final def computationalType: ComputationalType = ComputationalTypeInt
+
+    final def operator: String = "+ "+constValue
+
+    final def isPrefixOperator: Boolean = false
+
+    final def isShiftInstruction: Boolean = false
 
     override def toString = "IINC(lvIndex="+lvIndex+", "+constValue+")"
 

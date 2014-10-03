@@ -41,4 +41,6 @@ case object LDIV extends IntegerDivideInstruction {
 
     final val mnemonic = "ldiv"
 
+    final val computationalType = ComputationalTypeLong
+
 }

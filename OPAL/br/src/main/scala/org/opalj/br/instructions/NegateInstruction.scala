@@ -37,13 +37,18 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class NegateInstruction extends StackBasedArithmeticInstruction {
-
-    final def operator: String = "-"
+abstract class NegateInstruction
+        extends StackBasedArithmeticInstruction
+        with UnaryArithmeticInstruction {
 
     final def runtimeExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
+    final def operator: String = "-"
+
+    final def isPrefixOperator: Boolean = true
+
+    final def isShiftInstruction: Boolean = false
 }

@@ -41,4 +41,5 @@ case object FMUL extends MultiplyInstruction {
 
     final val mnemonic = "fmul"
 
+    final val computationalType = ComputationalTypeFloat
 }

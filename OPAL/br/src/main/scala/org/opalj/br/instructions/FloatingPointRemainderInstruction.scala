@@ -35,7 +35,8 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class FloatingPointRemainderInstruction extends RemainderInstruction {
+abstract class FloatingPointRemainderInstruction
+        extends RemainderInstruction {
 
     final def runtimeExceptions: List[ObjectType] = Nil
 

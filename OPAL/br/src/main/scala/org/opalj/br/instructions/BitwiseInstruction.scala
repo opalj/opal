@@ -37,11 +37,15 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class BitwiseInstruction extends StackBasedArithmeticInstruction {
+abstract class BitwiseInstruction
+        extends StackBasedArithmeticInstruction
+        with BinaryArithmeticInstruction {
 
     final def runtimeExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
+
+    final def isShiftInstruction: Boolean = false
 
 }

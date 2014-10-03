@@ -39,11 +39,13 @@ import org.opalj.collection.mutable.UShortSet
  */
 abstract class MultiplyInstruction extends StackBasedArithmeticInstruction {
 
-    final def operator: String = "*"
-
     final def runtimeExceptions: List[ObjectType] = Nil
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
+
+    final def operator: String = "*"
+
+    final def isShiftInstruction: Boolean = false
 
 }

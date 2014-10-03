@@ -45,7 +45,7 @@ case class INSTANCEOF(
 
     final def runtimeExceptions: List[ObjectType] = Nil
 
-    final def length: Int = 3
+    final def length: Int = INSTANCEOF.length
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
@@ -57,4 +57,5 @@ object INSTANCEOF {
 
     final val opcode = 193
 
+    final val length = 3
 }

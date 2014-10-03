@@ -35,8 +35,12 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class RemainderInstruction extends StackBasedArithmeticInstruction {
+abstract class RemainderInstruction
+        extends StackBasedArithmeticInstruction
+        with BinaryArithmeticInstruction {
 
     final def operator: String = "%"
+
+    final def isShiftInstruction: Boolean = false
 
 }

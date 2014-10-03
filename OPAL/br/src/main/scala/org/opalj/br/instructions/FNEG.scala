@@ -41,4 +41,5 @@ case object FNEG extends NegateInstruction {
 
     final val mnemonic = "fneg"
 
+    final val computationalType = ComputationalTypeFloat
 }

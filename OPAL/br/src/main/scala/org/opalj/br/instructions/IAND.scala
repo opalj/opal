@@ -43,4 +43,5 @@ case object IAND extends BitwiseInstruction {
 
     final def operator: String = "&"
 
+    final val computationalType = ComputationalTypeInt
 }

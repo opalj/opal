@@ -35,10 +35,31 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class ArithmeticInstruction extends Instruction {
+trait ArithmeticInstruction extends Instruction {
 
+    /**
+     * A string representation of the operator as
+     * used by the Java programming language (if possible).
+     * (In case of the comparison operators for long, float and double values the
+     * strings `cmp(g|l)?` are used.
+     */
     def operator: String
 
+    /**
+     * The computational type of the '''primary value(s)''' processed by the instruction.
+     *
+     * @note In case of the shift instructions for int and long values the second value
+     *      is always an int value but in both cases not all bits are taken into account.
+     */
+    def computationalType: ComputationalType
+
+    /**
+     * Returns `true` if this instruction is a shift (`<<`, `>>`, `>>>`) instruction.
+     * [[ShiftInstruction]]s are special since the computational type of the shift
+     * value must not be the same as the computational type of the shifted value and
+     * not all bits are taken into account.
+     */
+    def isShiftInstruction: Boolean
 }
 
 /**
@@ -50,4 +71,35 @@ object ArithmeticInstruction {
 
     final val runtimeExceptions = List(ObjectType.ArithmeticException)
 
+}
+
+/**
+ * Implemented by all arithmetic instructions that have two (runtime-dependent) operands.
+ */
+trait BinaryArithmeticInstruction extends ArithmeticInstruction {
+
+}
+
+object BinaryArithmeticInstruction {
+
+    def unapply(instruction: BinaryArithmeticInstruction): Option[ComputationalType] =
+        Some(instruction.computationalType)
+}
+
+/**
+ * Implemented by all arithmetic instructions that have one (runtime-dependent) operand.
+ * E.g. the [[NegateInstruction]] and [[IInc]] instructions.
+ */
+trait UnaryArithmeticInstruction extends ArithmeticInstruction {
+
+    def isPrefixOperator: Boolean
+
+    def isPostfixOperator: Boolean = !isPrefixOperator
+
+}
+
+object UnaryArithmeticInstruction {
+
+    def unapply(instruction: UnaryArithmeticInstruction): Option[ComputationalType] =
+        Some(instruction.computationalType)
 }
