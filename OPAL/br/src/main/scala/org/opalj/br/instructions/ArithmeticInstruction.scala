@@ -88,7 +88,7 @@ object BinaryArithmeticInstruction {
 
 /**
  * Implemented by all arithmetic instructions that have one (runtime-dependent) operand.
- * E.g. the [[NegateInstruction]] and [[IInc]] instructions.
+ * E.g. the [[NegateInstruction]] and [[IINC]] instructions.
  */
 trait UnaryArithmeticInstruction extends ArithmeticInstruction {
 
