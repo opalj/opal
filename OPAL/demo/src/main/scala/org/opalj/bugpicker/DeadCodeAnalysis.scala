@@ -205,8 +205,8 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
                         s"(code size: ${method.body.get.instructions.length})")
             } /* else (doInterrupt === true) the analysis as such was interrupted*/
         }
-            
-            java.lang.Math.max(10, 11)
+
+        java.lang.Math.max(10, 11)
 
         var analysisTime: Long = 0l
         val methodsWithDeadCode = time {
