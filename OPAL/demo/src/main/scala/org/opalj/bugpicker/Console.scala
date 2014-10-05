@@ -40,7 +40,7 @@ import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.debug.XHTML
 
 /**
- * A shallow analysis that tries to identify dead code based on the evaluation
+ * A data-flow analysis that tries to identify dead code based on the evaluation
  * of branches following if instructions that are not followed.
  *
  * @author Michael Eichberg

@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package util
+package collection
+package mutable
 
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
@@ -47,7 +47,7 @@ class LocalsTest
         with Matchers
         with ParallelTestExecution {
 
-    import org.opalj.ai.util._
+    import org.opalj.collection.mutable.Locals
 
     behavior of "a Locals data structure"
 

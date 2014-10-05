@@ -156,7 +156,7 @@ package object ai {
     type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
     type TheOperandsArray[T >: Null <: (ValuesDomain with Singleton)#Operands] = Array[T]
 
-    type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.ai.util.Locals[T]
+    type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.collection.mutable.Locals[T]
     type ALocalsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Locals[T]]
     type TheLocalsArray[T >: Null <: (ValuesDomain with Singleton)#Locals] = Array[T]
 
@@ -244,8 +244,9 @@ package object ai {
         calledMethod: Method,
         targetDomain: ValuesDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
 
+        import org.opalj.collection.mutable.Locals
         implicit val domainValueTag = targetDomain.DomainValueTag
-        val parameters = util.Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
+        val parameters = Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
         var localVariableIndex = 0
         var index = 0
         val operandsInParameterOrder = operands.reverse

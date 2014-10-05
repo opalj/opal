@@ -46,7 +46,7 @@ import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.util.Locals
+import org.opalj.collection.mutable.Locals
 
 /**
  * @author Michael Eichberg
