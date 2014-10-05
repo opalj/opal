@@ -83,7 +83,9 @@ case class Code_attribute(
             <div>
                 <details>
                     <summary>Exception Table:</summary>
-                    { for (exception ← exceptionTable) yield exception.toXHTML(cp, code) }
+                    <ol class="exception_table">
+                        { for (exception ← exceptionTable) yield exception.toXHTML(cp, code) }
+                    </ol>
                 </details>
             </div>
         else

@@ -223,7 +223,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
         val o$1 = ObjectType("org/apache/batik/swing/svg/AbstractJSVGComponent$1")
         val o$1$q = ObjectType("org/apache/batik/swing/svg/AbstractJSVGComponent$1$Query")
         nestedTypeInformation(o) should contain(o$1)
-        nestedTypeInformation(o$1) should contain(o$1$q)
+        nestedTypeInformation(o$1) should be('empty) // the jar contains inconsistent code...
         nestedTypeInformation(o$1$q) should be('empty)
     }
 

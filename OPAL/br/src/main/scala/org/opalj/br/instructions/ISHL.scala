@@ -41,4 +41,7 @@ case object ISHL extends ShiftInstruction {
 
     final val mnemonic = "ishl"
 
+    final val operator = "<<"
+
+    final val computationalType = ComputationalTypeInt
 }

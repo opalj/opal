@@ -41,4 +41,8 @@ case object LXOR extends BitwiseInstruction {
 
     final val mnemonic = "lxor"
 
+    final val operator = "^"
+
+    final val computationalType = ComputationalTypeLong
+
 }

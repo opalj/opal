@@ -28,6 +28,8 @@
  */
 package org.opalj
 
+import scala.xml.Node
+
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 
@@ -78,8 +80,8 @@ package object da {
         parseFieldType(cp(type_index).toString)
     }
 
-    def parseFieldType(ft: String): String = {
-        (ft.charAt(0): @scala.annotation.switch) match {
+    def parseFieldType(descriptor: String): String = {
+        (descriptor.charAt(0): @scala.annotation.switch) match {
             case 'B' ⇒ "byte"
             case 'C' ⇒ "char"
             case 'D' ⇒ "double"
@@ -88,13 +90,16 @@ package object da {
             case 'J' ⇒ "long"
             case 'S' ⇒ "short"
             case 'Z' ⇒ "boolean"
-            case 'L' ⇒ ft.substring(1, ft.length - 1).replace('/', '.')
-            case '[' ⇒ parseFieldType(ft.substring(1))+"[]"
-            case _   ⇒ throw new IllegalArgumentException(ft+" is not a valid field type descriptor")
+            case 'L' ⇒ descriptor.substring(1, descriptor.length - 1).replace('/', '.')
+            case '[' ⇒ parseFieldType(descriptor.substring(1))+"[]"
+            case _   ⇒ throw new IllegalArgumentException(descriptor+" is not a valid field type descriptor")
         }
     }
 
-    def parseMethodDescriptor(methodName: String, descriptor: String): String = {
+    def parseMethodDescriptor(
+        //definingTypeFQN: String,
+        methodName: String,
+        descriptor: String): String = {
         var index = 1 // we are not interested in the leading '('
         var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
         while (descriptor.charAt(index) != ')') {
@@ -133,6 +138,18 @@ package object da {
 
     def methodAccessFlagsToString(access_flags: Int): String =
         AccessFlags.toString(access_flags, AccessFlagsContexts.METHOD)
+
+    def abbreviateFQN(definingTypeFQN: String, memberTypeFQN: String): Node = {
+        val abbreviatedMemberTypeFQN =
+            org.opalj.abbreviateFQN(definingTypeFQN, memberTypeFQN, '.')
+
+        if (abbreviatedMemberTypeFQN == memberTypeFQN)
+            <span class="fqn"> { memberTypeFQN } </span>
+        else
+            <span class="fqn tooltip">
+                { abbreviatedMemberTypeFQN }<span>{ memberTypeFQN }</span>
+            </span>
+    }
 
 }
 

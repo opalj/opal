@@ -41,4 +41,8 @@ case object LOR extends BitwiseInstruction {
 
     final val mnemonic = "lor"
 
+    final val operator = "|"
+
+    final val computationalType = ComputationalTypeLong
+
 }

@@ -29,6 +29,8 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  * @author Michael Eichberg
  */
@@ -39,6 +41,8 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
     def asString: String = throw new UnsupportedOperationException()
 
     def toString(implicit cp: Constant_Pool): String
+
+    def toNode(implicit cp: Constant_Pool): Node
 
     def toLDCString(implicit cp: Constant_Pool): String
 

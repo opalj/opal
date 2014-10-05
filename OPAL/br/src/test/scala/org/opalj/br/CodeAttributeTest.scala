@@ -161,6 +161,15 @@ class CodeAttributeTest
         codeOfConstructor.lineNumberTable.get.lookupLineNumber(34) should be(Some(46))
     }
 
+    behavior of "the \"Code\" attribute's firstLineNumber method"
+
+    it should "be able to correctly extract the line number for the first instruction of aconstructor" in {
+        codeOfConstructor.firstLineNumber should be(Some(39))
+    }
+    it should "be able to correctly extract the line number for the first instruction" in {
+        codeOfPut.firstLineNumber should be(Some(51))
+    }
+
     behavior of "the \"Code\" attribute's joinInstructions method"
 
     it should "be able to correctly identify the join instructions" in {
@@ -192,6 +201,27 @@ private object CodeAttributeTest {
     //
     //
 
+    //PC  Line    Instruction
+    //0   41  aload_0
+    //1   |   invokespecial java.lang.Object{ <init> }
+    //4   39  aload_0
+    //5   |   iconst_0
+    //6   |   putfield code.BoundedBuffer{ numberInBuffer : int }
+    //9   43  aload_0
+    //10  |   iload_1
+    //11  |   putfield code.BoundedBuffer{ size : int }
+    //14  44  aload_0
+    //15  |   aload_0
+    //16  |   getfield code.BoundedBuffer{ size : int }
+    //19  |   newarray 10
+    //21  |   putfield code.BoundedBuffer{ buffer : int[] }
+    //24  45  aload_0
+    //25  |   aload_0
+    //26  |   iconst_0
+    //27  |   dup_x1
+    //28  |   putfield code.BoundedBuffer{ last : int }
+    //31  |   putfield code.BoundedBuffer{ first : int }
+    //44  46  return
     val codeOfConstructor =
         project.classFile(boundedBufferClass).get.methods.find(_.name == "<init>").get.body.get
 

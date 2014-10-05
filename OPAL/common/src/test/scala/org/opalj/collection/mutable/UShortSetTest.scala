@@ -37,7 +37,7 @@ import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
 /**
- * Tests the IntegerRanges Domain.
+ * Tests UShortSet.
  *
  * @author Michael Eichberg
  */

@@ -41,4 +41,7 @@ case object LCMP extends ComparisonInstruction {
 
     final val mnemonic = "lcmp"
 
+    final val operator = "cmp"
+
+    final val computationalType = ComputationalTypeLong
 }

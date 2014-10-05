@@ -45,8 +45,12 @@ case class ExceptionTableEntry(
         val catch_type: Int) {
 
     def toXHTML(implicit cp: Constant_Pool, code: Code): Node = {
-        val catchType = if (catch_type != 0) cp(catch_type).toString(cp) else "Any"
-        <div>try [{ start_pc }-{ end_pc }) catch { catchType } goto{ handler_pc }</div>
+
+        if (catch_type != 0) {
+            val catchType: Node = <span class="fqn">{ cp(catch_type).toString(cp) }</span>;
+            <li>try [{ start_pc }-{ end_pc }) catch { handler_pc } { catchType }</li>
+        } else
+            <li>try [{ start_pc }-{ end_pc }) catch { handler_pc } Any</li>
     }
 }
 

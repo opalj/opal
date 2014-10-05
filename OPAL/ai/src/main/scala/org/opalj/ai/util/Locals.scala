@@ -36,7 +36,7 @@ import scala.reflect.ClassTag
 import Locals._
 
 /**
- * An immutable array that enables random access and which is heavily optimized for
+ * Conceptually, an array that enables random access and which is heavily optimized for
  * small(er) collections (up to 12 elements) that are frequently compared and updated
  * and where sharing is beneficial.
  *

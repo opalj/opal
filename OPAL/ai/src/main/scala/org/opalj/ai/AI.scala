@@ -63,6 +63,8 @@ import org.opalj.br.instructions._
  * Creating new instances is extremely cheap as this class
  * does not have any significant associated state.
  *
+ * Anyway, subclasses are not required to be thread-safe as well.
+ *
  * @note
  *     OPAL does not make assumptions about the number of domain objects that
  *     are used. However, if a single domain object is used by multiple instances
@@ -79,8 +81,6 @@ import org.opalj.br.instructions._
  */
 trait AI[D <: Domain] {
 
-    import AI._
-
     /**
      * Determines whether a running (or to be started) abstract interpretation
      * should be interrupted (default: `false`).
@@ -92,8 +92,9 @@ trait AI[D <: Domain] {
      *
      * Called during the abstract interpretation of a method to determine whether
      * the computation should be aborted. This method is ''always called directly before
-     * the evaluation of the first/next instruction''. I.e., after the evaluation of an
-     * instruction and the update of the memory as well as stating all constraints.
+     * the evaluation of the first/next instruction''. I.e., before the very first
+     * instruction or after the ai has completely evaluated an instruction, updated the
+     * memory and stated all constraints.
      *
      * @note When the abstract interpreter is currently waiting on the result of the
      *    interpretation of a called method it may take some time before the
@@ -180,31 +181,28 @@ trait AI[D <: Domain] {
         import domain.DomainValueTag
 
         someLocals.map { l ⇒
+            val maxLocals = method.body.get.maxLocals
+
             if (l.size < (method.parameterTypes.size + (if (method.isStatic) 0 else 1)))
                 throw new IllegalArgumentException(
-                    "the number of initial values is less than the number of parameters"
+                    "the number of initial locals is less than the number of parameters"
                 )
 
-            val maxLocals = method.body.get.maxLocals
-            if (l.size > maxLocals) {
-                // l.toArray
+            if (l.size > maxLocals)
                 throw new IllegalArgumentException(
-                    "the number of initial locals("+l.size+
-                        ") is larger than \"maxLocals("+maxLocals+")\""
+                    "the number of initial locals is larger than max locals"
                 )
-            } else {
-                // the number of given locals is smaller than or equal to the number of max locals
-                // (the former number still has to be larger or equal to the number of 
-                // parameter values (including "this"))
-                val locals = org.opalj.ai.util.Locals[domain.DomainValue](maxLocals)
-                // for (i ← (0 until l.size)) locals(i) = l(i)
-                var i = l.size - 1
-                while (i >= 0) {
-                    locals.set(i, l(i))
-                    i -= 1
-                }
-                locals
+
+            // ... the number of given locals is smaller than or equal to the number of 
+            // max locals (the former number still has to be larger or equal to the 
+            // number of parameter values (including "this"))
+            val locals = org.opalj.ai.util.Locals[domain.DomainValue](maxLocals)
+            var i = l.size - 1
+            while (i >= 0) {
+                locals.set(i, l(i))
+                i -= 1
             }
+            locals
         }.getOrElse { // there are no locals at all...
             val code = method.body.get
             val locals = org.opalj.ai.util.Locals[domain.DomainValue](code.maxLocals)
@@ -239,8 +237,7 @@ trait AI[D <: Domain] {
      *
      * ==Controlling the AI==
      * The abstract interpretation of a method is aborted if the AI's `isInterrupted`
-     * method returns true. That method is called directly before an instruction
-     * is evaluated.
+     * method returns true.
      *
      * @param classFile Some class file; needed to determine the type of `this` if
      *      the method is an instance method.
@@ -295,7 +292,7 @@ trait AI[D <: Domain] {
 
         continueInterpretation(
             code, theDomain)(
-                initialWorkList, List.empty[PC], operandsArray, localsArray, Nil)
+                AI.initialWorkList, List.empty[PC], operandsArray, localsArray, Nil)
     }
 
     /**
@@ -321,9 +318,8 @@ trait AI[D <: Domain] {
             case _           ⇒ /*nothing to do*/
         }
         theDomain match {
-            case d: TheCodeStructure ⇒
-                d.setCodeStructure(instructions, joinInstructions)
-            case _ ⇒ /*nothing to do*/
+            case d: TheCodeStructure ⇒ d.setCodeStructure(instructions, joinInstructions)
+            case _                   ⇒ /*nothing to do*/
         }
         theDomain match {
             case d: TheMemoryLayout ⇒
@@ -346,19 +342,20 @@ trait AI[D <: Domain] {
      * @param initialWorkList The list of program counters with which the interpretation
      *      will continue. If the method was never analyzed before, the list should just
      *      contain the value "0"; i.e., we start with the interpretation of the
-     *      first instruction.
-     *      Note that the worklist may contain negative values. These values are not
+     *      first instruction (see `initialWorkList`).
+     *      '''Note that the worklist may contain negative values. These values are not
      *      related to a specific instruction per-se but encode the necessary information
      *      to handle subroutines. In case of calls to a subroutine we add the special
      *      values `SUBROUTINE` and `SUBROUTINE_START` to the list to encode when the
      *      evaluation started. This is needed to completely process the subroutine
-     *      (to explore all paths) before we finally return to the main method.
+     *      (to explore all paths) before we finally return to the main method.'''
      *
      * @param alreadyEvaluated The list of the program counters (PC) of the instructions
      *      that were already evaluated. Initially (i.e., if the given code is analyzed
      *      the first time) this list is empty.
      *      This list is primarily needed to correctly resolve jumps to sub routines
-     *      (`JSR(_W)` and `RET` instructions.)
+     *      (`JSR(_W)` and `RET` instructions.) For each instruction that was evaluated,
+     *      the operands array and the locals array must be non-empty (not `null`).
      *
      * @param theOperandsArray The array that contains the operand stacks. Each value
      *      in the array contains the operand stack before the instruction with the
@@ -404,8 +401,10 @@ trait AI[D <: Domain] {
         import theDomain.{ intIs0, intIsNot0, IntIs0, IntIsNot0 }
         import theDomain.{ intIsGreaterThan, intIsGreaterThan0, IntIsGreaterThan, IntIsGreaterThan0 }
         import theDomain.{ intIsLessThan, intIsLessThan0, IntIsLessThan, IntIsLessThan0 }
-        import theDomain.{ intIsGreaterThanOrEqualTo, intIsGreaterThanOrEqualTo0, IntIsGreaterThanOrEqualTo, IntIsGreaterThanOrEqualTo0 }
-        import theDomain.{ intIsLessThanOrEqualTo, intIsLessThanOrEqualTo0, IntIsLessThanOrEqualTo, IntIsLessThanOrEqualTo0 }
+        import theDomain.{ intIsGreaterThanOrEqualTo, intIsGreaterThanOrEqualTo0 }
+        import theDomain.{ IntIsGreaterThanOrEqualTo, IntIsGreaterThanOrEqualTo0 }
+        import theDomain.{ intIsLessThanOrEqualTo, intIsLessThanOrEqualTo0 }
+        import theDomain.{ IntIsLessThanOrEqualTo, IntIsLessThanOrEqualTo0 }
 
         import ObjectType._
 
@@ -466,7 +465,7 @@ trait AI[D <: Domain] {
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
                     false
                 } else if (!joinInstructions.contains(targetPC)) {
-                    // the instructions is not an instruction where multiple control-flow 
+                    // the instruction is not an instruction where multiple control-flow 
                     // paths join; however, we may have a dangling computation...
                     operandsArray(targetPC) = operands
                     localsArray(targetPC) = locals
@@ -941,8 +940,8 @@ trait AI[D <: Domain] {
                     // the call of a method. I.e., we make sure the operand
                     // stack and the registers are empty for all instructions that
                     // potentially belong to the subroutine by clearing all information
-                    // when the exploration of all paths is finished and before we 
-                    // return from the subroutine.
+                    // when the exploration of all paths of the subroutine is finished 
+                    // and before we return from the subroutine.
                     // Semantics (from the JVM Spec):
                     // - The instruction following each jsr(_w) instruction may be 
                     //      returned to only by a single ret instruction.
@@ -981,11 +980,12 @@ trait AI[D <: Domain] {
                             pc,
                             branchtarget,
                             false,
-                            newOperands,
-                            locals)
+                            newOperands, locals)
 
                         if (tracer.isDefined) {
-                            tracer.get.jumpToSubroutine(theDomain)(pc, branchtarget, memoryLayoutBeforeSubroutineCall.size)
+                            tracer.get.jumpToSubroutine(
+                                theDomain)(
+                                    pc, branchtarget, memoryLayoutBeforeSubroutineCall.size)
                         }
 
                     case 169 /*ret*/ ⇒
@@ -993,14 +993,16 @@ trait AI[D <: Domain] {
                         // we now know the local variable that is used and
                         // (one of) the ret instruction, we store this for later usage
                         val oldWorklist = worklist
-                        var remaining = List.empty[PC]
+
+                        var subroutineWorklist = List.empty[PC] // after the next steps... 
                         var tail = worklist
                         while (tail.head >= 0) {
-                            remaining = tail.head :: remaining
+                            subroutineWorklist = tail.head :: subroutineWorklist
                             tail = tail.tail
                         }
-                        remaining = remaining.reverse // reestablish the correct order
+                        subroutineWorklist = subroutineWorklist.reverse // reestablish the correct order
                         tail = tail.tail // remove SUBROUTINE_START marker
+
                         var dynamic_subroutine_information = List.empty[PC]
                         while (tail.head != SUBROUTINE_RETURN_TO_TARGET) {
                             dynamic_subroutine_information = tail.head :: dynamic_subroutine_information
@@ -1010,12 +1012,14 @@ trait AI[D <: Domain] {
                         if (dynamic_subroutine_information.isEmpty) {
                             // let's store the local variable
                             worklist =
-                                remaining :::
-                                    (SUBROUTINE_START :: pc :: SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :: lvIndex :: tail)
+                                subroutineWorklist :::
+                                    (SUBROUTINE_START :: pc ::
+                                        SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE :: lvIndex ::
+                                        tail)
                         } else {
                             // just let's store this ret instruction
                             worklist =
-                                remaining :::
+                                subroutineWorklist :::
                                     (SUBROUTINE_START :: pc :: dynamic_subroutine_information.reverse) :::
                                     tail
                         }
@@ -1949,7 +1953,8 @@ trait AI[D <: Domain] {
 
                     case opcode ⇒
                         throw new BytecodeProcessingFailedException(
-                            "unsupported opcode: "+opcode)
+                            s"unsupported opcode: $opcode"
+                        )
                 }
 
                 theDomain.evaluationCompleted(
@@ -1974,8 +1979,10 @@ trait AI[D <: Domain] {
             }
         }
 
-        import AIResultBuilder.completed
-        val result = completed(code, theDomain)(evaluated, operandsArray, localsArray)
+        val result =
+            AIResultBuilder.completed(
+                code, theDomain)(
+                    evaluated, operandsArray, localsArray)
         theDomain.abstractInterpretationEnded(result)
         if (tracer.isDefined) tracer.get.result(result)
         result

@@ -159,6 +159,84 @@ package object opalj {
     }
 
     /**
+     * Returns the package definitions shared by both fully qualified type names.
+     * If both types do not define a common package `None` is returned.
+     *
+     * @example
+     * {{{
+     * scala> org.opalj.commonPackage("a.b.T","a.c.T")
+     * res: Option[String] = Some(a.)
+     *
+     * scala> org.opalj.commonPackage("a.b.T","a.T")
+     * res: Option[String] = Some(a.)
+     *
+     * scala> org.opalj.commonPackage("a.b.T","a.b.T")
+     * res: Option[String] = Some(a.b.)
+     *
+     * scala> org.opalj.commonPackage("c.b.T","a.T")
+     * res: Option[String] = None
+     *
+     * scala> org.opalj.commonPackage("a.b.T","d.c.T")
+     * res: Option[String] = None
+     * }}}
+     */
+    def commonPackage(
+        fqnA: String, fqnB: String,
+        packageSeperator: Char = '.'): Option[String] = {
+        val packageSeperatorIndex = fqnA.indexOf(packageSeperator) + 1
+        if (packageSeperatorIndex <= 0)
+            return None;
+
+        val rootPackage = fqnA.substring(0, packageSeperatorIndex)
+        if (packageSeperatorIndex == fqnB.indexOf(packageSeperator) + 1 &&
+            rootPackage == fqnB.substring(0, packageSeperatorIndex)) {
+            commonPackage(
+                fqnA.substring(packageSeperatorIndex, fqnA.length()),
+                fqnB.substring(packageSeperatorIndex, fqnB.length())
+            ) match {
+                    case Some(childPackage) ⇒ Some(rootPackage + childPackage)
+                    case None               ⇒ Some(rootPackage)
+                }
+        } else {
+            None
+        }
+    }
+
+    /**
+     * Abbreviates the given `memberTypeFQN` by abbreviating the common packages
+     * (except of the last shared package) of both fully qualified type nams using '…'.
+     *
+     * @example
+     * {{{
+     * scala> org.opalj.abbreviateFQN("a.b.T","a.T") // <= no abbrev.
+     * res: String = a.T
+     *
+     * scala> org.opalj.abbreviateFQN("a.b.T","a.b.T")
+     * res: String = …b.T
+     *
+     * scala> org.opalj.abbreviateFQN("a.b.c.T","a.b.c.T.X")
+     * res: String = …c.T.X
+     * }}}
+     */
+    def abbreviateFQN(
+        definingTypeFQN: String, memberTypeFQN: String,
+        packageSeperator: Char = '.'): String = {
+
+        commonPackage(definingTypeFQN, memberTypeFQN) match {
+            case Some(commonPackages) if commonPackages.indexOf(packageSeperator) < commonPackages.length - 1 ⇒
+                // we have more than one common package...
+                val beforeLastCommonPackageIndex = commonPackages.dropRight(1).lastIndexOf('.')
+                val length = memberTypeFQN.length
+                val packagesCount = commonPackages.count(_ == '.') - 1
+                val packageAbbreviation = "." * packagesCount
+                packageAbbreviation +
+                    memberTypeFQN.substring(beforeLastCommonPackageIndex + 1, length)
+            case _ ⇒
+                memberTypeFQN
+        }
+    }
+
+    /**
      * Evaluates the given expression `f` with type `T` the given number of
      * `times` and stores the result in an `IndexedSeq[T]`.
      *

@@ -30,7 +30,7 @@ package org.opalj
 
 /**
  * Exception that is thrown if some error is detected that is most likely the
- * result of a bug in OPAL (or an invalid class file).
+ * result of a bug in the core OPAL framework (or an invalid class file).
  *
  * @author Michael Eichberg
  */

@@ -37,7 +37,13 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class SubtractInstruction extends StackBasedArithmeticInstruction {
+abstract class SubtractInstruction
+        extends StackBasedArithmeticInstruction
+        with BinaryArithmeticInstruction {
+
+    final def isShiftInstruction: Boolean = false
+
+    final def operator: String = "-"
 
     final def runtimeExceptions: List[ObjectType] = Nil
 

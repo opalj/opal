@@ -41,4 +41,5 @@ case object IMUL extends MultiplyInstruction {
 
     final val mnemonic = "imul"
 
+    final val computationalType = ComputationalTypeInt
 }

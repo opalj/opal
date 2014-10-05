@@ -44,4 +44,8 @@ abstract class MultiplyInstruction extends StackBasedArithmeticInstruction {
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
+    final def operator: String = "*"
+
+    final def isShiftInstruction: Boolean = false
+
 }

@@ -41,4 +41,5 @@ case object DDIV extends FloatingPointDivideInstruction {
 
     final val mnemonic = "ddiv"
 
+    final val computationalType = ComputationalTypeDouble
 }

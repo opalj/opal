@@ -95,7 +95,7 @@ case class InnerClassesEntry(
                 } else
                     outerClassFQN
 
-            <div class={ "inner_class"+{ if (definedType == definingClassFQN) " selfRef" else "" } }>
+            <div class={ "inner_class"+{ if (definedType == definingClassFQN) " selfref" else "" } }>
                 <span class="fqn">
                     { outerName }
                     {{

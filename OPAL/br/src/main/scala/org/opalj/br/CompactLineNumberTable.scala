@@ -35,11 +35,7 @@ package br
  * @author Michael Eichberg
  */
 case class CompactLineNumberTable(
-    lineNumbers: Array[Byte])
-        extends LineNumberTable {
-
-    def lookupLineNumber(pc: PC): Option[Int] = {
-        /* FORMAT
+    /* FORMAT
          *  <pre>
          * LineNumberTable_attribute {
          *   DATA:
@@ -50,6 +46,14 @@ case class CompactLineNumberTable(
          * </pre>
          *
          */
+    lineNumbers: Array[Byte])
+        extends LineNumberTable {
+
+    def asUnsignedShort(hb: Byte, lb: Byte): Int = {
+        ((hb & 0xFF) << 8) + (lb & 0xFF)
+    }
+
+    def lookupLineNumber(pc: PC): Option[Int] = {
         val breaks = new scala.util.control.Breaks
         import breaks.{ break, breakable }
 
@@ -71,6 +75,19 @@ case class CompactLineNumberTable(
             }
         }
         lastLineNumber
+    }
+
+    def firstLineNumber(): Option[Int] = {
+        if (lineNumbers.length == 0)
+            return None
+
+        val raw_pc_lns = lineNumbers.toIndexedSeq.grouped(2).zipWithIndex.filter(_._2 % 2 == 1).map(_._1)
+        val raw_lns = raw_pc_lns
+        val lns =
+            raw_lns map { bytes ⇒
+                val hb = bytes(0); val lb = bytes(1); asUnsignedShort(hb, lb)
+            }
+        Some(lns.min)
     }
 
 }

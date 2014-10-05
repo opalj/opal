@@ -44,4 +44,11 @@ abstract class ShiftInstruction extends StackBasedArithmeticInstruction {
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
+    final def isShiftInstruction: Boolean = true
+}
+
+object ShiftInstruction {
+
+    def unapply(instruction: ShiftInstruction): Option[ComputationalType] =
+        Some(instruction.computationalType)
 }

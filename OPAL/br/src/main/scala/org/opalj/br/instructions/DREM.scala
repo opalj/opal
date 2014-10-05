@@ -41,4 +41,6 @@ case object DREM extends FloatingPointRemainderInstruction {
 
     final val mnemonic = "drem"
 
+    final val computationalType = ComputationalTypeDouble
+
 }

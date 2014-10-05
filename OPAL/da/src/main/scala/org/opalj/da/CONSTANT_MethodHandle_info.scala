@@ -29,6 +29,8 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  *
  * @author Michael Eichberg
@@ -38,6 +40,31 @@ case class CONSTANT_MethodHandle_info(
         reference_index: Constant_Pool_Index) extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_MethodHandle
+
+    def toNode(implicit cp: Constant_Pool): Node =
+        <span class="cp_entry">
+            { this.getClass().getSimpleName }
+            (reference_kind={ reference_kind }
+            /*
+            <span class="method_handle_reference_kind">{
+                reference_kind match {
+                    case 1⇒ "REF_getField getfield C.f: T"
+                    case 2⇒ "REF_getStatic getstatic C.f:T"
+                    case 3⇒ "REF_putField putfield C.f:T"
+                    case 4⇒ "REF_putStatic putstatic C.f:T"
+                    case 5⇒ "REF_invokeVirtual invokevirtual C.m:(A*)T"
+                    case 6⇒ "REF_invokeStatic invokestatic C.m:(A*)T"
+                    case 7⇒ "REF_invokeSpecial invokespecial C.m:(A*)T"
+                    case 8⇒ "REF_newInvokeSpecial new C; dup; invokespecial C.<init>:(A*)V"
+                    case 9⇒ "REF_invokeInterface invokeinterface C.m:(A*)T"
+                }
+            }</span>
+            */,
+            reference_index={ reference_index }
+            /*
+            <span class="cp_ref">{ cp(reference_index).toNode(cp) }</span>
+            */)
+        </span>
 
     def toString(implicit cp: Constant_Pool): String = {
         s"CONSTANT_MethodHandle_info($reference_kind ,${cp(reference_index).toString(cp)}/*$reference_index */)"

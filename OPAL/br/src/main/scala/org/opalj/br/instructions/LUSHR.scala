@@ -41,4 +41,8 @@ case object LUSHR extends ShiftInstruction {
 
     final val mnemonic = "lushr"
 
+    final val operator = ">>>"
+
+    final val computationalType = ComputationalTypeLong
+
 }

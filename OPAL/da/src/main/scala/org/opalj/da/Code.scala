@@ -40,6 +40,8 @@ import scala.util.Random
  */
 case class Code(instructions: Array[Byte]) {
 
+    import Code.id
+
     def toXHTML(
         methodIndex: Int,
         exceptionTable: IndexedSeq[ExceptionTableEntry],
@@ -72,8 +74,6 @@ case class Code(instructions: Array[Byte]) {
             }
         </table>
     }
-
-    private[this] def id(methodIndex: Int, pc: Int): String = s"m${methodIndex}_pc$pc"
 
     private[this] def createTableRowForInstruction(
         methodIndex: Int,
@@ -243,12 +243,12 @@ case class Code(instructions: Array[Byte]) {
                 case 180 ⇒
                     <span>
                         <span class="instruction getfield">getfield </span>
-                        { val c = in.readUnsignedShort; cp(c).toString(cp)+" ["+c+"]" }
+                        { val c = in.readUnsignedShort; cp(c).toString(cp) }
                     </span>
                 case 178 ⇒
                     <span>
                         <span class="instruction getstatic">getstatic </span>
-                        { val c = in.readUnsignedShort; cp(c).toString(cp)+" ["+c+"]" }
+                        { val c = in.readUnsignedShort; cp(c).toString(cp) }
                     </span>
                 case 167 ⇒
                     val targetPC = in.readShort + pc
@@ -355,28 +355,28 @@ case class Code(instructions: Array[Byte]) {
                     val c = in.readUnsignedShort
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
-                    val signature = cp(c).toString(cp)+" ["+c+"]"
+                    val signature = cp(c).toString(cp)
                     <span>
                         <span class="instruction invokeinterface">invokeinterface </span>
                         { signature }
                     </span>
                 case 183 ⇒
                     val c = in.readUnsignedShort
-                    val signature = cp(c).toString(cp)+" ["+c+"]"
+                    val signature = cp(c).toString(cp)
                     <span>
                         <span class="instruction invokespecial">invokespecial </span>
                         { signature }
                     </span>
                 case 184 ⇒
                     val c = in.readUnsignedShort
-                    val signature = cp(c).toString(cp)+" ["+c+"]"
+                    val signature = cp(c).toString(cp)
                     <span>
                         <span class="instruction invokespecial">invokestatic  </span>
                         { signature }
                     </span>
                 case 182 ⇒
                     val c = in.readUnsignedShort
-                    val signature = cp(c).toString(cp)+" ["+c+"]"
+                    val signature = cp(c).toString(cp)
                     <span>
                         <span class="instruction invokevirtual">invokevirtual </span>
                         { signature }
@@ -461,12 +461,12 @@ case class Code(instructions: Array[Byte]) {
                 case 88  ⇒ <span class="instruction pop2">pop2</span>
                 case 181 ⇒
                     val c = in.readUnsignedShort
-                    val fieldSignature = cp(c).toString(cp)+" ["+c+"]"
-                    <span><span class="instruction putfield">putfield </span>{ fieldSignature }</span>
+                    val signature = cp(c).toString(cp)
+                    <span><span class="instruction putfield">putfield </span>{ signature }</span>
                 case 179 ⇒
                     val c = in.readUnsignedShort
-                    val fieldSignature = cp(c).toString(cp)+" ["+c+"]"
-                    <span><span class="instruction putstatic">putstatic </span>{ fieldSignature }</span>
+                    val signature = cp(c).toString(cp)
+                    <span><span class="instruction putstatic">putstatic </span>{ signature }</span>
                 case 169 ⇒
                     <span><span class="instruction ret">ret </span>{ lvIndex }</span>
                 case 177 ⇒ <span class="instruction return">return</span>
@@ -513,4 +513,9 @@ case class Code(instructions: Array[Byte]) {
         }
         instructions
     }
+}
+object Code {
+
+    def id(methodIndex: Int, pc: Int): String = s"m${methodIndex}_pc$pc"
+
 }

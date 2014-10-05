@@ -27,21 +27,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package instructions
+package bugpicker
 
-/**
- * Logical shift right int.
- *
- * @author Michael Eichberg
- */
-case object IUSHR extends ShiftInstruction {
+object BugReportOrdering extends scala.math.Ordering[BugReport] {
 
-    final val opcode = 124
+    def compare(x: BugReport, y: BugReport): Int = {
+        if (x.classFile.fqn < y.classFile.fqn) {
+            -1
+        } else if (x.classFile.fqn == y.classFile.fqn) {
+            val methodComparison = x.method.compare(y.method)
+            if (methodComparison == 0) {
+                if (x.line.isDefined)
+                    x.line.get - y.line.get
+                else
+                    x.pc - y.pc
+            } else {
+                methodComparison
+            }
+        } else {
+            1
+        }
+    }
 
-    final val mnemonic = "iushr"
-
-    final val operator = ">>>"
-
-    final val computationalType = ComputationalTypeInt
 }

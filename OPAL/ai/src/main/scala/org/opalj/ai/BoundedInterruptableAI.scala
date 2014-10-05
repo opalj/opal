@@ -34,7 +34,16 @@ import org.opalj.br.Code
 /**
  * An abstract interpreter that interrupts itself after the evaluation of
  * the given number of instructions or if the callback function `doInterrupt` returns
- * false.
+ * `false`.
+ *
+ * @param maxEvaluationCount The maximum number of instructions after which the
+ *      abstract interpretation is aborted. In general this number should be calculated
+ *      based on the method's/project's properties. To calculate it based on the properties
+ *      of a method, it is possible to use the predefined function
+ *      [[InstructionCountBoundedAI#calculateMaxEvaluationCount]].
+ * @param doInterrupt This function is called by the abstract interpreter to check if
+ *      the abstract interpretation should be aborted. Given that this function is called
+ *      very often, it is important that it is efficient.
  *
  * @author Michael Eichberg
  */

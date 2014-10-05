@@ -226,72 +226,10 @@ trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
 
         val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
         import executionHandler.domain
-        val parameters = PerformInvocations.mapOperandsToParameters(operands, method, domain)
+        val parameters = mapOperandsToParameters(operands, method, domain)
         val callResult = executionHandler.perform(pc, definingClass, method, parameters)
         // TODO [Improvement] Add support to map a value back to a parameter if a passed parameter is returned. (E.g. Math.min(a,b) will either return a or b.) 
         callResult
-    }
-}
-/**
- * General useful helper methods related to the invocation of methods.
- */
-object PerformInvocations {
-
-    /**
-     * Maps a list of operands (e.g., as passed to the `invokeXXX` instructions) to
-     * the list of parameters for the given method. The parameters are stored in the
-     * local variables ([[Locals]])/registers of the method; i.e., this method
-     * creates an initial assignment for the local variables that can directly
-     * be used to pass them to [[AI]]'s
-     * `perform(...)(<initialOperands = Nil>,initialLocals)` method.
-     *
-     * @param operands The list of operands used to call the given method. The length
-     *      of the list must be:
-     *      {{{
-     *      calledMethod.descriptor.parametersCount + { if (calledMethod.isStatic) 0 else 1 }
-     *      }}}.
-     *      I.e., the list of operands must contain one value per parameter and – 
-     *      in case of instance methods – the receiver object. The list __must not
-     *       contain additional values__. The latter is automatically ensured if this
-     *      method is called (in)directly by [[AI]] and the operands were just passed
-     *      through.
-     *      If two or more operands are (reference) identical then the adaptation will only
-     *      be performed once and the adapted value will be reused; this ensures that
-     *      the relation between values remains stable.
-     * @param calledMethod The method that will be evaluated using the given operands.
-     * @param targetDomain The [[Domain]] that will be use to perform the abstract
-     *      interpretation.
-     */
-    def mapOperandsToParameters[D <: ValuesDomain](
-        operands: Operands[D#DomainValue],
-        calledMethod: Method,
-        targetDomain: ValuesDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
-
-        implicit val domainValueTag = targetDomain.DomainValueTag
-        val parameters = util.Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
-        var localVariableIndex = 0
-        var index = 0
-        val operandsInParameterOrder = operands.reverse
-        for (operand ← operandsInParameterOrder) {
-            val parameter = {
-                // Was the same value (determined by "eq") already adapted?
-                var pOperands = operandsInParameterOrder
-                var p = 0
-                while (p < index && (pOperands.head ne operand)) {
-                    p += 1; pOperands = pOperands.tail
-                }
-                if (p < index)
-                    parameters(p)
-                else
-                    // the value was not previously adapted
-                    operand.adapt(targetDomain, -(index + 1))
-            }
-            parameters.set(localVariableIndex, parameter)
-            index += 1
-            localVariableIndex += operand.computationalType.operandSize
-        }
-
-        parameters
     }
 }
 

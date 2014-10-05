@@ -41,4 +41,7 @@ case object IOR extends BitwiseInstruction {
 
     final val mnemonic = "ior"
 
+    final val operator = "|"
+
+    final val computationalType = ComputationalTypeInt
 }

@@ -29,6 +29,10 @@
 package org.opalj
 package ai
 
+import scala.collection.mutable.AnyRefMap
+
+import org.opalj.collection.immutable.IdentityPair
+
 /**
  * Ensures that the '''same `DomainValue`''' is used whenever we merge the same
  * pair of domain values. This ensures that the relation between the values remains the same.
@@ -57,44 +61,65 @@ package ai
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
 trait JoinStabilization extends CoreDomainFunctionality {
-    /* OLD USING A MAP OF MAPS
-    import java.util.{ IdentityHashMap ⇒ IDMap }
 
-    private[this] val leftValues =
-        new IDMap[DomainValue, IDMap[DomainValue, Update[DomainValue]]]()
+    //    import java.util.{ IdentityHashMap ⇒ IDMap }
+    //
+    //    private[this] val leftValues =
+    //        new IDMap[DomainValue, IDMap[DomainValue, Update[DomainValue]]]()
+    //
+    //    abstract override protected[this] def joinValues(
+    //        pc: PC,
+    //        left: DomainValue, right: DomainValue): Update[DomainValue] = {
+    //        val rightMap = leftValues.get(left)
+    //        if (rightMap == null) {
+    //            val rightMap = new IDMap[DomainValue, Update[DomainValue]]()
+    //            val joinedValue = super.joinValues(pc, left, right)
+    //            rightMap.put(right, joinedValue)
+    //            leftValues.put(left, rightMap)
+    //            joinedValue
+    //        } else {
+    //            val cachedValue = rightMap.get(right)
+    //            if (cachedValue == null) {
+    //                val joinedValue = super.joinValues(pc, left, right)
+    //                rightMap.put(right, joinedValue)
+    //                joinedValue
+    //            } else {
+    //                cachedValue
+    //            }
+    //        }
+    //    }
+    //
+    //    abstract override protected[this] def afterBaseJoin(pc: PC): Unit = {
+    //        super.afterBaseJoin(pc)
+    //        leftValues.clear()
+    //    }
 
-    abstract override protected[this] def joinValues(
-        pc: PC,
-        left: DomainValue, right: DomainValue): Update[DomainValue] = {
-        val rightMap = leftValues.get(left)
-        if (rightMap == null) {
-            val rightMap = new IDMap[DomainValue, Update[DomainValue]]()
-            val joinedValue = super.joinValues(pc, left, right)
-            rightMap.put(right, joinedValue)
-            leftValues.put(left, rightMap)
-            joinedValue
-        } else {
-            val cachedValue = rightMap.get(right)
-            if (cachedValue == null) {
-                val joinedValue = super.joinValues(pc, left, right)
-                rightMap.put(right, joinedValue)
-                joinedValue
-            } else {
-                cachedValue
-            }
-        }
-    }
-
-    abstract override protected[this] def afterBaseJoin(pc: PC): Unit = {
-        super.afterBaseJoin(pc)
-        leftValues.clear()
-    }
-	*/
-
-    import scala.collection.mutable.Map
+    //    import java.util.HashMap
+    //
+    //    private[this] val joinedValues =
+    //        new HashMap[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]()
+    //
+    //     override protected[this] def joinValues(
+    //        pc: PC,
+    //        left: DomainValue, right: DomainValue): Update[DomainValue] = {
+    //        val key = new IdentityPair(left, right)
+    //        val value = joinedValues.get(key)
+    //        if (value ne null) {
+    //            value
+    //        } else {
+    //            val value = super.joinValues(pc, left, right)
+    //            joinedValues.put(key, value)
+    //            value
+    //        }
+    //    }
+    //
+    //     override protected[this] def afterBaseJoin(pc: PC): Unit = {
+    //        super.afterBaseJoin(pc)
+    //        joinedValues.clear()
+    //    }
 
     private[this] val joinedValues =
-        Map.empty[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]
+        AnyRefMap.empty[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]
 
     /* NOT "abstract override" - this trait is by purpose not stackable! */
     override protected[this] def joinValues(
@@ -111,5 +136,6 @@ trait JoinStabilization extends CoreDomainFunctionality {
         super.afterBaseJoin(pc)
         joinedValues.clear()
     }
+
 }
 

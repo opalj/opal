@@ -45,20 +45,22 @@ case class Field_Info(
         descriptor_index: Constant_Pool_Index,
         attributes: Attributes) {
 
-    def toXHTML(implicit cp: Constant_Pool): Node = {
-        <div class="field">
-            <span class="access_flags">{ AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }</span>
-            <span> { parseFieldType(cp(descriptor_index).asString) } </span>
-            <span> { cp(name_index).asString } </span><span> { attributesToXHTML(cp) } </span>
-            <a href="#" class="tooltip">
-                { name_index }
-                <span>{ cp(name_index) }</span>
-            </a>
-        </div>
+    /**
+     * @param definingTypeFQN The FQN of the class defining this field.
+     */
+    def toXHTML(definingTypeFQN: String)(implicit cp: Constant_Pool): Node = {
+        <tr class="field">
+            <td class="access_flags">{ AccessFlags.toString(access_flags, AccessFlagsContexts.FIELD) }</td>
+            <td>{ abbreviateFQN(definingTypeFQN, parseFieldType(cp(descriptor_index).asString)) }</td>
+            <td class="field_name"> { cp(name_index).asString } </td>
+            <td>{ attributesToXHTML(cp) }</td>
+        </tr>
     }
 
     def attributesToXHTML(implicit cp: Constant_Pool) = {
-        for (attribute ← attributes) yield attribute.toXHTML(cp)
+        if (attributes.nonEmpty)
+            for (attribute ← attributes) yield attribute.toXHTML(cp)
+        else
+            Seq.empty[Node]
     }
-
 }

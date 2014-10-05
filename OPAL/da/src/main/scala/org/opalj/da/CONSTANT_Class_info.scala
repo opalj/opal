@@ -29,6 +29,8 @@
 package org.opalj
 package da
 
+import scala.xml.Node
+
 /**
  *
  * @author Michael Eichberg
@@ -38,9 +40,17 @@ case class CONSTANT_Class_info(
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Class
 
+    def toNode(implicit cp: Constant_Pool): Node =
+        <span class="cp_entry">
+            CONSTANT_Class_info(name_index={ name_index }
+            &laquo;
+            <span class="cp_ref">{ cp(name_index).toNode(cp) }</span>
+            &raquo;)
+        </span>
+
     def toString(implicit cp: Constant_Pool): String =
         cp(name_index).toString.replace('/', '.')
 
     def toLDCString(implicit cp: Constant_Pool): String =
-        "Class<"+cp(name_index).toString.replace('/', '.')+">"
+        "Class<"+toString+">"
 }

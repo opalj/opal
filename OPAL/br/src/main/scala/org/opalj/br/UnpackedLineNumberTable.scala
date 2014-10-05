@@ -70,6 +70,13 @@ case class UnpackedLineNumberTable(
             Some(lastLineNumber.lineNumber)
     }
 
+    def firstLineNumber(): Option[Int] = {
+        if (lineNumbers.isEmpty)
+            None
+        else
+            Some(lineNumbers.view.map(_.lineNumber).min)
+    }
+
 }
 
 /**

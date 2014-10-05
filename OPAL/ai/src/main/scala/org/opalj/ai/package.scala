@@ -30,6 +30,7 @@ package org.opalj
 
 import scala.language.existentials
 
+import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
@@ -108,20 +109,28 @@ package object ai {
     type TargetDomain = ValuesDomain with ValuesFactory
 
     /**
-     * Special value that is added to the work list/list of evaluated instructions
-     * before the program counter of the first
-     * instruction of a subroutine.
+     * Special value that is added to the ''work list''/''list of evaluated instructions''
+     * before the '''program counter of the first instruction''' of a subroutine.
+     *
+     * The marker [[SUBROUTINE]] is used to mark the place in the worklist where we
+     * start having information about subroutines.
      */
-    // some value smaller than -65536 to avoid confusion with local variable indexes
-    // in the worklist this value is replaced by the local variable index
-    // once we encounter a ret insruction.
+    // Some value smaller than -65536 to avoid confusion with local variable indexes.
     final val SUBROUTINE_START = -80000008
+
     /**
-     * Special value that is added to the list of evaluated instructions
-     * to mark the end of the evaluation of a subroutine.
+     * Special value that is added to the list of `evaluated instructions`
+     * to mark the end of the evaluation of a subroutine. (I.e., this value
+     * is not directly used by the AI during the interpretation, but to record the
+     * progress.)
      */
     final val SUBROUTINE_END = -88888888
 
+    /**
+     * A special value that is larger than all other values used to mark boundaries
+     * and information related to the handling of subroutines and which is smaller
+     * that all other regular values.
+     */
     final val SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND = -80000000
 
     final val SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE = -88880008
@@ -179,9 +188,13 @@ package object ai {
 
     /**
      * Calculates the initial "PC" associated with a method's parameter.
+     *
+     * @param isStaticMethod True if method is static and, hence, has no implicit
+     *      parameter for `this`.
+     * @see [[mapOperandsToParameters]]
      */
     def parameterToValueIndex(
-        isStatic: Boolean,
+        isStaticMethod: Boolean,
         descriptor: MethodDescriptor,
         parameterIndex: Int): Int = {
 
@@ -189,7 +202,7 @@ package object ai {
 
         var localVariableIndex = 0
 
-        if (!isStatic) {
+        if (!isStaticMethod) {
             localVariableIndex += 1 /*=="this".computationalType.operandSize*/
         }
         val parameterTypes = descriptor.parameterTypes
@@ -201,6 +214,67 @@ package object ai {
         origin(localVariableIndex)
     }
 
+    /**
+     * Maps a list of operands (e.g., as passed to the `invokeXYZ` instructions) to
+     * the list of parameters for the given method. The parameters are stored in the
+     * local variables ([[Locals]])/registers of the method; i.e., this method
+     * creates an initial assignment for the local variables that can directly
+     * be used to pass them to [[AI]]'s
+     * `perform(...)(<initialOperands = Nil>,initialLocals)` method.
+     *
+     * @param operands The list of operands used to call the given method. The length
+     *      of the list must be:
+     *      {{{
+     *      calledMethod.descriptor.parametersCount + { if (calledMethod.isStatic) 0 else 1 }
+     *      }}}.
+     *      I.e., the list of operands must contain one value per parameter and – 
+     *      in case of instance methods – the receiver object. The list __must not
+     *       contain additional values__. The latter is automatically ensured if this
+     *      method is called (in)directly by [[AI]] and the operands were just passed
+     *      through.
+     *      If two or more operands are (reference) identical then the adaptation will only
+     *      be performed once and the adapted value will be reused; this ensures that
+     *      the relation between values remains stable.
+     * @param calledMethod The method that will be evaluated using the given operands.
+     * @param targetDomain The [[Domain]] that will be use to perform the abstract
+     *      interpretation.
+     */
+    def mapOperandsToParameters[D <: ValuesDomain](
+        operands: Operands[D#DomainValue],
+        calledMethod: Method,
+        targetDomain: ValuesDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
+
+        implicit val domainValueTag = targetDomain.DomainValueTag
+        val parameters = util.Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
+        var localVariableIndex = 0
+        var index = 0
+        val operandsInParameterOrder = operands.reverse
+        for (operand ← operandsInParameterOrder) {
+            val parameter = {
+                // Was the same value (determined by "eq") already adapted?
+                var pOperands = operandsInParameterOrder
+                var p = 0
+                while (p < index && (pOperands.head ne operand)) {
+                    p += 1; pOperands = pOperands.tail
+                }
+                if (p < index)
+                    parameters(p)
+                else
+                    // the value was not previously adapted
+                    operand.adapt(targetDomain, -(index + 1))
+            }
+            parameters.set(localVariableIndex, parameter)
+            index += 1
+            localVariableIndex += operand.computationalType.operandSize
+        }
+
+        parameters
+    }
+
+    /**
+     * Collects the result of a match of a partial function against an instruction's
+     * operands.
+     */
     def collectWithOperandsAndIndex[B](
         domain: Domain)(
             code: Code, operandsArray: domain.OperandsArray)(

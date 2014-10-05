@@ -45,7 +45,7 @@ class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extend
      * @param maxEvaluationFactor Determines the maximum number of instruction evaluations
      * before the evaluation of the method is automatically interrupted.
      */
-    def this(code: Code, maxEvaluationFactor: Int) = {
+    def this(code: Code, maxEvaluationFactor: Double = 1.5d) = {
 
         this(InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor))
     }

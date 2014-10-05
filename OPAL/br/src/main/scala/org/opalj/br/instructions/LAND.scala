@@ -41,4 +41,8 @@ case object LAND extends BitwiseInstruction {
 
     final val mnemonic = "land"
 
+    final val operator = "&"
+
+    final val computationalType = ComputationalTypeLong
+
 }

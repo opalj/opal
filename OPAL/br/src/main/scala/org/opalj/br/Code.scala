@@ -242,6 +242,9 @@ case class Code(
     def lineNumber(pc: PC): Option[Int] =
         lineNumberTable.flatMap(_.lookupLineNumber(pc))
 
+    def firstLineNumber: Option[Int] =
+        lineNumberTable.flatMap(_.firstLineNumber)
+
     /**
      * Collects all local variable tables.
      *

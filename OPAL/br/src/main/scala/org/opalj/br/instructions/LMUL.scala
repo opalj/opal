@@ -41,4 +41,6 @@ case object LMUL extends MultiplyInstruction {
 
     final val mnemonic = "lmul"
 
+    final val computationalType = ComputationalTypeLong
+
 }

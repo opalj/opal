@@ -90,7 +90,7 @@ case object NoUpdateType extends UpdateType {
 
 }
 
-case object MetaInformationUpdateType extends UpdateType {
+sealed trait MetaInformationUpdateType extends UpdateType {
 
     override def apply[V](value: ⇒ V): Update[V] = MetaInformationUpdate(value)
 
@@ -106,6 +106,7 @@ case object MetaInformationUpdateType extends UpdateType {
 
     override def &:(update: Update[_]): UpdateType = update.updateType &: this
 }
+case object MetaInformationUpdateType extends MetaInformationUpdateType
 
 case object StructuralUpdateType extends UpdateType {
 
