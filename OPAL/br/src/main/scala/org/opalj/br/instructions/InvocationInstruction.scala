@@ -30,16 +30,39 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.Locals
+
 /**
- * Return void from method.
+ * An instruction that "invokes" something. This can be, e.g., the invocation of a method
+ * or – using `invokedynamic` – the read of a field value.
  *
  * @author Michael Eichberg
  */
-case object RETURN extends ReturnInstruction {
+abstract class InvocationInstruction extends Instruction with ConstantLengthInstruction {
 
-    final val opcode = 177
+    def name: String
 
-    final val mnemonic = "return"
+    def methodDescriptor: MethodDescriptor
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int =
+        if (methodDescriptor.returnType.isVoidType) 0 else 1
+
+    final def readsLocal: Boolean = false
+
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
+    /**
+     * Given that we have – without any sophisticated analysis – no idea which
+     * exceptions may be thrown we make the safe assumption that any handler
+     * is a potential successor!
+     */
+    final def nextInstructions(currentPC: PC, code: Code): PCs = {
+        val exceptionHandlerPCs = code.handlerInstructionsFor(currentPC)
+        exceptionHandlerPCs + indexOfNextInstruction(currentPC, code)
+    }
 }
+

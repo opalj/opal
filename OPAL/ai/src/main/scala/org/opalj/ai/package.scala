@@ -297,4 +297,30 @@ package object ai {
         }
         result.reverse
     }
+
+    //    /**
+    //     * Returns those values `V` that are used by the instruction to perform a
+    //     * computation that may have an effect outside of the scope of the current method.
+    //     * In particular the following computations are considered:
+    //     *  - perform tests
+    //     *  - passing a value to a method
+    //     *  - performing an arithmetic computation
+    //     *  - value conversions
+    //     *  - assigning the value to a field
+    //     *  - using the value as a monitor.
+    //     *
+    //     * Here, instructions which just move values between the locals and the operands stack
+    //     * (laod, store) or just manipulate (dup..., pop, swap) the operand stack are
+    //     * ''not'' considered as performing computations related to those values.
+    //     *
+    //     * @param operands The current operand stack used by the instruction. Note that
+    //     *      this methods assumes that all values – independent of their computational
+    //     *      type category – just use one operand value. E.g. a long div instruction will
+    //     *      only pop the two top most operand values – as in case of the integer div
+    //     *      instruction. 
+    //     */
+    //    def usesForComputation[V >: Null <: AnyRef](
+    //    instruction : Instruction,
+    //    operands: List[V], 
+    //    locals: Locals[V]): List[V]
 }

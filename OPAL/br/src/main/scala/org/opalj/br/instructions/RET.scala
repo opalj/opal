@@ -51,6 +51,18 @@ case class RET(lvIndex: Int)
                 "a data-/control-flow analysis needs to be executed; "+
                 "without such an analysis this information is not directly available")
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    final def readsLocal: Boolean = true
+
+    final def indexOfReadLocal: Int = lvIndex
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
 }
 object RET {
 

@@ -55,3 +55,19 @@ object CreateNewArrayInstruction {
     val runtimeExceptionsAndErrors = ObjectType.OutOfMemoryError :: runtimeExceptions
 
 }
+
+abstract class CreateNewOneDimensionalArrayInstruction extends CreateNewArrayInstruction {
+
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
+    final def readsLocal: Boolean = false
+
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
+}

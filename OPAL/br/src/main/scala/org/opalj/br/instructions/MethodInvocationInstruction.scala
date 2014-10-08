@@ -31,29 +31,6 @@ package br
 package instructions
 
 /**
- * An instruction that "invokes" something. This can be, e.g., the invocation of a method
- * or – using `invokedynamic` – the read of a field value.
- *
- * @author Michael Eichberg
- */
-abstract class InvocationInstruction extends Instruction with ConstantLengthInstruction {
-
-    def name: String
-
-    def methodDescriptor: MethodDescriptor
-
-    /**
-     * Given that we have – without any sophisticated analysis – no idea which
-     * exceptions may be thrown we make the safe assumption that any handler
-     * is a potential successor!
-     */
-    final def nextInstructions(currentPC: PC, code: Code): PCs = {
-        val exceptionHandlerPCs = code.handlerInstructionsFor(currentPC)
-        exceptionHandlerPCs + indexOfNextInstruction(currentPC, code)
-    }
-}
-
-/**
  * An instruction that invokes another method (does not consider invokedynamic
  * instructions.)
  *
@@ -78,8 +55,23 @@ abstract class MethodInvocationInstruction extends InvocationInstruction {
 
 }
 
+object MethodInvocationInstruction {
+
+    def unapply(instruction: MethodInvocationInstruction): Option[(ReferenceType, String, MethodDescriptor)] = {
+        Some((instruction.declaringClass, instruction.name, instruction.methodDescriptor))
+    }
+
+    val runtimeExceptions = List(ObjectType.NullPointerException)
+
+}
+
 abstract class VirtualMethodInvocationInstruction extends MethodInvocationInstruction {
+
     def isVirtualMethodCall: Boolean = true
+
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int =
+        1 + methodDescriptor.parametersCount
+
 }
 
 object VirtualMethodInvocationInstruction {
@@ -95,16 +87,9 @@ object VirtualMethodInvocationInstruction {
  *
  * @author Michael Eichberg
  */
-abstract class StaticMethodInvocationInstruction extends MethodInvocationInstruction {
+abstract class NonVirtualMethodInvocationInstruction extends MethodInvocationInstruction {
+
     def isVirtualMethodCall: Boolean = false
-}
-
-object MethodInvocationInstruction {
-
-    def unapply(instruction: MethodInvocationInstruction): Option[(ReferenceType, String, MethodDescriptor)] = {
-        Some((instruction.declaringClass, instruction.name, instruction.methodDescriptor))
-    }
-
-    val runtimeExceptions = List(ObjectType.NullPointerException)
 
 }
+

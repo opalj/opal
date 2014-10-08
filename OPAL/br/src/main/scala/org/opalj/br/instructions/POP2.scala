@@ -31,7 +31,8 @@ package br
 package instructions
 
 /**
- * Pop the top one or two operand stack values.
+ * Pops the top ''computational type category 2'' value or the two top operand stack values
+ * if both have ''computational type category 1''.
  *
  * @author Michael Eichberg
  */
@@ -40,5 +41,14 @@ case object POP2 extends StackManagementInstruction {
     final val opcode = 88
 
     final val mnemonic = "pop2"
+
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
+        if (ctg(0).operandSize == 1)
+            2
+        else
+            1
+    }
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
 }

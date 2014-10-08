@@ -35,4 +35,8 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class JSRInstruction extends UnconditionalBranchInstruction
+abstract class JSRInstruction extends UnconditionalBranchInstruction {
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
+}

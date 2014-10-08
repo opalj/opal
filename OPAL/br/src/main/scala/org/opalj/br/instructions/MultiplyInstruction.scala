@@ -37,15 +37,17 @@ import org.opalj.collection.mutable.UShortSet
  *
  * @author Michael Eichberg
  */
-abstract class MultiplyInstruction extends StackBasedArithmeticInstruction {
+abstract class MultiplyInstruction
+        extends StackBasedArithmeticInstruction
+        with BinaryArithmeticInstruction {
 
     final def runtimeExceptions: List[ObjectType] = Nil
-
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
 
     final def operator: String = "*"
 
     final def isShiftInstruction: Boolean = false
+
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
+        UShortSet(indexOfNextInstruction(currentPC, code))
 
 }

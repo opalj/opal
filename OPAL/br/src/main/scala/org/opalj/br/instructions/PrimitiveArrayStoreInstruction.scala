@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class PrimitiveArrayStoreInstruction extends ArrayAccessInstruction {
+abstract class PrimitiveArrayStoreInstruction extends ArrayStoreInstruction {
 
     final def runtimeExceptions: List[ObjectType] =
         PrimitiveArrayAccess.runtimeExceptions

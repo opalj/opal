@@ -41,4 +41,8 @@ case object POP extends StackManagementInstruction {
 
     final val mnemonic = "pop"
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
 }

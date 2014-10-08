@@ -41,4 +41,8 @@ case object SWAP extends StackManagementInstruction {
 
     final val mnemonic = "swap"
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
 }
