@@ -37,7 +37,7 @@ package reader
  *
  * @author Arne Lottmann
  */
-class SynthesizedClassFiles(val classFiles: Seq[ClassFile]) extends Attribute {
+case class SynthesizedClassFiles(classFiles: Seq[ClassFile]) extends Attribute {
 
     override val kindId = 1002
 
