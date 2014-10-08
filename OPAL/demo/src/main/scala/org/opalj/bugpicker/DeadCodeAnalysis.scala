@@ -166,13 +166,13 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
                             instr @ BinaryArithmeticInstruction(ComputationalTypeInt),
                             Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                             ) ⇒
-                            (pc, s"Constant computation: $a ${instr.operator} $b.")
+                            (pc, s"Constant computation: $b ${instr.operator} $a.")
 
                         case (pc, instr: INEG.type, Seq(ConcreteIntegerValue(a), _*)) ⇒
                             (pc, s"Constant computation: -${a}")
 
                         case (pc, instr @ IINC(_, v), Seq(ConcreteIntegerValue(a), _*)) ⇒
-                            (pc, s"Constant computation: ${a} + $v")
+                            (pc, s"Constant computation (inc): ${a} + $v")
 
                         // HANDLING LONG VALUES 
                         //
@@ -181,13 +181,13 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
                             instr @ BinaryArithmeticInstruction(ComputationalTypeLong),
                             Seq(ConcreteLongValue(a), ConcreteLongValue(b), _*)
                             ) ⇒
-                            (pc, s"Constant computation: ${a}l ${instr.operator} ${b}l.")
+                            (pc, s"Constant computation: ${b}l ${instr.operator} ${a}l.")
                         case (
                             pc,
                             instr @ ShiftInstruction(ComputationalTypeLong),
                             Seq(ConcreteLongValue(a), ConcreteIntegerValue(b), _*)
                             ) ⇒
-                            (pc, s"Constant computation: ${a}l ${instr.operator} ${b}l.")
+                            (pc, s"Constant computation: ${b}l ${instr.operator} ${a}l.")
 
                         case (pc, instr: LNEG.type, Seq(ConcreteLongValue(a), _*)) ⇒
                             (pc, s"Constant computation: -${a}l")
