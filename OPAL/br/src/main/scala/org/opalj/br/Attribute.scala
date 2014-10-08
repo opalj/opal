@@ -80,6 +80,7 @@ trait Attribute {
      *  - 42 The BootstrapMethods Attribute
      *  - 43 The MethodParameters Attribute
      *  - 1001 OPAL's VirtualTypeFlag Attribute
+     *  - 1002 OPAL's SynthesizedClassFiles Attribute
      */
     def kindId: Int
 }
