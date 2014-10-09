@@ -95,6 +95,13 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
             }.getOrElse(
                 DeadCodeAnalysis.defaultMaxEvalFactor
             )
+        val maxEvalTime: Int =
+            parameters.collectFirst {
+                case DeadCodeAnalysis.maxEvalTimePattern(l) ⇒
+                    java.lang.Integer.parseInt(l).toInt
+            }.getOrElse(
+                DeadCodeAnalysis.defaultMaxEvalTime
+            )
         val maxCardinalityOfIntegerRanges: Int =
             parameters.collectFirst {
                 case DeadCodeAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
@@ -105,6 +112,7 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
 
         println("Settings:")
         println(s"\tmaxEvalFactor=$maxEvalFactor")
+        println(s"\tmaxEvalTime=${maxEvalTime}ms")
         println(s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges")
 
         // related to managing the analysis progress
@@ -117,7 +125,11 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
             val domain =
                 new DeadCodeAnalysisDomain(theProject, method, maxCardinalityOfIntegerRanges)
             val ai =
-                new BoundedInterruptableAI[domain.type](body, maxEvalFactor, doInterrupt)
+                new BoundedInterruptableAI[domain.type](
+                    body,
+                    maxEvalFactor,
+                    maxEvalTime,
+                    doInterrupt)
             val result = ai(classFile, method, domain)
 
             if (!result.wasAborted) {
@@ -260,14 +272,14 @@ object DeadCodeAnalysis {
     // -maxEvalFactor=20
     // -maxEvalFactor=1.25
     // -maxEvalFactor=10.5
-    final val maxEvalFactorPattern =
-        """-maxEvalFactor=(\d+(?:.\d+)?)""".r
-
+    final val maxEvalFactorPattern = """-maxEvalFactor=(\d+(?:.\d+)?)""".r
     final val defaultMaxEvalFactor = 1.75d
+
+    final val maxEvalTimePattern = """-maxEvalTime=(\d+)""".r
+    final val defaultMaxEvalTime = 10000
 
     final val maxCardinalityOfIntegerRangesPattern =
         """-maxCardinalityOfIntegerRanges=(\d+)""".r
-
     final val defaultMaxCardinalityOfIntegerRanges = 16
 
     def resultsAsXHTML(results: (Long, Iterable[BugReport])): Node = {
