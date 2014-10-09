@@ -302,14 +302,16 @@ package object ai {
     //     * Returns those values `V` that are used by the instruction to perform a
     //     * computation that may have an effect outside of the scope of the current method.
     //     * In particular the following computations are considered:
-    //     *  - perform tests
+    //     *  - performing tests
     //     *  - passing a value to a method
     //     *  - performing an arithmetic computation
     //     *  - value conversions
-    //     *  - assigning the value to a field
-    //     *  - using the value as a monitor.
+    //     *  - assigning the value to a field/reading a field's value
+    //     *  - throwing an exception
+    //     *  - using the value as a monitor
+    //     *  - creating an object
     //     *
-    //     * Here, instructions which just move values between the locals and the operands stack
+    //     * Hence, instructions which just move values between the locals and the operands stack
     //     * (laod, store) or just manipulate (dup..., pop, swap) the operand stack are
     //     * ''not'' considered as performing computations related to those values.
     //     *
