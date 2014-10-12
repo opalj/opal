@@ -31,15 +31,21 @@ package br
 package instructions
 
 /**
- * Return void from method.
+ * Implemented by all arithmetic instructions that have one (runtime-dependent) operand.
+ * E.g. the [[NegateInstruction]] and [[IINC]] instructions.
  *
  * @author Michael Eichberg
  */
-case object RETURN extends ReturnInstruction {
+trait UnaryArithmeticInstruction extends ArithmeticInstruction {
 
-    final val opcode = 177
+    def isPrefixOperator: Boolean
 
-    final val mnemonic = "return"
+    def isPostfixOperator: Boolean = !isPrefixOperator
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+}
+
+object UnaryArithmeticInstruction {
+
+    def unapply(instruction: UnaryArithmeticInstruction): Option[ComputationalType] =
+        Some(instruction.computationalType)
 }

@@ -39,7 +39,7 @@ import org.opalj.br.instructions.FieldAccess
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.NEW
-import org.opalj.br.instructions.StaticMethodInvocationInstruction
+import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.ai.debug.XHTML.dumpLocals
 import org.opalj.ai.debug.XHTML.dumpStack
 
@@ -94,7 +94,7 @@ trait XHTMLTracer extends AITracer {
                     "Load \""+s.substring(0, 4)+"…\""
                 case fieldAccess: FieldAccess ⇒
                     fieldAccess.mnemonic+" "+fieldAccess.name
-                case invoke: StaticMethodInvocationInstruction ⇒
+                case invoke: NonVirtualMethodInvocationInstruction ⇒
                     val declaringClass = invoke.declaringClass.toJava
                     "…"+declaringClass.substring(declaringClass.lastIndexOf('.') + 1)+" "+
                         invoke.name+"(…)"

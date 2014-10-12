@@ -1167,12 +1167,33 @@ class ClassHierarchy private (
     }
 
     /**
-     * Tries to calculate the most specific common supertype of the given types.
+     * Calculate the most specific common supertype of the given types.
      * If `reflexive` is `false`, no two types across both sets have to be in
      * an inheritance relation; if in doubt use `true`.
      *
      * @param upperTypeBoundsB A list (set) of `ObjectType`s that are not in an
-     *      inheritance relation.
+     *      inheritance relation if reflexive is `false`.
+     * @example
+     * {{{
+     * /* Consider the following type hierarchy:
+     *  *    Object <- Collection <- List
+     *  *    Object <- Collection <- Set
+     *  *    Object <- Externalizable
+     *  *    Object <- Serializable
+     *  */
+     * Object o = new ...
+     * if (...) {
+     *      Set s = (Set) o;
+     *      (( Externalizable)s).save(...)
+     *      // => o(s) has to be a subtype of Set AND Externalizable
+     * } else {
+     *      List l = (List) l;
+     *      ((Serializable)l).store(...)
+     *      // => o(l) has to be a subtype of List AND Serializable
+     * }
+     * // here, o is either a set or a list... hence, it is at least a Collection,
+     * // but we cannot deduce anything w.r.t. Serializable and Externalizable.
+     * }}}
      */
     def joinUpperTypeBounds(
         upperTypeBoundsA: UIDSet[ObjectType],

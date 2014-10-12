@@ -77,10 +77,11 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
     /**
      * Executes the analysis of the projects concrete methods.
      *
-     * @param Either an empty sequence or a sequence that contains a string
-     *      that matches the following pattern: `-maxEvalFactor=(\d+(?:.\d+)?)`; e.g.,
+     * @param Either an empty sequence or a sequence that contains one or more of the following parameters:
+     *      - a string that matches the following pattern: `-maxEvalFactor=(\d+(?:.\d+)?)`; e.g.,
      *      `-maxEvalFactor=0.5` or `-maxEvalFactor=1.5`. A value below 0.05 is usually
      *      not useable.
+     *      - a string that machtes the following pattern: `-maxCardinalityOfIntegerRanges=(\d+)`.
      */
     override def analyze(
         theProject: Project[URL],
@@ -94,6 +95,25 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
             }.getOrElse(
                 DeadCodeAnalysis.defaultMaxEvalFactor
             )
+        val maxEvalTime: Int =
+            parameters.collectFirst {
+                case DeadCodeAnalysis.maxEvalTimePattern(l) ⇒
+                    java.lang.Integer.parseInt(l).toInt
+            }.getOrElse(
+                DeadCodeAnalysis.defaultMaxEvalTime
+            )
+        val maxCardinalityOfIntegerRanges: Int =
+            parameters.collectFirst {
+                case DeadCodeAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
+                    java.lang.Integer.parseInt(i).toInt
+            }.getOrElse(
+                DeadCodeAnalysis.defaultMaxCardinalityOfIntegerRanges
+            )
+
+        println("Settings:")
+        println(s"\tmaxEvalFactor=$maxEvalFactor")
+        println(s"\tmaxEvalTime=${maxEvalTime}ms")
+        println(s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges")
 
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
@@ -102,10 +122,16 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
 
         val results = new java.util.concurrent.ConcurrentLinkedQueue[BugReport]()
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
-            val domain = new DeadCodeAnalysisDomain(theProject, method)
+            val domain =
+                new DeadCodeAnalysisDomain(theProject, method, maxCardinalityOfIntegerRanges)
             val ai =
-                new BoundedInterruptableAI[domain.type](body, maxEvalFactor, doInterrupt)
+                new BoundedInterruptableAI[domain.type](
+                    body,
+                    maxEvalFactor,
+                    maxEvalTime,
+                    doInterrupt)
             val result = ai(classFile, method, domain)
+
             if (!result.wasAborted) {
                 val operandsArray = result.operandsArray
 
@@ -152,13 +178,13 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
                             instr @ BinaryArithmeticInstruction(ComputationalTypeInt),
                             Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                             ) ⇒
-                            (pc, s"Constant computation: $a ${instr.operator} $b.")
+                            (pc, s"Constant computation: $b ${instr.operator} $a.")
 
                         case (pc, instr: INEG.type, Seq(ConcreteIntegerValue(a), _*)) ⇒
                             (pc, s"Constant computation: -${a}")
 
                         case (pc, instr @ IINC(_, v), Seq(ConcreteIntegerValue(a), _*)) ⇒
-                            (pc, s"Constant computation: ${a} + $v")
+                            (pc, s"Constant computation (inc): ${a} + $v")
 
                         // HANDLING LONG VALUES 
                         //
@@ -167,13 +193,13 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
                             instr @ BinaryArithmeticInstruction(ComputationalTypeLong),
                             Seq(ConcreteLongValue(a), ConcreteLongValue(b), _*)
                             ) ⇒
-                            (pc, s"Constant computation: ${a}l ${instr.operator} ${b}l.")
+                            (pc, s"Constant computation: ${b}l ${instr.operator} ${a}l.")
                         case (
                             pc,
                             instr @ ShiftInstruction(ComputationalTypeLong),
                             Seq(ConcreteLongValue(a), ConcreteIntegerValue(b), _*)
                             ) ⇒
-                            (pc, s"Constant computation: ${a}l ${instr.operator} ${b}l.")
+                            (pc, s"Constant computation: ${b}l ${instr.operator} ${a}l.")
 
                         case (pc, instr: LNEG.type, Seq(ConcreteLongValue(a), _*)) ⇒
                             (pc, s"Constant computation: -${a}l")
@@ -206,10 +232,8 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
             } /* else (doInterrupt === true) the analysis as such was interrupted*/
         }
 
-        java.lang.Math.max(10, 11)
-
         var analysisTime: Long = 0l
-        val methodsWithDeadCode = time {
+        val identifiedIssues = time {
             val stepIds = new java.util.concurrent.atomic.AtomicInteger(0)
 
             for {
@@ -237,7 +261,7 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
             scala.collection.JavaConversions.collectionAsScalaIterable(results)
         } { t ⇒ analysisTime = t }
 
-        (analysisTime, methodsWithDeadCode)
+        (analysisTime, identifiedIssues)
     }
 }
 
@@ -249,8 +273,14 @@ object DeadCodeAnalysis {
     // -maxEvalFactor=1.25
     // -maxEvalFactor=10.5
     final val maxEvalFactorPattern = """-maxEvalFactor=(\d+(?:.\d+)?)""".r
-
     final val defaultMaxEvalFactor = 1.75d
+
+    final val maxEvalTimePattern = """-maxEvalTime=(\d+)""".r
+    final val defaultMaxEvalTime = 10000
+
+    final val maxCardinalityOfIntegerRangesPattern =
+        """-maxCardinalityOfIntegerRanges=(\d+)""".r
+    final val defaultMaxCardinalityOfIntegerRanges = 16
 
     def resultsAsXHTML(results: (Long, Iterable[BugReport])): Node = {
         val (analysisTime, methodsWithDeadCode) = results

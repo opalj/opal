@@ -31,15 +31,30 @@ package br
 package instructions
 
 /**
- * Return void from method.
- *
- * @author Michael Eichberg
+ * Implemented by all arithmetic instructions that have two (runtime-dependent) operands.
  */
-case object RETURN extends ReturnInstruction {
+trait BinaryArithmeticInstruction extends ArithmeticInstruction {
 
-    final val opcode = 177
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
 
-    final val mnemonic = "return"
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    /**
+     * Returns `true` if this instruction reads/uses a local variable.
+     */
+    final def readsLocal: Boolean = true
+
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
 }
+
+object BinaryArithmeticInstruction {
+
+    def unapply(instruction: BinaryArithmeticInstruction): Option[ComputationalType] =
+        Some(instruction.computationalType)
+}
+

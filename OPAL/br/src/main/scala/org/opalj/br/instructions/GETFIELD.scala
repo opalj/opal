@@ -59,6 +59,8 @@ case class GETFIELD(
     final def runtimeExceptions: List[ObjectType] =
         FieldAccess.runtimeExceptions
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         Instruction.nextInstructionOrExceptionHandler(
             this, currentPC, code, ObjectType.NullPointerException

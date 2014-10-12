@@ -33,7 +33,8 @@ import scala.reflect.ClassTag
 import org.opalj.bi.AttributeParent
 
 /**
- * Represents a .class file as is.
+ * Factory methods to read class files and create [[ClassFile]] objects.
+ *
  * @author Michael Eichberg
  * @author Wael Alkhatib
  * @author Isbel Isbel

@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object DRETURN extends ReturnInstruction {
+case object DRETURN extends ReturnValueInstruction {
 
     final val opcode = 175
 

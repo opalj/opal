@@ -156,7 +156,7 @@ package object ai {
     type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
     type TheOperandsArray[T >: Null <: (ValuesDomain with Singleton)#Operands] = Array[T]
 
-    type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.ai.util.Locals[T]
+    type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.collection.mutable.Locals[T]
     type ALocalsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Locals[T]]
     type TheLocalsArray[T >: Null <: (ValuesDomain with Singleton)#Locals] = Array[T]
 
@@ -244,8 +244,9 @@ package object ai {
         calledMethod: Method,
         targetDomain: ValuesDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
 
+        import org.opalj.collection.mutable.Locals
         implicit val domainValueTag = targetDomain.DomainValueTag
-        val parameters = util.Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
+        val parameters = Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
         var localVariableIndex = 0
         var index = 0
         val operandsInParameterOrder = operands.reverse
@@ -296,4 +297,32 @@ package object ai {
         }
         result.reverse
     }
+
+    //    /**
+    //     * Returns those values `V` that are used by the instruction to perform a
+    //     * computation that may have an effect outside of the scope of the current method.
+    //     * In particular the following computations are considered:
+    //     *  - performing tests
+    //     *  - passing a value to a method
+    //     *  - performing an arithmetic computation
+    //     *  - value conversions
+    //     *  - assigning the value to a field/reading a field's value
+    //     *  - throwing an exception
+    //     *  - using the value as a monitor
+    //     *  - creating an object
+    //     *
+    //     * Hence, instructions which just move values between the locals and the operands stack
+    //     * (laod, store) or just manipulate (dup..., pop, swap) the operand stack are
+    //     * ''not'' considered as performing computations related to those values.
+    //     *
+    //     * @param operands The current operand stack used by the instruction. Note that
+    //     *      this methods assumes that all values – independent of their computational
+    //     *      type category – just use one operand value. E.g. a long div instruction will
+    //     *      only pop the two top most operand values – as in case of the integer div
+    //     *      instruction. 
+    //     */
+    //    def usesForComputation[V >: Null <: AnyRef](
+    //    instruction : Instruction,
+    //    operands: List[V], 
+    //    locals: Locals[V]): List[V]
 }

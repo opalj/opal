@@ -33,7 +33,8 @@ package instructions
 import org.opalj.collection.mutable.UShortSet
 
 /**
- * An instruction that directly manipulates the operand stack.
+ * An instruction that directly manipulates the operand stack by popping, swaping or
+ * duplicating values.
  *
  * @author Michael Eichberg
  */
@@ -47,6 +48,14 @@ abstract class StackManagementInstruction
 
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
+
+    final def readsLocal: Boolean = false
+
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
 }
 

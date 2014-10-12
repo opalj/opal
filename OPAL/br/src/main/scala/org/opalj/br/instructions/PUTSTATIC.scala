@@ -52,6 +52,8 @@ case class PUTSTATIC(
 
     final def runtimeExceptions: List[ObjectType] = Nil
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
