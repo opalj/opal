@@ -28,18 +28,21 @@
  */
 package org.opalj
 package br
-package instructions
+package reader
 
 /**
- * Return void from method.
+ * This attribute stores references to [[ClassFile]] objects that have been generated
+ * while parsing the annotated ClassFile.
  *
- * @author Michael Eichberg
+ * For example, to represent proxy types that have been created
+ * by JDK8 lambda or method reference expressions.
+ *
+ * @author Arne Lottmann
  */
-case object RETURN extends ReturnInstruction {
+case class SynthesizedClassFiles(classFiles: Seq[ClassFile]) extends Attribute {
 
-    final val opcode = 177
+    override val kindId = 1002
 
-    final val mnemonic = "return"
-
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    override def toString: String =
+        s"SynthesizedClassFiles(${classFiles.map(_.thisType.toJava).mkString(", ")})"
 }

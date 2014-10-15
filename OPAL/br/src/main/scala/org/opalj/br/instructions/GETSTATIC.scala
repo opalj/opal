@@ -52,6 +52,8 @@ case class GETSTATIC(
 
     final def runtimeExceptions: List[ObjectType] = Nil
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 

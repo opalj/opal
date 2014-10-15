@@ -49,17 +49,35 @@ import org.opalj.br.Code
  */
 class BoundedInterruptableAI[D <: Domain](
     maxEvaluationCount: Int,
+    maxEvaluationTimeInNS: Long,
     val doInterrupt: () ⇒ Boolean)
         extends InstructionCountBoundedAI[D](maxEvaluationCount) {
+
+    private[this] var startTime: Long = -1l;
 
     def this(
         code: Code,
         maxEvaluationFactor: Double,
+        maxEvaluationTimeInMS: Int,
         doInterrupt: () ⇒ Boolean) =
         this(
             InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
+            maxEvaluationTimeInMS * 1000000l,
             doInterrupt)
 
-    override def isInterrupted = super.isInterrupted || doInterrupt()
+    override def isInterrupted: Boolean = {
+        if (super.isInterrupted || doInterrupt())
+            return true
+
+        val startTime = this.startTime
+        if (startTime == -1l) {
+            this.startTime = System.nanoTime()
+            false
+        } else if (super.currentEvaluationCount % 1000 == 0) {
+            val elapsedTime = System.nanoTime() - startTime
+            elapsedTime > maxEvaluationTimeInNS
+        } else
+            false
+    }
 
 }

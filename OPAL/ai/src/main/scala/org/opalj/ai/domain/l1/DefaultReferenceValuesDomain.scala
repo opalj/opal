@@ -27,19 +27,50 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package instructions
+package ai
+package domain
+package l1
+
+import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.analyses.Project
 
 /**
- * Return void from method.
+ * This domain uses the l1 level ''stable'', partial domains.
  *
  * @author Michael Eichberg
  */
-case object RETURN extends ReturnInstruction {
+class DefaultConfigurableReferenceValuesDomain[I, Source](
+    val id: I,
+    val project: Project[Source],
+    val classFile: ClassFile,
+    val method: Method)
+        extends Domain with JoinStabilization
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with ProjectBasedClassHierarchy
+        with TheProject[Source]
+        with TheMethod
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with l1.DefaultReferenceValuesBinding
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultPrimitiveValuesConversions {
 
-    final val opcode = 177
+    type Id = I
 
-    final val mnemonic = "return"
-
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 }
+
+class DefaultReferenceValuesDomain[Source](
+    project: Project[Source],
+    classFile: ClassFile,
+    method: Method)
+        extends DefaultConfigurableReferenceValuesDomain[String, Source](
+            classFile.thisType.toJava+"{ "+method.toJava+"}",
+            project,
+            classFile,
+            method)

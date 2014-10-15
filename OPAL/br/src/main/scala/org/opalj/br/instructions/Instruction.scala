@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * Common superclass of all instructions.
  *
@@ -68,7 +70,7 @@ trait Instruction {
     def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int
 
     /**
-     * Returns the set of instructions that may be executed next at runtime. This
+     * Returns the pcs of the instructions that may be executed next at runtime. This
      * method takes potentially thrown exceptions into account. I.e., every instruction
      * that may throw an exception checks if it occurs within a catch block and
      * – if so – checks if an appropriate handler exists and – if so – also returns
@@ -78,6 +80,51 @@ trait Instruction {
      *      at runtime.
      */
     def nextInstructions(currentPC: PC, code: Code): PCs
+
+    /**
+     * The number of values that are popped from the operand stack. Here, long and
+     * double values are also counted as one value though they use to stack slots!
+     *
+     * @param ctg A function that returns the computational type category of
+     *          the value on the operand stack with a given index. The top value on
+     *          the operand stack has index '0' and may occupy one (for category 1 values)
+     *          or two stack slots (for category 2 values.)
+     * @note Several stack management instructions manipulate the stack in a generic
+     *          manner and the precise effect depends on the type. E.g., the [[POP2]]
+     *          instruction may just pop one ''categeory 2'' value (of type `long` or `double`)
+     *          or two ''category 1'' values.
+     */
+    def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int
+
+    /**
+     * The number of values that are put onto the operand stack.
+     *
+     * @param ctg A function that returns the computational type category of
+     *          the value on the operand stack with a given index. The top value on
+     *          the operand stack has index '0' and may occupy one (for category 1 values)
+     *          or two stack slots (for category 2 values.)
+     * @note Several stack management instructions manipulate the stack in a generic
+     *          manner and the precise effect depends on the type. E.g., the [[DUP2]]
+     *          instruction may just duplicate one ''categeory 2'' value (of type long or double)
+     *          or two ''category 1'' values.
+     */
+    def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int
+
+    /**
+     * Returns `true` if this instruction reads/uses a local variable.
+     */
+    def readsLocal: Boolean
+
+    @throws[UnsupportedOperationException]("thrown if no local variables are read")
+    def indexOfReadLocal: Int
+
+    /**
+     * Returns `true` if this instruction writes/updates a local variable.
+     */
+    def writesLocal: Boolean
+
+    @throws[UnsupportedOperationException]("thrown if no local variable is written")
+    def indexOfWrittenLocal: Int
 
     /**
      * Returns a string representation of this instruction. If this instruction is a
@@ -99,11 +146,11 @@ trait Instruction {
  */
 object Instruction {
 
+    final val ILLEGAL_INDEX = -1
+
     def unapply(instruction: Instruction): Option[(Int, String, List[ObjectType])] = {
         Some((instruction.opcode, instruction.mnemonic, instruction.runtimeExceptions))
     }
-
-    import collection.mutable.UShortSet
 
     private[instructions] def nextInstructionOrExceptionHandlers(
         instruction: Instruction,

@@ -35,6 +35,11 @@ import org.opalj.br.Code
  * An abstract interpreter that interrupts itself after the evaluation of
  * the given number of instructions.
  *
+ * ==Thread Safety==
+ * This class is thread-safe. I.e., one instance of the InstructionCountBoundedAI can
+ * be used to run multiple abstract interpretations in parallel and to ensure that they
+ * terminate (as a whole) if the set threshold is exceeded.
+ *
  * @author Michael Eichberg
  */
 class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extends AI[D] {

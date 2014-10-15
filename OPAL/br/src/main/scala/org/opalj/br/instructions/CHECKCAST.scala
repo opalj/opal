@@ -48,6 +48,18 @@ case class CHECKCAST(
 
     final def length: Int = 3
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
+    final def readsLocal: Boolean = false
+
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
     final def nextInstructions(currentPC: PC, code: Code): PCs = {
         Instruction.nextInstructionOrExceptionHandler(
             this, currentPC, code, ObjectType.ClassCastException)

@@ -57,6 +57,9 @@ case object INCOMPLETE_INVOKEDYNAMIC extends InvocationInstruction {
 
     final def length: Int = 5
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int =
+        error
+
     final def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
 
 }
@@ -78,6 +81,9 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
     final def length: Int = 5
 
     final def runtimeExceptions: List[ObjectType] = INVOKEDYNAMIC.runtimeExceptions
+
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int =
+        methodDescriptor.parametersCount
 
     override def toString: String =
         "INVOKEDYNAMIC\n"+
@@ -164,23 +170,28 @@ object INVOKEDYNAMIC {
     def unapply(instruction: INVOKEDYNAMIC): Option[(BootstrapMethod, String, MethodDescriptor)] =
         Some((instruction.bootstrapMethod, instruction.name, instruction.methodDescriptor))
 
-    private val lambdaMetafactoryDescriptor = MethodDescriptor(
-        IndexedSeq(ObjectType.MethodHandles$Lookup,
-            ObjectType.String,
-            ObjectType.MethodType,
-            ObjectType.MethodType,
-            ObjectType.MethodHandle,
-            ObjectType.MethodType
-        ),
-        ObjectType.CallSite)
+    val lambdaMetafactoryDescriptor =
+        MethodDescriptor(
+            IndexedSeq(ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ObjectType.MethodType,
+                ObjectType.MethodHandle,
+                ObjectType.MethodType
+            ),
+            ObjectType.CallSite
+        )
 
-    private val lambdaAltMetafactoryDescriptor = MethodDescriptor(
-        IndexedSeq(ObjectType.MethodHandles$Lookup,
-            ObjectType.String,
-            ObjectType.MethodType,
-            ArrayType.ArrayOfObjects
-        ),
-        ObjectType.CallSite)
+    val lambdaAltMetafactoryDescriptor =
+        MethodDescriptor(
+            IndexedSeq(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.MethodType,
+                ArrayType.ArrayOfObjects
+            ),
+            ObjectType.CallSite
+        )
 
 }
 

@@ -33,11 +33,11 @@ package l2
 
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 
+import org.opalj.collection.mutable.Locals
+
 import org.opalj.br._
 import org.opalj.br.instructions._
 import org.opalj.br.analyses.{ Project, ClassHierarchy }
-
-import org.opalj.ai.util.Locals
 
 /**
  * Mix in this trait if methods that are called by `invokeXXX` instructions should

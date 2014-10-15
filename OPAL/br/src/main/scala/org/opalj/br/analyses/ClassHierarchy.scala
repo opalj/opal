@@ -1191,7 +1191,7 @@ class ClassHierarchy private (
      *      ((Serializable)l).store(...)
      *      // => o(l) has to be a subtype of List AND Serializable
      * }
-     * // here, o is either a set or a list... hence, it is at least a Collection, 
+     * // here, o is either a set or a list... hence, it is at least a Collection,
      * // but we cannot deduce anything w.r.t. Serializable and Externalizable.
      * }}}
      */

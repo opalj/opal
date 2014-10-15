@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package util
+package collection
+package mutable
 
 import java.util.Random
 import org.opalj.util.PerformanceEvaluation

@@ -44,6 +44,16 @@ abstract class UnconditionalBranchInstruction
 
     def branchoffset: Int
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    final def readsLocal: Boolean = false
+
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(currentPC + branchoffset)
 
@@ -56,5 +66,11 @@ abstract class UnconditionalBranchInstruction
 object UnconditionalBranch {
 
     def unapply(i: UnconditionalBranchInstruction): Option[Int] = Some(i.branchoffset)
+
+}
+
+abstract class GotoInstruction extends UnconditionalBranchInstruction {
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
 }

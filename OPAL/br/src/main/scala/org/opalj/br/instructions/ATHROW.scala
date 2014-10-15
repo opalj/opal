@@ -44,6 +44,18 @@ case object ATHROW extends Instruction {
     final val runtimeExceptions: List[ObjectType] =
         List(ObjectType.NullPointerException)
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    final def readsLocal: Boolean = false
+
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
     final def indexOfNextInstruction(currentPC: Int, code: Code) =
         indexOfNextInstruction(currentPC, false)
 

@@ -196,7 +196,7 @@ trait AI[D <: Domain] {
             // ... the number of given locals is smaller than or equal to the number of 
             // max locals (the former number still has to be larger or equal to the 
             // number of parameter values (including "this"))
-            val locals = org.opalj.ai.util.Locals[domain.DomainValue](maxLocals)
+            val locals = org.opalj.collection.mutable.Locals[domain.DomainValue](maxLocals)
             var i = l.size - 1
             while (i >= 0) {
                 locals.set(i, l(i))
@@ -205,7 +205,7 @@ trait AI[D <: Domain] {
             locals
         }.getOrElse { // there are no locals at all...
             val code = method.body.get
-            val locals = org.opalj.ai.util.Locals[domain.DomainValue](code.maxLocals)
+            val locals = org.opalj.collection.mutable.Locals[domain.DomainValue](code.maxLocals)
             var localVariableIndex = 0
 
             // Calculates the initial "PC" associated with a method's parameter.

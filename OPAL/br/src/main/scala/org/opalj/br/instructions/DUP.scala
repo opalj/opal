@@ -41,4 +41,8 @@ case object DUP extends StackManagementInstruction {
 
     final val mnemonic = "dup"
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
+
 }

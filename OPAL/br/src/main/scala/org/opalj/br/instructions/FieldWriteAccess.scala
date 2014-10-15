@@ -30,16 +30,17 @@ package org.opalj
 package br
 package instructions
 
+abstract class FieldWriteAccess extends FieldAccess {
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
+}
+
 /**
- * Return void from method.
- *
- * @author Michael Eichberg
+ * Defines an extractor to facilitate pattern matching on field write access instructions.
  */
-case object RETURN extends ReturnInstruction {
+object FieldWriteAccess {
 
-    final val opcode = 177
-
-    final val mnemonic = "return"
-
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    def unapply(fa: FieldWriteAccess): Option[(ObjectType, String, FieldType)] =
+        FieldAccess.unapply(fa)
 }

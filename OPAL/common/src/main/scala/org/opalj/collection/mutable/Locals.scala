@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package util
+package collection
+package mutable
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
@@ -219,7 +219,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
 }
 
-private[util] final object Locals0 extends Locals[Null] {
+private[mutable] final object Locals0 extends Locals[Null] {
 
     final override val size = 0
 
@@ -261,7 +261,7 @@ private[util] final object Locals0 extends Locals[Null] {
     }
 }
 
-private[util] sealed abstract class LocalsX[T >: Null <: AnyRef] extends Locals[T] {
+private[mutable] sealed abstract class LocalsX[T >: Null <: AnyRef] extends Locals[T] {
 
     final override def isEmpty = false
 
@@ -282,7 +282,7 @@ private[util] sealed abstract class LocalsX[T >: Null <: AnyRef] extends Locals[
     }
 }
 
-private[util] final class Locals1[T >: Null <: AnyRef](
+private[mutable] final class Locals1[T >: Null <: AnyRef](
         private var v: T = null) extends LocalsX[T] {
 
     final override def size = 1
@@ -337,7 +337,7 @@ private[util] final class Locals1[T >: Null <: AnyRef](
     }
 }
 
-private[util] final class Locals2[T >: Null <: AnyRef](
+private[mutable] final class Locals2[T >: Null <: AnyRef](
         private var v0: T = null,
         private var v1: T = null) extends LocalsX[T] {
 
@@ -425,7 +425,7 @@ private[util] final class Locals2[T >: Null <: AnyRef](
     override def foreach(f: T ⇒ Unit): Unit = { f(v0); f(v1) }
 }
 
-private[util] final class Locals3[T >: Null <: AnyRef](
+private[mutable] final class Locals3[T >: Null <: AnyRef](
         private var v0: T = null,
         private var v1: T = null,
         private var v2: T = null) extends LocalsX[T] {
@@ -538,7 +538,7 @@ private[util] final class Locals3[T >: Null <: AnyRef](
     override def foreach(f: T ⇒ Unit): Unit = { f(v0); f(v1); f(v2) }
 }
 
-private[util] final class Locals4[T >: Null <: AnyRef](
+private[mutable] final class Locals4[T >: Null <: AnyRef](
         private var v0: T = null,
         private var v1: T = null,
         private var v2: T = null,
@@ -670,7 +670,7 @@ private[util] final class Locals4[T >: Null <: AnyRef](
     final override def foreach(f: T ⇒ Unit): Unit = { f(v0); f(v1); f(v2); f(v3) }
 }
 
-private[util] final class Locals5[T >: Null <: AnyRef](
+private[mutable] final class Locals5[T >: Null <: AnyRef](
         final val vs1: Locals2[T] = new Locals2[T],
         final val vs2: Locals3[T] = new Locals3[T]) extends LocalsX[T] {
 
@@ -750,7 +750,7 @@ private[util] final class Locals5[T >: Null <: AnyRef](
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
 }
 
-private[util] final class Locals6[T >: Null <: AnyRef](
+private[mutable] final class Locals6[T >: Null <: AnyRef](
         final val vs1: Locals3[T] = new Locals3[T],
         final val vs2: Locals3[T] = new Locals3[T]) extends LocalsX[T] {
 
@@ -830,7 +830,7 @@ private[util] final class Locals6[T >: Null <: AnyRef](
     }
 }
 
-private[util] final class Locals7[T >: Null <: AnyRef](
+private[mutable] final class Locals7[T >: Null <: AnyRef](
         final val vs1: Locals3[T] = new Locals3[T],
         final val vs2: Locals4[T] = new Locals4[T]) extends LocalsX[T] {
 
@@ -910,7 +910,7 @@ private[util] final class Locals7[T >: Null <: AnyRef](
     }
 }
 
-private[util] final class Locals8[T >: Null <: AnyRef](
+private[mutable] final class Locals8[T >: Null <: AnyRef](
         final val vs1: Locals2[T] = new Locals2[T],
         final val vs2: Locals3[T] = new Locals3[T],
         final val vs3: Locals3[T] = new Locals3[T]) extends LocalsX[T] {
@@ -1023,7 +1023,7 @@ private[util] final class Locals8[T >: Null <: AnyRef](
     }
 }
 
-private[util] final class Locals9[T >: Null <: AnyRef](
+private[mutable] final class Locals9[T >: Null <: AnyRef](
         final val vs1: Locals3[T] = new Locals3[T],
         final val vs2: Locals3[T] = new Locals3[T],
         final val vs3: Locals3[T] = new Locals3[T]) extends LocalsX[T] {
@@ -1136,7 +1136,7 @@ private[util] final class Locals9[T >: Null <: AnyRef](
     }
 }
 
-private[util] final class Locals10[T >: Null <: AnyRef](
+private[mutable] final class Locals10[T >: Null <: AnyRef](
         final val vs1: Locals4[T] = new Locals4[T],
         final val vs2: Locals3[T] = new Locals3[T],
         final val vs3: Locals3[T] = new Locals3[T]) extends LocalsX[T] {
@@ -1248,7 +1248,7 @@ private[util] final class Locals10[T >: Null <: AnyRef](
     }
 }
 
-private[util] final class Locals11[T >: Null <: AnyRef](
+private[mutable] final class Locals11[T >: Null <: AnyRef](
         final val vs1: Locals4[T] = new Locals4[T],
         final val vs2: Locals3[T] = new Locals3[T],
         final val vs3: Locals4[T] = new Locals4[T]) extends LocalsX[T] {
@@ -1360,7 +1360,7 @@ private[util] final class Locals11[T >: Null <: AnyRef](
     }
 }
 
-private[util] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
+private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
         final val vs11: Locals11[T],
         final val vs12_N: Array[T]) extends LocalsX[T] {
 

@@ -47,6 +47,18 @@ case class INSTANCEOF(
 
     final def length: Int = INSTANCEOF.length
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    final def readsLocal: Boolean = false
+
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
 

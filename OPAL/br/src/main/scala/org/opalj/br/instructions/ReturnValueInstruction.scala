@@ -30,16 +30,15 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
- * Return void from method.
+ * An instruction that returns a value calculated by the method.
  *
  * @author Michael Eichberg
  */
-case object RETURN extends ReturnInstruction {
+abstract class ReturnValueInstruction extends ReturnInstruction {
 
-    final val opcode = 177
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
-    final val mnemonic = "return"
-
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 }

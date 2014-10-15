@@ -51,6 +51,20 @@ abstract class LoadConstantInstruction[T]
     final def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
+    def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+
+    def readsLocal: Boolean = false
+
+    @throws[UnsupportedOperationException]("always")
+    def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    def writesLocal: Boolean = false
+
+    @throws[UnsupportedOperationException]("always")
+    def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+
 }
 /**
  * Defines factory methods for `LoadConstantInstruction`s.
