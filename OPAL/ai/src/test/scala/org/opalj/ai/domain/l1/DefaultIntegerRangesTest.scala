@@ -281,6 +281,188 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         }
 
+        describe("the behavior of ior") {
+
+            it("[3,3] | [8,19] => [3, 31]") {
+                val v = IntegerRange(3, 3)
+                val s = IntegerRange(8, 19)
+
+                ior(-1, v, s) should be(IntegerRange(3, 31))
+            }
+
+            it("[3,3] | [19,19] => [3,31]") {
+                val v = IntegerRange(3, 3)
+                val s = IntegerRange(19, 19)
+
+                ior(-1, v, s) should be(IntegerRange(3, 31))
+            }
+
+            it("[3,3] | [1,19] => [1,31]") {
+                val v = IntegerRange(3, 3)
+                val s = IntegerRange(1, 19)
+
+                ior(-1, v, s) should be(IntegerRange(1, 31))
+            }
+
+            it("[1,3] | [1,4] => [0,7]") {
+                val v = IntegerRange(1, 3)
+                val s = IntegerRange(1, 4)
+
+                ior(-1, v, s) should be(IntegerRange(1, 7))
+            }
+
+            it("[0,20] | [8,10] => [0,31]") {
+                val v = IntegerRange(0, 20)
+                val s = IntegerRange(8, 10)
+
+                ior(-1, v, s) should be(IntegerRange(0, 31))
+            }
+
+            it("[0,0] | [0,0] => [0,1]") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(0, 0)
+
+                ior(-1, v, s) should be(IntegerRange(0, 1))
+            }
+
+            it("[-5,3] | [8,19] => [-5, 31]") {
+                val v = IntegerRange(-5, 3)
+                val s = IntegerRange(8, 19)
+
+                ior(-1, v, s) should be(IntegerRange(-5, 31))
+            }
+
+            it("[-5,-3] | [8,19] => [-5, -1]") {
+                val v = IntegerRange(-5, -3)
+                val s = IntegerRange(8, 19)
+
+                ior(-1, v, s) should be(IntegerRange(-5, -1))
+            }
+
+            it("[-5,-3] | [-8,19] => [-5, -1]") {
+                val v = IntegerRange(-5, -3)
+                val s = IntegerRange(-8, 19)
+
+                ior(-1, v, s) should be(IntegerRange(-5, -1))
+            }
+
+            it("[-5,-3] | [-19,-8] => [-8, -1]") {
+                val v = IntegerRange(-5, -3)
+                val s = IntegerRange(-19, -8)
+
+                ior(-1, v, s) should be(IntegerRange(-8, -1))
+            }
+
+            it("[-5,0] | [-19,-8] => [-19, -1]") {
+                val v = IntegerRange(-5, 0)
+                val s = IntegerRange(-19, -8)
+
+                ior(-1, v, s) should be(IntegerRange(-19, -1))
+            }
+
+            it("[-5,-3] | [-19,0] => [-5, -1]") {
+                val v = IntegerRange(-5, -3)
+                val s = IntegerRange(-19, 0)
+
+                ior(-1, v, s) should be(IntegerRange(-5, -1))
+            }
+
+            it("[3,5] | [-19,-1] => [-19, -1]") {
+                val v = IntegerRange(3, 5)
+                val s = IntegerRange(-19, -1)
+
+                ior(-1, v, s) should be(IntegerRange(-19, -1))
+            }
+
+            it("[3,5] | [-19,1] => [-19, 7]") {
+                val v = IntegerRange(3, 5)
+                val s = IntegerRange(-19, 1)
+
+                ior(-1, v, s) should be(IntegerRange(-19, 7))
+            }
+
+            it("[-3,5] | [-19,1] => [-19, 7]") {
+                val v = IntegerRange(-3, 5)
+                val s = IntegerRange(-19, 1)
+
+                ior(-1, v, s) should be(IntegerRange(-19, 7))
+            }
+
+            it("[-1,1] | [0,1] => [-1, 1]") {
+                val v = IntegerRange(-1, 1)
+                val s = IntegerRange(0, 1)
+
+                ior(-1, v, s) should be(IntegerRange(-1, 1))
+            }
+
+            it("[-10,-10] | [-9,-9] => [-10, -1]") {
+                val v = IntegerRange(-10, -10)
+                val s = IntegerRange(-9, -9)
+
+                ior(-1, v, s) should be(IntegerRange(-10, -1))
+            }
+
+            it("[-10,-10] | [-9,0] => [-10, -1]") {
+                val v = IntegerRange(-10, -10)
+                val s = IntegerRange(-9, 0)
+
+                ior(-1, v, s) should be(IntegerRange(-10, -1))
+            }
+
+            it("[10,10] | [-9,-9] => [-9, -1]") {
+                val v = IntegerRange(10, 10)
+                val s = IntegerRange(-9, -9)
+
+                ior(-1, v, s) should be(IntegerRange(-9, -1))
+            }
+        }
+
+        describe("the behavior of ixor") {
+            // TODO Tests for negative numbers and combinations
+
+            it("[3,3] ^ [8,19] => [3, 31]") {
+                val v = IntegerRange(3, 3)
+                val s = IntegerRange(8, 19)
+
+                ixor(-1, v, s) should be(IntegerRange(3, 31))
+            }
+
+            it("[3,3] ^ [19,19] => [3,31]") {
+                val v = IntegerRange(3, 3)
+                val s = IntegerRange(19, 19)
+
+                ixor(-1, v, s) should be(IntegerRange(3, 31))
+            }
+
+            it("[3,3] ^ [1,19] => [1,31]") {
+                val v = IntegerRange(3, 3)
+                val s = IntegerRange(1, 19)
+
+                ixor(-1, v, s) should be(IntegerRange(1, 31))
+            }
+
+            it("[1,3] ^ [1,4] => [0,7]") {
+                val v = IntegerRange(1, 3)
+                val s = IntegerRange(1, 4)
+
+                ixor(-1, v, s) should be(IntegerRange(0, 7))
+            }
+
+            it("[0,20] ^ [8,10] => [0,31]") {
+                val v = IntegerRange(0, 20)
+                val s = IntegerRange(8, 10)
+
+                ixor(-1, v, s) should be(IntegerRange(0, 31))
+            }
+
+            it("[0,0] ^ [0,0] => [0,0]") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(0, 0)
+
+                ixor(-1, v, s) should be(IntegerRange(0, 0))
+            }
+        }
+
         describe("the behavior of iadd") {
 
             it("[0,3] + [0,2] => [0,5]") {
