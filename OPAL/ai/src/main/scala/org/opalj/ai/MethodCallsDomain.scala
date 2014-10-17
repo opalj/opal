@@ -35,7 +35,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 
 /**
- * Defines all method related to the invokation of other methods.
+ * Defines all methods related to the invokation of other methods.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */

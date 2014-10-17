@@ -32,6 +32,9 @@ package domain
 package l0
 
 /**
+ * Implementation of all primitive values conversion instructions that just use the
+ * default factory methods.
+ *
  * @author Michael Eichberg
  */
 trait DefaultPrimitiveValuesConversions extends PrimitiveValuesConversionsDomain {

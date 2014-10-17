@@ -30,7 +30,7 @@ package org.opalj
 package ai
 
 /**
- * A abstract interpreter that interrupts itself after some configurable
+ * An abstract interpreter that interrupts itself after some configurable
  * ([[maxEffortInNs]]) time has passed.
  *
  * @param maxEffortInNs  The number of nanoseconds after which the abstract
@@ -43,7 +43,7 @@ class TimeBoundedAI[D <: Domain](
 
     private[this] final val CheckInterval = 100
 
-    private[this] var evaluationCount = -1 // we don't check the p
+    private[this] var evaluationCount = -1
 
     private[this] var startTime: Long = _
 

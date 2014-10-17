@@ -34,7 +34,7 @@ import scala.collection.BitSet
 import org.opalj.br.instructions.Instruction
 
 /**
- * Mixin this trait if information about the structure of the code is needed.
+ * Mixin this trait if the domain needs information about the structure of the code.
  *
  * ==Usage==
  * It is sufficient to mixin this trait in a [[Domain]] that needs to get access to

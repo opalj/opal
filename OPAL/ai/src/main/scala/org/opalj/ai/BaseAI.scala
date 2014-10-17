@@ -35,6 +35,9 @@ package ai
  * interpreter can be interrupted by calling the `interrupt` method of the
  * AI's thread.
  *
+ * @see [[BoundedInterruptableAI]] for an abstract interpreter that can easily be
+ *      interrupted and which also interrupts itself if a certain threshold is exceeded.
+ *
  * @author Michael Eichberg
  */
 class BaseAI extends AI[Domain] {

@@ -48,6 +48,7 @@ import org.opalj.collection.mutable.UShortSet
  *    [[ReturnInstructionsDomain]].
  *  - Collects information directly associated with the analyzed code block.
  *  - Not thread-safe.
+ *  - Not reusable.
  *
  * @author Michael Eichberg
  */

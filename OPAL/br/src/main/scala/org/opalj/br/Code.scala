@@ -242,6 +242,19 @@ class Code private (
     def lineNumber(pc: PC): Option[Int] =
         lineNumberTable.flatMap(_.lookupLineNumber(pc))
 
+    /**
+     * Returns the smallest line number (if any).
+     *
+     * @note The line number associated with the first instruction (pc === 0) is
+     *      not necessarily the smallest one.
+     *      {{{
+     *      public void foo(int i) {
+     *          super.foo( // The call has the smallest line number.
+     *              i+=1; // THIS IS THE FIRST OPERATION...
+     *          )
+     *      }
+     *      }}}
+     */
     def firstLineNumber: Option[Int] =
         lineNumberTable.flatMap(_.firstLineNumber)
 
@@ -647,6 +660,18 @@ class Code private (
     }
 
     /**
+     * This attribute's kind id.
+     */
+    override def kindId: Int = Code.KindId
+
+    //    /**
+    //     * Associates the current memory layout with each instruction.
+    //     */
+    //    def memoryLayout(): (Array[List[ValueInformation]], Array[Locals[ValueInformation]]) = {
+    //
+    //    }
+
+    /**
      * A complete representation of this code attribute (including instructions,
      * attributes, etc.).
      */
@@ -659,11 +684,6 @@ class Code private (
             (attributes.toString)+
             ")"
     }
-
-    /**
-     * This attribute's kind id.
-     */
-    override def kindId: Int = Code.KindId
 
 }
 
