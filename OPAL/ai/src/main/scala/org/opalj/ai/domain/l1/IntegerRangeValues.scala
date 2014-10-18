@@ -808,11 +808,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
 
                     val ub = (1 << maxValueBitLength) - 1
 
-                    val intersectedBitrange = List(vlb.toBinaryString.length, vub.toBinaryString.length).intersect(List(slb.toBinaryString.length, sub.toBinaryString.length))
-
-                    val lb = 0
-
-                    IntegerRange(lb, ub)
+                    IntegerRange(0, ub)
 
                 } else if (vlb < 0 && vub < 0 && slb < 0 && sub < 0) {
                     val allValuesSorted = List((vlb, 'v'), (vub, 'v'), (slb, 's'), (sub, 's')).sorted
