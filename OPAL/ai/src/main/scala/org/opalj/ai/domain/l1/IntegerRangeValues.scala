@@ -799,7 +799,6 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         (value1, value2) match {
             // IMPROVE [IntegerRangeValues] General handling of "xor" for two integer range values
             // TODO other cases + improve accuracy and perfomance
-          
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
                 if (vlb >= 0 && vub >= 0 && slb >= 0 && sub >= 0) {
                     val allValuesSorted = List((vlb, 'v'), (vub, 'v'), (slb, 's'), (sub, 's')).sorted
