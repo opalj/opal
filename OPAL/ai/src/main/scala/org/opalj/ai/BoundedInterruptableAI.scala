@@ -53,7 +53,7 @@ import org.opalj.br.Code
  */
 class BoundedInterruptableAI[D <: Domain](
     maxEvaluationCount: Int,
-    maxEvaluationTimeInNS: Long,
+    val maxEvaluationTimeInNS: Long,
     val doInterrupt: () ⇒ Boolean)
         extends InstructionCountBoundedAI[D](maxEvaluationCount) {
 
