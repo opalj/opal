@@ -283,183 +283,424 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         describe("the behavior of ior") {
 
-            it("[3,3] | [8,19] => [3, 31]") {
+            it("[3,3] | [8,19] => [11, 19]") {
                 val v = IntegerRange(3, 3)
                 val s = IntegerRange(8, 19)
 
-                ior(-1, v, s) should be(IntegerRange(3, 31))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 11
+
+                        ub should be >= 19
+                    case v ⇒ fail(s"expect Range between [11,19]; found $v")
+                }
             }
 
-            it("[3,3] | [19,19] => [3,31]") {
+            it("[3,3] | [19,19] => [19,19]") {
                 val v = IntegerRange(3, 3)
                 val s = IntegerRange(19, 19)
 
-                ior(-1, v, s) should be(IntegerRange(3, 31))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 19
+
+                        ub should be >= 19
+                    case v ⇒ fail(s"expect Range between [19,19]; found $v")
+                }
             }
 
-            it("[3,3] | [1,19] => [1,31]") {
+            it("[3,3] | [1,19] => [3,19]") {
                 val v = IntegerRange(3, 3)
                 val s = IntegerRange(1, 19)
 
-                ior(-1, v, s) should be(IntegerRange(1, 31))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 3
+
+                        ub should be >= 19
+                    case v ⇒ fail(s"expect Range between [3,19]; found $v")
+                }
             }
 
-            it("[1,3] | [1,4] => [0,7]") {
+            it("[1,3] | [1,4] => [1,7]") {
                 val v = IntegerRange(1, 3)
                 val s = IntegerRange(1, 4)
 
-                ior(-1, v, s) should be(IntegerRange(1, 7))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 1
+
+                        ub should be >= 7
+                    case v ⇒ fail(s"expect Range between [1,7]; found $v")
+                }
             }
 
-            it("[0,20] | [8,10] => [0,31]") {
+            it("[0,20] | [8,10] => [8,30]") {
                 val v = IntegerRange(0, 20)
                 val s = IntegerRange(8, 10)
 
-                ior(-1, v, s) should be(IntegerRange(0, 31))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 8
+
+                        ub should be >= 30
+                    case v ⇒ fail(s"expect Range between [8,30]; found $v")
+                }
             }
 
-            it("[0,0] | [0,0] => [0,1]") {
+            it("[0,0] | [0,0] => [0,0]") {
                 val v = IntegerRange(0, 0)
                 val s = IntegerRange(0, 0)
 
-                ior(-1, v, s) should be(IntegerRange(0, 1))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+
+                        ub should be >= 0
+                    case v ⇒ fail(s"expect Range between [0,0]; found $v")
+                }
             }
 
-            it("[-5,3] | [8,19] => [-5, 31]") {
+            it("[-5,3] | [8,19] => [-5, 19]") {
                 val v = IntegerRange(-5, 3)
                 val s = IntegerRange(8, 19)
 
-                ior(-1, v, s) should be(IntegerRange(-5, 31))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -5
+
+                        ub should be >= 19
+                    case v ⇒ fail(s"expect Range between [-5,19]; found $v")
+                }
             }
 
             it("[-5,-3] | [8,19] => [-5, -1]") {
                 val v = IntegerRange(-5, -3)
                 val s = IntegerRange(8, 19)
 
-                ior(-1, v, s) should be(IntegerRange(-5, -1))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -5
+
+                        ub should be >= -1
+                    case v ⇒ fail(s"expect Range between [-5,-1]; found $v")
+                }
             }
 
             it("[-5,-3] | [-8,19] => [-5, -1]") {
                 val v = IntegerRange(-5, -3)
                 val s = IntegerRange(-8, 19)
 
-                ior(-1, v, s) should be(IntegerRange(-5, -1))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -5
+
+                        ub should be >= -1
+                    case v ⇒ fail(s"expect Range between [-5,-1]; found $v")
+                }
             }
 
-            it("[-5,-3] | [-19,-8] => [-8, -1]") {
+            it("[-5,-3] | [-19,-8] => [-5, -1]") {
                 val v = IntegerRange(-5, -3)
                 val s = IntegerRange(-19, -8)
 
-                ior(-1, v, s) should be(IntegerRange(-8, -1))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -5
+
+                        ub should be >= -1
+                    case v ⇒ fail(s"expect Range between [-5,-1]; found $v")
+                }
             }
 
             it("[-5,0] | [-19,-8] => [-19, -1]") {
                 val v = IntegerRange(-5, 0)
                 val s = IntegerRange(-19, -8)
 
-                ior(-1, v, s) should be(IntegerRange(-19, -1))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -19
+
+                        ub should be >= -1
+                    case v ⇒ fail(s"expect Range between [-19,-]; found $v")
+                }
             }
 
             it("[-5,-3] | [-19,0] => [-5, -1]") {
                 val v = IntegerRange(-5, -3)
                 val s = IntegerRange(-19, 0)
 
-                ior(-1, v, s) should be(IntegerRange(-5, -1))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -5
+
+                        ub should be >= -1
+                    case v ⇒ fail(s"expect Range between [-5,-1]; found $v")
+                }
             }
 
             it("[3,5] | [-19,-1] => [-19, -1]") {
                 val v = IntegerRange(3, 5)
                 val s = IntegerRange(-19, -1)
 
-                ior(-1, v, s) should be(IntegerRange(-19, -1))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -19
+
+                        ub should be >= -1
+                    case v ⇒ fail(s"expect Range between [-19,-1]; found $v")
+                }
             }
 
-            it("[3,5] | [-19,1] => [-19, 7]") {
+            it("[3,5] | [-19,1] => [-19, 5]") {
                 val v = IntegerRange(3, 5)
                 val s = IntegerRange(-19, 1)
 
-                ior(-1, v, s) should be(IntegerRange(-19, 7))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -19
+
+                        ub should be >= 5
+                    case v ⇒ fail(s"expect Range between [-19,5]; found $v")
+                }
             }
 
-            it("[-3,5] | [-19,1] => [-19, 7]") {
+            it("[-3,5] | [-19,1] => [-19, 5]") {
                 val v = IntegerRange(-3, 5)
                 val s = IntegerRange(-19, 1)
 
-                ior(-1, v, s) should be(IntegerRange(-19, 7))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -19
+
+                        ub should be >= 5
+                    case v ⇒ fail(s"expect Range between [-19,5]; found $v")
+                }
             }
 
             it("[-1,1] | [0,1] => [-1, 1]") {
                 val v = IntegerRange(-1, 1)
                 val s = IntegerRange(0, 1)
 
-                ior(-1, v, s) should be(IntegerRange(-1, 1))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -1
+
+                        ub should be >= 1
+                    case v ⇒ fail(s"expect Range between [-1,1]; found $v")
+                }
             }
 
-            it("[-10,-10] | [-9,-9] => [-10, -1]") {
+            it("[-10,-10] | [-9,-9] => [-9, -9]") {
                 val v = IntegerRange(-10, -10)
                 val s = IntegerRange(-9, -9)
 
-                ior(-1, v, s) should be(IntegerRange(-10, -1))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -9
+
+                        ub should be >= -9
+                    case v ⇒ fail(s"expect Range between [-9,-9]; found $v")
+                }
             }
 
             it("[-10,-10] | [-9,0] => [-10, -1]") {
                 val v = IntegerRange(-10, -10)
                 val s = IntegerRange(-9, 0)
 
-                ior(-1, v, s) should be(IntegerRange(-10, -1))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -10
+
+                        ub should be >= -1
+                    case v ⇒ fail(s"expect Range between [-10,-1]; found $v")
+                }
             }
 
-            it("[10,10] | [-9,-9] => [-9, -1]") {
+            it("[10,10] | [-9,-9] => [-1, -1]") {
                 val v = IntegerRange(10, 10)
                 val s = IntegerRange(-9, -9)
 
-                ior(-1, v, s) should be(IntegerRange(-9, -1))
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -1
+
+                        ub should be >= -1
+                    case v ⇒ fail(s"expect Range between [-1,-1]; found $v")
+                }
             }
         }
 
         describe("the behavior of ixor") {
             // TODO Tests for negative numbers and combinations
 
-            it("[3,3] ^ [8,19] => [3, 31]") {
+            it("[8,9] ^ [6,8] => [0,15]") {
+                val v = IntegerRange(8, 9)
+                val s = IntegerRange(6, 8)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+
+                        ub should be >= 15
+                    case v ⇒ fail(s"expect Range between [0,15]; found $v")
+                }
+            }
+
+            it("[3,3] ^ [8,19] => [8, 19]") {
                 val v = IntegerRange(3, 3)
                 val s = IntegerRange(8, 19)
 
-                ixor(-1, v, s) should be(IntegerRange(3, 31))
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 8
+
+                        ub should be >= 19
+                    case v ⇒ fail(s"expect Range between [8,19]; found $v")
+                }
             }
 
-            it("[3,3] ^ [19,19] => [3,31]") {
+            it("[3,3] ^ [19,19] => [16,16]") {
                 val v = IntegerRange(3, 3)
                 val s = IntegerRange(19, 19)
 
-                ixor(-1, v, s) should be(IntegerRange(3, 31))
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 16
+
+                        ub should be >= 16
+                    case v ⇒ fail(s"expect Range between [16,16]; found $v")
+                }
             }
 
-            it("[3,3] ^ [1,19] => [1,31]") {
+            it("[3,3] ^ [1,19] => [0,19]") {
                 val v = IntegerRange(3, 3)
                 val s = IntegerRange(1, 19)
 
-                ixor(-1, v, s) should be(IntegerRange(1, 31))
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+
+                        ub should be >= 19
+                    case v ⇒ fail(s"expect Range between [0,19]; found $v")
+                }
             }
 
             it("[1,3] ^ [1,4] => [0,7]") {
                 val v = IntegerRange(1, 3)
                 val s = IntegerRange(1, 4)
 
-                ixor(-1, v, s) should be(IntegerRange(0, 7))
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+
+                        ub should be >= 7
+                    case v ⇒ fail(s"expect Range between [0,7]; found $v")
+                }
             }
 
-            it("[0,20] ^ [8,10] => [0,31]") {
+            it("[0,20] ^ [8,10] => [0,30]") {
                 val v = IntegerRange(0, 20)
                 val s = IntegerRange(8, 10)
 
-                ixor(-1, v, s) should be(IntegerRange(0, 31))
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+
+                        ub should be >= 30
+                    case v ⇒ fail(s"expect Range between [0,30]; found $v")
+                }
             }
 
             it("[0,0] ^ [0,0] => [0,0]") {
                 val v = IntegerRange(0, 0)
                 val s = IntegerRange(0, 0)
 
-                ixor(-1, v, s) should be(IntegerRange(0, 0))
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+
+                        ub should be >= 0
+                    case v ⇒ fail(s"expect Range between [0,0]; found $v")
+                }
+            }
+
+            it("[-10,-2] ^ [-8,-1] => [0,15]") {
+                val v = IntegerRange(-10, -2)
+                val s = IntegerRange(-8, -1)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+
+                        ub should be >= 15
+                    case v ⇒ fail(s"expect Range between [0,15]; found $v")
+                }
+            }
+
+            it("[-220,-150] ^ [-10,-4] => [144,223]") {
+                val v = IntegerRange(-220, -150)
+                val s = IntegerRange(-10, -4)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 144
+
+                        ub should be >= 223
+                    case v ⇒ fail(s"expect Range between [144,223]; found $v")
+                }
+            }
+
+            it("[-22,-1] ^ [-10,-4] => [0,29]") {
+                val v = IntegerRange(-22, -1)
+                val s = IntegerRange(-10, -4)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+
+                        ub should be >= 29
+                    case v ⇒ fail(s"expect Range between [0,29]; found $v")
+                }
+            }
+
+            it("[-1,-1] ^ [-10,-4] => [3,9]") {
+                val v = IntegerRange(-1, -1)
+                val s = IntegerRange(-10, -4)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 3
+
+                        ub should be >= 9
+                    case v ⇒ fail(s"expect Range between [3,9]; found $v")
+                }
+            }
+
+            it("[-1,-1] ^ [-5,-4] => [3,4]") {
+                val v = IntegerRange(-1, -1)
+                val s = IntegerRange(-5, -4)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 3
+
+                        ub should be >= 4
+                    case v ⇒ fail(s"expect Range between [3,4]; found $v")
+                }
+            }
+
+            it("[-10,-9] ^ [-5,-5] => [12,13]") {
+                val v = IntegerRange(-10, -9)
+                val s = IntegerRange(-5, -5)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 12
+
+                        ub should be >= 13
+                    case v ⇒ fail(s"expect Range between [12,13]; found $v")
+                }
             }
         }
 
@@ -1264,8 +1505,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 // we don't know the size of the array
                 domain.allReturnedValues.head._2 abstractsOver (
-                    domain.InitializedArrayValue(2, List(10), ArrayType(IntegerType))
-                ) should be(true)
+                    domain.InitializedArrayValue(2, List(10), ArrayType(IntegerType))) should be(true)
 
                 // get the loop counter at the "icmple instruction" which controls the 
                 // loops that initializes the array

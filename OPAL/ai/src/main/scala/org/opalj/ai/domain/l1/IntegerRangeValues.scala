@@ -733,31 +733,25 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
 
     override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-
-            // IMPROVE [IntegerRangeValues] General handling of "or" for two integer range values
-
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
-                if ((vlb < 0 && vub >= 0 && slb < 0 && sub < 0) || (vlb >= 0 && vub >= 0 && slb < 0 && sub < 0)) {
-                    IntegerRange(Math.min(slb, sub), -1)
-                } else if ((vlb < 0 && vub < 0 && slb < 0 && sub >= 0) || (vlb < 0 && vub < 0 && slb >= 0 && sub >= 0)) {
-                    IntegerRange(Math.min(vlb, vub), -1)
+                if (vub >= 0 && slb < 0 && sub < 0) {
+                    IntegerRange(slb, -1)
+                } else if (vlb < 0 && vub < 0 && sub >= 0) {
+                    IntegerRange(vlb, -1)
                 } else if (vlb < 0 && vub < 0 && slb < 0 && sub < 0) {
-                    val allValuesSorted = List(vlb, vub, slb, sub).sorted
-                    IntegerRange(allValuesSorted(1), -1)
+                    val lb = if (vlb < slb) slb else vlb
+                    IntegerRange(lb, -1)
                 } else {
-                    val allValuesSorted = List(vlb, vub, slb, sub).sorted
-                    val maxValue = allValuesSorted(3)
-                    val maxValueBitLength = maxValue.toBinaryString.length
+                    val maxValue = if (vub < sub) sub else vub
 
-                    val ub = (Math.pow(2, maxValueBitLength) - 1).toInt
-                    val lb = allValuesSorted(0)
+                    val ub = if (maxValue != 0) (Integer.highestOneBit(maxValue) << 1) - 1 else 0
+                    val lb = if (vlb < slb) vlb else slb
 
                     IntegerRange(lb, ub)
                 }
 
             case _ ⇒ IntegerValue(pc)
         }
-
     }
 
     override def ishl(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
@@ -804,7 +798,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
     override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             // IMPROVE [IntegerRangeValues] General handling of "xor" for two integer range values
-
+            // TODO other cases + improve accuracy and perfomance
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
                 if (vlb >= 0 && vub >= 0 && slb >= 0 && sub >= 0) {
                     val allValuesSorted = List((vlb, 'v'), (vub, 'v'), (slb, 's'), (sub, 's')).sorted
@@ -812,32 +806,31 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                     val maxValueBitLength = maxValue._1.toBinaryString.length
                     val maxValueGroup = maxValue._2
 
-                    val ub = maxValueGroup match {
-                        case 'v' ⇒ {
-                            val maxS = Math.max(sub, slb)
-                            if (maxS.toBinaryString.length < maxValueBitLength)
-                                (Math.pow(2, maxValueBitLength) - 1).toInt
-                            else
-                                (Math.pow(2, maxValueBitLength - 1) - 1).toInt
-                        }
-
-                        case 's' ⇒ {
-                            val maxV = Math.max(vub, vlb)
-                            if (maxV.toBinaryString.length < maxValueBitLength)
-                                (Math.pow(2, maxValueBitLength) - 1).toInt
-                            else
-                                (Math.pow(2, maxValueBitLength - 1) - 1).toInt
-                        }
-                    }
+                    val ub = (1 << maxValueBitLength) - 1
 
                     val intersectedBitrange = List(vlb.toBinaryString.length, vub.toBinaryString.length).intersect(List(slb.toBinaryString.length, sub.toBinaryString.length))
 
-                    val lb = if (intersectedBitrange.isEmpty)
-                        allValuesSorted(0)._1
-                    else 0
+                    val lb = 0
 
                     IntegerRange(lb, ub)
 
+                } else if (vlb < 0 && vub < 0 && slb < 0 && sub < 0) {
+                    val allValuesSorted = List((vlb, 'v'), (vub, 'v'), (slb, 's'), (sub, 's')).sorted
+
+                    val bitRangeV = (Math.abs(vub).toBinaryString.length to Math.abs(vlb).toBinaryString.length + 1).toList
+                    val bitRangeS = (Math.abs(sub).toBinaryString.length to Math.abs(slb).toBinaryString.length + 1).toList
+
+                    val minValue = allValuesSorted(0)
+                    val numBitsMinValue = Math.abs(minValue._1).toBinaryString.length
+                    val maxValue = allValuesSorted(3)
+                    val numBitsMaxValue = Math.abs(maxValue._1).toBinaryString.length
+
+                    val intersectionResult = (bitRangeV intersect bitRangeS)
+
+                    val lb = if (intersectionResult.isEmpty) (1 << numBitsMaxValue) - 1 else 0
+                    val ub = if (intersectionResult.isEmpty) (1 << numBitsMinValue) - 1 else (1 << intersectionResult.last) - 1
+
+                    IntegerRange(lb, ub)
                 } else IntegerValue(pc)
 
             case _ ⇒ IntegerValue(pc)
