@@ -734,11 +734,11 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
     override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
-                if (vub >= 0 && slb < 0 && sub < 0) {
+                if (vub >= 0 && sub < 0) {
                     IntegerRange(slb, -1)
-                } else if (vlb < 0 && vub < 0 && sub >= 0) {
+                } else if (vub < 0 && sub >= 0) {
                     IntegerRange(vlb, -1)
-                } else if (vlb < 0 && vub < 0 && slb < 0 && sub < 0) {
+                } else if (vub < 0 && sub < 0) {
                     val lb = if (vlb < slb) slb else vlb
                     IntegerRange(lb, -1)
                 } else {
@@ -800,26 +800,27 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
             // IMPROVE [IntegerRangeValues] General handling of "xor" for two integer range values
             // TODO other cases + improve accuracy and perfomance
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
-                if (vlb >= 0 && vub >= 0 && slb >= 0 && sub >= 0) {
-                    val allValuesSorted = List((vlb, 'v'), (vub, 'v'), (slb, 's'), (sub, 's')).sorted
-                    val maxValue = allValuesSorted(3)
-                    val maxValueBitLength = maxValue._1.toBinaryString.length
-                    val maxValueGroup = maxValue._2
+                if (vub >= 0 && sub >= 0) {
+                    val maxValue = if (vub > sub) vub else sub
+                    val maxValueBitLength = (32 - Integer.numberOfLeadingZeros(maxValue))
 
                     val ub = (1 << maxValueBitLength) - 1
 
                     IntegerRange(0, ub)
 
-                } else if (vlb < 0 && vub < 0 && slb < 0 && sub < 0) {
-                    val allValuesSorted = List((vlb, 'v'), (vub, 'v'), (slb, 's'), (sub, 's')).sorted
+                } else if (vub < 0 && sub < 0) {
+                    /* The main idea behind these calculations is to find the switching of the bits, since this switching can lead to the min and max 
+                     * values of the result range. Bitranges of v and s that overlapp are good approximations of the ranges, since these overlappings
+                     * indicate a nullification (e.g. -3 ^ -3 = 0) and approximate the max value better.      
+                  	*/
+                    val bitRangeV = ((32 - Integer.numberOfLeadingZeros(-1 * vub)) to (32 - Integer.numberOfLeadingZeros(-1 * vlb) + 1)).toList
+                    val bitRangeS = ((32 - Integer.numberOfLeadingZeros(-1 * sub)) to (32 - Integer.numberOfLeadingZeros(-1 * slb) + 1)).toList
 
-                    val bitRangeV = (Math.abs(vub).toBinaryString.length to Math.abs(vlb).toBinaryString.length + 1).toList
-                    val bitRangeS = (Math.abs(sub).toBinaryString.length to Math.abs(slb).toBinaryString.length + 1).toList
+                    val minValue = if (vlb < slb) vlb else slb
+                    val numBitsMinValue = (32 - Integer.numberOfLeadingZeros(-1 * minValue))
 
-                    val minValue = allValuesSorted(0)
-                    val numBitsMinValue = Math.abs(minValue._1).toBinaryString.length
-                    val maxValue = allValuesSorted(3)
-                    val numBitsMaxValue = Math.abs(maxValue._1).toBinaryString.length
+                    val maxValue = if (vub > sub) vub else sub
+                    val numBitsMaxValue = (32 - Integer.numberOfLeadingZeros(-1 * maxValue))
 
                     val intersectionResult = (bitRangeV intersect bitRangeS)
 

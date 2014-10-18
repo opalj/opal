@@ -282,6 +282,44 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
 
         describe("the behavior of ior") {
+            it("[Int.MinValue,IntMaxValue] | [8,19] => [Int.MinValue, Int.MaxValue]") {
+                val v = IntegerRange(Int.MinValue, Int.MaxValue)
+                val s = IntegerRange(8, 19)
+
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(Int.MinValue)
+
+                        ub should ===(Int.MaxValue)
+                    case v ⇒ fail(s"expect Range between [Int.MinValue, Int.MaxValue]; found $v")
+                }
+            }
+
+            it("[2,Int.MaxValue] | [8,19] => [2, Int.MaxValue]") {
+                val v = IntegerRange(Int.MinValue, Int.MaxValue)
+                val s = IntegerRange(8, 19)
+
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 2
+
+                        ub should ===(Int.MaxValue)
+                    case v ⇒ fail(s"expect Range between [2, Int.MaxValue]; found $v")
+                }
+            }
+
+            it("[Int.MinValue,2] | [8,19] => [2, Int.MaxValue]") {
+                val v = IntegerRange(Int.MinValue, Int.MaxValue)
+                val s = IntegerRange(8, 19)
+
+                ior(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===((Int.MinValue))
+
+                        ub should be >= 32
+                    case v ⇒ fail(s"expect Range between [Int.MinValue, 32]; found $v")
+                }
+            }
 
             it("[3,3] | [8,19] => [11, 19]") {
                 val v = IntegerRange(3, 3)
@@ -532,7 +570,45 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
 
         describe("the behavior of ixor") {
-            // TODO Tests for negative numbers and combinations
+            // TODO Tests for combinations with negative and positive numbers and more tests with ranges Int.MaxValue and Int.MinValue           
+            it("[0,Int.MaxValue] ^ [0,Int.MaxValue] => [0,Int.MaxValue]") {
+                val v = IntegerRange(0, Int.MaxValue)
+                val s = IntegerRange(0, Int.MaxValue)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+
+                        ub should ===(Int.MaxValue)
+                    case v ⇒ fail(s"expect Range between [0,Int.MaxValue]; found $v")
+                }
+            }
+
+            it("[10,Int.MaxValue] ^ [0,Int.MaxValue] => [0,Int.MaxValue]") {
+                val v = IntegerRange(10, Int.MaxValue)
+                val s = IntegerRange(0, Int.MaxValue)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+
+                        ub should ===(Int.MaxValue)
+                    case v ⇒ fail(s"expect Range between [0,Int.MaxValue]; found $v")
+                }
+            }
+
+            it("[0,Int.MaxValue] ^ [10,Int.MaxValue] => [0,Int.MaxValue]") {
+                val v = IntegerRange(0, Int.MaxValue)
+                val s = IntegerRange(10, Int.MaxValue)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+
+                        ub should ===(Int.MaxValue)
+                    case v ⇒ fail(s"expect Range between [0,Int.MaxValue]; found $v")
+                }
+            }
 
             it("[8,9] ^ [6,8] => [0,15]") {
                 val v = IntegerRange(8, 9)
