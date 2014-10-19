@@ -47,7 +47,15 @@ class JumpToProblemListener(
 
     worker.stateProperty.addListener(this)
 
-    def runScript(script: String): Unit = webview.engine.delegate.executeScript(script)
+    def runScript(script: String): Unit =
+        try {
+            webview.engine.delegate.executeScript(script)
+        } catch {
+            case e: Exception ⇒
+                println("failed to run the script:")
+                println(script)
+                throw e
+        }
 
     override def changed(
         observable: ObservableValue[_ <: State],
