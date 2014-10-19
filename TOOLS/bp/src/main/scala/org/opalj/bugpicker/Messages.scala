@@ -32,7 +32,9 @@ package bugpicker
 import scala.io.Source
 
 object Messages {
-    def getMessage(path: String): String = process(getClass.getResourceAsStream(path))(Source.fromInputStream(_).mkString)
+
+    def getMessage(path: String): String =
+        process(getClass.getResourceAsStream(path))(Source.fromInputStream(_).mkString)
 
     final val ANALYSIS_RUNNING = getMessage("/org/opalj/bugpicker/messages/analysisrunning.html")
     final val ANALYSIS_FINISHED = getMessage("/org/opalj/bugpicker/messages/analysisfinished.html")

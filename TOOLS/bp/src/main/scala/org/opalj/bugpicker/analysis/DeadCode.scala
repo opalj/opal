@@ -31,6 +31,7 @@ package bugpicker
 package analysis
 
 import scala.xml.Node
+import scala.xml.Text
 import scala.xml.UnprefixedAttribute
 import scala.Console.BLUE
 import scala.Console.BOLD
@@ -153,11 +154,15 @@ case class DeadCode(
                     )
             }
 
+        val methodIndex = -1
+
         val pcNode =
-            <span class="tooltip">
+            <span class="tooltip" data-class={ classFile.fqn } data-method={ methodIndex.toString } data-pc={ ctiPC.toString } data-line={ line.map(_.toString).getOrElse("") } data-show="bytecode">
                 { ctiPC }
                 <span>{ iNode }</span>
             </span>
+
+        val methodLine: String = method.body.flatMap(_.firstLineNumber.map(_.toString)).getOrElse("")
 
         val node =
             <tr style={
@@ -165,10 +170,22 @@ case class DeadCode(
                 s"color:$color;"
             }>
                 <td>
-                    { XHTML.typeToXHTML(classFile.thisType) }
+                    <span data-class={ classFile.fqn }>{ XHTML.typeToXHTML(classFile.thisType) }</span>
                 </td>
-                <td>{ XHTML.methodToXHTML(method.name, method.descriptor) }</td>
-                <td>{ pcNode }{ "/ "+ctiLineNumber.getOrElse("N/A") }</td>
+                <td>
+                    <span data-class={ classFile.fqn } data-method={ methodIndex.toString } data-line={ methodLine }>
+                        { XHTML.methodToXHTML(method.name, method.descriptor) }
+                    </span>
+                </td>
+                <td>
+                    { pcNode }
+                    {
+                        Text("/ ") ++
+                            line.map(ln ⇒
+                                <span data-class={ classFile.fqn } data-method={ methodIndex.toString } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>
+                            ).getOrElse(Text("N/A"))
+                    }
+                </td>
                 <td>{ message }</td>
             </tr>
 
@@ -184,7 +201,7 @@ case class DeadCode(
     }
 
     override def toString = {
-        import Console._
+        import scala.Console._
         val declaringClassOfMethod = classFile.thisType.toJava
 
         "Dead code in "+BOLD + BLUE +
