@@ -61,10 +61,12 @@ case class Method_Info(
             }
 
         val name = cp(name_index).toString(cp)
-        <div class="method" name={ name } flags={ filter_flags }>
+        val jvmDescriptor = cp(descriptor_index).asString
+        val javaDescriptor = parseMethodDescriptor(name, jvmDescriptor)
+        <div class="method" name={ name } id={ name + jvmDescriptor } flags={ filter_flags }>
             <div class="method_signature">
                 <span class="access_flags">{ flags }</span>
-                <span>{ parseMethodDescriptor(name, cp(descriptor_index).asString) }</span>
+                <span>{ javaDescriptor }</span>
             </div>
             { attributesToXHTML(methodIndex) }
         </div>
