@@ -340,8 +340,8 @@ object BugPickerAnalysis {
                 }
             </table>
             <script type="text/javascript">
-                document.getElementById('accuracy').value=75;
-                updateAccuracy(75);
+                document.getElementById('relevance').value=75;
+                updateRelevance(75);
             </script>
         </div>
     }
