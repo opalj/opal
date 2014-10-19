@@ -71,7 +71,7 @@ class AboutDialog(owner: Stage, showUrl: String ⇒ Unit) extends DialogStage(ow
                             new Hyperlink {
                                 text = "the BugPicker project"
                                 onAction = { e: ActionEvent ⇒
-                                    showUrl("http://opal-project.de/bugpicker")
+                                    showUrl("http://opal-project.de/tools/bugpicker")
                                 }
                             }
                         )
