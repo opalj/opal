@@ -12,7 +12,7 @@ import scalariform.formatter.preferences._
 object BugPickerBuild extends Build {
 	
 	def getScalariformPreferences(dir: File) = PreferencesImporterExporter.loadPreferences(
-		(file("./../../../Scalariform Formatter Preferences.properties").getPath))
+		(file("./../../Scalariform Formatter Preferences.properties").getPath))
 	
 	lazy val buildSettings = Defaults.defaultSettings ++
 		SbtScalariform.scalariformSettingsWithIt ++

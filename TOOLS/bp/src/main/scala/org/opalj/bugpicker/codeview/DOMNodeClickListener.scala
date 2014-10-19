@@ -72,10 +72,15 @@ class DOMNodeClickListener(
 
         val sourceFile: Option[File] =
             if (cf.sourceFile.isDefined) {
-                sources.toStream.map(dir ⇒ new File(dir, sourcePackagePath+"/"+cf.sourceFile.get)).find(_.exists())
+                sources.toStream.map(dir ⇒
+                    new File(dir, sourcePackagePath+"/"+cf.sourceFile.get)).find(_.exists()
+                )
             } else {
                 val name = theType.simpleName
-                val packageDir = sources.toStream.map(dir ⇒ new File(dir, sourcePackagePath)).find(_.exists())
+                val packageDir =
+                    sources.toStream.map(dir ⇒
+                        new File(dir, sourcePackagePath)).find(_.exists()
+                    )
                 packageDir.map(_.listFiles(new FilenameFilter {
                     override def accept(file: File, filename: String): Boolean =
                         filename.matches("^"+name+"\\.\\w+$")
@@ -121,7 +126,10 @@ class DOMNodeClickListener(
             sourceWebview.engine.loadContent("")
         } else if (sourceFile.isDefined) {
             sourceWebview.engine.loadContent(sourceFile.get.toXHTML.toString)
-            new JumpToProblemListener(webview = sourceWebview, methodOption = methodOption, pcOption = None, lineOption = lineOption)
+            new JumpToProblemListener(
+                webview = sourceWebview,
+                methodOption = methodOption,
+                pcOption = None, lineOption = lineOption)
             focus(sourceWebview)
         }
 
@@ -130,7 +138,10 @@ class DOMNodeClickListener(
             bytecodeWebview.engine.loadContent(classFile.get.toXHTML.toString)
         else
             bytecodeWebview.engine.loadContent(Messages.NO_BYTECODE_FOUND)
-        new JumpToProblemListener(webview = bytecodeWebview, methodOption = methodOption, pcOption = pcOption, lineOption = None)
+        new JumpToProblemListener(
+            webview = bytecodeWebview,
+            methodOption = methodOption,
+            pcOption = pcOption, lineOption = None)
         if (noSourceFound || showBytecode && !showSource) focus(bytecodeWebview)
     }
 }

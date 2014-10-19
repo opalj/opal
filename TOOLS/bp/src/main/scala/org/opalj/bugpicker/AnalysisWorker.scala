@@ -55,7 +55,8 @@ class AnalysisWorker(
 
     protected def createTask(): jTask[Unit] = new jTask[Unit] {
         protected def call(): Unit = {
-            val results @ (analysisTime, methodsWithDeadCode) = AnalysisRunner.analyze(project, parameters.toStringParameters, initProgressManagement)
+            val results @ (analysisTime, methodsWithDeadCode) =
+                AnalysisRunner.analyze(project, parameters.toStringParameters, initProgressManagement)
             doc() = createHTMLReport(results)
         }
 

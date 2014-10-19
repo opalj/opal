@@ -92,14 +92,24 @@ object AnalysisRunner extends BugPickerAnalysis {
         val theProgress = DoubleProperty(0)
         val classCount = project.classFilesCount.toDouble
 
-        val progStage = new ProgressManagementDialog(stage, reportView, progressListView, theProgress, interrupted)
+        val progStage =
+            new ProgressManagementDialog(
+                stage,
+                reportView, progressListView, theProgress,
+                interrupted)
 
-        val initProgressManagement = new InitProgressManagement(interrupted, theProgress, progressListView, progressListItems, classCount, progStage)
+        val initProgressManagement =
+            new InitProgressManagement(
+                interrupted, theProgress,
+                progressListView, progressListItems,
+                classCount, progStage)
 
         val doc = new ObjectProperty[xmlNode]
 
         val worker = new AnalysisWorker(doc, project, parameters, initProgressManagement)
-        worker.handleEvent(WorkerStateEvent.ANY)(new WorkerFinishedListener(project, sources, doc, reportView, sourceView, byteView, tabPane))
+        worker.handleEvent(WorkerStateEvent.ANY)(
+            new WorkerFinishedListener(project, sources, doc, reportView, sourceView, byteView, tabPane)
+        )
 
         worker.start
         progStage.centerOnScreen
@@ -114,14 +124,18 @@ object AnalysisRunner extends BugPickerAnalysis {
             sourceView: WebView,
             byteView: WebView,
             tabPane: TabPane) extends Function1[WorkerStateEvent, Unit] {
+
         override def apply(event: WorkerStateEvent): Unit = {
             event.eventType match {
                 case WorkerStateEvent.WORKER_STATE_SUCCEEDED ⇒ {
                     reportView.engine.loadContent(doc().toString)
-                    new AddClickListenersOnLoadListener(project, sources, reportView, byteView, sourceView, { view ⇒
-                        if (view == sourceView) tabPane.selectionModel().select(0)
-                        else if (view == byteView) tabPane.selectionModel().select(1)
-                    })
+                    new AddClickListenersOnLoadListener(
+                        project, sources, reportView, byteView, sourceView,
+                        { view ⇒
+                            if (view == sourceView) tabPane.selectionModel().select(0)
+                            else if (view == byteView) tabPane.selectionModel().select(1)
+                        }
+                    )
                     byteView.engine.loadContent(Messages.ANALYSIS_FINISHED)
                     sourceView.engine.loadContent(Messages.ANALYSIS_FINISHED)
                 }

@@ -56,7 +56,7 @@ class AboutDialog(owner: Stage, showUrl: String ⇒ Unit) extends DialogStage(ow
                 margin = Insets(20)
                 alignment = Pos.TOP_LEFT
                 content = Seq(
-                    new Label("The BugPicker is powered by the OPAL (OPen AnaLysis) framework."),
+                    new Label("BugPicker is powered by the OPAL (OPen AnaLysis) framework."),
                     new HBox {
                         alignment = Pos.BASELINE_LEFT
                         content = Seq(
