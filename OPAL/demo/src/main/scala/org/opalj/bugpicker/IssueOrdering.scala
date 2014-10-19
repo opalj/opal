@@ -29,14 +29,24 @@
 package org.opalj
 package bugpicker
 
-case class Percentage(val value: Int) extends AnyVal {
+object IssueOrdering extends scala.math.Ordering[Issue] {
 
-    /**
-     * The lower the value, the "whiter" the color. If the value is 100
-     * then the color will be black.
-     */
-    def asHTMLColor = {
-        val rgbValue = 0 + (100 - value) * 2
-        s"rgb($rgbValue,$rgbValue,$rgbValue)"
+    def compare(x: Issue, y: Issue): Int = {
+        if (x.classFile.fqn < y.classFile.fqn) {
+            -1
+        } else if (x.classFile.fqn == y.classFile.fqn) {
+            val methodComparison = x.method.compare(y.method)
+            if (methodComparison == 0) {
+                if (x.line.isDefined)
+                    x.line.get - y.line.get
+                else
+                    x.pc - y.pc
+            } else {
+                methodComparison
+            }
+        } else {
+            1
+        }
     }
+
 }

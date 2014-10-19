@@ -29,24 +29,39 @@
 package org.opalj
 package bugpicker
 
-object BugReportOrdering extends scala.math.Ordering[BugReport] {
+import java.net.URL
+import org.opalj.br.analyses.Project
+import org.opalj.br.Method
+import org.opalj.ai.Domain
+import org.opalj.ai.domain
 
-    def compare(x: BugReport, y: BugReport): Int = {
-        if (x.classFile.fqn < y.classFile.fqn) {
-            -1
-        } else if (x.classFile.fqn == y.classFile.fqn) {
-            val methodComparison = x.method.compare(y.method)
-            if (methodComparison == 0) {
-                if (x.line.isDefined)
-                    x.line.get - y.line.get
-                else
-                    x.pc - y.pc
-            } else {
-                methodComparison
-            }
-        } else {
-            1
-        }
-    }
+/**
+ * The domain that is used to identify the issues.
+ *
+ * @author Michael Eichberg
+ */
+class BugPickerAnalysisDomain(
+    override val project: Project[java.net.URL],
+    override val method: Method,
+    override val maxCardinalityOfIntegerRanges: Long = 16l)
+        extends Domain
+        with domain.DefaultDomainValueBinding
+        with domain.ThrowAllPotentialExceptionsConfiguration
+        with domain.l0.DefaultTypeLevelFloatValues
+        with domain.l0.DefaultTypeLevelDoubleValues
+        with domain.l0.TypeLevelFieldAccessInstructions
+        with domain.l0.TypeLevelInvokeInstructions
+        with domain.l1.DefaultReferenceValuesBinding
+        with domain.l1.DefaultIntegerRangeValues
+        with domain.l1.MaxArrayLengthRefinement
+        with domain.l1.ConstraintsBetweenIntegerValues
+        //with domain.l1.DefaultIntegerSetValues
+        with domain.l1.DefaultLongValues
+        with domain.l1.LongValuesShiftOperators
+        with domain.l1.DefaultConcretePrimitiveValuesConversions
+        with domain.DefaultHandlingOfMethodResults
+        with domain.IgnoreSynchronization
+        with domain.TheProject[java.net.URL]
+        with domain.TheMethod
+        with domain.ProjectBasedClassHierarchy
 
-}

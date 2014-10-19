@@ -44,11 +44,20 @@ import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import scala.xml.Unparsed
 
+/**
+ * Describes a useless computation.
+ *
+ * @author Michael Eichberg
+ */
 case class UselessComputation(
         classFile: ClassFile,
         method: Method,
         pc: PC,
-        computation: String) extends BugReport {
+        computation: String) extends Issue {
+
+    override def category: String = IssueCategory.Performance
+
+    override def kind: String = IssueKind.ConstantComputation
 
     def opcode: Int = method.body.get.instructions(pc).opcode
 
@@ -79,7 +88,7 @@ case class UselessComputation(
         val pcNode = <span>{ pc }</span>
 
         val node =
-            <tr style="color:rgb(126, 64, 64);">
+            <tr style="color:rgb(126, 64, 64);" class="$kind">
                 <td>
                     { XHTML.typeToXHTML(classFile.thisType) }
                 </td>
@@ -89,7 +98,7 @@ case class UselessComputation(
             </tr>
 
         node % (
-            new UnprefixedAttribute("data-accuracy", "100", scala.xml.Null)
+            new UnprefixedAttribute("data-relevance", "50", scala.xml.Null)
         )
     }
 }

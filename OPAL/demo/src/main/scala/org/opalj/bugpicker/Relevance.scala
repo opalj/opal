@@ -29,34 +29,27 @@
 package org.opalj
 package bugpicker
 
-import java.net.URL
-import org.opalj.br.analyses.Project
-import org.opalj.br.Method
-import org.opalj.ai.Domain
-import org.opalj.ai.domain
+/**
+ * Describes the overall relevance of a finding.
+ *
+ * When calculation the relevance you should take all
+ * properties of the associated issue into consideration:
+ *  - kind of issue
+ *  - category of issue
+ *  - accuracy of the analysis
+ *
+ * @param value A value between 1 (not really relevant) and 100 (absolutely relevant).
+ *
+ * @author Michael Eichberg
+ */
+case class Relevance(value: Int) extends AnyVal {
 
-class DeadCodeAnalysisDomain(
-    override val project: Project[java.net.URL],
-    override val method: Method,
-    override val maxCardinalityOfIntegerRanges: Long = 16l)
-        extends Domain
-        with domain.DefaultDomainValueBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l1.DefaultReferenceValuesBinding
-        with domain.l1.DefaultIntegerRangeValues
-        with domain.l1.MaxArrayLengthRefinement
-        with domain.l1.ConstraintsBetweenIntegerValues
-        //with domain.l1.DefaultIntegerSetValues
-        with domain.l1.DefaultLongValues
-        with domain.l1.LongValuesShiftOperators
-        with domain.l1.DefaultConcretePrimitiveValuesConversions
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization
-        with domain.TheProject[java.net.URL]
-        with domain.TheMethod
-        with domain.ProjectBasedClassHierarchy
-
+    /**
+     * The lower the value, the "whiter" the color. If the value is 100
+     * then the color will be black.
+     */
+    def asHTMLColor = {
+        val rgbValue = 0 + (100 - value) * 2
+        s"rgb($rgbValue,$rgbValue,$rgbValue)"
+    }
+}

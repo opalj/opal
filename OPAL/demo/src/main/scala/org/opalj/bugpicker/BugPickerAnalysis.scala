@@ -69,16 +69,16 @@ import org.opalj.br.instructions.ShiftInstruction
 import org.opalj.br.instructions.INSTANCEOF
 
 /**
- * A static analysis that analyzes the data-flow to detect useless computations and 
- * dead code. 
- * 
+ * A static analysis that analyzes the data-flow to detect useless computations and
+ * dead code.
+ *
  * ==Precision==
  * The analysis is complete; i.e., every reported case is a true case. However, given
  * that we analyze Java bytecode, some findings may be the result of the compilation
  * scheme used for compiling the source code and, hence, cannot be resolved at the
- * sourcecode level.  
+ * sourcecode level.
  */
-class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
+class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
     override def title: String = "Dead/Useless/Buggy Code Identification"
 
@@ -96,7 +96,7 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
     override def analyze(
         theProject: Project[URL],
         parameters: Seq[String],
-        initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[BugReport]) = {
+        initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[Issue]) = {
 
         val maxEvalFactor: Double =
             parameters.collectFirst {
@@ -130,10 +130,10 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
         val progressManagement = initProgressManagement(classFilesCount)
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
-        val results = new java.util.concurrent.ConcurrentLinkedQueue[BugReport]()
+        val results = new java.util.concurrent.ConcurrentLinkedQueue[Issue]()
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
             val domain =
-                new DeadCodeAnalysisDomain(theProject, method, maxCardinalityOfIntegerRanges)
+                new BugPickerAnalysisDomain(theProject, method, maxCardinalityOfIntegerRanges)
             val ai =
                 new BoundedInterruptableAI[domain.type](
                     body,
@@ -162,17 +162,17 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
                             if (dc.tail.isEmpty) {
                                 // we have just one message, but since we have 
                                 // no line number we are still "doubtful"
-                                results.add(dc.head.copy(accuracy = Some(Percentage(75))))
+                                results.add(dc.head.copy(relevance = Some(Relevance(75))))
                             } else {
-                                dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(5)))))
+                                dc.foreach(i ⇒ results.add(i.copy(relevance = Some(Relevance(5)))))
                             }
 
                         case Some(ln) ⇒
                             if (dc.tail.isEmpty)
                                 // we have just one message,...
-                                results.add(dc.head.copy(accuracy = Some(Percentage(100))))
+                                results.add(dc.head.copy(relevance = Some(Relevance(100))))
                             else
-                                dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(10)))))
+                                dc.foreach(i ⇒ results.add(i.copy(relevance = Some(Relevance(10)))))
                     }
                 }
 
@@ -292,7 +292,7 @@ object DeadCodeAnalysis {
         """-maxCardinalityOfIntegerRanges=(\d+)""".r
     final val defaultMaxCardinalityOfIntegerRanges = 16
 
-    def resultsAsXHTML(results: (Long, Iterable[BugReport])): Node = {
+    def resultsAsXHTML(results: (Long, Iterable[Issue])): Node = {
         val (analysisTime, methodsWithDeadCode) = results
         val methodWithDeadCodeCount = methodsWithDeadCode.size
 
@@ -300,10 +300,10 @@ object DeadCodeAnalysis {
             <script type="text/javascript">
                 {
                     new Unparsed(
-                        """function updateAccuracy(value) {
-                            document.querySelectorAll("tr[data-accuracy]").forEach(
+                        """function updateRelevance(value) {
+                            document.querySelectorAll("tr[data-relevance]").forEach(
                                 function(tr){
-                                    tr.dataset.accuracy < value ? tr.style.display="none" : tr.style.display="table-row"
+                                    tr.dataset.relevance < value ? tr.style.display="none" : tr.style.display="table-row"
                                 }
                             )
                         }""")
@@ -315,7 +315,7 @@ object DeadCodeAnalysis {
                 <span class="tooltip">importance<span>The importance is calculated using the available context information.<br/>E.g., a dead <i>default case</i> in a switch statement is often the result of defensive programming and, hence, not important.</span></span>
                 less than:
                 <span class="tooltip">1<span>The identified issue is probably not important or is just a technical artifact.</span></span>
-                <input type="range" name="accuracy" id="accuracy" min="1" max="100" onchange="updateAccuracy(this.valueAsNumber)"/>
+                <input type="range" name="relevance" id="relevance" min="1" max="100" onchange="updateRelevance(this.valueAsNumber)"/>
                 <span class="tooltip">100<span>The identified issue is probably very important.</span></span>
             </div>
             <table>
@@ -333,7 +333,7 @@ object DeadCodeAnalysis {
                     for { (pkg, mdc) ← groupedMessages } yield {
                         Seq(
                             <tr><td class="caption" colspan="4">{ pkg.replace('/', '.') }</td></tr>,
-                            mdc.toSeq.sorted(BugReportOrdering).map(_.toXHTML)
+                            mdc.toSeq.sorted(IssueOrdering).map(_.toXHTML)
                         )
                     }.flatten
                 }

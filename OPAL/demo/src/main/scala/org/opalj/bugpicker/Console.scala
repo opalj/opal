@@ -47,19 +47,19 @@ import org.opalj.ai.debug.XHTML
  */
 object Console extends AnalysisExecutor { analysis ⇒
 
-    private final val deadCodeAnalysis = new DeadCodeAnalysis
+    private final val bugPickerAnalysis = new BugPickerAnalysis
     val analysis = new Analysis[URL, BasicReport] {
 
-        override def title: String = deadCodeAnalysis.title
+        override def title: String = bugPickerAnalysis.title
 
-        override def description: String = deadCodeAnalysis.description
+        override def description: String = bugPickerAnalysis.description
 
         override def analyze(
             theProject: Project[URL],
             parameters: Seq[String],
             initProgressManagement: (Int) ⇒ ProgressManagement) = {
             val results @ (analysisTime, methodsWithDeadCode) =
-                deadCodeAnalysis.analyze(theProject, parameters, initProgressManagement)
+                bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
 
             val doc = XHTML.createXHTML(Some(title), DeadCodeAnalysis.resultsAsXHTML(results))
             writeAndOpen(doc, "DeadCodeAnalysisResults", ".html")

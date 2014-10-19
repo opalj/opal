@@ -44,7 +44,12 @@ import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import scala.xml.Unparsed
 
-trait BugReport {
+/**
+ * Describes some issue found in the source code.
+ *
+ * @author Michael Eichberg
+ */
+trait Issue {
 
     /**
      * The primarily affected class file.
@@ -72,6 +77,21 @@ trait BugReport {
     def message: String
 
     /**
+     * A string that uses small letters and which describes the category of the issue.
+     *
+     * The category basically describes '''the property of the software that is
+     * affected ''' by this issue.
+     */
+    def category: String
+
+    /**
+     * A string that uses small letters and which describes the kind of the issue.
+     *
+     * The kind describes how '''this issue manifests itself in the source code'''.
+     */
+    def kind: String
+
+    /**
      * An HTML representation of the bug report, well suited for browser output.
      *
      * The format has to be:
@@ -96,3 +116,39 @@ trait BugReport {
     def toXHTML: Node
 }
 
+/**
+ * Collection of predefined issue categories.
+ *
+ * In general, the category basically describes '''the property of the software that is
+ * affected ''' by this issue.
+ *
+ * @author Michael Eichberg
+ */
+object IssueCategory {
+
+    val Bug = "bug"
+
+    val Flawed = "flawed"
+
+    val Performance = "performance"
+
+    val Comprehensibility = "comprehensibility"
+
+}
+
+/**
+ * Collection of predefined issue kinds.
+ *
+ * In general, an issue kind describes how '''this issue manifests itself in the source
+ * code'''.
+ *
+ * @author Michael Eichberg
+ */
+object IssueKind {
+
+    val ConstantComputation = "constant computation"
+
+    val DeadBranch = "dead branch"
+
+    val Unused = "unused"
+}
