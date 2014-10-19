@@ -28,6 +28,7 @@
  */
 package org.opalj
 package bugpicker
+package analysis
 
 import java.net.URL
 import scala.xml.Node
@@ -100,24 +101,24 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
         val maxEvalFactor: Double =
             parameters.collectFirst {
-                case DeadCodeAnalysis.maxEvalFactorPattern(d) ⇒
+                case BugPickerAnalysis.maxEvalFactorPattern(d) ⇒
                     java.lang.Double.parseDouble(d).toDouble
             }.getOrElse(
-                DeadCodeAnalysis.defaultMaxEvalFactor
+                BugPickerAnalysis.defaultMaxEvalFactor
             )
         val maxEvalTime: Int =
             parameters.collectFirst {
-                case DeadCodeAnalysis.maxEvalTimePattern(l) ⇒
+                case BugPickerAnalysis.maxEvalTimePattern(l) ⇒
                     java.lang.Integer.parseInt(l).toInt
             }.getOrElse(
-                DeadCodeAnalysis.defaultMaxEvalTime
+                BugPickerAnalysis.defaultMaxEvalTime
             )
         val maxCardinalityOfIntegerRanges: Int =
             parameters.collectFirst {
-                case DeadCodeAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
+                case BugPickerAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
                     java.lang.Integer.parseInt(i).toInt
             }.getOrElse(
-                DeadCodeAnalysis.defaultMaxCardinalityOfIntegerRanges
+                BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges
             )
 
         println("Settings:")
@@ -275,7 +276,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
     }
 }
 
-object DeadCodeAnalysis {
+object BugPickerAnalysis {
 
     // we want to match expressions such as:
     // -maxEvalFactor=1

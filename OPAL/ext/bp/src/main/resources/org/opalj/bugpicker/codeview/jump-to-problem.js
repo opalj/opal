@@ -26,42 +26,47 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package bugpicker
+// Functions to scroll to points in decompiled bytecode
+function openBytecodeMethodsBlock() {
+	var methodsBlock = document.querySelector('.methods details');
+	if (methodsBlock != undefined) {
+		methodsBlock.open = true;
+	}
+}
+function getBytecodeMethodBlock(methodIndex) {
+	return document.querySelector('#m' + methodIndex + ' details');
+}
+function openBytecodeMethod(methodIndex) {
+	var methodBlock = getBytecodeMethodBlock(methodIndex);
+	if (methodBlock != undefined) {
+		methodBlock.open = true;
+	}
+}
+function jumpToMethodInBytecode(methodIndex) {
+	openBytecodeMethodsBlock();
+	openBytecodeMethod(methodIndex);
+	getBytecodeMethodBlock(methodIndex).scrollIntoView();
+}
+function jumpToProblemInBytecode(methodIndex, pc) {
+	openBytecodeMethodsBlock();
+	openBytecodeMethod(methodIndex);
+	
+	var pcElement = document.getElementById('m' + methodIndex + '_pc' + pc);
+	if (pcElement != undefined) {
+		pcElement.scrollIntoView();
+	} else if (getBytecodeMethodBlock(methodIndex) != undefined) {
+		getBytecodeMethodBlock(methodIndex).scrollIntoView();
+	} else {
+		window.scrollTo(0,0);
+	}
+}
 
-import java.net.URL
-import org.opalj.br.analyses.Project
-import org.opalj.br.Method
-import org.opalj.ai.Domain
-import org.opalj.ai.domain
-
-/**
- * The domain that is used to identify the issues.
- *
- * @author Michael Eichberg
- */
-class BugPickerAnalysisDomain(
-    override val project: Project[java.net.URL],
-    override val method: Method,
-    override val maxCardinalityOfIntegerRanges: Long = 16l)
-        extends Domain
-        with domain.DefaultDomainValueBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l1.DefaultReferenceValuesBinding
-        with domain.l1.DefaultIntegerRangeValues
-        with domain.l1.MaxArrayLengthRefinement
-        with domain.l1.ConstraintsBetweenIntegerValues
-        //with domain.l1.DefaultIntegerSetValues
-        with domain.l1.DefaultLongValues
-        with domain.l1.LongValuesShiftOperators
-        with domain.l1.DefaultConcretePrimitiveValuesConversions
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization
-        with domain.TheProject[java.net.URL]
-        with domain.TheMethod
-        with domain.ProjectBasedClassHierarchy
-
+// Functions to scroll to points in bytecode
+function jumpToLineInSourceCode(line) {
+	var lineElement = document.getElementById('line' + line)
+	if (lineElement != undefined) {
+		lineElement.scrollIntoView();
+	} else {
+		window.scrollTo(0,0);
+	}
+}

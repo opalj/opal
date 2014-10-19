@@ -38,6 +38,7 @@ import org.opalj.util.writeAndOpen
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.debug.XHTML
+import org.opalj.bugpicker.analysis.BugPickerAnalysis
 
 /**
  * A data-flow analysis that tries to identify dead code based on the evaluation
@@ -58,11 +59,11 @@ object Console extends AnalysisExecutor { analysis ⇒
             theProject: Project[URL],
             parameters: Seq[String],
             initProgressManagement: (Int) ⇒ ProgressManagement) = {
-            val results @ (analysisTime, methodsWithDeadCode) =
+            val results @ (analysisTime, issues) =
                 bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
 
-            val doc = XHTML.createXHTML(Some(title), DeadCodeAnalysis.resultsAsXHTML(results))
-            writeAndOpen(doc, "DeadCodeAnalysisResults", ".html")
+            val doc = XHTML.createXHTML(Some(title), BugPickerAnalysis.resultsAsXHTML(results))
+            writeAndOpen(doc, "BugPickerAnalysisResults", ".html")
 
             //            BasicReport(
             //                methodsWithDeadCode.toList.sortWith((l, r) ⇒
@@ -79,7 +80,7 @@ object Console extends AnalysisExecutor { analysis ⇒
             //                    f"%nIdentified in: ${ns2sec(analysisTime)}%2.2f seconds."))
 
             BasicReport(
-                "Dead code (number of dead branches: "+methodsWithDeadCode.size+") "+
+                "Issues (number of issues: "+issues.size+") "+
                     f"identified in: ${ns2sec(analysisTime)}%2.2f seconds."
             )
         }
@@ -108,21 +109,21 @@ object Console extends AnalysisExecutor { analysis ⇒
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
         parameters.forall(parameter ⇒
             parameter match {
-                case DeadCodeAnalysis.maxEvalFactorPattern(d) ⇒
+                case BugPickerAnalysis.maxEvalFactorPattern(d) ⇒
                     try {
                         val factor = java.lang.Double.parseDouble(d).toDouble
                         factor >= 0.1d && factor <= 15.0d
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }
-                case DeadCodeAnalysis.maxEvalTimePattern(l) ⇒
+                case BugPickerAnalysis.maxEvalTimePattern(l) ⇒
                     try {
                         val maxTime = java.lang.Long.parseLong(l).toLong
                         maxTime >= 10 && maxTime <= 1000000
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }
-                case DeadCodeAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
+                case BugPickerAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
                     try {
                         val cardinality = java.lang.Integer.parseInt(i).toInt
                         cardinality >= 1 && cardinality <= 1024

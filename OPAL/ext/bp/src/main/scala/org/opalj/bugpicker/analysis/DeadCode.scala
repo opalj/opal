@@ -28,6 +28,7 @@
  */
 package org.opalj
 package bugpicker
+package analysis
 
 import scala.xml.Node
 import scala.xml.UnprefixedAttribute
