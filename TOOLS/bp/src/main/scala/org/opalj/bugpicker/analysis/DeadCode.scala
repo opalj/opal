@@ -154,10 +154,10 @@ case class DeadCode(
                     )
             }
 
-        val methodIndex = -1
+        val methodId = method.name + method.descriptor.toJVMDescriptor
 
         val pcNode =
-            <span class="tooltip" data-class={ classFile.fqn } data-method={ methodIndex.toString } data-pc={ ctiPC.toString } data-line={ line.map(_.toString).getOrElse("") } data-show="bytecode">
+            <span class="tooltip" data-class={ classFile.fqn } data-method={ methodId } data-pc={ ctiPC.toString } data-line={ line.map(_.toString).getOrElse("") } data-show="bytecode">
                 { ctiPC }
                 <span>{ iNode }</span>
             </span>
@@ -173,7 +173,7 @@ case class DeadCode(
                     <span data-class={ classFile.fqn }>{ XHTML.typeToXHTML(classFile.thisType) }</span>
                 </td>
                 <td>
-                    <span data-class={ classFile.fqn } data-method={ methodIndex.toString } data-line={ methodLine }>
+                    <span data-class={ classFile.fqn } data-method={ methodId } data-line={ methodLine }>
                         { XHTML.methodToXHTML(method.name, method.descriptor) }
                     </span>
                 </td>
@@ -182,7 +182,7 @@ case class DeadCode(
                     {
                         Text("/ ") ++
                             line.map(ln ⇒
-                                <span data-class={ classFile.fqn } data-method={ methodIndex.toString } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>
+                                <span data-class={ classFile.fqn } data-method={ methodId } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>
                             ).getOrElse(Text("N/A"))
                     }
                 </td>

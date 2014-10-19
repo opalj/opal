@@ -87,11 +87,11 @@ case class UselessComputation(
 
     def toXHTML: Node = {
 
-        val methodIndex = "-1"
+        val methodId = method.name + method.descriptor.toJVMDescriptor
 
         val methodLine: String = method.body.flatMap(_.firstLineNumber.map(_.toString)).getOrElse("")
 
-        val pcNode = <span data-class={ classFile.fqn } data-method={ methodIndex } data-line={ line.map(_.toString).getOrElse("") } data-pc={ pc.toString } data-show="bytecode">{ pc }</span>
+        val pcNode = <span data-class={ classFile.fqn } data-method={ methodId } data-line={ line.map(_.toString).getOrElse("") } data-pc={ pc.toString } data-show="bytecode">{ pc }</span>
 
         val node =
             <tr style="color:rgb(126, 64, 64);" class="$kind">
@@ -101,7 +101,7 @@ case class UselessComputation(
                     </span>
                 </td>
                 <td>
-                    <span data-class={ classFile.fqn } data-method={ methodIndex } data-line={ methodLine }>
+                    <span data-class={ classFile.fqn } data-method={ methodId } data-line={ methodLine }>
                         { XHTML.methodToXHTML(method.name, method.descriptor) }
                     </span>
                 </td>
@@ -109,7 +109,7 @@ case class UselessComputation(
                     { pcNode }
                     {
                         Text("/ ") ++ line.map(ln ⇒
-                            <span data-class={ classFile.fqn } data-method={ methodIndex } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>).getOrElse(Text("N/A"))
+                            <span data-class={ classFile.fqn } data-method={ methodId } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>).getOrElse(Text("N/A"))
                     }
                 </td>
                 <td>{ computation }</td>

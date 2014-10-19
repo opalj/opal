@@ -33,29 +33,29 @@ function openBytecodeMethodsBlock() {
 		methodsBlock.open = true;
 	}
 }
-function getBytecodeMethodBlock(methodIndex) {
-	return document.querySelector('#m' + methodIndex + ' details');
+function getBytecodeMethodBlock(methodId) {
+	return document.querySelector('#' + methodId + ' details');
 }
-function openBytecodeMethod(methodIndex) {
-	var methodBlock = getBytecodeMethodBlock(methodIndex);
+function openBytecodeMethod(methodId) {
+	var methodBlock = getBytecodeMethodBlock(methodId);
 	if (methodBlock != undefined) {
 		methodBlock.open = true;
 	}
 }
-function jumpToMethodInBytecode(methodIndex) {
+function jumpToMethodInBytecode(methodId) {
 	openBytecodeMethodsBlock();
-	openBytecodeMethod(methodIndex);
-	getBytecodeMethodBlock(methodIndex).scrollIntoView();
+	openBytecodeMethod(methodId);
+	getBytecodeMethodBlock(methodId).scrollIntoView();
 }
-function jumpToProblemInBytecode(methodIndex, pc) {
+function jumpToProblemInBytecode(methodId, pc) {
 	openBytecodeMethodsBlock();
-	openBytecodeMethod(methodIndex);
+	openBytecodeMethod(methodId);
 	
-	var pcElement = document.getElementById('m' + methodIndex + '_pc' + pc);
+	var pcElement = document.getElementById('m' + methodId + '_pc' + pc);
 	if (pcElement != undefined) {
 		pcElement.scrollIntoView();
-	} else if (getBytecodeMethodBlock(methodIndex) != undefined) {
-		getBytecodeMethodBlock(methodIndex).scrollIntoView();
+	} else if (getBytecodeMethodBlock(methodId) != undefined) {
+		getBytecodeMethodBlock(methodId).scrollIntoView();
 	} else {
 		window.scrollTo(0,0);
 	}
@@ -63,7 +63,7 @@ function jumpToProblemInBytecode(methodIndex, pc) {
 
 // Functions to scroll to points in bytecode
 function jumpToLineInSourceCode(line) {
-	var lineElement = document.getElementById('line' + line)
+	var lineElement = document.getElementById('line' + line);
 	if (lineElement != undefined) {
 		lineElement.scrollIntoView();
 	} else {
