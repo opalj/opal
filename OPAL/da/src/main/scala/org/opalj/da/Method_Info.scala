@@ -64,7 +64,7 @@ case class Method_Info(
         val jvmDescriptor = cp(descriptor_index).asString
         val javaDescriptor = parseMethodDescriptor(name, jvmDescriptor)
         val index = methodIndex.toString
-        <div class="method" name={ name } id={ name + jvmDescriptor } index={ index } flags={ filter_flags }>
+        <div class="method" name={ name } id={ name + jvmDescriptor } data-method-index={ index } data-method-flags={ filter_flags }>
             <div class="method_signature">
                 <span class="access_flags">{ flags }</span>
                 <span>{ javaDescriptor }</span>
