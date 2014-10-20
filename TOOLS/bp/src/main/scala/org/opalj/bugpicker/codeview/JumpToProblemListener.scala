@@ -52,8 +52,8 @@ class JumpToProblemListener(
             webview.engine.delegate.executeScript(script)
         } catch {
             case e: Exception ⇒
-                println("failed to run the script:")
-                println(script)
+                System.err.println("failed to run the script:")
+                System.err.println(script)
                 throw e
         }
 
@@ -68,9 +68,9 @@ class JumpToProblemListener(
             if (lineOption.isDefined) {
                 s"jumpToLineInSourceCode(${lineOption.get})"
             } else if (methodOption.isDefined && !pcOption.isDefined) {
-                s"jumpToMethodInBytecode(${methodOption.get});"
+                s"jumpToMethodInBytecode('${methodOption.get}');"
             } else if (methodOption.isDefined && pcOption.isDefined) {
-                s"jumpToProblemInBytecode(${methodOption.get}, ${pcOption.get});"
+                s"jumpToProblemInBytecode('${methodOption.get}', ${pcOption.get});"
             } else {
                 "window.scrollTo(0,0);"
             }

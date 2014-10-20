@@ -163,7 +163,7 @@ pre[data-line] {
 pre.line-numbers {
 	position: relative;
 	top: 12px;
-	padding-left: 3.8em;
+	padding-left: 4.8em;
 	padding-bottom: 1.4em;
 	counter-reset: linenumber;
 }
@@ -177,7 +177,7 @@ pre.line-numbers > code {
 	pointer-events: none;
 	top: -2px;
 	font-size: 100%;
-	left: -3.8em;
+	left: -4.8em;
 	width: 4em; /* works for line-numbers below 1000 lines */
 	letter-spacing: -1px;
 	border-right: 1px solid #999;
