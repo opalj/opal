@@ -74,8 +74,10 @@ import scalafx.scene.web.WebView
 
 object AnalysisRunner extends BugPickerAnalysis {
 
-    def runAnalysis(stage: Stage, project: Project[URL], sources: Seq[File], parameters: AnalysisParameters,
-                    sourceView: WebView, byteView: WebView, reportView: WebView, tabPane: TabPane) {
+    def runAnalysis(
+        stage: Stage,
+        project: Project[URL], sources: Seq[File], parameters: AnalysisParameters,
+        sourceView: WebView, byteView: WebView, reportView: WebView, tabPane: TabPane) {
         val scene: Scene = stage.scene()
         if (project == null) {
             DialogStage.showMessage("Error", "You need to load a project first!", stage)
