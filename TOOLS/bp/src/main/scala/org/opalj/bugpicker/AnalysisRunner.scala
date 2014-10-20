@@ -90,7 +90,7 @@ object AnalysisRunner extends BugPickerAnalysis {
         }
         val progressListItems = scala.collection.mutable.HashMap[String, String]()
         val theProgress = DoubleProperty(0)
-        val classCount = project.classFilesCount.toDouble
+        val classCount = project.projectClassFilesCount.toDouble
 
         val progStage =
             new ProgressManagementDialog(
