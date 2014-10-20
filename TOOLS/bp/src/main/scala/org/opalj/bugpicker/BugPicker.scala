@@ -88,6 +88,7 @@ import org.opalj.bugpicker.analysis.BugPickerAnalysis
 import org.opalj.bugpicker.analysis.AnalysisParameters
 import org.opalj.bugpicker.dialogs.AnalysisParametersDialog
 import javafx.application.Application
+import scalafx.geometry.Rectangle2D
 
 class BugPicker extends Application {
 
@@ -120,13 +121,19 @@ class BugPicker extends Application {
             }
         }
 
+        def screenForStage(stage: Stage): Screen = Screen.screensForRectangle(stage.x(), stage.y(), stage.width(), stage.height()).head
+
         def maximizeOnCurrentScreen(stage: Stage) {
-            val currentScreen = Screen.primary
-            val currentScreenDimensions = currentScreen.getVisualBounds()
-            stage.x = currentScreenDimensions.minX
-            stage.y = currentScreenDimensions.minY
-            stage.width = currentScreenDimensions.width
-            stage.height = currentScreenDimensions.height
+            val currentScreen = screenForStage(stage)
+            maximizeOnScreen(stage, currentScreen)
+        }
+
+        def maximizeOnScreen(stage: Stage, screen: Screen) {
+            val screenDimensions = screen.getVisualBounds()
+            stage.x = screenDimensions.minX
+            stage.y = screenDimensions.minY
+            stage.width = screenDimensions.width
+            stage.height = screenDimensions.height
         }
 
         def showURL(url: String): Unit = getHostServices.showDocument(url)
@@ -259,8 +266,26 @@ class BugPicker extends Application {
             stylesheets += BugPicker.defaultStyles
         }
 
-        stage.handleEvent(WindowEvent.WindowShowing) { e: WindowEvent ⇒
-            maximizeOnCurrentScreen(stage)
+        stage.handleEvent(WindowEvent.WindowShown) { e: WindowEvent ⇒
+            val storedSize = BugPicker.loadWindowSizeFromPreferences()
+            if (storedSize.isDefined) {
+                val currentScreen = Screen.screensForRectangle(storedSize.get)(0)
+                val currentScreenSize = currentScreen.bounds
+                if (currentScreenSize.contains(storedSize.get)) {
+                    stage.width = storedSize.get.width
+                    stage.height = storedSize.get.height
+                    stage.x = storedSize.get.minX
+                    stage.y = storedSize.get.minY
+                } else {
+                    maximizeOnScreen(stage, currentScreen)
+                }
+            } else {
+                maximizeOnCurrentScreen(stage)
+            }
+        }
+
+        stage.onCloseRequest = { e: WindowEvent ⇒
+            BugPicker.storeWindowSizeInPreferences(stage.width(), stage.height(), stage.x(), stage.y())
         }
 
         stage.show()
@@ -276,10 +301,23 @@ object BugPicker {
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR = "maxEvalFactor"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME = "maxEvalTime"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES = "maxCardinalityOfIntegerRanges"
+    final val PREFERENCES_KEY_WINDOW_SIZE = "windowSize"
 
     def defaultStyles = getClass.getResource("/org/opalj/bugpicker/style.css").toExternalForm
 
     val sep = File.pathSeparator
+
+    def loadWindowSizeFromPreferences(): Option[Rectangle2D] = {
+        val prefValue = PREFERENCES.get(PREFERENCES_KEY_WINDOW_SIZE, "")
+        if (prefValue.isEmpty()) return None
+        val Array(w, h, x, y) = prefValue.split(";")
+        Some(new Rectangle2D(x.toDouble, y.toDouble, w.toDouble, h.toDouble))
+    }
+
+    def storeWindowSizeInPreferences(width: Double, height: Double, x: Double, y: Double) {
+        val size = s"${width};${height};${x};${y}"
+        BugPicker.PREFERENCES.put(BugPicker.PREFERENCES_KEY_WINDOW_SIZE, size)
+    }
 
     def loadParametersFromPreferences(): AnalysisParameters = {
         val maxEvalFactor = PREFERENCES.getDouble(
