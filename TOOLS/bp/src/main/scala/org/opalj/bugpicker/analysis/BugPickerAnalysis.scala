@@ -70,14 +70,16 @@ import org.opalj.br.instructions.ShiftInstruction
 import org.opalj.br.instructions.INSTANCEOF
 
 /**
- * A static analysis that analyzes the data-flow to detect useless computations and
- * dead code.
+ * A static analysis that analyzes the data-flow to identify various issues in the
+ * source code of projects.
  *
  * ==Precision==
  * The analysis is complete; i.e., every reported case is a true case. However, given
  * that we analyze Java bytecode, some findings may be the result of the compilation
- * scheme used for compiling the source code and, hence, cannot be resolved at the
- * sourcecode level.
+ * scheme employed by the compiler and, hence, cannot be resolved at the
+ * sourcecode level. This is in particular true for finally blocks in Java programs. In
+ * this case compiler typically include the same block two times in the code.
+ *
  */
 class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
@@ -88,10 +90,12 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
     /**
      * Executes the analysis of the projects concrete methods.
      *
-     * @param Either an empty sequence or a sequence that contains one or more of the following parameters:
+     * @param Either an empty sequence or a sequence that contains one or more of
+     *      the following parameters:
      *      - a string that matches the following pattern: `-maxEvalFactor=(\d+(?:.\d+)?)`; e.g.,
      *      `-maxEvalFactor=0.5` or `-maxEvalFactor=1.5`. A value below 0.05 is usually
      *      not useable.
+     *      - a string that machtes the following pattern: `-maxEvalTime=(\d+)`.
      *      - a string that machtes the following pattern: `-maxCardinalityOfIntegerRanges=(\d+)`.
      */
     override def analyze(
@@ -189,7 +193,13 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                             instr @ BinaryArithmeticInstruction(ComputationalTypeInt),
                             Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                             ) ⇒
-                            (pc, s"Constant computation: $b ${instr.operator} $a.")
+                            // The java "~" operator has no direct representation in bytecode
+                            // instead, compilers generate an "ixor" with "-1" as the
+                            // second value.
+                            if (instr.operator == "^" && a == -1)
+                                (pc, s"Constant computation: ~$b (<=> $b ${instr.operator} $a).")
+                            else
+                                (pc, s"Constant computation: $b ${instr.operator} $a.")
 
                         case (pc, instr: INEG.type, Seq(ConcreteIntegerValue(a), _*)) ⇒
                             (pc, s"Constant computation: -${a}")
@@ -300,8 +310,7 @@ object BugPickerAnalysis {
         <div id="dead_code_results">
             <script type="text/javascript">
                 {
-                    new Unparsed(
-                        """function updateRelevance(value) {
+                    new Unparsed("""function updateRelevance(value) {
                             document.querySelectorAll("tr[data-relevance]").forEach(
                                 function(tr){
                                     tr.dataset.relevance < value ? tr.style.display="none" : tr.style.display="table-row"
