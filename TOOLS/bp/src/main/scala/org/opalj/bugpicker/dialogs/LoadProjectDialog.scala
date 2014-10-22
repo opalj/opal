@@ -52,6 +52,8 @@ import scalafx.stage.Modality
 import scalafx.stage.Stage
 import scalafx.stage.StageStyle
 import scalafx.scene.layout.BorderPane
+import scalafx.scene.control.SelectionMode
+import scalafx.scene.control.ScrollPane
 
 class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
     private final val buttonWidth = 200
@@ -68,14 +70,17 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
     val jarListview = new ListView[String] {
         items() ++= jars.map(_.toString)
         hgrow = Priority.ALWAYS
+        selectionModel().selectionMode = SelectionMode.MULTIPLE
     }
     val libsListview = new ListView[String] {
         items() ++= libs.map(_.toString)
         hgrow = Priority.ALWAYS
+        selectionModel().selectionMode = SelectionMode.MULTIPLE
     }
     val sourceListview = new ListView[String] {
         items() ++= sources.map(_.toString)
         hgrow = Priority.ALWAYS
+        selectionModel().selectionMode = SelectionMode.MULTIPLE
     }
 
     val self = this
@@ -87,195 +92,246 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
     maxHeight = 600
     scene = new Scene {
         root = new BorderPane {
-            center = new VBox {
-                content = Seq(
-                    new TitledPane {
-                        text = "Select project files and directories"
-                        collapsible = false
-                        padding = boxPadding
-                        margin = boxMargin
+            center = new ScrollPane {
+                content = new VBox {
+                    prefWidth = 778
+                    content = Seq(
+                        new TitledPane {
+                            text = "Select project files and directories"
+                            collapsible = true
+                            padding = boxPadding
+                            margin = boxMargin
+                            maxHeight = 220
 
-                        content = new HBox {
-                            content = Seq(
-                                jarListview,
-                                new VBox {
-                                    content = Seq(
-                                        new Button {
-                                            text = "Add _jar/class file"
-                                            mnemonicParsing = true
-                                            maxWidth = buttonWidth
-                                            minWidth = buttonWidth
-                                            margin = buttonMargin
-                                            onAction = { e: ActionEvent ⇒
-                                                val fcb = new FileChooser {
-                                                    title = "Select file"
-                                                }
-                                                fcb.extensionFilters.addAll(
-                                                    new FileChooser.ExtensionFilter("Jar Files", "*.jar"),
-                                                    new FileChooser.ExtensionFilter("Class Files", "*.class"))
-                                                val file = fcb.showOpenDialog(scene().getWindow())
-                                                if (file != null) {
-                                                    jars += file
-                                                    jarListview.items.get.add(file.toString())
-                                                }
-
-                                            }
-                                        },
-                                        new Button {
-                                            text = "Add _directory"
-                                            mnemonicParsing = true
-                                            maxWidth = buttonWidth
-                                            minWidth = buttonWidth
-                                            margin = buttonMargin
-                                            onAction = { e: ActionEvent ⇒
-                                                val dc = new DirectoryChooser {
-                                                    title = "Select directory"
-                                                }
-                                                val file = dc.showDialog(scene().window())
-                                                if (file != null) {
-                                                    jars += file
-                                                    jarListview.items() += file.toString()
-                                                }
-                                            }
-                                        },
-                                        new Button {
-                                            text = "_Remove"
-                                            mnemonicParsing = true
-                                            maxWidth = buttonWidth
-                                            minWidth = buttonWidth
-                                            margin = buttonMargin
-                                            onAction = { e: ActionEvent ⇒
-                                                val selection = jarListview.selectionModel().getSelectedIndices
-                                                if (!selection.isEmpty()) {
-                                                    selection.reverse.foreach { i ⇒
-                                                        if (jars.isDefinedAt(i)) jars.remove(i)
+                            content = new HBox {
+                                content = Seq(
+                                    jarListview,
+                                    new VBox {
+                                        content = Seq(
+                                            new Button {
+                                                text = "Add _jar/class file"
+                                                mnemonicParsing = true
+                                                maxWidth = buttonWidth
+                                                minWidth = buttonWidth
+                                                margin = buttonMargin
+                                                onAction = { e: ActionEvent ⇒
+                                                    val fcb = new FileChooser {
+                                                        title = "Select file"
                                                     }
+                                                    fcb.extensionFilters.addAll(
+                                                        new FileChooser.ExtensionFilter("Jar Files", "*.jar"),
+                                                        new FileChooser.ExtensionFilter("Class Files", "*.class"))
+                                                    val file = fcb.showOpenDialog(scene().getWindow())
+                                                    if (file != null) {
+                                                        jars += file
+                                                        jarListview.items.get.add(file.toString())
+                                                    }
+
+                                                }
+                                            },
+                                            new Button {
+                                                text = "Add _directory"
+                                                mnemonicParsing = true
+                                                maxWidth = buttonWidth
+                                                minWidth = buttonWidth
+                                                margin = buttonMargin
+                                                onAction = { e: ActionEvent ⇒
+                                                    val dc = new DirectoryChooser {
+                                                        title = "Select directory"
+                                                    }
+                                                    val file = dc.showDialog(scene().window())
+                                                    if (file != null) {
+                                                        jars += file
+                                                        jarListview.items() += file.toString()
+                                                    }
+                                                }
+                                            },
+                                            new Button {
+                                                text = "_Remove"
+                                                mnemonicParsing = true
+                                                maxWidth = buttonWidth
+                                                minWidth = buttonWidth
+                                                margin = buttonMargin
+                                                onAction = { e: ActionEvent ⇒
+                                                    val selection = jarListview.selectionModel().getSelectedIndices
+                                                    if (!selection.isEmpty()) {
+                                                        selection.reverse.foreach { i ⇒
+                                                            if (jars.isDefinedAt(i)) jars.remove(i)
+                                                        }
+                                                        jarListview.items().clear()
+                                                        jarListview.items() ++= jars.map(_.toString)
+                                                    }
+                                                }
+                                            },
+                                            new Button {
+                                                text = "_Remove all"
+                                                mnemonicParsing = true
+                                                maxWidth = buttonWidth
+                                                minWidth = buttonWidth
+                                                margin = buttonMargin
+                                                onAction = { e: ActionEvent ⇒
                                                     jarListview.items().clear()
-                                                    jarListview.items() ++= jars.map(_.toString)
+                                                    jars.clear()
                                                 }
-                                            }
-                                        })
-                                })
-                        }
-                    },
-                    new TitledPane {
-                        text = "Select source directories"
-                        collapsible = false
-                        padding = boxPadding
-                        margin = boxMargin
+                                            })
+                                    })
+                            }
+                        },
+                        new TitledPane {
+                            text = "Select source directories"
+                            collapsible = true
+                            padding = boxPadding
+                            margin = boxMargin
+                            maxHeight = 220
 
-                        content = new HBox {
-                            content = Seq(
-                                sourceListview,
-                                new VBox {
-                                    content = Seq(
-                                        new Button {
-                                            text = "Add direc_tory"
-                                            mnemonicParsing = true
-                                            maxWidth = buttonWidth
-                                            minWidth = buttonWidth
-                                            margin = buttonMargin
-                                            onAction = { e: ActionEvent ⇒
-                                                val dc = new DirectoryChooser {
-                                                    title = "Open Dialog"
-                                                }
-                                                val file = dc.showDialog(scene().window())
-                                                if (file != null) {
-                                                    sources += file
-                                                    sourceListview.items() += file.toString()
-                                                }
-                                            }
-                                        },
-                                        new Button {
-                                            text = "Re_move"
-                                            mnemonicParsing = true
-                                            maxWidth = buttonWidth
-                                            minWidth = buttonWidth
-                                            margin = buttonMargin
-                                            onAction = { e: ActionEvent ⇒
-                                                val selection = sourceListview.selectionModel().getSelectedIndices
-                                                if (!selection.isEmpty()) {
-                                                    selection.reverse.foreach { i ⇒
-                                                        if (sources.isDefinedAt(i)) sources.remove(i)
+                            content = new HBox {
+                                content = Seq(
+                                    sourceListview,
+                                    new VBox {
+                                        content = Seq(
+                                            new Button {
+                                                text = "Add direc_tory"
+                                                mnemonicParsing = true
+                                                maxWidth = buttonWidth
+                                                minWidth = buttonWidth
+                                                margin = buttonMargin
+                                                onAction = { e: ActionEvent ⇒
+                                                    val dc = new DirectoryChooser {
+                                                        title = "Open Dialog"
                                                     }
+                                                    val file = dc.showDialog(scene().window())
+                                                    if (file != null) {
+                                                        sources += file
+                                                        sourceListview.items() += file.toString()
+                                                    }
+                                                }
+                                            },
+                                            new Button {
+                                                text = "Re_move"
+                                                mnemonicParsing = true
+                                                maxWidth = buttonWidth
+                                                minWidth = buttonWidth
+                                                margin = buttonMargin
+                                                onAction = { e: ActionEvent ⇒
+                                                    val selection = sourceListview.selectionModel().getSelectedIndices
+                                                    if (!selection.isEmpty()) {
+                                                        selection.reverse.foreach { i ⇒
+                                                            if (sources.isDefinedAt(i)) sources.remove(i)
+                                                        }
+                                                        sourceListview.items().clear()
+                                                        sourceListview.items() ++= sources.map(_.toString)
+                                                    }
+                                                }
+                                            },
+                                            new Button {
+                                                text = "Re_move all"
+                                                mnemonicParsing = true
+                                                maxWidth = buttonWidth
+                                                minWidth = buttonWidth
+                                                margin = buttonMargin
+                                                onAction = { e: ActionEvent ⇒
                                                     sourceListview.items().clear()
-                                                    sourceListview.items() ++= sources.map(_.toString)
+                                                    sources.clear()
                                                 }
-                                            }
-                                        })
-                                })
-                        }
-                    },
-                    new TitledPane {
-                        text = "Select library files and directories"
-                        collapsible = false
-                        padding = boxPadding
-                        margin = boxMargin
+                                            })
+                                    })
+                            }
+                        },
+                        new TitledPane {
+                            text = "Select library files and directories"
+                            collapsible = true
+                            padding = boxPadding
+                            margin = boxMargin
+                            maxHeight = 220
 
-                        content = new HBox {
-                            content = Seq(
-                                libsListview,
-                                new VBox {
-                                    content = Seq(
-                                        new Button {
-                                            text = "Add j_ar/class file"
-                                            mnemonicParsing = true
-                                            maxWidth = buttonWidth
-                                            minWidth = buttonWidth
-                                            margin = buttonMargin
-                                            onAction = { e: ActionEvent ⇒
-                                                val fcb = new FileChooser {
-                                                    title = "Select file"
-                                                }
-                                                fcb.extensionFilters.addAll(
-                                                    new FileChooser.ExtensionFilter("Jar Files", "*.jar"),
-                                                    new FileChooser.ExtensionFilter("Class Files", "*.class"))
-                                                val file = fcb.showOpenDialog(scene().getWindow())
-                                                if (file != null) {
-                                                    libs += file
-                                                    libsListview.items() += file.toString()
-                                                }
-
-                                            }
-                                        },
-                                        new Button {
-                                            text = "Add d_irectory"
-                                            mnemonicParsing = true
-                                            maxWidth = buttonWidth
-                                            minWidth = buttonWidth
-                                            margin = buttonMargin
-                                            onAction = { e: ActionEvent ⇒
-                                                val fcb = new DirectoryChooser {
-                                                    title = "Select directory"
-                                                }
-                                                val file = fcb.showDialog(scene().getWindow())
-                                                if (file != null) {
-                                                    libs += file
-                                                    libsListview.items() += file.toString()
-                                                }
-
-                                            }
-                                        },
-                                        new Button {
-                                            text = "R_emove"
-                                            mnemonicParsing = true
-                                            maxWidth = buttonWidth
-                                            minWidth = buttonWidth
-                                            margin = buttonMargin
-                                            onAction = { e: ActionEvent ⇒
-                                                val selection = libsListview.selectionModel().getSelectedIndices
-                                                if (!selection.isEmpty()) {
-                                                    selection.reverse.foreach { i ⇒
-                                                        if (libs.isDefinedAt(i)) libs.remove(i)
+                            content = new HBox {
+                                content = Seq(
+                                    libsListview,
+                                    new VBox {
+                                        content = Seq(
+                                            new Button {
+                                                text = "Add j_ar/class file"
+                                                mnemonicParsing = true
+                                                maxWidth = buttonWidth
+                                                minWidth = buttonWidth
+                                                margin = buttonMargin
+                                                onAction = { e: ActionEvent ⇒
+                                                    val fcb = new FileChooser {
+                                                        title = "Select file"
                                                     }
-                                                    libsListview.items().clear()
-                                                    libsListview.items() ++= libs.map(_.toString())
+                                                    fcb.extensionFilters.addAll(
+                                                        new FileChooser.ExtensionFilter("Jar Files", "*.jar"),
+                                                        new FileChooser.ExtensionFilter("Class Files", "*.class"))
+                                                    val file = fcb.showOpenDialog(scene().getWindow())
+                                                    if (file != null) {
+                                                        libs += file
+                                                        libsListview.items() += file.toString()
+                                                    }
+
                                                 }
-                                            }
-                                        })
-                                })
-                        }
-                    })
+                                            },
+                                            new Button {
+                                                text = "Add d_irectory"
+                                                mnemonicParsing = true
+                                                maxWidth = buttonWidth
+                                                minWidth = buttonWidth
+                                                margin = buttonMargin
+                                                onAction = { e: ActionEvent ⇒
+                                                    val fcb = new DirectoryChooser {
+                                                        title = "Select directory"
+                                                    }
+                                                    val file = fcb.showDialog(scene().getWindow())
+                                                    if (file != null) {
+                                                        libs += file
+                                                        libsListview.items() += file.toString()
+                                                    }
+
+                                                }
+                                            },
+                                            new Button {
+                                                text = "Add _JRE as library"
+                                                mnemonicParsing = true
+                                                maxWidth = buttonWidth
+                                                minWidth = buttonWidth
+                                                margin = buttonMargin
+                                                onAction = { e: ActionEvent ⇒
+                                                    val jre = ProjectHelper.JRELibraryFolder
+                                                    libs += jre
+                                                    libsListview.items() += jre.toString
+                                                }
+                                            },
+                                            new Button {
+                                                text = "R_emove"
+                                                mnemonicParsing = true
+                                                maxWidth = buttonWidth
+                                                minWidth = buttonWidth
+                                                margin = buttonMargin
+                                                onAction = { e: ActionEvent ⇒
+                                                    val selection = libsListview.selectionModel().getSelectedIndices
+                                                    if (!selection.isEmpty()) {
+                                                        selection.reverse.foreach { i ⇒
+                                                            if (libs.isDefinedAt(i)) libs.remove(i)
+                                                        }
+                                                        libsListview.items().clear()
+                                                        libsListview.items() ++= libs.map(_.toString())
+                                                    }
+                                                }
+                                            },
+                                            new Button {
+                                                text = "R_emove all"
+                                                mnemonicParsing = true
+                                                maxWidth = buttonWidth
+                                                minWidth = buttonWidth
+                                                margin = buttonMargin
+                                                onAction = { e: ActionEvent ⇒
+                                                    libsListview.items().clear()
+                                                    libs.clear()
+                                                }
+                                            })
+                                    })
+                            }
+                        })
+                }
             }
             bottom = new HBox {
                 alignment = Pos.CENTER
