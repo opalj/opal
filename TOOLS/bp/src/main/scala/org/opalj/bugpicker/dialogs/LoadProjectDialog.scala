@@ -295,7 +295,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
                                                 minWidth = buttonWidth
                                                 margin = buttonMargin
                                                 onAction = { e: ActionEvent ⇒
-                                                    val jre = ProjectHelper.JRELibraryFolder
+                                                    val jre = org.opalj.util.JRELibraryFolder
                                                     libs += jre
                                                     libsListview.items() += jre.toString
                                                 }

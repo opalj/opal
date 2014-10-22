@@ -132,27 +132,4 @@ object ProjectHelper {
         )
         project
     }
-
-    /**
-     * Tries to locate the JRE's library folder. (I.e., the
-     * location in which the rt.jar file and the other jar files belonging to the
-     * Java runtime environment can be found).
-     */
-    lazy val JRELibraryFolder: File = {
-        val paths =
-            System.getProperties().getProperty("sun.boot.class.path").split(File.pathSeparator)
-        var libPath =
-            paths.find(_.endsWith("rt.jar")).map { path ⇒
-                path.substring(0, path.length() - 6)
-            }.getOrElse("null")
-
-        if (libPath == null) {
-            libPath = System.getProperty("sun.boot.library.path")
-            if (libPath == null) {
-                throw new RuntimeException("cannot locate the JRE libraries")
-            }
-        }
-
-        new File(libPath)
-    }
 }
