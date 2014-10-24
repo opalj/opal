@@ -83,7 +83,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                     }
                 }, 2, 0)
 
-                add(new Label("Maximum evaluation time:"), 0, 1)
+                add(new Label("Maximum evaluation time (ms):"), 0, 1)
                 add(maxEvalTimeField, 1, 1)
                 add(new Button {
                     text = "Default"
