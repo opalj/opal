@@ -48,6 +48,8 @@ import scalafx.scene.control.Hyperlink
 class AboutDialog(owner: Stage, showUrl: String ⇒ Unit) extends DialogStage(owner) {
     self ⇒
 
+    val version = processSource(scala.io.Source.fromURL(getClass.getResource("/org/opalj/bugpicker/version.txt")))(_.mkString(""))
+
     title = "About BugPicker"
 
     scene = new Scene {
@@ -75,7 +77,8 @@ class AboutDialog(owner: Stage, showUrl: String ⇒ Unit) extends DialogStage(ow
                                 }
                             }
                         )
-                    })
+                    },
+                    new Label("Version: "+version))
             }
 
             bottom = new HBox {
