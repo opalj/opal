@@ -20,7 +20,7 @@ JFX.mainClass := Some("org.opalj.bugpicker.BugPicker")
 
 assemblySettings
 
-jarName in assembly := "bugpicker.jar"
+jarName in assembly := "bugpicker-" + version.value + ".jar"
 
 test in assembly := {}
 
