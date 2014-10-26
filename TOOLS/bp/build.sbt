@@ -35,21 +35,24 @@ resourceGenerators in Compile += Def.task {
 	Seq(versionFile)
 }.taskValue
 
-val zipSources = taskKey[Unit]("Create a source zip")
+val zipAllSrc = taskKey[Unit]("Creates a zip file of all source files (including the build script etc.).")
 
-zipSources := {
+zipAllSrc := {
+	val s: TaskStreams = streams.value
 	val bd = baseDirectory.value.getAbsolutePath + "/"
 	def relativeToBase(f: File): String = f.getAbsolutePath.substring(bd.length.toInt)
 	val targetFolder = new File(target.value, "scala-" + scalaBinaryVersion.value)
 	targetFolder.mkdirs()
-	val zipName = "bugpicker-" + version.value + "-source.zip"
-	val zipFile = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(new File(targetFolder, zipName)))
+	val zipName = "bugpicker-" + version.value + "-all-source.zip"
+	val zipFile = new File(targetFolder, zipName)
+	val zout = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zipFile))
+	s.log.info(s"Creating all sources zip "+zipFile.toString)
 	def writeFile(f: File): Unit = {
 		val stream = new java.io.FileInputStream(f)
 		val buffer = new Array[Byte](4096)
 		var read = stream.read(buffer)
 		while (read != -1) {
-			zipFile.write(buffer, 0, read)
+			zout.write(buffer, 0, read)
 			read = stream.read(buffer)
 		}
 		stream.close()
@@ -59,7 +62,7 @@ zipSources := {
 		if (f.isDirectory) {
 			f.listFiles.foreach(addToZip)
 		} else {
-			zipFile.putNextEntry(e)
+			zout.putNextEntry(e)
 			writeFile(f)
 		}
 	}
@@ -72,15 +75,16 @@ zipSources := {
 		case l if l.indexOf("Scalariform Formatter") > -1 => """		(file("./Scalariform Formatter Preferences.properties").getPath))"""
 		case l => l
 	}
-	zipFile.putNextEntry(buildScala)
-	zipFile.write(lines.mkString("\n").getBytes("UTF-8"))
+	zout.putNextEntry(buildScala)
+	zout.write(lines.mkString("\n").getBytes("UTF-8"))
 	var formatterPrefs = new File("Scalariform Formatter Preferences.properties")
 	if (formatterPrefs.exists) { // packing from within an unpacked sources zip, so we already have it here
 		addToZip(formatterPrefs)
 	} else { // here we are in the context of the whole of OPAL, so grab the preferences from the OPAL root
-		zipFile.putNextEntry(new java.util.zip.ZipEntry("Scalariform Formatter Preferences.properties"))
+		zout.putNextEntry(new java.util.zip.ZipEntry("Scalariform Formatter Preferences.properties"))
 		writeFile(new File(bd, "../../Scalariform Formatter Preferences.properties"))
 	}
-	zipFile.flush()
-	zipFile.close()
+	zout.flush()
+	zout.close()
+	s.log.info(s"Done creating zip file.")
 }
