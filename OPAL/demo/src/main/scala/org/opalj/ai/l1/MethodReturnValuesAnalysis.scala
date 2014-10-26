@@ -28,6 +28,7 @@
  */
 package org.opalj
 package ai
+package l1
 
 import java.net.URL
 
@@ -42,7 +43,7 @@ import org.opalj.br.{ ReferenceType }
  *
  * @author Michael Eichberg
  */
-object IdentifyingReturnTypes extends AnalysisExecutor {
+object MethodReturnValuesAnalysis extends AnalysisExecutor {
 
     class AnalysisDomain(
         override val project: Project[java.net.URL],
@@ -97,7 +98,7 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
             "Derives Information About Returned Values"
 
         override def description: String =
-            "Identifies methods where we can – statically – derive more precise return type information."
+            "Identifies methods where we can – statically – derive more precise return type/value information."
 
         override def doAnalyze(
             theProject: Project[URL],
