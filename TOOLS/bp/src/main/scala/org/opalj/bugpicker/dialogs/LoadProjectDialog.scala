@@ -289,7 +289,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
                                                 }
                                             },
                                             new Button {
-                                                text = "Add _JRE as library"
+                                                text = "Add _JRE"
                                                 mnemonicParsing = true
                                                 maxWidth = buttonWidth
                                                 minWidth = buttonWidth
