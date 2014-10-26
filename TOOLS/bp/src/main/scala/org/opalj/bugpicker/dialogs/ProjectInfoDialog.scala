@@ -49,11 +49,12 @@ import scalafx.scene.web.WebView
 import scalafx.stage.Stage
 
 object ProjectInfoDialog {
-    def toUL(files: Seq[File]): String = files.map(_.getAbsolutePath).mkString("<ul><li>", "</li><li>", "</li></ul>")
+    def toUL(files: Seq[File]): String =
+        files.map(_.getAbsolutePath).mkString("<ul><li>", "</li><li>", "</li></ul>")
 
     def show(owner: Stage, project: Project[URL], sources: Seq[File]) {
         if (project == null) {
-            DialogStage.showMessage("Error", "You need to load a project before you can analyze it.", owner)
+            DialogStage.showMessage("Error", "You need to load a project before you can get information about it.", owner)
             return
         }
 
@@ -87,10 +88,6 @@ object ProjectInfoDialog {
         stage.showAndWait
     }
 
-    private def statistics(project: Project[URL]): String =
-        if (project == null) ""
-        else project.statistics.toList.map(e ⇒ s"<li>${e._1}: ${e._2}</li>").mkString("<ul>", "", "</ul>")
-
     private def report(project: Project[URL], preferences: LoadedFiles): String =
         <html>
             <head>
@@ -106,13 +103,13 @@ ul, li {
             </head>
             <body>
                 <h2>Project statistics</h2>
-                <ul>{ project.statistics.toList.map(e ⇒ <li>{ e._1 }: { e._2 }</li>) }</ul>
+                <ul>{ project.statistics.toList.map(e ⇒ e._1+": "+e._2).sorted.map(e ⇒ <li>{ e }</li>) }</ul>
                 <h2>Loaded jar files and directories</h2>
                 <ul>{ preferences.projectFiles.map(d ⇒ <li>{ d.getAbsolutePath }</li>) }</ul>
-                <h2>Loaded source directories</h2>
-                <ul>{ preferences.projectSources.map(d ⇒ <li>{ d.getAbsolutePath }</li>) }</ul>
                 <h2>Loaded libraries</h2>
                 <ul>{ preferences.libraries.map(d ⇒ <li>{ d.getAbsolutePath }</li>) }</ul>
+                <h2>Source directories</h2>
+                <ul>{ preferences.projectSources.map(d ⇒ <li>{ d.getAbsolutePath }</li>) }</ul>
             </body>
         </html>.toString
 }
