@@ -34,3 +34,53 @@ resourceGenerators in Compile += Def.task {
 	writer.close()
 	Seq(versionFile)
 }.taskValue
+
+val zipSources = taskKey[Unit]("Create a source zip")
+
+zipSources := {
+	val bd = baseDirectory.value.getAbsolutePath + "/"
+	def relativeToBase(f: File): String = f.getAbsolutePath.substring(bd.length.toInt)
+	val targetFolder = new File(target.value, "scala-" + scalaBinaryVersion.value)
+	targetFolder.mkdirs()
+	val zipName = "bugpicker-" + version.value + "-source.zip"
+	val zipFile = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(new File(targetFolder, zipName)))
+	def writeFile(f: File): Unit = {
+		val stream = new java.io.FileInputStream(f)
+		val buffer = new Array[Byte](4096)
+		var read = stream.read(buffer)
+		while (read != -1) {
+			zipFile.write(buffer, 0, read)
+			read = stream.read(buffer)
+		}
+		stream.close()
+	}
+	def addToZip(f: File): Unit = {
+		val e = new java.util.zip.ZipEntry(relativeToBase(f))
+		if (f.isDirectory) {
+			f.listFiles.foreach(addToZip)
+		} else {
+			zipFile.putNextEntry(e)
+			writeFile(f)
+		}
+	}
+	addToZip(new File(bd, "src"))
+	addToZip(new File(bd, "build.sbt"))
+	new File(bd, "project").listFiles.filter(_.getName.endsWith("sbt")).foreach(addToZip)
+	val buildScala = new java.util.zip.ZipEntry("project/Build.scala")
+	val lines = scala.io.Source.fromFile(new File(bd, "project/Build.scala")).getLines.collect {
+		// make sure we take the preferences from the current directory, because we don't pack the whole of opal up
+		case l if l.indexOf("Scalariform Formatter") > -1 => """		(file("./Scalariform Formatter Preferences.properties").getPath))"""
+		case l => l
+	}
+	zipFile.putNextEntry(buildScala)
+	zipFile.write(lines.mkString("\n").getBytes("UTF-8"))
+	var formatterPrefs = new File("Scalariform Formatter Preferences.properties")
+	if (formatterPrefs.exists) { // packing from within an unpacked sources zip, so we already have it here
+		addToZip(formatterPrefs)
+	} else { // here we are in the context of the whole of OPAL, so grab the preferences from the OPAL root
+		zipFile.putNextEntry(new java.util.zip.ZipEntry("Scalariform Formatter Preferences.properties"))
+		writeFile(new File(bd, "../../Scalariform Formatter Preferences.properties"))
+	}
+	zipFile.flush()
+	zipFile.close()
+}
