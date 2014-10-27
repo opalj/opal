@@ -556,10 +556,12 @@ trait ValuesDomain {
     def summarize(pc: PC, values: Iterable[DomainValue]): DomainValue = {
         var summary = values.head.summarize(pc)
         values.tail foreach { value ⇒
-            summary.join(pc, value.summarize(pc)) match {
-                case NoUpdate ⇒ /*nothing to do*/
-                case SomeUpdate(newSummary) ⇒
-                    summary = newSummary.summarize(pc)
+            if (summary ne value) {
+                summary.join(pc, value.summarize(pc)) match {
+                    case NoUpdate ⇒ /*nothing to do*/
+                    case SomeUpdate(newSummary) ⇒
+                        summary = newSummary.summarize(pc)
+                }
             }
         }
         summary

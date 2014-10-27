@@ -47,7 +47,7 @@ class DisassemblerTest extends FlatSpec with Matchers {
     behavior of "the Disassembler"
 
     //val files = new java.io.File("/users/eichberg/Applications/Scala IDE")
-    val files = org.opalj.bi.TestSupport.JRELibraryFolder
+    val files = org.opalj.util.JRELibraryFolder
 
     it should (s"be able to process every class of $files") in {
 

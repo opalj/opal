@@ -28,15 +28,15 @@
  */
 package org.opalj
 package bugpicker
+package analysis
 
-case class Percentage(val value: Int) extends AnyVal {
+case class AnalysisParameters(
+        maxEvalTime: Int = BugPickerAnalysis.defaultMaxEvalTime,
+        maxEvalFactor: Double = BugPickerAnalysis.defaultMaxEvalFactor,
+        maxCardinalityOfIntegerRanges: Int = BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges) {
 
-    /**
-     * The lower the value, the "whiter" the color. If the value is 100
-     * then the color will be black.
-     */
-    def asHTMLColor = {
-        val rgbValue = 0 + (100 - value) * 2
-        s"rgb($rgbValue,$rgbValue,$rgbValue)"
-    }
+    def toStringParameters: Seq[String] = Seq(
+        s"-maxEvalFactor=$maxEvalFactor",
+        s"maxEvalTime=$maxEvalTime",
+        s"-maxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges")
 }

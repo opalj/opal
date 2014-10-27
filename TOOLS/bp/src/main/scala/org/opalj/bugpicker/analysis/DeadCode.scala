@@ -28,8 +28,10 @@
  */
 package org.opalj
 package bugpicker
+package analysis
 
 import scala.xml.Node
+import scala.xml.Text
 import scala.xml.UnprefixedAttribute
 import scala.Console.BLUE
 import scala.Console.BOLD
@@ -44,13 +46,21 @@ import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import scala.xml.Unparsed
 
+/**
+ * Collection of all information related to some piece of code that was identified
+ * as being dead.
+ */
 case class DeadCode(
         classFile: ClassFile,
         method: Method,
         ctiPC: PC,
         operands: List[_],
         deadPC: PC,
-        accuracy: Option[Percentage]) extends BugReport {
+        relevance: Option[Relevance]) extends Issue {
+
+    override def category: String = IssueCategory.Flawed
+
+    override def kind: String = IssueKind.DeadBranch
 
     def ctiInstruction = method.body.get.instructions(ctiPC)
 
@@ -144,29 +154,45 @@ case class DeadCode(
                     )
             }
 
+        val methodId = method.name + method.descriptor.toJVMDescriptor
+
         val pcNode =
-            <span class="tooltip">
+            <span class="tooltip" data-class={ classFile.fqn } data-method={ methodId } data-pc={ ctiPC.toString } data-line={ line.map(_.toString).getOrElse("") } data-show="bytecode">
                 { ctiPC }
                 <span>{ iNode }</span>
             </span>
 
+        val methodLine: String = method.body.flatMap(_.firstLineNumber.map(_.toString)).getOrElse("")
+
         val node =
             <tr style={
-                val color = accuracy.map(a ⇒ a.asHTMLColor).getOrElse("rgb(255, 126, 3)")
+                val color = relevance.map(a ⇒ a.asHTMLColor).getOrElse("rgb(255, 126, 3)")
                 s"color:$color;"
             }>
                 <td>
-                    { XHTML.typeToXHTML(classFile.thisType) }
+                    <span data-class={ classFile.fqn }>{ XHTML.typeToXHTML(classFile.thisType) }</span>
                 </td>
-                <td>{ XHTML.methodToXHTML(method.name, method.descriptor) }</td>
-                <td>{ pcNode }{ "/ "+ctiLineNumber.getOrElse("N/A") }</td>
+                <td>
+                    <span data-class={ classFile.fqn } data-method={ methodId } data-line={ methodLine }>
+                        { XHTML.methodToXHTML(method.name, method.descriptor) }
+                    </span>
+                </td>
+                <td>
+                    { pcNode }
+                    {
+                        Text("/ ") ++
+                            line.map(ln ⇒
+                                <span data-class={ classFile.fqn } data-method={ methodId } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>
+                            ).getOrElse(Text("N/A"))
+                    }
+                </td>
                 <td>{ message }</td>
             </tr>
 
-        accuracy match {
+        relevance match {
             case Some(a) ⇒
                 node % (
-                    new UnprefixedAttribute("data-accuracy", a.value.toString(), scala.xml.Null)
+                    new UnprefixedAttribute("data-relevance", a.value.toString(), scala.xml.Null)
                 )
             case None ⇒
                 node
@@ -175,7 +201,7 @@ case class DeadCode(
     }
 
     override def toString = {
-        import Console._
+        import scala.Console._
         val declaringClassOfMethod = classFile.thisType.toJava
 
         "Dead code in "+BOLD + BLUE +
