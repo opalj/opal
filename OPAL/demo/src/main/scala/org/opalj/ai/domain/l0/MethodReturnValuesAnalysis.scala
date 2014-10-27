@@ -28,23 +28,20 @@
  */
 package org.opalj
 package ai
+package domain
 package l0
 
 import java.net.URL
-import org.opalj.collection.immutable.{ UIDSet, UIDSet1 }
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.{ ReferenceType }
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.IsAReferenceValue
-import org.opalj.ai.domain
 import org.opalj.util.PerformanceEvaluation.time
-import scala.Console.BLUE
-import scala.Console.BOLD
-import scala.Console.GREEN
-import scala.Console.RESET
-import scala.Iterable
+import org.opalj.ai.NoUpdate
+import org.opalj.ai.SomeUpdate
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
@@ -106,7 +103,6 @@ object MethodReturnValuesAnalysis extends AnalysisExecutor {
                     /* Nothing to do. */
                 }
             }
-
         }
     }
 
@@ -130,9 +126,10 @@ object MethodReturnValuesAnalysis extends AnalysisExecutor {
                 for {
                     classFile ← theProject.classFiles.par
                     method ← classFile.methods
-                    if method.returnType.isReferenceType
+                    originalReturnType = method.returnType
+                    if originalReturnType.isObjectType
+                    if theProject.classFile(originalReturnType.asObjectType).map(!_.isFinal).getOrElse(true)
                     if method.body.isDefined
-                    originalType = method.returnType
                     candidate = candidates.incrementAndGet()
                     ai = new InterruptableAI[Domain]
                     domain = new AnalysisDomain(theProject, ai, method)
@@ -140,7 +137,7 @@ object MethodReturnValuesAnalysis extends AnalysisExecutor {
                     if !result.wasAborted
                     returnedValue = domain.returnedValue
                     if returnedValue.isEmpty ||
-                        returnedValue.get.asInstanceOf[IsAReferenceValue].upperTypeBound != UIDSet(originalType)
+                        returnedValue.get.asInstanceOf[IsAReferenceValue].upperTypeBound != UIDSet(originalReturnType)
                 } yield {
                     RefinedReturnType(classFile, method, domain.returnedValue)
                 }
@@ -168,7 +165,7 @@ case class RefinedReturnType(
 
         "Refined the return type of "+BOLD + BLUE +
             declaringClassOfMethod+"{ "+method.toJava+" }"+
-            " => "+GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET
+            " => "+GREEN + refinedType.getOrElse("\"NONE\" (the method never returns normally)") + RESET
     }
 
 }
