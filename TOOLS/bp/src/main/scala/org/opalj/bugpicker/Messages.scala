@@ -46,13 +46,15 @@ object Messages {
     final val NO_BYTECODE_FOUND = getMessage("/org/opalj/bugpicker/messages/nobytecodefound.html")
     final val GET_HELP = getMessage("/org/opalj/bugpicker/messages/gethelp.html")
     final val PREFERENCES = getMessage("/org/opalj/bugpicker/messages/preferences.html")
+    final val LICENSES = getMessage("/org/opalj/bugpicker/messages/licenses.html")
 
     val helpTopics: Seq[HelpTopic] = Seq(
         new HelpTopic(GET_HELP),
         new HelpTopic(APP_STARTED),
         new HelpTopic(LOADING_FINISHED),
         new HelpTopic(ANALYSIS_FINISHED),
-        new HelpTopic(PREFERENCES)
+        new HelpTopic(PREFERENCES),
+        new HelpTopic(LICENSES)
     )
 }
 
