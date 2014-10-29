@@ -110,34 +110,6 @@ object XHTML {
         }
     }
 
-    def typeToXHTML(t: Type): Node = {
-        t match {
-            case ot: ObjectType ⇒
-                <span class="tooltip object_type">
-                    { ot.simpleName }<span class="fqn">{ ot.toJava }</span>
-                </span>
-            case at: ArrayType ⇒
-                <span class="array_type">
-                    { typeToXHTML(at.elementType) }{ (1 to at.dimensions).map(i ⇒ "[]") }
-                </span>
-            case bt: BaseType ⇒
-                <span class="base_type">{ bt.toJava }</span>
-            case vt: VoidType ⇒
-                <span class="void_type">void</span>
-        }
-    }
-
-    def methodToXHTML(name: String, descriptor: MethodDescriptor): Node = {
-        <span class="method_signature">
-            { typeToXHTML(descriptor.returnType) }
-            { name }
-            <span class="method_parameters">
-                (
-                { descriptor.parameterTypes.map(typeToXHTML(_)) }
-                )
-            </span>
-        </span>
-    }
 
     /**
      * In case that during the validation some exception is thrown, a dump of
@@ -222,13 +194,9 @@ object XHTML {
 
     def annotationsAsXHTML(method: Method) =
         <div class="annotations">
-            {
-                this.annotations(method) map { annotation ⇒
-                    <div class="annotation">
+            { this.annotations(method) map { annotation ⇒ <div class="annotation">
                         { Unparsed(annotation.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;")) }
-                    </div>
-                }
-            }
+                    </div> } }
         </div>
 
     def dump(
@@ -320,14 +288,8 @@ object XHTML {
                         <th class="pc">PC</th>
                         <th class="instruction">Instruction</th>
                         <th class="stack">Operand Stack</th>
-                        {
-                            if (operandsOnly)
-                                NodeSeq.Empty
-                            else {
-                                <th class="registers">Registers</th>
-                                <th class="properties">Properties</th>
-                            }
-                        }
+                        { if (operandsOnly)NodeSeq.Empty else { <th class="registers">Registers</th>
+                                <th class="properties">Properties</th> } }
                     </tr>
                 </thead>
                 <tbody>
@@ -402,15 +364,8 @@ object XHTML {
             <td class="pc">{ pcAsXHTML }</td>
             <td class="instruction">{ Unparsed(instruction.toString(pc).replace("\n", "<br>")) }</td>
             <td class="stack">{ dumpStack(operands) }</td>
-            {
-                if (operandsOnly)
-                    NodeSeq.Empty
-                else {
-
-                    <td class="locals">{ dumpLocals(locals) }</td>
-                    <td class="properties">{ properties }</td>
-                }
-            }
+            { if (operandsOnly)NodeSeq.Empty else { <td class="locals">{ dumpLocals(locals) }</td>
+                    <td class="properties">{ properties }</td> } }
         </tr>
     }
 
@@ -461,7 +416,7 @@ object XHTML {
         val node =
             if (throwable.getStackTrace == null ||
                 throwable.getStackTrace.size == 0) {
-                <div>{ throwable.getClass.getSimpleName+" "+throwable.getMessage }</div>
+                <div>{ throwable.getClass.getSimpleName + " " + throwable.getMessage }</div>
             } else {
                 val stackElements =
                     for { stackElement ← throwable.getStackTrace } yield {
