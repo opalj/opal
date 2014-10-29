@@ -810,34 +810,38 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
 
     override def iushr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
-                    case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
-                        if (vlb >= 0) {
-                            val maxShift = if (sub > 31 || sub < 0) 31 else sub
-                            val minShift = if (slb >= 0 && slb <= 31 && sub <= 31) slb else 0
-        
-                            val lb = vlb >>> maxShift
-                            val ub = vub >>> minShift
-        
-                            IntegerRange(lb, ub)
-                        } else if (vlb < 0 && vub >= 0) {
-                            val maxShift = if (sub > 31 || sub < 0) 31 else sub
-                            val minShift = if (slb >= 0 && slb <= 31 && sub <= 31) slb else 0
-        
-                            val lb = if (minShift == 0) vlb else 0
-                            val ub = if (minShift == 0) -1 >>> 1 else -1 >>> minShift
-        
-                            IntegerRange(lb, ub)
-                        } else { // last case: vub < 0
-                            val maxShift = if (sub > 31 || sub < 0) 31 else sub
-                            val minShift = if (slb >= 0 && slb <= 31 && sub <= 31) slb else 0
-        
-                            val lb = if (minShift == 0) vlb else vub >>> maxShift
-                            val ub = if (minShift != 0) vub >>> minShift else if (maxShift > 0) vub >>> 1 else vub
-        
-                            IntegerRange(lb, ub)
-                        }
-                    case _ ⇒ IntegerValue(pc)
+            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
+                // We have one "arbitrary" range of numbers to shift and one range that 
+                // should be between 0 and 31. Every number above 31 or any negative number does not make sense, since
+                // only the five least significant bits are used for shifting.
+            
+                if (vlb >= 0) {
+                    val maxShift = if (sub > 31 || sub < 0) 31 else sub
+                    val minShift = if (slb >= 0 && slb <= 31 && sub <= 31) slb else 0
+
+                    val lb = vlb >>> maxShift
+                    val ub = vub >>> minShift
+
+                    IntegerRange(lb, ub)
+                } else if (vlb < 0 && vub >= 0) {
+                    val maxShift = if (sub > 31 || sub < 0) 31 else sub
+                    val minShift = if (slb >= 0 && slb <= 31 && sub <= 31) slb else 0
+
+                    val lb = if (minShift == 0) vlb else 0
+                    val ub = if (minShift == 0) -1 >>> 1 else -1 >>> minShift
+
+                    IntegerRange(lb, ub)
+                } else { // last case: vub < 0
+                    val maxShift = if (sub > 31 || sub < 0) 31 else sub
+                    val minShift = if (slb >= 0 && slb <= 31 && sub <= 31) slb else 0
+
+                    val lb = if (minShift == 0) vlb else vub >>> maxShift
+                    val ub = if (minShift != 0) vub >>> minShift else if (maxShift > 0) vub >>> 1 else vub
+
+                    IntegerRange(lb, ub)
                 }
+            case _ ⇒ IntegerValue(pc)
+        }
 
     }
 
