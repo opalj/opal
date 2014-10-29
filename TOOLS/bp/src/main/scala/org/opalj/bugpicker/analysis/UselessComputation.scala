@@ -39,7 +39,8 @@ import scala.Console.GREEN
 import scala.Console.RESET
 import scala.collection.SortedMap
 import org.opalj.br.{ ClassFile, Method }
-import org.opalj.ai.debug.XHTML
+import org.opalj.br.typeToXHTML
+import org.opalj.br.methodToXHTML
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ConditionalBranchInstruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
@@ -89,31 +90,35 @@ case class UselessComputation(
 
         val methodId = method.name + method.descriptor.toJVMDescriptor
 
-        val methodLine: String = method.body.flatMap(_.firstLineNumber.map(_.toString)).getOrElse("")
+        val methodLine: String =
+            method.body.flatMap(_.firstLineNumber.map { ln ⇒
+                if (ln > 0) (ln - 1).toString else "0"
+            }).getOrElse("")
 
         val pcNode = <span data-class={ classFile.fqn } data-method={ methodId } data-line={ line.map(_.toString).getOrElse("") } data-pc={ pc.toString } data-show="bytecode">{ pc }</span>
 
+        val styleAttribute = "color:rgb(126, 64, 64)";
+
+        val classAttribute = "issue "+kind
+
         val node =
-            <tr style="color:rgb(126, 64, 64);" class="$kind">
-                <td>
-                    <span data-class={ classFile.fqn }>
-                        { XHTML.typeToXHTML(classFile.thisType) }
-                    </span>
-                </td>
-                <td>
-                    <span data-class={ classFile.fqn } data-method={ methodId } data-line={ methodLine }>
-                        { XHTML.methodToXHTML(method.name, method.descriptor) }
-                    </span>
-                </td>
-                <td>
-                    { pcNode }
-                    {
-                        Text("/ ") ++ line.map(ln ⇒
-                            <span data-class={ classFile.fqn } data-method={ methodId } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>).getOrElse(Text("N/A"))
-                    }
-                </td>
-                <td>{ computation }</td>
-            </tr>
+            <div class={ classAttribute } style={ styleAttribute }>
+                <dl>
+                    <dt>class</dt>
+                    <dd class="declaring_class" data-class={ classFile.fqn }>{ typeToXHTML(classFile.thisType) }</dd>
+                    <dt>method</dt>
+                    <dd class="method" data-class={ classFile.fqn } data-method={ methodId } data-line={ methodLine }>
+                        { methodToXHTML(method.name, method.descriptor) }
+                    </dd>
+                    <dt>pc</dt>
+                    <dd class="program_counter">{ pcNode }</dd>
+                    <dt>line</dt>
+                    <dd class="line_number">{ line.map(ln ⇒ <span data-class={ classFile.fqn } data-method={ methodId } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>).getOrElse(Text("N/A")) }</dd>
+                </dl>
+                <div class="issue_message">
+                    <p>{ computation }</p>
+                </div>
+            </div>
 
         node % (
             new UnprefixedAttribute("data-relevance", "50", scala.xml.Null)

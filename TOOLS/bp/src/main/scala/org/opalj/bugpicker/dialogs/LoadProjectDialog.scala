@@ -56,6 +56,7 @@ import scalafx.scene.control.SelectionMode
 import scalafx.scene.control.ScrollPane
 
 class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
+
     private final val buttonWidth = 200
     private final val buttonMargin = Insets(5)
 
@@ -375,7 +376,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
 
             }
         }
-        stylesheets += BugPicker.defaultStyles
+        stylesheets += BugPicker.defaultAppCSSURL
 
         filterEvent(KeyEvent.KeyPressed) { e: KeyEvent ⇒
             if (e.code.equals(KeyCode.ESCAPE)) {

@@ -48,6 +48,7 @@ import scalafx.stage.Stage
 import scalafx.stage.StageStyle
 
 object HelpBrowser extends Stage {
+
     title = "BugPicker Help"
     minWidth = 800
     minHeight = 600
@@ -70,7 +71,7 @@ object HelpBrowser extends Stage {
             items ++= Seq(list, browser)
             dividerPositions = 0.3
         }
-        stylesheets += BugPicker.defaultStyles
+        stylesheets += BugPicker.defaultAppCSSURL
     }
 
     initStyle(StageStyle.DECORATED)

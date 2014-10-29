@@ -80,7 +80,7 @@ object ProjectInfoDialog {
                         alignment = Pos.CENTER
                     }
                 }
-                stylesheets += BugPicker.defaultStyles
+                stylesheets += BugPicker.defaultAppCSSURL
             }
         }
 

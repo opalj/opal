@@ -52,6 +52,7 @@ import org.opalj.bugpicker.dialogs.DialogStage
 import org.opalj.bugpicker.dialogs.LoadedFiles
 
 object ProjectHelper {
+
     def setupProject(loadedFiles: LoadedFiles, parentStage: Stage): (Project[URL], Seq[File]) = {
 
         val files = loadedFiles.projectFiles
@@ -126,10 +127,6 @@ object ProjectHelper {
         }
 
         var project = Project(classFiles, libraryClassFiles)
-        print(
-            project.statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).toList.sorted.
-                mkString("[info] Project statistics:\n[info]\t", "\n[info]\t", "\n")
-        )
         project
     }
 }

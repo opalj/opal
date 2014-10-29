@@ -50,6 +50,7 @@ import scalafx.scene.control.TitledPane
 
 class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
     theStage ⇒
+
     title = "Set analysis parameters"
 
     var parameters: Option[AnalysisParameters] = None
