@@ -28,6 +28,7 @@
  */
 package org.opalj
 package bugpicker
+package analysis
 
 import java.net.URL
 import scala.xml.Node
@@ -68,7 +69,19 @@ import org.opalj.br.instructions.IINC
 import org.opalj.br.instructions.ShiftInstruction
 import org.opalj.br.instructions.INSTANCEOF
 
-class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
+/**
+ * A static analysis that analyzes the data-flow to identify various issues in the
+ * source code of projects.
+ *
+ * ==Precision==
+ * The analysis is complete; i.e., every reported case is a true case. However, given
+ * that we analyze Java bytecode, some findings may be the result of the compilation
+ * scheme employed by the compiler and, hence, cannot be resolved at the
+ * sourcecode level. This is in particular true for finally blocks in Java programs. In
+ * this case compiler typically include the same block two times in the code.
+ *
+ */
+class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
     override def title: String = "Dead/Useless/Buggy Code Identification"
 
@@ -77,37 +90,39 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
     /**
      * Executes the analysis of the projects concrete methods.
      *
-     * @param Either an empty sequence or a sequence that contains one or more of the following parameters:
+     * @param Either an empty sequence or a sequence that contains one or more of
+     *      the following parameters:
      *      - a string that matches the following pattern: `-maxEvalFactor=(\d+(?:.\d+)?)`; e.g.,
      *      `-maxEvalFactor=0.5` or `-maxEvalFactor=1.5`. A value below 0.05 is usually
      *      not useable.
+     *      - a string that machtes the following pattern: `-maxEvalTime=(\d+)`.
      *      - a string that machtes the following pattern: `-maxCardinalityOfIntegerRanges=(\d+)`.
      */
     override def analyze(
         theProject: Project[URL],
         parameters: Seq[String],
-        initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[BugReport]) = {
+        initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[Issue]) = {
 
         val maxEvalFactor: Double =
             parameters.collectFirst {
-                case DeadCodeAnalysis.maxEvalFactorPattern(d) ⇒
+                case BugPickerAnalysis.maxEvalFactorPattern(d) ⇒
                     java.lang.Double.parseDouble(d).toDouble
             }.getOrElse(
-                DeadCodeAnalysis.defaultMaxEvalFactor
+                BugPickerAnalysis.defaultMaxEvalFactor
             )
         val maxEvalTime: Int =
             parameters.collectFirst {
-                case DeadCodeAnalysis.maxEvalTimePattern(l) ⇒
+                case BugPickerAnalysis.maxEvalTimePattern(l) ⇒
                     java.lang.Integer.parseInt(l).toInt
             }.getOrElse(
-                DeadCodeAnalysis.defaultMaxEvalTime
+                BugPickerAnalysis.defaultMaxEvalTime
             )
         val maxCardinalityOfIntegerRanges: Int =
             parameters.collectFirst {
-                case DeadCodeAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
+                case BugPickerAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
                     java.lang.Integer.parseInt(i).toInt
             }.getOrElse(
-                DeadCodeAnalysis.defaultMaxCardinalityOfIntegerRanges
+                BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges
             )
 
         println("Settings:")
@@ -120,10 +135,10 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
         val progressManagement = initProgressManagement(classFilesCount)
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
-        val results = new java.util.concurrent.ConcurrentLinkedQueue[BugReport]()
+        val results = new java.util.concurrent.ConcurrentLinkedQueue[Issue]()
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
             val domain =
-                new DeadCodeAnalysisDomain(theProject, method, maxCardinalityOfIntegerRanges)
+                new BugPickerAnalysisDomain(theProject, method, maxCardinalityOfIntegerRanges)
             val ai =
                 new BoundedInterruptableAI[domain.type](
                     body,
@@ -152,17 +167,17 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
                             if (dc.tail.isEmpty) {
                                 // we have just one message, but since we have 
                                 // no line number we are still "doubtful"
-                                results.add(dc.head.copy(accuracy = Some(Percentage(75))))
+                                results.add(dc.head.copy(relevance = Some(Relevance(75))))
                             } else {
-                                dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(5)))))
+                                dc.foreach(i ⇒ results.add(i.copy(relevance = Some(Relevance(5)))))
                             }
 
                         case Some(ln) ⇒
                             if (dc.tail.isEmpty)
                                 // we have just one message,...
-                                results.add(dc.head.copy(accuracy = Some(Percentage(100))))
+                                results.add(dc.head.copy(relevance = Some(Relevance(100))))
                             else
-                                dc.foreach(i ⇒ results.add(i.copy(accuracy = Some(Percentage(10)))))
+                                dc.foreach(i ⇒ results.add(i.copy(relevance = Some(Relevance(10)))))
                     }
                 }
 
@@ -178,7 +193,13 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
                             instr @ BinaryArithmeticInstruction(ComputationalTypeInt),
                             Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                             ) ⇒
-                            (pc, s"Constant computation: $b ${instr.operator} $a.")
+                            // The java "~" operator has no direct representation in bytecode
+                            // instead, compilers generate an "ixor" with "-1" as the
+                            // second value.
+                            if (instr.operator == "^" && a == -1)
+                                (pc, s"Constant computation: ~$b (<=> $b ${instr.operator} $a).")
+                            else
+                                (pc, s"Constant computation: $b ${instr.operator} $a.")
 
                         case (pc, instr: INEG.type, Seq(ConcreteIntegerValue(a), _*)) ⇒
                             (pc, s"Constant computation: -${a}")
@@ -265,7 +286,7 @@ class DeadCodeAnalysis extends Analysis[URL, (Long, Iterable[BugReport])] {
     }
 }
 
-object DeadCodeAnalysis {
+object BugPickerAnalysis {
 
     // we want to match expressions such as:
     // -maxEvalFactor=1
@@ -282,57 +303,66 @@ object DeadCodeAnalysis {
         """-maxCardinalityOfIntegerRanges=(\d+)""".r
     final val defaultMaxCardinalityOfIntegerRanges = 16
 
-    def resultsAsXHTML(results: (Long, Iterable[BugReport])): Node = {
+    lazy val reportCSS: String =
+        process(this.getClass.getResourceAsStream("report.css"))(
+            scala.io.Source.fromInputStream(_).mkString
+        )
+
+    lazy val reportJS: String =
+        process(this.getClass.getResourceAsStream("report.js"))(
+            scala.io.Source.fromInputStream(_).mkString
+        )
+
+    def resultsAsXHTML(results: (Long, Iterable[Issue])): Seq[Node] = {
         val (analysisTime, methodsWithDeadCode) = results
         val methodWithDeadCodeCount = methodsWithDeadCode.size
 
-        <div id="dead_code_results">
-            <script type="text/javascript">
-                {
-                    new Unparsed(
-                        """function updateAccuracy(value) {
-                            document.querySelectorAll("tr[data-accuracy]").forEach(
-                                function(tr){
-                                    tr.dataset.accuracy < value ? tr.style.display="none" : tr.style.display="table-row"
-                                }
-                            )
-                        }""")
-                }
-            </script>
-            <div>Number of identified issues: { methodWithDeadCodeCount }</div>
-            <div>
-                Suppress identified issues with an estimated
-                <span class="tooltip">importance<span>The importance is calculated using the available context information.<br/>E.g., a dead <i>default case</i> in a switch statement is often the result of defensive programming and, hence, not important.</span></span>
-                less than:
-                <span class="tooltip">1<span>The identified issue is probably not important or is just a technical artifact.</span></span>
-                <input type="range" name="accuracy" id="accuracy" min="1" max="100" onchange="updateAccuracy(this.valueAsNumber)"/>
-                <span class="tooltip">100<span>The identified issue is probably very important.</span></span>
-            </div>
-            <table>
-                <tr>
-                    <th>Class</th>
-                    <th>Method</th>
-                    <th class="pc">Program Counter /<br/>Line Number</th>
-                    <th>Message</th>
-                </tr>
-                {
-                    import scala.collection.SortedMap
-                    val groupedMessages =
-                        SortedMap.empty[String, Seq[DeadCode]] ++
-                            methodsWithDeadCode.groupBy(dc ⇒ dc.classFile.thisType.packageName)
-                    for { (pkg, mdc) ← groupedMessages } yield {
-                        Seq(
-                            <tr><td class="caption" colspan="4">{ pkg.replace('/', '.') }</td></tr>,
-                            mdc.toSeq.sorted(BugReportOrdering).map(_.toXHTML)
-                        )
-                    }.flatten
-                }
-            </table>
-            <script type="text/javascript">
-                document.getElementById('accuracy').value=75;
-                updateAccuracy(75);
-            </script>
-        </div>
+        val issuesNode: Iterable[Node] = {
+            import scala.collection.SortedMap
+            val groupedMessages =
+                SortedMap.empty[String, Seq[DeadCode]] ++
+                    methodsWithDeadCode.groupBy(dc ⇒ dc.classFile.thisType.packageName)
+            val result =
+                (for { (pkg, mdc) ← groupedMessages } yield {
+                    <details>
+                        <summary class="package_summary">{ pkg.replace('/', '.') }</summary>
+                        { mdc.toSeq.sorted(IssueOrdering).map(_.toXHTML) }
+                    </details>
+                })
+            result
+        }
+
+        <html xmlns="http://www.w3.org/1999/xhtml">
+            <head>
+                <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
+                <script type="text/javascript">{ Unparsed(bugpicker.htmlJS) }</script>
+                <script type="text/javascript">{ Unparsed(reportJS) }</script>
+                <style>{ bugpicker.htmlCSS }</style>
+                <style>{ reportCSS }</style>
+            </head>
+            <body>
+                <div id="analysis_controls">
+                    <span>Number of issues: { methodWithDeadCodeCount }</span>
+                    . 
+                    Suppress issues with an estimated
+                    <abbr title='The importance is calculated using the available context information. E.g., a dead "default case" in a switch statement is often the result of defensive programming and, hence, not important.'>importance</abbr>
+                    less than:
+                    <abbr title="The identified issue is probably not important or is just a technical artifact.">1</abbr>
+                    <input type="range" name="relevance" id="relevance" min="1" max="100" onchange="updateRelevance(this.valueAsNumber)"/>
+                    <abbr title="The identified issue is probably very important.">100</abbr>
+                    <div>
+                        <a class="onclick" onclick="document.querySelectorAll('details').forEach(function(e){e.setAttribute('open','true')})">Open All Packages</a>
+                    </div>
+                </div>
+                <div id="analysis_results">
+                    { issuesNode }
+                </div>
+                <script type="text/javascript">
+                    document.getElementById('relevance').value=75;
+                	updateRelevance(75);
+                </script>
+            </body>
+        </html>
     }
 }
 

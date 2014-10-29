@@ -26,37 +26,85 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package bugpicker
+body{
+	margin:0px;
+    font-family: sans-serif;
+    font-size: 14px;
+}
 
-import java.net.URL
-import org.opalj.br.analyses.Project
-import org.opalj.br.Method
-import org.opalj.ai.Domain
-import org.opalj.ai.domain
+h1{
+	font-size:1.3em;
+} 
+ 
+h2,h3,h4,h5,h6{
+	font-size:1.2em;
+} 
 
-class DeadCodeAnalysisDomain(
-    override val project: Project[java.net.URL],
-    override val method: Method,
-    override val maxCardinalityOfIntegerRanges: Long = 16l)
-        extends Domain
-        with domain.DefaultDomainValueBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l1.DefaultReferenceValuesBinding
-        with domain.l1.DefaultIntegerRangeValues
-        with domain.l1.MaxArrayLengthRefinement
-        with domain.l1.ConstraintsBetweenIntegerValues
-        //with domain.l1.DefaultIntegerSetValues
-        with domain.l1.DefaultLongValues
-        with domain.l1.LongValuesShiftOperators
-        with domain.l1.DefaultConcretePrimitiveValuesConversions
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization
-        with domain.TheProject[java.net.URL]
-        with domain.TheMethod
-        with domain.ProjectBasedClassHierarchy
+details{
+	padding:1em;
+}
 
+summary{
+	padding:0.5em;
+	background-color: rgb(128, 181, 235);
+	color:white;
+}
+
+abbr {
+	border-bottom: 1px dotted black;
+}
+
+.method_name {
+	color: rgb(19, 5, 248);
+	font-style: italic;
+}
+
+.type {
+	color: rgb(11, 117, 11);	
+}
+
+.object_type{
+	text-decoration: underline;
+}
+
+.base_type {
+	font-style: italic;
+}
+
+dl{
+	margin: 0;
+}
+dt{	
+font-weight: 300;
+line-height: 1.0em;
+}
+dd{
+display:block;
+margin-top: -1em;
+margin-left: 6em;
+margin-bottom: 0.3em;
+}
+
+a.onclick{
+background-color: rgb(19, 91, 204);
+padding: 0.3em;
+line-height: 2em;
+border: 1px solid;
+border-radius: 3px;
+}
+
+a.onclick:hover{
+	color: yellow;
+}
+
+span.operator{
+	font-weight: bolder;
+}
+
+span.value{
+	color: rgb(215, 145, 4);
+}
+
+span.keyword{
+	font-style: italic;
+}

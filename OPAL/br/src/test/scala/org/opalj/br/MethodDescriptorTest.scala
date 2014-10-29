@@ -99,4 +99,21 @@ class MethodDescriptorTest extends FunSuite with ParallelTestExecution {
         })
     }
 
+    {
+        val jvmDescriptors = Seq(
+
+            "()V",
+            "([[[III)[I",
+            "([I)[I",
+            "(JZSCIFD)V",
+            "(IDLjava/lang/Thread;)Ljava/lang/Object;",
+            "(IDLjava/lang/Thread;[J)[Ljava/lang/Object;"
+        )
+        jvmDescriptors.foreach { jvmDescriptor ⇒
+            test(s"recreating JVM descriptor $jvmDescriptor") {
+                assert(MethodDescriptor(jvmDescriptor).toJVMDescriptor === jvmDescriptor)
+            }
+        }
+    }
+
 }

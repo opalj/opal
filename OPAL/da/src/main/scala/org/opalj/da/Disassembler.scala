@@ -56,7 +56,10 @@ object Disassembler {
 
         def processClassFile(classFile: ClassFile) {
             try {
-                writeAndOpen(classFile.toXHTML.toString, classFile.fqn, ".html")
+                val file = writeAndOpen(classFile.toXHTML.toString, classFile.fqn, ".html")
+                println(
+                    s"Generated the HTML documentation $file."
+                )
             } catch {
                 case OpeningFileFailedException(file, cause) ⇒
                     println(
@@ -67,8 +70,13 @@ object Disassembler {
         }
 
         if (args.length == 1) {
-            for ((classFile, _) ← ClassFileReader.ClassFiles(new java.io.File(args(0)))) {
-                processClassFile(classFile)
+            val classFiles = ClassFileReader.ClassFiles(new java.io.File(args(0)))
+            if (classFiles.isEmpty) {
+                println(s"No classfiles found in ${args(0)}")
+            } else {
+                for ((classFile, _) ← classFiles) {
+                    processClassFile(classFile)
+                }
             }
         } else
             for (classFileName ← args.drop(1) /* drop the name of the jar file */ ) {

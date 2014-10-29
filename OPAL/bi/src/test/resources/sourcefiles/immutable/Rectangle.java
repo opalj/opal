@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,17 +26,26 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package bugpicker
 
-case class Percentage(val value: Int) extends AnyVal {
+package immutable;
 
-    /**
-     * The lower the value, the "whiter" the color. If the value is 100
-     * then the color will be black.
-     */
-    def asHTMLColor = {
-        val rgbValue = 0 + (100 - value) * 2
-        s"rgb($rgbValue,$rgbValue,$rgbValue)"
+public class Rectangle {
+
+    private Point ul;
+
+    private Point lr;
+
+    public Rectangle(Point ul, Point lr) {
+        this.ul = ul;
+        this.lr = lr;
     }
+
+    public Point getLr() {
+        return lr;
+    }
+
+    public Point getUl() {
+        return ul;
+    }
+
 }

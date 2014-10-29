@@ -39,6 +39,7 @@ import scala.collection.SortedSet
 
 import org.opalj.collection.UID
 import org.opalj.collection.immutable.UIDSet
+// TODO [DESIGN] Resolve cyclic dependency between "br" and "br.instructions"!
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.Instruction
@@ -225,6 +226,11 @@ sealed abstract class Type extends UID with Ordered[Type] {
     def toBinaryJavaName: String
 
     /**
+     * Returns the representation of this type as used by the JVM.
+     */
+    def toJVMTypeName: String
+
+    /**
      * Returns the Java class object representing this type.
      *
      * '''This is generally only useful in very special cases and – to be meaningful at
@@ -300,6 +306,8 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     override def toBinaryJavaName: String =
         throw new UnsupportedOperationException("void does not have a binary name")
+
+    override def toJVMTypeName: String = "V"
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Void.TYPE
 
@@ -525,6 +533,8 @@ sealed abstract class ByteType private () extends IntLikeType {
 
     override def toBinaryJavaName: String = "B"
 
+    override def toJVMTypeName: String = "B"
+
     override def toJavaClass: java.lang.Class[_] = java.lang.Byte.TYPE
 
     override def toString() = "ByteType"
@@ -585,6 +595,8 @@ sealed abstract class CharType private () extends IntLikeType {
 
     override def toBinaryJavaName: String = "C"
 
+    override def toJVMTypeName: String = "C"
+
     override def toJavaClass: java.lang.Class[_] = java.lang.Character.TYPE
 
     override def toString() = "CharType"
@@ -641,6 +653,8 @@ sealed abstract class DoubleType private () extends NumericType {
     def toJava: String = "double"
 
     override def toBinaryJavaName: String = "D"
+
+    override def toJVMTypeName: String = "D"
 
     final val WrapperType = ObjectType.Double
 
@@ -712,6 +726,8 @@ sealed abstract class FloatType private () extends NumericType {
 
     override def toBinaryJavaName: String = "F"
 
+    override def toJVMTypeName: String = "F"
+
     override def toJavaClass: java.lang.Class[_] = java.lang.Float.TYPE
 
     override def toString() = "FloatType"
@@ -780,6 +796,8 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     override def toBinaryJavaName: String = "S"
 
+    override def toJVMTypeName: String = "S"
+
     override def toJavaClass: java.lang.Class[_] = java.lang.Short.TYPE
 
     override def toString() = "ShortType"
@@ -839,6 +857,8 @@ sealed abstract class IntegerType private () extends IntLikeType {
     def toJava: String = "int"
 
     override def toBinaryJavaName: String = "I"
+
+    override def toJVMTypeName: String = "I"
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Integer.TYPE
 
@@ -903,6 +923,8 @@ sealed abstract class LongType private () extends NumericType {
     def toJava: String = "long"
 
     override def toBinaryJavaName: String = "J"
+
+    override def toJVMTypeName: String = "J"
 
     override def toJavaClass: java.lang.Class[_] = java.lang.Long.TYPE
 
@@ -979,6 +1001,8 @@ sealed abstract class BooleanType private () extends BaseType {
 
     override def toBinaryJavaName: String = "Z"
 
+    override def toJVMTypeName: String = "Z"
+
     override def toJavaClass: java.lang.Class[_] = java.lang.Boolean.TYPE
 
     override def toString() = "BooleanType"
@@ -1038,6 +1062,8 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
     override def toJava: String = fqn.replace('/', '.')
 
     override def toBinaryJavaName: String = "L"+toJava+";"
+
+    override def toJVMTypeName: String = "L"+fqn+";"
 
     override def toJavaClass: java.lang.Class[_] =
         classOf[Type].getClassLoader().loadClass(toJava)
@@ -1369,6 +1395,8 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
     override def toJava: String = componentType.toJava+"[]"
 
     override def toBinaryJavaName: String = "["+componentType.toBinaryJavaName
+
+    override def toJVMTypeName: String = "["+componentType.toJVMTypeName
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Class.forName(toBinaryJavaName)

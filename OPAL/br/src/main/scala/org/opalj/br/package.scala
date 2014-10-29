@@ -29,6 +29,8 @@
 package org.opalj
 
 import org.opalj.collection.immutable.UIDSet
+import scala.xml.Node
+import scala.xml.Text
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -118,5 +120,48 @@ package object br {
      * and, hence, just represent an abstraction.
      */
     type UpperTypeBound = UIDSet[ReferenceType]
+
+    /**
+     * Creates an (X)HTML5 representation of the given type that Java type declarations.
+     */
+    def typeToXHTML(t: Type, abbr: Boolean = true): Node = {
+        t match {
+            case ot: ObjectType ⇒
+                if (abbr)
+                    <abbr class="type object_type" title={ ot.toJava }>
+                        { ot.simpleName }
+                    </abbr>
+                else
+                    <span class="type object_type">{ ot.toJava }</span>
+            case at: ArrayType ⇒
+                <span class="type array_type">
+                    { typeToXHTML(at.elementType) }{ (1 to at.dimensions).map(i ⇒ "[]") }
+                </span>
+            case bt: BaseType ⇒
+                <span class="type base_type">{ bt.toJava }</span>
+            case vt: VoidType ⇒
+                <span class="type void_type">void</span>
+        }
+    }
+
+    /**
+     * Creates an (X)HTML5 representation that resembles Java source code method signature.
+     */
+    def methodToXHTML(name: String, descriptor: MethodDescriptor, abbr: Boolean = true): Node = {
+
+        val parameterTypes =
+            if (descriptor.parametersCount == 0)
+                List(Text(""))
+            else {
+                val parameterTypes = descriptor.parameterTypes.map(typeToXHTML(_, abbr))
+                parameterTypes.tail.foldLeft(List(parameterTypes.head))((c, r) ⇒ r :: Text(", ") :: c).reverse
+            }
+
+        <span class="method_signature">
+            <span class="method_return_type">{ typeToXHTML(descriptor.returnType, abbr) }</span>
+            <span class="method_name">{ name }</span>
+            <span class="method_parameters">({ parameterTypes })</span>
+        </span>
+    }
 
 }

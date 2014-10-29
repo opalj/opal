@@ -14,7 +14,7 @@ function toogleFilter() {
 	 document.querySelectorAll("div[class='method']").forEach(function(e){e.style.display = 'none'})
 	 
 	 var filterString = "div[class='method']"
-	 flagsFilter.forEach(function(e){filterString += "[flags*='"+e.value+"']"});
+	 flagsFilter.forEach(function(e){filterString += "[data-method-flags*='"+e.value+"']"});
 	 if(nameFilter.length > 0)
 		 filterString += "[name*='"+document.querySelector('input[type="text"]').value+"']";
 	 	 

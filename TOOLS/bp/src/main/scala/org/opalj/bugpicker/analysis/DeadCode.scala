@@ -28,8 +28,10 @@
  */
 package org.opalj
 package bugpicker
+package analysis
 
 import scala.xml.Node
+import scala.xml.Text
 import scala.xml.UnprefixedAttribute
 import scala.Console.BLUE
 import scala.Console.BOLD
@@ -37,20 +39,29 @@ import scala.Console.GREEN
 import scala.Console.RESET
 import scala.collection.SortedMap
 import org.opalj.br.{ ClassFile, Method }
-import org.opalj.ai.debug.XHTML
+import org.opalj.br.{ typeToXHTML }
+import org.opalj.br.{ methodToXHTML }
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ConditionalBranchInstruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import scala.xml.Unparsed
 
+/**
+ * Collection of all information related to some piece of code that was identified
+ * as being dead.
+ */
 case class DeadCode(
         classFile: ClassFile,
         method: Method,
         ctiPC: PC,
         operands: List[_],
         deadPC: PC,
-        accuracy: Option[Percentage]) extends BugReport {
+        relevance: Option[Relevance]) extends Issue {
+
+    override def category: String = IssueCategory.Flawed
+
+    override def kind: String = IssueKind.DeadBranch
 
     def ctiInstruction = method.body.get.instructions(ctiPC)
 
@@ -125,48 +136,63 @@ case class DeadCode(
                     val condition =
                         if (cbi.operandCount == 1)
                             List(
-                                <span class="value">{ operands.head }</span>,
-                                <span class="operator">{ cbi.operator }</span>
+                                <span class="value">{ operands.head } </span>,
+                                <span class="operator">{ cbi.operator } </span>
                             )
                         else
                             List(
-                                <span class="value">{ operands.tail.head }</span>,
-                                <span class="operator">{ cbi.operator }</span>,
-                                <span class="value">{ operands.head }</span>
+                                <span class="value">{ operands.tail.head } </span>,
+                                <span class="operator">{ cbi.operator } </span>,
+                                <span class="value">{ operands.head } </span>
                             )
-                    <span class="keyword">if</span> :: condition
+                    <span class="keyword">if&nbsp;</span> :: condition
 
                 case cbi: CompoundConditionalBranchInstruction ⇒
                     Seq(
-                        <span class="keyword">switch</span>,
-                        <span class="value">{ operands.head }</span>
+                        <span class="keyword">switch </span>,
+                        <span class="value">{ operands.head } </span>
                         <span> (case values: { cbi.caseValues.mkString(", ") } )</span>
                     )
             }
 
+        val methodId = method.name + method.descriptor.toJVMDescriptor
+
         val pcNode =
-            <span class="tooltip">
+            <span data-class={ classFile.fqn } data-method={ methodId } data-pc={ ctiPC.toString } data-line={ line.map(_.toString).getOrElse("") } data-show="bytecode">
                 { ctiPC }
-                <span>{ iNode }</span>
             </span>
 
-        val node =
-            <tr style={
-                val color = accuracy.map(a ⇒ a.asHTMLColor).getOrElse("rgb(255, 126, 3)")
-                s"color:$color;"
-            }>
-                <td>
-                    { XHTML.typeToXHTML(classFile.thisType) }
-                </td>
-                <td>{ XHTML.methodToXHTML(method.name, method.descriptor) }</td>
-                <td>{ pcNode }{ "/ "+ctiLineNumber.getOrElse("N/A") }</td>
-                <td>{ message }</td>
-            </tr>
+        val methodLine: String =
+            method.body.flatMap(_.firstLineNumber.map { ln ⇒
+                if (ln > 0) (ln - 1).toString else "0"
+            }).getOrElse("")
 
-        accuracy match {
+        val color = s"color:${relevance.map(a ⇒ a.asHTMLColor).getOrElse("rgb(255, 126, 3)")};"
+
+        val node =
+            <div class="issue" style={ color }>
+                <dl>
+                    <dt>class</dt>
+                    <dd class="declaring_class" data-class={ classFile.fqn }>{ typeToXHTML(classFile.thisType) }</dd>
+                    <dt>method</dt>
+                    <dd class="method" data-class={ classFile.fqn } data-method={ methodId } data-line={ methodLine }>
+                        { methodToXHTML(method.name, method.descriptor) }
+                    </dd>
+                    <dt>pc</dt>
+                    <dd class="program_counter">{ pcNode }</dd>
+                    <dt>line</dt>
+                    <dd class="line_number">{ line.map(ln ⇒ <span data-class={ classFile.fqn } data-method={ methodId } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>).getOrElse(Text("N/A")) }</dd>
+                </dl>
+                <div class="issue_message">
+                    <p>{ message }</p>
+                    <p>{ iNode }</p>
+                </div>
+            </div>
+
+        relevance match {
             case Some(a) ⇒
                 node % (
-                    new UnprefixedAttribute("data-accuracy", a.value.toString(), scala.xml.Null)
+                    new UnprefixedAttribute("data-relevance", a.value.toString(), scala.xml.Null)
                 )
             case None ⇒
                 node
@@ -175,7 +201,7 @@ case class DeadCode(
     }
 
     override def toString = {
-        import Console._
+        import scala.Console._
         val declaringClassOfMethod = classFile.thisType.toJava
 
         "Dead code in "+BOLD + BLUE +

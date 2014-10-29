@@ -110,35 +110,6 @@ object XHTML {
         }
     }
 
-    def typeToXHTML(t: Type): Node = {
-        t match {
-            case ot: ObjectType ⇒
-                <span class="tooltip object_type">
-                    { ot.simpleName }<span class="fqn">{ ot.toJava }</span>
-                </span>
-            case at: ArrayType ⇒
-                <span class="array_type">
-                    { typeToXHTML(at.elementType) }{ (1 to at.dimensions).map(i ⇒ "[]") }
-                </span>
-            case bt: BaseType ⇒
-                <span class="base_type">{ bt.toJava }</span>
-            case vt: VoidType ⇒
-                <span class="void_type">void</span>
-        }
-    }
-
-    def methodToXHTML(name: String, descriptor: MethodDescriptor): Node = {
-        <span class="method_signature">
-            { typeToXHTML(descriptor.returnType) }
-            { name }
-            <span class="method_parameters">
-                (
-                { descriptor.parameterTypes.map(typeToXHTML(_)) }
-                )
-            </span>
-        </span>
-    }
-
     /**
      * In case that during the validation some exception is thrown, a dump of
      * the current memory layout is written to a temporary file and opened in a
@@ -321,9 +292,7 @@ object XHTML {
                         <th class="instruction">Instruction</th>
                         <th class="stack">Operand Stack</th>
                         {
-                            if (operandsOnly)
-                                NodeSeq.Empty
-                            else {
+                            if (operandsOnly) NodeSeq.Empty else {
                                 <th class="registers">Registers</th>
                                 <th class="properties">Properties</th>
                             }
@@ -403,10 +372,7 @@ object XHTML {
             <td class="instruction">{ Unparsed(instruction.toString(pc).replace("\n", "<br>")) }</td>
             <td class="stack">{ dumpStack(operands) }</td>
             {
-                if (operandsOnly)
-                    NodeSeq.Empty
-                else {
-
+                if (operandsOnly) NodeSeq.Empty else {
                     <td class="locals">{ dumpLocals(locals) }</td>
                     <td class="properties">{ properties }</td>
                 }
