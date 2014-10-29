@@ -657,6 +657,97 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         describe("the behavior of iushr") {
 
+            it("[20, 20] >>> [2,4] => [1,5]") {
+                val v = IntegerRange(20, 20)
+                val s = IntegerRange(2, 4)
+
+                iushr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 1
+                        ub should be >= 5
+
+                    case v ⇒ fail(s"expect Range between [1, 5]; found $v")
+                }
+            }
+
+            it("[Int.MinValue, Int.MinValue+100] >>> [25,45] => [1,64]") {
+                val v = IntegerRange(Int.MinValue, Int.MinValue + 100)
+                val s = IntegerRange(25, 45)
+
+                iushr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 1
+                        ub should be >= 64
+
+                    case v ⇒ fail(s"expect Range between [1, 64]; found $v")
+                }
+            }
+
+            it("[2, 4] >>> [25,45] => [0,0]") {
+                val v = IntegerRange(2, 4)
+                val s = IntegerRange(25, 45)
+
+                iushr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+                        ub should be >= 0
+
+                    case v ⇒ fail(s"expect Range between [0, 0]; found $v")
+                }
+            }
+
+            it("[-2, 4] >>> [25,45] => [0,127]") {
+                val v = IntegerRange(-2, 4)
+                val s = IntegerRange(25, 45)
+
+                iushr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 0
+                        ub should be >= 127
+
+                    case v ⇒ fail(s"expect Range between [0, 127]; found $v")
+                }
+            }
+
+            it("[5, 20] >>> [-20,1] => [2,20]") {
+                val v = IntegerRange(5, 20)
+                val s = IntegerRange(-20, 1)
+
+                iushr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= 2
+                        ub should be >= 20
+
+                    case v ⇒ fail(s"expect Range between [2, 20]; found $v")
+                }
+            }
+
+            it("[-5, 20] >>> [-20,1] => [-5,2147483647]") {
+                val v = IntegerRange(-5, 20)
+                val s = IntegerRange(-20, 1)
+
+                iushr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -5
+                        ub should be >= 2147483647
+
+                    case v ⇒ fail(s"expect Range between [-5, 2147483647]; found $v")
+                }
+            }
+
+            it("[-20, -5] >>> [-20,1] => [-20,2147483645]") {
+                val v = IntegerRange(-20, -5)
+                val s = IntegerRange(-20, 1)
+
+                iushr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -20
+                        ub should be >= 2147483645
+
+                    case v ⇒ fail(s"expect Range between [-20, 2147483645]; found $v")
+                }
+            }
+
             it("[Int.MinValue, Int.MinValue+100] >>> [25,31] => [1,64]") {
                 val v = IntegerRange(Int.MinValue, Int.MinValue + 100)
                 val s = IntegerRange(25, 31)
@@ -664,34 +755,34 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 iushr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
                         lb should be <= 1
-
                         ub should be >= 64
+
                     case v ⇒ fail(s"expect Range between [1, 64]; found $v")
                 }
             }
 
-            it("[Int.MaxValue+10000,Int.MaxValue] >>> [4,8] => [8388568,134217727]") {
-                val v = IntegerRange(Int.MaxValue + 10000, Int.MaxValue)
+            it("[Int.MinValue+9999,Int.MaxValue] >>> [4,8] => [8388568,134217727]") {
+                val v = IntegerRange(Int.MinValue + 9999, Int.MaxValue)
                 val s = IntegerRange(4, 8)
 
                 iushr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
                         lb should be <= 8388568
-
                         ub should be >= 134217727
+
                     case v ⇒ fail(s"expect Range between [8388568,134217727]; found $v")
                 }
             }
 
-            it("[-1, 1] >>> [4,8] => [-1,2147483647]") {
+            it("[-1, 1] >>> [4,8] => [0, 268435455]") {
                 val v = IntegerRange(-1, 1)
-                val s = IntegerRange(0, 12)
+                val s = IntegerRange(4, 8)
 
                 iushr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
-                        lb should be <= -1
+                        lb should be <= 0
+                        ub should be >= 268435455
 
-                        ub should be >= 2147483647
                     case v ⇒ fail(s"expect Range between [-1,2147483647]; found $v")
                 }
             }
@@ -703,8 +794,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 iushr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
                         lb should be <= -25
-
                         ub should be >= 2147483647
+
                     case v ⇒ fail(s"expect Range between [-25,2147483647]; found $v")
                 }
             }
@@ -716,8 +807,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 iushr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
                         lb should be <= 0
-
                         ub should be >= 60
+
                     case v ⇒ fail(s"expect Range between [0,60]; found $v")
                 }
             }
@@ -729,8 +820,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 iushr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
                         lb should be <= 0
-
                         ub should be >= 1
+
                     case v ⇒ fail(s"expect Range between [0,60]; found $v")
                 }
             }
@@ -742,8 +833,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 iushr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
                         lb should ===(0)
-
                         ub should ===(0)
+
                     case v ⇒ fail(s"expect Range between [0,0]; found $v")
                 }
             }
@@ -755,8 +846,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 iushr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
                         lb should ===(134217727)
-
                         ub should ===(134217727)
+
                     case v ⇒ fail(s"expect Range between [134217727,134217727]; found $v")
                 }
             }
@@ -768,8 +859,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 iushr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
                         lb should be <= 0
-
                         ub should be >= (134217727)
+
                     case v ⇒ fail(s"expect Range between [0,134217727]; found $v")
                 }
             }
@@ -781,8 +872,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 iushr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
                         lb should be <= -15
-
                         ub should be >= 2147483647
+
                     case v ⇒ fail(s"expect Range between [-15,2147483647]; found $v")
                 }
             }
@@ -794,8 +885,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 iushr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
                         lb should be <= 0
-
                         ub should be >= 45
+
                     case v ⇒ fail(s"expect Range between [0,45]; found $v")
                 }
             }
@@ -807,8 +898,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 iushr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
                         lb should be <= -45
-
                         ub should be >= 2147483645
+
                     case v ⇒ fail(s"expect Range between [0,45]; found $v")
                 }
             }
