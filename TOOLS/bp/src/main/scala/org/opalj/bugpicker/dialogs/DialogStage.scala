@@ -86,7 +86,7 @@ object DialogStage {
                         alignment = Pos.CENTER
                     }
                 }
-                stylesheets += BugPicker.defaultStyles
+                stylesheets += BugPicker.defaultAppCSSURL
             }
         }
         stage.showAndWait()

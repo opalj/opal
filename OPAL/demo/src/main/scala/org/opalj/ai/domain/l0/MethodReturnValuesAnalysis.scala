@@ -55,21 +55,21 @@ object MethodReturnValuesAnalysis extends AnalysisExecutor {
         val ai: InterruptableAI[_],
         val method: Method)
             extends Domain
+            with domain.TheProject[java.net.URL]
+            with domain.ProjectBasedClassHierarchy
+            with domain.TheMethod
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultPrimitiveValuesConversions
             with domain.l0.DefaultTypeLevelIntegerValues
             with domain.l0.DefaultTypeLevelLongValues
             with domain.l0.DefaultTypeLevelFloatValues
             with domain.l0.DefaultTypeLevelDoubleValues
+            with domain.l0.DefaultPrimitiveValuesConversions
             with domain.l0.TypeLevelFieldAccessInstructions
             with domain.l0.TypeLevelInvokeInstructions
             with domain.l0.DefaultReferenceValuesBinding
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
-            with domain.TheProject[java.net.URL]
-            with domain.TheMethod
-            with domain.ProjectBasedClassHierarchy
             with domain.RecordReturnedValuesInfrastructure {
 
         type ReturnedValue = DomainValue

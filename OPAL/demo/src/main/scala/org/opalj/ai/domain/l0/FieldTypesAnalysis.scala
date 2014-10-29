@@ -41,10 +41,51 @@ import org.opalj.ai.ComputationWithSideEffectOnly
 import org.opalj.ai.domain
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.UpperTypeBound
-import org.opalj.br.UpperTypeBound
 
 /**
- * A shallow analysis that tries to refine the return types of methods.
+ * This analysis performs a simple abstract interpretation of all methods of a class
+ * to identify fields that are always initialized with null or which are always assigned
+ * an object that is a subtype of the field's declared type.
+ *
+ * @note
+ * WE IGNORE THOSE FIELDS WHICH SEEMS TO BE ALWAYS NULL, BUT FOR WHICH
+ * WE CAN EITHER FIND A "SETTER METHOD" OR "A CONSTANT WITH THE NAME OF
+ * THE VARIABLE". FURTHERMORE, IF THE CLASS DEFINES NO PUBLIC OR PROTECTED
+ * CONSTRUCTOR THE FIELDS ARE ALSO IGNORED.
+ *
+ * THESE FIELDS ARE OFTEN INITIALZED - AT RUNTIME - BY SOME CODE OUTSIDE
+ * THE SCOPE OF "PURE" JAVA BASED ANALYSeS.
+ *
+ * E.G., WE IGNORE THE FOLLOWING FIELDS FROM JAVA 8:
+ *  - [BY NAME] java.util.concurrent.FutureTask{ runner:null // Originaltype: java.lang.Thread }
+ *  - [BY NAME] java.nio.channels.SelectionKey{ attachment:null // Originaltype: java.lang.Object }
+ *  - [BY SETTER] java.lang.System{ err:null // Originaltype: java.io.PrintStream }
+ *  - [BY SETTER] java.lang.System{ in:null // Originaltype: java.io.InputStream }
+ *  - [BY SETTER] java.lang.System{ out:null // Originaltype: java.io.PrintStream }
+ *  - [BY CONSTRUCTOR] java.net.InterfaceAddress{ address:null // Originaltype: java.net.InetAddress }
+ *
+ * '''[UPDATE BY NATIVE CODE...] sun.nio.ch.sctp.ResultContainer{ value:null // Originaltype: java.lang.Object }'''
+ *
+ * THE FOLLOWING FIELDS ARE "REALLY" NULL in JAVA 8 (1.8.0 - 1.8.0_25):
+ *  - [OK] java.util.TimeZone{ NO_TIMEZONE:null // Originaltype: java.util.TimeZone }
+ *  - [OK - DEPRECATED] java.security.SecureRandom{ digest:null // Originaltype: java.security.MessageDigest }
+ *
+ * The reason/purpose is not 100% clear:
+ *  - [OK] javax.swing.JList$AccessibleJList$AccessibleJListChild{ accessibleContext:null // Originaltype: javax.accessibility.AccessibleContext }
+ *  - [OK] javax.swing.JList$AccessibleJList$AccessibleJListChild{ component:null // Originaltype: java.awt.Component }
+ *  - [OK] com.sun.corba.se.impl.io.IIOPInputStream{ abortIOException:null // Originaltype: java.io.IOException }
+ *  - [OK] com.sun.corba.se.impl.orb.ORBImpl{ codeBaseIOR:null // Originaltype: com.sun.corba.se.spi.ior.IOR }
+ *  - [OK - ACCIDENTIALLY CREATED?] com.sun.org.apache.xpath.internal.jaxp.XPathImpl{ d:null // Originaltype: org.w3c.dom.Document }
+ *  - [OK - LEGACY CODE?] javax.swing.JPopupMenu{ margin:null // Originaltype: java.awt.Insets }
+ *  - [OK - LEGACY CODE?] sun.audio.AudioDevice{ mixer:null // Originaltype: javax.sound.sampled.Mixer }
+ *  - [OK - RESERVED FOR FUTURE USAGE] com.sun.corba.se.impl.corba.ServerRequestImpl{ _ctx:null // Originaltype: org.omg.CORBA.Context }
+ *  - [OK - LEGACY CODE?] com.sun.java.swing.plaf.motif.MotifPopupMenuUI{ border:null // Originaltype: javax.swing.border.Border }
+ *  - [OK - LEGACY CODE?] com.sun.media.sound.SoftSynthesizer{ testline:null // Originaltype: javax.sound.sampled.SourceDataLine }
+ *  - [OK - LEGACY CODE?] com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaLoader{ fSymbolTable:null // Originaltype: com.sun.org.apache.xerces.internal.util.SymbolTable }
+ *  - [OK - LEGACY CODE] com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl{ _piParams:null // Originaltype: java.util.Hashtable }
+ *  - [OK - RSERVED FOR FUTURE USAGE?] com.sun.org.apache.xml.internal.dtm.ref.DTMDefaultBase{ m_namespaceLists:null // Originaltype: java.util.Vector }
+ *  - [OK - LEGACY CODE?] sun.awt.motif.MFontConfiguration{ fontConfig:null // Originaltype: sun.awt.FontConfiguration }
+ *  - [OK - LEGACY CODE?] sun.print.PSStreamPrintJob{ reader:null // Originaltype: java.io.Reader }
  *
  * @author Michael Eichberg
  */
@@ -62,11 +103,11 @@ object FieldTypesAnalysis extends AnalysisExecutor {
             with domain.TheCode
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultPrimitiveValuesConversions
             with domain.l0.DefaultTypeLevelIntegerValues
             with domain.l0.DefaultTypeLevelLongValues
             with domain.l0.DefaultTypeLevelFloatValues
             with domain.l0.DefaultTypeLevelDoubleValues
+            with domain.l0.DefaultPrimitiveValuesConversions
             with domain.l0.TypeLevelFieldAccessInstructions
             with domain.l0.TypeLevelInvokeInstructions
             with domain.l0.DefaultReferenceValuesBinding
@@ -77,6 +118,13 @@ object FieldTypesAnalysis extends AnalysisExecutor {
 
         private[this] var currentCode: Code = null
 
+        /**
+         * Sets the method that is currently analyzed. This method '''must not be called'''
+         * during the abstract interpretation of a method. It is allowed to be called
+         * before this domain is used for the first time and immediately after the
+         * abstract interpretation of the method has completed/before the next interpreation
+         * starts.
+         */
         def setMethodContext(method: Method): Unit = {
             currentCode = method.body.get
         }
@@ -84,36 +132,38 @@ object FieldTypesAnalysis extends AnalysisExecutor {
         def code: Code = currentCode
 
         // Map of fieldNames (that are relevant) and the (refined) type information
-        private[this] val fieldTypeInformation: MutableMap[String /*FieldName*/ , Option[DomainValue]] = {
+        private[this] val fieldInformation: MutableMap[String /*FieldName*/ , Option[DomainValue]] = {
             val relevantFields: Iterable[String] =
                 for {
                     field ← classFile.fields
                     if field.fieldType.isObjectType
-                    // test that there is some potential for specialization
                     fieldType = field.fieldType.asObjectType
+
+                    // test that there is some potential for specialization
                     if !project.classFile(fieldType).map(_.isFinal).getOrElse(false)
                     if classHierarchy.hasSubtypes(fieldType).isYes
+
                     // test that the initialization can be made by the declaring class only:
                     if field.isFinal || field.isPrivate
                 } yield { field.name }
             MutableMap.empty ++ relevantFields.map(_ -> None)
         }
 
-        def hasCandidateFields: Boolean = fieldTypeInformation.nonEmpty
+        def hasCandidateFields: Boolean = fieldInformation.nonEmpty
 
-        def candidateFields: Iterable[String] = fieldTypeInformation.keys
+        def candidateFields: Iterable[String] = fieldInformation.keys
 
         def fieldsWithRefinedTypes: Seq[((ClassFile, Field), UpperTypeBound)] = {
             val refinedFields =
                 for {
                     field ← classFile.fields
-                    Some(ReferenceValue(fieldValue)) ← fieldTypeInformation.get(field.name)
-                    upperTypeBound = { println(classFile.thisType.toJava+" => "+field.toJavaSignature+" = "+fieldValue); fieldValue.upperTypeBound }
+                    Some(ReferenceValue(fieldValue)) ← fieldInformation.get(field.name)
+                    upperTypeBound = fieldValue.upperTypeBound
                     if (upperTypeBound.size != 1) || (upperTypeBound.first ne field.fieldType)
                 } yield {
                     ((classFile, field), upperTypeBound)
                 }
-            println("REFINEDFIELDS:"+refinedFields.mkString(", "))
+
             refinedFields
         }
 
@@ -122,20 +172,19 @@ object FieldTypesAnalysis extends AnalysisExecutor {
             declaringClassType: ObjectType,
             name: String): Unit = {
             if ((declaringClassType eq thisClassType) &&
-                fieldTypeInformation.contains(name)) {
-                fieldTypeInformation(name) match {
+                fieldInformation.contains(name)) {
+                fieldInformation(name) match {
                     case Some(previousValue) ⇒
                         if (previousValue ne value) {
                             previousValue.join(Int.MinValue, value) match {
                                 case SomeUpdate(newValue) ⇒
-                                    fieldTypeInformation.update(name, Some(newValue))
+                                    fieldInformation.update(name, Some(newValue))
                                 case NoUpdate ⇒ /*nothing to do*/
                             }
                         }
                     case None ⇒
-                        fieldTypeInformation.update(name, Some(value))
+                        fieldInformation.update(name, Some(value))
                 }
-                println("Update "+thisClassType.toJava+" => "+name+":"+classFile.findField(name).get.fieldType.toJava+" <=> "+fieldTypeInformation(name))
             }
         }
 
@@ -190,7 +239,7 @@ object FieldTypesAnalysis extends AnalysisExecutor {
                     domain = new FieldTypesAnalysisDomain(theProject, classFile)
                     if domain.hasCandidateFields
                 } yield {
-                    println(classFile.thisType.toJava+" => "+domain.candidateFields.mkString(", "))
+                    // println(classFile.thisType.toJava+" => "+domain.candidateFields.mkString(", "))
                     classFile.methods.foreach { method ⇒
                         if (method.body.isDefined) {
                             domain.setMethodContext(method)
@@ -205,7 +254,15 @@ object FieldTypesAnalysis extends AnalysisExecutor {
             BasicReport(
                 refinedFieldTypes.seq.map { info ⇒
                     val ((classFile, field), upperTypeBound) = info
-                    classFile.thisType.toJava+"{ "+field.name+":"+upperTypeBound.map { _.toJava }.mkString(" with ")+" // Originaltype: "+field.fieldType.toJava+" }"
+                    classFile.thisType.toJava+"{ "+
+                        field.name+":"+
+                        {
+                            if (upperTypeBound.isEmpty)
+                                "null"
+                            else
+                                upperTypeBound.map { _.toJava }.mkString(" with ")
+                        }+
+                        " // Originaltype: "+field.fieldType.toJava+" }"
                 }.mkString("\n")+
                     "\n"+
                     "Number of refined field types: "+refinedFieldTypes.size+"\n"

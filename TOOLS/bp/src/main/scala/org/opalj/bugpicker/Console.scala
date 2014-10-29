@@ -62,7 +62,7 @@ object Console extends AnalysisExecutor { analysis ⇒
             val results @ (analysisTime, issues) =
                 bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
 
-            val doc = XHTML.createXHTML(Some(title), BugPickerAnalysis.resultsAsXHTML(results))
+            val doc = BugPickerAnalysis.resultsAsXHTML(results).toString
             writeAndOpen(doc, "BugPickerAnalysisResults", ".html")
 
             //            BasicReport(

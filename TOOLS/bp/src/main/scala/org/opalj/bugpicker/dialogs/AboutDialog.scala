@@ -48,7 +48,12 @@ import scalafx.scene.control.Hyperlink
 class AboutDialog(owner: Stage, showUrl: String ⇒ Unit) extends DialogStage(owner) {
     self ⇒
 
-    val version = processSource(scala.io.Source.fromURL(getClass.getResource("/org/opalj/bugpicker/version.txt")))(_.mkString(""))
+    val version =
+        processSource(
+            scala.io.Source.fromURL(
+                getClass.getResource("/org/opalj/bugpicker/version.txt")
+            )
+        )(_.mkString(""))
 
     title = "About BugPicker"
 
@@ -91,6 +96,6 @@ class AboutDialog(owner: Stage, showUrl: String ⇒ Unit) extends DialogStage(ow
                 alignment = Pos.CENTER
             }
         }
-        stylesheets += BugPicker.defaultStyles
+        stylesheets += BugPicker.defaultAppCSSURL
     }
 }

@@ -112,7 +112,7 @@ class ProgressManagementDialog(
                 BorderPane.setMargin(this, Insets(10))
             }
         }
-        stylesheets += BugPicker.defaultStyles
+        stylesheets += BugPicker.defaultAppCSSURL
         filterEvent(KeyEvent.KeyPressed) { e: KeyEvent ⇒
             if (e.code.equals(KeyCode.ESCAPE)) cancelAnalysisAndCloseWindow()
         }

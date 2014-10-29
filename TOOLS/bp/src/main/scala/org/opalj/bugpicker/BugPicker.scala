@@ -121,7 +121,8 @@ class BugPicker extends Application {
             }
         }
 
-        def screenForStage(stage: Stage): Screen = Screen.screensForRectangle(stage.x(), stage.y(), stage.width(), stage.height()).head
+        def screenForStage(stage: Stage): Screen =
+            Screen.screensForRectangle(stage.x(), stage.y(), stage.width(), stage.height()).head
 
         def maximizeOnCurrentScreen(stage: Stage) {
             val currentScreen = screenForStage(stage)
@@ -263,7 +264,7 @@ class BugPicker extends Application {
                 )
             }
 
-            stylesheets += BugPicker.defaultStyles
+            stylesheets += BugPicker.defaultAppCSSURL
         }
 
         stage.handleEvent(WindowEvent.WindowShown) { e: WindowEvent ⇒
@@ -293,6 +294,7 @@ class BugPicker extends Application {
 }
 
 object BugPicker {
+
     final val PREFERENCES_KEY = "/org/opalj/bugpicker"
     final val PREFERENCES = Preferences.userRoot().node(PREFERENCES_KEY)
     final val PREFERENCES_KEY_CLASSES = "classes"
@@ -303,9 +305,7 @@ object BugPicker {
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES = "maxCardinalityOfIntegerRanges"
     final val PREFERENCES_KEY_WINDOW_SIZE = "windowSize"
 
-    def defaultStyles = getClass.getResource("/org/opalj/bugpicker/style.css").toExternalForm
-
-    val sep = File.pathSeparator
+    final val defaultAppCSSURL = getClass.getResource("/org/opalj/bugpicker/app.css").toExternalForm
 
     def loadWindowSizeFromPreferences(): Option[Rectangle2D] = {
         val prefValue = PREFERENCES.get(PREFERENCES_KEY_WINDOW_SIZE, "")
@@ -333,14 +333,20 @@ object BugPicker {
     }
 
     def storeParametersToPreferences(parameters: AnalysisParameters) {
-        PREFERENCES.putInt(PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME, parameters.maxEvalTime)
-        PREFERENCES.putDouble(PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR, parameters.maxEvalFactor)
-        PREFERENCES.putInt(PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES, parameters.maxCardinalityOfIntegerRanges)
+        PREFERENCES.putInt(
+            PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
+            parameters.maxEvalTime)
+        PREFERENCES.putDouble(
+            PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
+            parameters.maxEvalFactor)
+        PREFERENCES.putInt(
+            PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
+            parameters.maxCardinalityOfIntegerRanges)
     }
 
     def storeFilesToPreferences(loadedFiles: LoadedFiles) {
         def filesToPref(key: String, files: Seq[File]) =
-            PREFERENCES.put(key, files.mkString(sep))
+            PREFERENCES.put(key, files.mkString(File.pathSeparator))
 
         filesToPref(PREFERENCES_KEY_CLASSES, loadedFiles.projectFiles)
         filesToPref(PREFERENCES_KEY_SOURCES, loadedFiles.projectSources)
@@ -349,7 +355,7 @@ object BugPicker {
 
     def loadFilesFromPreferences(): Option[LoadedFiles] = {
         def prefAsFiles(key: String): Seq[File] =
-            PREFERENCES.get(key, "").split(sep).filterNot(_.isEmpty).map(new File(_))
+            PREFERENCES.get(key, "").split(File.pathSeparator).filterNot(_.isEmpty).map(new File(_))
 
         if (!PREFERENCES.nodeExists(""))
             return None
@@ -358,6 +364,7 @@ object BugPicker {
         val sources = prefAsFiles(PREFERENCES_KEY_SOURCES)
         Some(LoadedFiles(projectFiles = classes, projectSources = sources, libraries = libs))
     }
+
     def main(args: Array[String]) {
         Application.launch(classOf[BugPicker], args: _*)
     }
