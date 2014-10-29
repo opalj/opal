@@ -762,14 +762,15 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                 val r = vlb << slb
                 IntegerRange(r)
 
-            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb >= 0 ⇒
-                val maxShift = if (sub > 31 || sub < 0) 31 else sub
-                val minShift = if (slb >= 0 && slb <= 31 && sub <= 31) slb else 0
-                val max = vub.toLong << maxShift
-                if (max <= Int.MaxValue)
-                    IntegerRange(vlb << minShift, max.toInt)
-                else
-                    IntegerValue(pc)
+            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
+                if (vlb >= 0) {
+                    val maxShift = if (sub > 31 || sub < 0) 31 else sub
+                    val minShift = if (slb >= 0 && slb <= 31 && sub <= 31) slb else 0
+                    val max = vub.toLong << maxShift
+                    if (max <= Int.MaxValue)
+                        IntegerRange(vlb << minShift, max.toInt)
+                    else IntegerValue(pc)
+                } else IntegerValue(pc)
 
             case _ ⇒
                 IntegerValue(pc)
@@ -787,51 +788,39 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
     }
 
     override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        //        (value1, value2) match {
-        //            case (v: IntegerRange, s: IntegerRange) ⇒
-        //                println(s"$v iushr $s")
-        //            case _ ⇒
-        //        }
-        IntegerValue(pc)
+                (value1, value2) match {
+                    case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
+                        if (vlb >= 0) {
+                            val maxShift = if (sub > 31 || sub < 0) 31 else sub
+                            val minShift = if (slb >= 0 && slb <= 31 && sub <= 31) slb else 0
+        
+                            val lb = vlb >>> maxShift
+                            val ub = vub >>> minShift
+        
+                            IntegerRange(lb, ub)
+                        } else if (vlb < 0 && vub >= 0) {
+                            val maxShift = if (sub > 31 || sub < 0) 31 else sub
+                            val minShift = if (slb >= 0 && slb <= 31 && sub <= 31) slb else 0
+        
+                            val lb = if (minShift == 0) vlb else 0
+                            val ub = if (minShift == 0) -1 >>> 1 else -1 >>> minShift
+        
+                            IntegerRange(lb, ub)
+                        } else { // last case: vub < 0
+                            val maxShift = if (sub > 31 || sub < 0) 31 else sub
+                            val minShift = if (slb >= 0 && slb <= 31 && sub <= 31) slb else 0
+        
+                            val lb = if (minShift == 0) vlb else vub >>> maxShift
+                            val ub = if (minShift != 0) vub >>> minShift else if (maxShift > 0) vub >>> 1 else vub
+        
+                            IntegerRange(lb, ub)
+                        }
+                    case _ ⇒ IntegerValue(pc)
+                }
     }
 
     override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            // IMPROVE [IntegerRangeValues] General handling of "xor" for two integer range values
-            // TODO other cases + improve accuracy and perfomance
-            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
-                if (vub >= 0 && sub >= 0) {
-                    val maxValue = if (vub > sub) vub else sub
-                    val maxValueBitLength = (32 - Integer.numberOfLeadingZeros(maxValue))
-
-                    val ub = (1 << maxValueBitLength) - 1
-
-                    IntegerRange(0, ub)
-
-                } else if (vub < 0 && sub < 0) {
-                    /* The main idea behind these calculations is to find the switching of the bits, since this switching can lead to the min and max 
-                     * values of the result range. Bitranges of v and s that overlapp are good approximations of the ranges, since these overlappings
-                     * indicate a nullification (e.g. -3 ^ -3 = 0) and approximate the max value better.      
-                  	*/
-                    val bitRangeV = ((32 - Integer.numberOfLeadingZeros(-1 * vub)) to (32 - Integer.numberOfLeadingZeros(-1 * vlb) + 1)).toList
-                    val bitRangeS = ((32 - Integer.numberOfLeadingZeros(-1 * sub)) to (32 - Integer.numberOfLeadingZeros(-1 * slb) + 1)).toList
-
-                    val minValue = if (vlb < slb) vlb else slb
-                    val numBitsMinValue = (32 - Integer.numberOfLeadingZeros(-1 * minValue))
-
-                    val maxValue = if (vub > sub) vub else sub
-                    val numBitsMaxValue = (32 - Integer.numberOfLeadingZeros(-1 * maxValue))
-
-                    val intersectionResult = (bitRangeV intersect bitRangeS)
-
-                    val lb = if (intersectionResult.isEmpty) (1 << numBitsMaxValue) - 1 else 0
-                    val ub = if (intersectionResult.isEmpty) (1 << numBitsMinValue) - 1 else (1 << intersectionResult.last) - 1
-
-                    IntegerRange(lb, ub)
-                } else IntegerValue(pc)
-
-            case _ ⇒ IntegerValue(pc)
-        }
+        IntegerValue(pc)
     }
 
     //
