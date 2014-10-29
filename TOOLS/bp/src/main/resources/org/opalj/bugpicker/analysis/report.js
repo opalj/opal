@@ -26,27 +26,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package bugpicker
-
-object BugReportOrdering extends scala.math.Ordering[BugReport] {
-
-    def compare(x: BugReport, y: BugReport): Int = {
-        if (x.classFile.fqn < y.classFile.fqn) {
-            -1
-        } else if (x.classFile.fqn == y.classFile.fqn) {
-            val methodComparison = x.method.compare(y.method)
-            if (methodComparison == 0) {
-                if (x.line.isDefined)
-                    x.line.get - y.line.get
-                else
-                    x.pc - y.pc
-            } else {
-                methodComparison
-            }
-        } else {
-            1
-        }
-    }
-
+function updateRelevance(value) {
+	document.querySelectorAll("*[data-relevance]").forEach(
+    	function(e){
+        	e.dataset.relevance < value ? e.style.display="none" : e.style.display="block"
+		}
+    )
 }

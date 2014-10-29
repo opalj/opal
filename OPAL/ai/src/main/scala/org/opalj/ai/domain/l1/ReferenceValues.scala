@@ -100,11 +100,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             hasOrigin: ValueOrigin)(
                 isNull: Answer,
                 operands: Operands,
-                locals: Locals): (Operands, Locals) =
+                locals: Locals): (Operands, Locals) = {
             propagateRefinementIf(hasOrigin)(isNull, operands, locals)(
                 (rv: ReferenceValue, vo: ValueOrigin, isNull: Answer) ⇒
                     rv.refineIsNullIf(vo)(isNull)
             )
+        }
 
         /**
          * Refines the upper bound of this value's type to the given supertype.

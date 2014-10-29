@@ -121,6 +121,7 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * This is true for concrete ranges as well as `AnIntegerValue`s.
  *
  * @author Michael Eichberg
+ * @author Christos Votskos
  */
 trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues {
     domain: JoinStabilization with IdentityBasedAliasBreakUpDetection with Configuration with VMLevelExceptionsFactory ⇒
@@ -733,24 +734,39 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
 
     override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
-                if (vub >= 0 && sub < 0) {
-                    IntegerRange(slb, -1)
-                } else if (vub < 0 && sub >= 0) {
-                    IntegerRange(vlb, -1)
-                } else if (vub < 0 && sub < 0) {
-                    val lb = if (vlb < slb) slb else vlb
+            case (IntegerRange(llb, lub), IntegerRange(rlb, rub)) if llb == lub && rlb == rub ⇒
+                val result = llb | rlb
+                IntegerRange(result, result)
+
+            case (IntegerRange(llb, lub), IntegerRange(rlb, rub)) ⇒
+                // We have two "arbitrary" ranges.
+                // Recall that negative values always have a "1" in the highest Bit
+                // and that -1 is the value where all 32 bits are "1".
+
+                if (lub >= 0 && rub < 0) {
+                    IntegerRange(rlb, -1)
+                } else if (lub < 0 && rub >= 0) {
+                    IntegerRange(llb, -1)
+                } else if (lub < 0 && rub < 0) {
+                    val lb = Math.max(llb, rlb)
                     IntegerRange(lb, -1)
                 } else {
-                    val maxValue = if (vub < sub) sub else vub
-
-                    val ub = if (maxValue != 0) (Integer.highestOneBit(maxValue) << 1) - 1 else 0
-                    val lb = if (vlb < slb) vlb else slb
-
+                    // both values are positive (lbs are >= 0) and at least one
+                    // value is not just 0.
+                    import Integer.{ numberOfLeadingZeros ⇒ nlz }
+                    val max = Math.max(rub, lub)
+                    val nlzMax = nlz(max)
+                    val ub =
+                        if (nlzMax == 1)
+                            Int.MaxValue
+                        else // nlzMax >= 2
+                            (1 << (33 - nlzMax)) - 1
+                    val lb = if (llb < rlb) llb else rlb
                     IntegerRange(lb, ub)
                 }
 
-            case _ ⇒ IntegerValue(pc)
+            case _ ⇒
+                IntegerValue(pc)
         }
     }
 
@@ -777,18 +793,23 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         }
     }
 
-    override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        //        (value1, value2) match {
-        //            case (v: IntegerRange, s: IntegerRange) ⇒
-        //                println(s"$v ishr $s")
-        //            case _ ⇒
-        //        }
+    override def ishr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
+        (value, shift) match {
+            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub ⇒
+                val r = vlb >> slb
+                IntegerRange(r)
 
-        IntegerValue(pc)
+            // IMPROVE [IntegerRangeValues] Generalized handling of right shifts
+            // case  (IntegerRange(vlb, vub), IntegerRange(slb, sub))  =>
+
+            case _ ⇒
+                IntegerValue(pc)
+        }
+
     }
 
-    override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-                (value1, value2) match {
+    override def iushr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
+        (value, shift) match {
                     case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
                         if (vlb >= 0) {
                             val maxShift = if (sub > 31 || sub < 0) 31 else sub
@@ -817,10 +838,19 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                         }
                     case _ ⇒ IntegerValue(pc)
                 }
+
     }
 
     override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        IntegerValue(pc)
+        (value1, value2) match {
+            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub ⇒
+                IntegerRange(vlb ^ slb)
+
+            // IMPROVE [IntegerRangeValues] General handling of "xor" for two integer range values
+
+            case _ ⇒
+                IntegerValue(pc)
+        }
     }
 
     //

@@ -28,21 +28,31 @@
  */
 package org.opalj
 package ai
+package domain
+package l1
 
 import java.net.URL
-
 import org.opalj.collection.immutable.{ UIDSet, UIDSet1 }
-
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project, SomeProject }
+import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.{ ReferenceType }
+import org.opalj.ai.Domain
+import org.opalj.ai.InterruptableAI
+import org.opalj.ai.IsAReferenceValue
+import org.opalj.ai.domain
+import org.opalj.util.PerformanceEvaluation.time
+import scala.Console.BLUE
+import scala.Console.BOLD
+import scala.Console.GREEN
+import scala.Console.RESET
+import scala.Iterable
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
  *
  * @author Michael Eichberg
  */
-object IdentifyingReturnTypes extends AnalysisExecutor {
+object MethodReturnValuesAnalysis extends AnalysisExecutor {
 
     class AnalysisDomain(
         override val project: Project[java.net.URL],
@@ -83,7 +93,7 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
                 theReturnedValue = summarize(Int.MinValue, Iterable(theReturnedValue, value))
 
             typeOfValue(theReturnedValue) match {
-                case rv @ IsAReferenceValue(UIDSet1(`originalReturnType`)) if rv.isNull.isUnknown || !rv.isPrecise ⇒
+                case rv @ IsAReferenceValue(UIDSet1(`originalReturnType`)) if rv.isNull.isUnknown && !rv.isPrecise ⇒
                     // the return type will not be more precise than the original type
                     ai.interrupt()
                 case _ ⇒ /*go on*/
@@ -97,7 +107,7 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
             "Derives Information About Returned Values"
 
         override def description: String =
-            "Identifies methods where we can – statically – derive more precise return type information."
+            "Identifies methods where we can – statically – derive more precise return type/value information."
 
         override def doAnalyze(
             theProject: Project[URL],
@@ -117,8 +127,7 @@ object IdentifyingReturnTypes extends AnalysisExecutor {
                     result = ai(classFile, method, domain)
                     if !result.wasAborted
                     if domain.returnedValue.isEmpty ||
-                        (domain.returnedValue.get.isInstanceOf[IsAReferenceValue] &&
-                            domain.returnedValue.get.asInstanceOf[IsAReferenceValue].upperTypeBound != UIDSet(originalType))
+                        domain.returnedValue.get.asInstanceOf[IsAReferenceValue].upperTypeBound != UIDSet(originalType)
                 } yield {
                     RefinedReturnType(classFile, method, domain.returnedValue)
                 }
