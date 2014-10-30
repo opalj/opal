@@ -337,13 +337,12 @@ object BugPickerAnalysis {
                 <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
                 <script type="text/javascript">{ Unparsed(bugpicker.htmlJS) }</script>
                 <script type="text/javascript">{ Unparsed(reportJS) }</script>
-                <style>{ bugpicker.htmlCSS }</style>
-                <style>{ reportCSS }</style>
+                <style>{ Unparsed(bugpicker.htmlCSS) }</style>
+                <style>{ Unparsed(reportCSS) }</style>
             </head>
             <body>
                 <div id="analysis_controls">
-                    <span>Number of issues: { methodWithDeadCodeCount }</span>
-                    . 
+                    <span>Number of issues: { methodWithDeadCodeCount }.</span>
                     Suppress issues with an estimated
                     <abbr title='The importance is calculated using the available context information. E.g., a dead "default case" in a switch statement is often the result of defensive programming and, hence, not important.'>importance</abbr>
                     less than:
