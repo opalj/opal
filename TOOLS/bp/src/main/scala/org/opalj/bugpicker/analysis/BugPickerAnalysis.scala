@@ -350,7 +350,7 @@ object BugPickerAnalysis {
                     <input type="range" name="relevance" id="relevance" min="1" max="100" onchange="updateRelevance(this.valueAsNumber)"/>
                     <abbr title="The identified issue is probably very important.">100</abbr>
                     <div>
-                        <a class="onclick" onclick="document.querySelectorAll('details').forEach(function(e){e.setAttribute('open','true')})">Open All Packages</a>
+                        Show all Packages:<a class="onclick" onclick="openAllPackages()">+</a><a class="onclick" onclick="closeAllPackages()">-</a>
                     </div>
                 </div>
                 <div id="analysis_results">
@@ -358,7 +358,8 @@ object BugPickerAnalysis {
                 </div>
                 <script type="text/javascript">
                     document.getElementById('relevance').value=75;
-                	updateRelevance(75);
+                    updateRelevance(75);
+                    openAllPackages();
                 </script>
             </body>
         </html>

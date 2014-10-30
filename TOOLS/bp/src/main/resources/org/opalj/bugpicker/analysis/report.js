@@ -29,7 +29,21 @@
 function updateRelevance(value) {
 	document.querySelectorAll("*[data-relevance]").forEach(
     	function(e){
-        	e.dataset.relevance < value ? e.style.display="none" : e.style.display="block"
+        	e.dataset.relevance < value ? 
+        		e.style.display="none" : 
+        		e.style.display="block"
 		}
     )
+}
+
+function openAllPackages() {
+	document.querySelectorAll('details').forEach(
+		function(e){e.setAttribute('open')}
+	)
+}
+
+function closeAllPackages() {
+	document.querySelectorAll('details').forEach(
+		function(e){e.removeAttribute('open')}
+	)
 }

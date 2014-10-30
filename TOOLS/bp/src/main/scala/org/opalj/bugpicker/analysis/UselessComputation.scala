@@ -95,7 +95,13 @@ case class UselessComputation(
                 if (ln > 0) (ln - 1).toString else "0"
             }).getOrElse("")
 
-        val pcNode = <span data-class={ classFile.fqn } data-method={ methodId } data-line={ line.map(_.toString).getOrElse("") } data-pc={ pc.toString } data-show="bytecode">{ pc }</span>
+        val pcNode =
+            <span data-class={ classFile.fqn } data-method={ methodId } data-line={ line.map(_.toString).getOrElse("") } data-pc={ pc.toString } data-show="bytecode">{ pc }</span>
+
+        val lineNode =
+            line.map { ln ⇒
+                <span data-class={ classFile.fqn } data-method={ methodId } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>
+            }.getOrElse(Text("N/A"))
 
         val styleAttribute = "color:rgb(126, 64, 64)";
 
@@ -110,10 +116,12 @@ case class UselessComputation(
                     <dd class="method" data-class={ classFile.fqn } data-method={ methodId } data-line={ methodLine }>
                         { methodToXHTML(method.name, method.descriptor) }
                     </dd>
-                    <dt>pc</dt>
-                    <dd class="program_counter">{ pcNode }</dd>
-                    <dt>line</dt>
-                    <dd class="line_number">{ line.map(ln ⇒ <span data-class={ classFile.fqn } data-method={ methodId } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>).getOrElse(Text("N/A")) }</dd>
+                    <dt>location</dt>
+                    <dd>
+                        <span class="program_counter">PC={ pcNode }</span>
+                        &nbsp;
+                        <span class="line_number">Line={ lineNode }</span>
+                    </dd>
                 </dl>
                 <div class="issue_message">
                     <p>{ computation }</p>
