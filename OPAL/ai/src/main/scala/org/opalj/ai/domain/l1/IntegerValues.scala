@@ -37,10 +37,13 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
  * This domain enables the tracking of an integer value; unknown integer values
- * are represented using the single instance "AnIntegerValue".
+ * are represented using "AnIntegerValue".
  *
  * Given that it uses one instance to represent arbitrary integer values, constraint
  * propagation is not supported.
+ *
+ * This domain may be appropriate, e.g., if you want to determine if a field/local is
+ * always initialized to a specific value.
  *
  * @author Michael Eichberg
  */
@@ -71,9 +74,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     trait AnIntegerValue extends IntegerLikeValue { this: DomainValue ⇒ }
 
     /**
-     * Represents a range of integer values. The range's bounds are inclusive.
-     * Unless a range has only one value it is impossible to tell whether or not
-     * a value that is in the range will potentially occur at runtime.
+     * Represents one, concrete integer value.
      */
     abstract class TheIntegerValue extends IntegerLikeValue { this: DomainValue ⇒
 
