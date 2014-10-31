@@ -75,22 +75,27 @@ dl{
 	margin: 0;
 }
 dt{	
-font-weight: 300;
-line-height: 1.0em;
+	font-weight: 300;
+	line-height: 1.0em;
 }
 dd{
-display:block;
-margin-top: -1em;
-margin-left: 6em;
-margin-bottom: 0.3em;
+	display:block;
+	margin-top: -1em;
+	margin-left: 6em;
+	margin-bottom: 0.3em;
 }
 
 a.onclick{
-background-color: rgb(19, 91, 204);
-padding: 0.3em;
-line-height: 2em;
-border: 1px solid;
-border-radius: 3px;
+	background-color: rgb(19, 91, 204);
+	padding: 0.3em;
+	line-height: 1em;
+	border: 1px solid;
+	border-radius: 3px;
+	margin: 0.3em;
+	width: 1em;
+	height: 1em;
+	text-align: center;
+	display: inline-block;
 }
 
 a.onclick:hover{

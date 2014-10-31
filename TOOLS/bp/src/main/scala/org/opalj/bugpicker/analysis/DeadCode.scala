@@ -178,10 +178,12 @@ case class DeadCode(
                     <dd class="method" data-class={ classFile.fqn } data-method={ methodId } data-line={ methodLine }>
                         { methodToXHTML(method.name, method.descriptor) }
                     </dd>
-                    <dt>pc</dt>
-                    <dd class="program_counter">{ pcNode }</dd>
-                    <dt>line</dt>
-                    <dd class="line_number">{ line.map(ln ⇒ <span data-class={ classFile.fqn } data-method={ methodId } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>).getOrElse(Text("N/A")) }</dd>
+                    <dt>location</dt>
+                    <dd>
+                        <span class="program_counter">PC={ pcNode }</span>
+                        &nbsp;
+                        <span class="line_number">Line={ line.map(ln ⇒ <span data-class={ classFile.fqn } data-method={ methodId } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>).getOrElse(Text("N/A")) }</span>
+                    </dd>
                 </dl>
                 <div class="issue_message">
                     <p>{ message }</p>

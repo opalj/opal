@@ -156,7 +156,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 v2.join(-1, v1) should be(StructuralUpdate(IntegerRange(-1, 2)))
             }
 
-            it("(join of an IntegerRange value and an IntegerRange value that describes a sub-range) [-1,3] join [0,2] => \"NoUpdate\"") {
+            it("(join of an IntegerRange value and an IntegerRange value that describes a sub-range) [-1,3] join [0,2] => \"MetaInformationUpdate\"") {
                 val v1 = IntegerRange(-1, 3)
                 val v2 = IntegerRange(0, 2)
 
@@ -330,29 +330,42 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
 
-            it("[2,Int.MaxValue] | [8,19] => [2, Int.MaxValue]") {
-                val v = IntegerRange(Int.MinValue, Int.MaxValue)
-                val s = IntegerRange(8, 19)
+            it("[Int.MinValue, Int.MaxValue] | [8,19] => [Int.MinValue, Int.MaxValue]") {
+                val v1 = IntegerRange(Int.MinValue, Int.MaxValue)
+                val v2 = IntegerRange(8, 19)
 
-                ior(-1, v, s) match {
+                ior(-1, v1, v2) match {
                     case (IntegerRange(lb, ub)) ⇒
-                        lb should be <= 2
+                        lb should ===(Int.MinValue)
                         ub should ===(Int.MaxValue)
                     case v ⇒
-                        fail(s"expected [2, Int.MaxValue]; found $v")
+                        fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
                 }
             }
 
-            it("[Int.MinValue,2] | [8,19] => [2, Int.MaxValue]") {
-                val v = IntegerRange(Int.MinValue, Int.MaxValue)
-                val s = IntegerRange(8, 19)
+            it("[8,19] | [Int.MinValue, Int.MaxValue] => [Int.MinValue, Int.MaxValue]") {
+                val v1 = IntegerRange(8, 19)
+                val v2 = IntegerRange(Int.MinValue, Int.MaxValue)
 
-                ior(-1, v, s) match {
+                ior(-1, v1, v2) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(Int.MinValue)
+                        ub should ===(Int.MaxValue)
+                    case v ⇒
+                        fail(s"expected [Int.MinValue, Int.MaxValue]; found $v")
+                }
+            }
+
+            it("[Int.MinValue,2] | [8,19] => [Int.MinValue, 19]") {
+                val v1 = IntegerRange(Int.MinValue, 2)
+                val v2 = IntegerRange(8, 19)
+
+                ior(-1, v1, v2) match {
                     case (IntegerRange(lb, ub)) ⇒
                         lb should ===((Int.MinValue))
-                        ub should be >= 32
+                        ub should be >= 19
                     case v ⇒
-                        fail(s"expected [Int.MinValue, 32]; found $v")
+                        fail(s"expected [Int.MinValue, 19]; found $v")
                 }
             }
 
@@ -1113,7 +1126,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
 
-            it("(the dividend is unknown, but the divisor is known) AnIntegerValue % [2,4] =>  [-3,3] + Exception") {
+            it("(the dividend is unknown, but the divisor is known) AnIntegerValue % [2,4] =>  [-3,3]") {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 4)
 
