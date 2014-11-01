@@ -44,7 +44,7 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * completely sufficient and a large cardinality does not add the overall precision
  * significantly.
  *
- * This domain supports the most relevant operantions related to the most common math
+ * This domain supports the most relevant operations related to the most common math
  * operations.
  *
  * ==Constraint Propagation==
