@@ -337,13 +337,12 @@ object BugPickerAnalysis {
                 <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
                 <script type="text/javascript">{ Unparsed(bugpicker.htmlJS) }</script>
                 <script type="text/javascript">{ Unparsed(reportJS) }</script>
-                <style>{ bugpicker.htmlCSS }</style>
-                <style>{ reportCSS }</style>
+                <style>{ Unparsed(bugpicker.htmlCSS) }</style>
+                <style>{ Unparsed(reportCSS) }</style>
             </head>
             <body>
                 <div id="analysis_controls">
-                    <span>Number of issues: { methodWithDeadCodeCount }</span>
-                    . 
+                    <span>Number of issues: { methodWithDeadCodeCount }.</span>
                     Suppress issues with an estimated
                     <abbr title='The importance is calculated using the available context information. E.g., a dead "default case" in a switch statement is often the result of defensive programming and, hence, not important.'>importance</abbr>
                     less than:
@@ -351,7 +350,7 @@ object BugPickerAnalysis {
                     <input type="range" name="relevance" id="relevance" min="1" max="100" onchange="updateRelevance(this.valueAsNumber)"/>
                     <abbr title="The identified issue is probably very important.">100</abbr>
                     <div>
-                        <a class="onclick" onclick="document.querySelectorAll('details').forEach(function(e){e.setAttribute('open','true')})">Open All Packages</a>
+                        Show all Packages:<a class="onclick" onclick="openAllPackages()">+</a><a class="onclick" onclick="closeAllPackages()">-</a>
                     </div>
                 </div>
                 <div id="analysis_results">
@@ -359,7 +358,8 @@ object BugPickerAnalysis {
                 </div>
                 <script type="text/javascript">
                     document.getElementById('relevance').value=75;
-                	updateRelevance(75);
+                    updateRelevance(75);
+                    openAllPackages();
                 </script>
             </body>
         </html>
