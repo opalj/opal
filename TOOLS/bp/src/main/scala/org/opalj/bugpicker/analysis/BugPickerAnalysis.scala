@@ -204,8 +204,9 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                         case (pc, instr: INEG.type, Seq(ConcreteIntegerValue(a), _*)) ⇒
                             (pc, s"Constant computation: -${a}")
 
-                        case (pc, instr @ IINC(_, v), Seq(ConcreteIntegerValue(a), _*)) ⇒
-                            (pc, s"Constant computation (inc): ${a} + $v")
+                        case (pc, instr @ IINC(index, increment), _) if result.domain.intValueOption(result.localsArray(pc)(index)).isDefined ⇒
+                            val v = result.domain.intValueOption(result.localsArray(pc)(index)).get
+                            (pc, s"Constant computation (inc): ${v} + $increment")
 
                         // HANDLING LONG VALUES 
                         //
