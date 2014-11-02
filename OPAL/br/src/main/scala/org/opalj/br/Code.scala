@@ -248,11 +248,34 @@ case class Code(
     /**
      * Collects all local variable tables.
      *
+     * @note A code attribute is allowed to have multiple local variable tables. However, all
+     *      tables are merged into one by OPAL at class loading time.
+     *
      * @note Depending on the configuration of the reader for `ClassFile`s this
      * 	    attribute may not be reified.
      */
-    def localVariableTable: Seq[LocalVariables] =
-        attributes collect { case LocalVariableTable(lvt) ⇒ lvt }
+    def localVariableTable: Option[LocalVariables] =
+        attributes collectFirst { case LocalVariableTable(lvt) ⇒ lvt }
+
+    /**
+     * Returns the set of local variables defined at the given pc.
+     *
+     * @return A mapping of the index to the name of the local variable. The map is
+     *      empty if no debug information is available.
+     */
+    def localVariablesAt(pc: PC): Map[Int, String] = {
+        localVariableTable match {
+            case Some(lvt) ⇒
+                (
+                    lvt.collect {
+                        case LocalVariable(startPC, length, name, _, index) if startPC <= pc && startPC + length > pc ⇒
+                            (index, name)
+                    }
+                ).toMap
+            case _ ⇒
+                Map.empty
+        }
+    }
 
     /**
      * Collects all local variable type tables.

@@ -70,5 +70,27 @@ trait LocalVariableTable_attributeBinding
         local_variable_table: LocalVariables): LocalVariableTable =
         new LocalVariableTable(local_variable_table)
 
+    /**
+     * Merge all local variable tables and create a single sorted local variable table.
+     */
+    registerAttributesPostProcessor { attributes ⇒
+        val (localVariableTables, otherAttributes) =
+            attributes partition {
+                case _: LocalVariableTable ⇒ true
+                case _                     ⇒ false
+            }
+
+        localVariableTables match {
+            case Seq()    ⇒ attributes
+            case Seq(lvt) ⇒ attributes
+            case lvts ⇒ {
+                val allLVs =
+                    lvts.map(_.asInstanceOf[LocalVariableTable].localVariables).toIndexedSeq
+                val theLVT = allLVs.flatten
+                new LocalVariableTable(theLVT) +: otherAttributes
+            }
+        }
+    }
+
 }
 
