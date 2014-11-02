@@ -125,10 +125,16 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                 BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges
             )
 
-        println("Settings:")
-        println(s"\tmaxEvalFactor=$maxEvalFactor")
-        println(s"\tmaxEvalTime=${maxEvalTime}ms")
-        println(s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges")
+        if (parameters.contains("-debug")) {
+            val cp = System.getProperty("java.class.path")
+            val cpSorted = cp.split(java.io.File.pathSeparatorChar).sorted
+            println("ClassPath:\n\t"+cpSorted.mkString("\n\t"))
+
+            println("Settings:")
+            println(s"\tmaxEvalFactor=$maxEvalFactor")
+            println(s"\tmaxEvalTime=${maxEvalTime}ms")
+            println(s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges")
+        }
 
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
