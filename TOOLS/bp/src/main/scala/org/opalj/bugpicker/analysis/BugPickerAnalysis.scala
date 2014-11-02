@@ -159,7 +159,10 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                     if operandsArray(branchTarget) == null
                 } yield {
                     val operands = operandsArray(ctiPC).take(instruction.operandCount)
-                    DeadCode(classFile, method, ctiPC, operands, branchTarget, None)
+                    DeadCode(
+                        classFile, method, ctiPC,
+                        operands, Some(result.localsArray(ctiPC)),
+                        branchTarget, None)
                 }
                 for ((ln, dc) ← methodWithDeadCode.groupBy(_.line)) {
                     ln match {
@@ -237,9 +240,12 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                             result.operandsArray(pc + INSTANCEOF.length).head).isDefined ⇒
                             (pc, s"Useless type test: ${rv.upperTypeBound.map(_.toJava).mkString("", " with ", "")} instanceof ${referenceType.toJava}")
 
-                    }.map { result ⇒
-                        val (pc, message) = result
-                        UselessComputation(classFile, method, pc, message)
+                    }.map { issue ⇒
+                        val (pc, message) = issue
+                        UselessComputation(
+                            classFile, method, pc,
+                            Some(result.localsArray(pc)),
+                            message)
                     }
                 }
                 results.addAll(
@@ -317,7 +323,7 @@ object BugPickerAnalysis {
             scala.io.Source.fromInputStream(_).mkString
         )
 
-    def resultsAsXHTML(results: (Long, Iterable[Issue])): Seq[Node] = {
+    def resultsAsXHTML(results: (Long, Iterable[Issue])): Node = {
         val (analysisTime, methodsWithDeadCode) = results
         val methodWithDeadCodeCount = methodsWithDeadCode.size
 
