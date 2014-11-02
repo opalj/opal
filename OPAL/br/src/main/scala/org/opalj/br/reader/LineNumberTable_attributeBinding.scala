@@ -65,11 +65,10 @@ trait UnpackedLineNumberTable_attributeBinding
     registerAttributesPostProcessor { attributes ⇒
         val (lineNumberTables, otherAttributes) =
             attributes partition {
-                _ match {
-                    case lnt: UnpackedLineNumberTable ⇒ true
-                    case _                            ⇒ false
-                }
+                case lnt: UnpackedLineNumberTable ⇒ true
+                case _                            ⇒ false
             }
+
         lineNumberTables match {
             case Seq()    ⇒ attributes
             case Seq(lnt) ⇒ attributes
