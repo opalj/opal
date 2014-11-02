@@ -47,7 +47,7 @@ object UselessComputationsMinimal
     val analysis = this
 
     class AnalysisDomain(val project: Project[URL], val method: Method)
-        extends Domain
+        extends CoRelationalDomain
         with domain.DefaultDomainValueBinding
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization

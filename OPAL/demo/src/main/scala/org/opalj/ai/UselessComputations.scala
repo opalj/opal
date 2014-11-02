@@ -46,7 +46,7 @@ import org.opalj.br.instructions._
 object UselessComputations extends AnalysisExecutor {
 
     class AnalysisDomain(val project: Project[java.net.URL], val method: Method)
-            extends Domain
+            extends CoRelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.TheProject[java.net.URL]
             with domain.TheMethod

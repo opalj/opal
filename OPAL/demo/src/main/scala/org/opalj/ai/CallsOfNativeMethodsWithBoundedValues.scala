@@ -46,7 +46,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
     class AnalysisDomain(
         override val project: Project[java.net.URL],
         val method: Method)
-            extends Domain
+            extends CoRelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
             with domain.l0.DefaultPrimitiveValuesConversions

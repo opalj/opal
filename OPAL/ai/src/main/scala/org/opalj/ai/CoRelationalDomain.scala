@@ -28,44 +28,20 @@
  */
 package org.opalj
 package ai
-package project
 
-import scala.collection.Set
-import scala.collection.Map
-
-import br._
-import br.analyses._
-
-import domain._
-import domain.l0
-import domain.l1
+import org.opalj.br.ConstantFieldValue
+import org.opalj.br.ConstantInteger
+import org.opalj.br.ConstantLong
+import org.opalj.br.ConstantFloat
+import org.opalj.br.ConstantDouble
+import org.opalj.br.ConstantString
 
 /**
- * Domain object which is used to calculate the call graph using variable type analysis.
  *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-class DefaultVTACallGraphDomain[Source](
-    val project: Project[Source],
-    val cache: CallGraphCache[MethodSignature, Set[Method]],
-    val classFile: ClassFile,
-    val method: Method,
-    override val maxCardinalityOfIntegerRanges: Long)
-        extends CoRelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with TheProject[Source]
-        with ProjectBasedClassHierarchy
-        with TheMethod
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.TypeLevelInvokeInstructions
-        with l0.DefaultTypeLevelLongValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l1.DefaultIntegerRangeValues
-        with l1.DefaultReferenceValuesBinding
-        with l0.DefaultPrimitiveValuesConversions
-        with VTACallGraphDomain
+trait CoRelationalDomain
+    extends Domain
+    with JoinStabilization
+    with IdentityBasedAliasBreakUpDetection
 
