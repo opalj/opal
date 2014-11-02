@@ -1921,14 +1921,14 @@ trait AI[D <: Domain] {
                     //
 
                     case 193 /*instanceof*/ ⇒ {
-                        val objectref :: rest = operands
+                        val value :: rest = operands
                         val referenceType = as[INSTANCEOF](instruction).referenceType
 
                         val result =
-                            if (theDomain.refIsNull(pc, objectref).isYes)
+                            if (theDomain.refIsNull(pc, value).isYes)
                                 theDomain.BooleanValue(pc, false)
                             else
-                                theDomain.isValueSubtypeOf(objectref, referenceType) match {
+                                theDomain.isValueSubtypeOf(value, referenceType) match {
                                     case Yes     ⇒ theDomain.BooleanValue(pc, true)
                                     case No      ⇒ theDomain.BooleanValue(pc, false)
                                     case Unknown ⇒ theDomain.BooleanValue(pc)
