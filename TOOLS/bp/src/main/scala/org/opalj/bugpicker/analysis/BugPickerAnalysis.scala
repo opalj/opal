@@ -272,8 +272,11 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                             case afe: InterpretationFailedException ⇒
                                 val ms = method.fullyQualifiedSignature(classFile.thisType)
                                 val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
+                                val cause = afe.cause
                                 println(
-                                    s"[error] the analysis of ${ms} failed after $steps steps: "+afe.cause)
+                                    s"[error] the analysis of ${ms} failed after $steps steps: "+cause
+                                )
+                                afe.printStackTrace()
                         }
                     }
                 } finally {
