@@ -50,12 +50,12 @@ import org.opalj.br.instructions._
  *
  * @author Michael Eichberg
  */
-case class Code(
-    maxStack: Int,
-    maxLocals: Int,
-    instructions: Array[Instruction],
-    exceptionHandlers: ExceptionHandlers,
-    attributes: Attributes)
+class Code private (
+    val maxStack: Int,
+    val maxLocals: Int,
+    val instructions: Array[Instruction],
+    val exceptionHandlers: ExceptionHandlers,
+    val attributes: Attributes)
         extends Attribute
         with CommonAttributes {
 
@@ -673,6 +673,49 @@ case class Code(
  * @author Michael Eichberg
  */
 object Code {
+
+    def apply(
+        maxStack: Int,
+        maxLocals: Int,
+        instructions: Array[Instruction],
+        exceptionHandlers: ExceptionHandlers,
+        attributes: Attributes): Code = {
+
+        val (localVariableTables, otherAttributes1) =
+            attributes partition { _.isInstanceOf[LocalVariableTable] }
+        val newAttributes1 =
+            if (localVariableTables.size > 1) {
+                val allLVs =
+                    localVariableTables.
+                        map(_.asInstanceOf[LocalVariableTable].localVariables).
+                        toIndexedSeq
+                val theLVT = allLVs.flatten
+                new LocalVariableTable(theLVT) +: otherAttributes1
+            } else {
+                attributes
+            }
+
+        val (lineNumberTables, otherAttributes2) =
+            newAttributes1 partition { _.isInstanceOf[UnpackedLineNumberTable] }
+        val newAttributes2 =
+            if (lineNumberTables.size > 1) {
+                val mergedTables =
+                    lineNumberTables.map(_.asInstanceOf[UnpackedLineNumberTable].lineNumbers).flatten
+                val sortedTable =
+                    mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
+                new UnpackedLineNumberTable(sortedTable) +: otherAttributes2
+
+            } else {
+                otherAttributes2
+            }
+
+        new Code(maxStack, maxLocals, instructions, exceptionHandlers, newAttributes2)
+    }
+
+    def unapply(code: Code): Option[(Int, Int, Array[Instruction], ExceptionHandlers, Attributes)] = {
+        import code._
+        Some((maxStack, maxLocals, instructions, exceptionHandlers, attributes))
+    }
 
     /**
      * The unique id associated with attributes of kind: [[Code]].
