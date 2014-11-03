@@ -701,35 +701,49 @@ object Code {
         exceptionHandlers: ExceptionHandlers,
         attributes: Attributes): Code = {
 
-        val (localVariableTables, otherAttributes1) =
-            attributes partition { _.isInstanceOf[LocalVariableTable] }
-        val newAttributes1 =
-            if (localVariableTables.nonEmpty && localVariableTables.tail.nonEmpty) {
-                val allLVs =
-                    localVariableTables.
-                        map(_.asInstanceOf[LocalVariableTable].localVariables).
-                        toIndexedSeq
-                val theLVT = allLVs.flatten
-                new LocalVariableTable(theLVT) +: otherAttributes1
-            } else {
-                attributes
+        var localVariableTablesCount = 0
+        var lineNumberTablesCount = 0
+        attributes.foreach { a ⇒
+            if (a.isInstanceOf[LocalVariableTable]) {
+                localVariableTablesCount += 1
+            } else if (a.isInstanceOf[UnpackedLineNumberTable]) {
+                lineNumberTablesCount += 1
             }
+        }
 
-        val (lineNumberTables, otherAttributes2) =
-            newAttributes1 partition { _.isInstanceOf[UnpackedLineNumberTable] }
-        val newAttributes2 =
-            if (lineNumberTables.nonEmpty && lineNumberTables.tail.nonEmpty) {
-                val mergedTables =
-                    lineNumberTables.map(_.asInstanceOf[UnpackedLineNumberTable].lineNumbers).flatten
-                val sortedTable =
-                    mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
-                new UnpackedLineNumberTable(sortedTable) +: otherAttributes2
+        if (localVariableTablesCount <= 1 && lineNumberTablesCount <= 1) {
+            new Code(maxStack, maxLocals, instructions, exceptionHandlers, attributes)
+        } else {
+            val (localVariableTables, otherAttributes1) =
+                attributes partition { _.isInstanceOf[LocalVariableTable] }
+            val newAttributes1 =
+                if (localVariableTables.nonEmpty && localVariableTables.tail.nonEmpty) {
+                    val allLVs =
+                        localVariableTables.
+                            map(_.asInstanceOf[LocalVariableTable].localVariables).
+                            toIndexedSeq
+                    val theLVT = allLVs.flatten
+                    new LocalVariableTable(theLVT) +: otherAttributes1
+                } else {
+                    attributes
+                }
 
-            } else {
-                newAttributes1
-            }
+            val (lineNumberTables, otherAttributes2) =
+                newAttributes1 partition { _.isInstanceOf[UnpackedLineNumberTable] }
+            val newAttributes2 =
+                if (lineNumberTables.nonEmpty && lineNumberTables.tail.nonEmpty) {
+                    val mergedTables =
+                        lineNumberTables.map(_.asInstanceOf[UnpackedLineNumberTable].lineNumbers).flatten
+                    val sortedTable =
+                        mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
+                    new UnpackedLineNumberTable(sortedTable) +: otherAttributes2
 
-        new Code(maxStack, maxLocals, instructions, exceptionHandlers, newAttributes2)
+                } else {
+                    newAttributes1
+                }
+
+            new Code(maxStack, maxLocals, instructions, exceptionHandlers, newAttributes2)
+        }
     }
 
     def unapply(code: Code): Option[(Int, Int, Array[Instruction], ExceptionHandlers, Attributes)] = {
