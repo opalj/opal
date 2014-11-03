@@ -50,7 +50,7 @@ import org.opalj.br.instructions._
  *
  * @author Michael Eichberg
  */
-class Code private (
+final class Code private (
     val maxStack: Int,
     val maxLocals: Int,
     val instructions: Array[Instruction],
