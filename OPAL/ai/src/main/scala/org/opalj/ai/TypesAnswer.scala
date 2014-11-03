@@ -145,15 +145,15 @@ trait IsAReferenceValue {
 
     /**
      * The upper bound of the value's type. The upper bound is empty if this
-     * value is `null` (i.e., `isNUll == Yes`). The upper bound will only contain
+     * value is `null` (i.e., `isNull == Yes`). The upper bound will only contain
      * a single type if the type is precise. (i.e., `isPrecise == true`). Otherwise,
-     * the upper type bound will contain one or more types that are not known to be
+     * the upper type bound may contain one or more types that are not known to be
      * in an inheritance relation, but which will ''correctly'' approximate the runtime
      * type.
      *
      * @note If only a part of a project is analyzed, the class hierarchy may be
      *      fragmented and it may happen that two classes that are indeed in an
-     *      inheritance relation if we would analyzed the complete project are reported
+     *      inheritance relation – if we would analyzed the complete project – are reported
      *      in the upper type bound.
      */
     def upperTypeBound: UpperTypeBound
@@ -224,7 +224,9 @@ trait IsReferenceValue extends TypesAnswer with IsAReferenceValue {
 
     /**
      * In general a domain value can represent several distinct values (depending
-     * on the control flow). Each of these values can have a different upper bound and
+     * on the control flow).
+     *
+     * Each of these values can have a different upper bound and
      * an upper bound can in turn consist of several interfaces and a class.
      */
     def referenceValues: Traversable[IsAReferenceValue]

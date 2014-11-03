@@ -306,7 +306,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
      *      The default case is also to return the given `worklist`.
      *
      * @note The domain is allowed to modify the `worklist`, `operandsArray` and
-     *      `localsArray`. However, the AI will not perform any checks. In case of
+     *      `localsArray`. However, the AI will not perform any checks. '''In case of
      *      updates of the `operandsArray` or `localsArray` it is necessary to first
      *      create a shallow copy before updating it.
      *      If this is not done, it may happen that the locals associated
