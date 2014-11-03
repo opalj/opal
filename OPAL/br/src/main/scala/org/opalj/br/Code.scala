@@ -684,7 +684,7 @@ object Code {
         val (localVariableTables, otherAttributes1) =
             attributes partition { _.isInstanceOf[LocalVariableTable] }
         val newAttributes1 =
-            if (localVariableTables.size > 1) {
+            if (localVariableTables.nonEmpty && localVariableTables.tail.nonEmpty) {
                 val allLVs =
                     localVariableTables.
                         map(_.asInstanceOf[LocalVariableTable].localVariables).
@@ -698,7 +698,7 @@ object Code {
         val (lineNumberTables, otherAttributes2) =
             newAttributes1 partition { _.isInstanceOf[UnpackedLineNumberTable] }
         val newAttributes2 =
-            if (lineNumberTables.size > 1) {
+            if (lineNumberTables.nonEmpty && lineNumberTables.tail.nonEmpty) {
                 val mergedTables =
                     lineNumberTables.map(_.asInstanceOf[UnpackedLineNumberTable].lineNumbers).flatten
                 val sortedTable =
@@ -706,7 +706,7 @@ object Code {
                 new UnpackedLineNumberTable(sortedTable) +: otherAttributes2
 
             } else {
-                otherAttributes2
+                newAttributes1
             }
 
         new Code(maxStack, maxLocals, instructions, exceptionHandlers, newAttributes2)
