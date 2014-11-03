@@ -125,10 +125,16 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                 BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges
             )
 
-        println("Settings:")
-        println(s"\tmaxEvalFactor=$maxEvalFactor")
-        println(s"\tmaxEvalTime=${maxEvalTime}ms")
-        println(s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges")
+        if (parameters.contains("-debug")) {
+            val cp = System.getProperty("java.class.path")
+            val cpSorted = cp.split(java.io.File.pathSeparatorChar).sorted
+            println("ClassPath:\n\t"+cpSorted.mkString("\n\t"))
+
+            println("Settings:")
+            println(s"\tmaxEvalFactor=$maxEvalFactor")
+            println(s"\tmaxEvalTime=${maxEvalTime}ms")
+            println(s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges")
+        }
 
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
@@ -159,7 +165,10 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                     if operandsArray(branchTarget) == null
                 } yield {
                     val operands = operandsArray(ctiPC).take(instruction.operandCount)
-                    DeadCode(classFile, method, ctiPC, operands, branchTarget, None)
+                    DeadCode(
+                        classFile, method, ctiPC,
+                        operands, Some(result.localsArray(ctiPC)),
+                        branchTarget, None)
                 }
                 for ((ln, dc) ← methodWithDeadCode.groupBy(_.line)) {
                     ln match {
@@ -204,8 +213,9 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                         case (pc, instr: INEG.type, Seq(ConcreteIntegerValue(a), _*)) ⇒
                             (pc, s"Constant computation: -${a}")
 
-                        case (pc, instr @ IINC(_, v), Seq(ConcreteIntegerValue(a), _*)) ⇒
-                            (pc, s"Constant computation (inc): ${a} + $v")
+                        case (pc, instr @ IINC(index, increment), _) if result.domain.intValueOption(result.localsArray(pc)(index)).isDefined ⇒
+                            val v = result.domain.intValueOption(result.localsArray(pc)(index)).get
+                            (pc, s"Constant computation (inc): ${v} + $increment")
 
                         // HANDLING LONG VALUES 
                         //
@@ -236,9 +246,12 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                             result.operandsArray(pc + INSTANCEOF.length).head).isDefined ⇒
                             (pc, s"Useless type test: ${rv.upperTypeBound.map(_.toJava).mkString("", " with ", "")} instanceof ${referenceType.toJava}")
 
-                    }.map { result ⇒
-                        val (pc, message) = result
-                        UselessComputation(classFile, method, pc, message)
+                    }.map { issue ⇒
+                        val (pc, message) = issue
+                        UselessComputation(
+                            classFile, method, pc,
+                            Some(result.localsArray(pc)),
+                            message)
                     }
                 }
                 results.addAll(
@@ -271,8 +284,11 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                             case afe: InterpretationFailedException ⇒
                                 val ms = method.fullyQualifiedSignature(classFile.thisType)
                                 val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
+                                val cause = afe.cause
                                 println(
-                                    s"[error] the analysis of ${ms} failed after $steps steps: "+afe.cause)
+                                    s"[error] the analysis of ${ms} failed after $steps steps: "+cause
+                                )
+                                afe.printStackTrace()
                         }
                     }
                 } finally {
@@ -313,7 +329,7 @@ object BugPickerAnalysis {
             scala.io.Source.fromInputStream(_).mkString
         )
 
-    def resultsAsXHTML(results: (Long, Iterable[Issue])): Seq[Node] = {
+    def resultsAsXHTML(results: (Long, Iterable[Issue])): Node = {
         val (analysisTime, methodsWithDeadCode) = results
         val methodWithDeadCodeCount = methodsWithDeadCode.size
 

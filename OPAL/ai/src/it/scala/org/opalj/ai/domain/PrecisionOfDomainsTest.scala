@@ -87,7 +87,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with ProjectBasedClassHierarchy
 
             class L1Domain[I](val code: Code, val project: Project[java.net.URL])
-                extends Domain
+                extends CoRelationalDomain
                 with ThrowAllPotentialExceptionsConfiguration
                 with DefaultHandlingOfMethodResults
                 with IgnoreSynchronization

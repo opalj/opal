@@ -38,16 +38,13 @@ package l1
  */
 trait DefaultIntegerRangeValues
         extends DefaultDomainValueBinding
-        with JoinStabilization
-        with IdentityBasedAliasBreakUpDetection
         with IntegerRangeValues {
-    domain: Configuration with VMLevelExceptionsFactory ⇒
+    domain: JoinStabilization with IdentityBasedAliasBreakUpDetection with Configuration with VMLevelExceptionsFactory ⇒
 
     /**
      * @note The functionality to propagate a constraint crucially depends on
-     *      the fact that two integer values created at two different places / at
-     *      one place but at two different points in time
-     *      are represented by two different instances
+     *      the fact that two integer values that are no guaranteed to represent the
+     *      same runtime value are represented by two different instances
      *      of "AnIntegerValue"; otherwise, propagating the
      *      constraint that some value (after some kind of check) has to have a special
      *      value may affect unrelated values!
@@ -55,8 +52,7 @@ trait DefaultIntegerRangeValues
     class AnIntegerValue() extends super.AnIntegerValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
-            // we are not joining the "same" value; the join stabilization trait
-            // takes care of handling potential aliases
+            // We are not joining the "same" value!
             MetaInformationUpdate(AnIntegerValue())
         }
 

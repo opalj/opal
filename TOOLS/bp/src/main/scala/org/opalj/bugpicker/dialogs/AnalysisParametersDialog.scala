@@ -137,7 +137,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                             val maxEvalFactor = try {
                                 maxEvalFactorField.text().toDouble
                             } catch {
-                                case _ ⇒ {
+                                case _: Exception | _: Error ⇒ {
                                     DialogStage.showMessage("Error",
                                         "You entered an illegal value for maximum evaluation factor!",
                                         theStage)
@@ -148,7 +148,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                             val maxEvalTime = try {
                                 maxEvalTimeField.text().toInt
                             } catch {
-                                case _ ⇒ {
+                                case _: Exception | _: Error ⇒ {
                                     DialogStage.showMessage("Error",
                                         "You entered an illegal value for maximum evaluation time!",
                                         theStage)
@@ -159,7 +159,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                             val maxCardinalityOfIntegerRanges = try {
                                 maxCardinalityOfIntegerRangesField.text().toInt
                             } catch {
-                                case _ ⇒ {
+                                case _: Exception | _: Error ⇒ {
                                     DialogStage.showMessage("Error",
                                         "You entered an illegal value for maximum cardinality of integer ranges!",
                                         theStage)

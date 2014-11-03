@@ -45,7 +45,7 @@ trait DefaultIntegerSetValues
         with IntegerSetValues {
     domain: Configuration with VMLevelExceptionsFactory ⇒
 
-    class AnIntegerValue() extends super.AnIntegerValue {
+    class AnIntegerValue extends super.AnIntegerValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
             // we are not joining the "same" value; the join stabilization trait
@@ -81,8 +81,11 @@ trait DefaultIntegerSetValues
                     val newValues = this.values ++ thatValues
 
                     if (newValues.size == 1)
-                        // This is a "point-range" (a concrete value), hence there
-                        // will be NO further constraints
+                        // This set represents a single, concrete value, hence there
+                        // will be NO further constraints that affect this set.
+                        // Furthermore, since we have "value semantics" for int
+                        // values we are no longer concerned about potential aliasing
+                        // relations
                         NoUpdate
 
                     else if (newValues.size > maxCardinalityOfIntegerSets)
@@ -100,19 +103,24 @@ trait DefaultIntegerSetValues
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
-            (this eq other) || (other match {
-                case that: IntegerSet ⇒
-                    that.values.subsetOf(this.values)
-                case _ ⇒ false
-            })
+            (this eq other) ||
+                (other match {
+                    case that: IntegerSet ⇒
+                        that.values.subsetOf(this.values)
+                    case _ ⇒ false
+                })
         }
 
         override def summarize(pc: PC): DomainValue = this
 
         override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             if (target.isInstanceOf[IntegerSetValues]) {
-                val thatDomain = target.asInstanceOf[DefaultIntegerSetValues]
+                val thatDomain = target.asInstanceOf[IntegerSetValues]
                 thatDomain.IntegerSet(this.values).asInstanceOf[target.DomainValue]
+            } else if (target.isInstanceOf[IntegerRangeValues]) {
+                val thatDomain = target.asInstanceOf[IntegerRangeValues]
+                val value = thatDomain.IntegerRange(this.values.firstKey, this.values.lastKey)
+                value.asInstanceOf[target.DomainValue]
             } else {
                 target.IntegerValue(pc)
             }

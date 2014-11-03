@@ -196,7 +196,8 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
 
 object PerformInvocationsTestFixture {
 
-    trait L1Domain extends Domain
+    trait L1Domain
+        extends CoRelationalDomain
         with DefaultDomainValueBinding
         with TheProject[java.net.URL]
         with ThrowAllPotentialExceptionsConfiguration
@@ -212,7 +213,8 @@ object PerformInvocationsTestFixture {
         with IgnoreSynchronization
         with TheMethod
 
-    trait LiDomain extends Domain
+    trait LiDomain
+            extends CoRelationalDomain
             with DefaultDomainValueBinding
             with TheProject[java.net.URL]
             with ThrowAllPotentialExceptionsConfiguration
