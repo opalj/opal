@@ -177,6 +177,33 @@ class CodeAttributeTest
         codeOfPut.joinInstructions should contain(15)
     }
 
+    behavior of "the \"Code\" attribute's localVariableTable method"
+
+    it should "return the local variable table" in {
+        codeOfPut.localVariableTable should be('defined)
+    }
+
+    behavior of "the \"Code\" attribute's localVariableAt method"
+
+    it should "return the local variables defined at the respective pc" in {
+        codeOfPut.localVariablesAt(32) should be(Map(0 -> "this", 1 -> "item"))
+    }
+
+    behavior of "the \"Code\" attribute's localVariable method"
+
+    it should "be able to return the correct local variable" in {
+        val thisVariable = LocalVariable(0, 55, "this", ObjectType("code/BoundedBuffer"), 0)
+        codeOfPut.localVariable(32, 0) should be(Some(thisVariable))
+        codeOfPut.localVariable(0, 0) should be(Some(thisVariable))
+        codeOfPut.localVariable(54, 0) should be(Some(thisVariable))
+
+        codeOfPut.localVariable(54, 1) should be(Some(LocalVariable(0, 55, "item", IntegerType, 1)))
+    }
+
+    it should "not crash if the index/pc does not map to a local variable definition" in {
+        codeOfPut.localVariable(32, 2) should be(None)
+    }
+
 }
 private object CodeAttributeTest {
 

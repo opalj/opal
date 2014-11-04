@@ -291,6 +291,22 @@ final class Code private (
     }
 
     /**
+     * Returns the local variable stored at the given local variable index that is live at
+     * the given instruction (pc).
+     */
+    def localVariable(pc: PC, index: Int): Option[LocalVariable] = {
+        localVariableTable.flatMap { lvs ⇒
+
+            lvs.find { lv ⇒
+                val result = lv.index == index &&
+                    lv.startPC <= pc &&
+                    (lv.startPC + lv.length) > pc
+                result
+            }
+        }
+    }
+
+    /**
      * Collects all local variable type tables.
      *
      * @note Depending on the configuration of the reader for `ClassFile`s this
