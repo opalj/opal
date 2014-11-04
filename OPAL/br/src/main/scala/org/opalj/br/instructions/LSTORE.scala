@@ -30,14 +30,19 @@ package org.opalj
 package br
 package instructions
 
+trait LStoreInstruction extends StoreLocalVariableInstruction
+
+object LStoreInstruction {
+
+    def unapply(lstore: LStoreInstruction): Some[Int] = Some(lstore.lvIndex)
+}
+
 /**
  * Store long into local variable.
  *
  * @author Michael Eichberg
  */
-case class LSTORE(
-    lvIndex: Int)
-        extends StoreLocalVariableInstruction with ExplicitLocalVariableIndex {
+case class LSTORE(lvIndex: Int) extends LStoreInstruction with ExplicitLocalVariableIndex {
 
     final def opcode: Opcode = LSTORE.opcode
 
