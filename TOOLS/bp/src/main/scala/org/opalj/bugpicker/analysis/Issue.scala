@@ -87,9 +87,19 @@ trait Issue {
             if (code.localVariablesAt(pc).isEmpty) {
                 default
             } else {
+
                 val lvsAsXHTML =
                     for ((index, name) ← code.localVariablesAt(pc)) yield {
-                        <tr><td>{ index }</td><td>{ name }</td><td>{ lv(index).toString }</td></tr>
+                        val localValue = lv(index)
+                        val localValueAsXHTML =
+                            if (localValue == null)
+                                <span class="warning">unused</span>
+                            else
+                                Text(localValue.toString)
+
+                        <tr>
+                            <td>{ index }</td><td>{ name }</td><td>{ localValueAsXHTML }</td>
+                        </tr>
                     }
 
                 <details class="locals">
