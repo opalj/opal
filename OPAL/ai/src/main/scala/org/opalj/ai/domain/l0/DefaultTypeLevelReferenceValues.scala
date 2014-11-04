@@ -241,8 +241,9 @@ trait DefaultTypeLevelReferenceValues
          */
         override def isValueSubtypeOf(supertype: ReferenceType): Answer = {
             val isSubtypeOf = domain.isSubtypeOf(theUpperTypeBound, supertype)
-            isSubtypeOf match {
-                case Yes ⇒ Yes
+            val result = isSubtypeOf match {
+                case Yes ⇒
+                    Yes
                 case No if isPrecise
                     || (
                         supertype.isArrayType &&
@@ -260,9 +261,12 @@ trait DefaultTypeLevelReferenceValues
                             !classHierarchy.isInterface(supertype.asObjectType) &&
                             !classHierarchy.isInterface(theUpperTypeBound) &&
                             domain.isSubtypeOf(supertype, theUpperTypeBound).isNo
-                        ) ⇒ No
-                case _ ⇒ Unknown
+                        ) ⇒
+                    No
+                case _ ⇒
+                    Unknown
             }
+            result
         }
 
         // WIDENING OPERATION

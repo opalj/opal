@@ -30,22 +30,21 @@ package org.opalj
 package bugpicker
 package analysis
 
-import scala.xml.Node
-import scala.xml.Text
-import scala.xml.UnprefixedAttribute
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
-import scala.collection.SortedMap
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.{ typeToXHTML }
-import org.opalj.br.{ methodToXHTML }
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.ConditionalBranchInstruction
-import org.opalj.br.instructions.SimpleConditionalBranchInstruction
+import scala.xml.Node
+import scala.xml.Text
+import scala.xml.UnprefixedAttribute
+
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import scala.xml.Unparsed
+import org.opalj.br.instructions.SimpleConditionalBranchInstruction
+import org.opalj.br.methodToXHTML
+import org.opalj.br.typeToXHTML
+import org.opalj.collection.mutable.Locals
 
 /**
  * Collection of all information related to some piece of code that was identified
@@ -56,6 +55,7 @@ case class DeadCode(
         method: Method,
         ctiPC: PC,
         operands: List[_],
+        localVariables: Option[Locals[_ <: AnyRef]],
         deadPC: PC,
         relevance: Option[Relevance]) extends Issue {
 
@@ -70,8 +70,6 @@ case class DeadCode(
     def ctiLineNumber: Option[PC] =
         method.body.get.lineNumber(ctiPC)
 
-    def line = ctiLineNumber
-
     def deadLineNumber: Option[PC] =
         method.body.get.lineNumber(deadPC)
 
@@ -80,8 +78,8 @@ case class DeadCode(
             case i: SimpleConditionalBranchInstruction ⇒
                 val conditionIsAlwaysTrue =
                     method.body.get.pcOfNextInstruction(ctiPC) == deadPC
-                s"the condition (${i.operator}) is always $conditionIsAlwaysTrue; "+
-                    s"the instruction with program counter $deadPC "+
+                s"The condition (${i.operator}) is always $conditionIsAlwaysTrue; "+
+                    s"the instruction with pc $deadPC "+
                     s"${deadLineNumber.map(l ⇒ s"(line ${l}) ").getOrElse("")}is never reached"
             case i: CompoundConditionalBranchInstruction ⇒
                 val (caseValues, defaultCase) = i.caseValueOfJumpOffset(deadPC - ctiPC)
@@ -109,8 +107,7 @@ case class DeadCode(
                     <div>
                         The condition (&nbsp;{ i.operator }
                         ) is always&nbsp;{ conditionIsAlwaysTrue }
-                        .<br/>
-                        The instruction with program counter&nbsp;{ deadPC }
+                        . The instruction with program counter&nbsp;{ deadPC }
                         { deadLineNumber.map(l ⇒ s"(line ${l}) ").getOrElse("") }
                         is never reached.
                     </div>
@@ -118,11 +115,11 @@ case class DeadCode(
                     val (caseValues, defaultCase) = i.caseValueOfJumpOffset(deadPC - ctiPC)
                     var message = ""
                     if (caseValues.nonEmpty)
-                        message += "dead case "+caseValues.mkString(" or ")
+                        message += "Dead case(s): "+caseValues.mkString(", ")+"."
                     if (defaultCase) {
                         if (message.nonEmpty)
-                            message += "; "
-                        message += "default case is dead"
+                            message += " "
+                        message += "The \"default\" case is dead."
                     }
 
                     <div>{ message }</div>
@@ -170,7 +167,7 @@ case class DeadCode(
         val color = s"color:${relevance.map(a ⇒ a.asHTMLColor).getOrElse("rgb(255, 126, 3)")};"
 
         val node =
-            <div class="issue" style={ color }>
+            <div class="an_issue" style={ color }>
                 <dl>
                     <dt>class</dt>
                     <dd class="declaring_class" data-class={ classFile.fqn }>{ typeToXHTML(classFile.thisType) }</dd>
@@ -178,17 +175,19 @@ case class DeadCode(
                     <dd class="method" data-class={ classFile.fqn } data-method={ methodId } data-line={ methodLine }>
                         { methodToXHTML(method.name, method.descriptor) }
                     </dd>
-                    <dt>location</dt>
+                    <dt>instruction</dt>
                     <dd>
-                        <span class="program_counter">PC={ pcNode }</span>
+                        <span class="program_counter">pc={ pcNode }</span>
                         &nbsp;
-                        <span class="line_number">Line={ line.map(ln ⇒ <span data-class={ classFile.fqn } data-method={ methodId } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>).getOrElse(Text("N/A")) }</span>
+                        <span class="line_number">line={ line.map(ln ⇒ <span data-class={ classFile.fqn } data-method={ methodId } data-line={ ln.toString } data-pc={ pc.toString } data-show="sourcecode">{ ln }</span>).getOrElse(Text("N/A")) }</span>
+                    </dd>
+                    <dt class="issue">issue</dt>
+                    <dd class="issue_message">
+                        { message }
+                        <p>{ iNode }</p>
+                        { localVariablesToXHTML }
                     </dd>
                 </dl>
-                <div class="issue_message">
-                    <p>{ message }</p>
-                    <p>{ iNode }</p>
-                </div>
             </div>
 
         relevance match {

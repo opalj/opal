@@ -30,15 +30,19 @@ package org.opalj
 package br
 package instructions
 
+trait FStoreInstruction extends StoreLocalVariableInstruction
+
+object FStoreInstruction {
+
+    def unapply(fstore: FStoreInstruction): Some[Int] = Some(fstore.lvIndex)
+}
+
 /**
  * Store float into local variable.
  *
  * @author Michael Eichberg
  */
-case class FSTORE(
-    lvIndex: Int)
-        extends StoreLocalVariableInstruction
-        with ExplicitLocalVariableIndex {
+case class FSTORE(lvIndex: Int) extends FStoreInstruction with ExplicitLocalVariableIndex {
 
     final def opcode: Opcode = FSTORE.opcode
 

@@ -59,29 +59,6 @@ trait UnpackedLineNumberTable_attributeBinding
     def LineNumberTableEntry(start_pc: Int, line_number: Int) =
         new LineNumber(start_pc, line_number)
 
-    /**
-     * Merge all line number tables and create a single sorted line number table.
-     */
-    registerAttributesPostProcessor { attributes ⇒
-        val (lineNumberTables, otherAttributes) =
-            attributes partition {
-                _ match {
-                    case lnt: UnpackedLineNumberTable ⇒ true
-                    case _                            ⇒ false
-                }
-            }
-        lineNumberTables match {
-            case Seq()    ⇒ attributes
-            case Seq(lnt) ⇒ attributes
-            case lnts ⇒ {
-                val mergedTables =
-                    lnts.map(_.asInstanceOf[UnpackedLineNumberTable].lineNumbers).flatten
-                val sortedTable =
-                    mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
-                new UnpackedLineNumberTable(sortedTable) +: otherAttributes
-            }
-        }
-    }
 }
 
 import bi.reader.CompactLineNumberTable_attributeReader

@@ -76,7 +76,8 @@ package ai
  * Unless explicitly documented, a domain is never thread-safe. The general programming
  * model is to use one `Domain` object per code block/method and therefore, thread-safety
  * is not required for `Domain`s that are used for the evaluation of methods. However
- * domains that are used to adapt/transfer values should be thread safe.
+ * domains that are used to adapt/transfer values should be thread safe
+ * (see [[ValuesCoordinatingDomain]] for further details).
  *
  * @author Michael Eichberg
  */

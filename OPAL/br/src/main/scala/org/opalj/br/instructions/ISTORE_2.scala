@@ -35,9 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object ISTORE_2
-        extends StoreLocalVariableInstruction
-        with ImplicitLocalVariableIndex {
+case object ISTORE_2 extends IStoreInstruction with ImplicitLocalVariableIndex {
 
     final val lvIndex = 2
 

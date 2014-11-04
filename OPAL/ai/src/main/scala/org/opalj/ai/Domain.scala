@@ -71,7 +71,7 @@ import org.opalj.br.ConstantString
  *
  * ==Implementing Abstract Domains==
  * While it is perfectly possible to implement a new domain by inheriting from this
- * trait, it is recommended  to first study the already implemented domains and to
+ * trait, it is recommended to first study the already implemented domains and to
  * use them as a foundation.
  * To facilitate the usage of OPAL several classes/traits that implement parts of
  * this `Domain` trait are pre-defined and can be flexibly combined (mixed together)

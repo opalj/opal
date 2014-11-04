@@ -30,8 +30,8 @@ package org.opalj
 package ai
 
 /**
- * Mixin this trait if access to the operands ([[Domain#OperandsArray]])
- * and locals ([[Domain#LocalsArray]]) is needed.
+ * Mixin this trait if a domain needs access to the operands ([[Domain#OperandsArray]])
+ * and/or locals ([[Domain#LocalsArray]]).
  *
  * ==Usage==
  * It is sufficient to mixin this trait in a [[Domain]] that needs to get access to the

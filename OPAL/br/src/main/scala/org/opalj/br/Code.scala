@@ -50,12 +50,12 @@ import org.opalj.br.instructions._
  *
  * @author Michael Eichberg
  */
-case class Code(
-    maxStack: Int,
-    maxLocals: Int,
-    instructions: Array[Instruction],
-    exceptionHandlers: ExceptionHandlers,
-    attributes: Attributes)
+final class Code private (
+    val maxStack: Int,
+    val maxLocals: Int,
+    val instructions: Array[Instruction],
+    val exceptionHandlers: ExceptionHandlers,
+    val attributes: Attributes)
         extends Attribute
         with CommonAttributes {
 
@@ -242,17 +242,69 @@ case class Code(
     def lineNumber(pc: PC): Option[Int] =
         lineNumberTable.flatMap(_.lookupLineNumber(pc))
 
+    /**
+     * Returns the smallest line number (if any).
+     *
+     * @note The line number associated with the first instruction (pc === 0) is
+     *      not necessarily the smallest one.
+     *      {{{
+     *      public void foo(int i) {
+     *          super.foo( // The call has the smallest line number.
+     *              i+=1; // THIS IS THE FIRST OPERATION...
+     *          )
+     *      }
+     *      }}}
+     */
     def firstLineNumber: Option[Int] =
         lineNumberTable.flatMap(_.firstLineNumber)
 
     /**
      * Collects all local variable tables.
      *
+     * @note A code attribute is allowed to have multiple local variable tables. However, all
+     *      tables are merged into one by OPAL at class loading time.
+     *
      * @note Depending on the configuration of the reader for `ClassFile`s this
      * 	    attribute may not be reified.
      */
-    def localVariableTable: Seq[LocalVariables] =
-        attributes collect { case LocalVariableTable(lvt) ⇒ lvt }
+    def localVariableTable: Option[LocalVariables] =
+        attributes collectFirst { case LocalVariableTable(lvt) ⇒ lvt }
+
+    /**
+     * Returns the set of local variables defined at the given pc.
+     *
+     * @return A mapping of the index to the name of the local variable. The map is
+     *      empty if no debug information is available.
+     */
+    def localVariablesAt(pc: PC): Map[Int, String] = {
+        localVariableTable match {
+            case Some(lvt) ⇒
+                (
+                    lvt.collect {
+                        case LocalVariable(startPC, length, name, _, index) if startPC <= pc && startPC + length > pc ⇒
+                            (index, name)
+                    }
+                ).toMap
+            case _ ⇒
+                Map.empty
+        }
+    }
+
+    /**
+     * Returns the local variable stored at the given local variable index that is live at
+     * the given instruction (pc).
+     */
+    def localVariable(pc: PC, index: Int): Option[LocalVariable] = {
+        localVariableTable.flatMap { lvs ⇒
+
+            lvs.find { lv ⇒
+                val result = lv.index == index &&
+                    lv.startPC <= pc &&
+                    (lv.startPC + lv.length) > pc
+                result
+            }
+        }
+    }
 
     /**
      * Collects all local variable type tables.
@@ -624,6 +676,18 @@ case class Code(
     }
 
     /**
+     * This attribute's kind id.
+     */
+    override def kindId: Int = Code.KindId
+
+    //    /**
+    //     * Associates the current memory layout with each instruction.
+    //     */
+    //    def memoryLayout(): (Array[List[ValueInformation]], Array[Locals[ValueInformation]]) = {
+    //
+    //    }
+
+    /**
      * A complete representation of this code attribute (including instructions,
      * attributes, etc.).
      */
@@ -637,11 +701,6 @@ case class Code(
             ")"
     }
 
-    /**
-     * This attribute's kind id.
-     */
-    override def kindId: Int = Code.KindId
-
 }
 
 /**
@@ -650,6 +709,63 @@ case class Code(
  * @author Michael Eichberg
  */
 object Code {
+
+    def apply(
+        maxStack: Int,
+        maxLocals: Int,
+        instructions: Array[Instruction],
+        exceptionHandlers: ExceptionHandlers,
+        attributes: Attributes): Code = {
+
+        var localVariableTablesCount = 0
+        var lineNumberTablesCount = 0
+        attributes.foreach { a ⇒
+            if (a.isInstanceOf[LocalVariableTable]) {
+                localVariableTablesCount += 1
+            } else if (a.isInstanceOf[UnpackedLineNumberTable]) {
+                lineNumberTablesCount += 1
+            }
+        }
+
+        if (localVariableTablesCount <= 1 && lineNumberTablesCount <= 1) {
+            new Code(maxStack, maxLocals, instructions, exceptionHandlers, attributes)
+        } else {
+            val (localVariableTables, otherAttributes1) =
+                attributes partition { _.isInstanceOf[LocalVariableTable] }
+            val newAttributes1 =
+                if (localVariableTables.nonEmpty && localVariableTables.tail.nonEmpty) {
+                    val allLVs =
+                        localVariableTables.
+                            map(_.asInstanceOf[LocalVariableTable].localVariables).
+                            toIndexedSeq
+                    val theLVT = allLVs.flatten
+                    new LocalVariableTable(theLVT) +: otherAttributes1
+                } else {
+                    attributes
+                }
+
+            val (lineNumberTables, otherAttributes2) =
+                newAttributes1 partition { _.isInstanceOf[UnpackedLineNumberTable] }
+            val newAttributes2 =
+                if (lineNumberTables.nonEmpty && lineNumberTables.tail.nonEmpty) {
+                    val mergedTables =
+                        lineNumberTables.map(_.asInstanceOf[UnpackedLineNumberTable].lineNumbers).flatten
+                    val sortedTable =
+                        mergedTables.sortWith((ltA, ltB) ⇒ ltA.startPC < ltB.startPC)
+                    new UnpackedLineNumberTable(sortedTable) +: otherAttributes2
+
+                } else {
+                    newAttributes1
+                }
+
+            new Code(maxStack, maxLocals, instructions, exceptionHandlers, newAttributes2)
+        }
+    }
+
+    def unapply(code: Code): Option[(Int, Int, Array[Instruction], ExceptionHandlers, Attributes)] = {
+        import code._
+        Some((maxStack, maxLocals, instructions, exceptionHandlers, attributes))
+    }
 
     /**
      * The unique id associated with attributes of kind: [[Code]].

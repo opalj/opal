@@ -51,7 +51,8 @@ class DefaultVTACallGraphDomain[Source](
     val classFile: ClassFile,
     val method: Method,
     override val maxCardinalityOfIntegerRanges: Long)
-        extends DefaultDomainValueBinding
+        extends CoRelationalDomain
+        with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject[Source]
         with ProjectBasedClassHierarchy

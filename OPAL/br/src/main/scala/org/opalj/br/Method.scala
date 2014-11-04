@@ -170,6 +170,10 @@ final class Method private (
 
     def toJava(): String = descriptor.toJava(name)
 
+    def toJava(declaringClass: ClassFile): String = toJava(declaringClass.thisType)
+
+    def toJava(declaringType: ObjectType): String = s"${declaringType.toJava}{ $toJava }"
+
     def fullyQualifiedSignature(declaringClassType: ObjectType): String = {
         descriptor.toJava(declaringClassType.toJava+"."+name)
     }
