@@ -615,6 +615,244 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
         }
+        
+        describe("the behavior of ishr") {
+
+            it("[-100,-100] >> [4,4] => [-7, -7]") {
+                val v = IntegerRange(-100, -100)
+                val s = IntegerRange(4, 4)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(-7)
+                        ub should ===(-7)
+                    case v ⇒
+                        fail(s"expected [-7,-7]; found $v")
+                }
+            }
+
+            it("[20,20] >> [4,4] => [1, 1]") {
+                val v = IntegerRange(20, 20)
+                val s = IntegerRange(4, 4)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(1)
+                        ub should ===(1)
+                    case v ⇒
+                        fail(s"expected [1,1]; found $v")
+                }
+            }
+
+            it("[-10,5] >> [3,3] => [-2, 0]") {
+                val v = IntegerRange(-10, 5)
+                val s = IntegerRange(3, 3)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -2
+                        ub should be >= 0
+                    case v ⇒
+                        fail(s"expected lb <= -2 and ub >= 0; found $v")
+                }
+            }
+
+            it("[-10,5] >> [3,31] => [-2, 0]") {
+                val v = IntegerRange(-10, 5)
+                val s = IntegerRange(3, 31)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -2
+                        ub should be >= 0
+                    case v ⇒
+                        fail(s"expected lb <= -2 and ub >= 0; found $v")
+                }
+            }
+
+            it("[-10,5] >> [1,3] => [-5, 2]") {
+                val v = IntegerRange(-10, 5)
+                val s = IntegerRange(1, 3)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= -5
+                        ub should be >= 2
+                    case v ⇒
+                        fail(s"expected lb <= -5 and ub >= 2; found $v")
+                }
+            }
+
+            it("[-1,1] >> [0,31] => [-1, 1]") {
+                val v = IntegerRange(-1, 1)
+                val s = IntegerRange(0, 31)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-1)
+                        ub should be >= (1)
+                    case v ⇒
+                        fail(s"expected lb <= -1 and ub >= 1; found $v")
+                }
+            }
+
+            it("[-10,-5] >> [1,3] => [-5, -1]") {
+                val v = IntegerRange(-10, -5)
+                val s = IntegerRange(1, 3)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-5)
+                        ub should be >= (-1)
+                    case v ⇒
+                        fail(s"expected lb <= -5 and ub >= -1; found $v")
+                }
+            }
+
+            it("[-10,-5] >> [1,31] => [-5, -1]") {
+                val v = IntegerRange(-10, -5)
+                val s = IntegerRange(1, 31)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-5)
+                        ub should be >= (-1)
+                    case v ⇒
+                        fail(s"expected lb <= -5 and ub >= -1; found $v")
+                }
+            }
+
+            it("[10,50] >> [1,31] => [0, 25]") {
+                val v = IntegerRange(10, 50)
+                val s = IntegerRange(1, 31)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (0)
+                        ub should be >= (25)
+                    case v ⇒
+                        fail(s"expected lb <= 0 and ub >= 25; found $v")
+                }
+            }
+
+            it("[1,5] >> [0,2] => [0, 5]") {
+                val v = IntegerRange(1, 5)
+                val s = IntegerRange(0, 2)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (0)
+                        ub should be >= (5)
+                    case v ⇒
+                        fail(s"expected lb <= 0 and ub >= 5; found $v")
+                }
+            }
+
+            it("[Int.MinValue, Int.MinValue+100] >> [0,31] => [-2147483648,-1]") {
+                val v = IntegerRange(Int.MinValue, Int.MinValue + 100)
+                val s = IntegerRange(0, 31)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2147483648)
+                        ub should be >= (-1)
+                    case v ⇒
+                        fail(s"expected lb <= -2147483648 and ub >= -1; found $v")
+                }
+            }
+
+            it("[Int.MaxValue-1000, Int.MaxValue] >> [10,12] => [524287,2097151]") {
+                val v = IntegerRange(Int.MaxValue - 1000, Int.MaxValue)
+                val s = IntegerRange(10, 12)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (524287)
+                        ub should be >= (2097151)
+                    case v ⇒
+                        fail(s"expected lb <= 524287 and ub >= 2097151; found $v")
+                }
+            }
+
+            it("[-1000, -1] >> [-5,12] => [-1000,-1]") {
+                val v = IntegerRange(-1000, -1)
+                val s = IntegerRange(-5, 12)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-1000)
+                        ub should be >= (-1)
+                    case v ⇒
+                        fail(s"expected lb <= -1000 and ub >= -1; found $v")
+                }
+            }
+
+            it("[-10, 1] >> [-8,12] => [-10,1]") {
+                val v = IntegerRange(-10, 1)
+                val s = IntegerRange(-8, 12)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-10)
+                        ub should be >= (1)
+                    case v ⇒
+                        fail(s"expected lb <= -10 and ub >= 1; found $v")
+                }
+            }
+
+            it("[10, 12] >> [-12,12] => [0,12]") {
+                val v = IntegerRange(10, 12)
+                val s = IntegerRange(-12, 12)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (0)
+                        ub should be >= (12)
+                    case v ⇒
+                        fail(s"expected lb <= 0 and ub >= 12; found $v")
+                }
+            }
+
+            it("[-1000, -1] >> [13,35] => [-1,-1]") {
+                val v = IntegerRange(-1000, -1)
+                val s = IntegerRange(13, 35)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(-1)
+                        ub should ===(-1)
+                    case v ⇒
+                        fail(s"expected [-1,-1]; found $v")
+                }
+            }
+
+            it("[-10, 1] >> [30,45] => [-1,0]") {
+                val v = IntegerRange(-10, 1)
+                val s = IntegerRange(30, 45)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(-1)
+                        ub should ===(0)
+                    case v ⇒
+                        fail(s"expected [-1,0]; found $v")
+                }
+            }
+
+            it("[1, 12] >> [20,120] => [0,0]") {
+                val v = IntegerRange(1, 12)
+                val s = IntegerRange(20, 120)
+
+                ishr(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(0)
+                        ub should ===(0)
+                    case v ⇒
+                        fail(s"expected [0,0]; found $v")
+                }
+            }
+        }
+
 
         describe("the behavior of iadd") {
 
@@ -1059,7 +1297,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                         lb should be <= 1
                         ub should be >= 64
 
-                    case v ⇒ fail(s"expected lb <= 1 and ub >= 64]; found $v")
+                    case v ⇒ fail(s"expected lb <= 1 and ub >= 64; found $v")
                 }
             }
 
