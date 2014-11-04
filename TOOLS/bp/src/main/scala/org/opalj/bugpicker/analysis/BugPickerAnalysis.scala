@@ -68,6 +68,8 @@ import org.opalj.br.instructions.INEG
 import org.opalj.br.instructions.IINC
 import org.opalj.br.instructions.ShiftInstruction
 import org.opalj.br.instructions.INSTANCEOF
+import org.opalj.br.instructions.ISTORE
+import org.opalj.br.instructions.IStoreInstruction
 
 /**
  * A static analysis that analyzes the data-flow to identify various issues in the
@@ -142,16 +144,20 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
         val results = new java.util.concurrent.ConcurrentLinkedQueue[Issue]()
+
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
-            val domain =
+            val analysisDomain =
                 new BugPickerAnalysisDomain(theProject, method, maxCardinalityOfIntegerRanges)
             val ai =
-                new BoundedInterruptableAI[domain.type](
+                new BoundedInterruptableAI[analysisDomain.type](
                     body,
                     maxEvalFactor,
                     maxEvalTime,
                     doInterrupt)
-            val result = ai(classFile, method, domain)
+            val result = ai(classFile, method, analysisDomain)
+            import result.domain.ConcreteIntegerValue
+            import result.domain.ConcreteLongValue
+            import result.domain
 
             if (!result.wasAborted) {
                 val operandsArray = result.operandsArray
@@ -191,8 +197,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                 }
 
                 val methodsWithUselessComputations = {
-                    import result.domain.ConcreteIntegerValue
-                    import result.domain.ConcreteLongValue
+
                     collectWithOperandsAndIndex(result.domain)(body, result.operandsArray) {
 
                         // HANDLING INT VALUES 
@@ -242,7 +247,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                             pc,
                             INSTANCEOF(referenceType),
                             Seq(rv: domain.ReferenceValue, _*)
-                            ) if result.domain.intValueOption(
+                            ) if domain.intValueOption(
                             result.operandsArray(pc + INSTANCEOF.length).head).isDefined ⇒
                             (pc, s"Useless type test: ${rv.upperTypeBound.map(_.toJava).mkString("", " with ", "")} instanceof ${referenceType.toJava}")
 
@@ -257,6 +262,42 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                 results.addAll(
                     scala.collection.JavaConversions.asJavaCollection(methodsWithUselessComputations)
                 )
+
+                if (domain.code.localVariableTable.isDefined) {
+                    // This analysis requires debug information to increase the likelihood
+                    // the we identify the correct local variable re-assignments. Otherwise
+                    // we are not able to distinguish the reuse of a "register variable"/
+                    // local variable for a new/different purpose or the situation where
+                    // the same variable is updated the second time using the same
+                    // value.
+
+                    val operandsArray = result.operandsArray
+                    val localsArray = result.localsArray
+                    val code = domain.code
+
+                    val methodsWithValueReassignment =
+                        collectWithOperandsAndIndex(domain)(body, operandsArray) {
+                            case (
+                                pc,
+                                IStoreInstruction(index),
+                                Seq(ConcreteIntegerValue(a), _*)
+                                ) if localsArray(pc) != null &&
+                                domain.intValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
+                                code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
+
+                                val lv = code.localVariable(pc, index).get
+
+                                UselessComputation(
+                                    classFile, method, pc,
+                                    Some(localsArray(pc)),
+                                    "(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+").")
+
+                        }
+
+                    results.addAll(
+                        scala.collection.JavaConversions.asJavaCollection(methodsWithValueReassignment)
+                    )
+                }
 
             } else if (!doInterrupt()) {
                 println(
