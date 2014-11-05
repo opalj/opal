@@ -40,7 +40,7 @@ import org.opalj.br.ClassFile
  * @author Michael Eichberg
  */
 trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with MethodCallsDomain with domain.ClassHierarchy with Configuration with TheProject[_] with TheCode ⇒
+    callingDomain: ValuesFactory with ReferenceValuesDomain with domain.ClassHierarchy with Configuration with TheProject[_] with TheCode ⇒
 
     val calledMethodsStore: CalledMethodsStore
 
@@ -53,7 +53,7 @@ trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
     trait InvokeExecutionHandler extends super.InvokeExecutionHandler {
 
         override val domain: Domain with MethodCallResults with PerformInvocationsWithRecursionDetection {
-            // we want to make sure that all instances use the same CalledMethodsStore
+            // we need to make sure that all instances use the same CalledMethodsStore
             val calledMethodsStore: callingDomain.calledMethodsStore.type
         }
 
