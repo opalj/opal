@@ -61,6 +61,8 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     /* ABSTRACT */ def set(index: Int, value: T): Unit
 
+    final def update(index: Int, value: T): Unit = set(index, value)
+
     /* ABSTRACT */ def update(f: (T) ⇒ T): Unit
 
     /* ABSTRACT */ def updated(index: Int, value: T): Locals[T]
