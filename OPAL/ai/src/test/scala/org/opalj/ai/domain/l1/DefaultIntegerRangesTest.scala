@@ -1661,6 +1661,17 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         val testProject = org.opalj.br.analyses.Project(testFolder)
         val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
+        describe("hanlding of complex dependent casts and moduluo operations") {
+
+            it("the analysis should be correct in the presence of type casts (\"randomModulo\")") {
+                val domain = new IntegerRangesTestDomain
+                val method = IntegerValues.findMethod("randomModulo").get
+                val result = BaseAI(IntegerValues, method, domain)
+                result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
+            }
+
+        }
+
         describe("constraint propagation") {
 
             it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing") {
