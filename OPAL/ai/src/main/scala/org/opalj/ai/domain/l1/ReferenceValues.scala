@@ -65,6 +65,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
     }
 
+    override def refAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
+        if (value1 eq value2)
+            Yes
+        else
+            super.refAreEqual(pc, value1, value2)
+    }
+
     /**
      * Common supertrait of all [[DomainValue]]s that represent reference values. This
      * trait defines the additional methods needed for the refinement of the new
