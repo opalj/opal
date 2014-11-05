@@ -30,15 +30,19 @@ package org.opalj
 package br
 package instructions
 
+trait DStoreInstruction extends StoreLocalVariableInstruction
+
+object DStoreInstruction {
+
+    def unapply(dstore: DStoreInstruction): Option[Int] = Some(dstore.lvIndex)
+}
+
 /**
  * Store double into local variable.
  *
  * @author Michael Eichberg
  */
-case class DSTORE(
-    lvIndex: Int)
-        extends StoreLocalVariableInstruction
-        with ExplicitLocalVariableIndex {
+case class DSTORE(lvIndex: Int) extends DStoreInstruction with ExplicitLocalVariableIndex {
 
     final def opcode: Opcode = DSTORE.opcode
 
