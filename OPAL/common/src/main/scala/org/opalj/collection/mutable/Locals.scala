@@ -112,6 +112,30 @@ sealed trait Locals[T >: Null <: AnyRef] {
     }
 
     /**
+     * Counts the number of (non-null) values that do not match the given given predicate;
+     * the count of the first element that matches the predicate is returned. If
+     * no value matches the predicate -1 is returned.
+     */
+    def nthValue[X >: T](f: X ⇒ Boolean): Int = {
+        val max = size
+        var i = 0
+        var index = 0
+        while (i < max) {
+            val value = apply(i)
+            i += 1
+            if (value != null) {
+
+                if (f(value))
+                    return index;
+
+                index += 1
+            }
+        }
+
+        -1
+    }
+
+    /**
      * Creates a new vector which contains the mapped values as specified by the given
      * function `f`.
      *
