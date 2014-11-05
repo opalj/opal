@@ -46,7 +46,7 @@ trait DefaultPreciseIntegerValues
 
     /**
      * @note The functionality to propagate a constraint crucially depends on
-     *      the fact two integer values created at two different places are represented
+     *      the fact that two integer values created at two different places are represented
      *      by two different instances of "AnIntegerValue"; otherwise, propagating the
      *      constraint that some value (after some kind of check) has to have a special
      *      value may affect unrelated values!
