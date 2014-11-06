@@ -55,7 +55,7 @@ import domain._
  * @author Michael Eichberg
  */
 trait CHACallGraphDomain extends CallGraphDomain {
-    domain: TheProject[_] with TheMethod with ClassHierarchy ⇒
+    domain: TheProject with TheMethod with ClassHierarchy ⇒
 
     //
     // Helper data structures  

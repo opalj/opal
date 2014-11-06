@@ -52,7 +52,7 @@ private class ImmutabilityAnalysisDomain[Source](
     val project: Project[Source],
     val method: Method)
         extends Domain
-        with TheProject[Source]
+        with TheProject
         with TheMethod
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration

@@ -55,7 +55,7 @@ object MethodReturnValuesAnalysis extends AnalysisExecutor {
         val ai: InterruptableAI[_],
         val method: Method)
             extends Domain
-            with domain.TheProject[java.net.URL]
+            with domain.TheProject
             with domain.ProjectBasedClassHierarchy
             with domain.TheMethod
             with domain.DefaultDomainValueBinding

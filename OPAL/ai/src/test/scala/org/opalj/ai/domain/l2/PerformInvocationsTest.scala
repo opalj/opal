@@ -212,7 +212,7 @@ object PerformInvocationsTestFixture {
     trait L1Domain
         extends CoRelationalDomain
         with DefaultDomainValueBinding
-        with TheProject[java.net.URL]
+        with TheProject
         with ThrowAllPotentialExceptionsConfiguration
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
@@ -228,7 +228,7 @@ object PerformInvocationsTestFixture {
     trait LiDomain
             extends CoRelationalDomain
             with DefaultDomainValueBinding
-            with TheProject[java.net.URL]
+            with TheProject
             with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
@@ -251,7 +251,7 @@ object PerformInvocationsTestFixture {
             with PerformInvocations
             with DefaultHandlingOfMethodResults
             with RecordMethodCallResults {
-        domain: ValuesFactory with ClassHierarchy with Configuration with TheProject[_] with TheMethod ⇒
+        domain: ValuesFactory with ClassHierarchy with Configuration with TheProject with TheMethod ⇒
 
         def isRecursive(
             definingClass: ClassFile,

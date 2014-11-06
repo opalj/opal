@@ -214,7 +214,7 @@ private class FieldStatusTracingDomain[Source](
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with ProjectBasedClassHierarchy
-        with TheProject[Source]
+        with TheProject
         with TheMethod
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization

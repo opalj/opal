@@ -53,7 +53,7 @@ class DefaultCHACallGraphDomain[Source](
         extends Domain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
-        with TheProject[Source]
+        with TheProject
         with TheMethod
         with ProjectBasedClassHierarchy
         with DefaultHandlingOfMethodResults

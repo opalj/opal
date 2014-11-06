@@ -54,7 +54,7 @@ class DefaultVTACallGraphDomain[Source](
         extends CoRelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
-        with TheProject[Source]
+        with TheProject
         with ProjectBasedClassHierarchy
         with TheMethod
         with DefaultHandlingOfMethodResults

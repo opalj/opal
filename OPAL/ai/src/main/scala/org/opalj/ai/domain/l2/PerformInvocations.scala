@@ -46,7 +46,7 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
  * @author Michael Eichberg
  */
 trait PerformInvocations extends MethodCallsDomain {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject[_] with TheCode with domain.ClassHierarchy ⇒
+    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode with domain.ClassHierarchy ⇒
 
     /**
      * Identifies recursive calls.

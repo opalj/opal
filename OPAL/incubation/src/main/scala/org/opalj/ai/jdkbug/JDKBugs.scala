@@ -200,7 +200,7 @@ trait TaintAnalysisDomain[Source]
         with TypeLevelFieldAccessInstructions
         with TypeLevelInvokeInstructions
         with TypeLevelReferenceValues
-        with TheProject[Source]
+        with TheProject
         with TheCode
         with ProjectBasedClassHierarchy
         with OptionalReport { thisDomain ⇒
