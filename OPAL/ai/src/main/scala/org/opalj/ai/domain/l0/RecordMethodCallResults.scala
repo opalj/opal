@@ -68,7 +68,31 @@ trait RecordMethodCallResults
         }
     }
 
+    def returnedValueRemapped(
+        callerDomain: TargetDomain,
+        callerPC: PC)(
+            originalOperands: callerDomain.Operands,
+            passedParameters: Locals): Option[callerDomain.DomainValue] = {
+
+        if (allReturnedValues.isEmpty)
+            None
+        else {
+            val summarizedValue = summarize(callerPC, allReturnedValues.values)
+
+            val nthParameter = passedParameters.nthValue { _ eq summarizedValue }
+            if (nthParameter == -1)
+                Some(summarizedValue.adapt(callerDomain, callerPC))
+            else {
+                // map back to operand...
+                val mappedBackValue = originalOperands.reverse(nthParameter)
+                Some(mappedBackValue)
+            }
+        }
+    }
+
+    // [IMPROVE] Remap returned exceptions
     def thrownExceptions(target: TargetDomain, callerPC: PC): target.ExceptionValues = {
+
         val allThrownExceptions = this.allThrownExceptions //: Map[PC, ThrownException] 
         if (allThrownExceptions.isEmpty) {
             Iterable.empty
