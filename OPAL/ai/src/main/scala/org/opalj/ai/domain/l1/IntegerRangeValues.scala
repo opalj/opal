@@ -844,6 +844,24 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
 
     override def ishr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
+            case (_, IntegerRange(0, 0)) ⇒
+                value
+
+            // in this case the shift does not change the given integer range of [-1,-1], 
+            // hence the same object should be returned
+            case (IntegerRange(-1, -1), _) ⇒
+                value
+
+            case (IntegerRange(0, 0), _) ⇒
+                value
+
+            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub && vlb >= 0 && vlb <= 31 && slb >= 0 && sub <= 31 ⇒
+                val r = vlb >> slb
+                IntegerRange(r)
+
+            case (_, IntegerRange(31, 31)) ⇒
+                IntegerRange(-1, 0)
+
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
                 // We have one "arbitrary" range of numbers to shift and one range that 
                 // should be between 0 and 31. Every number above 31 or any negative number does not make sense, since
