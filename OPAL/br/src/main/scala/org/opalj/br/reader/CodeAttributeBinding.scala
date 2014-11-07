@@ -59,7 +59,9 @@ trait CodeAttributeBinding
         instructions: Instructions,
         exception_handlers: ExceptionHandlers,
         attributes: Attributes) = {
-        new Code(max_stack, max_locals, instructions, exception_handlers, attributes)
+        org.opalj.br.Code(
+            max_stack, max_locals, instructions, exception_handlers, attributes
+        )
     }
 
     def ExceptionTableEntry(

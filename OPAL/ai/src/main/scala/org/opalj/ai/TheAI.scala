@@ -50,6 +50,10 @@ trait TheAI[D <: Domain] {
         this.theAI = ai
     }
 
+    /**
+     * Returns the instance of the abstract interpreter that performs the abstract
+     * interpretation.
+     */
     def ai: AI[D] = theAI
 
     def tracer: Option[AITracer] = ai.tracer

@@ -30,22 +30,19 @@ package org.opalj
 package bugpicker
 package analysis
 
-import scala.xml.Node
-import scala.xml.Text
-import scala.xml.UnprefixedAttribute
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
-import scala.collection.SortedMap
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.typeToXHTML
+import scala.xml.Node
+import scala.xml.Text
+import scala.xml.UnprefixedAttribute
+
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
 import org.opalj.br.methodToXHTML
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.ConditionalBranchInstruction
-import org.opalj.br.instructions.SimpleConditionalBranchInstruction
-import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import scala.xml.Unparsed
+import org.opalj.br.typeToXHTML
+import org.opalj.collection.mutable.Locals
 
 /**
  * Describes a useless computation.
@@ -56,15 +53,12 @@ case class UselessComputation(
         classFile: ClassFile,
         method: Method,
         pc: PC,
+        localVariables: Option[Locals[_ <: AnyRef]],
         computation: String) extends Issue {
 
     override def category: String = IssueCategory.Performance
 
     override def kind: String = IssueKind.ConstantComputation
-
-    def opcode: Int = method.body.get.instructions(pc).opcode
-
-    def line: Option[Int] = method.body.get.lineNumber(pc)
 
     def message: String = {
 
@@ -105,7 +99,7 @@ case class UselessComputation(
 
         val styleAttribute = "color:rgb(126, 64, 64)";
 
-        val classAttribute = "issue "+kind
+        val classAttribute = "an_issue "+kind
 
         val node =
             <div class={ classAttribute } style={ styleAttribute }>
@@ -118,14 +112,13 @@ case class UselessComputation(
                     </dd>
                     <dt>location</dt>
                     <dd>
-                        <span class="program_counter">PC={ pcNode }</span>
+                        <span class="program_counter">pc={ pcNode }</span>
                         &nbsp;
-                        <span class="line_number">Line={ lineNode }</span>
+                        <span class="line_number">line={ lineNode }</span>
                     </dd>
+                    <dt class="issue">issue</dt>
+                    <dd class="issue_message">{ computation }</dd>
                 </dl>
-                <div class="issue_message">
-                    <p>{ computation }</p>
-                </div>
             </div>
 
         node % (

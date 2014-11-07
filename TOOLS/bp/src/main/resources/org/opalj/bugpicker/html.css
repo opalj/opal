@@ -113,3 +113,32 @@ span.value{
 span.keyword{
 	font-style: italic;
 }
+
+table{
+	white-space: inherit;
+	line-height: inherit;
+	font-weight: inherit;
+	font-size: inherit;
+	font-variant: inherit;
+	font-style: inherit;
+	border: 0;
+	margin: 0;
+	padding: 0;
+}
+
+th{
+	font-weight: bolder;
+	text-align: left;
+	word-wrap: break-word;
+}
+
+td{
+	word-break:break-all;
+	word-wrap: break-word;
+	vertical-align:top;
+}
+
+.warning{
+	color: rgb(242, 112, 46);
+	font-size: smaller;
+}

@@ -37,13 +37,13 @@ function updateRelevance(value) {
 }
 
 function openAllPackages() {
-	document.querySelectorAll('details').forEach(
-		function(e){e.setAttribute('open')}
+	document.querySelectorAll('div#analysis_results > details').forEach(
+		function(e){e.open=true}
 	)
 }
 
 function closeAllPackages() {
-	document.querySelectorAll('details').forEach(
+	document.querySelectorAll('div#analysis_results > details').forEach(
 		function(e){e.removeAttribute('open')}
 	)
 }

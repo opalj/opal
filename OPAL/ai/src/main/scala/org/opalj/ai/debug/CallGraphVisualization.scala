@@ -121,12 +121,16 @@ object CallGraphVisualization {
                         }
                     cache = null
                     ClassFileReader = null
-                    Project(classFiles)
+                    val project = Project(classFiles)
+                    println(
+                        project.statistics.map(e ⇒ "\t"+e._1+": "+e._2).toSeq.sorted.
+                            mkString("Project statistics:\n\t", "\n\t", "")
+                    )
+                    project
                 } { t ⇒ println("Setting up the project took: "+ns2sec(t)) }
-            } { m ⇒ println("Required memory for base representation: "+asMB(m)) }
-        val fqnFilter = args(2)
+            } { m ⇒ println("Required memory for base representation: "+asMB(m))+"\n" }
 
-        println(project.statistics.map(e ⇒ "\t"+e._1+": "+e._2).mkString("Project statistics:\n\t", "\n\t", ""))
+        val fqnFilter = args(2)
 
         //
         // GRAPH CONSTRUCTION
@@ -147,30 +151,31 @@ object CallGraphVisualization {
                         project,
                         entryPoints,
                         callGraphAlgorithmConfig)
+
+                    // Some statistics 
+                    import computedCallGraph.callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
+                    println("Methods with at least one resolved call: "+callsCount)
+                    println("Methods which are called by at least one method: "+calledByCount)
+
+                    var callGraphEdgesCount = 0
+                    var maxCallSitesPerMethod = 0
+                    var maxTargets = 0
+                    foreachCallingMethod { (method, callees) ⇒
+                        val calleesCount = callees.size
+                        callGraphEdgesCount += calleesCount
+                        if (calleesCount > maxCallSitesPerMethod) maxCallSitesPerMethod = calleesCount
+                        for (targets ← callees.values) {
+                            val targetsCount = targets.size
+                            if (targetsCount > maxTargets) maxTargets = targetsCount
+                        }
+                    }
+                    println("Number of all call edges: "+callGraphEdgesCount)
+                    println("Maximum number of targets over all calls: "+maxTargets)
+                    println("Maximum number of method calls over all methods: "+maxCallSitesPerMethod)
+
                     computedCallGraph
                 } { t ⇒ println("Creating the call graph took: "+ns2sec(t)) }
-            } { m ⇒ println("Required memory for call graph: "+asMB(m)) }
-
-        // Some statistics 
-        import callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
-        println("Methods with at least one resolved call: "+callsCount)
-        println("Methods which are called by at least one method: "+calledByCount)
-
-        var callGraphEdgesCount = 0
-        var maxCallSitesPerMethod = 0
-        var maxTargets = 0
-        foreachCallingMethod { (method, callees) ⇒
-            val calleesCount = callees.size
-            callGraphEdgesCount += calleesCount
-            if (calleesCount > maxCallSitesPerMethod) maxCallSitesPerMethod = calleesCount
-            for (targets ← callees.values) {
-                val targetsCount = targets.size
-                if (targetsCount > maxTargets) maxTargets = targetsCount
-            }
-        }
-        println("Number of all call edges: "+callGraphEdgesCount)
-        println("Maximum number of targets over all calls: "+maxTargets)
-        println("Maximum number of method calls over all methods: "+maxCallSitesPerMethod)
+            } { m ⇒ println("Required memory for call graph: "+asMB(m))+"\n" }
 
         //
         // Let's create the visualization
@@ -201,7 +206,7 @@ object CallGraphVisualization {
                 nodesForMethods += ((caller, node)) // break cycles!
 
                 for {
-                    perCallsiteCallees ← calls(caller).values
+                    perCallsiteCallees ← callGraph.calls(caller).values
                     callee ← perCallsiteCallees
                     if project.classFile(callee).fqn.startsWith(fqnFilter)
                 } {
@@ -210,7 +215,7 @@ object CallGraphVisualization {
                 node
             }
 
-            foreachCallingMethod { (method, callees) ⇒
+            callGraph.foreachCallingMethod { (method, callees) ⇒
                 if (project.classFile(method).thisType.fqn.startsWith(fqnFilter))
                     createNode(method)
             }

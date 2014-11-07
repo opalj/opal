@@ -45,15 +45,18 @@ div#analysis_results {
 	margin-top: 5em;
 }
 
-div.issue{
+div.an_issue{
 	padding: 0.5em;	
 	background-color: rgb(241, 244, 255);
 	border: 1px solid  rgb(224, 222, 235);
 	border-top: 0px;	
 }
 
+.issue{
+	margin-top: 1em;	
+}
+
 .issue_message {
-	margin-top: 0.5em;
 	color: rgb(94,94,94);
 	font-weight: 300;
 }
@@ -64,4 +67,10 @@ div.declaring_class{
 }
 div.declaring_class:before{
 	content: "class:";
+}
+
+details.locals {
+	padding:0;
+	background-color: rgba(174, 177, 255, 0.24);
+	border: 1px solid rgb(172, 172, 205);
 }

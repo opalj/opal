@@ -210,7 +210,7 @@ private class FieldStatusTracingDomain[Source](
 
     // Callback used to analyze invoked methods
     val evaluateMethod: (ClassFile, Set[Method], ClassFile, Method, FieldStatus) ⇒ FieldStatus)
-        extends Domain
+        extends CoRelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with ProjectBasedClassHierarchy

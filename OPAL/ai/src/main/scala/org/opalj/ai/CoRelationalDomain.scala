@@ -27,20 +27,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package instructions
+package ai
+
+import org.opalj.br.ConstantFieldValue
+import org.opalj.br.ConstantInteger
+import org.opalj.br.ConstantLong
+import org.opalj.br.ConstantFloat
+import org.opalj.br.ConstantDouble
+import org.opalj.br.ConstantString
 
 /**
- * Store int into local variable with index 0.
  *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-case object ISTORE_0 extends IStoreInstruction with ImplicitLocalVariableIndex {
+trait CoRelationalDomain
+    extends Domain
+    with JoinStabilization
+    with IdentityBasedAliasBreakUpDetection
 
-    final val lvIndex = 0
-
-    final val opcode = 59
-
-    final val mnemonic = "istore_0"
-
-}

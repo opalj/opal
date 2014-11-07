@@ -54,7 +54,8 @@ import org.opalj.collection.mutable.Locals
 @RunWith(classOf[JUnitRunner])
 class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTestExecution {
 
-    object TheDomain extends Domain
+    object TheDomain
+            extends CoRelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with PredefinedClassHierarchy

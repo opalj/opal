@@ -32,8 +32,9 @@ package ai
 /**
  * Identifies situations (based on a '''reference comparison of the domain values''')
  * in which the memory layout changes such that an alias that
- * existed before a join no longer exists. In this case the [[UpdateType]] is set to
- * [[StructuralUpdateType]].
+ * existed before a join was performed no longer exists.
+ * In this case the [[UpdateType]] is set to [[StructuralUpdateType]].
+ *
  * For example, imagine that the old stack layout (before the join was executed)
  * is as follows:
  *

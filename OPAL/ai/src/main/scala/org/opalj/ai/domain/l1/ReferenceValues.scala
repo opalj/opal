@@ -191,11 +191,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         /**
          * Copy constructor.
          */
-        def apply(
+        /*ABSTRACT*/ def apply(
             origin: ValueOrigin = this.origin,
             isNull: Answer = this.isNull): DomainSingleOriginReferenceValue
 
-        def refineIsNullIf(hasPC: PC)(isNull: Answer): DomainSingleOriginReferenceValue
+        /*ABSTRACT*/ def refineIsNullIf(
+            hasPC: PC)(
+                isNull: Answer): DomainSingleOriginReferenceValue
 
         /*ABSTRACT*/ protected def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,

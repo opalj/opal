@@ -52,8 +52,8 @@ class ConstraintsBetweenIntegerValuesTest extends FunSpec with Matchers with Par
 
     class IntegerRangesWithInterIntegerConstraintsTestDomain(
         override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
-            extends Domain
-            with DefaultDomainValueBinding
+            extends CoRelationalDomain
+            with IdentityBasedAliasBreakUpDetection
             with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues

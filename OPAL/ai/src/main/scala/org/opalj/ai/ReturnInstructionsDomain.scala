@@ -30,7 +30,7 @@ package org.opalj
 package ai
 
 /**
- *
+ * Models all return instructions.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
