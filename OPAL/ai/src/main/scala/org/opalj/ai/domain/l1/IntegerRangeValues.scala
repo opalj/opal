@@ -855,7 +855,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
             case (IntegerRange(0, 0), _) ⇒
                 value
 
-            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub && vlb >= 0 && vlb <= 31 && slb >= 0 && sub <= 31 ⇒
+            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub ⇒
                 val r = vlb >> slb
                 IntegerRange(r)
 
@@ -866,7 +866,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                 // We have one "arbitrary" range of numbers to shift and one range that 
                 // should be between 0 and 31. Every number above 31 or any negative number does not make sense, since
                 // only the five least significant bits are used for shifting.
-                val maxShift = if (sub > 31 || sub < 0) 31 else sub
+                val maxShift = if (sub >= 0 && sub <= 31) sub else 31
                 val minShift = if (slb >= 0 && slb <= 31) slb else 0
 
                 if (vlb >= 0) {

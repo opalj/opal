@@ -852,16 +852,16 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
 
-            it("[10, 10] >> [-9,-9] => [0,10]") {
+            it("[10, 10] >> [-9,-9] => [0,0]") {
                 val v = IntegerRange(10, 10)
                 val s = IntegerRange(-9, -9)
 
                 ishr(-1, v, s) match {
                     case (IntegerRange(lb, ub)) ⇒
-                        lb should be <= (0)
-                        ub should be >= (10)
+                        lb should ===(0)
+                        ub should ===(0)
                     case v ⇒
-                        fail(s"expected lb <= 0 and ub >= 10; found $v")
+                        fail(s"expected [0,0]; found $v")
                 }
             }
 
