@@ -188,7 +188,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                                 method: Method): VTACallGraphDomain =
                                 new DefaultVTACallGraphDomain(
                                     theProject, cache, classFile, method, 3
-                                ) with domain.ConstantFieldValuesResolution[Source]
+                                ) with domain.ConstantFieldValuesResolution
                         })
                 VTACG = theVTACG
 
@@ -205,7 +205,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                                 method: Method): VTACallGraphDomain =
                                 new DefaultVTACallGraphDomain(
                                     theProject, cache, classFile, method, 3
-                                ) with domain.ConstantFieldValuesResolution[Source]
+                                ) with domain.ConstantFieldValuesResolution
                         })
 
                 info("comparing the call graphs")
@@ -239,7 +239,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                                 method: Method): VTACallGraphDomain =
                                 new DefaultVTACallGraphDomain(
                                     theProject, cache, classFile, method, 2
-                                ) with domain.ConstantFieldValuesResolution[Source]
+                                ) with domain.ConstantFieldValuesResolution
                         })
 
                 info("calculating the more precise VTA based call graph")
@@ -255,7 +255,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                                 method: Method): VTACallGraphDomain =
                                 new DefaultVTACallGraphDomain(
                                     theProject, cache, classFile, method, 20
-                                ) with domain.ConstantFieldValuesResolution[Source]
+                                ) with domain.ConstantFieldValuesResolution
                         })
 
                 info("comparing the variants of the VTA based call graphs")

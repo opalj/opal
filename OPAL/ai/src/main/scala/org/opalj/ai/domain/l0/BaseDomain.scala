@@ -46,9 +46,9 @@ import org.opalj.br.{ Method, ClassFile }
  *
  * @author Michael Eichberg
  */
-class BaseConfigurableDomain[I, Source](
+class BaseConfigurableDomain[I, S](
     val id: I,
-    val project: Project[Source],
+    val project: Project[S],
     val classFile: ClassFile,
     val method: Method)
         extends TypeLevelDomain
@@ -57,7 +57,7 @@ class BaseConfigurableDomain[I, Source](
         with DefaultPrimitiveValuesConversions
         with IgnoreSynchronization
         with ProjectBasedClassHierarchy
-        with TheProject[Source]
+        with TheProject
         with TheMethod
         with DomainId {
 

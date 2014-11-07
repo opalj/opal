@@ -27,42 +27,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
-
-import org.opalj.br.analyses.SomeProject
+package br
+package analyses
 
 /**
- * Provides information about the underlying project.
+ * The ''key'' object to get the estimated complexity of evaluating a method.
  *
- * ==Usage==
- * If a (partial-) domain needs information about the project declare a corresponding
- * self-type dependency.
- * {{{
- * trait MyIntegerValuesDomain extends IntegerValues { this : TheProject =>
- * }}}
- *
- * ==Providing Information about a Project==
- * A domain that provides information about the currently analyzed project should inherit
- * from this trait and implement the respective method.
- *
- * ==Core Properties==
- *  - Defines the public interface.
- *  - Makes the analyzed [[org.opalj.br.analyses.Project]] available.
- *  - Thread safe.
- *
- * @note '''It is recommended that the domain that provides the project information
- *      does not use the `override` access flag.'''
- *      This way the compiler will issue a warning if two implementations are used
- *      to create a final domain.
+ * @example
+ *      To get the index use the [[Project]]'s `get` method and pass in
+ *      `this` object.
  *
  * @author Michael Eichberg
  */
-trait TheProject {
+object MethodComplexityKey extends ProjectInformationKey[(Method) ⇒ Int] {
 
     /**
-     * Returns the project that is currently analyzed.
+     * The [[MethodComplexityKey]] has no special prerequisites.
+     *
+     * @return `Nil`.
      */
-    def project: SomeProject
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
+    /**
+     * Computes the method complexity using for the given project using the
+     * [[MethodComplexityAnalysis]].
+     */
+    override protected def compute(project: SomeProject): (Method) ⇒ Int = {
+        val rating =
+            MethodComplexityAnalysis.doAnalyze(
+                project,
+                100, // arbirtray....
+                () ⇒ true
+            )
+
+        (m: Method) ⇒ {
+            rating.get(m).getOrElse(Int.MaxValue)
+        }
+    }
 }
+

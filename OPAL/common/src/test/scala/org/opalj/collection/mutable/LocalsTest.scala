@@ -223,4 +223,17 @@ class LocalsTest
         v1 should equal(v2)
     }
 
+    it should ("be able to get the nthValue") in {
+        val ls = Locals[Integer](5)
+        ls(0) = 5
+        ls(2) = 2
+        ls(4) = 4
+
+        ls.nthValue(_ == 1) should be(-1)
+
+        ls.nthValue(_ == 5) should be(0)
+        ls.nthValue(_ == 2) should be(1)
+        ls.nthValue(_ == 4) should be(2)
+    }
+
 }

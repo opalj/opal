@@ -130,7 +130,7 @@ object CallGraphDiff extends AnalysisExecutor {
                         method: Method): VTACallGraphDomain =
                         new DefaultVTACallGraphDomain(
                             theProject, cache, classFile, method, 4
-                        ) with domain.ConstantFieldValuesResolution[Source]
+                        ) with domain.ConstantFieldValuesResolution
                 })
         } { t ⇒ println("creating the more precise call graph took: "+ns2sec(t)) }
 
@@ -149,7 +149,7 @@ object CallGraphDiff extends AnalysisExecutor {
 object CallGraphComparison {
 
     def apply(
-        project: Project[_],
+        project: SomeProject,
         lessPreciseCG: CallGraph,
         morePreciseCG: CallGraph): (List[CallGraphDifferenceReport], List[CallGraphDifferenceReport]) = {
         var reports: List[CallGraphDifferenceReport] = Nil

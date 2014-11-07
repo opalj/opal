@@ -28,41 +28,36 @@
  */
 package org.opalj
 package ai
-package domain
+package analyses
 
-import org.opalj.br.analyses.SomeProject
+import org.opalj.br.Field
+import org.opalj.br.UpperTypeBound
+import org.opalj.br.analyses._
 
 /**
- * Provides information about the underlying project.
- *
- * ==Usage==
- * If a (partial-) domain needs information about the project declare a corresponding
- * self-type dependency.
- * {{{
- * trait MyIntegerValuesDomain extends IntegerValues { this : TheProject =>
- * }}}
- *
- * ==Providing Information about a Project==
- * A domain that provides information about the currently analyzed project should inherit
- * from this trait and implement the respective method.
- *
- * ==Core Properties==
- *  - Defines the public interface.
- *  - Makes the analyzed [[org.opalj.br.analyses.Project]] available.
- *  - Thread safe.
- *
- * @note '''It is recommended that the domain that provides the project information
- *      does not use the `override` access flag.'''
- *      This way the compiler will issue a warning if two implementations are used
- *      to create a final domain.
+ * The ''key'' object to get information about the "more precise" field types.
  *
  * @author Michael Eichberg
  */
-trait TheProject {
+object FieldTypesKey extends ProjectInformationKey[Map[Field, UpperTypeBound]] {
 
     /**
-     * Returns the project that is currently analyzed.
+     * The FieldTypesKey has no special prerequisites.
+     *
+     * @return `Nil`.
      */
-    def project: SomeProject
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
+    /**
+     * Computes the field type information.
+     */
+    override protected def compute(project: SomeProject): Map[Field, UpperTypeBound] = {
+        // TODO Introduce the concept of a "configuration to a project"
+
+        FieldTypesAnalysis.doAnalyze(
+            project,
+            () ⇒ false // make it configurable
+        )
+    }
 }
+

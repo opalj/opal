@@ -61,6 +61,8 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     /* ABSTRACT */ def set(index: Int, value: T): Unit
 
+    final def update(index: Int, value: T): Unit = set(index, value)
+
     /* ABSTRACT */ def update(f: (T) ⇒ T): Unit
 
     /* ABSTRACT */ def updated(index: Int, value: T): Locals[T]
@@ -107,6 +109,30 @@ sealed trait Locals[T >: Null <: AnyRef] {
     def find[X >: T](f: X ⇒ Boolean): Option[T] = {
         foreach { e ⇒ if (f(e)) return Some(e) }
         None
+    }
+
+    /**
+     * Counts the number of (non-null) values that do not match the given given predicate;
+     * the count of the first element that matches the predicate is returned. If
+     * no value matches the predicate -1 is returned.
+     */
+    def nthValue[X >: T](f: X ⇒ Boolean): Int = {
+        val max = size
+        var i = 0
+        var index = 0
+        while (i < max) {
+            val value = apply(i)
+            i += 1
+            if (value != null) {
+
+                if (f(value))
+                    return index;
+
+                index += 1
+            }
+        }
+
+        -1
     }
 
     /**

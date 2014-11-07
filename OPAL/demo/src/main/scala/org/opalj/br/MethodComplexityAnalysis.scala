@@ -27,42 +27,46 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
+package br
 
-import org.opalj.br.analyses.SomeProject
+import java.net.URL
+
+import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.instructions._
 
 /**
- * Provides information about the underlying project.
- *
- * ==Usage==
- * If a (partial-) domain needs information about the project declare a corresponding
- * self-type dependency.
- * {{{
- * trait MyIntegerValuesDomain extends IntegerValues { this : TheProject =>
- * }}}
- *
- * ==Providing Information about a Project==
- * A domain that provides information about the currently analyzed project should inherit
- * from this trait and implement the respective method.
- *
- * ==Core Properties==
- *  - Defines the public interface.
- *  - Makes the analyzed [[org.opalj.br.analyses.Project]] available.
- *  - Thread safe.
- *
- * @note '''It is recommended that the domain that provides the project information
- *      does not use the `override` access flag.'''
- *      This way the compiler will issue a warning if two implementations are used
- *      to create a final domain.
+ * Very primitive rating of the complexity of methods.
  *
  * @author Michael Eichberg
  */
-trait TheProject {
+object MethodComplexityAnalysis extends AnalysisExecutor {
 
-    /**
-     * Returns the project that is currently analyzed.
-     */
-    def project: SomeProject
+    val analysis =
+        new OneStepAnalysis[URL, BasicReport] {
 
+            override def description: String =
+                "A very simple rating of the complexity of methods."
+
+            def doAnalyze(
+                project: Project[URL],
+                parameters: Seq[String],
+                isInterrupted: () ⇒ Boolean) = {
+
+                import util.PerformanceEvaluation.{ time, ns2sec }
+
+                var executionTimeInSecs = 0d
+                val analysisResults = time {
+                    import org.opalj.br.analyses.{ MethodComplexityAnalysis ⇒ TheAnalysis }
+                    TheAnalysis.doAnalyze(project, 100, isInterrupted)
+                } { executionTime ⇒ executionTimeInSecs = ns2sec(executionTime) }
+
+                BasicReport(
+                    analysisResults.
+                        toList.map(m ⇒ (m._2, m._1)).
+                        sorted.map(m ⇒ m._1+":"+m._2.fullyQualifiedSignature(project.classFile(m._2).thisType)).
+                        mkString("\n")+"\n"+
+                        s"Rated ${analysisResults.size} methods in ${executionTimeInSecs} secs."
+                )
+            }
+        }
 }

@@ -43,7 +43,7 @@ class DefaultConfigurableDomain[I, Source](
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with ProjectBasedClassHierarchy
-        with TheProject[Source]
+        with TheProject
         with TheMethod
         with PerInstructionPostProcessing
         with DefaultHandlingOfMethodResults

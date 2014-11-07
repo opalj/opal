@@ -59,7 +59,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
             with domain.l1.DefaultIntegerRangeValues
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
-            with domain.TheProject[java.net.URL]
+            with domain.TheProject
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy {
 

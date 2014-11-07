@@ -78,7 +78,7 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
                 override val project: Project[URL],
                 val method: Method)
                     extends Domain
-                    with domain.TheProject[URL]
+                    with domain.TheProject
                     with domain.TheMethod
                     with domain.DefaultDomainValueBinding
                     with domain.ThrowAllPotentialExceptionsConfiguration

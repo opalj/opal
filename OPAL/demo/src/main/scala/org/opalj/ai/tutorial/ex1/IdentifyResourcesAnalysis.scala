@@ -57,7 +57,7 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
             with domain.l1.DefaultStringValuesBinding
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
-            with domain.TheProject[URL]
+            with domain.TheProject
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy
 

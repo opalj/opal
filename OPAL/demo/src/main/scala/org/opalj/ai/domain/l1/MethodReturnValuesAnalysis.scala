@@ -71,7 +71,7 @@ object MethodReturnValuesAnalysis extends AnalysisExecutor {
             with domain.l1.DefaultReferenceValuesBinding
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
-            with domain.TheProject[java.net.URL]
+            with domain.TheProject
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy
             with domain.RecordReturnedValuesInfrastructure {

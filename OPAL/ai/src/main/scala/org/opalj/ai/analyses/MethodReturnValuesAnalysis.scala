@@ -28,79 +28,65 @@
  */
 package org.opalj
 package ai
-package domain
-package l0
+package analyses
 
 import java.net.URL
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.{ Analysis, OneStepAnalysis, AnalysisExecutor, BasicReport, SomeProject }
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.{ ReferenceType }
 import org.opalj.ai.Domain
+import org.opalj.ai.domain._
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.IsAReferenceValue
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.SomeUpdate
-
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysisDomain ⇒ TheAnalysisDomain }
+import org.opalj.br.analyses.Project
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
  *
  * @author Michael Eichberg
  */
-object MethodReturnValuesAnalysis
-        extends AnalysisExecutor
-        with OneStepAnalysis[URL, BasicReport] {
+object MethodReturnValuesAnalysis {
 
-    val analysis = this
+    def title: String =
+        "Tries to derive more precise information about the values returned by methods."
 
-    override def title: String = TheAnalysis.title
+    def description: String =
+        "Identifies methods where we can – statically – derive more precise return type/value information."
 
-    override def description: String = TheAnalysis.description
-
-    override def doAnalyze(
-        theProject: Project[URL],
+    def doAnalyze(
+        theProject: SomeProject,
         parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+        isInterrupted: () ⇒ Boolean): Map[Method, Option[MethodReturnValuesAnalysisDomain#DomainValue]] = {
         import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
         val candidates = new java.util.concurrent.atomic.AtomicInteger(0)
 
-        val methodsWithRefinedReturnTypes: Map[Method, Option[TheAnalysisDomain#DomainValue]] = time {
-            TheAnalysis.doAnalyze(theProject, parameters, isInterrupted)
-        } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
-
-        val results =
-            methodsWithRefinedReturnTypes.map { result ⇒
-                val (method, value) = result
-                RefinedReturnType[TheAnalysisDomain](theProject.classFile(method), method, value)
+        val methodsWithRefinedReturnTypes =
+            for {
+                classFile ← theProject.classFiles.par
+                if !isInterrupted()
+                method ← classFile.methods
+                originalReturnType = method.returnType
+                if originalReturnType.isObjectType
+                if theProject.classFile(originalReturnType.asObjectType).map(!_.isFinal).getOrElse(true)
+                if method.body.isDefined
+                candidate = candidates.incrementAndGet()
+                ai = new InterruptableAI[Domain]
+                domain = new MethodReturnValuesAnalysisDomain(theProject, ai, method)
+                result = ai(classFile, method, domain)
+                if !result.wasAborted
+                returnedValue = domain.returnedValue
+                if returnedValue.isEmpty ||
+                    returnedValue.get.asInstanceOf[IsAReferenceValue].upperTypeBound != UIDSet(originalReturnType)
+            } yield {
+                (method, domain.returnedValue)
             }
 
-        BasicReport(
-            results.mkString(
-                "Methods with refined return types ("+
-                    results.size+" out of "+candidates.get+
-                    "): \n",
-                "\n",
-                "\n"))
-    }
-}
-
-case class RefinedReturnType[D <: Domain](
-        classFile: ClassFile,
-        method: Method,
-        refinedType: Option[D#DomainValue]) {
-
-    override def toString = {
-        import Console._
-        val declaringClassOfMethod = classFile.thisType.toJava
-
-        "Refined the return type of "+BOLD + BLUE +
-            declaringClassOfMethod+"{ "+method.toJava+" }"+
-            " => "+GREEN + refinedType.getOrElse("\"NONE\" (the method never returns normally)") + RESET
+        methodsWithRefinedReturnTypes.seq.toMap
     }
 
 }
