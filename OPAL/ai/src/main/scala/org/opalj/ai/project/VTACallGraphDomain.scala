@@ -54,7 +54,7 @@ import org.opalj.ai.domain.ClassHierarchy
 trait VTACallGraphDomain extends CHACallGraphDomain {
     domain: TheProject with TheMethod with ClassHierarchy ⇒
 
-    @inline override protected[this] def unresolvedCall(
+    @inline override protected[this] def virtualCall(
         pc: PC,
         declaringClassType: ObjectType,
         name: String,
@@ -73,12 +73,9 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
         //  - the value is null => call to the constructor of NullPointerException
         //  - the value maybe null => additional call to the constructor of NullPointerException
 
-        // TODO The following should no longer be necessary...:
         val isNull = value.isNull
         if (isNull.isYesOrUnknown) {
-            implicitExceptionConstructorCall(
-                classFile.thisType, method, pc,
-                ObjectType.NullPointerException)
+            NullPointerExceptionConstructorCall(classFile.thisType, method, pc)
         }
 
         // there may be additional calls
@@ -87,9 +84,9 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
             if (upperTypeBound.consistsOfOneElement) {
                 val theType = upperTypeBound.first
                 if (theType.isArrayType)
-                    resolvedCall(pc, ObjectType.Object, name, descriptor, true, operands)
+                    doNonVirtualCall(pc, ObjectType.Object, name, descriptor, operands)
                 else if (value.isPrecise)
-                    resolvedCall(pc, theType.asObjectType, name, descriptor, true, operands)
+                    doNonVirtualCall(pc, theType.asObjectType, name, descriptor, operands)
                 else if ((declaringClassType ne theType) &&
                     domain.isSubtypeOf(declaringClassType, theType).isYes) {
                     // the invoke's declaring class type is "more" precise
@@ -99,12 +96,12 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
                             " should be a subtype of the type of the method's declaring class: "+
                             declaringClassType.toJava+
                             " (but this cannot be deduced reliably from the project)"+Console.RESET)
-                    super.unresolvedCall(pc, declaringClassType, name, descriptor, operands)
+                    super.doVirtualCall(pc, declaringClassType, name, descriptor, operands)
                 } else {
-                    super.unresolvedCall(pc, theType.asObjectType, name, descriptor, operands)
+                    super.doVirtualCall(pc, theType.asObjectType, name, descriptor, operands)
                 }
             } else {
-                // _Also_ supports the case where we have a "precise type", but
+                // _Also_ supports the case where we have a "precise type" with
                 // multiple types as an upper bound. This is useful in some selected
                 // cases where the class is generated dynamically at runtime and 
                 // hence, the currently available information is simply the best that
@@ -112,7 +109,7 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
 
                 for (utb ← upperTypeBound) {
                     if (utb.isArrayType) {
-                        resolvedCall(pc, ObjectType.Object, name, descriptor, true, operands)
+                        super.doNonVirtualCall(pc, declaringClassType, name, descriptor, operands)
                     } else if ((declaringClassType ne utb) &&
                         domain.isSubtypeOf(declaringClassType, utb).isYes) {
                         // The invoke's declaring class type is "more" precise
@@ -124,7 +121,7 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
                                 " should be a subtype of the type of the method's declaring class: "+
                                 declaringClassType.toJava+
                                 " (but this cannot be deduced reliably from the project)"+Console.RESET)
-                        doResolveCall(pc, declaringClassType, name, descriptor, operands)
+                        super.doVirtualCall(pc, declaringClassType, name, descriptor, operands)
                     } else {
                         val callees =
                             this.callees(pc, utb.asObjectType, name, descriptor, operands)

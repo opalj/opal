@@ -34,6 +34,7 @@ import scala.collection.Set
 
 import org.opalj.br.{ ClassFile, Method, MethodSignature }
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Configuration of a call graph algorithm that uses CHA.
@@ -49,9 +50,13 @@ import org.opalj.br.analyses.Project
 class CHACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration {
 
     type Contour = MethodSignature
+
     type Value = Set[Method]
+
     type Cache = CallGraphCache[Contour, Value]
-    def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Value]
+
+    def Cache(project: SomeProject): this.type#Cache =
+        new CallGraphCache[MethodSignature, Value](project)
 
     def Domain[Source](
         theProject: Project[Source],

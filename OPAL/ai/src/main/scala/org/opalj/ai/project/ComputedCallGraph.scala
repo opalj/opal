@@ -30,35 +30,15 @@ package org.opalj
 package ai
 package project
 
-import scala.Console.BOLD
-import scala.Console.RESET
-
-import br.Method
-import br.MethodDescriptor
-import br.ReferenceType
+import org.opalj.br._
+import org.opalj.br.analyses.SomeProject
 
 /**
- * Represents a method call that could not be resolved; that is, the target of
- * an invoke instruction could not be found. This information is primarily
- * interesting during the development of static analyses.
+ * Representation of a computed call graph.
  *
  * @author Michael Eichberg
  */
-case class UnresolvedMethodCall(
-        callerClass: ReferenceType,
-        caller: Method,
-        pc: PC,
-        calleeClass: ReferenceType,
-        calleeName: String,
-        calleeDescriptor: MethodDescriptor) {
-
-    import Console._
-
-    override def toString: String = {
-        callerClass.toJava+"{ "+
-            BOLD + caller.toJava + RESET+":"+pc+" } => "+
-            calleeClass.toJava+"{ "+
-            BOLD + calleeDescriptor.toJava(calleeName) + RESET+
-            " }"
-    }
-}
+case class ComputedCallGraph(
+    callGraph: CallGraph,
+    unresolvedMethodCalls: List[UnresolvedMethodCall],
+    constructionExceptions: List[CallGraphConstructionException])

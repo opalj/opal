@@ -128,7 +128,7 @@ object GetCallees {
                         return ;
                 }
 
-        val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]]
+        val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](project)
         val domain =
             if (args.length == 4 && args(3) == "VTA") {
                 println("USING VTA")
