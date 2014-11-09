@@ -28,50 +28,36 @@
  */
 package org.opalj
 package ai
-package domain
-package li
+package analyses
 
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.analyses.Project
+import org.opalj.br.Method
+import org.opalj.br.UpperTypeBound
+import org.opalj.br.analyses._
 
-class DefaultConfigurableDomain[I, Source](
-    val id: I,
-    val project: Project[Source],
-    val classFile: ClassFile,
-    val method: Method)
-        extends CoRelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with ProjectBasedClassHierarchy
-        with TheProject
-        with TheMethod
-        with PerInstructionPostProcessing
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        //    with l1.DefaultReferenceValuesBinding
-        //    with l1.DefaultStringValuesBinding
-        with l1.DefaultClassValuesBinding
-        with l1.DefaultArrayValuesBinding
-        with li.DefaultPreciseIntegerValues
-        with li.DefaultPreciseLongValues
-        with l1.DefaultConcretePrimitiveValuesConversions {
+/**
+ * The ''key'' object to get information about the "more precise" return values.
+ *
+ * @author Michael Eichberg
+ */
+object MethodReturnValuesKey
+        extends ProjectInformationKey[Map[Method, Option[MethodReturnValuesAnalysisDomain#DomainValue]]] {
 
-    type Id = I
+    override protected def requirements = Seq(FieldValuesKey)
 
-    override protected def maxUpdatesForIntegerValues: Long = 25l
-
+    /**
+     * Computes the return value information.
+     */
+    override protected def compute(
+        project: SomeProject): Map[Method, Option[MethodReturnValuesAnalysisDomain#DomainValue]] = {
+        // TODO Introduce the concept of a "configuration to a project"
+        // TODO Use project-specific logging facility
+        println("Computing method return value information")
+        val result = MethodReturnValuesAnalysis.doAnalyze(
+            project,
+            () ⇒ false // make it configurable
+        )
+        println("Successfully computed the method return value information")
+        result
+    }
 }
 
-class DefaultDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends DefaultConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)

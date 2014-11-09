@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,15 +30,45 @@ package org.opalj
 package ai
 package project
 
+import scala.collection.Set
+import scala.collection.Map
+
+import br._
+import br.analyses._
+
+import domain._
+import domain.l0
+import domain.l1
+
 /**
- * @author Marco Jacobasch
+ * Domain object which can used to calculate the call graph using variable type analysis.
+ * This domain uses advanced domains for tracking primitive values to rule out
+ * potential dead branches/method calls on dead branches.
+ *
  * @author Michael Eichberg
  */
-class SimpleVTACallGraphTest extends AbstractCallGraphTest {
+class ExtVTACallGraphDomain[Source](
+    val project: Project[Source],
+    val cache: CallGraphCache[MethodSignature, Set[Method]],
+    val classFile: ClassFile,
+    val method: Method)
+        extends CoRelationalDomain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with TheProject
+        with ProjectBasedClassHierarchy
+        with TheMethod
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l1.DefaultIntegerRangeValues
+        with l1.ConstraintsBetweenIntegerValues
+        with l1.DefaultLongValues
+        with l1.LongValuesShiftOperators
+        with l1.DefaultConcretePrimitiveValuesConversions
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l1.DefaultReferenceValuesBinding
+        with l0.TypeLevelInvokeInstructions
+        with l0.RefinedTypeLevelFieldAccessInstructions
+        with VTACallGraphDomain
 
-    override def testFileName = "classfiles/simpleCallgraph.jar"
-
-    override def testFilePath = "ai"
-
-    override def testCallGraph = VTACallGraphKey
-}

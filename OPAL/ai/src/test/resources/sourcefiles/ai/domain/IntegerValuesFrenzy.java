@@ -194,7 +194,7 @@ public class IntegerValuesFrenzy {
         /* NOTHING TO DO */
     }
 
-    static int anInt() {
+    public static int anInt() {
         return (int) Math.random() * 10;
     }
 

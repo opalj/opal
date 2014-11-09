@@ -62,7 +62,11 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
         operands: Operands): Unit = {
         // MODIFIED CHA - we used the type information that is readily available
         val receiver = operands.last
-        val value = typeOfValue(receiver).asInstanceOf[IsAReferenceValue]
+        val value = typeOfValue(receiver).asInstanceOf[IsReferenceValue]
+
+        //        if (value.upperTypeBound != org.opalj.collection.immutable.UIDSet(declaringClassType)) {
+        //            println(s"invoke: $declaringClassType refined to ${value.upperTypeBound.mkString("", " with ", "")} => $name")
+        //        }
 
         // Possible Cases:
         //  - the value is precise and has a single type => static call
@@ -105,12 +109,12 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
                 // multiple types as an upper bound. This is useful in some selected
                 // cases where the class is generated dynamically at runtime and 
                 // hence, the currently available information is simply the best that
-                // is available.
-
+                // is available.           
                 for (utb ← upperTypeBound) {
-                    if (utb.isArrayType) {
-                        super.doNonVirtualCall(pc, declaringClassType, name, descriptor, operands)
-                    } else if ((declaringClassType ne utb) &&
+                    //                    if (utb.isArrayType) {
+                    //                        super.doNonVirtualCall(pc, declaringClassType, name, descriptor, operands)
+                    //                    } else
+                    if ((declaringClassType ne utb) &&
                         domain.isSubtypeOf(declaringClassType, utb).isYes) {
                         // The invoke's declaring class type is "more" precise
                         println(

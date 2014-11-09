@@ -42,7 +42,9 @@ import org.opalj.ai.project.CHACallGraphAlgorithmConfiguration
 import org.opalj.ai.project.CallGraphFactory
 import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
 import org.opalj.ai.project.ComputedCallGraph
-import org.opalj.ai.project.VTACallGraphAlgorithmConfiguration
+import org.opalj.ai.project.BasicVTACallGraphAlgorithmConfiguration
+import org.opalj.ai.project.DefaultVTACallGraphAlgorithmConfiguration
+import org.opalj.ai.project.ExtVTACallGraphAlgorithmConfiguration
 import org.opalj.graphs.Node
 import org.opalj.graphs.SimpleNode
 import org.opalj.util.PerformanceEvaluation.asMB
@@ -141,10 +143,17 @@ object CallGraphVisualization {
             memory {
                 time {
                     val callGraphAlgorithmConfig = args(0) match {
-                        case "VTA" ⇒
-                            new VTACallGraphAlgorithmConfiguration()
-                        case _ /*CHA*/ ⇒
+                        case "BasicVTA" ⇒
+                            new BasicVTACallGraphAlgorithmConfiguration()
+                        case "VTA" | "DefaultVTA" ⇒
+                            new DefaultVTACallGraphAlgorithmConfiguration()
+                        case "ExtVTA" ⇒
+                            new ExtVTACallGraphAlgorithmConfiguration()
+                        case "CHA" ⇒
                             new CHACallGraphAlgorithmConfiguration()
+                        case cga ⇒
+                            println("Unknown call graph algorithm: "+cga+"; available: CHA, BasicVTA, DefaultVTA, ExtVTA")
+                            return ;
                     }
                     val entryPoints = defaultEntryPointsForLibraries(project)
                     val computedCallGraph = CallGraphFactory.create(
@@ -153,25 +162,46 @@ object CallGraphVisualization {
                         callGraphAlgorithmConfig)
 
                     // Some statistics 
-                    import computedCallGraph.callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
+                    val callGraph = computedCallGraph.callGraph
+                    import callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
                     println("Methods with at least one resolved call: "+callsCount)
                     println("Methods which are called by at least one method: "+calledByCount)
 
-                    var callGraphEdgesCount = 0
                     var maxCallSitesPerMethod = 0
-                    var maxTargets = 0
+                    var methodWithMaxCallSites: Method = null
+                    var maxCallTargets = 0
+                    var methodWithMethodCallWithMaxTargets: Method = null
+                    var methodCallWithMaxTargetsPC: PC = 0
                     foreachCallingMethod { (method, callees) ⇒
-                        val calleesCount = callees.size
-                        callGraphEdgesCount += calleesCount
-                        if (calleesCount > maxCallSitesPerMethod) maxCallSitesPerMethod = calleesCount
-                        for (targets ← callees.values) {
-                            val targetsCount = targets.size
-                            if (targetsCount > maxTargets) maxTargets = targetsCount
+                        val callSitesCount = callees.size
+                        if (callSitesCount > maxCallSitesPerMethod) {
+                            maxCallSitesPerMethod = callSitesCount
+                            methodWithMaxCallSites = method
+                        }
+                        val maxTargetsPerCallSite =
+                            callees.values.map(_.size).max
+                        if (maxTargetsPerCallSite > maxCallTargets) {
+                            maxCallTargets = maxTargetsPerCallSite
+                            methodWithMethodCallWithMaxTargets = method
+                            methodCallWithMaxTargetsPC =
+                                callees.find(e ⇒ e._2.size == maxCallTargets).get._1
                         }
                     }
-                    println("Number of all call edges: "+callGraphEdgesCount)
-                    println("Maximum number of targets over all calls: "+maxTargets)
-                    println("Maximum number of method calls over all methods: "+maxCallSitesPerMethod)
+                    println(
+                        f"Number of call edges: ${callGraph.callEdgesCount}%,d"+
+                            f" /  called-by edges: ${callGraph.calledByEdgesCount}%,d")
+                    println(
+                        "Maximum number of targets for one call: "+maxCallTargets+"; method: "+
+                            methodWithMethodCallWithMaxTargets.fullyQualifiedSignature(
+                                project.classFile(methodWithMethodCallWithMaxTargets).thisType
+                            )+"; pc: "+methodCallWithMaxTargetsPC
+                    )
+                    println(
+                        "Method with the maximum number of call sites: "+maxCallSitesPerMethod+"; method: "+
+                            methodWithMaxCallSites.fullyQualifiedSignature(
+                                project.classFile(methodWithMaxCallSites).thisType
+                            )
+                    )
 
                     computedCallGraph
                 } { t ⇒ println("Creating the call graph took: "+ns2sec(t)) }

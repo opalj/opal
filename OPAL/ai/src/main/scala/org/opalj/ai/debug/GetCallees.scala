@@ -132,7 +132,7 @@ object GetCallees {
         val domain =
             if (args.length == 4 && args(3) == "VTA") {
                 println("USING VTA")
-                new DefaultVTACallGraphDomain(project, cache, classFile, method, 4)
+                new DefaultVTACallGraphDomain(project, cache, classFile, method /*, 4*/ )
             } else {
                 println("USING CHA")
                 new DefaultCHACallGraphDomain(project, cache, classFile, method)

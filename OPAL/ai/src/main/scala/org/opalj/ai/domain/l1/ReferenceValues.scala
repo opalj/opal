@@ -45,7 +45,7 @@ import org.opalj.br.{ Type, ReferenceType, ObjectType, ArrayType, UpperTypeBound
  * @author Michael Eichberg
  */
 trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CoRelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type DomainReferenceValue <: ReferenceValue
     type DomainSingleOriginReferenceValue <: SingleOriginReferenceValue with DomainReferenceValue

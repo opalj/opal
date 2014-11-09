@@ -57,10 +57,6 @@ class DefaultConfigurableIntegerValuesDomain[I, Source](
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with l0.DefaultReferenceValuesBinding
-        // [NOT YET NEEDED] with PerInstructionPostProcessing
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
         with l1.DefaultIntegerRangeValues
         with l1.ConstraintsBetweenIntegerValues
         with l1.DefaultLongValues

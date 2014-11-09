@@ -129,7 +129,7 @@ object CallGraphDiff extends AnalysisExecutor {
                         classFile: ClassFile,
                         method: Method): VTACallGraphDomain =
                         new DefaultVTACallGraphDomain(
-                            theProject, cache, classFile, method, 4
+                            theProject, cache, classFile, method //, 4
                         ) with domain.ConstantFieldValuesResolution
                 })
         } { t ⇒ println("creating the more precise call graph took: "+ns2sec(t)) }
@@ -195,7 +195,7 @@ sealed trait CallGraphDifferenceReport {
             "PC="+pc+"(Line="+method.body.get.lineNumber(pc).getOrElse("NotAvailable")+"): "+
             (
                 callTargets map { method ⇒
-                    project.classFile(method).thisType.toJava+"{ "+
+                    BLUE + project.classFile(method).thisType.toJava+"{ "+
                         CYAN + method.descriptor.toJava(method.name) + RESET+
                         " }"
                 }

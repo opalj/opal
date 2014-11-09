@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,36 +28,19 @@
  */
 package org.opalj
 package ai
-package analyses
-
-import org.opalj.br.Field
-import org.opalj.br.UpperTypeBound
-import org.opalj.br.analyses._
+package project
 
 /**
- * The ''key'' object to get information about the "more precise" field types.
+ * Tests the VTA based `CallGraph` algorithm using a more complex (explicitly
+ * annotated) project.
  *
  * @author Michael Eichberg
  */
-object FieldTypesKey extends ProjectInformationKey[Map[Field, UpperTypeBound]] {
+class ComplexDefaultVTACallGraphTest extends AbstractCallGraphTest {
 
-    /**
-     * The FieldTypesKey has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override def testFileName = "classfiles/callgraph.jar"
 
-    /**
-     * Computes the field type information.
-     */
-    override protected def compute(project: SomeProject): Map[Field, UpperTypeBound] = {
-        // TODO Introduce the concept of a "configuration to a project"
+    override def testFilePath = "ai"
 
-        FieldTypesAnalysis.doAnalyze(
-            project,
-            () ⇒ false // make it configurable
-        )
-    }
+    override def testCallGraphConfiguration = new DefaultVTACallGraphAlgorithmConfiguration
 }
-

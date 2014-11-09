@@ -61,7 +61,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Eichberg
  */
-class FieldTypesAnalysisDomain(
+class FieldValuesAnalysisDomain(
     override val project: SomeProject,
     val classFile: ClassFile)
         extends Domain
@@ -104,6 +104,10 @@ class FieldTypesAnalysisDomain(
         MutableMap.empty ++ relevantFields.map(_ -> None)
     }
 
+    def hasCandidateFields: Boolean = fieldInformation.nonEmpty
+
+    def candidateFields: Iterable[String] = fieldInformation.keys
+
     private[this] var currentCode: Code = null
 
     /**
@@ -119,11 +123,7 @@ class FieldTypesAnalysisDomain(
 
     def code: Code = currentCode
 
-    def hasCandidateFields: Boolean = fieldInformation.nonEmpty
-
-    def candidateFields: Iterable[String] = fieldInformation.keys
-
-    def fieldsWithRefinedTypes: Seq[(Field, UpperTypeBound)] = {
+    def fieldsWithRefinedValues: Seq[(Field, DomainValue)] = {
         val refinedFields =
             for {
                 field ← classFile.fields
@@ -135,9 +135,8 @@ class FieldTypesAnalysisDomain(
                 if upperTypeBound.nonEmpty
                 if (upperTypeBound.size != 1) || (upperTypeBound.first ne field.fieldType)
             } yield {
-                (field, upperTypeBound)
+                (field, fieldValue)
             }
-
         refinedFields
     }
 

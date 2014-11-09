@@ -49,7 +49,6 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
 
     behavior of "OPAL's parallelized Call Graph algorithms"
 
-    //def testFileName = "classfiles/simpleCallgraph.jar"
     def testFileName = "classfiles/callgraph.jar"
     def testFilePath = "ai"
     def testCallGraphAlgorithm = new CHACallGraphAlgorithmConfiguration()
@@ -71,7 +70,7 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
             CallGraphFactory.create(
                 project,
                 CallGraphFactory.defaultEntryPointsForLibraries(project),
-                new CHACallGraphAlgorithmConfiguration())
+                testCallGraphAlgorithm)
         }
 
     //

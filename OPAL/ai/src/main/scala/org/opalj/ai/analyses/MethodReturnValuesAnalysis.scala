@@ -52,20 +52,16 @@ import org.opalj.br.analyses.Project
 object MethodReturnValuesAnalysis {
 
     def title: String =
-        "Tries to derive more precise information about the values returned by methods."
+        "tries to derive more precise information about the values returned by methods"
 
     def description: String =
         "Identifies methods where we can – statically – derive more precise return type/value information."
 
     def doAnalyze(
         theProject: SomeProject,
-        parameters: Seq[String],
         isInterrupted: () ⇒ Boolean): Map[Method, Option[MethodReturnValuesAnalysisDomain#DomainValue]] = {
-        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-        val candidates = new java.util.concurrent.atomic.AtomicInteger(0)
-
-        val methodsWithRefinedReturnTypes =
+        val methodsWithRefinedReturnValues =
             for {
                 classFile ← theProject.classFiles.par
                 if !isInterrupted()
@@ -74,19 +70,18 @@ object MethodReturnValuesAnalysis {
                 if originalReturnType.isObjectType
                 if theProject.classFile(originalReturnType.asObjectType).map(!_.isFinal).getOrElse(true)
                 if method.body.isDefined
-                candidate = candidates.incrementAndGet()
                 ai = new InterruptableAI[Domain]
                 domain = new MethodReturnValuesAnalysisDomain(theProject, ai, method)
                 result = ai(classFile, method, domain)
                 if !result.wasAborted
                 returnedValue = domain.returnedValue
-                if returnedValue.isEmpty ||
+                if returnedValue.isEmpty /* the method does not complete normally */ ||
                     returnedValue.get.asInstanceOf[IsAReferenceValue].upperTypeBound != UIDSet(originalReturnType)
             } yield {
                 (method, domain.returnedValue)
             }
 
-        methodsWithRefinedReturnTypes.seq.toMap
+        methodsWithRefinedReturnValues.seq.toMap
     }
 
 }

@@ -65,7 +65,7 @@ import org.opalj.br.MethodDescriptor
  * @author Arne Lottmann
  */
 trait ClassValues extends StringValues with FieldAccessesDomain with MethodCallsDomain {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CoRelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type DomainClassValue <: ClassValue with DomainObjectValue
 

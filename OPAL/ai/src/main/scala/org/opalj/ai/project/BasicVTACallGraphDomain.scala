@@ -28,50 +28,51 @@
  */
 package org.opalj
 package ai
-package domain
-package li
+package project
 
-import org.opalj.br.{ ClassFile, Method }
+import scala.collection.Set
+
+import org.opalj.ai.CoRelationalDomain
 import org.opalj.br.analyses.Project
 
-class DefaultConfigurableDomain[I, Source](
-    val id: I,
+import br.ClassFile
+import br.Method
+import br.MethodSignature
+import br.analyses.Project
+import domain.DefaultDomainValueBinding
+import domain.DefaultHandlingOfMethodResults
+import domain.IgnoreSynchronization
+import domain.ProjectBasedClassHierarchy
+import domain.TheMethod
+import domain.TheProject
+import domain.ThrowAllPotentialExceptionsConfiguration
+import domain.l0
+
+/**
+ * Domain object which is used to calculate the call graph using variable type analysis.
+ *
+ * @author Michael Eichberg
+ */
+class BasicVTACallGraphDomain[Source](
     val project: Project[Source],
+    val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method: Method)
         extends CoRelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
-        with ProjectBasedClassHierarchy
         with TheProject
+        with ProjectBasedClassHierarchy
         with TheMethod
-        with PerInstructionPostProcessing
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
+        with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultPrimitiveValuesConversions
+        with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelInvokeInstructions
-        //    with l1.DefaultReferenceValuesBinding
-        //    with l1.DefaultStringValuesBinding
-        with l1.DefaultClassValuesBinding
-        with l1.DefaultArrayValuesBinding
-        with li.DefaultPreciseIntegerValues
-        with li.DefaultPreciseLongValues
-        with l1.DefaultConcretePrimitiveValuesConversions {
+        with l0.RefinedTypeLevelFieldAccessInstructions
+        with VTACallGraphDomain
 
-    type Id = I
-
-    override protected def maxUpdatesForIntegerValues: Long = 25l
-
-}
-
-class DefaultDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends DefaultConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)

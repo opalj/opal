@@ -51,7 +51,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Eichberg
  */
-class VTACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration {
+abstract class VTACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration {
 
     type Contour = MethodSignature
 
@@ -62,11 +62,34 @@ class VTACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration
     def Cache(project: SomeProject): this.type#Cache =
         new CallGraphCache[MethodSignature, Value](project)
 
+}
+
+class BasicVTACallGraphAlgorithmConfiguration extends VTACallGraphAlgorithmConfiguration {
+
     def Domain[Source](
         theProject: Project[Source],
         cache: Cache,
         classFile: ClassFile,
         method: Method): VTACallGraphDomain =
-        new DefaultVTACallGraphDomain(theProject, cache, classFile, method, 2)
+        new BasicVTACallGraphDomain(theProject, cache, classFile, method)
 }
 
+class DefaultVTACallGraphAlgorithmConfiguration extends VTACallGraphAlgorithmConfiguration {
+
+    def Domain[Source](
+        theProject: Project[Source],
+        cache: Cache,
+        classFile: ClassFile,
+        method: Method): VTACallGraphDomain =
+        new DefaultVTACallGraphDomain(theProject, cache, classFile, method)
+}
+
+class ExtVTACallGraphAlgorithmConfiguration extends VTACallGraphAlgorithmConfiguration {
+
+    def Domain[Source](
+        theProject: Project[Source],
+        cache: Cache,
+        classFile: ClassFile,
+        method: Method): VTACallGraphDomain =
+        new ExtVTACallGraphDomain(theProject, cache, classFile, method)
+}

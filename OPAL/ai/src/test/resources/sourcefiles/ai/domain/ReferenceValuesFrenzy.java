@@ -28,189 +28,216 @@
  */
 package ai.domain;
 
-import java.io.Serializable;
+import ai.domain.IntegerValuesFrenzy;
 
 /**
- * A class that does perform a large number of operations related to reference values.
+ * A class that does perform a large number of operations related to reference
+ * values.
  * 
  * @author Michael Eichberg
  */
 public class ReferenceValuesFrenzy {
 
-    static void doIt(Object o) {
-        System.out.println(o);
-    }
+	static void doIt(Object o) {
+		System.out.println(o);
+	}
 
-    static void doIt(String id, Object o) {
-        System.out.println(id + ":" + o);
-    }
+	static void doIt(String id, Object o) {
+		System.out.println(id + ":" + o);
+	}
 
-    static void printError(Object o) {
-        System.err.println(o);
-    }
+	static void printError(Object o) {
+		System.err.println(o);
+	}
 
-    //
-    // Test methods/Test Fixture
-    //
+	//
+	// Test methods/Test Fixture
+	//
 
-    // Returns either "null" or a "new Object"
-    static Object maybeNull() {
-        if (System.currentTimeMillis() % 100l > 50l)
-            return null;
-        else
-            return new Object();
-    }
+	static void multipleReferenceValues(String s) {
+		int i = IntegerValuesFrenzy.anInt();
+		String v = "v";
+		String u = v;
+		if (i == 0) {
+			u = s;
+		} else if (i == 1) {
+			u = null;
+		}
+		if (u != null) {
+			doIt(s); // we don't know to which value u refers to; hence s maybe
+						// null!
+			doIt(u); // u is not null and hence is guaranteed to not refer to
+						// the "null" value
+		} else
+			return;
 
-    @SuppressWarnings("all")
-    static Object aliases(Object a, Object b) {
-        if (a == null) {
-            a = b;
-            if (a instanceof java.io.Serializable) {
-                return b; // <= this is java.io.Serializable
-            }
-        } else {
-            if (b == null) {
-                return a; // non-null
-            } else {
-                Object d = null;
-                if (a.hashCode() < b.hashCode()) {
-                    d = a;
-                } else {
-                    d = b;
-                }
-                if (d instanceof java.lang.Comparable<?>) {
-                    doIt(a); // a non-null Object
-                    doIt(b); // a non-null Object
-                    return d; // java.lang.Comparable
-                }
-                return d; // a or b || both not null
-            }
-        }
+		// u is not null...
+		if (s == null)
+			return;
 
-        return null;
-    }
+		doIt(u);
+		// if u refers to s; s is now non-null
+	}
 
-    static void swap(int index, Object[] values) {
-        Object v = values[index];
-        values[index] = values[index + 1];
-        values[index + 1] = v;
-    }
+	// Returns either "null" or a "new Object"
+	static Object maybeNull() {
+		if (System.currentTimeMillis() % 100l > 50l)
+			return null;
+		else
+			return new Object();
+	}
 
-    static Object simpleConditionalAssignment(int i) {
-        Object o = null;
-        if (i < 0)
-            o = new Object();
-        else
-            o = new Object();
+	@SuppressWarnings("all")
+	static Object aliases(Object a, Object b) {
+		if (a == null) {
+			a = b;
+			if (a instanceof java.io.Serializable) {
+				return b; // <= this is java.io.Serializable
+			}
+		} else {
+			if (b == null) {
+				return a; // non-null
+			} else {
+				// a and b are non-null
+				Object d = null;
+				if (a.hashCode() < b.hashCode()) {
+					d = a;
+				} else {
+					d = b;
+				}
+				if (d instanceof java.lang.Comparable<?>) {
+					doIt(a); // a non-null Object
+					doIt(b); // a non-null Object
+					return d; // java.lang.Comparable
+				}
+				return d; // a or b || both not null
+			}
+		}
 
-        return o; // o is either one or the other object
-    }
+		return null;
+	}
 
-    static Object conditionalAssignment1() {
-        Object o = null;
-        for (int i = 0; i < 2; i++) {
-            if (i == 0)
-                o = null;
-            else
-                o = new Object();
+	static void swap(int index, Object[] values) {
+		Object v = values[index];
+		values[index] = values[index + 1];
+		values[index + 1] = v;
+	}
 
-            if (o == null && i != 0)
-                printError("impossible");
-        }
+	static Object simpleConditionalAssignment(int i) {
+		Object o = null;
+		if (i < 0)
+			o = new Object();
+		else
+			o = new Object();
 
-        return o; // o is not null....
-    }
+		return o; // o is either one or the other object
+	}
 
-    static Object conditionalAssignment2() {
-        Object o = null;
-        for (int i = 0; i < 2; i++) {
-            if (i == 0)
-                o = new Object();
-            else
-                o = null;
+	static Object conditionalAssignment1() {
+		Object o = null;
+		for (int i = 0; i < 2; i++) {
+			if (i == 0)
+				o = null;
+			else
+				o = new Object();
 
-            if (o == null && i == 0)
-                printError("impossible");
-        }
+			if (o == null && i != 0)
+				printError("impossible");
+		}
 
-        return o; // o is null....
-    }
+		return o; // o is not null....
+	}
 
-    static void complexConditionalAssignment1() {
-        Object a = null;
-        Object b = null;
-        Object c = null;
-        Object d = null;
+	static Object conditionalAssignment2() {
+		Object o = null;
+		for (int i = 0; i < 2; i++) {
+			if (i == 0)
+				o = new Object();
+			else
+				o = null;
 
-        for (int i = 0; i < 3; i++) {
-            Object o = maybeNull();
-            switch (i) {
-            case 0:
-                a = o;
-                break;
-            case 1:
-                b = o;
-                break;
-            case 2:
-                c = o;
-                break;
-            }
-        }
-        if (a == null) {
-            doIt(/* "a: a===null", */a);
-            doIt(/* "a: b.isNull.isUnknown", */b);
-            doIt(/* "a: c.isNull.isUnknown", */c);
-            doIt(/* "a: d===null", */d);
-        }
-        if (b == null) {
-            doIt(/* "b: a.isNull.isUnknown", */a);
-            doIt(/* "b: b===null", */b);
-            doIt(/* "b: c.isNull.isUnknown", */c);
-            doIt(/* "b: d===null", */d);
-        }
-        if (c == null) {
-            doIt(/* "c: a.isNull.isUnknown", */a);
-            doIt(/* "c: b.isNull.isUnknown", */b);
-            doIt(/* "c: c===null", */c);
-            doIt(/* "c: d===null", */d);
-        }
-    }
+			if (o == null && i == 0)
+				printError("impossible");
+		}
 
-    // REQUIRES A CAPABLE IntegerDomain
-    static void complexConditionalAssignment2() {
-        Object a = null;
-        Object b = null;
-        Object c = null;
-        Object d = null;
+		return o; // o is null....
+	}
 
-        for (int i = 0; i < 2; i++) {
-            Object o = maybeNull();
-            switch (i) {
-            case 0:
-                a = o;
-                break;
-            case 1:
-                b = o;
-                break;
-            case 2: // dead code... 
-                c = o;
-                break;
-            }
-        }
-        if (a instanceof java.io.Serializable) {
-            doIt(a); // java.io.Serializable (or null)
-            doIt(b);
-            doIt(c);
-            doIt(d);
-        }
-        if (b instanceof java.util.Vector) {
-            doIt(a);
-            doIt(b);// java.util.Vector (or null)
-            doIt(c);
-            doIt(d);
-        }
-        if (c != null) {
-            printError("impossible");
-        }
-    }
+	static void complexConditionalAssignment1() {
+		Object a = null;
+		Object b = null;
+		Object c = null;
+		Object d = null;
+
+		for (int i = 0; i < 3; i++) {
+			Object o = maybeNull();
+			switch (i) {
+			case 0:
+				a = o;
+				break;
+			case 1:
+				b = o;
+				break;
+			case 2:
+				c = o;
+				break;
+			}
+		}
+		if (a == null) {
+			doIt(/* "a: a===null", */a);
+			doIt(/* "a: b.isNull.isUnknown", */b);
+			doIt(/* "a: c.isNull.isUnknown", */c);
+			doIt(/* "a: d===null", */d);
+		}
+		if (b == null) {
+			doIt(/* "b: a.isNull.isUnknown", */a);
+			doIt(/* "b: b===null", */b);
+			doIt(/* "b: c.isNull.isUnknown", */c);
+			doIt(/* "b: d===null", */d);
+		}
+		if (c == null) {
+			doIt(/* "c: a.isNull.isUnknown", */a);
+			doIt(/* "c: b.isNull.isUnknown", */b);
+			doIt(/* "c: c===null", */c);
+			doIt(/* "c: d===null", */d);
+		}
+	}
+
+	// REQUIRES A CAPABLE IntegerDomain
+	static void complexConditionalAssignment2() {
+		Object a = null;
+		Object b = null;
+		Object c = null;
+		Object d = null;
+
+		for (int i = 0; i < 2; i++) {
+			Object o = maybeNull();
+			switch (i) {
+			case 0:
+				a = o;
+				break;
+			case 1:
+				b = o;
+				break;
+			case 2: // dead code...
+				c = o;
+				break;
+			}
+		}
+		if (a instanceof java.io.Serializable) {
+			doIt(a); // java.io.Serializable (or null)
+			doIt(b);
+			doIt(c);
+			doIt(d);
+		}
+		if (b instanceof java.util.Vector) {
+			doIt(a);
+			doIt(b);// java.util.Vector (or null)
+			doIt(c);
+			doIt(d);
+		}
+		if (c != null) {
+			printError("impossible");
+		}
+	}
 }
