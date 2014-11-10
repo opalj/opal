@@ -822,6 +822,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         (value, shift) match {
             case (_, IntegerRange(0, 0)) ⇒
                 value
+
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
                 if (vlb == vub && slb == sub) {
                     val r = vlb << slb
@@ -837,8 +838,9 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                 } else
                     IntegerValue(pc)
 
-            case _ ⇒
-                IntegerValue(pc)
+            case (_, IntegerRange(31, 31)) ⇒ IntegerRange(Int.MinValue, 0) // actually, the value is either Int.MinValue or 0
+            case (-1, _)                   ⇒ IntegerRange(Int.MinValue, -1)
+            case _                         ⇒ IntegerValue(pc)
         }
     }
 
