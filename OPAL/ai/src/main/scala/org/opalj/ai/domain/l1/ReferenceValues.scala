@@ -826,25 +826,35 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (hasOrigin != this.origin)
                 return this;
 
-            val theSupertype = supertype.asObjectType
-            var newUpperTypeBound: UIDSet[ObjectType] = UIDSet.empty
-            upperTypeBound foreach { (anUpperTypeBound: ObjectType) ⇒
-                domain.isSubtypeOf(supertype, anUpperTypeBound) match {
-                    case Yes ⇒
-                        newUpperTypeBound += theSupertype
-                    case No if domain.isSubtypeOf(anUpperTypeBound, supertype).isYes ⇒
-                        newUpperTypeBound += anUpperTypeBound
-                    case _ ⇒
-                        newUpperTypeBound += anUpperTypeBound
-                        newUpperTypeBound += theSupertype
+            if (supertype.isObjectType) {
+                val theSupertype = supertype.asObjectType
+                var newUpperTypeBound: UIDSet[ObjectType] = UIDSet.empty
+                upperTypeBound foreach { (anUpperTypeBound: ObjectType) ⇒
+                    domain.isSubtypeOf(supertype, anUpperTypeBound) match {
+                        case Yes ⇒
+                            newUpperTypeBound += theSupertype
+                        case No if domain.isSubtypeOf(anUpperTypeBound, supertype).isYes ⇒
+                            newUpperTypeBound += anUpperTypeBound
+                        case _ ⇒
+                            newUpperTypeBound += anUpperTypeBound
+                            newUpperTypeBound += theSupertype
+                    }
                 }
-            }
-            if (newUpperTypeBound.size == 1) {
-                val newValue = ReferenceValue(hasOrigin, isNull, false, newUpperTypeBound.first)
-                newValue
+                if (newUpperTypeBound.size == 1) {
+                    val newValue = ObjectValue(hasOrigin, isNull, false, newUpperTypeBound.first)
+                    newValue
+                } else {
+                    val newValue = ObjectValue(hasOrigin, isNull, newUpperTypeBound + supertype.asObjectType)
+                    newValue
+                }
             } else {
-                val newValue = ObjectValue(hasOrigin, isNull, newUpperTypeBound + supertype.asObjectType)
-                newValue
+                /* The supertype is an array type; this implies that this MObjectValue
+                 * models the upper type bound "Serializable & Cloneable"; otherwise
+                 * the refinement is illegal
+                 */
+                assert(upperTypeBound == ObjectType.SerializableAndCloneable)
+                
+                ArrayValue(hasOrigin, isNull, false, supertype.asArrayType)
             }
         }
 
