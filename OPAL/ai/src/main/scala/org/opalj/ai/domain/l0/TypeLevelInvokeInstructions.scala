@@ -60,7 +60,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsDomain {
                 exceptionTypes += exceptionType
                 // We don't know the true type of the exception, we just
                 // know the upper bound!
-                exceptionValues::= NonNullObjectValue(pc, exceptionType) 
+                exceptionValues ::= NonNullObjectValue(pc, exceptionType)
             }
         }
 
