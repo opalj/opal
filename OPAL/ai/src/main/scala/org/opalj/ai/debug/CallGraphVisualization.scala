@@ -141,7 +141,7 @@ object CallGraphVisualization {
         val callGraphAlgorithm = args(0)
         val ComputedCallGraph(callGraph, unresolvedMethodCalls, exceptions) =
             memory {
-                time {
+                val computedCallGraph = time {
                     val callGraphAlgorithmConfig = args(0) match {
                         case "BasicVTA" ⇒
                             new BasicVTACallGraphAlgorithmConfiguration()
@@ -156,55 +156,53 @@ object CallGraphVisualization {
                             return ;
                     }
                     val entryPoints = defaultEntryPointsForLibraries(project)
-                    val computedCallGraph = CallGraphFactory.create(
-                        project,
-                        entryPoints,
-                        callGraphAlgorithmConfig)
-
-                    // Some statistics 
-                    val callGraph = computedCallGraph.callGraph
-                    import callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
-                    println("Methods with at least one resolved call: "+callsCount)
-                    println("Methods which are called by at least one method: "+calledByCount)
-
-                    var maxCallSitesPerMethod = 0
-                    var methodWithMaxCallSites: Method = null
-                    var maxCallTargets = 0
-                    var methodWithMethodCallWithMaxTargets: Method = null
-                    var methodCallWithMaxTargetsPC: PC = 0
-                    foreachCallingMethod { (method, callees) ⇒
-                        val callSitesCount = callees.size
-                        if (callSitesCount > maxCallSitesPerMethod) {
-                            maxCallSitesPerMethod = callSitesCount
-                            methodWithMaxCallSites = method
-                        }
-                        val maxTargetsPerCallSite =
-                            callees.values.map(_.size).max
-                        if (maxTargetsPerCallSite > maxCallTargets) {
-                            maxCallTargets = maxTargetsPerCallSite
-                            methodWithMethodCallWithMaxTargets = method
-                            methodCallWithMaxTargetsPC =
-                                callees.find(e ⇒ e._2.size == maxCallTargets).get._1
-                        }
-                    }
-                    println(
-                        f"Number of call edges: ${callGraph.callEdgesCount}%,d"+
-                            f" /  called-by edges: ${callGraph.calledByEdgesCount}%,d")
-                    println(
-                        "Maximum number of targets for one call: "+maxCallTargets+"; method: "+
-                            methodWithMethodCallWithMaxTargets.fullyQualifiedSignature(
-                                project.classFile(methodWithMethodCallWithMaxTargets).thisType
-                            )+"; pc: "+methodCallWithMaxTargetsPC
-                    )
-                    println(
-                        "Method with the maximum number of call sites: "+maxCallSitesPerMethod+"; method: "+
-                            methodWithMaxCallSites.fullyQualifiedSignature(
-                                project.classFile(methodWithMaxCallSites).thisType
-                            )
-                    )
-
-                    computedCallGraph
+                    CallGraphFactory.create(project, entryPoints, callGraphAlgorithmConfig)
                 } { t ⇒ println("Creating the call graph took: "+ns2sec(t)) }
+
+                // Some statistics 
+                val callGraph = computedCallGraph.callGraph
+                import callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
+                println("Methods with at least one resolved call: "+callsCount)
+                println("Methods which are called by at least one method: "+calledByCount)
+
+                var maxCallSitesPerMethod = 0
+                var methodWithMaxCallSites: Method = null
+                var maxCallTargets = 0
+                var methodWithMethodCallWithMaxTargets: Method = null
+                var methodCallWithMaxTargetsPC: PC = 0
+                foreachCallingMethod { (method, callees) ⇒
+                    val callSitesCount = callees.size
+                    if (callSitesCount > maxCallSitesPerMethod) {
+                        maxCallSitesPerMethod = callSitesCount
+                        methodWithMaxCallSites = method
+                    }
+                    val maxTargetsPerCallSite =
+                        callees.values.map(_.size).max
+                    if (maxTargetsPerCallSite > maxCallTargets) {
+                        maxCallTargets = maxTargetsPerCallSite
+                        methodWithMethodCallWithMaxTargets = method
+                        methodCallWithMaxTargetsPC =
+                            callees.find(e ⇒ e._2.size == maxCallTargets).get._1
+                    }
+                }
+                println(
+                    f"Number of call edges: ${callGraph.callEdgesCount}%,d"+
+                        f" /  called-by edges: ${callGraph.calledByEdgesCount}%,d")
+                println(
+                    "Maximum number of targets for one call: "+maxCallTargets+"; method: "+
+                        methodWithMethodCallWithMaxTargets.fullyQualifiedSignature(
+                            project.classFile(methodWithMethodCallWithMaxTargets).thisType
+                        )+"; pc: "+methodCallWithMaxTargetsPC
+                )
+                println(
+                    "Method with the maximum number of call sites: "+maxCallSitesPerMethod+"; method: "+
+                        methodWithMaxCallSites.fullyQualifiedSignature(
+                            project.classFile(methodWithMaxCallSites).thisType
+                        )
+                )
+
+                computedCallGraph
+
             } { m ⇒ println("Required memory for call graph: "+asMB(m))+"\n" }
 
         //
