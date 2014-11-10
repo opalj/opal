@@ -236,6 +236,7 @@ trait CHACallGraphDomain extends CallGraphDomain {
         } else {
             virtualCall(pc, declaringClass.asObjectType, name, descriptor, operands)
         }
+
         super.invokevirtual(pc, declaringClass, name, descriptor, operands)
     }
 
@@ -247,6 +248,7 @@ trait CHACallGraphDomain extends CallGraphDomain {
         operands: Operands): MethodCallResult = {
 
         virtualCall(pc, declaringClass, name, descriptor, operands)
+
         super.invokeinterface(pc, declaringClass, name, descriptor, operands)
     }
 
@@ -265,6 +267,7 @@ trait CHACallGraphDomain extends CallGraphDomain {
             pc, declaringClass, name, descriptor,
             receiverMayBeNull = false /*the receiver is "this" object*/ , operands
         )
+
         super.invokespecial(pc, declaringClass, name, descriptor, operands)
     }
 
@@ -281,6 +284,7 @@ trait CHACallGraphDomain extends CallGraphDomain {
         nonVirtualCall(
             pc, declaringClass, name, descriptor,
             receiverMayBeNull = false /*the receiver is the "class" object*/ , operands)
+
         super.invokestatic(pc, declaringClass, name, descriptor, operands)
     }
 }
