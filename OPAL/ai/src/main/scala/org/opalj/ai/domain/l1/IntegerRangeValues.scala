@@ -822,6 +822,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         (value, shift) match {
             case (_, IntegerRange(0, 0)) ⇒
                 value
+
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
                 if (vlb == vub && slb == sub) {
                     val r = vlb << slb
@@ -837,8 +838,9 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                 } else
                     IntegerValue(pc)
 
-            case _ ⇒
-                IntegerValue(pc)
+            case (_, IntegerRange(31, 31)) ⇒ IntegerRange(Int.MinValue, 0) // actually, the value is either Int.MinValue or 0
+            case (-1, _)                   ⇒ IntegerRange(Int.MinValue, -1)
+            case _                         ⇒ IntegerValue(pc)
         }
     }
 
@@ -847,8 +849,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
             case (_, IntegerRange(0, 0)) ⇒
                 value
 
-            // in this case the shift does not change the given integer range of [-1,-1], 
-            // hence the same object should be returned
+            // In this case a signed shift does not change the value ([-1,-1]).
             case (IntegerRange(-1, -1), _) ⇒
                 value
 
@@ -872,19 +873,16 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                 if (vlb >= 0) {
                     val lb = vlb >> maxShift
                     val ub = vub >> minShift
-
                     IntegerRange(lb, ub)
 
                 } else if (vlb < 0 && vub >= 0) {
                     val lb = vlb >> minShift
                     val ub = vub >> minShift
-
                     IntegerRange(lb, ub)
 
                 } else { // case vub < 0
                     val lb = vlb >> minShift
                     val ub = vub >> maxShift
-
                     IntegerRange(lb, ub)
                 }
 

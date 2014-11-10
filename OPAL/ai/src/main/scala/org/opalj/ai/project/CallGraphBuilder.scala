@@ -31,6 +31,7 @@ package ai
 package project
 
 import scala.collection.{ Set, Map }
+import scala.collection.mutable.{ Map ⇒ MutableMap }
 
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.collection.UID
@@ -82,6 +83,7 @@ class CallGraphBuilder(val project: SomeProject) {
         import scala.collection.mutable.{ OpenHashMap, AnyRefMap, WrappedArray }
 
         val calledByMapFuture: Future[AnyRefMap[Method, AnyRefMap[Method, PCs]]] = Future {
+
             val calledByMap: AnyRefMap[Method, AnyRefMap[Method, PCs]] =
                 new AnyRefMap[Method, AnyRefMap[Method, PCs]](project.methodsCount)
             for {

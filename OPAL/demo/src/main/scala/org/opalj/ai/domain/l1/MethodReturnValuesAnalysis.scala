@@ -58,7 +58,7 @@ object MethodReturnValuesAnalysis extends AnalysisExecutor {
         override val project: Project[java.net.URL],
         val ai: InterruptableAI[_],
         val method: Method)
-            extends Domain
+            extends CoRelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
             with domain.l0.DefaultPrimitiveValuesConversions

@@ -28,36 +28,17 @@
  */
 package org.opalj
 package ai
-package analyses
+package project
 
-import org.opalj.br.Field
-import org.opalj.br.UpperTypeBound
-import org.opalj.br.analyses._
+import org.opalj.br._
+import org.opalj.br.analyses.SomeProject
 
 /**
- * The ''key'' object to get information about the "more precise" field types.
+ * Representation of a computed call graph.
  *
  * @author Michael Eichberg
  */
-object FieldTypesKey extends ProjectInformationKey[Map[Field, UpperTypeBound]] {
-
-    /**
-     * The FieldTypesKey has no special prerequisites.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
-
-    /**
-     * Computes the field type information.
-     */
-    override protected def compute(project: SomeProject): Map[Field, UpperTypeBound] = {
-        // TODO Introduce the concept of a "configuration to a project"
-
-        FieldTypesAnalysis.doAnalyze(
-            project,
-            () ⇒ false // make it configurable
-        )
-    }
-}
-
+case class ComputedCallGraph(
+    callGraph: CallGraph,
+    unresolvedMethodCalls: List[UnresolvedMethodCall],
+    constructionExceptions: List[CallGraphConstructionException])

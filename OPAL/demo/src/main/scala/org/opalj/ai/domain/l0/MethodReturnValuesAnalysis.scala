@@ -67,11 +67,10 @@ object MethodReturnValuesAnalysis
         isInterrupted: () ⇒ Boolean) = {
         import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-        val candidates = new java.util.concurrent.atomic.AtomicInteger(0)
-
-        val methodsWithRefinedReturnTypes: Map[Method, Option[TheAnalysisDomain#DomainValue]] = time {
-            TheAnalysis.doAnalyze(theProject, parameters, isInterrupted)
-        } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
+        val methodsWithRefinedReturnTypes: Map[Method, Option[TheAnalysisDomain#DomainValue]] =
+            time {
+                TheAnalysis.doAnalyze(theProject, isInterrupted)
+            } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
 
         val results =
             methodsWithRefinedReturnTypes.map { result ⇒
@@ -81,9 +80,7 @@ object MethodReturnValuesAnalysis
 
         BasicReport(
             results.mkString(
-                "Methods with refined return types ("+
-                    results.size+" out of "+candidates.get+
-                    "): \n",
+                "Methods with refined return types ("+results.size+"): \n",
                 "\n",
                 "\n"))
     }

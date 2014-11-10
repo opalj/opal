@@ -31,14 +31,16 @@ package ai
 package project
 
 /**
- * @author Marco Jacobasch
+ * Tests the VTA based `CallGraph` algorithm using a more complex (explicitly
+ * annotated) project.
+ *
  * @author Michael Eichberg
  */
-class SimpleVTACallGraphTest extends AbstractCallGraphTest {
+class ComplexDefaultVTACallGraphTest extends AbstractCallGraphTest {
 
-    override def testFileName = "classfiles/simpleCallgraph.jar"
+    override def testFileName = "classfiles/callgraph.jar"
 
     override def testFilePath = "ai"
 
-    override def testCallGraph = VTACallGraphKey
+    override def testCallGraphConfiguration = new DefaultVTACallGraphAlgorithmConfiguration
 }

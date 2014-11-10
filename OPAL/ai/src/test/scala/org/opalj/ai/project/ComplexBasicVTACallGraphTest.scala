@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,50 +28,19 @@
  */
 package org.opalj
 package ai
-package domain
-package li
+package project
 
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.analyses.Project
+/**
+ * Tests the VTA based `CallGraph` algorithm using a more complex (explicitly
+ * annotated) project.
+ *
+ * @author Michael Eichberg
+ */
+class ComplexBasicVTACallGraphTest extends AbstractCallGraphTest {
 
-class DefaultConfigurableDomain[I, Source](
-    val id: I,
-    val project: Project[Source],
-    val classFile: ClassFile,
-    val method: Method)
-        extends CoRelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with ProjectBasedClassHierarchy
-        with TheProject
-        with TheMethod
-        with PerInstructionPostProcessing
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        //    with l1.DefaultReferenceValuesBinding
-        //    with l1.DefaultStringValuesBinding
-        with l1.DefaultClassValuesBinding
-        with l1.DefaultArrayValuesBinding
-        with li.DefaultPreciseIntegerValues
-        with li.DefaultPreciseLongValues
-        with l1.DefaultConcretePrimitiveValuesConversions {
+    override def testFileName = "classfiles/callgraph.jar"
 
-    type Id = I
+    override def testFilePath = "ai"
 
-    override protected def maxUpdatesForIntegerValues: Long = 25l
-
+    override def testCallGraphConfiguration = new BasicVTACallGraphAlgorithmConfiguration
 }
-
-class DefaultDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends DefaultConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)

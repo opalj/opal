@@ -76,7 +76,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Eichberg
  */
-object FieldTypesAnalysis {
+object FieldValuesAnalysis {
 
     def doAnalyze(
         theProject: SomeProject,
@@ -90,7 +90,7 @@ object FieldTypesAnalysis {
             // fined-grained level, because we reuse the same domain instance
             // to perform an abstract interpretation of all methods of the 
             // same class file
-            domain = new FieldTypesAnalysisDomain(theProject, classFile)
+            domain = new FieldValuesAnalysisDomain(theProject, classFile)
             if domain.hasCandidateFields
         } yield {
             classFile.methods.foreach { method ⇒
@@ -99,7 +99,7 @@ object FieldTypesAnalysis {
                     BaseAI(classFile, method, domain)
                 }
             }
-            domain.fieldsWithRefinedTypes
+            domain.fieldsWithRefinedValues
         }
         refinedFieldTypes.flatten.seq.toMap
     }

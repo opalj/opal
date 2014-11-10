@@ -61,7 +61,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
 
     def testFilePath: String
 
-    def testCallGraph: org.opalj.br.analyses.ProjectInformationKey[ComputedCallGraph]
+    def testCallGraphConfiguration: CallGraphAlgorithmConfiguration
 
     //
     // ANNOTATIONTYPES
@@ -90,8 +90,10 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     //
     // GRAPH CONSTRUCTION
     //
-    val ComputedCallGraph(callGraph, unresolvedMethodCalls, exceptions) =
-        project.get(testCallGraph)
+    val ComputedCallGraph(callGraph, unresolvedMethodCalls, exceptions) = {
+        val entryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project)
+        CallGraphFactory.create(project, entryPoints, testCallGraphConfiguration)
+    }
 
     //
     // UTILITY FUNCTIONS

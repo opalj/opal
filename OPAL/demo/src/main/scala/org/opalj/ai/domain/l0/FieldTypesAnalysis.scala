@@ -63,27 +63,23 @@ object FieldTypesAnalysis extends AnalysisExecutor {
             isInterrupted: () ⇒ Boolean) = {
             import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-            val refinedFieldTypes =
-                org.opalj.ai.analyses.FieldTypesAnalysis.doAnalyze(
+            val refinedFieldValues =
+                org.opalj.ai.analyses.FieldValuesAnalysis.doAnalyze(
                     theProject,
                     isInterrupted)
 
             BasicReport(
-                refinedFieldTypes.seq.map { info ⇒
-                    val (field, upperTypeBound) = info
+                refinedFieldValues.seq.map { info ⇒
+                    val (field, fieldValue) = info
                     val classFile = theProject.classFile(field)
-                    classFile.thisType.toJava+"{ "+
-                        field.name+":"+
-                        {
-                            if (upperTypeBound.isEmpty)
-                                "null"
-                            else
-                                upperTypeBound.map { _.toJava }.mkString(" with ")
-                        }+
-                        " // Originaltype: "+field.fieldType.toJava+" }"
+                    classFile.thisType.toJava+
+                        "{ "+
+                        field.name+":"+fieldValue+
+                        " // Originaltype: "+field.fieldType.toJava+
+                        " }"
                 }.mkString("\n")+
                     "\n"+
-                    "Number of refined field types: "+refinedFieldTypes.size+"\n"
+                    "Number of refined field types: "+refinedFieldValues.size+"\n"
             )
         }
     }

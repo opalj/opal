@@ -947,25 +947,14 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v = AnIntegerValue()
                 val s = IntegerRange(0, 0)
 
-                ishr(-1, v, s) match {
-                    case (resultRange) ⇒
-                        resultRange should be equals v
-                    case v ⇒
-                        fail(s"expected AnIntegerValue; found $v")
-                }
+                ishr(-1, v, s) should be theSameInstanceAs v
             }
 
             it("[0, 0] >> AnIntegerValue => [0,0]") {
                 val v = IntegerRange(0)
                 val s = AnIntegerValue()
 
-                ishr(-1, v, s) match {
-                    case (resultRange) ⇒
-                        resultRange should be equals v
-
-                    case v ⇒
-                        fail(s"expected lb <= -10 and ub >= 5; found $v")
-                }
+                ishr(-1, v, s) should be theSameInstanceAs v
             }
         }
 

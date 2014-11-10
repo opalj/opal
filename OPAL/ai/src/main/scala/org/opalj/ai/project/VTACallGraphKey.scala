@@ -36,8 +36,8 @@ import br.analyses._
  * The ''key'' object to get a call graph that was calculated using the VTA algorithm.
  *
  * You can assume that – in general – the call graph calculated using the VTA algorithm
- * is more precise than the call graph calculated using the CHA algorithm. However,
- * it also take more time (2x-5x) to perform the calculation.
+ * is more precise than the call graph calculated using the CHA algorithm. Depending
+ * on the project, the performance may be better, equal or worse.
  *
  * @example
  *      To get the call graph object use the `Project`'s `get` method and pass in
@@ -61,11 +61,14 @@ object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
      * Computes the `CallGraph` for the given project.
      */
     override protected def compute(project: SomeProject): ComputedCallGraph = {
+
+        // TODO query the project to decide which configuration to choose
+
         val entryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project)
         CallGraphFactory.create(
             project,
             entryPoints,
-            new VTACallGraphAlgorithmConfiguration())
+            new DefaultVTACallGraphAlgorithmConfiguration())
     }
 }
 

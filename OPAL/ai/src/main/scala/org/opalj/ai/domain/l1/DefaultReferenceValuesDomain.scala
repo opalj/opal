@@ -44,7 +44,7 @@ class DefaultConfigurableReferenceValuesDomain[I, Source](
     val project: Project[Source],
     val classFile: ClassFile,
     val method: Method)
-        extends Domain with JoinStabilization
+        extends CoRelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with ProjectBasedClassHierarchy

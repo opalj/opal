@@ -52,7 +52,7 @@ import org.opalj.br.analyses.SomeProject
  * ==Usage==
  * One instance of this domain has to be used to analyze all methods of the respective
  * class. Only after the analysis of all methods, the information returned by
- * [[fieldsWithRefinedTypes]] is guaranteed to be correct.
+ * [[fieldsWithRefinedValues]] is guaranteed to be correct.
  *
  * ==Thread Safety==
  * This domain is not thread-safe. The methods of a class have to be analyzed
@@ -61,7 +61,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Eichberg
  */
-class FieldTypesAnalysisDomain(
+class FieldValuesAnalysisDomain(
     override val project: SomeProject,
     val classFile: ClassFile)
         extends Domain
@@ -104,6 +104,10 @@ class FieldTypesAnalysisDomain(
         MutableMap.empty ++ relevantFields.map(_ -> None)
     }
 
+    def hasCandidateFields: Boolean = fieldInformation.nonEmpty
+
+    def candidateFields: Iterable[String] = fieldInformation.keys
+
     private[this] var currentCode: Code = null
 
     /**
@@ -119,11 +123,7 @@ class FieldTypesAnalysisDomain(
 
     def code: Code = currentCode
 
-    def hasCandidateFields: Boolean = fieldInformation.nonEmpty
-
-    def candidateFields: Iterable[String] = fieldInformation.keys
-
-    def fieldsWithRefinedTypes: Seq[(Field, UpperTypeBound)] = {
+    def fieldsWithRefinedValues: Seq[(Field, DomainValue)] = {
         val refinedFields =
             for {
                 field ← classFile.fields
@@ -135,9 +135,8 @@ class FieldTypesAnalysisDomain(
                 if upperTypeBound.nonEmpty
                 if (upperTypeBound.size != 1) || (upperTypeBound.first ne field.fieldType)
             } yield {
-                (field, upperTypeBound)
+                (field, fieldValue)
             }
-
         refinedFields
     }
 
