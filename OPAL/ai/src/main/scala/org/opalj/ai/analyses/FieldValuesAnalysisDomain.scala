@@ -52,7 +52,7 @@ import org.opalj.br.analyses.SomeProject
  * ==Usage==
  * One instance of this domain has to be used to analyze all methods of the respective
  * class. Only after the analysis of all methods, the information returned by
- * [[fieldsWithRefinedTypes]] is guaranteed to be correct.
+ * [[fieldsWithRefinedValues]] is guaranteed to be correct.
  *
  * ==Thread Safety==
  * This domain is not thread-safe. The methods of a class have to be analyzed
