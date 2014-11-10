@@ -853,7 +853,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                  * the refinement is illegal
                  */
                 assert(upperTypeBound == ObjectType.SerializableAndCloneable)
-                
+
                 ArrayValue(hasOrigin, isNull, false, supertype.asArrayType)
             }
         }
