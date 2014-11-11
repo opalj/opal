@@ -839,7 +839,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                     IntegerValue(pc)
 
             case (_, IntegerRange(31, 31)) ⇒ IntegerRange(Int.MinValue, 0) // actually, the value is either Int.MinValue or 0
-            case (-1, _)                   ⇒ IntegerRange(Int.MinValue, -1)
+            case (IntegerRange(-1, -1), _) ⇒ IntegerRange(Int.MinValue, -1)
             case _                         ⇒ IntegerValue(pc)
         }
     }
