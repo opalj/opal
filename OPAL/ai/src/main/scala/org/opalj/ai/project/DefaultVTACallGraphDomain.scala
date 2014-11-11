@@ -49,23 +49,22 @@ class DefaultVTACallGraphDomain[Source](
     val project: Project[Source],
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
-    val method: Method,
-    override val maxCardinalityOfIntegerRanges: Long)
+    val method: Method)
         extends CoRelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
-        with TheProject[Source]
+        with TheProject
         with ProjectBasedClassHierarchy
         with TheMethod
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        with l0.TypeLevelInvokeInstructions
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l1.DefaultIntegerRangeValues
-        with l1.DefaultReferenceValuesBinding
+        with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultPrimitiveValuesConversions
+        with l1.DefaultReferenceValuesBinding
+        with l0.TypeLevelInvokeInstructions
+        with l0.RefinedTypeLevelFieldAccessInstructions
         with VTACallGraphDomain
 

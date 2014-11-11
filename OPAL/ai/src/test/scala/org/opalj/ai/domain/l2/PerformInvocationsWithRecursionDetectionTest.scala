@@ -147,9 +147,11 @@ class PerformInvocationsWithRecursionDetectionTest
 
 object PerformInvocationsWithRecursionDetectionTestFixture {
 
-    class BaseDomain(val project: Project[java.net.URL]) extends ValuesDomain
+    abstract class BaseDomain(val project: Project[java.net.URL])
+            extends CoRelationalDomain
+            with ValuesDomain
             with DefaultDomainValueBinding
-            with TheProject[java.net.URL]
+            with TheProject
             with ProjectBasedClassHierarchy
             with TypedValuesFactory
             with l0.DefaultTypeLevelLongValues
@@ -162,9 +164,12 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
         override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
     }
 
-    def createCalledMethodsStore(theProject: Project[java.net.URL]): CalledMethodsStore { def warningIssued: Boolean } =
+    def createCalledMethodsStore(
+        theProject: Project[java.net.URL]): CalledMethodsStore { def warningIssued: Boolean } =
         new CalledMethodsStore(new BaseDomain(theProject) with ValuesCoordinatingDomain) {
+
             var warningIssued = false
+
             override def frequentEvalution(
                 definingClass: ClassFile,
                 method: Method,

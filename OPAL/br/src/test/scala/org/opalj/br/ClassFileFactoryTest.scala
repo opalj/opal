@@ -96,6 +96,9 @@ import instructions.RETURN
 import instructions.ReturnInstruction
 import org.scalatest.junit.JUnitRunner
 
+/**
+ * @author Arne Lottmann
+ */
 @RunWith(classOf[JUnitRunner])
 class ClassFileFactoryTest extends FunSpec with Matchers {
     val testProject = Project(locateTestResources("classfiles/proxy.jar", "br"))
@@ -113,7 +116,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             cf.methods.map((theClass, _))
         }.getOrElse(Iterable.empty)
 
-    private def checkAndReturnMethod(classFile: ClassFile)(filter: Method ⇒ Boolean): Method = {
+    private def checkAndReturnMethod(
+        classFile: ClassFile)(
+            filter: Method ⇒ Boolean): Method = {
         val methods = classFile.methods.filter(filter)
         methods should have size (1)
         val method = methods.head
@@ -126,14 +131,16 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
     private def checkAndReturnFactoryMethod(classFile: ClassFile): Method =
         checkAndReturnMethod(classFile)(m ⇒
-            m.isStatic && m.isPublic && (m.name == "$newInstance" || m.name == "$createInstance"))
+            m.isStatic && m.isPublic &&
+                (m.name == "$newInstance" || m.name == "$createInstance"))
 
     private def checkAndReturnForwardingMethod(classFile: ClassFile): Method =
         checkAndReturnMethod(classFile)(m ⇒
             !(m.isConstructor || m.name == "$newInstance" || m.name == "$createInstance"))
 
     describe("ClassFileFactory") {
-        describe("should proxify all kinds of methods") {
+
+        describe("should be able to proxify methods") {
             val instanceMethods = getMethods(InstanceMethods, testProject)
             instanceMethods should not be ('empty)
             val constructors = getMethods(Constructors, testProject)
@@ -204,11 +211,12 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     val maxLocals = factoryMethod.parameterTypes.map(_.computationalType.operandSize).sum
                     val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
                     var currentVariableIndex = 0
-                    val loadParametersInstructions: Array[Instruction] = factoryMethod.parameterTypes.flatMap { t ⇒
-                        val instruction = LoadLocalVariableInstruction(t, currentVariableIndex)
-                        currentVariableIndex += t.computationalType.operandSize
-                        if (currentVariableIndex > 3) Array(instruction, null) else Array(instruction)
-                    }.toArray
+                    val loadParametersInstructions: Array[Instruction] =
+                        factoryMethod.parameterTypes.flatMap { t ⇒
+                            val instruction = LoadLocalVariableInstruction(t, currentVariableIndex)
+                            currentVariableIndex += t.computationalType.operandSize
+                            if (currentVariableIndex > 3) Array(instruction, null) else Array(instruction)
+                        }.toArray
                     val body = factoryMethod.body.get
                     body.maxStack should be(maxStack)
                     body.maxLocals should be(maxLocals)
@@ -415,19 +423,20 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 val methodWithFiveDoubleParameters = testProject.
                     classFile(StaticMethods).get.findMethod(
                         "doubleDoubleDoubleDoubleDoubleAndNoReturnValue").get
-                val proxy = ClassFileFactory.Proxy(
-                    TypeDeclaration(
-                        ObjectType("StaticMethods$ProxyWithFiveArguments"),
-                        false,
-                        Some(ObjectType.Object),
-                        Set.empty
-                    ),
-                    methodWithFiveDoubleParameters.name,
-                    methodWithFiveDoubleParameters.descriptor,
-                    StaticMethods,
-                    methodWithFiveDoubleParameters.name,
-                    methodWithFiveDoubleParameters.descriptor,
-                    INVOKESTATIC.opcode)
+                val proxy =
+                    ClassFileFactory.Proxy(
+                        TypeDeclaration(
+                            ObjectType("StaticMethods$ProxyWithFiveArguments"),
+                            false,
+                            Some(ObjectType.Object),
+                            Set.empty
+                        ),
+                        methodWithFiveDoubleParameters.name,
+                        methodWithFiveDoubleParameters.descriptor,
+                        StaticMethods,
+                        methodWithFiveDoubleParameters.name,
+                        methodWithFiveDoubleParameters.descriptor,
+                        INVOKESTATIC.opcode)
 
                 val method = checkAndReturnForwardingMethod(proxy)
                 val body = method.body.get
@@ -467,21 +476,22 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         } else {
                             INVOKEVIRTUAL.opcode
                         }
-                    val proxy = ClassFileFactory.Proxy(
-                        TypeDeclaration(
-                            ObjectType(s"TestProxy$$${theType}$$${method.name}"),
-                            false,
-                            Some(ObjectType.Object),
-                            Set.empty
-                        ),
-                        "theProxy",
-                        method.descriptor,
-                        theType,
-                        method.name,
-                        MethodDescriptor(
-                            IntegerType +: method.parameterTypes,
-                            method.returnType),
-                        invocationInstruction)
+                    val proxy =
+                        ClassFileFactory.Proxy(
+                            TypeDeclaration(
+                                ObjectType(s"TestProxy$$${theType}$$${method.name}"),
+                                false,
+                                Some(ObjectType.Object),
+                                Set.empty
+                            ),
+                            "theProxy",
+                            method.descriptor,
+                            theType,
+                            method.name,
+                            MethodDescriptor(
+                                IntegerType +: method.parameterTypes,
+                                method.returnType),
+                            invocationInstruction)
 
                     val constructor = checkAndReturnConstructor(proxy)
                     if (method.isStatic) {
@@ -516,48 +526,49 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         } else {
                             INVOKEVIRTUAL.opcode
                         }
-                    val proxy = ClassFileFactory.Proxy(
-                        TypeDeclaration(
-                            ObjectType(s"TestProxy$$${theType}$$${method.name}"),
-                            false,
-                            Some(ObjectType.Object),
-                            Set.empty
-                        ),
-                        "theProxy",
-                        method.descriptor,
-                        theType,
-                        method.name,
-                        MethodDescriptor(
-                            IntegerType +: method.parameterTypes,
-                            method.returnType),
-                        invocationInstruction)
+                    val proxy =
+                        ClassFileFactory.Proxy(
+                            TypeDeclaration(
+                                ObjectType(s"TestProxy$$${theType}$$${method.name}"),
+                                false,
+                                Some(ObjectType.Object),
+                                Set.empty
+                            ),
+                            "theProxy",
+                            method.descriptor,
+                            theType,
+                            method.name,
+                            MethodDescriptor(
+                                IntegerType +: method.parameterTypes,
+                                method.returnType),
+                            invocationInstruction)
                     val forwarderMethod = checkAndReturnForwardingMethod(proxy)
                     val instructions = forwarderMethod.body.get.instructions
 
-                    var currentIndex = 0
+                    var currentPC = 0
                     if (!method.isStatic) {
                         // check that the receiver is loaded while advancing the index correctly
                         if (method.isConstructor) {
-                            instructions(currentIndex) should be(NEW(theType))
-                            currentIndex = instructions(currentIndex).indexOfNextInstruction(currentIndex, false)
-                            instructions(currentIndex) should be(DUP)
-                            currentIndex = DUP.indexOfNextInstruction(currentIndex, false)
+                            instructions(currentPC) should be(NEW(theType))
+                            currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
+                            instructions(currentPC) should be(DUP)
+                            currentPC = DUP.indexOfNextInstruction(currentPC, false)
                         } else {
-                            instructions(currentIndex) should be(ALOAD_0)
-                            currentIndex = ALOAD_0.indexOfNextInstruction(currentIndex, false)
-                            instructions(currentIndex) should be(
+                            instructions(currentPC) should be(ALOAD_0)
+                            currentPC = ALOAD_0.indexOfNextInstruction(currentPC, false)
+                            instructions(currentPC) should be(
                                 GETFIELD(proxy.thisType, ClassFileFactory.ReceiverFieldName, theType)
                             )
-                            currentIndex = instructions(currentIndex).indexOfNextInstruction(currentIndex, false)
+                            currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
                         }
                     }
-                    instructions(currentIndex) should be(ALOAD_0)
-                    currentIndex = ALOAD_0.indexOfNextInstruction(currentIndex, false)
-                    instructions(currentIndex) should be(
+                    instructions(currentPC) should be(ALOAD_0)
+                    currentPC = ALOAD_0.indexOfNextInstruction(currentPC, false)
+                    instructions(currentPC) should be(
                         GETFIELD(proxy.thisType, "staticParameter0", IntegerType)
                     )
-                    currentIndex = instructions(currentIndex).indexOfNextInstruction(currentIndex, false)
-                    instructions(currentIndex) should not be (null)
+                    currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
+                    instructions(currentPC) should not be (null)
                 }
             }
 
@@ -592,27 +603,30 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         } else {
                             INVOKEVIRTUAL.opcode
                         }
-                    val proxy = ClassFileFactory.Proxy(
-                        TypeDeclaration(
-                            ObjectType(s"TestProxy$$${theType}$$${method.name}"),
-                            false,
-                            Some(ObjectType.Object),
-                            Set.empty
-                        ),
-                        "theProxy",
-                        method.descriptor,
-                        theType,
-                        method.name,
-                        MethodDescriptor(
-                            method.parameterTypes,
-                            ObjectType.Object
-                        ),
-                        invocationInstruction)
+                    val proxy =
+                        ClassFileFactory.Proxy(
+                            TypeDeclaration(
+                                ObjectType(s"TestProxy$$${theType}$$${method.name}"),
+                                false,
+                                Some(ObjectType.Object),
+                                Set.empty
+                            ),
+                            "theProxy",
+                            method.descriptor,
+                            theType,
+                            method.name,
+                            MethodDescriptor(
+                                method.parameterTypes,
+                                ObjectType.Object
+                            ),
+                            invocationInstruction)
                     val forwarderMethod = checkAndReturnForwardingMethod(proxy)
                     val instructions = forwarderMethod.body.get.instructions
 
-                    val indexOfInvocation = instructions.indexWhere(_.isInstanceOf[InvocationInstruction])
-                    var currentIndex = instructions(indexOfInvocation).indexOfNextInstruction(indexOfInvocation, false)
+                    val indexOfInvocation =
+                        instructions.indexWhere(_.isInstanceOf[InvocationInstruction])
+                    var currentPC =
+                        instructions(indexOfInvocation).indexOfNextInstruction(indexOfInvocation, false)
 
                     val returnType = method.returnType
 
@@ -621,9 +635,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         val baseType = returnType.asBaseType
                         val wrapper = baseType.WrapperType
                         val cast = CHECKCAST(wrapper)
-                        instructions(currentIndex) should be(cast)
-                        currentIndex = cast.indexOfNextInstruction(currentIndex, false)
-                        instructions(currentIndex) should be(
+                        instructions(currentPC) should be(cast)
+                        currentPC = cast.indexOfNextInstruction(currentPC, false)
+                        instructions(currentPC) should be(
                             INVOKEVIRTUAL(
                                 wrapper,
                                 s"${baseType.toJava}Value",
@@ -632,10 +646,10 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     } else if (returnType.isReferenceType) {
                         // just cast
                         val cast = CHECKCAST(returnType.asReferenceType)
-                        instructions(currentIndex) should be(cast)
+                        instructions(currentPC) should be(cast)
                     }
-                    currentIndex = instructions(currentIndex).indexOfNextInstruction(currentIndex, false)
-                    instructions(currentIndex) should be(ReturnInstruction(returnType))
+                    currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
+                    instructions(currentPC) should be(ReturnInstruction(returnType))
                 }
             }
         }
@@ -643,19 +657,20 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         describe("should be able to profixy $newInstance methods") {
             it("by picking an alternate name for the factory method") {
                 val theType = ObjectType("ClassFileFactoryTest$newInstanceName")
-                val proxy = ClassFileFactory.Proxy(
-                    TypeDeclaration(
-                        ObjectType(theType.toJava+"$Proxy"),
-                        false,
-                        Some(ObjectType.Object),
-                        Set.empty
-                    ),
-                    "$newInstance",
-                    new NoArgumentMethodDescriptor(theType),
-                    theType,
-                    "newInstance",
-                    new NoArgumentMethodDescriptor(theType),
-                    INVOKESTATIC.opcode)
+                val proxy =
+                    ClassFileFactory.Proxy(
+                        TypeDeclaration(
+                            ObjectType(theType.toJava+"$Proxy"),
+                            false,
+                            Some(ObjectType.Object),
+                            Set.empty
+                        ),
+                        "$newInstance",
+                        new NoArgumentMethodDescriptor(theType),
+                        theType,
+                        "newInstance",
+                        new NoArgumentMethodDescriptor(theType),
+                        INVOKESTATIC.opcode)
                 val factoryMethod = checkAndReturnFactoryMethod(proxy)
                 factoryMethod.name should be(ClassFileFactory.AlternativeFactoryMethodName)
             }
@@ -665,17 +680,19 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             it("the bridge method should stack & cast parameters and call the forwarding method") {
                 val receiverType = ObjectType("ClassFileFactoryTest$BridgeCast")
                 val proxyType = ObjectType(receiverType.simpleName+"$Proxy")
-                val methodDescriptor = MethodDescriptor(IndexedSeq(ObjectType.String, DoubleType), IntegerType)
-                val proxy = ClassFileFactory.Proxy(
-                    TypeDeclaration(proxyType, false, Some(ObjectType.Object), Set.empty),
-                    "method",
-                    methodDescriptor,
-                    receiverType,
-                    "method",
-                    methodDescriptor,
-                    INVOKESTATIC.opcode,
-                    Some(MethodDescriptor(IndexedSeq(ObjectType.Object, DoubleType), IntegerType))
-                )
+                val methodDescriptor =
+                    MethodDescriptor(IndexedSeq(ObjectType.String, DoubleType), IntegerType)
+                val proxy =
+                    ClassFileFactory.Proxy(
+                        TypeDeclaration(proxyType, false, Some(ObjectType.Object), Set.empty),
+                        "method",
+                        methodDescriptor,
+                        receiverType,
+                        "method",
+                        methodDescriptor,
+                        INVOKESTATIC.opcode,
+                        Some(MethodDescriptor(IndexedSeq(ObjectType.Object, DoubleType), IntegerType))
+                    )
                 val bridge = proxy.methods.find(m ⇒ ACC_BRIDGE.isSet(m.accessFlags))
                 bridge should be('defined)
                 bridge.get.body should be('defined)
@@ -700,14 +717,16 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         }
 
         describe("should compute correct constructor stack and local values") {
-            val definingType = TypeDeclaration(
-                ObjectType("SomeRandomType"),
-                false,
-                Some(ObjectType.Object),
-                Set.empty)
+            val definingType =
+                TypeDeclaration(
+                    ObjectType("SomeRandomType"),
+                    false,
+                    Some(ObjectType.Object),
+                    Set.empty)
 
-            def testConstructor(fieldTypes: IndexedSeq[FieldType],
-                                expectedLocals: Int, expectedStack: Int) {
+            def testConstructor(
+                fieldTypes: IndexedSeq[FieldType],
+                expectedLocals: Int, expectedStack: Int) {
                 val fields = fieldTypes.zipWithIndex.map { p ⇒
                     val (ft, i) = p
                     Field(bi.ACC_PRIVATE.mask, "field"+i, ft, Seq.empty)
@@ -722,26 +741,34 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             it("for no fields") {
                 testConstructor(IndexedSeq.empty, 1, 1)
             }
+
             it("for a single reference value field") {
                 testConstructor(IndexedSeq(ObjectType.Object), 2, 2)
             }
+
             it("for primitive value fields") {
                 testConstructor(IndexedSeq(IntegerType), 2, 2)
             }
+
             it("for wide primitive value fields") {
                 testConstructor(IndexedSeq(DoubleType), 3, 3)
             }
+
             it("for multiple simple primitive and reference value fields") {
                 testConstructor(IndexedSeq(ObjectType.Object, IntegerType, IntegerType), 4, 2)
             }
+
             it("for multiple wide primitive value fields") {
                 testConstructor(IndexedSeq(DoubleType, LongType, DoubleType), 7, 3)
             }
+
             it("for everything together") {
                 testConstructor(IndexedSeq(ObjectType.Object, LongType, IntegerType), 5, 3)
             }
         }
+
         describe("should create correct instructions for stacking parameters for the forwarding call") {
+
             it("should produce no instructions for empty descriptors") {
                 val instructions = ClassFileFactory.parameterForwardingInstructions(
                     NoArgumentAndNoReturnValueMethodDescriptor,
@@ -751,6 +778,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     ObjectType.Object)
                 instructions should have size (0)
             }
+
             it("should forward all parameters for identical, non-empty descriptors") {
                 var d = MethodDescriptor(IndexedSeq(IntegerType, ObjectType.String), VoidType)
                 ClassFileFactory.parameterForwardingInstructions(
@@ -786,8 +814,11 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             ILOAD(9),
                             null
                         ))
-                d = MethodDescriptor(IndexedSeq(DoubleType, ObjectType.String, ByteType,
-                    LongType, DoubleType, FloatType), VoidType)
+                d =
+                    MethodDescriptor(
+                        IndexedSeq(DoubleType, ObjectType.String, ByteType,
+                            LongType, DoubleType, FloatType),
+                        VoidType)
                 ClassFileFactory.parameterForwardingInstructions(
                     d, d, 0, Seq.empty, ObjectType.Object) should be(
                         Array(
@@ -803,10 +834,16 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         ))
             }
             it("should safely convert primitive values") {
-                val d1 = MethodDescriptor(IndexedSeq(ByteType, CharType, ShortType,
-                    IntegerType, FloatType, LongType), VoidType)
-                val d2 = MethodDescriptor(IndexedSeq(ShortType, ShortType, IntegerType,
-                    LongType, DoubleType, DoubleType), VoidType)
+                val d1 =
+                    MethodDescriptor(
+                        IndexedSeq(ByteType, CharType, ShortType,
+                            IntegerType, FloatType, LongType),
+                        VoidType)
+                val d2 =
+                    MethodDescriptor(
+                        IndexedSeq(ShortType, ShortType, IntegerType,
+                            LongType, DoubleType, DoubleType),
+                        VoidType)
                 ClassFileFactory.parameterForwardingInstructions(
                     d1, d2, 0, Seq.empty, ObjectType.Object) should be(
                         Array(
@@ -829,11 +866,17 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                 MethodDescriptor(baseType, baseType.WrapperType)
 
             it("should create boxing instructions for primitive types") {
-                val d1 = MethodDescriptor(IndexedSeq(ByteType, CharType, ShortType,
-                    IntegerType, FloatType, LongType), VoidType)
-                val d2 = MethodDescriptor(IndexedSeq(ObjectType.Byte, ObjectType.Character,
-                    ObjectType.Short, ObjectType.Integer, ObjectType.Float,
-                    ObjectType.Long), VoidType)
+                val d1 =
+                    MethodDescriptor(
+                        IndexedSeq(ByteType, CharType, ShortType,
+                            IntegerType, FloatType, LongType),
+                        VoidType)
+                val d2 =
+                    MethodDescriptor(
+                        IndexedSeq(ObjectType.Byte, ObjectType.Character,
+                            ObjectType.Short, ObjectType.Integer, ObjectType.Float,
+                            ObjectType.Long),
+                        VoidType)
                 ClassFileFactory.parameterForwardingInstructions(
                     d1, d2, 0, Seq.empty, ObjectType.Object) should be(
                         Array(
@@ -879,8 +922,14 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     )
             }
             it("should cast arbitrary reference types") {
-                val d1 = MethodDescriptor(IndexedSeq(ObjectType.Object, ObjectType.Object), VoidType)
-                val d2 = MethodDescriptor(IndexedSeq(ObjectType.String, ArrayType.ArrayOfObjects), VoidType)
+                val d1 =
+                    MethodDescriptor(
+                        IndexedSeq(ObjectType.Object, ObjectType.Object),
+                        VoidType)
+                val d2 =
+                    MethodDescriptor(
+                        IndexedSeq(ObjectType.String, ArrayType.ArrayOfObjects),
+                        VoidType)
                 ClassFileFactory.parameterForwardingInstructions(
                     d1, d2, 0, Seq.empty, ObjectType.Object) should be(Array(
                         ALOAD_0,
@@ -893,9 +942,18 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         null
                     ))
             }
+
             it("should pack everything into an Object[] if necessary") {
-                val d1 = MethodDescriptor(IndexedSeq(IntegerType, ObjectType.String,
-                    ByteType, BooleanType, ObjectType.Integer, LongType, ShortType), VoidType)
+                val d1 =
+                    MethodDescriptor(
+                        IndexedSeq(
+                            IntegerType,
+                            ObjectType.String,
+                            ByteType,
+                            BooleanType,
+                            ObjectType.Integer,
+                            LongType,
+                            ShortType), VoidType)
                 val d2 = MethodDescriptor(ArrayType.ArrayOfObjects, ObjectType.Object)
                 ClassFileFactory.parameterForwardingInstructions(
                     d1, d2, 0, Seq.empty, ObjectType.Object) should be(
@@ -955,7 +1013,9 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                         ))
             }
         }
+
         describe("should create correct return/conversion instructions") {
+
             it("should convert Object to base types by casting and unboxing") {
                 BaseType.baseTypes foreach { t ⇒
                     val name = s"${t.toJava}Value"
@@ -967,12 +1027,14 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     conv(6) should be(ReturnInstruction(t))
                 }
             }
+
             it("should convert Object to any reference type by casting") {
                 Seq(ObjectType.String, ArrayType(LongType), ObjectType.Integer).foreach(
                     t ⇒ ClassFileFactory.returnAndConvertInstructions(t, ObjectType.Object) should be(
                         Array(CHECKCAST(t.asReferenceType), null, null, ARETURN))
                 )
             }
+
             it("should convert other types if possible, e.g. base types to wrappers") {
                 ClassFileFactory.returnAndConvertInstructions(ObjectType.Byte, ByteType) should be(
                     Array(
@@ -1073,7 +1135,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
      * method specified by each tuple, and passes that proxy class file to the provided
      * test function.
      */
-    def testMethods(
+    private def testMethods(
         methods: Iterable[(ObjectType, Method)],
         repository: ClassFileRepository)(
             test: (ClassFile, (ObjectType, Method)) ⇒ Unit): Unit = {
@@ -1084,18 +1146,19 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
         }
     }
 
-    def testMethod(
+    private def testMethod(
         calleeType: ObjectType, calleeMethod: Method,
         repository: ClassFileRepository)(
             test: (ClassFile, (ObjectType, Method)) ⇒ Unit) {
         val calleeMethodName = calleeMethod.name
         val calleeMethodDescriptor = calleeMethod.descriptor
         val definingTypeName = calleeType.simpleName+"$"+calleeMethodName
-        val definingType = TypeDeclaration(
-            ObjectType(definingTypeName),
-            false,
-            Some(ObjectType.Object),
-            Set())
+        val definingType =
+            TypeDeclaration(
+                ObjectType(definingTypeName),
+                false,
+                Some(ObjectType.Object),
+                Set())
         val methodName = calleeMethodName+"$Forwarded"
         val methodDescriptor = calleeMethodDescriptor
         val invocationInstruction: Opcode =
@@ -1108,15 +1171,16 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             } else {
                 INVOKEVIRTUAL.opcode
             }
-        val classFile = ClassFileFactory.Proxy(
-            definingType,
-            methodName,
-            methodDescriptor,
-            calleeType,
-            calleeMethodName,
-            calleeMethodDescriptor,
-            invocationInstruction
-        )
+        val classFile =
+            ClassFileFactory.Proxy(
+                definingType,
+                methodName,
+                methodDescriptor,
+                calleeType,
+                calleeMethodName,
+                calleeMethodDescriptor,
+                invocationInstruction
+            )
 
         test(classFile, (calleeType, calleeMethod))
     }

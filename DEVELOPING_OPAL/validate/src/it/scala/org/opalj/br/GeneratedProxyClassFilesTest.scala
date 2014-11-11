@@ -30,17 +30,17 @@ package org.opalj
 package br
 
 import org.junit.runner.RunWith
-import org.opalj.ai.BaseAI
-import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.instructions.INVOKEINTERFACE
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-import analyses.Project
-import instructions.INVOKESPECIAL
-import instructions.INVOKESTATIC
-import instructions.INVOKEVIRTUAL
 import org.scalatest.junit.JUnitRunner
+import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.ai.BaseAI
+import org.opalj.ai.domain.l0.BaseDomain
 
 /**
  * Checks that the ClassFileFactory produces valid proxy class files.
@@ -59,13 +59,15 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
         val proxies: Iterable[(ClassFile, java.net.URL)] = testProject.methods.map { m ⇒
             val t = testProject.classFile(m).thisType
             var proxy: ClassFile = null
+
             describe(s"generating a valid proxy for ${t.toJava} { ${m.toJava} }") {
-                val definingType = TypeDeclaration(
-                    ObjectType("ProxyValidation$"+t.toJava+":"+m.toJava.replace(' ', '_')+"$"),
-                    false,
-                    Some(ObjectType.Object),
-                    Set.empty
-                )
+                val definingType =
+                    TypeDeclaration(
+                        ObjectType("ProxyValidation$"+t.toJava+":"+m.toJava.replace(' ', '_')+"$"),
+                        false,
+                        Some(ObjectType.Object),
+                        Set.empty
+                    )
                 val proxyMethodName = m.name+"$proxy"
                 val invocationInstruction =
                     if (testProject.classFile(t).get.isInterfaceDeclaration) {
@@ -78,7 +80,8 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         INVOKEVIRTUAL.opcode
                     }
                 proxy =
-                    ClassFileFactory.Proxy(definingType,
+                    ClassFileFactory.Proxy(
+                        definingType,
                         proxyMethodName,
                         m.descriptor,
                         t,
@@ -123,8 +126,9 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                     verifyMethod(proxy, constructor)
                 }
 
-                val factoryMethod = proxy.findMethod("$newInstance").getOrElse(
-                    proxy.findMethod("$createInstance").get)
+                val factoryMethod =
+                    proxy.findMethod("$newInstance").getOrElse(
+                        proxy.findMethod("$createInstance").get)
                 it("should produce a correct factory method") {
                     verifyMethod(proxy, factoryMethod)
                 }

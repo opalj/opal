@@ -45,8 +45,8 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
  *
  * @author Michael Eichberg
  */
-trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with MethodCallsDomain with Configuration with TheProject[_] with TheCode with domain.ClassHierarchy ⇒
+trait PerformInvocations extends MethodCallsDomain {
+    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode with domain.ClassHierarchy ⇒
 
     /**
      * Identifies recursive calls.
@@ -90,46 +90,67 @@ trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
             pc: PC,
             definingClass: ClassFile,
             method: Method,
-            parameters: domain.Locals): MethodCallResult = {
+            operands: callingDomain.Operands): MethodCallResult = {
+
+            val parameters = mapOperandsToParameters(operands, method, domain)
 
             val aiResult =
                 ai.perform(method.body.get, domain)(
                     List.empty[domain.DomainValue], parameters)
-            transformResult(pc, method, aiResult)
+
+            transformResult(pc, method, operands, parameters, aiResult)
         }
 
         /**
-         * Converts the results of the evaluation of the called method into this domain.
+         * Converts the results (`DomainValue`s) of the evaluation of the called method into the
+         * calling domain. If the returned value is one of the parameters
+         * (determined using reference identity), then the parameter is mapped back
+         * to the original operand.
          */
         protected[this] def transformResult(
             callerPC: PC,
             calledMethod: Method,
+            originalOperands: callingDomain.Operands,
+            passedParameters: domain.Locals,
             result: AIResult { val domain: InvokeExecutionHandler.this.domain.type }): MethodCallResult = {
+
             val domain = result.domain
-            val thrownExceptions = domain.thrownExceptions(callingDomain, callerPC)
+            val thrownExceptions =
+                domain.thrownExceptions(callingDomain, callerPC)
             if (!domain.returnedNormally) {
                 // The method must have returned with an exception or not at all...
                 if (thrownExceptions.nonEmpty)
-                    ThrowsException(thrownExceptions)
+                    ThrowsException(
+                        thrownExceptions
+                    )
                 else
                     ComputationFailed
             } else {
                 if (calledMethod.descriptor.returnType eq VoidType) {
                     if (thrownExceptions.nonEmpty) {
-                        ComputationWithSideEffectOrException(thrownExceptions)
+                        ComputationWithSideEffectOrException(
+                            thrownExceptions
+                        )
                     } else {
                         ComputationWithSideEffectOnly
                     }
                 } else {
-                    val returnedValue = domain.returnedValue(callingDomain, callerPC)
+                    val returnedValue =
+                        domain.returnedValueRemapped(
+                            callingDomain, callerPC)(originalOperands, passedParameters)
                     if (thrownExceptions.nonEmpty) {
-                        ComputedValueOrException(returnedValue.get, thrownExceptions)
+                        ComputedValueOrException(
+                            returnedValue.get,
+                            thrownExceptions)
                     } else {
-                        ComputedValue(returnedValue.get)
+                        ComputedValue(
+                            returnedValue.get
+                        )
                     }
                 }
             }
         }
+
     }
 
     /**
@@ -142,7 +163,7 @@ trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
         method: Method,
         operands: Operands): InvokeExecutionHandler
 
-    override def invokevirtual(
+    abstract override def invokevirtual(
         pc: PC,
         declaringClass: ReferenceType,
         name: String,
@@ -150,7 +171,7 @@ trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
         operands: Operands): MethodCallResult =
         super.invokevirtual(pc, declaringClass, name, methodDescriptor, operands)
 
-    override def invokeinterface(
+    abstract override def invokeinterface(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
@@ -158,7 +179,7 @@ trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
         operands: Operands): MethodCallResult =
         super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
 
-    override def invokespecial(
+    abstract override def invokespecial(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
@@ -169,7 +190,7 @@ trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
     /**
      * Implements the general strategy for handling "invokestatic" calls.
      */
-    override def invokestatic(
+    abstract override def invokestatic(
         pc: PC,
         declaringClass: ObjectType,
         methodName: String,
@@ -225,10 +246,7 @@ trait PerformInvocations extends l0.TypeLevelInvokeInstructions {
         operands: Operands): MethodCallResult = {
 
         val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
-        import executionHandler.domain
-        val parameters = mapOperandsToParameters(operands, method, domain)
-        val callResult = executionHandler.perform(pc, definingClass, method, parameters)
-        // TODO [Improvement] Add support to map a value back to a parameter if a passed parameter is returned. (E.g. Math.min(a,b) will either return a or b.) 
+        val callResult = executionHandler.perform(pc, definingClass, method, operands)
         callResult
     }
 }

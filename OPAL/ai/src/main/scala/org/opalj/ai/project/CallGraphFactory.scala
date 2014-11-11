@@ -33,11 +33,6 @@ package project
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 
-case class ComputedCallGraph(
-    callGraph: CallGraph,
-    unresolvedMethodCalls: List[UnresolvedMethodCall],
-    constructionExceptions: List[CallGraphConstructionException])
-
 /**
  * Factory object to create call graphs.
  *
@@ -88,7 +83,7 @@ object CallGraphFactory {
         import java.util.concurrent.Executors
         import java.util.concurrent.ExecutorCompletionService
 
-        val cache = configuration.Cache()
+        val cache = configuration.Cache(theProject)
 
         /* START - EXECUTED CONCURRENTLY */
         def doAnalyzeMethod(method: Method): Callable[MethodAnalysisResult] =

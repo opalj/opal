@@ -192,12 +192,21 @@ public class StaticCalls {
         int v1 = (int) (System.currentTimeMillis() % 10000);
         int v2 = (int) (System.currentTimeMillis() % 10000);
 
-        if (areEqual(v1, v1) && !areNotEqual(v2,v2)) {
+        if (areEqual(v1, v1) && !areNotEqual(v2, v2)) {
             if (areNotEqual(v1, v2)) {
                 return true;
             } else
                 return true;
         } else
             return false; // we failed....
+    }
+
+    static Object id(Object o) {
+        return o;
+    }
+
+    static boolean uselessReferenceTest() {
+        Object o = new Object();
+        return o == id(o);
     }
 }

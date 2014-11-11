@@ -49,12 +49,14 @@ class CalledMethodsStore(
      */
     val frequentEvaluationWarningLevel = 10
 
-    private[this] val calledMethods = scala.collection.mutable.HashMap.empty[Method, List[domain.Operands]]
+    private[this] val calledMethods =
+        scala.collection.mutable.HashMap.empty[Method, List[domain.Operands]]
 
     def isRecursive(
         definingClass: ClassFile,
         method: Method,
         operands: ValuesDomain#Operands): Boolean = {
+
         val adaptedOperands = operands.map(_.adapt(domain, -1))
         calledMethods.get(method) match {
             case None ⇒
