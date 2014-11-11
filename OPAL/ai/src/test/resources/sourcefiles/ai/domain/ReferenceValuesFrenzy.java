@@ -92,7 +92,7 @@ public class ReferenceValuesFrenzy {
 		if (a == null) {
 			a = b;
 			if (a instanceof java.io.Serializable) {
-				return b; // <= this is java.io.Serializable
+				return b; // Serializable
 			}
 		} else {
 			if (b == null) {
@@ -108,13 +108,35 @@ public class ReferenceValuesFrenzy {
 				if (d instanceof java.lang.Comparable<?>) {
 					doIt(a); // a non-null Object
 					doIt(b); // a non-null Object
-					return d; // java.lang.Comparable
+					return d; // d is of type java.lang.Comparable
 				}
 				return d; // a or b || both not null
 			}
 		}
 
 		return null;
+	}
+
+	static Object complexAliasing(Object a) {
+		Object o = a;
+		do {
+			if (o != null)
+				break;
+			else
+				o = maybeNull();
+		} while (IntegerValuesFrenzy.anInt() % 2 == 1);
+		doIt(a); // a.isNull === Unknown
+		return o; // o.isNull === Unknown; but if o is a then o is "non-null"
+	}
+
+	static Object iterativelyUpdated(Object a) {
+		do {
+			if (a != null) {
+				doIt(a);
+			} else
+				a = maybeNull();
+		} while (IntegerValuesFrenzy.anInt() % 2 == 1);
+		return a; 
 	}
 
 	static void swap(int index, Object[] values) {
