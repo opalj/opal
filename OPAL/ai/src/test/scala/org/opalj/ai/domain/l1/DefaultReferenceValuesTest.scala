@@ -214,14 +214,61 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
             val targetType = ObjectType("ai/domain/ReferenceValuesFrenzy")
             val ReferenceValuesFrenzy = theProject.classFile(targetType).get
 
-            it("it should be possible to get precise information about a method's return values (maybeNull)") {
+            it("it should be able to handle basic aliasing (method: \"aliases\"") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "aliases").get
+                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
 
-                //                val result = BaseAI(ReferenceValues, method, TheDomain)
-                //                val exception = result.operandsArray(20)
-                //                TheDomain.refIsNull(exception.head) should be(No)
+                val ReferenceValue(v95) = result.operandsArray(14).head
+                v95.isNull should be(Unknown)
+
+                val ReferenceValue(v99) = result.operandsArray(20).head
+                v99.isNull should be(No)
+
+                val ReferenceValue(v111) = result.operandsArray(57).head
+                v111.isNull should be(No)
+
+                val ReferenceValue(v113) = result.operandsArray(59).head
+                v113.isNull should be(No)
+
+                val ReferenceValue(v117) = result.operandsArray(61).head
+                v117.isNull should be(Yes)
             }
 
-            it("it should be able to correctly distinguish different values that were created at different points in time") {
+            it("it should be possible to get precise information about a method's return values (method: \"maybeNull\")") {
+
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "maybeNull").get
+                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+
+                val ReferenceValue(firstReturn) = result.operandsArray(15).head
+                firstReturn.isNull should be(Yes)
+
+                val ReferenceValue(secondReturn) = result.operandsArray(23).head
+                secondReturn.isNull should be(No)
+            }
+
+            it("it should be able to correctly track a MultipleReferenceValue's values in the presence of aliasing (method: \"complexAliasing\")") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "complexAliasing").get
+                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+
+                val ReferenceValue(firstReturn) = result.operandsArray(23).head
+                firstReturn.isNull should be(Unknown)
+
+                val ReferenceValue(secondReturn) = result.operandsArray(27).head
+                secondReturn.isNull should be(Unknown)
+
+                val IsReferenceValue(values) = result.operandsArray(27).head
+                values.head.isNull should be(No)
+                values.tail.head.isNull should be(Unknown)
+
+            }
+
+            it("it should be able to correctly determine the return value in the presence of aliasing (method: \"iterativelyUpdated\")") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "iterativelyUpdated").get
+                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+
+                val IsReferenceValue(values) = result.operandsArray(25).head
+                values.head.isNull should be(No)
+                values.tail.head.isNull should be(Unknown)
 
             }
 
