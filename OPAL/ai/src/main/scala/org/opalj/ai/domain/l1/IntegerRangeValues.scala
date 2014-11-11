@@ -902,9 +902,8 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                     val result = vlb >>> slb
                     IntegerRange(result)
                 } else {
-                    // We have one "arbitrary" range of numbers to shift and one range that 
-                    // should be between 0 and 31. Every number above 31 or any negative number does not make sense, since
-                    // only the five least significant bits are used for shifting.
+                    // Recall: the shift value is at most "31" (a corresponding)
+                    // bit mask is always implicitly applied to the shift value. 
 
                     // IMPROVE [IntegerRangeValues] log suspicious shift value
                     val maxShift = if (sub > 31 || sub < 0) 31 else sub
