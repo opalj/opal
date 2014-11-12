@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-function updateRelevance(value) {
+function updateRelevance(value){
 	document.querySelectorAll("*[data-relevance]").forEach(
     	function(e){
         	e.dataset.relevance < value ? 
@@ -36,13 +36,13 @@ function updateRelevance(value) {
     )
 }
 
-function openAllPackages() {
+function openAllPackages(){
 	document.querySelectorAll('div#analysis_results > details').forEach(
 		function(e){e.open=true}
 	)
 }
 
-function closeAllPackages() {
+function closeAllPackages(){
 	document.querySelectorAll('div#analysis_results > details').forEach(
 		function(e){e.removeAttribute('open')}
 	)

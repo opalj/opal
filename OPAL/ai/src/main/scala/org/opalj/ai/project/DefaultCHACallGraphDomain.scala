@@ -51,20 +51,21 @@ class DefaultCHACallGraphDomain[Source](
     val classFile: ClassFile,
     val method: Method)
         extends Domain
+        with JoinStabilization
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
-        with TheProject[Source]
-        with TheMethod
+        with TheProject
         with ProjectBasedClassHierarchy
+        with TheMethod
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultReferenceValuesBinding
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
         with l0.DefaultPrimitiveValuesConversions
+        with l0.DefaultReferenceValuesBinding
+        with l0.TypeLevelInvokeInstructions
+        with l0.TypeLevelFieldAccessInstructions
         with CHACallGraphDomain
 

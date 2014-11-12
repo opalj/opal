@@ -60,6 +60,22 @@ trait MethodCallResults { domain: ValuesDomain ⇒
     def returnedValue(target: TargetDomain, callerPC: PC): Option[target.DomainValue]
 
     /**
+     * Maps the returned value back to the original operand value if possible.
+     *
+     * @note This method is only defined if the method returned normally. In this case
+     *      `None` is returned if the method's return type is `void`;
+     *      `Some(DomainValue)` is returned otherwise.
+     *
+     * @note This method may only be called after the abstract interpretation of a
+     *       method has completed.
+     */
+    def returnedValueRemapped(
+        callerDomain: TargetDomain,
+        callerPC: PC)(
+            originalOperands: callerDomain.Operands,
+            passedParameters: Locals): Option[callerDomain.DomainValue]
+
+    /**
      * Adapts and returns the exceptions that are thrown by the called method.
      *
      * In general, for each type of exception there should be at most one

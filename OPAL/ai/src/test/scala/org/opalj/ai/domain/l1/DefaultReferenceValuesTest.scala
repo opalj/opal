@@ -55,27 +55,21 @@ import org.opalj.collection.mutable.Locals
 class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTestExecution {
 
     object TheDomain
-            extends CoRelationalDomain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with PredefinedClassHierarchy
-            with PerInstructionPostProcessing
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultTypeLevelLongValues
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultReferenceValuesBinding // <- PRIMARY GOAL!
-            // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
-            // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
-            // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-            with l1.DefaultIntegerRangeValues
-            with l0.DefaultPrimitiveValuesConversions {
-
-        override protected def maxCardinalityOfIntegerRanges: Long = 25l
-    }
+        extends CoRelationalDomain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with PredefinedClassHierarchy
+        with PerInstructionPostProcessing
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelLongValues
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l1.DefaultReferenceValuesBinding // <- PRIMARY GOAL!
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.DefaultPrimitiveValuesConversions
 
     import TheDomain._
 
@@ -218,17 +212,85 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
             val theProject = Project(locateTestResources("classfiles/ai.jar", "ai"))
             val targetType = ObjectType("ai/domain/ReferenceValuesFrenzy")
-            val ReferenceValues = theProject.classFile(targetType).get
+            val ReferenceValuesFrenzy = theProject.classFile(targetType).get
 
-            //            it("it should be possible to get precise information about a method's return values (maybeNull)") {
-            //                val result = BaseAI(ReferenceValues, method, TheDomain)
-            //                val exception = result.operandsArray(20)
-            //                TheDomain.refIsNull(exception.head) should be(No)
-            //            }
-            //
-            //            it("it should be able to correctly distinguish different values that were created at different points in time.") {
-            //
-            //            }
+            it("it should be able to handle basic aliasing (method: \"aliases\"") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "aliases").get
+                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+
+                val ReferenceValue(v95) = result.operandsArray(14).head
+                v95.isNull should be(Unknown)
+
+                val ReferenceValue(v99) = result.operandsArray(20).head
+                v99.isNull should be(No)
+
+                val ReferenceValue(v111) = result.operandsArray(57).head
+                v111.isNull should be(No)
+
+                val ReferenceValue(v113) = result.operandsArray(59).head
+                v113.isNull should be(No)
+
+                val ReferenceValue(v117) = result.operandsArray(61).head
+                v117.isNull should be(Yes)
+            }
+
+            it("it should be possible to get precise information about a method's return values (method: \"maybeNull\")") {
+
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "maybeNull").get
+                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+
+                val ReferenceValue(firstReturn) = result.operandsArray(15).head
+                firstReturn.isNull should be(Yes)
+
+                val ReferenceValue(secondReturn) = result.operandsArray(23).head
+                secondReturn.isNull should be(No)
+            }
+
+            it("it should be able to correctly track a MultipleReferenceValue's values in the presence of aliasing (method: \"complexAliasing\")") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "complexAliasing").get
+                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+
+                val ReferenceValue(firstReturn) = result.operandsArray(23).head
+                firstReturn.isNull should be(Unknown)
+
+                val ReferenceValue(secondReturn) = result.operandsArray(27).head
+                secondReturn.isNull should be(Unknown)
+
+                val IsReferenceValue(values) = result.operandsArray(27).head
+                values.head.isNull should be(No)
+                values.tail.head.isNull should be(Unknown)
+
+            }
+
+            it("it should be able to correctly determine the return value in the presence of aliasing (method: \"iterativelyUpdated\")") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "iterativelyUpdated").get
+                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+
+                val IsReferenceValue(values) = result.operandsArray(25).head
+                values.head.isNull should be(No)
+                values.tail.head.isNull should be(Unknown)
+
+            }
+
+            it("it should be able to correctly refine MultipleReferenceValues") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "multipleReferenceValues").get
+                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+
+                // u != null test
+                val ReferenceValue(u) = result.operandsArray(26).head
+                u.isNull should be(Unknown)
+
+                // first "doIt" call
+                val ReferenceValue(d1) = result.operandsArray(30).head
+                d1.isNull should be(Unknown)
+
+                // last "doIt" call
+                val ReferenceValue(d3) = result.operandsArray(47).head
+                d3.isNull should be(No)
+
+                // the "last return" is not dead
+                result.operandsArray(45) should not be (null)
+            }
         }
     }
 }

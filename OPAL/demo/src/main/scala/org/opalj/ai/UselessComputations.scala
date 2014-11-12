@@ -48,7 +48,7 @@ object UselessComputations extends AnalysisExecutor {
     class AnalysisDomain(val project: Project[java.net.URL], val method: Method)
             extends CoRelationalDomain
             with domain.DefaultDomainValueBinding
-            with domain.TheProject[java.net.URL]
+            with domain.TheProject
             with domain.TheMethod
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization

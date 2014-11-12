@@ -31,12 +31,14 @@ package ai
 package project
 
 import scala.collection.Set
-import scala.collection.Map
 
-import domain._
+import org.opalj.br.analyses.Project
 
-import br._
-import br.analyses._
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.MethodSignature
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Configuration of a call graph algorithm that uses CHA.
@@ -49,18 +51,45 @@ import br.analyses._
  *
  * @author Michael Eichberg
  */
-class VTACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration {
+abstract class VTACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration {
 
     type Contour = MethodSignature
+
     type Value = Set[Method]
+
     type Cache = CallGraphCache[Contour, Value]
-    def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Value]
+
+    def Cache(project: SomeProject): this.type#Cache =
+        new CallGraphCache[MethodSignature, Value](project)
+
+}
+
+class BasicVTACallGraphAlgorithmConfiguration extends VTACallGraphAlgorithmConfiguration {
 
     def Domain[Source](
         theProject: Project[Source],
         cache: Cache,
         classFile: ClassFile,
         method: Method): VTACallGraphDomain =
-        new DefaultVTACallGraphDomain(theProject, cache, classFile, method, 2)
+        new BasicVTACallGraphDomain(theProject, cache, classFile, method)
 }
 
+class DefaultVTACallGraphAlgorithmConfiguration extends VTACallGraphAlgorithmConfiguration {
+
+    def Domain[Source](
+        theProject: Project[Source],
+        cache: Cache,
+        classFile: ClassFile,
+        method: Method): VTACallGraphDomain =
+        new DefaultVTACallGraphDomain(theProject, cache, classFile, method)
+}
+
+class ExtVTACallGraphAlgorithmConfiguration extends VTACallGraphAlgorithmConfiguration {
+
+    def Domain[Source](
+        theProject: Project[Source],
+        cache: Cache,
+        classFile: ClassFile,
+        method: Method): VTACallGraphDomain =
+        new ExtVTACallGraphDomain(theProject, cache, classFile, method)
+}

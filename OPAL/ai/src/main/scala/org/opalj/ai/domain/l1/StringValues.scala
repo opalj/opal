@@ -41,7 +41,7 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait StringValues extends ReferenceValues with JavaObjectConversion {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CoRelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
 

@@ -276,13 +276,13 @@ final class Code private (
      * @return A mapping of the index to the name of the local variable. The map is
      *      empty if no debug information is available.
      */
-    def localVariablesAt(pc: PC): Map[Int, String] = {
+    def localVariablesAt(pc: PC): Map[Int, LocalVariable] = {
         localVariableTable match {
             case Some(lvt) ⇒
                 (
                     lvt.collect {
-                        case LocalVariable(startPC, length, name, _, index) if startPC <= pc && startPC + length > pc ⇒
-                            (index, name)
+                        case lv @ LocalVariable(startPC, length, name, fieldType, index) if startPC <= pc && startPC + length > pc ⇒
+                            (index, lv)
                     }
                 ).toMap
             case _ ⇒

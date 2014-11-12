@@ -178,18 +178,15 @@ sealed abstract class Type extends UID with Ordered[Type] {
 
     @throws[ClassCastException]("if this type is not a reference type")
     def asReferenceType: ReferenceType =
-        throw new ClassCastException(
-            "a "+this.getClass.getSimpleName+" cannot be cast to a ReferenceType")
+        throw new ClassCastException(this.toJava+" cannot be cast to a ReferenceType")
 
     @throws[ClassCastException]("if this type is not an array type")
     def asArrayType: ArrayType =
-        throw new ClassCastException(
-            "a "+this.getClass.getSimpleName+" cannot be cast to an ArrayType")
+        throw new ClassCastException(this.toJava+" cannot be cast to an ArrayType")
 
     @throws[ClassCastException]("if this type is not an object type")
     def asObjectType: ObjectType =
-        throw new ClassCastException(
-            "a "+this.getClass.getSimpleName+" cannot be cast to an ObjectType")
+        throw new ClassCastException(this.toJava+" cannot be cast to an ObjectType")
 
     @throws[ClassCastException]("if this type is not a base type")
     def asBaseType: BaseType =

@@ -61,7 +61,7 @@ object UselessComputationsMinimal
         with domain.l1.DefaultLongValues
         with domain.l1.DefaultConcretePrimitiveValuesConversions
         with domain.l1.LongValuesShiftOperators
-        with domain.TheProject[java.net.URL]
+        with domain.TheProject
         with domain.TheMethod
         with domain.ProjectBasedClassHierarchy
 

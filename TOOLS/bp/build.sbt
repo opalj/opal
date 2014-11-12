@@ -2,7 +2,7 @@ import AssemblyKeys._
 
 name := "BugPicker"
 
-version := "1.1.0-SNAPSHOT"
+version := "1.1.0"
 
 scalaVersion := "2.11.4"
 
@@ -26,14 +26,13 @@ test in assembly := {}
 
 mainClass in assembly := Some("org.opalj.bugpicker.BugPicker")
 
-resourceGenerators in Compile += Def.task {
-	val versionFile = new File(baseDirectory.value, "target/scala-2.11/classes/org/opalj/bugpicker/version.txt")
-	versionFile.getParentFile.mkdirs()
-	val writer = new java.io.PrintWriter(versionFile, "UTF-8")
-	writer.append((version in Compile).value).println()
-	writer.close()
-	Seq(versionFile)
-}.taskValue
+resourceGenerators in Compile <+= Def.task {
+ val versionFile = (baseDirectory in Compile).value / "target" / "scala-2.11" / "classes" / "org" / "opalj" / "bugpicker" / "version.txt"
+ versionFile.getParentFile.mkdirs()
+ IO.write(versionFile, (version in Compile).value)
+ Seq(versionFile)
+}
+
 
 val zipAllSrc = taskKey[Unit]("Creates a zip file of all source files (including the build script etc.).")
 
