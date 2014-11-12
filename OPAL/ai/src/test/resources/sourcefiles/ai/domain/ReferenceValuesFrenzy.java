@@ -114,8 +114,8 @@ public class ReferenceValuesFrenzy {
 		} else {
 			doIt(a); // a is either o or p (and both may be null)
 			// But, if we are not able track the fact that a can only be non
-			// null if
-			// i was 1 or 2, then a may also refer to q
+			// null if i was 1 or 2, then a may also refer to q and the 
+			// original value
 		}
 
 		if (o != null) {

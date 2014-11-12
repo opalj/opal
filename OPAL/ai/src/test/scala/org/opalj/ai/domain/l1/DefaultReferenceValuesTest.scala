@@ -328,8 +328,10 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 values1.drop(1).head.isNull should be(Yes) // the original value
                 values1.drop(2).head.isNull should be(Unknown) // b is p
 
+                // SINCE THE FIRST TEST FAILS, THE FOLLOWING MAY NEED TO BE REFINED!
+
                 val IsReferenceValue(values2) = result.operandsArray(87).head
-                values2.size should be(3)
+                values2.size should be(4)
                 values2.head.isNull should be(Unknown) // a is o
                 values2.drop(1).head.isNull should be(Yes) // the original value
                 values2.drop(2).head.isNull should be(Unknown) // a is p
@@ -337,23 +339,22 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
                 val IsReferenceValue(values3) = result.operandsArray(95).head
                 values3.size should be(3)
-                values3.head.isNull should be(Unknown) // b is o
-                values3.drop(1).head.isNull should be(Yes) // the original value
-                values3.drop(2).head.isNull should be(Unknown) // b is p
-                values3.drop(3).head.isNull should be(Unknown) // b is p
+                values3.head.isNull should be(Unknown) // a is o
+                values3.drop(1).head.isNull should be(Yes) // the original value (not really necessary!)
+                values3.drop(2).head.isNull should be(Unknown) // a is p                
 
                 val IsReferenceValue(values4) = result.operandsArray(104).head
-                values4.size should be(3)
-                values4.head.isNull should be(Unknown) // b is o
+                values4.size should be(4)
+                values4.head.isNull should be(Unknown) // a is o
                 values4.drop(1).head.isNull should be(Yes) // the original value
-                values4.drop(2).head.isNull should be(Unknown) // b is p
-                values4.drop(3).head.isNull should be(Unknown) // b is p
+                values4.drop(2).head.isNull should be(No) // a is p
+                values4.drop(3).head.isNull should be(Unknown) // a is q
 
                 val IsReferenceValue(values5) = result.operandsArray(109).head
                 values5.size should be(3)
                 values5.head.isNull should be(Unknown) // b is o
                 values5.drop(1).head.isNull should be(Yes) // the original value
-                values5.drop(2).head.isNull should be(Unknown) // b is p
+                values5.drop(2).head.isNull should be(No) // b is p
 
             }
         }
