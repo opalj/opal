@@ -52,25 +52,11 @@ object CallGraphFactory {
      * - every private method related to Serialization
      */
     def defaultEntryPointsForLibraries(project: SomeProject): List[Method] = {
-        import MethodDescriptor.JustReturnsObject
-        import MethodDescriptor.JustTakesObject
-        import MethodDescriptor.NoArgsAndReturnVoid
-        val readObjectDescriptor =
-            MethodDescriptor(ObjectType("java/io/ObjectInputStream"), VoidType)
-
-        val writeObjectDescriptor =
-            MethodDescriptor(ObjectType("java/io/ObjectOutputStream"), VoidType)
-
         for {
             classFile ← project.projectClassFiles
             method ← classFile.methods
             if method.body.isDefined
-            if !method.isPrivate ||
-                (method.name == "readObjectNoData" && method.descriptor == NoArgsAndReturnVoid) ||
-                (method.name == "readObject" && method.descriptor == readObjectDescriptor) ||
-                (method.name == "writeObject" && method.descriptor == writeObjectDescriptor) ||
-                (method.name == "readResolve" && method.descriptor == JustReturnsObject) ||
-                (method.name == "writeReplace" && method.descriptor == JustTakesObject)
+            if !method.isPrivate || Method.isObjectSerializationRelated(method)
         } yield {
             method
         }
