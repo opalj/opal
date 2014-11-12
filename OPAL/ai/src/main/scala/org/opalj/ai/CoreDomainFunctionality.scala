@@ -149,6 +149,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
             }
 
         var localsUpdated: UpdateType = NoUpdateType
+        var localsUpdateIsRelevant: Boolean = false // if we just have "illegal value updates" 
         val newLocals: Locals =
             if (thisLocals eq otherLocals) {
                 thisLocals
@@ -166,7 +167,10 @@ trait CoreDomainFunctionality extends ValuesDomain {
                                     thisLocal
                                 } else {
                                     localsUpdated = localsUpdated &: updatedLocal
-                                    updatedLocal.value
+                                    val value = updatedLocal.value
+                                    if (value ne TheIllegalValue)
+                                        localsUpdateIsRelevant = true
+                                    value
                                 }
                             }
                         }
@@ -175,12 +179,15 @@ trait CoreDomainFunctionality extends ValuesDomain {
                     thisLocals
                 else
                     newLocals
-
             }
 
         afterBaseJoin(pc)
 
-        val updateType = operandsUpdated &: localsUpdated
+        val updateType =
+            if (localsUpdateIsRelevant)
+                operandsUpdated &: localsUpdated
+            else
+                operandsUpdated
         joinPostProcessing(updateType, pc, thisOperands, thisLocals, newOperands, newLocals)
     }
 

@@ -109,7 +109,7 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * @author Christos Votskos
  */
 trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues {
-    domain: JoinStabilization with IdentityBasedAliasBreakUpDetection with Configuration with VMLevelExceptionsFactory ⇒
+    domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //

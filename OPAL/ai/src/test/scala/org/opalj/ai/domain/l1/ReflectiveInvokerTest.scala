@@ -52,7 +52,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
     private[this] val IrrelevantPC = Int.MinValue
 
     class ReflectiveInvokerTestDomain
-            extends CoRelationalDomain
+            extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelLongValues

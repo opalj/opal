@@ -52,7 +52,7 @@ class ExtVTACallGraphDomain[Source](
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method: Method)
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject
