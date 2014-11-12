@@ -53,7 +53,7 @@ class MethodReturnValuesAnalysisDomain(
     override val project: SomeProject,
     val ai: InterruptableAI[_],
     val method: Method)
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with TheProject
         with ProjectBasedClassHierarchy
         with TheMethod

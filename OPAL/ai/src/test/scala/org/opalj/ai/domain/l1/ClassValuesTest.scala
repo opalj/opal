@@ -151,7 +151,7 @@ class ClassValuesTest extends FlatSpec with Matchers with ParallelTestExecution 
 object PlainClassesTest {
 
     class RecordingDomain
-            extends CoRelationalDomain
+            extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with PredefinedClassHierarchy

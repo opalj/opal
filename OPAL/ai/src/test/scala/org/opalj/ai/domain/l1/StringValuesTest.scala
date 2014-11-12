@@ -55,7 +55,7 @@ class StringValuesTest extends FlatSpec with Matchers with ParallelTestExecution
     import PlainClassesTest._
 
     object AnalysisDomain
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with PredefinedClassHierarchy

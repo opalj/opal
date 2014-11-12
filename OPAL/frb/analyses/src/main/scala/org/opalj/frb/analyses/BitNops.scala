@@ -44,7 +44,7 @@ import org.opalj.ai.domain._
  * @author Daniel Klauer
  */
 private class BitNopsDomain
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with DefaultDomainValueBinding
         with DefaultHandlingOfMethodResults
         with ThrowAllPotentialExceptionsConfiguration

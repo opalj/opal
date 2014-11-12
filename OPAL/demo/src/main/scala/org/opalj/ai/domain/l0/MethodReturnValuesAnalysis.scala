@@ -32,19 +32,22 @@ package domain
 package l0
 
 import java.net.URL
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.{ ReferenceType }
-import org.opalj.ai.Domain
-import org.opalj.ai.InterruptableAI
-import org.opalj.ai.IsAReferenceValue
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.NoUpdate
-import org.opalj.ai.SomeUpdate
 
+import scala.Console.BLUE
+import scala.Console.BOLD
+import scala.Console.GREEN
+import scala.Console.RESET
+
+import org.opalj.ai.Domain
 import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
 import org.opalj.ai.analyses.{ MethodReturnValuesAnalysisDomain ⇒ TheAnalysisDomain }
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * A shallow analysis that tries to refine the return types of methods.

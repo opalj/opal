@@ -38,12 +38,8 @@ import scala.collection.immutable.SortedSet
  *
  * @author Michael Eichberg
  */
-trait DefaultIntegerSetValues
-        extends DefaultDomainValueBinding
-        with JoinStabilization
-        with IdentityBasedAliasBreakUpDetection
-        with IntegerSetValues {
-    domain: Configuration with VMLevelExceptionsFactory ⇒
+trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetValues {
+    domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
 
     class AnIntegerValue extends super.AnIntegerValue {
 

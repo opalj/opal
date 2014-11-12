@@ -32,11 +32,12 @@ package analysis
 
 import scala.xml.Node
 import scala.xml.Text
-
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.collection.mutable.Locals
 import org.opalj.br.Code
+import org.opalj.ai.domain.ConcreteIntegerValues
+import org.opalj.ai.domain.l1.IntegerRangeValues
 
 /**
  * Describes some issue found in the source code.
@@ -89,16 +90,29 @@ trait Issue {
             } else {
 
                 val lvsAsXHTML =
-                    for ((index, name) ← code.localVariablesAt(pc)) yield {
+                    for ((index, theLV) ← code.localVariablesAt(pc)) yield {
                         val localValue = lv(index)
                         val localValueAsXHTML =
                             if (localValue == null)
                                 <span class="warning">unused</span>
-                            else
-                                Text(localValue.toString)
+                            else {
+
+                                if ((theLV.fieldType eq org.opalj.br.BooleanType) &&
+                                    // SPECIAL HANDLING IF THE VALUE IS AN INTEGER RANGE VALUE
+                                    localValue.isInstanceOf[IntegerRangeValues#IntegerRange]) {
+                                    val range = localValue.asInstanceOf[IntegerRangeValues#IntegerRange]
+                                    if (range.lowerBound == 0 && range.upperBound == 0)
+                                        Text("false")
+                                    else if (range.lowerBound == 1 && range.upperBound == 1)
+                                        Text("true")
+                                    else
+                                        Text("true or false")
+                                } else
+                                    Text(localValue.toString)
+                            }
 
                         <tr>
-                            <td>{ index }</td><td>{ name }</td><td>{ localValueAsXHTML }</td>
+                            <td>{ index }</td><td>{ theLV.name }</td><td>{ localValueAsXHTML }</td>
                         </tr>
                     }
 

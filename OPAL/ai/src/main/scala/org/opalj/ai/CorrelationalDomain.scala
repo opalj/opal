@@ -29,19 +29,11 @@
 package org.opalj
 package ai
 
-import org.opalj.br.ConstantFieldValue
-import org.opalj.br.ConstantInteger
-import org.opalj.br.ConstantLong
-import org.opalj.br.ConstantFloat
-import org.opalj.br.ConstantDouble
-import org.opalj.br.ConstantString
-
 /**
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait CoRelationalDomain
+trait CorrelationalDomain
     extends Domain
-    with JoinStabilization
-    with IdentityBasedAliasBreakUpDetection
+    with CorrelationalDomainSupport
 

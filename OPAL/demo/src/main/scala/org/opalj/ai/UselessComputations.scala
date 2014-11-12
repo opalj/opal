@@ -31,12 +31,20 @@ package ai
 
 import java.net.URL
 
-import org.opalj.collection.immutable.{ UIDSet, UIDSet1 }
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project, SomeProject }
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.{ ReferenceType }
+import scala.Console.BLUE
+import scala.Console.BOLD
+import scala.Console.GREEN
+import scala.Console.RESET
+
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
-import org.opalj.br.instructions._
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.IF0Instruction
+import org.opalj.br.instructions.IFICMPInstruction
 
 /**
  * A shallow analysis that tries to identify useless computations.
@@ -46,7 +54,7 @@ import org.opalj.br.instructions._
 object UselessComputations extends AnalysisExecutor {
 
     class AnalysisDomain(val project: Project[java.net.URL], val method: Method)
-            extends CoRelationalDomain
+            extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.TheProject
             with domain.TheMethod

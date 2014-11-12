@@ -31,8 +31,12 @@ package ai
 
 import java.net.URL
 
-import org.opalj.br._
-import org.opalj.br.analyses._
+import org.opalj.br.Method
+import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IFICMPInstruction
 
 /**
@@ -47,7 +51,7 @@ object UselessComputationsMinimal
     val analysis = this
 
     class AnalysisDomain(val project: Project[URL], val method: Method)
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with domain.DefaultDomainValueBinding
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization
