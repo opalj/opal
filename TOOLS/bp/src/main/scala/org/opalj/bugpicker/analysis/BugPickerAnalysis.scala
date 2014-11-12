@@ -68,6 +68,9 @@ import org.opalj.br.instructions.INEG
 import org.opalj.br.instructions.IINC
 import org.opalj.br.instructions.ShiftInstruction
 import org.opalj.br.instructions.INSTANCEOF
+import org.opalj.br.instructions.ISTORE
+import org.opalj.br.instructions.IStoreInstruction
+import org.opalj.ai.analyses.FieldValuesKey
 
 /**
  * A static analysis that analyzes the data-flow to identify various issues in the
@@ -125,27 +128,44 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                 BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges
             )
 
-        println("Settings:")
-        println(s"\tmaxEvalFactor=$maxEvalFactor")
-        println(s"\tmaxEvalTime=${maxEvalTime}ms")
-        println(s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges")
+        if (parameters.contains("-debug")) {
+            val cp = System.getProperty("java.class.path")
+            val cpSorted = cp.split(java.io.File.pathSeparatorChar).sorted
+            println("ClassPath:\n\t"+cpSorted.mkString("\n\t"))
+
+            println("Settings:")
+            println(s"\tmaxEvalFactor=$maxEvalFactor")
+            println(s"\tmaxEvalTime=${maxEvalTime}ms")
+            println(s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges")
+        }
 
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
-        val progressManagement = initProgressManagement(classFilesCount)
+        val progressManagement =
+            initProgressManagement(1 /*for the FieldValues analysis*/ + classFilesCount)
+
+        // preanalysis
+        progressManagement.start(1, "Analyzing field declarations")
+        theProject.get(FieldValuesKey)
+        progressManagement.end(1)
+
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
         val results = new java.util.concurrent.ConcurrentLinkedQueue[Issue]()
+
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
-            val domain =
+            val analysisDomain =
                 new BugPickerAnalysisDomain(theProject, method, maxCardinalityOfIntegerRanges)
             val ai =
-                new BoundedInterruptableAI[domain.type](
+                new BoundedInterruptableAI[analysisDomain.type](
                     body,
                     maxEvalFactor,
                     maxEvalTime,
                     doInterrupt)
-            val result = ai(classFile, method, domain)
+            val result = ai(classFile, method, analysisDomain)
+            import result.domain.ConcreteIntegerValue
+            import result.domain.ConcreteLongValue
+            import result.domain
 
             if (!result.wasAborted) {
                 val operandsArray = result.operandsArray
@@ -159,7 +179,10 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                     if operandsArray(branchTarget) == null
                 } yield {
                     val operands = operandsArray(ctiPC).take(instruction.operandCount)
-                    DeadCode(classFile, method, ctiPC, operands, branchTarget, None)
+                    DeadCode(
+                        classFile, method, ctiPC,
+                        operands, Some(result.localsArray(ctiPC)),
+                        branchTarget, None)
                 }
                 for ((ln, dc) ← methodWithDeadCode.groupBy(_.line)) {
                     ln match {
@@ -182,8 +205,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                 }
 
                 val methodsWithUselessComputations = {
-                    import result.domain.ConcreteIntegerValue
-                    import result.domain.ConcreteLongValue
+
                     collectWithOperandsAndIndex(result.domain)(body, result.operandsArray) {
 
                         // HANDLING INT VALUES 
@@ -204,8 +226,9 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                         case (pc, instr: INEG.type, Seq(ConcreteIntegerValue(a), _*)) ⇒
                             (pc, s"Constant computation: -${a}")
 
-                        case (pc, instr @ IINC(_, v), Seq(ConcreteIntegerValue(a), _*)) ⇒
-                            (pc, s"Constant computation (inc): ${a} + $v")
+                        case (pc, instr @ IINC(index, increment), _) if result.domain.intValueOption(result.localsArray(pc)(index)).isDefined ⇒
+                            val v = result.domain.intValueOption(result.localsArray(pc)(index)).get
+                            (pc, s"Constant computation (inc): ${v} + $increment")
 
                         // HANDLING LONG VALUES 
                         //
@@ -232,18 +255,57 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                             pc,
                             INSTANCEOF(referenceType),
                             Seq(rv: domain.ReferenceValue, _*)
-                            ) if result.domain.intValueOption(
+                            ) if domain.intValueOption(
                             result.operandsArray(pc + INSTANCEOF.length).head).isDefined ⇒
                             (pc, s"Useless type test: ${rv.upperTypeBound.map(_.toJava).mkString("", " with ", "")} instanceof ${referenceType.toJava}")
 
-                    }.map { result ⇒
-                        val (pc, message) = result
-                        UselessComputation(classFile, method, pc, message)
+                    }.map { issue ⇒
+                        val (pc, message) = issue
+                        UselessComputation(
+                            classFile, method, pc,
+                            Some(result.localsArray(pc)),
+                            message)
                     }
                 }
                 results.addAll(
                     scala.collection.JavaConversions.asJavaCollection(methodsWithUselessComputations)
                 )
+
+                if (domain.code.localVariableTable.isDefined) {
+                    // This analysis requires debug information to increase the likelihood
+                    // the we identify the correct local variable re-assignments. Otherwise
+                    // we are not able to distinguish the reuse of a "register variable"/
+                    // local variable for a new/different purpose or the situation where
+                    // the same variable is updated the second time using the same
+                    // value.
+
+                    val operandsArray = result.operandsArray
+                    val localsArray = result.localsArray
+                    val code = domain.code
+
+                    val methodsWithValueReassignment =
+                        collectWithOperandsAndIndex(domain)(body, operandsArray) {
+                            case (
+                                pc,
+                                IStoreInstruction(index),
+                                Seq(ConcreteIntegerValue(a), _*)
+                                ) if localsArray(pc) != null &&
+                                domain.intValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
+                                code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
+
+                                val lv = code.localVariable(pc, index).get
+
+                                UselessComputation(
+                                    classFile, method, pc,
+                                    Some(localsArray(pc)),
+                                    "(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+").")
+
+                        }
+
+                    results.addAll(
+                        scala.collection.JavaConversions.asJavaCollection(methodsWithValueReassignment)
+                    )
+                }
 
             } else if (!doInterrupt()) {
                 println(
@@ -255,7 +317,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
         var analysisTime: Long = 0l
         val identifiedIssues = time {
-            val stepIds = new java.util.concurrent.atomic.AtomicInteger(0)
+            val stepIds = new java.util.concurrent.atomic.AtomicInteger(1 /*.. the FieldValuesAnalysis */ )
 
             for {
                 classFile ← theProject.projectClassFiles.par
@@ -271,8 +333,11 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                             case afe: InterpretationFailedException ⇒
                                 val ms = method.fullyQualifiedSignature(classFile.thisType)
                                 val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
+                                val cause = afe.cause
                                 println(
-                                    s"[error] the analysis of ${ms} failed after $steps steps: "+afe.cause)
+                                    s"[error] the analysis of ${ms} failed after $steps steps: "+cause
+                                )
+                                afe.printStackTrace()
                         }
                     }
                 } finally {
@@ -313,7 +378,7 @@ object BugPickerAnalysis {
             scala.io.Source.fromInputStream(_).mkString
         )
 
-    def resultsAsXHTML(results: (Long, Iterable[Issue])): Seq[Node] = {
+    def resultsAsXHTML(results: (Long, Iterable[Issue])): Node = {
         val (analysisTime, methodsWithDeadCode) = results
         val methodWithDeadCodeCount = methodsWithDeadCode.size
 

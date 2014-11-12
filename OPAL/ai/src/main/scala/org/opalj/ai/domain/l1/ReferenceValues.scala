@@ -45,7 +45,7 @@ import org.opalj.br.{ Type, ReferenceType, ObjectType, ArrayType, UpperTypeBound
  * @author Michael Eichberg
  */
 trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type DomainReferenceValue <: ReferenceValue
     type DomainSingleOriginReferenceValue <: SingleOriginReferenceValue with DomainReferenceValue
@@ -63,6 +63,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             y: DomainSingleOriginReferenceValue): Int = {
             x.origin - y.origin
         }
+    }
+
+    override def refAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
+        if (value1 eq value2)
+            Yes
+        else
+            super.refAreEqual(pc, value1, value2)
     }
 
     /**
@@ -191,11 +198,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         /**
          * Copy constructor.
          */
-        def apply(
+        /*ABSTRACT*/ def apply(
             origin: ValueOrigin = this.origin,
             isNull: Answer = this.isNull): DomainSingleOriginReferenceValue
 
-        def refineIsNullIf(hasPC: PC)(isNull: Answer): DomainSingleOriginReferenceValue
+        /*ABSTRACT*/ def refineIsNullIf(
+            hasPC: PC)(
+                isNull: Answer): DomainSingleOriginReferenceValue
 
         /*ABSTRACT*/ protected def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,
@@ -817,25 +826,35 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (hasOrigin != this.origin)
                 return this;
 
-            val theSupertype = supertype.asObjectType
-            var newUpperTypeBound: UIDSet[ObjectType] = UIDSet.empty
-            upperTypeBound foreach { (anUpperTypeBound: ObjectType) ⇒
-                domain.isSubtypeOf(supertype, anUpperTypeBound) match {
-                    case Yes ⇒
-                        newUpperTypeBound += theSupertype
-                    case No if domain.isSubtypeOf(anUpperTypeBound, supertype).isYes ⇒
-                        newUpperTypeBound += anUpperTypeBound
-                    case _ ⇒
-                        newUpperTypeBound += anUpperTypeBound
-                        newUpperTypeBound += theSupertype
+            if (supertype.isObjectType) {
+                val theSupertype = supertype.asObjectType
+                var newUpperTypeBound: UIDSet[ObjectType] = UIDSet.empty
+                upperTypeBound foreach { (anUpperTypeBound: ObjectType) ⇒
+                    domain.isSubtypeOf(supertype, anUpperTypeBound) match {
+                        case Yes ⇒
+                            newUpperTypeBound += theSupertype
+                        case No if domain.isSubtypeOf(anUpperTypeBound, supertype).isYes ⇒
+                            newUpperTypeBound += anUpperTypeBound
+                        case _ ⇒
+                            newUpperTypeBound += anUpperTypeBound
+                            newUpperTypeBound += theSupertype
+                    }
                 }
-            }
-            if (newUpperTypeBound.size == 1) {
-                val newValue = ReferenceValue(hasOrigin, isNull, false, newUpperTypeBound.first)
-                newValue
+                if (newUpperTypeBound.size == 1) {
+                    val newValue = ObjectValue(hasOrigin, isNull, false, newUpperTypeBound.first)
+                    newValue
+                } else {
+                    val newValue = ObjectValue(hasOrigin, isNull, newUpperTypeBound + supertype.asObjectType)
+                    newValue
+                }
             } else {
-                val newValue = ObjectValue(hasOrigin, isNull, newUpperTypeBound + supertype.asObjectType)
-                newValue
+                /* The supertype is an array type; this implies that this MObjectValue
+                 * models the upper type bound "Serializable & Cloneable"; otherwise
+                 * the refinement is illegal
+                 */
+                assert(upperTypeBound == ObjectType.SerializableAndCloneable)
+
+                ArrayValue(hasOrigin, isNull, false, supertype.asArrayType)
             }
         }
 

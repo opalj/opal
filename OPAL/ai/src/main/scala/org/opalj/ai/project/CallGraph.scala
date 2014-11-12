@@ -116,6 +116,26 @@ class CallGraph private[project] (
     /** Number of methods that call at least one other method. */
     def callsCount: Int = callsMap.size
 
+    def callEdgesCount: Int = {
+        val perMethodCallTargetsCount =
+            callsMap.map { e ⇒
+                val (_, perMethodCallTargets) = e
+                perMethodCallTargets.values.map(_.size).sum
+            }
+        perMethodCallTargetsCount.sum
+    }
+
+    def calledByEdgesCount: Int = {
+        // calledByMap = Map[Method, Map[Method, PCs]]
+        val perMethodCalledByCount =
+            calledByMap.map { e ⇒
+                val (_, perMethodCallers) = e
+                perMethodCallers.values.map(_.size).sum
+            }
+
+        perMethodCalledByCount.sum
+    }
+
     /** Number of methods that are called by at least one other method. */
     def calledByCount: Int = calledByMap.size
 

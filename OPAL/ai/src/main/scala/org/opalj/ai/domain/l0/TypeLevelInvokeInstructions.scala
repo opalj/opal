@@ -60,7 +60,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsDomain {
                 exceptionTypes += exceptionType
                 // We don't know the true type of the exception, we just
                 // know the upper bound!
-                exceptionValues = NonNullObjectValue(pc, exceptionType) :: exceptionValues
+                exceptionValues ::= NonNullObjectValue(pc, exceptionType)
             }
         }
 
@@ -72,25 +72,9 @@ trait TypeLevelInvokeInstructions extends MethodCallsDomain {
         }
         // The list of exception values is in reverse order when compared to the handlers!
         // This is by purpose to foster a faster overall evaluation. (I.e., we want
-        // to perform the abstract interpretation using more abstract values first. (<=>
-        // exceptions with types higher-up in the type hierarchy) 
+        // to perform the abstract interpretation using more abstract values first (<=>
+        // exceptions with types higher-up in the type hierarchy).
         exceptionValues
-    }
-
-    protected[this] def handleInstanceBasedInvoke(
-        pc: PC,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
-        val exceptions = refIsNull(pc, operands.last) match {
-            case Yes ⇒
-                return justThrows(NullPointerException(pc))
-            case Unknown if throwNullPointerExceptionOnMethodCall ⇒
-                NullPointerException(pc) :: getExceptions(pc)
-            case /*No or Unknown & DoNotThrowNullPointerException*/ _ ⇒
-                getExceptions(pc)
-        }
-        val returnType = methodDescriptor.returnType
-        handleInvoke(pc, returnType, exceptions)
     }
 
     protected[this] def handleInvoke(
@@ -108,6 +92,22 @@ trait TypeLevelInvokeInstructions extends MethodCallsDomain {
             else
                 ComputedValueOrException(TypedValue(pc, returnType), exceptions)
         }
+    }
+
+    protected[this] def handleInstanceBasedInvoke(
+        pc: PC,
+        methodDescriptor: MethodDescriptor,
+        operands: Operands): MethodCallResult = {
+        val exceptions = refIsNull(pc, operands.last) match {
+            case Yes ⇒
+                return justThrows(NullPointerException(pc))
+            case Unknown if throwNullPointerExceptionOnMethodCall ⇒
+                NullPointerException(pc) :: getExceptions(pc)
+            case /*No or Unknown & DoNotThrowNullPointerException*/ _ ⇒
+                getExceptions(pc)
+        }
+        val returnType = methodDescriptor.returnType
+        handleInvoke(pc, returnType, exceptions)
     }
 
     /*override*/ def invokevirtual(

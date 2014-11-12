@@ -62,7 +62,7 @@ class DefaultPerInstructionPostProcessingTest
 
     class DefaultRecordingDomain(
         val id: String)
-            extends Domain
+            extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with PredefinedClassHierarchy

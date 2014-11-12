@@ -43,7 +43,7 @@ import org.opalj.br.ReferenceType
  *    and [[ReferenceValuesDomain]]].
  *  - Collects state directly associated with the analyzed code block.
  *  - '''Not''' thread-safe.
- *  - '''Not''' reusable.
+ *  - '''Not''' reusable (I.e., a new instance needs to be created per method.)
  *
  * @author Michael Eichberg
  */

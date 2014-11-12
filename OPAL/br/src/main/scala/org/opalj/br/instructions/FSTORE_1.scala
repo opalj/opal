@@ -35,9 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object FSTORE_1
-        extends StoreLocalVariableInstruction
-        with ImplicitLocalVariableIndex {
+case object FSTORE_1 extends FStoreInstruction with ImplicitLocalVariableIndex {
 
     final val lvIndex = 1
 

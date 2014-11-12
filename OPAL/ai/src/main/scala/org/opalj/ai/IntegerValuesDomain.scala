@@ -215,15 +215,16 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
     // W.r.t. Integer values
 
     /**
-     * Sets the given domain value to the `theValue`.
+     * Sets the given domain value to `theValue`.
      *
      * This function is called by OPAL '''before''' it starts to explore the branch
      * where this condition has to hold. (This function is, e.g., called whenever we explore
      * the branches of a switch-case statement.) I.e., the constraint is established
      * before a potential join operation.
      *
-     * @param value An integer value that does not have the value `theValue` as it single
-     *      possible value. (I.e., intHasValue(
+     * @param value An integer domain value that does also, but not exclusively represents
+     *      `theValue`.
+     *
      */
     def intEstablishValue(
         pc: PC,
@@ -232,6 +233,14 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
         operands: Operands,
         locals: Locals): (Operands, Locals) = (operands, locals)
 
+    /**
+     *
+     * @note This function is ONLY defined if a corresponding test (`value1 == value2`)
+     *      returned [[org.opalj.util.Unknown]]. I.e., this method is only allowed to be
+     *      called if there is something to establish!
+     *      I.e., the domain values are real ranges (not single values, e.g., `[1,1]`)
+     *      that overlap.
+     */
     def intEstablishAreEqual(
         pc: PC,
         value1: DomainValue,
@@ -240,6 +249,13 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
         locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def IntAreEqual = intEstablishAreEqual _
 
+    /**
+     * @note This function is ONLY defined if a corresponding test (`value1 != value2`)
+     *      returned [[org.opalj.util.Unknown]]. I.e., this method is only allowed to be
+     *      called if there is something to establish!
+     *      I.e., the domain values are real ranges (not single values, e.g., `[1,1]`)
+     *      that overlap.
+     */
     def intEstablishAreNotEqual(
         pc: PC,
         value1: DomainValue,
@@ -248,6 +264,13 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
         locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def IntAreNotEqual = intEstablishAreNotEqual _
 
+    /**
+     * @note This function is ONLY defined if a corresponding test (`value1 < value2`)
+     *      returned [[org.opalj.util.Unknown]]. I.e., this method is only allowed to be
+     *      called if there is something to establish!
+     *      I.e., the domain values are real ranges (not single values, e.g., `[1,1]`)
+     *      that overlap.
+     */
     def intEstablishIsLessThan(
         pc: PC,
         value1: DomainValue,
@@ -256,6 +279,13 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
         locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def IntIsLessThan = intEstablishIsLessThan _
 
+    /**
+     * @note This function is ONLY defined if a corresponding test (`value1 <= value2`)
+     *      returned [[org.opalj.util.Unknown]]. I.e., this method is only allowed to be
+     *      called if there is something to establish!
+     *      I.e., the domain values are real ranges (not single values, e.g., `[1,1]`)
+     *      that overlap.
+     */
     def intEstablishIsLessThanOrEqualTo(
         pc: PC,
         value1: DomainValue,

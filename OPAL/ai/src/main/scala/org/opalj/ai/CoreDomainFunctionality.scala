@@ -149,6 +149,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
             }
 
         var localsUpdated: UpdateType = NoUpdateType
+        var localsUpdateIsRelevant: Boolean = false // if we just have "illegal value updates" 
         val newLocals: Locals =
             if (thisLocals eq otherLocals) {
                 thisLocals
@@ -166,7 +167,10 @@ trait CoreDomainFunctionality extends ValuesDomain {
                                     thisLocal
                                 } else {
                                     localsUpdated = localsUpdated &: updatedLocal
-                                    updatedLocal.value
+                                    val value = updatedLocal.value
+                                    if (value ne TheIllegalValue)
+                                        localsUpdateIsRelevant = true
+                                    value
                                 }
                             }
                         }
@@ -175,12 +179,15 @@ trait CoreDomainFunctionality extends ValuesDomain {
                     thisLocals
                 else
                     newLocals
-
             }
 
         afterBaseJoin(pc)
 
-        val updateType = operandsUpdated &: localsUpdated
+        val updateType =
+            if (localsUpdateIsRelevant)
+                operandsUpdated &: localsUpdated
+            else
+                operandsUpdated
         joinPostProcessing(updateType, pc, thisOperands, thisLocals, newOperands, newLocals)
     }
 
@@ -306,7 +313,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
      *      The default case is also to return the given `worklist`.
      *
      * @note The domain is allowed to modify the `worklist`, `operandsArray` and
-     *      `localsArray`. However, the AI will not perform any checks. In case of
+     *      `localsArray`. However, the AI will not perform any checks. '''In case of
      *      updates of the `operandsArray` or `localsArray` it is necessary to first
      *      create a shallow copy before updating it.
      *      If this is not done, it may happen that the locals associated

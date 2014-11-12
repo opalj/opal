@@ -40,6 +40,12 @@ import org.opalj.br.Code
  * be used to run multiple abstract interpretations in parallel and to ensure that they
  * terminate (as a whole) if the set threshold is exceeded.
  *
+ * @param maxEvaluationCount Determines the maximum number of instructions that should
+ *      be interpreted. If the interpretation did not finish before that, the abstract
+ *      interpretation is aborted.
+ *      In general, it makes sense to determine this value based on the complexity of
+ *      the code as it is done by [[InstructionCountBoundedAI.calculateMaxEvaluationCount]].
+ *
  * @author Michael Eichberg
  */
 class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extends AI[D] {
@@ -48,7 +54,7 @@ class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extend
 
     /**
      * @param maxEvaluationFactor Determines the maximum number of instruction evaluations
-     * before the evaluation of the method is automatically interrupted.
+     *      before the evaluation of the method is automatically interrupted.
      */
     def this(code: Code, maxEvaluationFactor: Double = 1.5d) = {
 
@@ -72,7 +78,11 @@ class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extend
     }
 
 }
-
+/**
+ * Defines common helper methods.
+ *
+ * @author Michael Eichberg
+ */
 object InstructionCountBoundedAI {
 
     def calculateMaxEvaluationCount(

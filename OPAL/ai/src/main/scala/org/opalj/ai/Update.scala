@@ -43,8 +43,6 @@ import scala.language.higherKinds
  */
 sealed trait Update[+V] {
 
-    type ThisType[V] <: Update[V]
-
     /**
      * Merges a given `updateType` value with the type of this update and returns a
      * new `UpdateType` value.
@@ -74,7 +72,7 @@ sealed trait Update[+V] {
      * Creates a new `Update` object of the same type with the given value.
      */
     @throws[java.lang.IllegalStateException]("if the type of this update is NoUpdate")
-    def updateValue[NewV](newValue: NewV): ThisType[NewV]
+    def updateValue[NewV](newValue: NewV): Update[NewV]
 }
 
 /**
@@ -99,8 +97,6 @@ object SomeUpdate {
 final case class StructuralUpdate[V](
     value: V)
         extends SomeUpdate[V] {
-
-    type ThisType[V] = StructuralUpdate[V]
 
     override def isStructuralUpdate: Boolean = true
 
@@ -130,8 +126,6 @@ final case class StructuralUpdate[V](
 final case class MetaInformationUpdate[V](
     value: V)
         extends SomeUpdate[V] {
-
-    type ThisType[V] = MetaInformationUpdate[V]
 
     override def isMetaInformationUpdate: Boolean = true
 

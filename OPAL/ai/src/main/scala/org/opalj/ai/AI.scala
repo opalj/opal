@@ -1075,7 +1075,7 @@ trait AI[D <: Domain] {
                         val index = operands.head
                         val remainingOperands = operands.tail
                         if (switch.npairs.isEmpty) {
-                            // in the Java 7 JDK 45 we actually had found a lookupswitch
+                            // in the Java 7 JDK 45 we found a lookupswitch
                             // that just had a defaultBranch (glorified "goto")
                             gotoTarget(
                                 pc, pc + switch.defaultOffset, false,
@@ -1086,17 +1086,15 @@ trait AI[D <: Domain] {
                             var previousKey = firstKey
                             for ((key, offset) ← switch.npairs) {
                                 if (!branchToDefaultRequired && (key - previousKey) > 1) {
-                                    val domainValueMayBeOutOfRange: Boolean =
-                                        (previousKey until key) exists { v ⇒
-                                            theDomain.intIsSomeValueInRange(pc, index, v, v).
-                                                isYesOrUnknown
-                                        }
-                                    if (domainValueMayBeOutOfRange) {
+                                    // there is a whole in the switch table...
+                                    if (theDomain.intIsSomeValueInRange(
+                                        pc, index, previousKey + 1, key - 1).
+                                        isYesOrUnknown) {
                                         branchToDefaultRequired = true
-                                    } else {
-                                        previousKey = key
                                     }
                                 }
+                                previousKey = key
+
                                 if (theDomain.intIsSomeValueInRange(pc, index, key, key).isYesOrUnknown) {
                                     val branchTarget = pc + offset
                                     val (updatedOperands, updatedLocals) =
@@ -1113,6 +1111,7 @@ trait AI[D <: Domain] {
                                         updatedOperands, updatedLocals)
                                 }
                             }
+
                             if (branchToDefaultRequired ||
                                 theDomain.intIsSomeValueNotInRange(
                                     pc,
@@ -1922,14 +1921,14 @@ trait AI[D <: Domain] {
                     //
 
                     case 193 /*instanceof*/ ⇒ {
-                        val objectref :: rest = operands
+                        val value :: rest = operands
                         val referenceType = as[INSTANCEOF](instruction).referenceType
 
                         val result =
-                            if (theDomain.refIsNull(pc, objectref).isYes)
+                            if (theDomain.refIsNull(pc, value).isYes)
                                 theDomain.BooleanValue(pc, false)
                             else
-                                theDomain.isValueSubtypeOf(objectref, referenceType) match {
+                                theDomain.isValueSubtypeOf(value, referenceType) match {
                                     case Yes     ⇒ theDomain.BooleanValue(pc, true)
                                     case No      ⇒ theDomain.BooleanValue(pc, false)
                                     case Unknown ⇒ theDomain.BooleanValue(pc)

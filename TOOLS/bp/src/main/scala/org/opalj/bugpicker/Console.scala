@@ -59,6 +59,7 @@ object Console extends AnalysisExecutor { analysis ⇒
             theProject: Project[URL],
             parameters: Seq[String],
             initProgressManagement: (Int) ⇒ ProgressManagement) = {
+
             val results @ (analysisTime, issues) =
                 bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
 
@@ -130,7 +131,8 @@ object Console extends AnalysisExecutor { analysis ⇒
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }
-                case _ ⇒ false
+                case "-debug" ⇒ true
+                case _        ⇒ false
             })
 
 }

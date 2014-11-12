@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,15 +30,15 @@ package org.opalj
 package ai
 package project
 
+import org.opalj.br._
+import org.opalj.br.analyses.SomeProject
+
 /**
- * @author Marco Jacobasch
+ * Representation of a computed call graph.
+ *
  * @author Michael Eichberg
  */
-class SimpleVTACallGraphTest extends AbstractCallGraphTest {
-
-    override def testFileName = "classfiles/simpleCallgraph.jar"
-
-    override def testFilePath = "ai"
-
-    override def testCallGraph = VTACallGraphKey
-}
+case class ComputedCallGraph(
+    callGraph: CallGraph,
+    unresolvedMethodCalls: List[UnresolvedMethodCall],
+    constructionExceptions: List[CallGraphConstructionException])

@@ -30,6 +30,8 @@ package org.opalj
 package ai
 package jdkbug
 
+import scala.language.existentials
+
 import java.net.URL
 import org.opalj.graphs._
 import br._
@@ -59,6 +61,7 @@ import org.opalj.ai.domain.IgnoreSynchronization
 import org.opalj.ai.domain.l0.DefaultTypeLevelDoubleValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
 import org.opalj.ai.Domain
+import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain.l0.TypeLevelReferenceValues
 import org.opalj.ai.domain.l0.DefaultPrimitiveValuesConversions
 import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
@@ -185,7 +188,7 @@ object TaintAnalysisDomain {
  * This is the analysis domain it provides all need functionality to find Class.forName bugs.
  */
 trait TaintAnalysisDomain[Source]
-        extends Domain
+        extends CorrelationalDomain
         with DomainId
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
@@ -200,7 +203,7 @@ trait TaintAnalysisDomain[Source]
         with TypeLevelFieldAccessInstructions
         with TypeLevelInvokeInstructions
         with TypeLevelReferenceValues
-        with TheProject[Source]
+        with TheProject
         with TheCode
         with ProjectBasedClassHierarchy
         with OptionalReport { thisDomain ⇒

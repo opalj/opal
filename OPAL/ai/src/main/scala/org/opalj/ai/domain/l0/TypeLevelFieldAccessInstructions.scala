@@ -50,29 +50,42 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         pc: PC,
         objectref: DomainValue,
         declaringClass: ObjectType,
-        name: String,
+        fieldName: String,
         fieldType: FieldType): Computation[DomainValue, ExceptionValue] =
+        doGetfield(pc, objectref, TypedValue(pc, fieldType))
+
+    /*override*/ def doGetfield(
+        pc: PC,
+        objectref: DomainValue,
+        fieldValue: DomainValue): Computation[DomainValue, ExceptionValue] = {
+
         refIsNull(pc, objectref) match {
             case Yes ⇒ throws(NullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnFieldAccess ⇒
-                ComputedValueOrException(TypedValue(pc, fieldType), NullPointerException(pc))
+                ComputedValueOrException(fieldValue, NullPointerException(pc))
             case _ ⇒
-                ComputedValue(TypedValue(pc, fieldType))
+                ComputedValue(fieldValue)
         }
+    }
 
     /*override*/ def getstatic(
         pc: PC,
         declaringClass: ObjectType,
-        name: String,
+        fieldName: String,
         fieldType: FieldType): Computation[DomainValue, Nothing] =
-        ComputedValue(TypedValue(pc, fieldType))
+        doGetstatic(pc, TypedValue(pc, fieldType))
+
+    /*override*/ def doGetstatic(
+        pc: PC,
+        fieldValue: DomainValue): Computation[DomainValue, Nothing] =
+        ComputedValue(fieldValue)
 
     /*override*/ def putfield(
         pc: PC,
         objectref: DomainValue,
         value: DomainValue,
         declaringClass: ObjectType,
-        name: String,
+        fieldName: String,
         fieldType: FieldType): Computation[Nothing, ExceptionValue] =
         refIsNull(pc, objectref) match {
             case Yes ⇒
@@ -87,7 +100,7 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         pc: PC,
         value: DomainValue,
         declaringClass: ObjectType,
-        name: String,
+        fieldName: String,
         fieldType: FieldType): Computation[Nothing, Nothing] =
         ComputationWithSideEffectOnly
 

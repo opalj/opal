@@ -47,7 +47,7 @@ import org.opalj.ai.domain._
  *
  * @author Michael Eichberg
  */
-trait CallGraphDomain extends Domain { this: TheProject[_] with TheMethod ⇒
+trait CallGraphDomain extends Domain { this: TheProject with TheMethod ⇒
 
     // THE CONTEXT - SET DURING THE CREATION OF THE DOMAIN
 

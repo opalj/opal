@@ -31,19 +31,13 @@ package bugpicker
 package analysis
 
 import scala.xml.Node
-import scala.xml.UnprefixedAttribute
-import scala.Console.BLUE
-import scala.Console.BOLD
-import scala.Console.GREEN
-import scala.Console.RESET
-import scala.collection.SortedMap
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.ai.debug.XHTML
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.ConditionalBranchInstruction
-import org.opalj.br.instructions.SimpleConditionalBranchInstruction
-import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import scala.xml.Unparsed
+import scala.xml.Text
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.collection.mutable.Locals
+import org.opalj.br.Code
+import org.opalj.ai.domain.ConcreteIntegerValues
+import org.opalj.ai.domain.l1.IntegerRangeValues
 
 /**
  * Describes some issue found in the source code.
@@ -62,15 +56,78 @@ trait Issue {
      */
     def method: Method
 
+    final def code: Code = method.body.get
+
     /**
      * The primarily affected instruction.
      */
     def pc: PC
 
     /**
+     * The opcode of the relevant instruction.
+     */
+    final def opcode: Int = method.body.get.instructions(pc).opcode
+
+    /**
      * The primarily affected line of source code; if available.
      */
-    def line: Option[Int]
+    final def line: Option[Int] = method.body.get.lineNumber(pc)
+
+    /**
+     * The register values at the given location.
+     */
+    def localVariables: Option[Locals[_ <: AnyRef]]
+
+    def localVariablesToXHTML: Node = {
+        def default =
+            <div class="warning">
+                Local variable information (debug information) is not available.
+            </div>
+
+        localVariables.map { lv ⇒
+            if (code.localVariablesAt(pc).isEmpty) {
+                default
+            } else {
+
+                val lvsAsXHTML =
+                    for ((index, theLV) ← code.localVariablesAt(pc)) yield {
+                        val localValue = lv(index)
+                        val localValueAsXHTML =
+                            if (localValue == null)
+                                <span class="warning">unused</span>
+                            else {
+
+                                if ((theLV.fieldType eq org.opalj.br.BooleanType) &&
+                                    // SPECIAL HANDLING IF THE VALUE IS AN INTEGER RANGE VALUE
+                                    localValue.isInstanceOf[IntegerRangeValues#IntegerRange]) {
+                                    val range = localValue.asInstanceOf[IntegerRangeValues#IntegerRange]
+                                    if (range.lowerBound == 0 && range.upperBound == 0)
+                                        Text("false")
+                                    else if (range.lowerBound == 1 && range.upperBound == 1)
+                                        Text("true")
+                                    else
+                                        Text("true or false")
+                                } else
+                                    Text(localValue.toString)
+                            }
+
+                        <tr>
+                            <td>{ index }</td><td>{ theLV.name }</td><td>{ localValueAsXHTML }</td>
+                        </tr>
+                    }
+
+                <details class="locals">
+                    <summary>Local Variable State</summary>
+                    <table>
+                        <tr><th>Index</th><th>Name</th><th>Value</th></tr>
+                        { lvsAsXHTML }
+                    </table>
+                </details>
+            }
+        }.getOrElse {
+            default
+        }
+    }
 
     /**
      * A textual representation of the bug report, well suited for console output.

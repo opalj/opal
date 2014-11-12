@@ -61,7 +61,7 @@ class AnalysisWorker(
         }
 
         def createHTMLReport(results: (Long, Iterable[Issue])): scala.xml.Node = {
-            var report = XHTML.createXHTML(Some(AnalysisRunner.title), BugPickerAnalysis.resultsAsXHTML(results))
+            var report = BugPickerAnalysis.resultsAsXHTML(results)
 
             val additionalStyles = process(getClass.getResourceAsStream("report.ext.css")) {
                 Source.fromInputStream(_).mkString

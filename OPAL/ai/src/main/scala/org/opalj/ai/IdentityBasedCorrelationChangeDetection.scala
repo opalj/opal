@@ -31,8 +31,9 @@ package ai
 
 /**
  * Identifies situations (based on a '''reference comparison of the domain values''')
- * in which the memory layout changes such that an alias that
- * existed before a join no longer exists. In this case the [[UpdateType]] is set to
+ * in which the memory layout changes such that an correlation between two values that
+ * existed before a join was performed no longer exists.
+ * In this case the [[UpdateType]] is lifted from [[MetaInformationUpdate]] to
  * [[StructuralUpdateType]].
  * For example, imagine that the old stack layout (before the join was executed)
  * is as follows:
@@ -44,22 +45,49 @@ package ai
  *  `AnIntegerValue[#2]` <- `AnIntegerValue[#3]` <- `IntegerRange(lb=0,ub=10)[#2]` <- ...
  *
  * Hence, the two top-most stack values are now different values and – if the result of an
- * analysis/domain is influenced by aliasing information – the continuation of the
+ * analysis/domain is influenced by correlation information – the continuation of the
  * abstract interpretation is enforced.
  *
+ * ==Concrete Example==
+ * {{{
+ * static void cfDependentValues(int i) {
+ *  Object b = null;
+ *  Object c = null;
+ *  int j = i; // <--- j is just an alias for i
+ *  while (j < 2) {
+ *      Object a = maybeNull(); // returns "null" or a new instance of Object
+ *      if (i == 1)
+ *          b = a; // <--- b is just an alias for a
+ *      else
+ *          c = a; // <--- c is just an alias for a
+ *      i++;
+ *      j = i;
+ *  }
+ *  // b and c are never referring to the same object; hence a constraint related to
+ *  // c does not affect b and vice versa
+ *  if (c == null) { // this just constraints "c" (not "b")
+ *      doIt(b); // we know nothing special about b
+ *      doIt(c); // c is null
+ *  } else if (b != null) {
+ *      doIt(b); // b is non-null
+ *      doIt(c); // we know nothing special  about c
+ *  }
+ * }
+ * }}}
+ *
  * This trait requires that updates to a value that do not influence the represented
- * value as such, but which may influence its ''aliasing information'', have to create a
- * [[MetaInformationUpdate]]. Here, ''aliasing information'' is used in a broader sense:
+ * value as such, but which may influence its ''correlation information'', have to create a
+ * [[MetaInformationUpdate]]. Here, correlation means:
  *  - two reference values that refer to the '''same object''' are considered aliases
  *  - two local variables that are guaranteed to be identical in all cases, and, hence
- *    are subject to the same constraints are also aliases.
+ *    are subject to the same constraints are also correlated.
  *
  * @note Mixing in this trait is strictly necessary when aliases are traced using a
  *      a DomainValue's reference.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait IdentityBasedAliasBreakUpDetection extends CoreDomainFunctionality {
+trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
 
     /* NOT abstract override [this trait is by purpose NOT stackable] */
     protected[this] override def joinPostProcessing(
