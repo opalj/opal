@@ -36,6 +36,7 @@ import scala.Console.GREEN
 import scala.Console.RESET
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
@@ -65,18 +66,23 @@ object UnusedMethods extends AnalysisExecutor {
             parameters: Seq[String],
             isInterrupted: () ⇒ Boolean) = {
 
+            import theProject.classHierarchy.isSubtypeOf
+
             val results = {
                 val ComputedCallGraph(callGraph, _, _) = theProject.get(VTACallGraphKey)
                 for {
                     classFile ← theProject.classFiles
                     method ← classFile.methods
                     if method.isPrivate //|| method.isPackageVisible
-                    // Handle "Singleton Pattern" related stuff
-                    if !(method.name == "<init>" && method.descriptor == MethodDescriptor.NoArgsAndReturnVoid)
-                    // Handle Serialization Stuff...
-                    //    if !(method.name == "readObject")
-                    //    if !(method.name == "writeObject")
                     if callGraph.calledBy(method).isEmpty
+                    if !(
+                        method.name == "<init>" &&
+                        method.descriptor == MethodDescriptor.NoArgsAndReturnVoid
+                    )
+                    if !(
+                        Method.isObjectSerializationRelated(method) &&
+                        isSubtypeOf(classFile.thisType, ObjectType.Serializable).isYesOrUnknown
+                    )
                 } yield {
                     method.fullyQualifiedSignature(classFile.thisType)
                 }
