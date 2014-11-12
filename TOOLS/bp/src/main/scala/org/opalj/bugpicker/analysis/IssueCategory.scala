@@ -31,31 +31,21 @@ package bugpicker
 package analysis
 
 /**
- * Describes the overall relevance of a finding.
+ * Collection of predefined issue categories.
  *
- * When calculation the relevance you should take all
- * properties of the associated issue into consideration:
- *  - kind of issue
- *  - category of issue
- *  - accuracy of the analysis
- *
- * @param value A value between 1 (not really relevant) and 100 (absolutely relevant).
+ * In general, the category basically describes '''the property of your software that is
+ * affected ''' by this issue.
  *
  * @author Michael Eichberg
  */
-case class Relevance(value: Int) extends AnyVal {
+object IssueCategory {
 
-    /**
-     * The lower the value, the "whiter" the color. If the value is 100
-     * then the color will be black.
-     */
-    def asHTMLColor = {
-        val rgbValue = 0 + (100 - value) * 2
-        s"rgb($rgbValue,$rgbValue,$rgbValue)"
-    }
-}
+    final val Bug = "bug"
 
-object Relevance {
-    final val DefaultRelevance = Relevance(50)
-    final val Undetermined = Relevance(0)
+    final val Flawed = "flawed"
+
+    final val Performance = "performance"
+
+    final val Comprehensibility = "comprehensibility"
+
 }

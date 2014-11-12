@@ -30,32 +30,47 @@ package org.opalj
 package bugpicker
 package analysis
 
+import scala.xml.Node
+import scala.xml.Text
+
+import org.opalj.collection.mutable.Locals
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.Code
+import org.opalj.br.analyses.SomeProject
+
 /**
- * Describes the overall relevance of a finding.
- *
- * When calculation the relevance you should take all
- * properties of the associated issue into consideration:
- *  - kind of issue
- *  - category of issue
- *  - accuracy of the analysis
- *
- * @param value A value between 1 (not really relevant) and 100 (absolutely relevant).
+ * Describes some issue found in the source code.
  *
  * @author Michael Eichberg
  */
-case class Relevance(value: Int) extends AnyVal {
+case class StandardIssue(
+    project: SomeProject,
+    classFile: ClassFile,
+    method: Option[Method],
+    pc: Option[PC],
+    localVariables: Option[Locals[_ <: AnyRef]],
+    summary: String,
+    description: Option[String],
+    category: Set[String],
+    kind: Set[String],
+    otherPCs: Seq[(PC, String)],
+    relevance : Relevance) extends Issue
 
-    /**
-     * The lower the value, the "whiter" the color. If the value is 100
-     * then the color will be black.
-     */
-    def asHTMLColor = {
-        val rgbValue = 0 + (100 - value) * 2
-        s"rgb($rgbValue,$rgbValue,$rgbValue)"
+object StandardIssue {
+
+    def apply(project: SomeProject, classFile: ClassFile, summary: String) = {
+        new StandardIssue(
+            project,
+            classFile,
+            None,
+            None,
+            None,
+            summary,
+            None,
+            Set.empty,
+            Set.empty,
+            Seq.empty,
+            Relevance.DefaultRelevance)
     }
-}
-
-object Relevance {
-    final val DefaultRelevance = Relevance(50)
-    final val Undetermined = Relevance(0)
 }

@@ -32,12 +32,13 @@ package analysis
 
 import scala.xml.Node
 import scala.xml.Text
+import org.opalj.collection.mutable.Locals
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.collection.mutable.Locals
 import org.opalj.br.Code
 import org.opalj.ai.domain.ConcreteIntegerValues
 import org.opalj.ai.domain.l1.IntegerRangeValues
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Describes some issue found in the source code.
@@ -47,6 +48,11 @@ import org.opalj.ai.domain.l1.IntegerRangeValues
 trait Issue {
 
     /**
+     * The affected project.
+     */
+    def project: SomeProject
+
+    /**
      * The primarily affected class file.
      */
     def classFile: ClassFile
@@ -54,27 +60,32 @@ trait Issue {
     /**
      * The primarily affected method.
      */
-    def method: Method
-
-    final def code: Code = method.body.get
+    def method: Option[Method]
 
     /**
      * The primarily affected instruction.
+     *
+     * If `pc` is defined `method` has to be defined too and the method must have
+     * a `Code` block.
      */
-    def pc: PC
+    def pc: Option[PC]
 
     /**
-     * The opcode of the relevant instruction.
+     * Other instructions that are related to this finding and which may facilitate
+     * the comprehension of this issue.
      */
-    final def opcode: Int = method.body.get.instructions(pc).opcode
+    def otherPCs: Seq[(PC, String)]
 
     /**
-     * The primarily affected line of source code; if available.
+     * A value in the range [1..100] and which is an estimation of the relevance of
+     * this issue from the point of view of the developer.
      */
-    final def line: Option[Int] = method.body.get.lineNumber(pc)
+    def relevance: Relevance
 
     /**
      * The register values at the given location.
+     *
+     * If `localVariables` is defined, `pc` and `method` has to be defined, too!
      */
     def localVariables: Option[Locals[_ <: AnyRef]]
 
@@ -130,83 +141,60 @@ trait Issue {
     }
 
     /**
-     * A textual representation of the bug report, well suited for console output.
+     * The issue in '''one''' sentence.
      */
-    def message: String
+    def summary: String
+
+    /**
+     * The description of the issue.
+     */
+    def description: Option[String]
 
     /**
      * A string that uses small letters and which describes the category of the issue.
      *
      * The category basically describes '''the property of the software that is
-     * affected ''' by this issue.
+     * affected ''' by this issue (see [[IssueCategory]] for further details).
      */
-    def category: String
+    def categories: Set[String]
 
     /**
      * A string that uses small letters and which describes the kind of the issue.
      *
-     * The kind describes how '''this issue manifests itself in the source code'''.
+     * The kind describes how '''this issue manifests itself in the source code'''
+     * (see [[IssueKind]] for further details).
      */
-    def kind: String
+    def kind: Set[String]
+
+    // __________________________________________________________________________________
+    //
+    // DERIVED INFORMATION
+    // __________________________________________________________________________________
+    //
 
     /**
-     * An HTML representation of the bug report, well suited for browser output.
-     *
-     * The format has to be:
-     * {{{
-     * &lt;tr style={
-     *      val color = accuracy.map(a ⇒ a.asHTMLColor).getOrElse("rgb(255, 126, 3)")
-     *      s"color:$color;"
-     *      }&gt;
-     *  &lt;td&gt;
-     *      XHTML.typeToXHTML(classFile.thisType)
-     *  &lt;/td&gt;
-     *  &lt;td&gt;
-     *      XHTML.methodToXHTML(method.name, method.descriptor)
-     *  &lt;/td&gt;
-     *  &lt;td&gt;
-     *      PROGRAM_COUNTER "/" LINE_NUMBER OR "N/A"
-     *  &lt;td&gt;
-     *      MESSAGE (FREE FORM)
-     * &lt;/tr&gt;
-     * }}}
+     * The method's code.
      */
-    def toXHTML: Node
+    final def code: Option[Code] = method.flatMap(_.body)
+
+    /**
+     * The opcode of the relevant instruction.
+     */
+    final def opcode: Option[Int] = pc.flatMap(pc ⇒ code.map(_.instructions(pc).opcode))
+
+    /**
+     * The primarily affected line of source code; if available.
+     */
+    final def line: Option[Int] = pc.flatMap(pc ⇒ code.flatMap(_.lineNumber(pc)))
+
+    /**
+     * An (x)HTML5 representation of the bug report, well suited for browser output.
+     */
+    def asXHTML: Node
+
+    /**
+     * A representation of this bug report well suited for console output.
+     */
+    def asAnsiColoredString: String
 }
 
-/**
- * Collection of predefined issue categories.
- *
- * In general, the category basically describes '''the property of the software that is
- * affected ''' by this issue.
- *
- * @author Michael Eichberg
- */
-object IssueCategory {
-
-    val Bug = "bug"
-
-    val Flawed = "flawed"
-
-    val Performance = "performance"
-
-    val Comprehensibility = "comprehensibility"
-
-}
-
-/**
- * Collection of predefined issue kinds.
- *
- * In general, an issue kind describes how '''this issue manifests itself in the source
- * code'''.
- *
- * @author Michael Eichberg
- */
-object IssueKind {
-
-    val ConstantComputation = "constant computation"
-
-    val DeadBranch = "dead branch"
-
-    val Unused = "unused"
-}

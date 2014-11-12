@@ -31,31 +31,18 @@ package bugpicker
 package analysis
 
 /**
- * Describes the overall relevance of a finding.
+ * Collection of predefined issue kinds.
  *
- * When calculation the relevance you should take all
- * properties of the associated issue into consideration:
- *  - kind of issue
- *  - category of issue
- *  - accuracy of the analysis
- *
- * @param value A value between 1 (not really relevant) and 100 (absolutely relevant).
+ * In general, an issue kind describes how '''this issue manifests itself in the source
+ * code'''.
  *
  * @author Michael Eichberg
  */
-case class Relevance(value: Int) extends AnyVal {
+object IssueKind {
 
-    /**
-     * The lower the value, the "whiter" the color. If the value is 100
-     * then the color will be black.
-     */
-    def asHTMLColor = {
-        val rgbValue = 0 + (100 - value) * 2
-        s"rgb($rgbValue,$rgbValue,$rgbValue)"
-    }
-}
+    final val ConstantComputation = "constant computation"
 
-object Relevance {
-    final val DefaultRelevance = Relevance(50)
-    final val Undetermined = Relevance(0)
+    final val DeadBranch = "dead branch"
+
+    final val Unused = "unused"
 }
