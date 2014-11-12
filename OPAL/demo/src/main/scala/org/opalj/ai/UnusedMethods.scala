@@ -71,7 +71,8 @@ object UnusedMethods extends AnalysisExecutor {
             val results = {
                 val ComputedCallGraph(callGraph, _, _) = theProject.get(VTACallGraphKey)
                 for {
-                    classFile ← theProject.classFiles
+                    classFile ← theProject.classFiles.par
+                    if !isInterrupted()
                     method ← classFile.methods
                     if method.isPrivate //|| method.isPackageVisible
                     if callGraph.calledBy(method).isEmpty
