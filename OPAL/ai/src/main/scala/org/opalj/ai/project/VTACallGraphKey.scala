@@ -31,6 +31,7 @@ package ai
 package project
 
 import br.analyses._
+import org.opalj.ai.analyses.FieldValuesKey
 
 /**
  * The ''key'' object to get a call graph that was calculated using the VTA algorithm.
@@ -50,12 +51,7 @@ import br.analyses._
  */
 object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
 
-    /**
-     * The VTACallGraph has no special requirements.
-     *
-     * @return `Nil`.
-     */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
+    override protected def requirements = List(FieldValuesKey)
 
     /**
      * Computes the `CallGraph` for the given project.
