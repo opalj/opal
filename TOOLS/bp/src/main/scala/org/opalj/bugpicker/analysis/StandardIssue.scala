@@ -55,7 +55,7 @@ case class StandardIssue(
     category: Set[String],
     kind: Set[String],
     otherPCs: Seq[(PC, String)],
-    relevance : Relevance) extends Issue
+    relevance: Relevance) extends Issue
 
 object StandardIssue {
 

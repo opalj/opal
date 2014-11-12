@@ -150,20 +150,20 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         val progressManagement =
             initProgressManagement(1 /*for the FieldValues analysis*/ + classFilesCount)
 
-						//
-						//
-						// DO PREANALYSES
-//
-						//
+        //
+        //
+        // DO PREANALYSES
+        //
+        //
         progressManagement.start(1, "Analyzing field declarations")
         theProject.get(FieldValuesKey)
         progressManagement.end(1)
 
-						//
-						//
-						// MAIN ANALYSIS
-//
-						//
+        //
+        //
+        // MAIN ANALYSIS
+        //
+        //
 
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
@@ -232,8 +232,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                                     classFile, method, pc,
                                     Some(localsArray(pc)),
                                     "(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+").")
-                            
-                             case (
+
+                            case (
                                 pc,
                                 LStoreInstruction(index),
                                 Seq(ConcreteLongValue(a), _*)
