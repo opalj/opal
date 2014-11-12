@@ -84,13 +84,15 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
         //
 
         describe("using the factory methods") {
-            it("it should be possible to create a representation for a non-null object with a specific type") {
+
+            it("it should be possible to create a representation for a non-null object "+
+                "with a specific type") {
                 val ref = ReferenceValue(444, No, true, ObjectType.Object)
                 if (!ref.isNull.isNo || ref.origin != 444 || !ref.isPrecise)
                     fail("expected a precise, non-null reference value with pc 444;"+
                         " actual: "+ref)
-
             }
+
         }
 
         //
@@ -106,11 +108,16 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 val theObject = ObjectValue(-1, No, false, ObjectType.Object)
                 val theFile = ObjectValue(-1, No, false, File)
 
-                val (update1, _) = theObject.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
+                val (update1, _) =
+                    theObject.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
                 update1.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
-                val (update2, _) = theFile.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
+
+                val (update2, _) =
+                    theFile.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
                 update2.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
-                val (update3, _) = theFile.refineUpperTypeBound(-1, ObjectType.Object, List(theFile), Locals.empty)
+
+                val (update3, _) =
+                    theFile.refineUpperTypeBound(-1, ObjectType.Object, List(theFile), Locals.empty)
                 update3.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
             }
 
@@ -122,7 +129,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
         describe("the summarize function") {
 
-            it("it should calculate a meaningful upper type bound given multiple different types of reference values") {
+            it("it should calculate a meaningful upper type bound given "+
+                "multiple different types of reference values") {
                 summarize(
                     -1,
                     List(
