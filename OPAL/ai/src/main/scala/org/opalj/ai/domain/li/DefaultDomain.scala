@@ -39,7 +39,7 @@ class DefaultConfigurableDomain[I, Source](
     val project: Project[Source],
     val classFile: ClassFile,
     val method: Method)
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with ProjectBasedClassHierarchy

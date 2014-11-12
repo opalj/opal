@@ -32,7 +32,7 @@ package project
 
 import scala.collection.Set
 
-import org.opalj.ai.CoRelationalDomain
+import org.opalj.ai.CorrelationalDomain
 import org.opalj.br.analyses.Project
 
 import br.ClassFile
@@ -58,7 +58,7 @@ class BasicVTACallGraphDomain[Source](
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method: Method)
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject
