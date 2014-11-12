@@ -37,7 +37,7 @@ import org.opalj.br.Type
  * @author Arne Lottmann
  */
 trait DefaultClassValuesBinding extends DefaultStringValuesBinding with ClassValues {
-    domain: CoRelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
     type DomainClassValue = ClassValue

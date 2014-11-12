@@ -46,7 +46,7 @@ import org.opalj.br._
  * @author Michael Eichberg
  */
 trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
-    domain: JoinStabilization with IdentityBasedAliasBreakUpDetection with Configuration with VMLevelExceptionsFactory ⇒
+    domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //

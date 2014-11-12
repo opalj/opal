@@ -39,7 +39,7 @@ package l1
 trait DefaultIntegerRangeValues
         extends DefaultDomainValueBinding
         with IntegerRangeValues {
-    domain: JoinStabilization with IdentityBasedAliasBreakUpDetection with Configuration with VMLevelExceptionsFactory ⇒
+    domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
 
     /**
      * @note The functionality to propagate a constraint crucially depends on

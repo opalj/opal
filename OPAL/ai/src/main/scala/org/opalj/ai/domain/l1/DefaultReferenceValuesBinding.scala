@@ -45,7 +45,7 @@ import org.opalj.br.ArrayType
 trait DefaultReferenceValuesBinding
         extends l1.ReferenceValues
         with DefaultVMLevelExceptionsFactory {
-    domain: CoRelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
 

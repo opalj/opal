@@ -70,6 +70,7 @@ import org.opalj.br.instructions.ShiftInstruction
 import org.opalj.br.instructions.INSTANCEOF
 import org.opalj.br.instructions.ISTORE
 import org.opalj.br.instructions.IStoreInstruction
+import org.opalj.ai.analyses.FieldValuesKey
 
 /**
  * A static analysis that analyzes the data-flow to identify various issues in the
@@ -140,7 +141,14 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
-        val progressManagement = initProgressManagement(classFilesCount)
+        val progressManagement =
+            initProgressManagement(1 /*for the FieldValues analysis*/ + classFilesCount)
+
+        // preanalysis
+        progressManagement.start(1, "Analyzing field declarations")
+        theProject.get(FieldValuesKey)
+        progressManagement.end(1)
+
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
         val results = new java.util.concurrent.ConcurrentLinkedQueue[Issue]()
@@ -309,7 +317,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
         var analysisTime: Long = 0l
         val identifiedIssues = time {
-            val stepIds = new java.util.concurrent.atomic.AtomicInteger(0)
+            val stepIds = new java.util.concurrent.atomic.AtomicInteger(1 /*.. the FieldValuesAnalysis */ )
 
             for {
                 classFile ← theProject.projectClassFiles.par

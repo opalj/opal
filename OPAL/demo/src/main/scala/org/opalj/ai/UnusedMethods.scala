@@ -28,56 +28,63 @@
  */
 package org.opalj
 package ai
-package domain
-package l0
 
 import java.net.URL
-
+import scala.Console.BLUE
+import scala.Console.BOLD
+import scala.Console.GREEN
+import scala.Console.RESET
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.IF0Instruction
+import org.opalj.br.instructions.IFICMPInstruction
+import org.opalj.ai.project.VTACallGraphKey
+import org.opalj.ai.project.ComputedCallGraph
+import org.opalj.br.MethodDescriptor
 
 /**
- * Demonstrates how to use OPAL's FieldTypesAnalysis.
+ * A shallow analysis that tries to identify (private) methods that are dead.
  *
  * @author Michael Eichberg
  */
-object FieldTypesAnalysis extends AnalysisExecutor {
+object UnusedMethods extends AnalysisExecutor {
 
     val analysis = new OneStepAnalysis[URL, BasicReport] {
 
-        override def title: String =
-            "Tries to derive more precise information about the fields of a class."
+        override def title: String = "Dead methods"
 
-        override def description: String =
-            "Identifies fields of a class where we can – statically – derive more precise type/value information."
+        override def description: String = "Identifies methods that are never called."
 
         override def doAnalyze(
             theProject: Project[URL],
             parameters: Seq[String],
             isInterrupted: () ⇒ Boolean) = {
-            import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-            val refinedFieldValues =
-                org.opalj.ai.analyses.FieldValuesAnalysis.doAnalyze(
-                    theProject,
-                    isInterrupted)
+            val results = {
+                val ComputedCallGraph(callGraph, _, _) = theProject.get(VTACallGraphKey)
+                for {
+                    classFile ← theProject.classFiles
+                    method ← classFile.methods
+                    if method.isPrivate //|| method.isPackageVisible
+                    // Handle "Singleton Pattern" related stuff
+                    if !(method.name == "<init>" && method.descriptor == MethodDescriptor.NoArgsAndReturnVoid)
+                    // Handle Serialization Stuff...
+                    //    if !(method.name == "readObject")
+                    //    if !(method.name == "writeObject")
+                    if callGraph.calledBy(method).isEmpty
+                } yield {
+                    method.fullyQualifiedSignature(classFile.thisType)
+                }
+            }
 
             BasicReport(
-                refinedFieldValues.seq.map { info ⇒
-                    val (field, fieldValue) = info
-                    val classFile = theProject.classFile(field)
-                    classFile.thisType.toJava+
-                        "{ "+
-                        field.name+":"+fieldValue+
-                        " // Originaltype: "+field.fieldType.toJava+
-                        " }"
-                }.mkString("\n")+
-                    "\n"+
-                    "Number of refined field types: "+refinedFieldValues.size+"\n"
+                results.mkString("Dead Methods: "+results.size+"): \n", "\n", "\n")
             )
         }
     }
 }
-

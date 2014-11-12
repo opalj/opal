@@ -51,7 +51,8 @@ class BugPickerAnalysisDomain(
         with domain.ThrowAllPotentialExceptionsConfiguration
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelFieldAccessInstructions
+        //with domain.l0.TypeLevelFieldAccessInstructions
+        with domain.l0.RefinedTypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
         with domain.l1.DefaultReferenceValuesBinding
         with domain.l1.DefaultIntegerRangeValues

@@ -132,27 +132,27 @@ case class ClassFile(
         <details class="filter_settings" open="true">
             <summary>Filter</summary>
             <fieldset>
-                <input type="radio" name="visibility" value="private" onclick="toogleFilter();">private</input>
-                <input type="radio" name="visibility" value="default" onclick="toogleFilter();">&lt;default&gt;</input>
-                <input type="radio" name="visibility" value="protected" onclick="toogleFilter();">protected</input>
-                <input type="radio" name="visibility" value="public" onclick="toogleFilter();">public</input>
+                <input type="radio" id="access_flag_private" name="visibility" value="private" onclick="toogleFilter();"></input><label for="access_flag_private">private</label>
+                <input type="radio" id="access_flag_default" name="visibility" value="default" onclick="toogleFilter();"></input><label for="access_flag_default">&lt;default&gt;</label>
+                <input type="radio" id="access_flag_protected" name="visibility" value="protected" onclick="toogleFilter();"></input><label for="access_flag_protected">protected</label>
+                <input type="radio" id="access_flag_public" name="visibility" value="public" onclick="toogleFilter();"></input><label for="access_flag_public">public</label>
             </fieldset>
             <fieldset>
-                <input type="radio" name="final_or_abstract" value="final" onclick="toogleFilter();">final</input>
-                <input type="radio" name="final_or_abstract" value="abstract" onclick="toogleFilter();">abstract</input>
+                <input type="radio" id="access_flag_final" name="final_or_abstract" value="final" onclick="toogleFilter();"></input><label for="access_flag_final">final</label>
+                <input type="radio" id="access_flag_abstract" name="final_or_abstract" value="abstract" onclick="toogleFilter();"></input><label for="access_flag_abstract">abstract</label>
             </fieldset>
             <div class="java_flags">
-                <input type="checkbox" name="static" value="static" onclick="toogleFilter();">static</input>
-                <input type="checkbox" value="strict" onclick="toogleFilter();">strict</input>
-                <input type="checkbox" value="native" onclick="toogleFilter();">native</input>
-                <input type="checkbox" value="synchronized" onclick="toogleFilter();">synchronized</input>
+                <input type="checkbox" id="access_flag_static" name="static" value="static" onclick="toogleFilter();"></input><label for="access_flag_static">static</label>
+                <input type="checkbox" id="access_flag_strict" value="strict" onclick="toogleFilter();"></input><label for="access_flag_strict">strict</label>
+                <input type="checkbox" id="access_flag_native" value="native" onclick="toogleFilter();"></input><label for="access_flag_native">native</label>
+                <input type="checkbox" id="access_flag_synchronized" value="synchronized" onclick="toogleFilter();"></input><label for="access_flag_synchronized">synchronized</label>
             </div>
             <div class="jvm_flags">
-                <input type="checkbox" value="bridge" onclick="toogleFilter();">bridge</input>
-                <input type="checkbox" value="varargs" onclick="toogleFilter();">varargs</input>
+                <input type="checkbox" id="jvm_modifier_bridge" value="bridge" onclick="toogleFilter();"></input><label for="jvm_modifier_bridge">bridge</label>
+                <input type="checkbox" id="jvm_modifier_varargs" value="varargs" onclick="toogleFilter();"></input><label for="jvm_modifier_varargs">varargs</label>
             </div>
             <div class="name_filter">
-                Name:<input type="text" title='filter by method name' onkeyup="toogleFilter();"></input>
+                <label for="filter_by_method_name">Name:</label><input id="filter_by_method_name" type="text" title='filter by method name' onkeyup="toogleFilter();"></input>
             </div>
             <button value="clear" onclick="clearFilter();">clear</button>
         </details>
