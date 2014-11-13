@@ -53,7 +53,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
     class IntegerRangesTestDomain(
         override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
-            extends CoRelationalDomain
+            extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelLongValues

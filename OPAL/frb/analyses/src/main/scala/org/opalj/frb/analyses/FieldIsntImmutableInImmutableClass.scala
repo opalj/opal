@@ -51,7 +51,7 @@ import org.opalj.ai.domain.l1._
 private class ImmutabilityAnalysisDomain[Source](
     val project: Project[Source],
     val method: Method)
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with TheProject
         with TheMethod
         with DefaultDomainValueBinding

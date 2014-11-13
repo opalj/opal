@@ -66,7 +66,7 @@ class MethodsWithExceptionsTest
     import org.opalj.collection.mutable.UShortSet
 
     class DefaultRecordingDomain(val id: String)
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with PredefinedClassHierarchy

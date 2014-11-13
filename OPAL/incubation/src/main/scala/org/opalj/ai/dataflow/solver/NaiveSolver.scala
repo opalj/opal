@@ -52,7 +52,7 @@ trait NaiveSolver[Source, Params] extends DataFlowProblemSolver[Source, Params] 
 }
 
 abstract class BaseDomain[Source](val project: Project[Source])
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with domain.DefaultDomainValueBinding
         with domain.ProjectBasedClassHierarchy
         with domain.TheProject
