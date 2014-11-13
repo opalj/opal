@@ -29,12 +29,17 @@ fieldset{
 	width:100%;
 }
 
-.instruction{
+.instruction,.lv_index{
 	font-weight:400;
 	font-style:italic;
 	color:#6666AA;
-	width:8em;
 	float:left;	
+}
+.instruction{
+	width:8em;
+}
+.lv_index{
+	width: 4em;
 }
 
 .local_variable_name{
@@ -172,8 +177,12 @@ th.pc, td.pc, th.line, td.line {
 	color: #0000ff;
 }
 		
-.constant_value,.attribute_name{
-	color: #FFA500;
+.constant_value{
+	color: #FF00A5;
+}
+
+.attribute_name{
+	color: #d73b04;
 }
 
 .tooltip:hover > span{ 

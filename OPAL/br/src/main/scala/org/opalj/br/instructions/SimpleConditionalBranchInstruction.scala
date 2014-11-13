@@ -61,18 +61,25 @@ abstract class SimpleConditionalBranchInstruction
 }
 
 abstract class IF0Instruction extends SimpleConditionalBranchInstruction {
+
     def operandCount = 1
+
 }
 
 abstract class IFICMPInstruction extends SimpleConditionalBranchInstruction {
+
     def operandCount = 2
+
 }
 
 abstract class IFACMPInstruction extends SimpleConditionalBranchInstruction {
+
     def operandCount = 2
 }
 
 abstract class IFXNullInstruction extends SimpleConditionalBranchInstruction {
+
     def operandCount = 1
+
 }
 

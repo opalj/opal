@@ -12,7 +12,12 @@ interface IE extends java/lang/Object
 interface SubID extends java/lang/Object implements ID
 interface SubID2 extends java/lang/Object implements ID
 interface SubID3 extends java/lang/Object implements ID
+interface SubIDSubIA extends java/lang/Object implements ID, IA
 interface SubSubID extends java/lang/Object implements SubID
+interface SubSubIDSubIA extends java/lang/Object implements SubID, IA
+interface SubSubIDSubIA2 extends java/lang/Object implements SubID, IA
+interface SubSubID2 extends java/lang/Object implements SubID2, ID
+interface SubSubID22 extends java/lang/Object implements SubID2, ID
 class SubA extends A implements SubID3
 class SubA2 extends A
 class SubA3 extends A implements IC

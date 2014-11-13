@@ -36,7 +36,7 @@ package instructions
  * @author Michael Eichberg
  */
 case object LSTORE_3
-        extends StoreLocalVariableInstruction
+        extends LStoreInstruction
         with ImplicitLocalVariableIndex {
 
     final val lvIndex = 3

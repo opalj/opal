@@ -512,9 +512,9 @@ class ClassHierarchy private (
                     if (doesInheritFromInterface.isYes)
                         Yes
                     else
-                        answerSoFar & doesInheritFromInterface
+                        answerSoFar /*either no or unknown */ & doesInheritFromInterface
                 } else
-                    No
+                    answerSoFar
             }
 
             val superSubclassType = superclassTypeMap(subclassType.id)

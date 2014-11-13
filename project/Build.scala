@@ -20,7 +20,7 @@ object OPALBuild extends Build {
 		Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest)) ++
 		Seq(libraryDependencies  ++= Seq(
 			"junit" % "junit" % "4.11" % "test,it",
-			"org.scalatest" %% "scalatest" % "2.2.0" % "test,it"))
+			"org.scalatest" %% "scalatest" % "2.2.1" % "test,it"))
 
 	lazy val buildSettingsWithScoverage = 
 		buildSettings ++ 

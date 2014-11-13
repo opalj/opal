@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object IRETURN extends ReturnInstruction {
+case object IRETURN extends ReturnValueInstruction {
 
     final val opcode = 172
 

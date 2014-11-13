@@ -50,4 +50,4 @@ object Java8Framework extends Java8Framework
  */
 object Java8FrameworkWithLambdaSupport
     extends Java8Framework
-    with FullJDK8DeferredInvokedynamicResolution
+    with JDK8DeferredInvokedynamicResolution

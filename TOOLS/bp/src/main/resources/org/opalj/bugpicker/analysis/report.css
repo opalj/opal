@@ -1,0 +1,76 @@
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2014
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+ 
+/*VIEW SPECIFIC*/ 
+div#analysis_controls {
+	position: fixed;
+	top: 0px;
+	padding: 1em;
+	height: 3em;
+	margin: 0px;
+	width:100%;
+	
+	background-color: rgba(8, 114, 215, 0.95);
+	color: white;
+}
+
+div#analysis_results {
+	padding: 0em;
+	margin-top: 5em;
+}
+
+div.an_issue{
+	padding: 0.5em;	
+	background-color: rgb(241, 244, 255);
+	border: 1px solid  rgb(224, 222, 235);
+	border-top: 0px;	
+}
+
+.issue{
+	margin-top: 1em;	
+}
+
+.issue_message {
+	color: rgb(94,94,94);
+	font-weight: 300;
+}
+
+div.declaring_class{
+	margin-left: 8em;
+	
+}
+div.declaring_class:before{
+	content: "class:";
+}
+
+details.locals {
+	padding:0;
+	background-color: rgba(174, 177, 255, 0.24);
+	border: 1px solid rgb(172, 172, 205);
+}

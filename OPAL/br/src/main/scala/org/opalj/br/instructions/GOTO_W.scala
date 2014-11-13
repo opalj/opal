@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case class GOTO_W(branchoffset: Int) extends UnconditionalBranchInstruction {
+case class GOTO_W(branchoffset: Int) extends GotoInstruction {
 
     final def opcode: Opcode = GOTO_W.opcode
 

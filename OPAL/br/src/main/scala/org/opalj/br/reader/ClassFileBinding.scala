@@ -71,37 +71,28 @@ trait ClassFileBinding extends ClassFileReader {
     }
 
     val extractSynthesizedClassFiles: Seq[ClassFile] ⇒ Seq[ClassFile] = { classFiles ⇒
-        val classFile = classFiles.head
-        if (classFile.majorVersion < 52 || // can't contain lambda expressions
-            classFile.attributes.size == 0 ||
-            classFile.attributes.forall(a ⇒ !a.isInstanceOf[SynthesizedClassFiles])) {
+        val attributes = classFiles.head.attributes
+        if (attributes.isEmpty) {
             classFiles
         } else {
-            val synthesizedClassFiles: Seq[ClassFile] = classFile.attributes.find(
-                _.isInstanceOf[SynthesizedClassFiles]) match {
-                    case Some(scf: SynthesizedClassFiles) ⇒ scf.classFiles
-                    case _                                ⇒ Seq.empty
-                }
-
-            classFiles ++ synthesizedClassFiles
+            attributes.find(_.kindId == SynthesizedClassFiles.KindId) match {
+                case Some(SynthesizedClassFiles(synthesizedClassFiles)) ⇒
+                    classFiles ++ synthesizedClassFiles
+                case _ ⇒ classFiles
+            }
         }
     }
 
     val removeTemporaryAttributes: Seq[ClassFile] ⇒ Seq[ClassFile] = { classFiles ⇒
         val classFile = classFiles.head
         val attributes = classFile.attributes
-        if (classFile.majorVersion <= 50 /*does not have BootstrapMethodTable*/ ||
-            attributes.size == 0 ||
-            attributes.forall(attribute ⇒
-                !(attribute.isInstanceOf[BootstrapMethodTable] ||
-                    attribute.isInstanceOf[SynthesizedClassFiles])))
+        if (attributes.isEmpty) {
             classFiles
-        else {
-            val newAttributes = classFile.attributes filter { attribute ⇒
-                !(attribute.isInstanceOf[BootstrapMethodTable] ||
-                    attribute.isInstanceOf[SynthesizedClassFiles])
-            }
-            classFile.updateAttributes(newAttributes) +: classFiles.tail
+        } else {
+            classFile.updateAttributes(attributes filterNot { a ⇒
+                a.kindId == BootstrapMethodTable.KindId ||
+                    a.kindId == SynthesizedClassFiles.KindId
+            }) +: classFiles.tail
         }
     }
 

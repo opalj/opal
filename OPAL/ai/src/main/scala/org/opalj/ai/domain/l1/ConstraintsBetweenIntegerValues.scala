@@ -48,7 +48,7 @@ trait ConstraintsBetweenIntegerValues
         extends CoreDomainFunctionality
         with IntegerRangeValues // IMRPOVE [ConstraintsBetweenIntegerValues] Define a common trait that specifies that the values support aliasing analyses
         with TheCodeStructure {
-    domain: JoinStabilization with IdentityBasedAliasBreakUpDetection with Configuration with VMLevelExceptionsFactory ⇒
+    domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
 
     type Constraint = NumericConstraints.Value
 

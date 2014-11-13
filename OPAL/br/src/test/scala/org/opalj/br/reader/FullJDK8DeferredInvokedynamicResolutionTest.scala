@@ -163,7 +163,7 @@ class FullJDK8DeferredInvokedynamicResolutionTest extends FunSpec with Matchers 
     describe("JDK 8 invokedynamic resolution in a regular framework") {
         val project: SomeProject = Project(
             Java8FrameworkWithLambdaSupport.ClassFiles(testResources),
-            Java8LibraryFramework.ClassFiles(TestSupport.JRELibraryFolder)
+            Java8LibraryFramework.ClassFiles(util.JRELibraryFolder)
         )
         testProject(project)
     }
@@ -173,7 +173,7 @@ class FullJDK8DeferredInvokedynamicResolutionTest extends FunSpec with Matchers 
         val framework = new Java8FrameworkWithLambdaSupportAndCaching(cache)
         val project = Project(
             framework.ClassFiles(testResources),
-            Java8LibraryFramework.ClassFiles(TestSupport.JRELibraryFolder)
+            Java8LibraryFramework.ClassFiles(util.JRELibraryFolder)
         )
         testProject(project)
     }

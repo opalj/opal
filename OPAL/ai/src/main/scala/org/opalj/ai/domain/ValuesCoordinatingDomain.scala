@@ -58,7 +58,7 @@ import org.opalj.br.analyses.{ Project }
  *
  * @author Michael Eichberg
  */
-trait ValuesCoordinatingDomain extends Domain with JoinStabilization with Configuration {
+trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
 
     def throwAllHandledExceptionsOnMethodCall: Boolean = true
     def throwNullPointerExceptionOnMethodCall: Boolean = true

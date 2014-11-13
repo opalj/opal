@@ -53,6 +53,10 @@ sealed abstract class MethodDescriptor
 
     def returnType: Type
 
+    def toJVMDescriptor: String =
+        "("+parameterTypes.map(_.toJVMTypeName).mkString("")+")"+
+            returnType.toJVMTypeName
+
     def value: this.type = this
 
     def valueType: ObjectType = ObjectType.MethodType

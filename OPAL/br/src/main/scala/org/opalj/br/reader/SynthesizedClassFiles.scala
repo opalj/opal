@@ -31,16 +31,22 @@ package br
 package reader
 
 /**
- * This attribute stores [[ClassFile]]s that have been generated while parsing the annotated
- * ClassFile, e.g. to represent proxy types that have been created by JDK8 lambda or
- * method reference expressions.
+ * This attribute stores references to [[ClassFile]] objects that have been generated
+ * while parsing the annotated ClassFile.
+ *
+ * For example, to represent proxy types that have been created
+ * by JDK8 lambda or method reference expressions.
  *
  * @author Arne Lottmann
  */
 case class SynthesizedClassFiles(classFiles: Seq[ClassFile]) extends Attribute {
 
-    override val kindId = 1002
+    override val kindId = SynthesizedClassFiles.KindId
 
     override def toString: String =
-        s"SynthesizedClassFiles(${classFiles.map(_.thisType).mkString(",")})"
+        s"SynthesizedClassFiles(${classFiles.map(_.thisType.toJava).mkString(", ")})"
+}
+
+object SynthesizedClassFiles {
+    final val KindId = 1002
 }

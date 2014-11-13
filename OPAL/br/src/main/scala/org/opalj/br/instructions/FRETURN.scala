@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object FRETURN extends ReturnInstruction {
+case object FRETURN extends ReturnValueInstruction {
 
     final val opcode = 174
 

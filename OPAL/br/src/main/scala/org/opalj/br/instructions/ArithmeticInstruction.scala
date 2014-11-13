@@ -73,33 +73,3 @@ object ArithmeticInstruction {
 
 }
 
-/**
- * Implemented by all arithmetic instructions that have two (runtime-dependent) operands.
- */
-trait BinaryArithmeticInstruction extends ArithmeticInstruction {
-
-}
-
-object BinaryArithmeticInstruction {
-
-    def unapply(instruction: BinaryArithmeticInstruction): Option[ComputationalType] =
-        Some(instruction.computationalType)
-}
-
-/**
- * Implemented by all arithmetic instructions that have one (runtime-dependent) operand.
- * E.g. the [[NegateInstruction]] and [[IINC]] instructions.
- */
-trait UnaryArithmeticInstruction extends ArithmeticInstruction {
-
-    def isPrefixOperator: Boolean
-
-    def isPostfixOperator: Boolean = !isPrefixOperator
-
-}
-
-object UnaryArithmeticInstruction {
-
-    def unapply(instruction: UnaryArithmeticInstruction): Option[ComputationalType] =
-        Some(instruction.computationalType)
-}

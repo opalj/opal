@@ -41,4 +41,5 @@ case object RETURN extends ReturnInstruction {
 
     final val mnemonic = "return"
 
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 }

@@ -1,3 +1,31 @@
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2014
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 package org.opalj
 package br
 package analyses
@@ -11,10 +39,14 @@ import org.opalj.graphs.toDot
 import org.opalj.collection.immutable.UIDSet
 import scala.language.implicitConversions
 
+/**
+ * @author Tobias Becker
+ */
 @RunWith(classOf[JUnitRunner])
 class JoinUpperBoundsTest
         extends FunSpec
         with Matchers {
+
     val classhierachy = ClassHierarchy(
         Traversable.empty,
         List(() ⇒ this.getClass.getResourceAsStream("ClassHierachyUpperBounds.ths"))
@@ -24,18 +56,29 @@ class JoinUpperBoundsTest
 
     implicit def setToUIDSet(s: Set[String]) = UIDSet(s.map(ObjectType.apply))
 
-    def testJoinUpperTypeBounds(param1: UIDSet[ObjectType], param2: UIDSet[ObjectType], reflexive: Boolean, expected: UIDSet[ObjectType]) = {
+    def testJoinUpperTypeBounds(
+        param1: UIDSet[ObjectType],
+        param2: UIDSet[ObjectType],
+        reflexive: Boolean,
+        expected: UIDSet[ObjectType]) = {
         // should always be the same value if parameters are swapped
         def mkString(param: UIDSet[ObjectType]) = {
             param.toSeq.map(_.toJava).mkString("{", ",", "}")
         }
         val result1_2 = classhierachy.joinUpperTypeBounds(param1, param2, reflexive)
-        if (result1_2 != expected)
-            fail(s"${mkString(param1)} join${if (reflexive) "(reflexive)" else ""} ${mkString(param2)} is ${mkString(result1_2)}; expected ${mkString(expected)}")
+        if (result1_2 != expected) {
+            fail(
+                s"${mkString(param1)} join${if (reflexive) "(reflexive)" else ""}"+
+                    s" ${mkString(param2)} is ${mkString(result1_2)};"+
+                    s" expected ${mkString(expected)}")
+        }
 
         val result2_1 = classhierachy.joinUpperTypeBounds(param2, param1, reflexive)
-        if (result2_1 != expected)
-            fail(s"${mkString(param2)} join${if (reflexive) "(reflexive)" else ""} ${mkString(param1)} is ${mkString(result2_1)}; expected ${mkString(expected)}")
+        if (result2_1 != expected) {
+            fail(s"${mkString(param2)} join${if (reflexive) "(reflexive)" else ""}"+
+                s" ${mkString(param1)} is ${mkString(result2_1)};"+
+                s" expected ${mkString(expected)}")
+        }
 
     }
 
@@ -69,16 +112,8 @@ class JoinUpperBoundsTest
                     testJoinUpperTypeBounds("A", "SubA", true, "A")
                 }
 
-                it("join of a class and a subclass with common implemented interfaces should result in the common implemented interfaces (non-reflexive)") {
-                    testJoinUpperTypeBounds("A", "SubA", false, "IA")
-                }
-
                 it("join of a class and a subclass with no common implemented interfaces should result in the class (reflexive)") {
                     testJoinUpperTypeBounds("E", "SubE", true, "E")
-                }
-
-                it("join of a class and a subclass with no common implemented interfaces should result in the superclass (non-reflexive)") {
-                    testJoinUpperTypeBounds("E", "SubE", false, "java/lang/Object")
                 }
 
                 it("join of class with no interface and no superclass and another class should result in java/lang/Object (reflexive)") {
@@ -149,24 +184,6 @@ class JoinUpperBoundsTest
                     testJoinUpperTypeBounds("SubB", "SubB2", false, Set("B", "SubIB"))
                 }
             }
-
-            describe("the behavior of joins with sets containing more than one class") {
-                it("join a set of classes with itself should result in the same set") {
-                    testJoinUpperTypeBounds(Set("A", "B"), Set("A", "B"), true, Set("A", "B"))
-                }
-
-                it("join of several direct subclasses should result in the superclass (reflexive)") {
-                    testJoinUpperTypeBounds(Set("SubA2", "SubA"), "SubA3", true, "A")
-                    testJoinUpperTypeBounds(Set("SubA", "SubA3"), "SubA2", true, "A")
-                    testJoinUpperTypeBounds(Set("SubA3", "SubA2"), "SubA", true, "A")
-                }
-
-                it("join of several direct subclasses should result in the superclass (non-reflexive)") {
-                    testJoinUpperTypeBounds(Set("SubA2", "SubA"), "SubA3", false, "A")
-                    testJoinUpperTypeBounds(Set("SubA", "SubA3"), "SubA2", false, "A")
-                    testJoinUpperTypeBounds(Set("SubA3", "SubA2"), "SubA", false, "A")
-                }
-            }
         }
 
         describe("the behavior of joins with interfaces") {
@@ -202,9 +219,60 @@ class JoinUpperBoundsTest
                 it("join of interface with no superinterface and another interface should result in java/lang/Object (non-reflexive)") {
                     testJoinUpperTypeBounds("IE", "SubID", false, "java/lang/Object")
                 }
+
+                it("join of interfaces with same direct superinterface and a different superinterface should result in their common superinterface (reflexive)") {
+                    testJoinUpperTypeBounds("SubSubID", "SubSubIDSubIA", true, "SubID")
+                }
+
+                it("join of interfaces with same direct superinterface and a different superinterface should result in their common superinterface (non-reflexive)") {
+                    testJoinUpperTypeBounds("SubSubID", "SubSubIDSubIA", false, "SubID")
+                }
+
+                it("join of interfaces with same direct superinterface and another common superinterface should result in both superinterfaces (reflexive)") {
+                    testJoinUpperTypeBounds("SubSubIDSubIA", "SubSubIDSubIA2", true, Set("SubID", "IA"))
+                }
+
+                it("join of interfaces with same direct superinterface and another common superinterface should result in both superinterfaces (non-reflexive)") {
+                    testJoinUpperTypeBounds("SubSubIDSubIA", "SubSubIDSubIA2", false, Set("SubID", "IA"))
+                }
+
+                it("join of interfaces with same indirect superinterface and a different superinterface should result in their common superinterface (reflexive)") {
+                    testJoinUpperTypeBounds("SubID2", "SubSubID", true, "ID")
+                }
+
+                it("join of interfaces with same indirect superinterface and a different superinterface should result in their common superinterface (non-reflexive)") {
+                    testJoinUpperTypeBounds("SubID2", "SubSubID", false, "ID")
+                }
+
+                it("join of interfaces with same indirect superinterface and another common superinterface should result in both superinterfaces (reflexive)") {
+                    testJoinUpperTypeBounds("SubIDSubIA", "SubSubIDSubIA", true, Set("ID", "IA"))
+                }
+
+                it("join of interfaces with same indirect superinterface and another common superinterface should result in both superinterfaces (non-reflexive)") {
+                    testJoinUpperTypeBounds("SubIDSubIA", "SubSubIDSubIA", false, Set("ID", "IA"))
+                }
+
+                it("join of interfaces with different superinterfaces should result in java/lang/Object (reflexive)") {
+                    testJoinUpperTypeBounds("SubIDSubIA", "SubIB", true, "java/lang/Object")
+                }
+
+                it("join of interfaces with different superinterfaces should result in java/lang/Object (non-reflexive)") {
+                    testJoinUpperTypeBounds("SubIDSubIA", "SubIB", false, "java/lang/Object")
+                }
+
+                it("join of interface and subinterface with re-implemented interface should result in the interface (reflexive)") {
+                    testJoinUpperTypeBounds("SubSubID2", "SubID2", true, "SubID2")
+                }
             }
 
             describe("the behavior of joins with sets containing more than one interface") {
+                it("join a set of interfaces with itself should result in the same set") {
+                    testJoinUpperTypeBounds(Set("IA", "IB", "IC"), Set("IA", "IB", "IC"), true, Set("IA", "IB", "IC"))
+                }
+
+                it("join of a interface and several direct subinterfaces should result in the interface") {
+                    testJoinUpperTypeBounds("ID", Set("SubSubID", "SubSubID2"), true, "ID")
+                }
 
                 it("join of several direct subinterfaces should result in the superinterface (reflexive)") {
                     testJoinUpperTypeBounds(Set("SubID2", "SubID"), "SubID3", true, "ID")
@@ -226,8 +294,48 @@ class JoinUpperBoundsTest
 
                 it("join of several indirect subinterfaces should result in the superinterface (non-reflexive)") {
                     testJoinUpperTypeBounds("SubSubID", Set("SubID2", "SubID3"), false, "ID")
-                    testJoinUpperTypeBounds(Set("SubSubID", "SubID2"), Set("SubID", "SubID3"), false, "ID")
-                    testJoinUpperTypeBounds(Set("SubSubID", "SubID3"), Set("SubID", "SubID2"), false, "ID")
+                    testJoinUpperTypeBounds("SubID3", Set("SubSubID", "SubID2"), false, "ID")
+                    testJoinUpperTypeBounds("SubID2", Set("SubSubID", "SubID3"), false, "ID")
+                }
+
+                it("join of several interfaces with no superinterface and another interface should result in java/lang/Object (reflexive)") {
+                    testJoinUpperTypeBounds(Set("ID", "IA", "IC"), "SubIB", true, "java/lang/Object")
+                }
+
+                it("join of several interfaces with no superinterface and another interface should result in java/lang/Object (non-reflexive)") {
+                    testJoinUpperTypeBounds(Set("ID", "IA", "IC"), "SubIB", false, "java/lang/Object")
+                }
+
+                it("join of several interfaces with same direct superinterface and a different superinterface should result in their common superinterface (reflexive)") {
+                    testJoinUpperTypeBounds(Set("SubID3", "SubID2"), "SubSubIDSubIA", true, "ID")
+                }
+
+                it("join of several interfaces with same direct superinterface and a different superinterface should result in their common superinterface (non-reflexive)") {
+                    testJoinUpperTypeBounds(Set("SubID3", "SubID2"), "SubSubIDSubIA", false, "ID")
+                }
+
+                it("join of several interfaces with same direct superinterface and another common superinterface should result in both superinterfaces (reflexive)") {
+                    testJoinUpperTypeBounds(Set("SubID2", "SubSubIDSubIA"), Set("SubID3", "SubSubIDSubIA2"), true, Set("SubID", "IA"))
+                }
+
+                it("join of several interfaces with same direct superinterface and another common superinterface should result in both superinterfaces (non-reflexive)") {
+                    testJoinUpperTypeBounds(Set("SubID2", "SubSubIDSubIA"), Set("SubID3", "SubSubIDSubIA2"), false, Set("SubID", "IA"))
+                }
+
+                it("join of several interfaces with same indirect superinterface and a different superinterface should result in their common superinterface (reflexive)") {
+                    testJoinUpperTypeBounds(Set("SubSubID2", "SubSubIDSubIA"), Set("SubID3", "SubIB"), true, "ID")
+                }
+
+                it("join of several interfaces with same indirect superinterface and a different superinterface should result in their common superinterface (non-reflexive)") {
+                    testJoinUpperTypeBounds(Set("SubSubID2", "SubSubIDSubIA"), Set("SubID3", "SubIB"), false, "ID")
+                }
+
+                it("join of several interfaces with same indirect superinterface and another common superinterface should result in both superinterfaces (reflexive)") {
+                    testJoinUpperTypeBounds(Set("SubSubID2", "SubSubIDSubIA"), Set("SubID3", "SubIDSubIA"), true, Set("ID", "IA"))
+                }
+
+                it("join of several interfaces with same indirect superinterface and another common superinterface should result in both superinterfaces (non-reflexive)") {
+                    testJoinUpperTypeBounds(Set("SubSubID2", "SubSubIDSubIA"), Set("SubID3", "SubIDSubIA"), false, Set("ID", "IA"))
                 }
 
                 it("join of several interfaces with different superinterfaces should result in java/lang/Object (reflexive)") {
@@ -236,6 +344,10 @@ class JoinUpperBoundsTest
 
                 it("join of several interfaces with different superinterfaces should result in java/lang/Object (non-reflexive)") {
                     testJoinUpperTypeBounds("SubIB", Set("SubID3", "IA"), false, "java/lang/Object")
+                }
+
+                it("join of interface and several subinterfaces with re-implemented interface should result in the interface (reflexive)") {
+                    testJoinUpperTypeBounds(Set("SubSubID2", "SubSubID22"), "SubID2", true, "SubID2")
                 }
             }
         }
@@ -250,8 +362,40 @@ class JoinUpperBoundsTest
                     testJoinUpperTypeBounds("SubA", "ID", true, "ID")
                 }
 
-            }
+                it("join of class with several interfaces and one of those interfaces should result in this interface (reflexive)") {
+                    testJoinUpperTypeBounds("D", "IA", true, "IA")
+                }
 
+                it("join of class with several interfaces and one of those interfaces superinterface should result in this superinterface (reflexive)") {
+                    testJoinUpperTypeBounds("SubSubA", "SubID3", true, "SubID3")
+                }
+
+                it("join of class and a re-implemented interface should result in the interface (reflexive)") {
+                    testJoinUpperTypeBounds("SubB", "SubIB", true, "SubIB")
+                }
+
+                it("join of class and interface with no inheritance relation should result in java/lang/Object (reflexive)") {
+                    testJoinUpperTypeBounds("C", "IA", true, "java/lang/Object")
+                }
+
+                it("join of class and interface with no inheritance relation should result in java/lang/Object (non-reflexive)") {
+                    testJoinUpperTypeBounds("C", "IA", false, "java/lang/Object")
+                }
+            }
+            describe("the behavior of joins with sets containing one interfaces and one class") {
+
+                it("join of class and superclass and superinterface should result in both (reflexive)") {
+                    testJoinUpperTypeBounds("SubB", Set("SubIB", "B"), true, Set("SubIB", "B"))
+                }
+
+                it("join of interface and a class/interface-pair where no two are in an inheritance relation should result in java/lang/Object (reflexive)") {
+                    testJoinUpperTypeBounds("B", Set("SubE", "IA"), true, "java/lang/Object")
+                }
+
+                it("join of interface and a class/interface-pair where no two are in an inheritance relation should result in java/lang/Object (nonreflexive)") {
+                    testJoinUpperTypeBounds("B", Set("SubE", "IA"), false, "java/lang/Object")
+                }
+            }
         }
     }
 }

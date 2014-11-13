@@ -82,7 +82,8 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
             ex match {
                 case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒
                     true
-                case _ ⇒ false
+                case _ ⇒
+                    false
             }
         } should be(true)
     }
@@ -192,13 +193,26 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
         }) fail("unexpected result: "+domain.allReturnedValues)
     }
 
+    it should ("be able to identify the situation where a passed value is returned as is") in {
+        val method = StaticCalls.findMethod("uselessReferenceTest").get
+        val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
+        val result = BaseAI(StaticCalls, method, domain)
+        domain.returnedNormally should be(true)
+        domain.allThrownExceptions.size should be(0)
+        println(domain.allReturnedValues.mkString("\n"))
+
+        domain.allReturnedValues.size should be(1)
+        domain.allReturnedValues.head should be((17, domain.IntegerRange(1)))
+    }
+
 }
 
 object PerformInvocationsTestFixture {
 
-    trait L1Domain extends Domain
+    trait L1Domain
+        extends CorrelationalDomain
         with DefaultDomainValueBinding
-        with TheProject[java.net.URL]
+        with TheProject
         with ThrowAllPotentialExceptionsConfiguration
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
@@ -207,14 +221,14 @@ object PerformInvocationsTestFixture {
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultPrimitiveValuesConversions
         with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
         with ProjectBasedClassHierarchy
         with IgnoreSynchronization
         with TheMethod
 
-    trait LiDomain extends Domain
+    trait LiDomain
+            extends CorrelationalDomain
             with DefaultDomainValueBinding
-            with TheProject[java.net.URL]
+            with TheProject
             with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
@@ -223,7 +237,6 @@ object PerformInvocationsTestFixture {
             with li.DefaultPreciseLongValues
             with l0.DefaultPrimitiveValuesConversions
             with l0.TypeLevelFieldAccessInstructions
-            with l0.TypeLevelInvokeInstructions
             with ProjectBasedClassHierarchy
             with IgnoreSynchronization
             with TheMethod {
@@ -234,10 +247,11 @@ object PerformInvocationsTestFixture {
         val project: Project[java.net.URL],
         val method: Method)
             extends Domain
+            with l0.TypeLevelInvokeInstructions
             with PerformInvocations
             with DefaultHandlingOfMethodResults
             with RecordMethodCallResults {
-        domain: ValuesFactory with ClassHierarchy with Configuration with TheProject[_] with TheMethod ⇒
+        domain: ValuesFactory with ClassHierarchy with Configuration with TheProject with TheMethod ⇒
 
         def isRecursive(
             definingClass: ClassFile,
@@ -268,6 +282,7 @@ object PerformInvocationsTestFixture {
 
     class LiInvocationDomain(project: Project[java.net.URL], method: Method)
             extends InvocationDomain(project, method) with LiDomain {
+
         protected[this] def createInvocationDomain(
             project: Project[java.net.URL],
             method: Method): InvocationDomain = new LiInvocationDomain(project, method)
@@ -275,6 +290,7 @@ object PerformInvocationsTestFixture {
 
     class L1InvocationDomain(project: Project[java.net.URL], method: Method)
             extends InvocationDomain(project, method) with L1Domain {
+
         protected[this] def createInvocationDomain(
             project: Project[java.net.URL],
             method: Method): InvocationDomain = new L1InvocationDomain(project, method)

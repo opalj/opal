@@ -55,12 +55,16 @@ import instructions.RETURN
 import instructions.ReturnInstruction
 
 /**
- * Provides a method to generate a proxy class file that implements a single method.
+ * Provides helper methods to facilitate the generation of classes.
+ * In particular, functionality to create transparent proxy classes is provided.
  *
  * @author Arne Lottmann
  */
 object ClassFileFactory {
 
+    /**
+     * Name used to store the final receiver object in generated proxy classes.
+     */
     final val ReceiverFieldName = "$receiver";
 
     /**
@@ -78,11 +82,12 @@ object ClassFileFactory {
     final val AlternativeFactoryMethodName = "$createInstance"
 
     /**
-     * Creates a class that acts as a proxy for the specified class that implements a
-     * single, non-Object method (typically defined by a so-called "Functional Interface")
-     * that calls the specified method.
+     * Creates a class that acts as a proxy for the specified class.
+     * The proxy implements a single, method – e.g., as defined by a so-called
+     * "Functional Interface" - that calls the specified method;
+     * creating a proxy for `java.lang.Object`'s methods is not supported.
      *
-     * I.e., a class is generated using the following template:
+     * The generated class uses the following template:
      * {{{
      * class <definingType.objectType>
      *  extends <definingType.theSuperclassType>
@@ -105,9 +110,8 @@ object ClassFileFactory {
      * }}}
      *
      * The class, the constructor and the method are public. The field which holds
-     * the receiver object is private and final.
-     *
-     * If the receiver method is static, no receiver field is generated and the constructor
+     * the receiver object is private and final unles the receiver method is static.
+     * In this case no receiver field is generated and the constructor
      * does not take an argument of the receiver's type.
      *
      * In addition to the receiver field, additional fields holding '''static parameters'''
@@ -116,40 +120,46 @@ object ClassFileFactory {
      * `receiverMethodDescriptor` has more parameters that precede the parameters found in
      * `methodDescriptor`.
      *
-     * @example
+     * E.g., given the following two descriptors:
      * {{{
-     * val methodDescriptor = MethodDescriptor(IntegerType, IntegerType)
-     * val receiverMethodDescriptor = MethodDescriptor(IndexedSeq(DoubleType, IntegerType), IntegerType)
+     * val methodDescriptor =
+     *  MethodDescriptor(IntegerType, IntegerType)
+     * val receiverMethodDescriptor =
+     *  MethodDescriptor(IndexedSeq(DoubleType, IntegerType), IntegerType)
      * }}}
-     * will result in one additional field and constructor parameter of type `double`.
+     * one additional field and constructor parameter of type `double` will be created.
      * This case occurs for example with Java 8 lambda expressions that capture local
      * variables, which are prepended to the regular parameter list.
      *
-     * If any of the parameters or the return type of `methodDescriptor` are of bound
+     * If any of the parameters or the return type of `methodDescriptor` are
      * generic types, the generated proxy will need to create a bridge method to be valid.
      * Therefore, in these cases, `bridgeMethodDescriptor` must be specified.
      * It must be identical to `methodDescriptor` except for all occurrences of generic
      * types, which must be replaced with `ObjectType.Object`.
      * For example, consider the Java interface `java.util.Comparator` that defines the
      * generic type `T` and uses it in its `int compare(T, T)` method. This would require
-     * a bridge method `int compate(Object, Object)`. The appropriate method descriptors
+     * a bridge method `int compare(Object, Object)`. The appropriate method descriptors
      * for, for example, `Comparator<String>` would be:
      * {{{
-     * methodDescriptor = MethodDescriptor(IndexedSeq(ObjectType.String, ObjectType.String), IntegerType)
-     * bridgeMethodDescriptor = MethodDescriptor(IndexedSeq(ObjectType.Object, ObjectType.Object), IntegerType)
+     * // Uses "String"
+     * methodDescriptor =
+     *  MethodDescriptor(IndexedSeq(ObjectType.String, ObjectType.String), IntegerType)
+     * // Uses "Object"
+     * bridgeMethodDescriptor =
+     *  MethodDescriptor(IndexedSeq(ObjectType.Object, ObjectType.Object), IntegerType)
      * }}}
      *
-     * The synthetic access flag is always set, as well as the [[VirtualTypeFlag]]
-     * attribute.
+     * The created class will always have its synthetic access flag set, as well as the
+     * [[VirtualTypeFlag]] attribute.
      *
-     * The used class file version is 49.0 (Java 5) (Using this version, we are not
+     * @note The used class file version is 49.0 (Java 5) (Using this version, we are not
      * required to create the stack map table attribute to create a valid class file.)
      *
-     * @note it is expected that `methodDescriptor` and `receiverMethodDescriptor` are
+     * @note It is expected that `methodDescriptor` and `receiverMethodDescriptor` are
      * "compatible", i.e. it would be possible to have the method described by
      * `methodDescriptor` forward to `receiverMethodDescriptor`.
      *
-     * That requires that for their return types, one of the following statements holds true:
+     * This requires that for their return types, one of the following statements holds true:
      *
      * - `methodDescriptor`'s return type is [[VoidType]] (so no returning is necessary)
      * - `receiverMethodDescriptor`'s return type is assignable to `methodDescriptor`'s
@@ -158,7 +168,7 @@ object ClassFileFactory {
      *   stands for "generic return type" and expect the receiver method to return an
      *   object of a type compatible to the forwarder method's return type
      *
-     * Additionally, their parameter lists must satisfy one of these conditions:
+     * Additionally, the parameter lists must satisfy one of these conditions:
      *
      * - they are identical
      * - the descriptors have the same numbers of parameters and `methodDescriptor`'s
@@ -176,24 +186,38 @@ object ClassFileFactory {
      *   `methodDescriptor`'s arguments will be collected into an `Object[]` prior to
      *   forwarding)
      *
-     * @example
+     * Examples of compatible method descriptors are:
      * {{{
-     * // these descriptors would be compatible
-     * methodDescriptor = MethodDescriptor(IntegerType, VoidType)
-     * receiverMethodDescriptor = MethodDescriptor(ObjectType.Integer, VoidType) // or MethodDescriptor(ObjectType.Object, ByteType)
-     * // or these
-     * methodDescriptor = MethodDescriptor(ObjectType.String, BooleanType)
-     * receiverMethodDescriptor = MethodDescriptor.JustReturnsBoolean // IF receiverType == ObjectType.String
-     * // or these
-     * methodDescriptor = MethodDescriptor(IndexedSeq(ByteType, ByteType, ObjectType.Integer), IntegerType)
-     * receiverMethodDescriptor = MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object) // generic method
-     * // or these
-     * methodDescriptor = MethodDescriptor(IntegerType, LongType)
-     * receiverMethodDescriptor = MethodDescriptor(IndexedSeq(ByteType, ByteType, IntegerType), IntegerType)
+     * // ------------- First Example
+     * methodDescriptor =
+     *  MethodDescriptor(IntegerType, VoidType)
+     * receiverMethodDescriptor =
+     *  MethodDescriptor(ObjectType.Integer, VoidType)
+     *  // or MethodDescriptor(ObjectType.Object, ByteType)
+     *
+     * // ------------- Second Example
+     * methodDescriptor =
+     *  MethodDescriptor(ObjectType.String, BooleanType)
+     * receiverMethodDescriptor =
+     *  MethodDescriptor.JustReturnsBoolean // IF receiverType == ObjectType.String
+     *
+     * // ------------- Third Example
+     * methodDescriptor =
+     *  MethodDescriptor(IndexedSeq(ByteType, ByteType, ObjectType.Integer), IntegerType)
+     * receiverMethodDescriptor =
+     *  MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object) // generic method
+     *
+     * // ------------- Fourth Example
+     * methodDescriptor =
+     *  MethodDescriptor(IntegerType, LongType)
+     * receiverMethodDescriptor =
+     *  MethodDescriptor(IndexedSeq(ByteType, ByteType, IntegerType), IntegerType)
      * }}}
      *
-     * @param invocationInstruction the opcode of the invocation instruction used to call
-     * 		   call the method on the receiver.
+     * @param invocationInstruction the opcode of the invocation instruction
+     *          (`INVOKESPECIAL.opcode`,`INVOKEVIRTUAL.opcode`,
+     *          `INVOKESTATIC.opcode`,`INVOKEINTERFACE.opcode`)
+     *          used to call call the method on the receiver.
      */
     def Proxy(
         definingType: TypeDeclaration,
@@ -278,12 +302,12 @@ object ClassFileFactory {
     }
 
     /**
-     * Creates a constructor.
+     * Creates a public constructor that initializes the given fields.
      *
      * For every `Field` in `fields` the constructor will have one parameter of the same
      * type. The parameter list will have the same order as `fields`.
-     * This method also creates bytecode that invokes the default super constructor, so
-     * `definingType.theSuperclassType`, if defined, should have a default constructor.
+     * The generated constructor will call the superclass' default constructor; i.e.,
+     * the type `definingType.theSuperclassType` has to have a default constructor.
      * Additionally, bytecode is generated to populate the `fields` from the constructor
      * arguments.
      *
@@ -306,7 +330,7 @@ object ClassFileFactory {
                     0 // nothing extra needed if no fields are being set
                 /*
                  * For below: we're only setting one field at a time, so we'll only need
-                 * two spaces on the stack if there's at least one field to be set that
+                 * two additional stack slots if there's at least one field to be set that
                  * needs two spaces. Otherwise, we just need one more space.
                  */
                 else if (fields.exists(_.fieldType.computationalType.operandSize == 2))
@@ -332,15 +356,15 @@ object ClassFileFactory {
         theSuperclassType: ObjectType): Array[Instruction] =
         Array(
             ALOAD_0,
-            INVOKESPECIAL(theSuperclassType,
-                "<init>",
-                NoArgumentAndNoReturnValueMethodDescriptor),
+            INVOKESPECIAL(
+                theSuperclassType,
+                "<init>", NoArgumentAndNoReturnValueMethodDescriptor),
             null,
             null
         )
 
     /**
-     * Creates an array of instructions that populate the given `fields` in `declaringType`
+     * Creates an array of instructions that populates the given `fields` in `declaringType`
      * from local variables (constructor parameters).
      *
      * This method assumes that it creates instructions for a constructor whose parameter
@@ -360,26 +384,26 @@ object ClassFileFactory {
                 (3 * fields.size) // PUTFIELD for each field
         val instructions = new Array[Instruction](requiredInstructions)
 
-        var currentInstruction = 0
-        var localVariableIndex = 1
+        var currentInstructionPC = 0
+        var nextLocalVariableIndex = 1
 
         fields foreach { f ⇒
-            instructions(currentInstruction) = ALOAD_0
-            currentInstruction = ALOAD_0.indexOfNextInstruction(currentInstruction, false)
-            val llvi = LoadLocalVariableInstruction(f.fieldType, localVariableIndex)
-            localVariableIndex += f.fieldType.computationalType.operandSize
-            instructions(currentInstruction) = llvi
-            currentInstruction = llvi.indexOfNextInstruction(currentInstruction, false)
+            instructions(currentInstructionPC) = ALOAD_0
+            currentInstructionPC = ALOAD_0.indexOfNextInstruction(currentInstructionPC, false)
+            val llvi = LoadLocalVariableInstruction(f.fieldType, nextLocalVariableIndex)
+            nextLocalVariableIndex += f.fieldType.computationalType.operandSize
+            instructions(currentInstructionPC) = llvi
+            currentInstructionPC = llvi.indexOfNextInstruction(currentInstructionPC, false)
             val putField = PUTFIELD(declaringType, f.name, f.fieldType)
-            instructions(currentInstruction) = putField
-            currentInstruction = putField.indexOfNextInstruction(currentInstruction, false)
+            instructions(currentInstructionPC) = putField
+            currentInstructionPC = putField.indexOfNextInstruction(currentInstructionPC, false)
         }
 
         instructions
     }
 
     /**
-     * Computes the number of instructions required to load the list of parameters given
+     * Computes the number of instructions required to put the list of parameters given
      * as `fieldTypes` onto the stack.
      */
     private def computeNumberOfInstructionsForParameterLoading(
@@ -395,8 +419,8 @@ object ClassFileFactory {
     }
 
     /**
-     * Creates a method with the appropriate instructions to create and return an instance
-     * of `typeToCreate`.
+     * Creates a factory method with the appropriate instructions to create and
+     * return an instance of `typeToCreate`.
      *
      * `typeToCreate` must have a constructor with a parameter list that exactly matches
      * `fieldTypes`. It also must not define a method named `factoryMethodName` with a
@@ -419,24 +443,24 @@ object ClassFileFactory {
         val maxLocals = fieldTypes.map(_.computationalType.operandSize).sum
         val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
         val instructions = new Array[Instruction](numberOfInstructions)
-        var currentInstructionIndex: Int = 0
-        instructions(currentInstructionIndex) = NEW(typeToCreate)
-        currentInstructionIndex = instructions(currentInstructionIndex).indexOfNextInstruction(currentInstructionIndex, false)
-        instructions(currentInstructionIndex) = DUP
-        currentInstructionIndex = instructions(currentInstructionIndex).indexOfNextInstruction(currentInstructionIndex, false)
+        var currentPC: Int = 0
+        instructions(currentPC) = NEW(typeToCreate)
+        currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
+        instructions(currentPC) = DUP
+        currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
         var currentVariableIndex = 0
         fieldTypes.foreach { t ⇒
             val instruction = LoadLocalVariableInstruction(t, currentVariableIndex)
             currentVariableIndex += t.computationalType.operandSize
-            instructions(currentInstructionIndex) = instruction
-            currentInstructionIndex = instruction.indexOfNextInstruction(currentInstructionIndex, false)
+            instructions(currentPC) = instruction
+            currentPC = instruction.indexOfNextInstruction(currentPC, false)
         }
-        instructions(currentInstructionIndex) = INVOKESPECIAL(
+        instructions(currentPC) = INVOKESPECIAL(
             typeToCreate,
             "<init>",
             MethodDescriptor(fieldTypes, VoidType))
-        currentInstructionIndex = instructions(currentInstructionIndex).indexOfNextInstruction(currentInstructionIndex, false)
-        instructions(currentInstructionIndex) = ARETURN
+        currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
+        instructions(currentPC) = ARETURN
         val body = Code(
             maxStack, maxLocals,
             instructions,
@@ -480,7 +504,7 @@ object ClassFileFactory {
     /**
      * Creates the bytecode instructions for the proxy method.
      *
-     * These instructions will populate the stack with the variables required to call the
+     * These instructions will setup the stack with the variables required to call the
      * `receiverMethod`, perform the appropriate invocation instruction (one of
      * INVOKESTATIC, INVOKEVIRTUAL, or INVOKESPECIAL), and return from the proxy method.
      *
@@ -615,7 +639,10 @@ object ClassFileFactory {
      * Generates an array of instructions that fill the operand stack with all parameters
      * required by `receiverMethodDescriptor` from the parameters of
      * `calledMethodDescriptor`. For that reason, it is expected that both method
-     * descriptors are compatible as defined by [[#areDescriptorsCompatible]].
+     * descriptors have compatible parameter and return types, i.e. that
+     * `forwarderMethodDescriptor`'s parameters can be widened or (un)boxed to fit into
+     * `receiverMethodDescriptor`'s parameters, and that `receiverMethodDescriptor`'s return
+     * type can be widened or (un)boxed to fit into `forwarderMethodDescriptor`'s return type.
      *
      * If `receiverMethodDescriptor` has more parameters than `forwarderMethodDescriptor`,
      * the missing parameters must be provided in `staticParameters`.
@@ -725,7 +752,8 @@ object ClassFileFactory {
                 val conversionInstructions =
                     if (rt != ft) {
                         if (rt.isBaseType && ft.isBaseType) {
-                            if (rt.isIntLikeType && ft.isIntLikeType && rt.asIntLikeType.isWiderThan(ft.asIntLikeType)) {
+                            if (rt.isIntLikeType && ft.isIntLikeType &&
+                                rt.asIntLikeType.isWiderThan(ft.asIntLikeType)) {
                                 0 // there's no need to convert from a smaller integer type to a larger one
                             } else {
                                 1 // we only do safe conversions which always take 1 instruction
@@ -734,7 +762,9 @@ object ClassFileFactory {
                             (ft.isBaseType && rt.isObjectType)) {
                             // can (un)box to fit => invokestatic/invokevirtual
                             3
-                        } else if (rt.isReferenceType && ft.isReferenceType && rt != ObjectType.Object) {
+                        } else if (rt.isReferenceType &&
+                            ft.isReferenceType &&
+                            rt != ObjectType.Object) {
                             3 // checkcast
                         } else 0
                     } else 0
@@ -805,7 +835,7 @@ object ClassFileFactory {
      * converted to the required type.
      *
      * @throws IllegalArgumentException
-     * 			if the `typeOnStack` is not compatible with `toBeReturnedType` and
+     * 			If  `typeOnStack` is not compatible with `toBeReturnedType` and
      *    		`typeOnStack` is not `Object`
      */
     def returnAndConvertInstructions(
@@ -813,10 +843,6 @@ object ClassFileFactory {
 
         if (toBeReturnedType == typeOnStack)
             return Array(ReturnInstruction(toBeReturnedType))
-
-        //        if (!areTypesCompatible(typeOnStack, toBeReturnedType) &&
-        //            typeOnStack != ObjectType.Object)
-        //            throw new IllegalArgumentException(s"cannot convert from $typeOnStack to $toBeReturnedType.")
 
         val conversionInstructions: Array[Instruction] =
             if (typeOnStack == ObjectType.Object) {
@@ -837,7 +863,9 @@ object ClassFileFactory {
             } else if (typeOnStack.isObjectType && toBeReturnedType.isNumericType) {
                 typeOnStack.asObjectType.unboxValue
             } else {
-                throw new UnknownError("This should not occur.")
+                throw new IllegalArgumentException(
+                    s"types are incompatible: ${toBeReturnedType.toJava} and ${typeOnStack.toJava}"
+                )
             }
         conversionInstructions :+ ReturnInstruction(toBeReturnedType)
     }
@@ -849,24 +877,12 @@ object ClassFileFactory {
      * This method generates bytecode that invokes the method described by `methodName`
      * and `targetMethodDescriptor` on `declaringType`. If parameters need to be cast
      * before invocation, the appropriate bytecode will be generated as well.
-     *
-     * @throws IllegalArgumentException
-     * 	if `bridgeMethodDescriptor` and `targetMethodDescriptor` are not compatible
-     * 	as defined by [[isCompatibleBridgeMethodDescriptor]]
      */
     def createBridgeMethod(
         methodName: String,
         bridgeMethodDescriptor: MethodDescriptor,
         targetMethodDescriptor: MethodDescriptor,
         targetMethodDeclaringType: ObjectType): Method = {
-
-        //        if (!isCompatibleBridgeMethodDescriptor(targetMethodDescriptor, bridgeMethodDescriptor)) {
-        //            throw new IllegalArgumentException(
-        //                "the given bridge method descriptor \n"+
-        //                    bridgeMethodDescriptor+"\n"+
-        //                    "is not compatible to the given proxy method descriptor\n"+
-        //                    targetMethodDescriptor+"!")
-        //        }
 
         val bridgeMethodParameters = bridgeMethodDescriptor.parameterTypes
         val bridgeMethodReturnType = bridgeMethodDescriptor.returnType

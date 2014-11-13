@@ -47,7 +47,7 @@ import org.scalatest.junit.JUnitRunner
 class JRELambdaResolutionTest extends FunSpec with Matchers {
     describe("The Java8FrameworkWithLambdaSupport") {
         describe("should resolve all invokedynamic instructions found in the JRE") {
-            val jrePath = bi.TestSupport.JRELibraryFolder
+            val jrePath = util.JRELibraryFolder
             val jreProject = Project(
                 Java8FrameworkWithLambdaSupport.ClassFiles(jrePath),
                 Traversable.empty

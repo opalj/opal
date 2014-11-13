@@ -32,11 +32,12 @@ package project
 
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Configuration of a specific call graph algorithm. Basically, the configuration
  * consist of a method to create a `Cache` object that will be used during the
- * computation of the call graph and a factory method to create new domain instance
+ * computation of the call graph and a factory method to create a new domain instance
  * for each method that is analyzed during the construction of the graph.
  *
  * @author Michael Eichberg
@@ -61,7 +62,7 @@ trait CallGraphAlgorithmConfiguration {
      *
      * Usually created only once per run.
      */
-    def Cache(): this.type#Cache
+    def Cache(project: SomeProject): this.type#Cache
 
     /**
      * Returns the new domain object that will be used to analyze the given

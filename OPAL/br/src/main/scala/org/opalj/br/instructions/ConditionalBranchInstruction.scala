@@ -31,7 +31,7 @@ package br
 package instructions
 
 /**
- * Common super class of all compound conditional branch instructions (switch instructions!)
+ * Common super class of all conditional branch instructions.
  *
  * @author Michael Eichberg
  */
@@ -41,5 +41,17 @@ abstract class ConditionalBranchInstruction extends ControlTransferInstruction {
      * The number of operand values popped from the operand stack.
      */
     def operandCount: Int
+
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = operandCount
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    final def readsLocal: Boolean = false
+
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
 }

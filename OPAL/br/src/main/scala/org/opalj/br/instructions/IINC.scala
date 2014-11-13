@@ -45,6 +45,26 @@ case class IINC(lvIndex: Int, constValue: Int) extends UnaryArithmeticInstructio
 
     final def runtimeExceptions: List[ObjectType] = Nil
 
+    final def computationalType: ComputationalType = ComputationalTypeInt
+
+    final def operator: String = "+ "+constValue
+
+    final def isPrefixOperator: Boolean = false
+
+    final def isShiftInstruction: Boolean = false
+
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    final def readsLocal: Boolean = true
+
+    final def indexOfReadLocal: Int = lvIndex
+
+    final def writesLocal: Boolean = true
+
+    final def indexOfWrittenLocal: Int = lvIndex
+
     final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
         indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
 
@@ -57,14 +77,6 @@ case class IINC(lvIndex: Int, constValue: Int) extends UnaryArithmeticInstructio
     }
     override def nextInstructions(currentPC: PC, code: Code): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
-
-    final def computationalType: ComputationalType = ComputationalTypeInt
-
-    final def operator: String = "+ "+constValue
-
-    final def isPrefixOperator: Boolean = false
-
-    final def isShiftInstruction: Boolean = false
 
     override def toString = "IINC(lvIndex="+lvIndex+", "+constValue+")"
 

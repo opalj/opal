@@ -39,7 +39,7 @@ case class INVOKESTATIC(
     declaringClass: ObjectType, // a class type to be precise
     name: String,
     methodDescriptor: MethodDescriptor)
-        extends StaticMethodInvocationInstruction {
+        extends NonVirtualMethodInvocationInstruction {
 
     final def opcode: Opcode = INVOKESTATIC.opcode
 
@@ -48,6 +48,9 @@ case class INVOKESTATIC(
     final def runtimeExceptions: List[ObjectType] = Nil
 
     final def length: Int = 3
+
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int =
+        methodDescriptor.parametersCount
 
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString

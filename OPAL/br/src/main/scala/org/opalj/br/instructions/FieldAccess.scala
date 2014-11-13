@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-sealed abstract class FieldAccess extends Instruction with ConstantLengthInstruction {
+abstract class FieldAccess extends Instruction with ConstantLengthInstruction {
 
     def declaringClass: ObjectType
 
@@ -46,6 +46,14 @@ sealed abstract class FieldAccess extends Instruction with ConstantLengthInstruc
     def asVirtualField: VirtualField = VirtualField(declaringClass, name, fieldType)
 
     final def length: Int = 3
+
+    final def readsLocal: Boolean = false
+
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
 }
 
@@ -58,26 +66,4 @@ object FieldAccess {
 
     def unapply(fa: FieldAccess): Option[(ObjectType, String, FieldType)] =
         Some((fa.declaringClass, fa.name, fa.fieldType))
-}
-
-abstract class FieldReadAccess extends FieldAccess
-
-/**
- * Defines an extractor to facilitate pattern matching on field read access instructions.
- */
-object FieldReadAccess {
-
-    def unapply(fa: FieldReadAccess): Option[(ObjectType, String, FieldType)] =
-        FieldAccess.unapply(fa)
-}
-
-abstract class FieldWriteAccess extends FieldAccess
-
-/**
- * Defines an extractor to facilitate pattern matching on field write access instructions.
- */
-object FieldWriteAccess {
-
-    def unapply(fa: FieldWriteAccess): Option[(ObjectType, String, FieldType)] =
-        FieldAccess.unapply(fa)
 }

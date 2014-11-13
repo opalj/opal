@@ -193,7 +193,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         }
     }
 
-    // ---------------------------------1-------------------------------------------------
+    // -----------------------------------------------------------------------------------
     //
     // REPRESENTATION OF REFERENCE VALUES
     //

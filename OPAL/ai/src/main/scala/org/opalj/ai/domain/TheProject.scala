@@ -30,7 +30,7 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Provides information about the underlying project.
@@ -58,11 +58,11 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-trait TheProject[Source] {
+trait TheProject {
 
     /**
      * Returns the project that is currently analyzed.
      */
-    def project: Project[Source]
+    def project: SomeProject
 
 }

@@ -40,7 +40,7 @@ case class INVOKESPECIAL(
     declaringClass: ObjectType, // an interface or class type to be precise
     name: String, // an interface or class type to be precise
     methodDescriptor: MethodDescriptor)
-        extends StaticMethodInvocationInstruction {
+        extends NonVirtualMethodInvocationInstruction {
 
     final def opcode: Opcode = INVOKESPECIAL.opcode
 
@@ -50,6 +50,9 @@ case class INVOKESPECIAL(
         MethodInvocationInstruction.runtimeExceptions
 
     final def length: Int = 3
+
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int =
+        methodDescriptor.parametersCount + 1
 
     // Required to avoid that Scala generates a default toString method!
     override def toString = super.toString

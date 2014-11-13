@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-sealed abstract class NEWARRAY extends CreateNewArrayInstruction {
+sealed abstract class NEWARRAY extends CreateNewOneDimensionalArrayInstruction {
 
     def atype: Int = elementType.atype
 

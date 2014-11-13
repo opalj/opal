@@ -60,7 +60,7 @@ class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecut
     import PropertyTracingTest._
 
     class AnalysisDomain(val method: Method)
-            extends Domain
+            extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with DefaultHandlingOfMethodResults

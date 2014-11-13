@@ -34,13 +34,17 @@ import org.opalj.br.Code
 /**
  * An abstract interpreter that interrupts itself after the evaluation of
  * the given number of instructions or if the callback function `doInterrupt` returns
- * `false`.
+ * `false` or if the maximum allowed time is exceeded.
  *
  * @param maxEvaluationCount The maximum number of instructions after which the
  *      abstract interpretation is aborted. In general this number should be calculated
  *      based on the method's/project's properties. To calculate it based on the properties
  *      of a method, it is possible to use the predefined function
  *      [[InstructionCountBoundedAI#calculateMaxEvaluationCount]].
+ *
+ * @param maxEvaluationTimeInNS The maximum number of nanoseconds the abstract interpreter
+ *      is allowed to run.
+ *
  * @param doInterrupt This function is called by the abstract interpreter to check if
  *      the abstract interpretation should be aborted. Given that this function is called
  *      very often, it is important that it is efficient.
@@ -49,17 +53,35 @@ import org.opalj.br.Code
  */
 class BoundedInterruptableAI[D <: Domain](
     maxEvaluationCount: Int,
+    val maxEvaluationTimeInNS: Long,
     val doInterrupt: () ⇒ Boolean)
         extends InstructionCountBoundedAI[D](maxEvaluationCount) {
+
+    private[this] var startTime: Long = -1l;
 
     def this(
         code: Code,
         maxEvaluationFactor: Double,
+        maxEvaluationTimeInMS: Int,
         doInterrupt: () ⇒ Boolean) =
         this(
             InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
+            maxEvaluationTimeInMS * 1000000l,
             doInterrupt)
 
-    override def isInterrupted = super.isInterrupted || doInterrupt()
+    override def isInterrupted: Boolean = {
+        if (super.isInterrupted || doInterrupt())
+            return true
+
+        val startTime = this.startTime
+        if (startTime == -1l) {
+            this.startTime = System.nanoTime()
+            false
+        } else if (super.currentEvaluationCount % 1000 == 0) {
+            val elapsedTime = System.nanoTime() - startTime
+            elapsedTime > maxEvaluationTimeInNS
+        } else
+            false
+    }
 
 }

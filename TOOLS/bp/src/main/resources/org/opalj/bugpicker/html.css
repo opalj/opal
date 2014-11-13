@@ -1,0 +1,144 @@
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2014
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+body{
+	margin:0px;
+    font-family: sans-serif;
+    font-size: 14px;
+}
+
+h1{
+	font-size:1.3em;
+} 
+ 
+h2,h3,h4,h5,h6{
+	font-size:1.2em;
+} 
+
+details{
+	padding:1em;
+}
+
+summary{
+	padding:0.5em;
+	background-color: rgb(128, 181, 235);
+	color:white;
+}
+
+abbr {
+	border-bottom: 1px dotted black;
+}
+
+.method_name {
+	color: rgb(19, 5, 248);
+	font-style: italic;
+}
+
+.type {
+	color: rgb(11, 117, 11);	
+}
+
+.object_type{
+	text-decoration: underline;
+}
+
+.base_type {
+	font-style: italic;
+}
+
+dl{
+	margin: 0;
+}
+dt{	
+	font-weight: 300;
+	line-height: 1.0em;
+}
+dd{
+	display:block;
+	margin-top: -1em;
+	margin-left: 6em;
+	margin-bottom: 0.3em;
+}
+
+a.onclick{
+	background-color: rgb(19, 91, 204);
+	padding: 0.3em;
+	line-height: 1em;
+	border: 1px solid;
+	border-radius: 3px;
+	margin: 0.3em;
+	width: 1em;
+	height: 1em;
+	text-align: center;
+	display: inline-block;
+}
+
+a.onclick:hover{
+	color: yellow;
+}
+
+span.operator{
+	font-weight: bolder;
+}
+
+span.value{
+	color: rgb(215, 145, 4);
+}
+
+span.keyword{
+	font-style: italic;
+}
+
+table{
+	white-space: inherit;
+	line-height: inherit;
+	font-weight: inherit;
+	font-size: inherit;
+	font-variant: inherit;
+	font-style: inherit;
+	border: 0;
+	margin: 0;
+	padding: 0;
+}
+
+th{
+	font-weight: bolder;
+	text-align: left;
+	word-wrap: break-word;
+}
+
+td{
+	word-break:break-all;
+	word-wrap: break-word;
+	vertical-align:top;
+}
+
+.warning{
+	color: rgb(242, 112, 46);
+	font-size: smaller;
+}

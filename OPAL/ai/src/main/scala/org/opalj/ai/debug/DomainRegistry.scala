@@ -135,7 +135,7 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultDomain] A classical abstract domain that performs calculations using ranges.",
+        "[l1.DefaultDomain] A classical abstract domain that tracks origin and null-ness properties of references values as well as tracks int/long values using ranges/sets.",
         classOf[domain.l1.DefaultDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.l1.DefaultDomain(project, classFile, method)
@@ -143,7 +143,23 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultDomain] This domain performs some partial concrete evaluation.",
+        "[l1.DefaultIntegerValuesDomain] A classical abstract domain that tracks references values at the type level and tracks int/long values using ranges/sets.",
+        classOf[domain.l1.DefaultIntegerValuesDomain[_]],
+        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
+            new domain.l1.DefaultIntegerValuesDomain(project, classFile, method)
+        }
+    )
+
+    register(
+        "[l1.DefaultReferenceValuesDomain] A classical abstract domain that tracks various properties related to references values.",
+        classOf[domain.l1.DefaultIntegerValuesDomain[_]],
+        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
+            new domain.l1.DefaultIntegerValuesDomain(project, classFile, method)
+        }
+    )
+
+    register(
+        "[li.DefaultDomain] This domain performs some partial concrete evaluation.",
         classOf[domain.li.DefaultDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.li.DefaultDomain(project, classFile, method)

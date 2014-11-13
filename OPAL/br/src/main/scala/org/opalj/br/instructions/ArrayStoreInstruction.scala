@@ -35,5 +35,18 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class ArrayStoreInstruction extends ArrayAccessInstruction
+abstract class ArrayStoreInstruction extends ArrayAccessInstruction {
+
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 3
+
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    final def readsLocal: Boolean = false
+
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
+}
 

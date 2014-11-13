@@ -64,4 +64,4 @@ class Java8FrameworkWithCaching(cache: BytecodeInstructionsCache)
  */
 class Java8FrameworkWithLambdaSupportAndCaching(cache: BytecodeInstructionsCache)
     extends Java8FrameworkWithCaching(cache)
-    with FullJDK8DeferredInvokedynamicResolution
+    with JDK8DeferredInvokedynamicResolution

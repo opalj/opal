@@ -35,7 +35,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object DSTORE_0 extends StoreLocalVariableInstruction with ImplicitLocalVariableIndex {
+case object DSTORE_0 extends DStoreInstruction with ImplicitLocalVariableIndex {
 
     final val lvIndex = 0
 
