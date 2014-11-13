@@ -45,18 +45,26 @@ object CallGraphFactory {
      * analyze a library/framework.
      *
      * The set of all entry points consists of:
-     * - all static initializers,
-     * - every non-private static method,
-     * - every non-private constructor,
-     * - every non-private method,
-     * - every private method related to Serialization
+     *  - all static initializers,
+     *  - every non-private static method,
+     *  - every non-private constructor,
+     *  - every non-private method,
+     *  - every private method related to Serialization, if the respective
+     *    declaring class is a subtype of java.io.Serializable.
      */
     def defaultEntryPointsForLibraries(project: SomeProject): List[Method] = {
+        val classHierarchy = project.classHierarchy
         for {
             classFile ← project.projectClassFiles
             method ← classFile.methods
             if method.body.isDefined
-            if !method.isPrivate || Method.isObjectSerializationRelated(method)
+            if !method.isPrivate ||
+                ( // the method is private, but...
+                    Method.isObjectSerializationRelated(method) &&
+                    classHierarchy.isSubtypeOf(
+                        classFile.thisType,
+                        ObjectType.Serializable).isYesOrUnknown
+                )
         } yield {
             method
         }
