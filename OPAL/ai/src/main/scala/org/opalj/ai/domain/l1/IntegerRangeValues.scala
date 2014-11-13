@@ -824,22 +824,38 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                 value
 
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
+                val maxShift = if (sub > 31 || sub < 0) 31 else sub
+                val minShift = if (slb >= 0 && slb <= 31) slb else 0
+
                 if (vlb == vub && slb == sub) {
                     val r = vlb << slb
                     IntegerRange(r)
                 } else if (vlb >= 0) {
-                    val maxShift = if (sub > 31 || sub < 0) 31 else sub
-                    val minShift = if (slb >= 0 && slb <= 31) slb else 0
+                    // max will never be negative, since shifting a 64 bit value at most 31 times always results
+                    // into a positive value
                     val max = vub.toLong << maxShift
+
                     if (max <= Int.MaxValue)
                         IntegerRange(vlb << minShift, max.toInt)
                     else
-                        IntegerValue(pc)
-                } else
-                    IntegerValue(pc)
+                        IntegerRange((1 << maxShift) | Int.MinValue, (-1 << minShift) & Int.MaxValue)
+                } else { // case vlb < 0 && vub >= 0 && vub < 0
+                    /* 
+                   	 lb is (1 << maxShift) & Int.MinValue, since TODO
+                   	 . The biggest min value
+                     in binary notation is the value with the most trailing zeros e.g. 10000000....0.
+                     
+                     ub is (-1 << minShift) & Int.MaxValue, since the biggest number after a shift 
+                     always has to the pattern 0111..1100..0. The number of trailing zeros must be
+                     minShift, the sign bit 0 and bits between sign bit and next zero bit have to 
+                     be 1. 
+                  */
+
+                    IntegerRange((1 << maxShift) | Int.MinValue, (-1 << minShift) & Int.MaxValue)
+                }
 
             case (_, IntegerRange(31, 31)) ⇒ IntegerRange(Int.MinValue, 0) // actually, the value is either Int.MinValue or 0
-            case (-1, _)                   ⇒ IntegerRange(Int.MinValue, -1)
+            case (IntegerRange(-1, -1), _) ⇒ IntegerRange(Int.MinValue, -1)
             case _                         ⇒ IntegerValue(pc)
         }
     }
