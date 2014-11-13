@@ -180,7 +180,8 @@ object UselessComputationsAnalysis {
                 val (pc, message, relevance) = issue
                 StandardIssue(
                     theProject, classFile, Some(method),
-                    Some(pc), Some(result.localsArray(pc)),
+                    Some(pc),
+                    Some(result.operandsArray(pc)), Some(result.localsArray(pc)),
                     "the expression always evalutes to the same value",
                     Some(message),
                     Set(IssueCategory.Comprehensibility, IssueCategory.Performance),

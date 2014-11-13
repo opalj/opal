@@ -83,26 +83,28 @@ object DeadCodeAnalysis {
         val operandsArray = result.operandsArray
         val body = result.code
 
-        val deadCodeIssues = for {
-            (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
-                case (ctiPC, i: ConditionalBranchInstruction) if operandsArray(ctiPC) != null ⇒
-                    (ctiPC, i, i.nextInstructions(ctiPC, /*not required*/ null))
+        val deadCodeIssues =
+            for {
+                (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
+                    case (ctiPC, i: ConditionalBranchInstruction) if operandsArray(ctiPC) != null ⇒
+                        (ctiPC, i, i.nextInstructions(ctiPC, /*not required*/ null))
+                }
+                branchTarget ← branchTargetPCs.iterator
+                if operandsArray(branchTarget) == null
+            } yield {
+                val operands = operandsArray(ctiPC).take(instruction.operandCount)
+                StandardIssue(
+                    theProject, classFile, Some(method), Some(ctiPC),
+                    Some(operands),
+                    Some(result.localsArray(ctiPC)),
+                    "constant expression",
+                    Some("The expression at runtime always evaluates to the same value."),
+                    Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                    Set(IssueKind.ConstantComputation, IssueKind.DeadBranch),
+                    Seq((branchTarget, "dead code")),
+                    Relevance.Undetermined
+                )
             }
-            branchTarget ← branchTargetPCs.iterator
-            if operandsArray(branchTarget) == null
-        } yield {
-            val operands = operandsArray(ctiPC).take(instruction.operandCount)
-            StandardIssue(
-                theProject, classFile, Some(method), Some(ctiPC),
-                Some(result.localsArray(ctiPC)),
-                "constant expression",
-                Some("The expression at runtime always evaluates to the same value."),
-                Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
-                Set(IssueKind.ConstantComputation, IssueKind.DeadBranch),
-                Seq((branchTarget, "dead code")),
-                Relevance.Undetermined
-            )
-        }
         var results: List[Issue] = List.empty
         for ((ln, dc) ← deadCodeIssues.groupBy(_.line)) {
             ln match {

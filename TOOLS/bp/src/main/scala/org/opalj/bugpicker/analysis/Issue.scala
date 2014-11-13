@@ -33,6 +33,7 @@ package analysis
 import scala.xml.Node
 import scala.xml.Text
 import org.opalj.collection.mutable.Locals
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.Code
@@ -89,55 +90,66 @@ trait Issue {
      */
     def localVariables: Option[Locals[_ <: AnyRef]]
 
-    def localVariablesToXHTML: Node = {
+    def localVariablesToXHTML: Option[Node] = {
+        if (this.pc.isEmpty || this.code.isEmpty)
+            return None;
+
+        val pc = this.pc.get
+        val code = this.code.get
+
         def default =
-            <div class="warning">
-                Local variable information (debug information) is not available.
-            </div>
+            Some(
+                <div class="warning">
+                    Local variable information (debug information) is not available.
+                </div>
+            )
 
-        localVariables.map { lv ⇒
-            if (code.localVariablesAt(pc).isEmpty) {
-                default
-            } else {
+        if (this.localVariables.isEmpty) {
+            return default;
+        }
+        val localVariableValues = this.localVariables.get
 
-                val lvsAsXHTML =
-                    for ((index, theLV) ← code.localVariablesAt(pc)) yield {
-                        val localValue = lv(index)
-                        val localValueAsXHTML =
-                            if (localValue == null)
-                                <span class="warning">unused</span>
-                            else {
+        val localVariableDefinitions = code.localVariablesAt(pc)
+        if (localVariableDefinitions.isEmpty)
+            return default;
 
-                                if ((theLV.fieldType eq org.opalj.br.BooleanType) &&
-                                    // SPECIAL HANDLING IF THE VALUE IS AN INTEGER RANGE VALUE
-                                    localValue.isInstanceOf[IntegerRangeValues#IntegerRange]) {
-                                    val range = localValue.asInstanceOf[IntegerRangeValues#IntegerRange]
-                                    if (range.lowerBound == 0 && range.upperBound == 0)
-                                        Text("false")
-                                    else if (range.lowerBound == 1 && range.upperBound == 1)
-                                        Text("true")
-                                    else
-                                        Text("true or false")
-                                } else
-                                    Text(localValue.toString)
-                            }
+        val lvsAsXHTML =
+            for ((index, theLV) ← localVariableDefinitions) yield {
+                val localValue = localVariableValues(index)
+                val localValueAsXHTML =
+                    if (localValue == null)
+                        <span class="warning">unused</span>
+                    else {
 
-                        <tr>
-                            <td>{ index }</td><td>{ theLV.name }</td><td>{ localValueAsXHTML }</td>
-                        </tr>
+                        if ((theLV.fieldType eq org.opalj.br.BooleanType) &&
+                            // SPECIAL HANDLING IF THE VALUE IS AN INTEGER RANGE VALUE
+                            localValue.isInstanceOf[IntegerRangeValues#IntegerRange]) {
+                            val range = localValue.asInstanceOf[IntegerRangeValues#IntegerRange]
+                            if (range.lowerBound == 0 && range.upperBound == 0)
+                                Text("false")
+                            else if (range.lowerBound == 1 && range.upperBound == 1)
+                                Text("true")
+                            else
+                                Text("true or false")
+                        } else
+                            Text(localValue.toString)
                     }
 
-                <details class="locals">
-                    <summary>Local Variable State</summary>
-                    <table>
-                        <tr><th>Index</th><th>Name</th><th>Value</th></tr>
-                        { lvsAsXHTML }
-                    </table>
-                </details>
+                <tr>
+                    <td>{ index }</td><td>{ theLV.name }</td><td>{ localValueAsXHTML }</td>
+                </tr>
             }
-        }.getOrElse {
-            default
-        }
+
+        Some(
+            <details class="locals">
+                <summary>Local Variable State</summary>
+                <table>
+                    <tr><th>Index</th><th>Name</th><th>Value</th></tr>
+                    { lvsAsXHTML }
+                </table>
+            </details>
+        )
+
     }
 
     /**
@@ -180,7 +192,11 @@ trait Issue {
     /**
      * The opcode of the relevant instruction.
      */
-    final def opcode: Option[Int] = pc.flatMap(pc ⇒ code.map(_.instructions(pc).opcode))
+    final def opcode: Option[Int] =
+        pc.flatMap(pc ⇒ code.map(_.instructions(pc).opcode))
+
+    final def instruction: Option[Instruction] =
+        pc.flatMap(pc ⇒ code.map(_.instructions(pc)))
 
     /**
      * The primarily affected line of source code; if available.

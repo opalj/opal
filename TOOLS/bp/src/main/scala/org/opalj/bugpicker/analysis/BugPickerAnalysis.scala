@@ -200,6 +200,10 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                     )
                 )
 
+                //
+                // FIND USELESS EXPRESSION EVALUATIONS
+                //
+
                 import result.domain.ConcreteIntegerValue
                 import result.domain.ConcreteLongValue
                 import result.domain
@@ -228,10 +232,17 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
                                 val lv = code.localVariable(pc, index).get
 
-                                UselessComputation(
-                                    classFile, method, pc,
-                                    Some(localsArray(pc)),
-                                    "(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+").")
+                                StandardIssue(
+                                    theProject, classFile, Some(method), Some(pc),
+                                    Some(result.operandsArray(pc)),
+                                    Some(result.localsArray(pc)),
+                                    "useless (re-)assignment",
+                                    Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
+                                    Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                                    Set(IssueKind.ConstantComputation),
+                                    Seq.empty,
+                                    new Relevance(20)
+                                )
 
                             case (
                                 pc,
@@ -243,11 +254,17 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
                                 val lv = code.localVariable(pc, index).get
 
-                                UselessComputation(
-                                    classFile, method, pc,
-                                    Some(localsArray(pc)),
-                                    "(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+").")
-
+                                StandardIssue(
+                                    theProject, classFile, Some(method), Some(pc),
+                                    Some(result.operandsArray(pc)),
+                                    Some(result.localsArray(pc)),
+                                    "useless (re-)assignment",
+                                    Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
+                                    Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                                    Set(IssueKind.ConstantComputation),
+                                    Seq.empty,
+                                    new Relevance(20)
+                                )
                         }
 
                     results.addAll(
@@ -333,7 +350,7 @@ object BugPickerAnalysis {
         val issuesNode: Iterable[Node] = {
             import scala.collection.SortedMap
             val groupedMessages =
-                SortedMap.empty[String, Seq[DeadCode]] ++
+                SortedMap.empty[String, Seq[Issue]] ++
                     methodsWithDeadCode.groupBy(dc ⇒ dc.classFile.thisType.packageName)
             val result =
                 (for { (pkg, mdc) ← groupedMessages } yield {
