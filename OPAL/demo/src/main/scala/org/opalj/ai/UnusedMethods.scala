@@ -74,10 +74,10 @@ object UnusedMethods extends AnalysisExecutor {
                     classFile ← theProject.classFiles.par
                     if !isInterrupted()
                     method ← classFile.methods
-                    if method.isPrivate //|| method.isPackageVisible
+                    if method.isPrivate || method.hasDefaultVisibility
                     if callGraph.calledBy(method).isEmpty
                     if !(
-                        method.name == "<init>" &&
+                        (method.name == "<clinit>" || method.name == "<init>") &&
                         method.descriptor == MethodDescriptor.NoArgsAndReturnVoid
                     )
                     if !(
@@ -85,12 +85,22 @@ object UnusedMethods extends AnalysisExecutor {
                         isSubtypeOf(classFile.thisType, ObjectType.Serializable).isYesOrUnknown
                     )
                 } yield {
-                    method.fullyQualifiedSignature(classFile.thisType)
+                    (classFile, method)
                 }
             }
+            val sortedResults =
+                (
+                    results.seq.toSeq.sortWith { (e1, e2) ⇒
+                        val (e1ClassFile, e1Method) = e1
+                        val (e2ClassFile, e2Method) = e2
+                        val e1FQN = e1ClassFile.thisType.fqn
+                        val e2FQN = e2ClassFile.thisType.fqn
+                        e1FQN < e2FQN || (e1FQN == e2FQN && e1Method < e2Method)
+                    }
+                ).map(e ⇒ e._2.fullyQualifiedSignature(e._1.thisType))
 
             BasicReport(
-                results.mkString("Dead Methods: "+results.size+"): \n", "\n", "\n")
+                sortedResults.mkString("Dead Methods: "+results.size+"): \n", "\n", "\n")
             )
         }
     }
