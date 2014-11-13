@@ -53,10 +53,11 @@ object MethodComplexityKey extends ProjectInformationKey[(Method) ⇒ Int] {
      * [[MethodComplexityAnalysis]].
      */
     override protected def compute(project: SomeProject): (Method) ⇒ Int = {
+        // TODO Read the "maximum" value from the project configuration 
         val rating =
             MethodComplexityAnalysis.doAnalyze(
                 project,
-                100, // arbirtray....
+                100, // arbitrary....
                 () ⇒ true
             )
 

@@ -32,20 +32,28 @@ package domain
 package l1
 
 import java.net.URL
-import org.opalj.collection.immutable.{ UIDSet, UIDSet1 }
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.{ ReferenceType }
-import org.opalj.ai.Domain
-import org.opalj.ai.InterruptableAI
-import org.opalj.ai.IsAReferenceValue
-import org.opalj.ai.domain
-import org.opalj.util.PerformanceEvaluation.time
+
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.Iterable
+
+import org.opalj.ai.CorrelationalDomain
+import org.opalj.ai.Domain
+import org.opalj.ai.InterruptableAI
+import org.opalj.ai.IsAReferenceValue
+import org.opalj.ai.domain
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
@@ -58,7 +66,7 @@ object MethodReturnValuesAnalysis extends AnalysisExecutor {
         override val project: Project[java.net.URL],
         val ai: InterruptableAI[_],
         val method: Method)
-            extends CoRelationalDomain
+            extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
             with domain.l0.DefaultPrimitiveValuesConversions

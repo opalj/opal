@@ -79,6 +79,51 @@ public class ReferenceValuesFrenzy {
 		// if u refers to s; s is now non-null
 	}
 
+	static void relatedMultipleReferenceValues(String s) {
+		int i = IntegerValuesFrenzy.anInt();
+		Object o = maybeNull();
+		Object p = maybeNull();
+		Object q = maybeNull();
+
+		Object a = null;
+		Object b = null;
+
+		switch (i) {
+		case 1:
+			a = o;
+			b = p;
+			break;
+		case 2:
+			a = p;
+			b = o;
+			break;
+		default:
+			a = q;
+		}
+		// Let's assume that o, p and q are different objects.
+		//
+		// Now, both: a and b may refer to o and p; however, they will never
+		// refer to the same object; hence, any constraints will not affect 
+		// both values!
+
+		if (a == null) {
+			doIt(b); // b is either the original value, o or p
+		}
+		if (b == null) {
+			doIt(a); // a is either the original value, o, p or q
+		} else {
+			doIt(a); // a is either o or p (and both may be null)
+			// But, if we are not able track the fact that a can only be non
+			// null if i was 1 or 2, then a may also refer to q and the 
+			// original value
+		}
+
+		if (o != null) {
+			doIt(a); // p should be non-null
+			doIt(b); // p should be non-null
+		}
+	}
+
 	// Returns either "null" or a "new Object"
 	static Object maybeNull() {
 		if (System.currentTimeMillis() % 100l > 50l)
@@ -136,7 +181,30 @@ public class ReferenceValuesFrenzy {
 			} else
 				a = maybeNull();
 		} while (IntegerValuesFrenzy.anInt() % 2 == 1);
-		return a; 
+		return a;
+	}
+
+	static void cfDependentValues(int i) {
+		Object b = null;
+		Object c = null;
+		int j = i; // <--- j is just an alias for i
+		while (j < 2) {
+			Object a = maybeNull();
+			if (i == 1)
+				b = a; // <--- b is just an alias for a
+			else
+				c = a; // <--- c is just an alias for a
+			i++;
+			j = i;
+		}
+		// b and c are (potentially) not referring to the same object
+		if (c == null) { // this just constraints "c" (not "b")
+			doIt(b); // we know nothing about b here
+			doIt(c); // c is "0"
+		} else if (b != null) {
+			doIt(b); // b is non-null
+			doIt(c); // we know nothing about c
+		}
 	}
 
 	static void swap(int index, Object[] values) {

@@ -55,7 +55,7 @@ import org.opalj.collection.mutable.Locals
 class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTestExecution {
 
     object TheDomain
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with PredefinedClassHierarchy
@@ -84,13 +84,15 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
         //
 
         describe("using the factory methods") {
-            it("it should be possible to create a representation for a non-null object with a specific type") {
+
+            it("it should be possible to create a representation for a non-null object "+
+                "with a specific type") {
                 val ref = ReferenceValue(444, No, true, ObjectType.Object)
                 if (!ref.isNull.isNo || ref.origin != 444 || !ref.isPrecise)
                     fail("expected a precise, non-null reference value with pc 444;"+
                         " actual: "+ref)
-
             }
+
         }
 
         //
@@ -106,11 +108,16 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 val theObject = ObjectValue(-1, No, false, ObjectType.Object)
                 val theFile = ObjectValue(-1, No, false, File)
 
-                val (update1, _) = theObject.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
+                val (update1, _) =
+                    theObject.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
                 update1.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
-                val (update2, _) = theFile.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
+
+                val (update2, _) =
+                    theFile.refineUpperTypeBound(-1, File, List(theObject), Locals.empty)
                 update2.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
-                val (update3, _) = theFile.refineUpperTypeBound(-1, ObjectType.Object, List(theFile), Locals.empty)
+
+                val (update3, _) =
+                    theFile.refineUpperTypeBound(-1, ObjectType.Object, List(theFile), Locals.empty)
                 update3.head.asInstanceOf[ReferenceValue].upperTypeBound.first should be(File)
             }
 
@@ -122,7 +129,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
         describe("the summarize function") {
 
-            it("it should calculate a meaningful upper type bound given multiple different types of reference values") {
+            it("it should calculate a meaningful upper type bound given "+
+                "multiple different types of reference values") {
                 summarize(
                     -1,
                     List(
@@ -269,10 +277,28 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 val IsReferenceValue(values) = result.operandsArray(25).head
                 values.head.isNull should be(No)
                 values.tail.head.isNull should be(Unknown)
-
             }
 
-            it("it should be able to correctly refine MultipleReferenceValues") {
+            it("it should be able to handle conditional aliasing (method: \"cfDependentValues\")") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "cfDependentValues").get
+                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+
+                val IsReferenceValue(values1) = result.operandsArray(43).head
+                values1.head.isNull should be(Yes) // original value
+                values1.tail.head.isNull should be(Unknown)
+
+                val IsReferenceValue(values2) = result.operandsArray(47).head
+                values2.head.isNull should be(Yes) // original value
+                values2.tail.head.isNull should be(Yes)
+
+                val ReferenceValue(value1) = result.operandsArray(58).head
+                value1.isNull should be(No)
+
+                val ReferenceValue(value2) = result.operandsArray(62).head
+                value2.isNull should be(Unknown)
+            }
+
+            it("it should be able to correctly refine a MultipleReferenceValues") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "multipleReferenceValues").get
                 val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
 
@@ -290,6 +316,46 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
                 // the "last return" is not dead
                 result.operandsArray(45) should not be (null)
+            }
+
+            it("it should be able to correctly refine related MultipleReferenceValues") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "relatedMultipleReferenceValues").get
+                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+
+                val IsReferenceValue(values1) = result.operandsArray(77).head
+                values1.size should be(3)
+                values1.head.isNull should be(Unknown) // b is o
+                values1.drop(1).head.isNull should be(Yes) // the original value
+                values1.drop(2).head.isNull should be(Unknown) // b is p
+
+                // SINCE THE FIRST TEST FAILS, THE FOLLOWING MAY NEED TO BE REFINED!
+
+                val IsReferenceValue(values2) = result.operandsArray(87).head
+                values2.size should be(4)
+                values2.head.isNull should be(Unknown) // a is o
+                values2.drop(1).head.isNull should be(Yes) // the original value
+                values2.drop(2).head.isNull should be(Unknown) // a is p
+                values2.drop(3).head.isNull should be(Unknown) // a is p
+
+                val IsReferenceValue(values3) = result.operandsArray(95).head
+                values3.size should be(3)
+                values3.head.isNull should be(Unknown) // a is o
+                values3.drop(1).head.isNull should be(Yes) // the original value (not really necessary!)
+                values3.drop(2).head.isNull should be(Unknown) // a is p                
+
+                val IsReferenceValue(values4) = result.operandsArray(104).head
+                values4.size should be(4)
+                values4.head.isNull should be(Unknown) // a is o
+                values4.drop(1).head.isNull should be(Yes) // the original value
+                values4.drop(2).head.isNull should be(No) // a is p
+                values4.drop(3).head.isNull should be(Unknown) // a is q
+
+                val IsReferenceValue(values5) = result.operandsArray(109).head
+                values5.size should be(3)
+                values5.head.isNull should be(Unknown) // b is o
+                values5.drop(1).head.isNull should be(Yes) // the original value
+                values5.drop(2).head.isNull should be(No) // b is p
+
             }
         }
     }

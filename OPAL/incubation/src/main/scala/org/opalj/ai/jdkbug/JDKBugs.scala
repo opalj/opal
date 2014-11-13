@@ -61,7 +61,7 @@ import org.opalj.ai.domain.IgnoreSynchronization
 import org.opalj.ai.domain.l0.DefaultTypeLevelDoubleValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
 import org.opalj.ai.Domain
-import org.opalj.ai.CoRelationalDomain
+import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain.l0.TypeLevelReferenceValues
 import org.opalj.ai.domain.l0.DefaultPrimitiveValuesConversions
 import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
@@ -188,7 +188,7 @@ object TaintAnalysisDomain {
  * This is the analysis domain it provides all need functionality to find Class.forName bugs.
  */
 trait TaintAnalysisDomain[Source]
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with DomainId
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization

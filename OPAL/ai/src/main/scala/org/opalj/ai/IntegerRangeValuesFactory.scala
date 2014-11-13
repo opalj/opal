@@ -28,43 +28,22 @@
  */
 package org.opalj
 package ai
-package project
 
-import scala.collection.Set
-import scala.collection.Map
-
-import br._
-import br.analyses._
-
-import domain._
-import domain.l0
-import domain.l1
+import scala.collection.immutable.SortedSet
 
 /**
- * Domain object which is used to calculate the call graph using variable type analysis.
+ * Defines the primary factory methods to create `IntegerRange` values.
  *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author David Becker
  */
-class DefaultVTACallGraphDomain[Source](
-    val project: Project[Source],
-    val cache: CallGraphCache[MethodSignature, Set[Method]],
-    val classFile: ClassFile,
-    val method: Method)
-        extends CorrelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with TheProject
-        with ProjectBasedClassHierarchy
-        with TheMethod
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelLongValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultPrimitiveValuesConversions
-        with l1.DefaultReferenceValuesBinding
-        with l0.TypeLevelInvokeInstructions
-        with l0.RefinedTypeLevelFieldAccessInstructions
-        with VTACallGraphDomain
+trait IntegerRangeValuesFactory extends IntegerValuesFactory { domain ⇒
 
+    /**
+     * Factory method to create a `DomainValue` that was created (explicitly or implicitly)
+     * by the instruction with the specified program counter and represents
+     * an integer value runtime value which is known to be in the range [lb,ub].
+     */
+    def IntegerRange(pc: PC, lb: Int, rb: Int): DomainValue
+
+}
