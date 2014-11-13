@@ -44,8 +44,9 @@ import org.opalj.br._
  * overall precision.
  *
  * @author Michael Eichberg
+ * @author David Becker
  */
-trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
+trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactory with ConcreteIntegerValues {
     domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------
@@ -96,6 +97,17 @@ trait IntegerSetValues extends IntegerValuesDomain with ConcreteIntegerValues {
      * Creates a new IntegerSet value using the given set.
      */
     def IntegerSet(values: SortedSet[Int]): DomainValue
+
+    /**
+     * Implicitly creates a new IntegerSet value containing all values
+     * with the given bounds of the IntegerRange, as long as they don't
+     * exceed maxCardinalityOfIntegerSets.
+     */
+    def IntegerRange(pc: PC, lb: Int, ub: Int): DomainValue = {
+        if (ub.toLong - lb.toLong <= maxCardinalityOfIntegerSets)
+            IntegerSet(SortedSet[Int](lb to ub: _*))
+        else IntegerValue(vo = pc)
+    }
 
     /**
      * Extractor for `IntegerSet` values.
