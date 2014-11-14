@@ -1915,7 +1915,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 ishl(-1, v, s) should be(AnIntegerValue)
             }
 
-            it("[-1,1] << [2,2] => AnIntegerValue") {
+            it("[-1,1] << [2,2] => [-4, 4]") {
                 val v = IntegerRange(-1, 1)
                 val s = IntegerRange(2, 2)
 
@@ -1924,7 +1924,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                         lb should be <= (-4)
                         ub should be >= (4)
                     case v ⇒
-                        fail(s"expected lb <= 4 and ub >= 4; found $v")
+                        fail(s"expected lb <= -4 and ub >= 4; found $v")
                 }
             }
 

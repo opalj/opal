@@ -842,14 +842,16 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                         IntegerRange((1 << maxShift) | Int.MinValue, (-1 << minShift) & Int.MaxValue)
                 } else { // case vlb < 0 && vub >= 0 && vub < 0
                     /* 
-                   	 lb is (1 << maxShift) & Int.MinValue, since TODO
-                   	 . The biggest min value
-                     in binary notation is the value with the most trailing zeros e.g. 10000000....0.
+                   	 lb is (1 << maxShift) | Int.MinValue, since the smallest value has the most 
+                   	 trailing zeros that will be shifted. By using the or operation after 
+                   	 (1 << maxShift) the sign bit is set to one, since the smallest value
+                   	 is negative.
                      
                      ub is (-1 << minShift) & Int.MaxValue, since the biggest number after a shift 
-                     always has to the pattern 0111..1100..0. The number of trailing zeros must be
+                     always has the pattern 0111..1100..0. The number of trailing zeros must be
                      minShift, the sign bit 0 and bits between sign bit and next zero bit have to 
-                     be 1. 
+                     be 1. To ensure that the number is always positive the sign bit is set to zero
+                     by using & Int.MaxValue.
                   */
 
                     IntegerRange((1 << maxShift) | Int.MinValue, (-1 << minShift) & Int.MaxValue)
