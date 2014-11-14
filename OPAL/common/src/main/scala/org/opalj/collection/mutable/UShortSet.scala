@@ -50,9 +50,7 @@ trait UShortSet extends collection.UShortSet {
      */
     def +≈:(value: UShort): UShortSet
 
-    override def +(value: UShort): UShortSet = {
-        value +≈: this.mutableCopy
-    }
+    override def +(value: UShort): UShortSet = value +≈: this.mutableCopy
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int
