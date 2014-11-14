@@ -107,8 +107,9 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  *
  * @author Michael Eichberg
  * @author Christos Votskos
+ * @author David Becker
  */
-trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues {
+trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFactory with ConcreteIntegerValues {
     domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------

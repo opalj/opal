@@ -186,7 +186,8 @@ class CodeAttributeTest
     behavior of "the \"Code\" attribute's localVariableAt method"
 
     it should "return the local variables defined at the respective pc" in {
-        codeOfPut.localVariablesAt(32) should be(Map(0 -> "this", 1 -> "item"))
+        val lvs = codeOfPut.localVariablesAt(32).map(e ⇒ (e._1, e._2.name))
+        lvs should be(Map(0 -> "this", 1 -> "item"))
     }
 
     behavior of "the \"Code\" attribute's localVariable method"

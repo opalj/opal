@@ -41,6 +41,7 @@ trait LongValuesDomain extends LongValuesFactory { domain ⇒
     //
     // RELATIONAL OPERATORS
     //
+
     /**
      * ''Comparison (==)'' of two long values.
      *
