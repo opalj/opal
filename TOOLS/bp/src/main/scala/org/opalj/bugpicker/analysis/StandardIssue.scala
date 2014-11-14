@@ -33,7 +33,6 @@ package analysis
 import scala.Console.{ GREEN, RESET }
 import scala.xml.Node
 import scala.xml.Text
-
 import org.opalj.br.methodToXHTML
 import org.opalj.br.typeToXHTML
 import org.opalj.collection.mutable.Locals
@@ -42,6 +41,7 @@ import org.opalj.br.Method
 import org.opalj.br.Code
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions._
+import scala.xml.UnprefixedAttribute
 
 /**
  * Describes some issue found in the source code.
@@ -82,9 +82,9 @@ case class StandardIssue(
         val pcNode: Option[Node] =
             if (methodId.isDefined && pc.isDefined)
                 Some(
-                    <span data-class={ classFile.fqn } data-method={ methodId.get } data-pc={ pc.get.toString }  data-show="bytecode">
-                { pc.get.toString }
-            </span>
+                    <span data-class={ classFile.fqn } data-method={ methodId.get } data-pc={ pc.get.toString } data-show="bytecode">
+                        { pc.get.toString }
+                    </span>
                 )
             else
                 None
@@ -93,14 +93,14 @@ case class StandardIssue(
             if (methodId.isDefined && pc.isDefined && line.isDefined)
                 Some(
                     <span data-class={ classFile.fqn } data-method={ methodId.get } data-line={ line.get.toString } data-pc={ pc.get.toString } data-show="sourcecode">
-                    { line.get.toString }
+                        { line.get.toString }
                     </span>
                 )
             else
                 None
 
-        val instructionNode =
-            if (this.instruction.isDefined && this.operands.isDefined) {
+        val instructionNode: Seq[Node] =
+            if (this.instruction.isDefined && this.operands.isDefined && this.localVariables.isDefined) {
                 val operands = this.operands.get
                 this.instruction.get match {
                     case cbi: SimpleConditionalBranchInstruction ⇒
@@ -122,49 +122,105 @@ case class StandardIssue(
                     case cbi: CompoundConditionalBranchInstruction ⇒
                         Seq(
                             <span class="keyword">switch </span>,
-                            <span class="value">{ operands.head } </span>
-                        <span> (case values: { cbi.caseValues.mkString(", ") } )</span>
+                            <span class="value">{ operands.head } </span>,
+                            <span> (case values: { cbi.caseValues.mkString(", ") } )</span>
                         )
+
                     case smi: StackManagementInstruction ⇒
                         val representation =
                             <span class="keyword">{ smi.mnemonic } </span> ::
                                 operands.map(op ⇒ <span class="value">{ op } </span>)
                         representation
 
+                    case IINC(lvIndex, constValue) ⇒
+                        val representation =
+                            List(
+                                <span class="keyword">iinc </span>,
+                                <span class="parameters">
+                                    (
+                                    <span class="value">{ localVariables.get(lvIndex) }</span>
+                                    <span class="value">{ constValue } </span>
+                                    )
+                                </span>
+                            )
+                        representation
+
                     case instruction ⇒
                         val operandsCount =
                             instruction.numberOfPoppedOperands { x ⇒ throw new UnknownError() }
 
-                        <span class="keyword">{ instruction.mnemonic } </span> ::
-                            Text("(") ::
+                        val parametersNode =
                             operands.take(operandsCount).reverse.map { op ⇒
                                 <span class="value">{ op } </span>
-                            } :::
-                            List(Text(")"))
+                            }
+                        List(
+                            <span class="keyword">{ instruction.mnemonic } </span>,
+                            <span class="parameters">({ parametersNode })</span>
+                        )
                 }
             } else
-                Seq(Text(""))
+                Seq.empty[Node]
+
+        //
+        // BUILDING THE FINAL DOCUMENT
+        //
+
+        var infoNodes: List[Node] =
+            List(
+                <dt>class</dt>,
+                <dd class="declaring_class" data-class={ classFile.fqn }>{ typeToXHTML(classFile.thisType) }</dd>
+            )
+
+        if (method.isDefined) {
+            val method = this.method.get
+            val dt =
+                <dt>method</dt>
+            val dd =
+                <dd class="method" data-class={ classFile.fqn }>
+                    { methodToXHTML(method.name, method.descriptor) }
+                </dd>
+            if (methodId.isDefined)
+                dd % (new UnprefixedAttribute(
+                    "data-method",
+                    methodId.get.toString,
+                    scala.xml.Null
+                ))
+
+            if (firstLineOfMethod.isDefined)
+                dd % (new UnprefixedAttribute(
+                    "data-line",
+                    firstLineOfMethod.get.toString,
+                    scala.xml.Null
+                ))
+
+            infoNodes = infoNodes ::: List(dt, dd)
+        }
+        if (pcNode.isDefined || lineNode.isDefined) {
+            val dt = <dt>instruction</dt>
+            var locations = List.empty[Node]
+            lineNode.foreach(ln ⇒
+                locations =
+                    <span class="line_number">line={ lineNode.get }</span> ::
+                        locations
+            )
+            pcNode.foreach(ln ⇒
+                locations =
+                    <span class="program_counter">line={ pcNode.get }</span> ::
+                        Text(" ") ::
+                        locations
+            )
+            infoNodes = infoNodes ::: List(dt, <dd> { locations } </dd>)
+        }
 
         val node =
-            <div class="an_issue" style={ s"color:${ relevance.asHTMLColor };" } data-relevance={ relevance.toString }>
+            <div class="an_issue" style={ s"color:${relevance.asHTMLColor};" } data-relevance={ relevance.toString } data-kind={ kind.mkString(" ") } data-category={ categories.mkString(" ") }>
                 <dl>
-                    <dt>class</dt>
-                    <dd class="declaring_class" data-class={ classFile.fqn }>{ typeToXHTML(classFile.thisType) }</dd>
-                    <dt>method</dt>
-                    <dd class="method" data-class={ classFile.fqn } data-method={ methodId } data-line={ methodLine }>
-                        { methodToXHTML(method.name, method.descriptor) }
-                    </dd>
-                    <dt>instruction</dt>
-                    <dd>
-                        <span class="program_counter">pc={ pcNode }</span>
-                        &nbsp;
-                        <span class="line_number">line={ lineNode }</span>
-                    </dd>
+                    { infoNodes }
                     <dt class="issue">summary</dt>
                     <dd class="issue_message">
-                        { description }
+                        { description.getOrElse("") }
                         <p>{ instructionNode }</p>
-                        { localVariablesToXHTML }
+                        { localVariablesToXHTML.toSeq }
                     </dd>
                 </dl>
             </div>
