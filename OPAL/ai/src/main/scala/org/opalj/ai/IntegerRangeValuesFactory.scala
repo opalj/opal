@@ -27,44 +27,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bugpicker
-package analysis
+package ai
 
-import java.net.URL
-
-import org.opalj.br.analyses.Project
-import org.opalj.br.Method
-import org.opalj.ai.CorrelationalDomain
-import org.opalj.ai.domain
+import scala.collection.immutable.SortedSet
 
 /**
- * The domain that is used to identify the issues.
+ * Defines the primary factory methods to create `IntegerRange` values.
  *
- * @author Michael Eichberg
+ * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author David Becker
  */
-class BugPickerAnalysisDomain(
-    override val project: Project[java.net.URL],
-    override val method: Method,
-    override val maxCardinalityOfIntegerRanges: Long = 16l)
-        extends CorrelationalDomain
-        with domain.DefaultDomainValueBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        //with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.RefinedTypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l1.DefaultReferenceValuesBinding
-        with domain.l1.DefaultIntegerRangeValues
-        with domain.l1.MaxArrayLengthRefinement
-        with domain.l1.ConstraintsBetweenIntegerValues
-        //with domain.l1.DefaultIntegerSetValues
-        with domain.l1.DefaultLongValues
-        with domain.l1.LongValuesShiftOperators
-        with domain.l1.DefaultConcretePrimitiveValuesConversions
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization
-        with domain.TheProject
-        with domain.TheMethod
-        with domain.ProjectBasedClassHierarchy
+trait IntegerRangeValuesFactory extends IntegerValuesFactory { domain ⇒
 
+    /**
+     * Factory method to create a `DomainValue` that was created (explicitly or implicitly)
+     * by the instruction with the specified program counter and represents
+     * an integer value runtime value which is known to be in the range [lb,ub].
+     */
+    def IntegerRange(pc: PC, lb: Int, rb: Int): DomainValue
+
+}

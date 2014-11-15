@@ -65,7 +65,10 @@ case class LOOKUPSWITCH(
 
     def nextInstructions(currentPC: PC, code: Code): PCs = {
         var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
-        npairs foreach (npair ⇒ { val (_, offset) = npair; (currentPC + offset) +≈: pcs })
+        npairs foreach { npair ⇒
+            val (_, offset) = npair
+            pcs = (currentPC + offset) +≈: pcs
+        }
         pcs
     }
 

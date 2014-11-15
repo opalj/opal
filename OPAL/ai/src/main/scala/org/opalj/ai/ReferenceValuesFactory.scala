@@ -33,7 +33,7 @@ import org.opalj.br.{ Type, ReferenceType, ArrayType, ObjectType }
 import org.opalj.br.{ MethodDescriptor, MethodHandle }
 
 /**
- * Definition of factory methods to create `RefernceValues`.
+ * Definition of factory methods to create `ReferenceValues`.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */

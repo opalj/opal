@@ -30,41 +30,22 @@ package org.opalj
 package bugpicker
 package analysis
 
-import java.net.URL
-
-import org.opalj.br.analyses.Project
-import org.opalj.br.Method
-import org.opalj.ai.CorrelationalDomain
-import org.opalj.ai.domain
-
 /**
- * The domain that is used to identify the issues.
+ * Collection of predefined issue categories.
+ *
+ * In general, the category basically describes '''the property of your software that is
+ * affected ''' by this issue.
  *
  * @author Michael Eichberg
  */
-class BugPickerAnalysisDomain(
-    override val project: Project[java.net.URL],
-    override val method: Method,
-    override val maxCardinalityOfIntegerRanges: Long = 16l)
-        extends CorrelationalDomain
-        with domain.DefaultDomainValueBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        //with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.RefinedTypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l1.DefaultReferenceValuesBinding
-        with domain.l1.DefaultIntegerRangeValues
-        with domain.l1.MaxArrayLengthRefinement
-        with domain.l1.ConstraintsBetweenIntegerValues
-        //with domain.l1.DefaultIntegerSetValues
-        with domain.l1.DefaultLongValues
-        with domain.l1.LongValuesShiftOperators
-        with domain.l1.DefaultConcretePrimitiveValuesConversions
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization
-        with domain.TheProject
-        with domain.TheMethod
-        with domain.ProjectBasedClassHierarchy
+object IssueCategory {
 
+    final val Bug = "bug"
+
+    final val Flawed = "flawed"
+
+    final val Performance = "performance"
+
+    final val Comprehensibility = "comprehensibility"
+
+}

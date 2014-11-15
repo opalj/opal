@@ -167,7 +167,7 @@ object Instruction {
                         exception,
                         handler.catchType.get).isYes
             } match {
-                case Some(handler) ⇒ handler.startPC +≈: pcs
+                case Some(handler) ⇒ pcs = handler.startPC +≈: pcs
                 case _             ⇒ /* exception is not handled */
             }
         }
