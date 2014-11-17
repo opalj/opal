@@ -33,6 +33,8 @@ package project
 import scala.collection.Set
 import scala.collection.Map
 
+import org.opalj.collection.immutable.UIDSet
+
 import br._
 import br.analyses._
 
@@ -52,91 +54,116 @@ import org.opalj.ai.domain.ClassHierarchy
  * @author Michael Eichberg
  */
 trait VTACallGraphDomain extends CHACallGraphDomain {
-    domain: TheProject with TheMethod with ClassHierarchy ⇒
+    domain: MethodCallsHandling with ReferenceValuesDomain with TypedValuesFactory with Configuration with TheProject with ClassHierarchy with TheMethod with TheCode ⇒
 
     @inline override protected[this] def virtualCall(
         pc: PC,
         declaringClassType: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: Operands): Unit = {
+        operands: Operands): MethodCallResult = {
         // MODIFIED CHA - we used the type information that is readily available
-        val receiver = operands.last
-        val value = typeOfValue(receiver).asInstanceOf[IsReferenceValue]
-
-        //        if (value.upperTypeBound != org.opalj.collection.immutable.UIDSet(declaringClassType)) {
-        //            println(s"invoke: $declaringClassType refined to ${value.upperTypeBound.mkString("", " with ", "")} => $name")
-        //        }
+        val receiver = typeOfValue(operands.last).asInstanceOf[IsReferenceValue]
+        val receiverIsNull = receiver.isNull
 
         // Possible Cases:
-        //  - the value is precise and has a single type => static call
-        //  - the value is not precise but has an upper type bound that is a subtype of the declaringClassType. 
-        //  - the value is not precise and the upper type bound is a supertype 
-        //    of the declaringClassType => "strange"; nevertheless, treated as a 
-        //    standard virtual call with the upper type bound set to the declaring class.
+        //  - the value is precise and has a single type => non-virtual call
+        //  - the value is not precise but has an upper type bound that is a subtype 
+        //    of the declaringClassType
+        //
         //  - the value is null => call to the constructor of NullPointerException
         //  - the value maybe null => additional call to the constructor of NullPointerException
+        //
+        //  - the value is not precise and the upper type bound is a supertype 
+        //    of the declaringClassType => the type hierarchy information is not complete;
+        //    the central factory method already "handles" this issue - hence, we don't care 
 
-        val isNull = value.isNull
-        if (isNull.isYesOrUnknown) {
-            NullPointerExceptionConstructorCall(classFile.thisType, method, pc)
+        if (receiverIsNull.isYes) {
+            addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+            return handleInstanceBasedInvoke(pc, descriptor, receiverIsNull);
         }
 
-        // there may be additional calls
-        if (isNull.isNoOrUnknown) {
-            val upperTypeBound = value.upperTypeBound
-            if (upperTypeBound.consistsOfOneElement) {
-                val theType = upperTypeBound.first
-                if (theType.isArrayType)
-                    doNonVirtualCall(pc, ObjectType.Object, name, descriptor, operands)
-                else if (value.isPrecise)
-                    doNonVirtualCall(pc, theType.asObjectType, name, descriptor, operands)
-                else if ((declaringClassType ne theType) &&
-                    domain.isSubtypeOf(declaringClassType, theType).isYes) {
-                    // the invoke's declaring class type is "more" precise
-                    println(
-                        Console.YELLOW+"[warn] type information missing: "+
-                            theType.toJava+" (underlying value="+receiver+")"+
-                            " should be a subtype of the type of the method's declaring class: "+
-                            declaringClassType.toJava+
-                            " (but this cannot be deduced reliably from the project)"+Console.RESET)
-                    super.doVirtualCall(pc, declaringClassType, name, descriptor, operands)
-                } else {
-                    super.doVirtualCall(pc, theType.asObjectType, name, descriptor, operands)
-                }
-            } else {
-                // _Also_ supports the case where we have a "precise type" with
-                // multiple types as an upper bound. This is useful in some selected
-                // cases where the class is generated dynamically at runtime and 
-                // hence, the currently available information is simply the best that
-                // is available.           
-                for (utb ← upperTypeBound) {
-                    //                    if (utb.isArrayType) {
-                    //                        super.doNonVirtualCall(pc, declaringClassType, name, descriptor, operands)
-                    //                    } else
-                    if ((declaringClassType ne utb) &&
-                        domain.isSubtypeOf(declaringClassType, utb).isYes) {
-                        // The invoke's declaring class type is "more" precise
-                        println(
-                            Console.YELLOW+"[warn] type information missing: "+
-                                utb.toJava+"(underlying value="+receiver+")"+
-                                " part of the upper type bound "+
-                                upperTypeBound.map(_.toJava).mkString("(", ",", ")")+
-                                " should be a subtype of the type of the method's declaring class: "+
-                                declaringClassType.toJava+
-                                " (but this cannot be deduced reliably from the project)"+Console.RESET)
-                        super.doVirtualCall(pc, declaringClassType, name, descriptor, operands)
-                    } else {
-                        val callees =
-                            this.callees(pc, utb.asObjectType, name, descriptor, operands)
-                        callees.filter { m ⇒
-                            upperTypeBound.exists(
-                                domain.isSubtypeOf(project.classFile(m).thisType, _).isYesOrUnknown
-                            )
-                        }
-                    }
-                }
+        if (receiverIsNull.isUnknown) {
+            addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+            // ... and continue!
+        }
+
+        val upperTypeBound = receiver.upperTypeBound
+        if (upperTypeBound.consistsOfOneElement) {
+            val theType = upperTypeBound.first
+            if (theType.isArrayType)
+                doNonVirtualCall(pc, ObjectType.Object, name, descriptor, receiverIsNull, operands)
+            else if (receiver.isPrecise)
+                doNonVirtualCall(pc, theType.asObjectType, name, descriptor, receiverIsNull, operands)
+            else {
+                doVirtualCall(pc, theType.asObjectType, name, descriptor, receiverIsNull, operands)
             }
+        } else {
+            // Recall that the types defining the upper type bound are not in an 
+            // inheritance relationship; however, they still may define 
+            // the respective method.
+
+            val potentialRuntimeTypes =
+                classHierarchy.directSubtypesOf(upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
+
+            val allCallees =
+                if (potentialRuntimeTypes.nonEmpty) {
+                    val potentialRuntimeType = potentialRuntimeTypes.head.asObjectType
+                    val callees = this.callees(potentialRuntimeType, name, descriptor)
+                    potentialRuntimeTypes.tail.foldLeft(callees) { (r, nextUpperTypeBound) ⇒
+                        r ++ this.callees(nextUpperTypeBound.asObjectType, name, descriptor)
+                    }
+                } else {
+                    Set.empty[Method]
+                }
+
+            if (allCallees.isEmpty) {
+                addUnresolvedMethodCall(
+                    classFile.thisType, method, pc,
+                    declaringClassType, name, descriptor)
+                handleInstanceBasedInvoke(pc, descriptor, receiverIsNull)
+            } else {
+                addCallEdge(pc, allCallees)
+                handleInstanceBasedInvoke(pc, allCallees, receiverIsNull, operands)
+            }
+
+            //                val receiverType =
+            //                    classHierarchy.joinObjectTypesUntilSingleUpperBound(
+            //                        // the following cast is safe, because we cannot have
+            //                        // an UpperTypeBound with more than one value that
+            //                        // contains ArrayTypes
+            //                        upperTypeBound.asInstanceOf[UIDSet[ObjectType]],
+            //                        true)
+            //                doVirtualCall(pc, receiverType, name, descriptor, receiverIsNull, operands)
+
+            //                // _Also_ supports the case where we have a "precise type" with
+            //                // multiple types as an upper bound. This is useful in some selected
+            //                // cases where the class is generated dynamically at runtime and 
+            //                // hence, the currently available information is simply the best that
+            //                // is available.           
+            //                for (utb ← upperTypeBound) {
+            //                    if ((declaringClassType ne utb) &&
+            //                        domain.isSubtypeOf(declaringClassType, utb).isYes) {
+            //                        // The invoke's declaring class type is "more" precise
+            //                        println(
+            //                            Console.YELLOW+"[warn] type information missing: "+
+            //                                utb.toJava+"(underlying value="+receiver+")"+
+            //                                " part of the upper type bound "+
+            //                                upperTypeBound.map(_.toJava).mkString("(", ",", ")")+
+            //                                " should be a subtype of the type of the method's declaring class: "+
+            //                                declaringClassType.toJava+
+            //                                " (but this cannot be deduced reliably from the project)"+Console.RESET)
+            //                        doVirtualCall(pc, declaringClassType, name, descriptor, receiverIsNull, operands)
+            //                    } else {
+            //                        val callees = this.callees(utb.asObjectType, name, descriptor)
+            //                        callees.filter { m ⇒
+            //                            upperTypeBound.exists(
+            //                                domain.isSubtypeOf(project.classFile(m).thisType, _).isYesOrUnknown
+            //                            )
+            //                        }
+            //                    }
+            //                }
+
         }
     }
 }

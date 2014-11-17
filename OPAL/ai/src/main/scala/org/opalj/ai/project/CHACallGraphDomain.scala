@@ -33,6 +33,9 @@ package project
 import scala.collection.Set
 import scala.collection.Map
 
+import org.opalj.util.Answer
+import org.opalj.util.No
+
 import br._
 
 import domain._
@@ -55,7 +58,7 @@ import domain._
  * @author Michael Eichberg
  */
 trait CHACallGraphDomain extends CallGraphDomain {
-    domain: TheProject with TheMethod with ClassHierarchy ⇒
+    domain: MethodCallsHandling with ReferenceValuesDomain with TypedValuesFactory with Configuration with TheProject with ClassHierarchy with TheMethod with TheCode ⇒
 
     //
     // Helper data structures (shared across all instances of this domain) 
@@ -73,7 +76,7 @@ trait CHACallGraphDomain extends CallGraphDomain {
 
     private[this] var unresolvableMethodCalls = List.empty[UnresolvedMethodCall]
 
-    @inline final private[this] def addUnresolvedMethodCall(
+    @inline final protected[this] def addUnresolvedMethodCall(
         callerClass: ReferenceType, caller: Method, pc: PC,
         calleeClass: ReferenceType, calleeName: String, calleeDescriptor: MethodDescriptor): Unit = {
         unresolvableMethodCalls =
@@ -87,7 +90,7 @@ trait CHACallGraphDomain extends CallGraphDomain {
 
     private[this] val callEdgesMap = OpenHashMap.empty[PC, Set[Method]]
 
-    @inline final private[this] def addCallEdge(
+    @inline final protected[this] def addCallEdge(
         pc: PC,
         callees: Set[Method]): Unit = {
 
@@ -100,73 +103,32 @@ trait CHACallGraphDomain extends CallGraphDomain {
 
     def allCallEdges: (Method, Map[PC, Set[Method]]) = (method, callEdgesMap)
 
-    //
-    //
-    // Logic to derive call edges
-    //
-    //
-
-    def NullPointerExceptionConstructorCall(
+    def addCallToNullPointerExceptionConstructor(
         callerType: ObjectType, callerMethod: Method, pc: PC) {
 
         cache.NullPointerExceptionDefaultConstructor match {
             case Some(defaultConstructor) ⇒
                 addCallEdge(pc, HashSet(defaultConstructor))
             case _ ⇒
+                val defaultConstructorDescriptor = MethodDescriptor.NoArgsAndReturnVoid
+                val NullPointerException = ObjectType.NullPointerException
                 addUnresolvedMethodCall(
                     callerType, callerMethod, pc,
-                    ObjectType("java/lang/NullPointerException"), "<init>", MethodDescriptor.NoArgsAndReturnVoid
+                    NullPointerException, "<init>", defaultConstructorDescriptor
                 )
         }
     }
 
-    @inline protected[this] def doNonVirtualCall(
-        pc: PC,
-        declaringClassType: ObjectType,
-        name: String,
-        descriptor: MethodDescriptor,
-        operands: Operands): Unit = {
-
-        def handleUnresolvedMethodCall() =
-            addUnresolvedMethodCall(
-                classFile.thisType, method, pc,
-                declaringClassType, name, descriptor
-            )
-
-        if (classHierarchy.isKnown(declaringClassType)) {
-            classHierarchy.lookupMethodDefinition(
-                declaringClassType, name, descriptor, project
-            ) match {
-                    case Some(callee) ⇒
-                        addCallEdge(pc, HashSet(callee))
-                    case None ⇒
-                        handleUnresolvedMethodCall()
-                }
-        } else {
-            handleUnresolvedMethodCall()
-        }
-    }
-
-    @inline protected[this] def nonVirtualCall(
-        pc: PC,
-        declaringClassType: ObjectType,
-        name: String,
-        descriptor: MethodDescriptor,
-        receiverMayBeNull: Boolean,
-        operands: Operands): Unit = {
-
-        if (receiverMayBeNull)
-            NullPointerExceptionConstructorCall(classFile.thisType, method, pc)
-
-        doNonVirtualCall(pc, declaringClassType, name, descriptor, operands)
-    }
+    //
+    //
+    // Logic to derive call edges
+    //
+    //
 
     @inline protected[this] def callees(
-        pc: PC,
         declaringClassType: ObjectType,
         name: String,
-        descriptor: MethodDescriptor,
-        operands: Operands): Set[Method] = {
+        descriptor: MethodDescriptor): Set[Method] = {
 
         if (classHierarchy.isKnown(declaringClassType)) {
             val methodSignature = new MethodSignature(name, descriptor)
@@ -180,39 +142,126 @@ trait CHACallGraphDomain extends CallGraphDomain {
         }
     }
 
+    @inline protected[this] def staticCall(
+        pc: PC,
+        declaringClassType: ObjectType,
+        name: String,
+        descriptor: MethodDescriptor,
+        operands: Operands): MethodCallResult = {
+
+        def handleUnresolvedMethodCall() = {
+            addUnresolvedMethodCall(
+                classFile.thisType, method, pc,
+                declaringClassType, name, descriptor
+            )
+            handleInvoke(pc, descriptor)
+        }
+
+        if (classHierarchy.isKnown(declaringClassType)) {
+            classHierarchy.lookupMethodDefinition(
+                declaringClassType, name, descriptor, project) match {
+                    case Some(callee) ⇒
+                        addCallEdge(pc, HashSet(callee))
+                        handleInvoke(pc, callee, operands)
+                    case None ⇒
+                        handleUnresolvedMethodCall()
+                }
+        } else {
+            handleUnresolvedMethodCall()
+        }
+    }
+
+    @inline protected[this] def doNonVirtualCall(
+        pc: PC,
+        declaringClassType: ObjectType,
+        name: String,
+        descriptor: MethodDescriptor,
+        receiverIsNull: Answer,
+        operands: Operands): MethodCallResult = {
+
+        def handleUnresolvedMethodCall() = {
+            addUnresolvedMethodCall(
+                classFile.thisType, method, pc,
+                declaringClassType, name, descriptor
+            )
+            handleInstanceBasedInvoke(pc, descriptor, receiverIsNull)
+        }
+
+        if (classHierarchy.isKnown(declaringClassType)) {
+            classHierarchy.lookupMethodDefinition(
+                declaringClassType, name, descriptor, project) match {
+                    case Some(callee) ⇒
+                        val callees = HashSet(callee)
+                        addCallEdge(pc, callees)
+                        handleInstanceBasedInvoke(pc, callees, receiverIsNull, operands)
+                    case None ⇒
+                        handleUnresolvedMethodCall()
+                }
+        } else {
+            handleUnresolvedMethodCall()
+        }
+    }
+
+    /**
+     * @param receiverMayBeNull The parameter is `false` if:
+     *      - a static method is called,
+     *      - this is an invokespecial call (in this case the receiver is `this`),
+     *      - the receiver is known not to be null and the type is known to be precise.
+     */
+    @inline protected[this] def nonVirtualCall(
+        pc: PC,
+        declaringClassType: ObjectType,
+        name: String,
+        descriptor: MethodDescriptor,
+        receiverIsNull: Answer,
+        operands: Operands): MethodCallResult = {
+
+        if (receiverIsNull.isYesOrUnknown)
+            addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+
+        doNonVirtualCall(
+            pc,
+            declaringClassType, name, descriptor,
+            receiverIsNull, operands)
+    }
+
     @inline protected[this] def doVirtualCall(
         pc: PC,
         declaringClassType: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: Operands): Unit = {
+        receiverIsNull: Answer,
+        operands: Operands): MethodCallResult = {
 
-        val callees: Set[Method] =
-            this.callees(pc, declaringClassType, name, descriptor, operands)
-
+        val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
         if (callees.isEmpty) {
             addUnresolvedMethodCall(
                 classFile.thisType, method, pc,
                 declaringClassType, name, descriptor)
+            handleInstanceBasedInvoke(pc, descriptor, receiverIsNull)
         } else {
             addCallEdge(pc, callees)
+            handleInstanceBasedInvoke(pc, callees, receiverIsNull, operands)
         }
     }
 
     /**
      * @note A virtual method call is always an instance based call and never a call to
-     *      a static method.
+     *      a static method. However, the receiver may be `null` unless it is the
+     *      self reference (`this`).
      */
     @inline protected[this] def virtualCall(
         pc: PC,
         declaringClassType: ObjectType,
         name: String,
         descriptor: MethodDescriptor,
-        operands: Operands): Unit = {
+        operands: Operands): MethodCallResult = {
 
-        NullPointerExceptionConstructorCall(classFile.thisType, method, pc)
+        val receiverIsNull = refIsNull(pc, operands.last)
+        if (receiverIsNull.isYesOrUnknown)
+            addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
 
-        doVirtualCall(pc, declaringClassType, name, descriptor, operands)
+        doVirtualCall(pc, declaringClassType, name, descriptor, receiverIsNull, operands)
     }
 
     //
@@ -231,13 +280,11 @@ trait CHACallGraphDomain extends CallGraphDomain {
         if (declaringClass.isArrayType) {
             nonVirtualCall(
                 pc, ObjectType.Object, name, descriptor,
-                receiverMayBeNull = true, operands
+                refIsNull(pc, operands.last), operands
             )
         } else {
             virtualCall(pc, declaringClass.asObjectType, name, descriptor, operands)
         }
-
-        super.invokevirtual(pc, declaringClass, name, descriptor, operands)
     }
 
     abstract override def invokeinterface(
@@ -248,8 +295,6 @@ trait CHACallGraphDomain extends CallGraphDomain {
         operands: Operands): MethodCallResult = {
 
         virtualCall(pc, declaringClass, name, descriptor, operands)
-
-        super.invokeinterface(pc, declaringClass, name, descriptor, operands)
     }
 
     /**
@@ -265,10 +310,8 @@ trait CHACallGraphDomain extends CallGraphDomain {
         // for invokespecial the dynamic type is not "relevant" (even for Java 8) 
         nonVirtualCall(
             pc, declaringClass, name, descriptor,
-            receiverMayBeNull = false /*the receiver is "this" object*/ , operands
+            receiverIsNull = No /*the receiver is "this" object*/ , operands
         )
-
-        super.invokespecial(pc, declaringClass, name, descriptor, operands)
     }
 
     /**
@@ -281,11 +324,7 @@ trait CHACallGraphDomain extends CallGraphDomain {
         descriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
 
-        nonVirtualCall(
-            pc, declaringClass, name, descriptor,
-            receiverMayBeNull = false /*the receiver is the "class" object*/ , operands)
-
-        super.invokestatic(pc, declaringClass, name, descriptor, operands)
+        staticCall(pc, declaringClass, name, descriptor, operands)
     }
 }
 

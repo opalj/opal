@@ -41,7 +41,7 @@ case class ALOAD(lvIndex: Int)
 
     final def opcode: Opcode = ALOAD.opcode
 
-    final def mnemonic: String = "aload"
+    final def mnemonic: String = ALOAD.mnemonic
 
     override def equals(other: Any): Boolean = other match {
         case that: ALOAD ⇒ this.lvIndex == that.lvIndex
@@ -56,12 +56,15 @@ object ALOAD {
 
     final val opcode = 25
 
-    def canonicalRepresentation(lvIndex: Int): LoadLocalVariableInstruction = lvIndex match {
-        case 0 ⇒ ALOAD_0
-        case 1 ⇒ ALOAD_1
-        case 2 ⇒ ALOAD_2
-        case 3 ⇒ ALOAD_3
-        case _ ⇒ new ALOAD(lvIndex)
-    }
+    final val mnemonic = "aload"
+
+    def canonicalRepresentation(lvIndex: Int): LoadLocalVariableInstruction =
+        lvIndex match {
+            case 0 ⇒ ALOAD_0
+            case 1 ⇒ ALOAD_1
+            case 2 ⇒ ALOAD_2
+            case 3 ⇒ ALOAD_3
+            case _ ⇒ new ALOAD(lvIndex)
+        }
 
 }

@@ -220,7 +220,9 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
             it("the call graph created using CHA should be less precise than the one created using VTA") {
                 val (unexpected, additional) =
                     org.opalj.ai.debug.CallGraphComparison(project, CHACG, VTACG)
-                unexpected should be(empty)
+                 if (unexpected.nonEmpty)
+                        fail("the comparison of the CHA and the default VTA based call graphs failed:\n"+
+                            unexpected.mkString("\n")+"\n")
             }
         }
 
