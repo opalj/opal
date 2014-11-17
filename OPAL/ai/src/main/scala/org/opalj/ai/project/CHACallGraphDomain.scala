@@ -193,7 +193,7 @@ trait CHACallGraphDomain extends CallGraphDomain {
                     case Some(callee) ⇒
                         val callees = HashSet(callee)
                         addCallEdge(pc, callees)
-                        handleInstanceBasedInvoke(pc, callees, receiverIsNull, operands)
+                        handleInstanceBasedInvoke(pc, descriptor, callees, receiverIsNull, operands)
                     case None ⇒
                         handleUnresolvedMethodCall()
                 }
@@ -241,7 +241,7 @@ trait CHACallGraphDomain extends CallGraphDomain {
             handleInstanceBasedInvoke(pc, descriptor, receiverIsNull)
         } else {
             addCallEdge(pc, callees)
-            handleInstanceBasedInvoke(pc, callees, receiverIsNull, operands)
+            handleInstanceBasedInvoke(pc, descriptor, callees, receiverIsNull, operands)
         }
     }
 

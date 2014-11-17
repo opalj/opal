@@ -124,7 +124,7 @@ trait VTACallGraphDomain extends CHACallGraphDomain {
                 handleInstanceBasedInvoke(pc, descriptor, receiverIsNull)
             } else {
                 addCallEdge(pc, allCallees)
-                handleInstanceBasedInvoke(pc, allCallees, receiverIsNull, operands)
+                handleInstanceBasedInvoke(pc, descriptor, allCallees, receiverIsNull, operands)
             }
 
             //                val receiverType =

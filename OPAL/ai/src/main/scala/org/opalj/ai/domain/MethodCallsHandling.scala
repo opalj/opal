@@ -143,12 +143,22 @@ trait MethodCallsHandling extends MethodCallsDomain {
         handleInstanceBasedInvoke(pc, methodDescriptor, receiverIsNull)
     }
 
+    /**
+     * @param methodDescriptor The method descriptor as specified by the invoke
+     *      instruction.
+     *      In case of the invocation of a signature polymorphic method using
+     *      [[org.opalj.br.instructions.INVOKEVIRTUAL]] the descriptor of the
+     *      invoked method may differ from the descriptor used by the method. Nevertheless,
+     *      the [[MethodCallResult]] has to satisfy the requirements of the caller. In
+     *      particular regarding the return type.
+     */
     protected[this] def handleInstanceBasedInvoke(
         pc: PC,
+        methodDescriptor: MethodDescriptor,
         targetMethods: Set[Method],
         receiverIsNull: Answer,
         operands: Operands): MethodCallResult = {
-        handleInstanceBasedInvoke(pc, targetMethods.head.descriptor, receiverIsNull)
+        handleInstanceBasedInvoke(pc, methodDescriptor, receiverIsNull)
     }
 
 }
