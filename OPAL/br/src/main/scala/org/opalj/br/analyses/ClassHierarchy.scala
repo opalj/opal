@@ -1016,9 +1016,16 @@ class ClassHierarchy private (
         // we check whether the type is a subtype of all types in the bound.
         // If so, the type is added to the result set and the search terminates 
         // for this particular type.
+
+        // The analysis is complicated by the fact that an inteface may be 
+        // implemented multiple times, e.g.,:
+        // interface I
+        // interface J extends I
+        // class X implements I,J
+        // class Y implements J
         import scala.collection.mutable.Queue
 
-        val directSubtypes = HashSet.empty[ObjectType]
+        var directSubtypes = HashSet.empty[ObjectType]
         val processedTypes = HashSet.empty[ObjectType]
         val typesToProcess = Queue(directSubtypesOf(primaryType).toSeq: _*)
         while (typesToProcess.nonEmpty) {
@@ -1029,7 +1036,11 @@ class ClassHierarchy private (
                     isSubtypeOf(candidateType, otherTypeBound).isYesOrUnknown
                 }
             if (isCommonSubtype) {
-                directSubtypes += candidateType
+                directSubtypes =
+                    directSubtypes.filter { candidateDirectSubtype ⇒
+                        isSubtypeOf(candidateDirectSubtype, candidateType).isNoOrUnknown
+                    } +
+                        candidateType
             } else {
                 directSubtypesOf(candidateType).foreach { candidateType ⇒
                     if (!processedTypes.contains(candidateType))
