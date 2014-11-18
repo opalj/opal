@@ -35,5 +35,5 @@ package immutability.annotations;
  */
 public @interface Mutable {
 
-    String explanation();
+    String value();
 }

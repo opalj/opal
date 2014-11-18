@@ -26,9 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package helperclasses;
+package immutability.helperclasses;
 
-import annotations.Immutable;
+import immutability.annotations.Immutable;
 
 /**
  * A simple immutable class with a field which is of primitive type that has no setter.

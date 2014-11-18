@@ -28,7 +28,7 @@
  */
 package immutability;
 
-import annotations.Mutable;
+import immutability.annotations.Mutable;
 
 /**
  * A mutable class which defines no additional methods or fields but extends a mutable

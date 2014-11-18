@@ -28,8 +28,8 @@
  */
 package immutability;
 
-import helperclasses.MutableClass;
-import annotations.Immutable;
+import immutability.helperclasses.MutableClass;
+import immutability.annotations.Immutable;
 
 /**
  * An immutable class which gets a reference passed via the constructor but creates a

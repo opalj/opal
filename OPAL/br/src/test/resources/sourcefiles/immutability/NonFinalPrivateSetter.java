@@ -28,8 +28,8 @@
  */
 package immutability;
 
-import helperclasses.ImmutableClass;
-import annotations.Mutable;
+import immutability.helperclasses.ImmutableClass;
+import immutability.annotations.Mutable;
 
 /**
  * A simple example of a mutable class with a private attribute which is setable via a
@@ -44,5 +44,9 @@ public class NonFinalPrivateSetter {
 
     public void setName(ImmutableClass object) {
         this.object = object;
+    }
+
+    public ImmutableClass getObject() {
+        return object;
     }
 }

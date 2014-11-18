@@ -28,7 +28,7 @@
  */
 package immutability;
 
-import annotations.Mutable;
+import immutability.annotations.Mutable;
 
 /**
  * A mutable class with a non-pure method for a private field. A public method calls the

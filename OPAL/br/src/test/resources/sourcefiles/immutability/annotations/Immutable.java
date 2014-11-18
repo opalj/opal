@@ -34,5 +34,5 @@ package immutability.annotations;
  * @author Andre Pacak
  */
 public @interface Immutable {
-    String explanation();
+    String value();
 }

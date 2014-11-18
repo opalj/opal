@@ -28,8 +28,8 @@
  */
 package immutability;
 
-import helperclasses.ImmutableClass;
-import annotations.Mutable;
+import immutability.helperclasses.ImmutableClass;
+import immutability.annotations.Mutable;
 
 /**
  * A simple example of a mutable class with a public attribute.
@@ -37,7 +37,7 @@ import annotations.Mutable;
  * @author Andre Pacak
  */
 @Mutable("visible non-final field")
-public class NonFinalPublicObject {
+public class NonFinalPublicClass {
 
     public ImmutableClass object = new ImmutableClass();
 }

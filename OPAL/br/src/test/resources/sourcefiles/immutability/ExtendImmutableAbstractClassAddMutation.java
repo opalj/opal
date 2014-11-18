@@ -28,8 +28,8 @@
  */
 package immutability;
 
-import helperclasses.AbstractImmutableClass;
-import annotations.Mutable;
+import immutability.helperclasses.AbstractImmutableClass;
+import immutability.annotations.Mutable;
 
 /**
  * A mutable class which extends an immutable abstract class but adds mutation via a
@@ -38,7 +38,7 @@ import annotations.Mutable;
  * @author Andre Pacak
  */
 @Mutable("extends an abstract immutable class and defines a public setter method for a protected field")
-public class ExtendImmutableAbstractClassAddMutation extends AbstractImmutableClass {
+public abstract class ExtendImmutableAbstractClassAddMutation extends AbstractImmutableClass {
 
     public void doSomething(int x) {
         this.x = x;

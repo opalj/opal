@@ -28,8 +28,8 @@
  */
 package immutability;
 
-import helperclasses.MutableClass;
-import annotations.Mutable;
+import immutability.helperclasses.ImmutableClass;
+import immutability.annotations.Mutable;
 
 /**
  * A mutable class which defines a new method and extends an immutable class which has a

@@ -26,9 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package helperclasses;
+package immutability.helperclasses;
 
-import annotations.Immutable;
+import immutability.annotations.Immutable;
 
 /**
  * An abstract class which is immutable which contains a non final field.
@@ -42,6 +42,10 @@ public abstract class AbstractImmutableClass {
 
     public AbstractImmutableClass(int x) {
         this.x = x;
+    }
+
+    public AbstractImmutableClass() {
+        this(0);
     }
 
     public int getX() {

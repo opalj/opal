@@ -28,7 +28,7 @@
  */
 package immutability;
 
-import annotations.Mutable;
+import immutability.annotations.Mutable;
 
 /**
  * Rate an object of this class as mutable because it contains a volatile field.
@@ -44,4 +44,3 @@ public class VolatileFieldClass {
         return x;
     }
 }
- 

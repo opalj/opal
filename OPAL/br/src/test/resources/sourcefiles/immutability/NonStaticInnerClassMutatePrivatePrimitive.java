@@ -28,7 +28,7 @@
  */
 package immutability;
 
-import annotations.Mutable;
+import immutability.annotations.Mutable;
 
 /**
  * A at first glance an immutable class. But it contains an inner class which adds a
@@ -43,6 +43,10 @@ public class NonStaticInnerClassMutatePrivatePrimitive {
 
     public NonStaticInnerClassMutatePrivatePrimitive(int x) {
         this.x = x;
+    }
+
+    public int getX() {
+        return x;
     }
 
     public class InnerClass {

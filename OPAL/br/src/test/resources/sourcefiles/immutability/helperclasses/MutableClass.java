@@ -26,9 +26,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package helperclasses;
+package immutability.helperclasses;
 
-import annotations.Mutable;
+import immutability.annotations.Mutable;
 
 /**
  * A simple mutable class with a public field of primitive type.
@@ -36,7 +36,11 @@ import annotations.Mutable;
  * @author Andre Pacak
  */
 @Mutable("public non-final primitive")
-public class MutableClass {
+public class MutableClass implements Cloneable {
 
     public int x = 0;
+    
+    public MutableClass clone() {
+        return new MutableClass();
+    }
 }

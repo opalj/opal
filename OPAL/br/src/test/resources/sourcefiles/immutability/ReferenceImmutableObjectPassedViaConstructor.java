@@ -28,8 +28,8 @@
  */
 package immutability;
 
-import helperclasses.ImmutableClass;
-import annotations.Immutable;
+import immutability.helperclasses.ImmutableClass;
+import immutability.annotations.Immutable;
 
 /**
  * An immutable class which contains a field that references an immutable object which is

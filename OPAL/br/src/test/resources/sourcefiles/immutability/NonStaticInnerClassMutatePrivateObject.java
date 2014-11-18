@@ -28,8 +28,8 @@
  */
 package immutability;
 
-import helperclasses.MutableClass;
-import annotations.Mutable;
+import immutability.helperclasses.MutableClass;
+import immutability.annotations.Mutable;
 
 /**
  * A mutable class which contains a private final mutable object and an inner class that

@@ -28,8 +28,8 @@
  */
 package immutability;
 
-import helperclasses.ImmutableClass;
-import annotations.Immutable;
+import immutability.helperclasses.ImmutableClass;
+import immutability.annotations.Immutable;
 
 /**
  * An immutable class which has a private field which is lazily initialized.
@@ -45,6 +45,6 @@ public class LazyInitField {
         if (this.lazyInitField == null) {
             this.lazyInitField = new ImmutableClass();
         }
-        return this.xAsString;
+        return lazyInitField.toString();
     }
 }

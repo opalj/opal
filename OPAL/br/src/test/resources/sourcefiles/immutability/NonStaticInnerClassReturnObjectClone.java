@@ -28,8 +28,8 @@
  */
 package immutability;
 
-import helperclasses.MutableClass;
-import annotations.Immutable;
+import immutability.helperclasses.MutableClass;
+import immutability.annotations.Immutable;
 
 /**
  * A immutable class which contains a mutable object and an inner class which has a method

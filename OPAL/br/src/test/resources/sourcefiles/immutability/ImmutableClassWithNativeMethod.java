@@ -28,7 +28,7 @@
  */
 package immutability;
 
-import annotations.Mutable;
+import immutability.annotations.Mutable;
 
 /**
  * A class with a native method. A save approximation is to mark is as mutable.

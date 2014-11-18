@@ -28,8 +28,8 @@
  */
 package immutability;
 
-import helperclasses.ImmutableClass;
-import annotations.Immutable;
+import immutability.helperclasses.ImmutableClass;
+import immutability.annotations.Immutable;
 
 /**
  * A simple example of an immutable class with a public final attribute which is of a

@@ -28,7 +28,7 @@
  */
 package immutability;
 
-import annotations.Immutable;
+import immutability.annotations.Immutable;
 
 /**
  * A simple example of an immutable class with a private final attribute which is of a
