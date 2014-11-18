@@ -37,7 +37,7 @@ import immutability.annotations.Immutable;
  * @author Andre Pacak
  */
 @Immutable("defines a mutable field that is not mutated")
- public class ImmutableClass {
+public class ImmutableClass {
 
     protected int x = 0;
 
