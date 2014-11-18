@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,20 +28,20 @@
  */
 package org.opalj
 package ai
-package project
+
+import org.opalj.ai.analyses.FieldValuesAnalysisDomain
+import org.opalj.br.Field
+
+import scala.language.existentials
+
+import org.opalj.ai.analyses.FieldValuesAnalysisDomain
+import org.opalj.br.Field
 
 /**
- * Tests the VTA based `CallGraph` algorithm using a more complex (explicitly
- * annotated) project.
- *
  * @author Michael Eichberg
  */
-class ComplexExtVTACallGraphTest extends AbstractCallGraphTest {
+package object analyses {
 
-    override def testFileName = "classfiles/callgraph.jar"
+    type FieldValueInformation = Map[Field, FieldValuesAnalysisDomain#DomainValue]
 
-    override def testFilePath = "ai"
-
-    override def testCallGraphConfiguration =
-        new ExtVTACallGraphAlgorithmConfiguration(project)
 }

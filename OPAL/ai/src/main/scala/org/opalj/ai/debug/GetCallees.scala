@@ -40,7 +40,6 @@ import org.opalj.ai.project.CallGraphCache
 import org.opalj.ai.project.VTACallGraphExtractor
 import org.opalj.ai.project.CHACallGraphExtractor
 import org.opalj.ai.project.CallGraphExtractor
-
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.TheClassFile
@@ -48,6 +47,7 @@ import org.opalj.ai.domain.TheMethod
 import org.opalj.ai.domain.ClassHierarchy
 import org.opalj.ai.domain.TheCode
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.analyses.FieldValuesKey
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -145,7 +145,11 @@ object GetCallees {
         val (domain: CallGraphDomain, extractor: CallGraphExtractor) =
             if (useVTA) {
                 println("USING VTA")
-                val domain = new DefaultVTACallGraphDomain(project, cache, classFile, method /*, 4*/ )
+                val domain =
+                    new DefaultVTACallGraphDomain(
+                        project, project.get(FieldValuesKey),
+                        cache,
+                        classFile, method /*, 4*/ )
                 (
                     domain,
                     new VTACallGraphExtractor(

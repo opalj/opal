@@ -31,11 +31,9 @@ package ai
 package project
 
 import scala.collection.Set
-
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain.TheClassFile
 import org.opalj.br.analyses.Project
-
 import br.ClassFile
 import br.Method
 import br.MethodSignature
@@ -48,6 +46,7 @@ import domain.TheMethod
 import domain.TheProject
 import domain.ThrowAllPotentialExceptionsConfiguration
 import domain.l0
+import org.opalj.ai.analyses.FieldValueInformation
 
 /**
  * Domain object which is used to calculate the call graph using variable type analysis.
@@ -56,6 +55,7 @@ import domain.l0
  */
 class BasicVTACallGraphDomain[Source](
     val project: Project[Source],
+    val fieldValueInformation: FieldValueInformation,
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method: Method)

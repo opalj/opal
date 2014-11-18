@@ -31,10 +31,8 @@ package ai
 package project
 
 import scala.collection.Set
-
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.br.analyses.Project
-
 import br.ClassFile
 import br.Method
 import br.MethodSignature
@@ -49,6 +47,7 @@ import domain.TheProject
 import domain.ThrowAllPotentialExceptionsConfiguration
 import domain.l0
 import domain.l1
+import org.opalj.ai.analyses.FieldValueInformation
 
 /**
  * Domain object which can used to calculate the call graph using variable type analysis.
@@ -59,6 +58,7 @@ import domain.l1
  */
 class ExtVTACallGraphDomain[Source](
     val project: Project[Source],
+    val fieldValueInformation: FieldValueInformation,
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method: Method)

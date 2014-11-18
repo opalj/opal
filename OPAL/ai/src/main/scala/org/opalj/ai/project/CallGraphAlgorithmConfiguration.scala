@@ -50,17 +50,19 @@ import org.opalj.ai.domain.TheCode
  */
 trait CallGraphAlgorithmConfiguration {
 
+    val project: SomeProject
+
     /**
      * The contour identifies the key of the CallGraphCache.
      */
-    type Contour
+    protected type Contour
 
     /**
      * The type of the cached values.
      */
-    type Value
+    protected type Value
 
-    type Cache <: CallGraphCache[Contour, Value]
+    protected type Cache <: CallGraphCache[Contour, Value]
 
     /**
      * Creates a new cache that is used to cache intermediate results while
@@ -68,7 +70,9 @@ trait CallGraphAlgorithmConfiguration {
      *
      * Usually created only once per run.
      */
-    def Cache(project: SomeProject): Cache
+    protected[this] val cache: Cache
+
+    val Extractor: CallGraphExtractor
 
     type CallGraphDomain = Domain with ReferenceValuesDomain with TheProject with ClassHierarchy with TheClassFile with TheMethod with TheCode
 
@@ -76,12 +80,6 @@ trait CallGraphAlgorithmConfiguration {
      * Returns the new domain object that will be used to analyze the given
      * method.
      */
-    def Domain[Source](
-        theProject: Project[Source],
-        cache: Cache,
-        classFile: ClassFile,
-        method: Method): CallGraphDomain
-
-    def Extractor(cache: Cache): CallGraphExtractor
+    def Domain[Source](classFile: ClassFile, method: Method): CallGraphDomain
 
 }
