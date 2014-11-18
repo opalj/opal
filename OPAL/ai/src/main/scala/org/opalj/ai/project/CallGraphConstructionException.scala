@@ -43,7 +43,7 @@ import org.opalj.br.{ ClassFile, Method }
 case class CallGraphConstructionException(
         classFile: ClassFile,
         method: Method,
-        cause: Exception) {
+        cause: Throwable) {
 
     import Console._
 

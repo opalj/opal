@@ -235,7 +235,7 @@ class ClassHierarchyTest
         directSubtypesOf(UIDSet[ObjectType](cRootAAABBCType)) should be(Set(cRootAAABBCType))
     }
 
-    it should "return the type that is the is a subtype of all types of the bound" in {
+    it should "return the type that is the subtype of all types of the bound" in {
         import typesProject.classHierarchy.directSubtypesOf
         directSubtypesOf(UIDSet[ObjectType](iRootAType, iRootBType)) should be(Set(cRootAABType))
         directSubtypesOf(UIDSet[ObjectType](cRootAType, iRootBType)) should be(Set(cRootAABType))

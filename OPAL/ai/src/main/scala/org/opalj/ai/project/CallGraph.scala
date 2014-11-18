@@ -57,8 +57,8 @@ class CallGraph private[project] (
         private[this] val calledByMap: Map[Method, Map[Method, PCs]],
         private[this] val callsMap: Map[Method, Map[PC, Iterable[Method]]]) {
 
-    assert(calledByMap.values.forall(_.size > 0))
-    assert(callsMap.values.forall(_.size > 0))
+    // assert(calledByMap.values.forall(_.size > 0))
+    // assert(callsMap.values.forall(_.size > 0))
 
     /**
      * Returns the invoke instructions (by means of (`Method`,`PC`) pairs) that

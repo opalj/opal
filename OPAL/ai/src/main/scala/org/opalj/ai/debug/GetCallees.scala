@@ -37,6 +37,17 @@ import org.opalj.ai.project.VTACallGraphAlgorithmConfiguration
 import org.opalj.ai.project.DefaultVTACallGraphDomain
 import org.opalj.ai.project.DefaultCHACallGraphDomain
 import org.opalj.ai.project.CallGraphCache
+import org.opalj.ai.project.VTACallGraphExtractor
+import org.opalj.ai.project.CHACallGraphExtractor
+import org.opalj.ai.project.CallGraphExtractor
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.TheProject
+import org.opalj.ai.domain.TheClassFile
+import org.opalj.ai.domain.TheMethod
+import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.ai.domain.TheCode
+import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.analyses.FieldValuesKey
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -129,26 +140,45 @@ object GetCallees {
                 }
 
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](project)
-        val domain =
-            if (args.length == 4 && args(3) == "VTA") {
+        val useVTA = args.length == 4 && args(3) == "VTA"
+        type CallGraphDomain = Domain with ReferenceValuesDomain with TheProject with ClassHierarchy with TheClassFile with TheMethod with TheCode
+        val (domain: CallGraphDomain, extractor: CallGraphExtractor) =
+            if (useVTA) {
                 println("USING VTA")
-                new DefaultVTACallGraphDomain(project, cache, classFile, method /*, 4*/ )
+                val domain =
+                    new DefaultVTACallGraphDomain(
+                        project, project.get(FieldValuesKey),
+                        cache,
+                        classFile, method /*, 4*/ )
+                (
+                    domain,
+                    new VTACallGraphExtractor(
+                        new CallGraphCache[MethodSignature, scala.collection.Set[Method]](project)
+                    )
+                )
             } else {
                 println("USING CHA")
-                new DefaultCHACallGraphDomain(project, cache, classFile, method)
+                val domain = new DefaultCHACallGraphDomain(project, cache, classFile, method)
+                (
+                    domain,
+                    new CHACallGraphExtractor(
+                        new CallGraphCache[MethodSignature, scala.collection.Set[Method]](project)
+                    )
+                )
             }
 
         import org.opalj.ai.debug.XHTML.dump
 
         try {
             val result = AI(classFile, method, domain)
-            val (_, callees) = domain.allCallEdges
+            val (allCallEdges, allUnresolvableMethodCalls) = extractor.extract(result)
+            val (_, callees) = allCallEdges
             for ((pc, methods) ← callees) {
                 println("\n"+pc+":"+method.body.get.instructions(pc)+" calls: ")
                 for (method ← methods) {
                     println(Console.GREEN+"\t\t+ "+project.classFile(method).thisType.toJava+"{ "+method.toJava+" }")
                 }
-                domain.allUnresolvableMethodCalls.find(_.pc == pc).map { unresolvedCall ⇒
+                allUnresolvableMethodCalls.find(_.pc == pc).map { unresolvedCall ⇒
                     println(Console.RED+"\t\t- "+
                         unresolvedCall.calleeClass.toJava+
                         "{ "+unresolvedCall.calleeDescriptor.toJava(unresolvedCall.calleeName)+" }")

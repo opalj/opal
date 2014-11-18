@@ -123,7 +123,7 @@ trait UShortSet {
     def last: UShort = max
 
     /**
-     * The number of elements of this set.
+     * The number of elements of this set (the complexity is O(n)).
      *
      * @note The size is calculated on demand and requires a traversal of this
      *      data structure.

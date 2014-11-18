@@ -62,9 +62,8 @@ object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
 
         val entryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project)
         CallGraphFactory.create(
-            project,
-            entryPoints,
-            new DefaultVTACallGraphAlgorithmConfiguration())
+            project, entryPoints,
+            new DefaultVTACallGraphAlgorithmConfiguration(project))
     }
 }
 
