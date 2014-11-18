@@ -36,7 +36,7 @@ import immutability.annotations.Immutable;
  *
  * @author Andre Pacak
  */
-@Immutable("final primitve type with getter method")
+@Immutable("only defines a final field with a value type")
 public class FinalPrivatePrimitiveType {
 
     private final int x = 1;

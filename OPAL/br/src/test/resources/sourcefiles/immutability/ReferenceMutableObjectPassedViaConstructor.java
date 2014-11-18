@@ -37,7 +37,7 @@ import immutability.annotations.Mutable;
  * 
  * @author Andre Pacak
  */
-@Mutable("mutable object is visble outside of class because constructor does not create a clone of the argument")
+@Mutable("has a reference to a mutable object that was created externally")
 public class ReferenceMutableObjectPassedViaConstructor {
 
     private final MutableClass object;

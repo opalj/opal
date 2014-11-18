@@ -31,11 +31,11 @@ package immutability;
 import immutability.annotations.Mutable;
 
 /**
- * Rate an object of this class as mutable because it contains a volatile field.
+ * Defines a public, non-final field.
  * 
  * @author Andre Pacak
  */
-@Mutable("volatile public non-final field")
+@Mutable("defines a public, non-final field")
 public class VolatileFieldClass {
 
     public volatile int x;

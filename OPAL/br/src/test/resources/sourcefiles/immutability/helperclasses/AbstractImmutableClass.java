@@ -35,7 +35,7 @@ import immutability.annotations.Immutable;
  *
  * @author Andre Pacak
  */
-@Immutable("non-setable protected primitive field")
+@Immutable("no field is mutated")
 public abstract class AbstractImmutableClass {
 
     protected int x;

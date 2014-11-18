@@ -35,7 +35,7 @@ import immutability.annotations.Mutable;
  * 
  * @author Andre Pacak
  */
-@Mutable("contains native method and classes with native methods are considered mutable")
+@Mutable("defines a native method")
 public class ImmutableClassWithNativeMethod {
 
     private int x;

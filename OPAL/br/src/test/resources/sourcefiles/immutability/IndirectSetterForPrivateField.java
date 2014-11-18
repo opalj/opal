@@ -36,7 +36,7 @@ import immutability.annotations.Mutable;
  * 
  * @author Andre Pacak
  */
-@Mutable("defines public non-pure method")
+@Mutable("defines a public method that potentially mutates the state of the object")
 public class IndirectSetterForPrivateField {
 
     private int x = 0;

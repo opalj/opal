@@ -36,7 +36,7 @@ import immutability.annotations.Mutable;
  *
  * @author Andre Pacak
  */
-@Mutable("inner class provides setter for field of enclosing class")
+@Mutable("the inner class implements a setter for a private field of the enclosing class")
 public class NonStaticInnerClassMutatePrivatePrimitive {
 
     private int x;

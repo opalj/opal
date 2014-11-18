@@ -36,7 +36,7 @@ import immutability.annotations.Immutable;
  * 
  * @author Andre Pacak
  */
-@Immutable("a field that gets lazily initialized")
+@Immutable("the fields is lazily initialized")
 public class LazyInitField {
 
     private ImmutableClass lazyInitField = null;

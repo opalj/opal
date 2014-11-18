@@ -35,10 +35,9 @@ import immutability.annotations.Immutable;
  * A immutable class which contains a mutable object and an inner class which has a method
  * that returns the clone of the mutable object
  *
- *
  * @author Andre Pacak
  */
-@Immutable("inner class provides method that returns the clone of a mutable object which is a field of the enclosing class")
+@Immutable("defines a field that stores a mutable object, but that object is never mutated and not made accessible beyond the scope of the inner class")
 public class NonStaticInnerClassReturnObjectClone {
 
     private final MutableClass object;

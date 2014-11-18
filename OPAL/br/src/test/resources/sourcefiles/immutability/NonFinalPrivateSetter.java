@@ -37,7 +37,7 @@ import immutability.annotations.Mutable;
  *
  * @author Andre Pacak
  */
-@Mutable("public setter method for private field")
+@Mutable("defines a public setter for a private field")
 public class NonFinalPrivateSetter {
 
     private ImmutableClass object = new ImmutableClass();

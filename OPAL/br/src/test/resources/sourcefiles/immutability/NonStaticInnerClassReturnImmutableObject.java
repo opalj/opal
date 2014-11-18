@@ -29,7 +29,7 @@
 package immutability;
 
 import immutability.helperclasses.ImmutableClass;
-import immutability.annotations.Immutable;
+import immutability.annotations.Mutable;
 
 /**
  * An immutable class which contains an immutable object and an inner class which has a
@@ -37,7 +37,7 @@ import immutability.annotations.Immutable;
  *
  * @author Andre Pacak
  */
-@Immutable("the field, of the enclosing class which gets returned by a method of the inner class, is immutable")
+@Mutable("the field of the enclosing class, which gets returned by a method of the inner class, is potentially mutable (after a downcast)")
 public class NonStaticInnerClassReturnImmutableObject {
 
     private final ImmutableClass object;

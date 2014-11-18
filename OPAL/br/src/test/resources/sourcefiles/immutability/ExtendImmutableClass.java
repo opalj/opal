@@ -37,7 +37,7 @@ import immutability.annotations.Immutable;
  *
  * @author Andre Pacak
  */
-@Immutable("extend immutable class and define a non-resetable field")
+@Immutable("extends an immutable class and only defines fields that are not mutated")
 public class ExtendImmutableClass extends ImmutableClass {
 
     private int y;

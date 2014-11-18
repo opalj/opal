@@ -36,8 +36,9 @@ import immutability.annotations.Mutable;
  *
  * @author Andre Pacak
  */
-@Mutable("visible non-final field")
+@Mutable("defines a public, non-final field")
 public class NonFinalPublicClass {
 
     public ImmutableClass object = new ImmutableClass();
+
 }
