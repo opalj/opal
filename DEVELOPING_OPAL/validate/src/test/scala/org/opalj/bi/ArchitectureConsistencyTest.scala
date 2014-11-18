@@ -50,7 +50,9 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
 
     it should "be consistent with the specified architecture" in {
         val expected =
-            new Specification {
+            new Specification(
+                Specification.SourceDirectory("OPAL/bi/target/scala-2.11/classes")
+            ) {
 
                 ensemble('Bi) {
                     "org.opalj.bi.**" except
@@ -71,10 +73,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
 
             }
 
-        val result = expected.analyze(
-            // Specification.SourceDirectory("." )
-            Specification.SourceDirectory("OPAL/bi/target/scala-2.11/classes")
-        )
+        val result = expected.analyze()
         if (result.nonEmpty) {
             println("Violations:\n\t"+result.mkString("\n\t"))
             fail("The implemented and the specified architecture are not consistent (see the console for details).")

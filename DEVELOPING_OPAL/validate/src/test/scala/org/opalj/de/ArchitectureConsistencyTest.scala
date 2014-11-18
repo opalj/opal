@@ -52,7 +52,9 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
 
     it should "be well modularized in the sense that a superpackage does not depend on a subpackage" in {
         val expected =
-            new Specification {
+            new Specification(
+                Specification.SourceDirectory("OPAL/de/target/scala-2.11/classes")
+            ) {
 
                 val DependencyExtractorElements: SourceElementsMatcher =
                     "org.opalj.de.DependencyExtractor*"
@@ -76,9 +78,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                 'DependencyExtractorCore is_only_allowed_to_use empty
             }
 
-        val result = expected.analyze(
-            Specification.SourceDirectory("OPAL/de/target/scala-2.11/classes")
-        )
+        val result = expected.analyze()
         result.mkString("\n") should be("")
     }
 
