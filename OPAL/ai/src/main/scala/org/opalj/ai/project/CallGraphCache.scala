@@ -66,7 +66,7 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  */
 class CallGraphCache[Contour, Value](
-        final val NullPointerExceptionDefaultConstructor: Option[Method]) {
+        val NullPointerExceptionDefaultConstructor: Option[Method]) {
 
     def this(project: SomeProject) = {
         this(
