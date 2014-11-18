@@ -31,12 +31,22 @@ package ai
 package project
 
 import scala.collection.Set
-import scala.collection.Map
 
-import br._
-import br.analyses._
+import org.opalj.ai.CorrelationalDomain
+import org.opalj.br.analyses.Project
 
-import domain._
+import br.ClassFile
+import br.Method
+import br.MethodSignature
+import br.analyses.Project
+import domain.DefaultDomainValueBinding
+import domain.DefaultHandlingOfMethodResults
+import domain.IgnoreSynchronization
+import domain.ProjectBasedClassHierarchy
+import domain.TheClassFile
+import domain.TheMethod
+import domain.TheProject
+import domain.ThrowAllPotentialExceptionsConfiguration
 import domain.l0
 import domain.l1
 
@@ -57,6 +67,7 @@ class ExtVTACallGraphDomain[Source](
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject
         with ProjectBasedClassHierarchy
+        with TheClassFile
         with TheMethod
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
@@ -70,5 +81,4 @@ class ExtVTACallGraphDomain[Source](
         with l1.DefaultReferenceValuesBinding
         with l0.TypeLevelInvokeInstructions
         with l0.RefinedTypeLevelFieldAccessInstructions
-        with VTACallGraphDomain
 

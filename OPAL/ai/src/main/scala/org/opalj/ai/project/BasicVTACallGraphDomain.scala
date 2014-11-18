@@ -33,6 +33,7 @@ package project
 import scala.collection.Set
 
 import org.opalj.ai.CorrelationalDomain
+import org.opalj.ai.domain.TheClassFile
 import org.opalj.br.analyses.Project
 
 import br.ClassFile
@@ -63,6 +64,7 @@ class BasicVTACallGraphDomain[Source](
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject
         with ProjectBasedClassHierarchy
+        with TheClassFile
         with TheMethod
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
@@ -74,5 +76,4 @@ class BasicVTACallGraphDomain[Source](
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelInvokeInstructions
         with l0.RefinedTypeLevelFieldAccessInstructions
-        with VTACallGraphDomain
 

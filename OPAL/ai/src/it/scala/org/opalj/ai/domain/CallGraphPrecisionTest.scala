@@ -54,7 +54,6 @@ import org.opalj.ai.project.CallGraphFactory
 import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
 import org.opalj.ai.project.ComputedCallGraph
 import org.opalj.ai.project.VTACallGraphAlgorithmConfiguration
-import org.opalj.ai.project.VTACallGraphDomain
 import org.opalj.ai.project.DefaultVTACallGraphDomain
 import org.opalj.ai.project.ExtVTACallGraphDomain
 import org.opalj.ai.project.BasicVTACallGraphDomain
@@ -187,7 +186,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                                 theProject: Project[Source],
                                 cache: Cache,
                                 classFile: ClassFile,
-                                method: Method): VTACallGraphDomain =
+                                method: Method): CallGraphDomain =
                                 new DefaultVTACallGraphDomain(
                                     theProject, cache, classFile, method
                                 ) with domain.ConstantFieldValuesResolution
@@ -204,7 +203,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                                 theProject: Project[Source],
                                 cache: Cache,
                                 classFile: ClassFile,
-                                method: Method): VTACallGraphDomain =
+                                method: Method): CallGraphDomain =
                                 new DefaultVTACallGraphDomain(
                                     theProject, cache, classFile, method
                                 ) with domain.ConstantFieldValuesResolution
@@ -240,7 +239,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                                 theProject: Project[Source],
                                 cache: Cache,
                                 classFile: ClassFile,
-                                method: Method): VTACallGraphDomain =
+                                method: Method): CallGraphDomain =
                                 new BasicVTACallGraphDomain(
                                     theProject, cache, classFile, method
                                 ) with domain.ConstantFieldValuesResolution
@@ -256,7 +255,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                                 theProject: Project[Source],
                                 cache: Cache,
                                 classFile: ClassFile,
-                                method: Method): VTACallGraphDomain =
+                                method: Method): CallGraphDomain =
                                 new DefaultVTACallGraphDomain(
                                     theProject, cache, classFile, method
                                 ) with domain.ConstantFieldValuesResolution
@@ -281,7 +280,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                                 theProject: Project[Source],
                                 cache: Cache,
                                 classFile: ClassFile,
-                                method: Method): VTACallGraphDomain =
+                                method: Method): CallGraphDomain =
                                 new ExtVTACallGraphDomain(
                                     theProject, cache, classFile, method
                                 ) with domain.ConstantFieldValuesResolution

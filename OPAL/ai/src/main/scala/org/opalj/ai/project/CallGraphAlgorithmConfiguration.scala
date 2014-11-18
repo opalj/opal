@@ -33,6 +33,12 @@ package project
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.TheProject
+import org.opalj.ai.domain.TheClassFile
+import org.opalj.ai.domain.TheMethod
+import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.ai.domain.TheCode
 
 /**
  * Configuration of a specific call graph algorithm. Basically, the configuration
@@ -62,7 +68,9 @@ trait CallGraphAlgorithmConfiguration {
      *
      * Usually created only once per run.
      */
-    def Cache(project: SomeProject): this.type#Cache
+    def Cache(project: SomeProject): Cache
+
+    type CallGraphDomain = Domain with ReferenceValuesDomain with TheProject with ClassHierarchy with TheClassFile with TheMethod with TheCode
 
     /**
      * Returns the new domain object that will be used to analyze the given
@@ -70,8 +78,10 @@ trait CallGraphAlgorithmConfiguration {
      */
     def Domain[Source](
         theProject: Project[Source],
-        cache: this.type#Cache,
+        cache: Cache,
         classFile: ClassFile,
         method: Method): CallGraphDomain
+
+    def Extractor(cache: Cache): CallGraphExtractor
 
 }

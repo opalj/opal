@@ -59,9 +59,10 @@ abstract class VTACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConf
 
     type Cache = CallGraphCache[Contour, Value]
 
-    def Cache(project: SomeProject): this.type#Cache =
+    def Cache(project: SomeProject): Cache =
         new CallGraphCache[MethodSignature, Value](project)
 
+    def Extractor(cache: Cache) = new VTACallGraphExtractor(cache)
 }
 
 class BasicVTACallGraphAlgorithmConfiguration extends VTACallGraphAlgorithmConfiguration {
@@ -70,7 +71,7 @@ class BasicVTACallGraphAlgorithmConfiguration extends VTACallGraphAlgorithmConfi
         theProject: Project[Source],
         cache: Cache,
         classFile: ClassFile,
-        method: Method): VTACallGraphDomain =
+        method: Method) =
         new BasicVTACallGraphDomain(theProject, cache, classFile, method)
 }
 
@@ -80,7 +81,7 @@ class DefaultVTACallGraphAlgorithmConfiguration extends VTACallGraphAlgorithmCon
         theProject: Project[Source],
         cache: Cache,
         classFile: ClassFile,
-        method: Method): VTACallGraphDomain =
+        method: Method) =
         new DefaultVTACallGraphDomain(theProject, cache, classFile, method)
 }
 
@@ -90,6 +91,6 @@ class ExtVTACallGraphAlgorithmConfiguration extends VTACallGraphAlgorithmConfigu
         theProject: Project[Source],
         cache: Cache,
         classFile: ClassFile,
-        method: Method): VTACallGraphDomain =
+        method: Method) =
         new ExtVTACallGraphDomain(theProject, cache, classFile, method)
 }

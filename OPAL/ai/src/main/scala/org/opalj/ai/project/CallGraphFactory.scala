@@ -101,6 +101,8 @@ object CallGraphFactory {
         import java.util.concurrent.ExecutorCompletionService
 
         val cache = configuration.Cache(theProject)
+        val extractor = configuration.Extractor(cache)
+        import extractor.extract
 
         /* START - EXECUTED CONCURRENTLY */
         def doAnalyzeMethod(method: Method): Callable[MethodAnalysisResult] =
@@ -109,14 +111,16 @@ object CallGraphFactory {
                     val classFile = theProject.classFile(method)
                     val domain = configuration.Domain(theProject, cache, classFile, method)
                     try {
-                        BaseAI(classFile, method, domain)
-                        (domain.allCallEdges, domain.allUnresolvableMethodCalls, None)
+                        val result = BaseAI(classFile, method, domain)
+                        val (callEdges, unresolveableMethodCalls) = extract(result)
+                        (callEdges, unresolveableMethodCalls, None)
                     } catch {
-                        case exception: Exception ⇒
+                        case ct: scala.util.control.ControlThrowable ⇒ throw ct
+                        case t: Throwable ⇒
                             (
-                                domain.allCallEdges,
-                                domain.allUnresolvableMethodCalls,
-                                Some(CallGraphConstructionException(classFile, method, exception))
+                                (method, Map.empty[PC, /*Callees*/ Set[Method]]),
+                                List.empty,
+                                Some(CallGraphConstructionException(classFile, method, t))
                             )
                     }
                 }

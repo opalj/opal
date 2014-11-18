@@ -43,7 +43,6 @@ import org.opalj.ai.project.CallGraphFactory
 import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
 import org.opalj.ai.project.ComputedCallGraph
 import org.opalj.ai.project.VTACallGraphAlgorithmConfiguration
-import org.opalj.ai.project.VTACallGraphDomain
 import org.opalj.ai.project.DefaultVTACallGraphDomain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
@@ -107,7 +106,7 @@ object CallGraphDiff extends AnalysisExecutor {
             //                                            theProject: Project[Source],
             //                                            cache: Cache,
             //                                            classFile: ClassFile,
-            //                                            method: Method): VTACallGraphDomain =
+            //                                            method: Method) =
             //                                            new DefaultVTACallGraphDomain(
             //                                                theProject, cache, classFile, method, 1
             //                                            )
@@ -127,10 +126,10 @@ object CallGraphDiff extends AnalysisExecutor {
                         theProject: Project[Source],
                         cache: Cache,
                         classFile: ClassFile,
-                        method: Method): VTACallGraphDomain =
+                        method: Method) =
                         new DefaultVTACallGraphDomain(
                             theProject, cache, classFile, method //, 4
-                        ) with domain.ConstantFieldValuesResolution
+                        )
                 })
         } { t ⇒ println("creating the more precise call graph took: "+ns2sec(t)) }
 

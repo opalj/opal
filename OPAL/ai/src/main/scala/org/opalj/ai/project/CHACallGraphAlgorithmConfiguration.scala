@@ -55,14 +55,16 @@ class CHACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration
 
     type Cache = CallGraphCache[Contour, Value]
 
-    def Cache(project: SomeProject): this.type#Cache =
+    def Cache(project: SomeProject): Cache =
         new CallGraphCache[MethodSignature, Value](project)
 
     def Domain[Source](
         theProject: Project[Source],
         cache: Cache,
         classFile: ClassFile,
-        method: Method): CHACallGraphDomain =
+        method: Method): CallGraphDomain =
         new DefaultCHACallGraphDomain(theProject, cache, classFile, method)
+
+    def Extractor(cache: Cache) = new CHACallGraphExtractor(cache)
 }
 
