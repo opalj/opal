@@ -224,11 +224,10 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     // UNARY EXPRESSIONS
     //
 
-    override def ineg(pc: PC, value: DomainValue) =
-        value match {
-            case (IntegerValue(v)) ⇒ IntegerValue(pc, -v)
-            case _                 ⇒ value
-        }
+    override def ineg(pc: PC, value: DomainValue) = value match {
+        case v: IntegerValue ⇒ IntegerValue(pc, -v.value)
+        case _               ⇒ IntegerValue(vo = pc)
+    }
 
     //
     // BINARY EXPRESSIONS
@@ -243,16 +242,14 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
 
     override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (_, IntegerValue(-1)) ⇒ value1
-            case (_, IntegerValue(0))  ⇒ value2
-            case (IntegerValue(-1), _) ⇒ value2
-            case (IntegerValue(0), _)  ⇒ value1
+            case (_, IntegerValue(-1))              ⇒ value1
+            case (_, IntegerValue(0))               ⇒ value2
+            case (IntegerValue(-1), _)              ⇒ value2
+            case (IntegerValue(0), _)               ⇒ value1
 
-            case (IntegerValue(l), IntegerValue(r)) ⇒
-                IntegerValue(pc, l & r)
+            case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l & r)
 
-            case _ ⇒
-                IntegerValue(vo = pc)
+            case _                                  ⇒ IntegerValue(vo = pc)
         }
     }
 
@@ -368,12 +365,8 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
 
     override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue =
         value match {
-            case (IntegerValue(v)) ⇒
-                IntegerValue(pc, v + increment)
-            case _ ⇒
-                // The given value is "some (unknown) integer value"
-                // hence, we can directly return it.
-                value
+            case v: IntegerValue ⇒ IntegerValue(pc, v.value + increment)
+            case _               ⇒ IntegerValue(vo = pc)
         }
 
     //
