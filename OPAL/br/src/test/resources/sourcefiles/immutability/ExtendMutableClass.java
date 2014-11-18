@@ -28,7 +28,7 @@
  */
 package immutability;
 
-import org.opalj.br.test.immutability.annotations.Mutable;
+import annotations.Mutable;
 
 /**
  * A mutable class which defines no additional methods or fields but extends a mutable

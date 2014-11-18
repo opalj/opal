@@ -28,7 +28,7 @@
  */
 package immutability;
 
-import org.opalj.br.test.immutability.annotations.Mutable;
+import annotations.Mutable;
 
 /**
  * Rate an object of this class as mutable because it contains a volatile field.

@@ -28,7 +28,7 @@
  */
 package helperclasses;
 
-import org.opalj.br.test.immutability.annotations.Immutable;
+import annotations.Immutable;
 
 /**
  * An abstract class which is immutable which contains a non final field.

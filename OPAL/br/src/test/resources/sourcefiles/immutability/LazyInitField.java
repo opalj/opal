@@ -29,7 +29,7 @@
 package immutability;
 
 import helperclasses.ImmutableClass;
-import org.opalj.br.test.immutability.annotations.Immutable;
+import annotations.Immutable;
 
 /**
  * An immutable class which has a private field which is lazily initialized.

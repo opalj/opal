@@ -29,7 +29,7 @@
 package immutability;
 
 import helperclasses.MutableClass;
-import org.opalj.br.test.immutability.annotations.Immutable;
+import annotations.Immutable;
 
 /**
  * An immutable class which gets a reference passed via the constructor but creates a

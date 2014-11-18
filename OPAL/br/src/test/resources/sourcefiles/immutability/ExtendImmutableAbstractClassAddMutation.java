@@ -29,7 +29,7 @@
 package immutability;
 
 import helperclasses.AbstractImmutableClass;
-import org.opalj.br.test.immutability.annotations.Mutable;
+import annotations.Mutable;
 
 /**
  * A mutable class which extends an immutable abstract class but adds mutation via a

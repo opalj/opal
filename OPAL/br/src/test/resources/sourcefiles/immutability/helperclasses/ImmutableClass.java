@@ -28,7 +28,7 @@
  */
 package helperclasses;
 
-import org.opalj.br.test.immutability.annotations.Immutable;
+import annotations.Immutable;
 
 /**
  * A simple immutable class with a field which is of primitive type that has no setter.

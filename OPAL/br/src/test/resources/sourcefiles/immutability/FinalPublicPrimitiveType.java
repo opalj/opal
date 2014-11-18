@@ -28,7 +28,7 @@
  */
 package immutability;
 
-import org.opalj.br.test.immutability.annotations.Immutable;
+import annotations.Immutable;
 
 /**
  * A simple example of an immutable class with a public final field which is of a

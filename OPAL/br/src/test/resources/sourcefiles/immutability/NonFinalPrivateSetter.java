@@ -29,7 +29,7 @@
 package immutability;
 
 import helperclasses.ImmutableClass;
-import org.opalj.br.test.immutability.annotations.Mutable;
+import annotations.Mutable;
 
 /**
  * A simple example of a mutable class with a private attribute which is setable via a

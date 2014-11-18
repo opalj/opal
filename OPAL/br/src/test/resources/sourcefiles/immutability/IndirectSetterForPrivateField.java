@@ -28,7 +28,7 @@
  */
 package immutability;
 
-import org.opalj.br.test.immutability.annotations.Mutable;
+import annotations.Mutable;
 
 /**
  * A mutable class with a non-pure method for a private field. A public method calls the

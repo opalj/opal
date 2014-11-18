@@ -28,7 +28,7 @@
  */
 package immutability;
 
-import org.opalj.br.test.immutability.annotations.Mutable;
+import annotations.Mutable;
 
 /**
  * A at first glance an immutable class. But it contains an inner class which adds a

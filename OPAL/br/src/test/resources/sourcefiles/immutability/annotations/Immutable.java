@@ -26,10 +26,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.test.immutability.annotations;
+package immutability.annotations;
 
 /**
- * Describes that an object of a class is immutable.
+ * Describes that instances of the annotated class are immutable.
  * 
  * @author Andre Pacak
  */

@@ -29,7 +29,7 @@
 package immutability;
 
 import helperclasses.MutableClass;
-import org.opalj.br.test.immutability.annotations.Mutable;
+import annotations.Mutable;
 
 /**
  * A mutable class with a final field which references a mutable object.

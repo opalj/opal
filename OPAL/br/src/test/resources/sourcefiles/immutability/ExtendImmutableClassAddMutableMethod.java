@@ -29,7 +29,7 @@
 package immutability;
 
 import helperclasses.MutableClass;
-import org.opalj.br.test.immutability.annotations.Mutable;
+import annotations.Mutable;
 
 /**
  * A mutable class which defines a new method and extends an immutable class which has a

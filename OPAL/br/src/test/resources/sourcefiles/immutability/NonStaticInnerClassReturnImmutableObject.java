@@ -29,7 +29,7 @@
 package immutability;
 
 import helperclasses.ImmutableClass;
-import org.opalj.br.test.immutability.annotations.Immutable;
+import annotations.Immutable;
 
 /**
  * An immutable class which contains an immutable object and an inner class which has a

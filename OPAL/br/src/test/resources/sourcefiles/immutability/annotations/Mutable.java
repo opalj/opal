@@ -26,13 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br.test.immutability.annotations;
+package immutability.annotations;
 
 /**
- * Describes that an object of a class is mutable.
+ * Describes that an instance of the annotated class is mutable.
  * 
  * @author Andre Pacak
  */
 public @interface Mutable {
+
     String explanation();
 }

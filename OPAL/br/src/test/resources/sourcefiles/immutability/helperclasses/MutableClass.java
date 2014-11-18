@@ -28,7 +28,7 @@
  */
 package helperclasses;
 
-import org.opalj.br.test.immutability.annotations.Mutable;
+import annotations.Mutable;
 
 /**
  * A simple mutable class with a public field of primitive type.

@@ -29,7 +29,7 @@
 package immutability;
 
 import helperclasses.ImmutableClass;
-import org.opalj.br.test.immutability.annotations.Immutable;
+import annotations.Immutable;
 
 /**
  * An immutable class which adds a new field and a new method and also extends an

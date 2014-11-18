@@ -29,7 +29,7 @@
 package immutability;
 
 import helperclasses.ImmutableClass;
-import org.opalj.br.test.immutability.annotations.Immutable;
+import annotations.Immutable;
 
 /**
  * A simple example of an immutable class with a public final attribute which is of a
