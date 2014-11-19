@@ -87,7 +87,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             remainingv2s find (domain.asObjectValue(_).upperTypeBound == v1UTB) match {
                 case Some(v2) ⇒
                     remainingv2s = remainingv2s filterNot (_ == v2)
-                    v = mergeDomainValues(pc, v1, v2) :: v
+                    v = mergeDomainValues(pc, v1, v2).asInstanceOf[ExceptionValue] :: v
                 case None ⇒
                     v = v1 :: v
             }
@@ -177,11 +177,15 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             case ComputationWithResultAndException(r1, e1) ⇒
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) ⇒
-                        ComputedValueOrException(mergeDomainValues(pc, r1, r2), mergeDomainValues(pc, e1, e2))
+                        ComputedValueOrException(
+                            mergeDomainValues(pc, r1, r2) /*Value*/ ,
+                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue])
                     case ComputationWithResult(r2) ⇒
                         ComputedValueOrException(mergeDomainValues(pc, r1, r2), e1)
                     case ComputationWithException(e2) ⇒
-                        ComputedValueOrException(r1, mergeDomainValues(pc, e1, e2))
+                        ComputedValueOrException(
+                            r1,
+                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue])
                 }
 
             case ComputationWithResult(r1) ⇒
@@ -197,11 +201,14 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             case ComputationWithException(e1) ⇒
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) ⇒
-                        ComputedValueOrException(r2, mergeDomainValues(pc, e1, e2))
+                        ComputedValueOrException(
+                            r2,
+                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue])
                     case ComputationWithResult(r2) ⇒
                         ComputedValueOrException(r2, e1)
                     case ComputationWithException(e2) ⇒
-                        ThrowsException(mergeDomainValues(pc, e1, e2))
+                        ThrowsException(
+                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue])
                 }
         }
     }
@@ -212,13 +219,13 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     //
     // -----------------------------------------------------------------------------------
 
-    type DomainReferenceValue <: ReferenceValue with DomainValue
+    type AReferenceValue <: DomainReferenceValue with ReferenceValue
 
-    type DomainObjectValue <: ObjectValue with DomainReferenceValue
+    type DomainObjectValue <: ObjectValue with AReferenceValue
 
-    type DomainArrayValue <: ArrayValue with DomainReferenceValue
+    type DomainArrayValue <: ArrayValue with AReferenceValue
 
-    type DomainNullValue <: NullValue with DomainReferenceValue
+    type DomainNullValue <: NullValue with AReferenceValue
 
     trait ArrayAbstraction {
 
@@ -237,7 +244,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             with Value
             with IsReferenceValue
             with ArrayAbstraction {
-        this: DomainReferenceValue ⇒
+        this: AReferenceValue ⇒
 
         /**
          * Returns `ComputationalTypeReference`.
@@ -245,12 +252,12 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         final override def computationalType = ComputationalTypeReference
 
         final override def asDomainValue(
-            implicit targetDomain: Domain): targetDomain.DomainValue = {
+            implicit targetDomain: Domain): targetDomain.DomainReferenceValue = {
             if (targetDomain ne domain)
                 throw new UnsupportedOperationException(
                     "the given domain has to be equal to this value's domain"
                 )
-            this.asInstanceOf[targetDomain.DomainValue]
+            this.asInstanceOf[targetDomain.DomainReferenceValue]
         }
 
     }
@@ -259,7 +266,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
      * A reference value with a single (upper) type (bound).
      */
     protected[this] trait SReferenceValue[T <: ReferenceType] {
-        this: DomainReferenceValue ⇒
+        this: AReferenceValue ⇒
 
         val theUpperTypeBound: T
 
@@ -446,8 +453,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
      * a type cast and is intended to be used to communicate that the value has
      * to be a reference value (if the underlying byte code is valid.)
      */
-    def asReferenceValue(value: DomainValue): DomainReferenceValue =
-        value.asInstanceOf[DomainReferenceValue]
+    def asReferenceValue(value: DomainValue): AReferenceValue =
+        value.asInstanceOf[AReferenceValue]
 
     def asObjectValue(value: DomainValue): DomainObjectValue =
         value.asInstanceOf[DomainObjectValue]
@@ -639,15 +646,15 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     // -----------------------------------------------------------------------------------
 
     object IsNull {
-        def unapply(value: DomainReferenceValue): Some[Answer] = Some(value.isNull)
+        def unapply(value: AReferenceValue): Some[Answer] = Some(value.isNull)
     }
 
     object IsPrecise {
-        def unapply(value: DomainReferenceValue): Some[Boolean] = Some(value.isPrecise)
+        def unapply(value: AReferenceValue): Some[Boolean] = Some(value.isPrecise)
     }
 
     object UpperTypeBound {
-        def unapply(value: DomainReferenceValue): Some[UpperTypeBound] =
+        def unapply(value: AReferenceValue): Some[UpperTypeBound] =
             Some(value.upperTypeBound)
     }
 
@@ -665,7 +672,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
 
     override def ReferenceValue(
         pc: PC,
-        upperTypeBound: ReferenceType): DomainReferenceValue = {
+        upperTypeBound: ReferenceType): AReferenceValue = {
         if (upperTypeBound.isArrayType)
             ArrayValue(pc, upperTypeBound.asArrayType)
         else

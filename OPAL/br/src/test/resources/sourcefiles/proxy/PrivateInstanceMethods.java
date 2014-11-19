@@ -33,7 +33,7 @@ package proxy;
  * 
  * @author Arne Lottmann
  */
-public class PrivateInstanceMethods {
+@SuppressWarnings("all") public class PrivateInstanceMethods {
 	
 	/* ********************************************************
 	 * 

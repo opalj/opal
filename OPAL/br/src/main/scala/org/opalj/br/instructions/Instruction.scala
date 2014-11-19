@@ -87,7 +87,7 @@ trait Instruction {
      * [[IADD]] (integer add) and [[LADD]] (long add) both pop two values and push
      * one value.
      *
-     * @note In case of some of the [[StackManagementInstructions]] this number is
+     * @note In case of some of the [[StackManagementInstruction]] this number is
      *      not fixed. In that case the number depends on the concrete layout of the
      *      operand stack.
      *
@@ -108,7 +108,7 @@ trait Instruction {
      * [[IADD]] (integer add) and [[LADD]] (long add) both pop two values and push
      * one value.
      *
-     * @note In case of some of the [[StackManagementInstructions]] this number is
+     * @note In case of some of the [[StackManagementInstruction]] this number is
      *      not fixed. In that case the number depends on the concrete layout of the
      *      operand stack.
      *

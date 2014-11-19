@@ -146,7 +146,7 @@ trait AI[D <: Domain] {
      * This method is called by the `perform` method with the same signature. It
      * may be overridden by subclasses to perform some additional processing.
      */
-    protected def initialOperands(
+    def initialOperands(
         classFile: ClassFile,
         method: Method,
         domain: D): domain.Operands = Nil
@@ -172,7 +172,7 @@ trait AI[D <: Domain] {
      * @param domain The domain that will be used to perform computations related
      *  	to values.
      */
-    protected def initialLocals(
+    def initialLocals(
         classFile: ClassFile,
         method: Method,
         domain: D)(
@@ -854,7 +854,7 @@ trait AI[D <: Domain] {
                     exceptions.foreach(handleException)
                 }
 
-                def abruptMethodExecution(pc: Int, exception: DomainValue): Unit = {
+                def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit = {
                     if (tracer.isDefined)
                         tracer.get.abruptMethodExecution(theDomain)(pc, exception)
 
