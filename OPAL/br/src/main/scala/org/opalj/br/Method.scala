@@ -192,6 +192,24 @@ final class Method private (
  */
 object Method {
 
+    final val readObjectDescriptor =
+        MethodDescriptor(ObjectType("java/io/ObjectInputStream"), VoidType)
+
+    final val writeObjectDescriptor =
+        MethodDescriptor(ObjectType("java/io/ObjectOutputStream"), VoidType)
+
+    def isObjectSerializationRelated(method: Method): Boolean = {
+        import MethodDescriptor.JustReturnsObject
+        import MethodDescriptor.JustTakesObject
+        import MethodDescriptor.NoArgsAndReturnVoid
+
+        (method.name == "readObjectNoData" && method.descriptor == NoArgsAndReturnVoid) ||
+            (method.name == "readObject" && method.descriptor == readObjectDescriptor) ||
+            (method.name == "writeObject" && method.descriptor == writeObjectDescriptor) ||
+            (method.name == "readResolve" && method.descriptor == JustReturnsObject) ||
+            (method.name == "writeReplace" && method.descriptor == JustReturnsObject)
+    }
+
     final val ACC_NATIVEAndVARARGS /*:Int*/ = ACC_NATIVE.mask | ACC_VARARGS.mask
 
     private def isNativeAndVarargs(accessFlags: Int) =

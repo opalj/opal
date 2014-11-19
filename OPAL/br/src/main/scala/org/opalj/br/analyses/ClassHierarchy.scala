@@ -1004,6 +1004,55 @@ class ClassHierarchy private (
     }
 
     /**
+     * @param upperTypeBound A set of types that are in no inheritance relationship.
+     */
+    def directSubtypesOf(upperTypeBound: UIDSet[ObjectType]): Set[ObjectType] = {
+        val primaryType = upperTypeBound.first
+        val otherTypeBounds = upperTypeBound.tail
+        if (otherTypeBounds.isEmpty)
+            return Set(primaryType);
+
+        // Basic Idea: let's do a breadth-first search and for every candidate type
+        // we check whether the type is a subtype of all types in the bound.
+        // If so, the type is added to the result set and the search terminates 
+        // for this particular type.
+
+        // The analysis is complicated by the fact that an inteface may be 
+        // implemented multiple times, e.g.,:
+        // interface I
+        // interface J extends I
+        // class X implements I,J
+        // class Y implements J
+        import scala.collection.mutable.Queue
+
+        var directSubtypes = HashSet.empty[ObjectType]
+        val processedTypes = HashSet.empty[ObjectType]
+        val typesToProcess = Queue(directSubtypesOf(primaryType).toSeq: _*)
+        while (typesToProcess.nonEmpty) {
+            val candidateType: ObjectType = typesToProcess.dequeue
+            processedTypes += candidateType
+            val isCommonSubtype =
+                otherTypeBounds.forall { (otherTypeBound: ObjectType) ⇒
+                    isSubtypeOf(candidateType, otherTypeBound).isYesOrUnknown
+                }
+            if (isCommonSubtype) {
+                directSubtypes =
+                    directSubtypes.filter { candidateDirectSubtype ⇒
+                        isSubtypeOf(candidateDirectSubtype, candidateType).isNoOrUnknown
+                    } +
+                        candidateType
+            } else {
+                directSubtypesOf(candidateType).foreach { candidateType ⇒
+                    if (!processedTypes.contains(candidateType))
+                        typesToProcess += candidateType
+                }
+            }
+        }
+
+        directSubtypes
+    }
+
+    /**
      * Calls the given function `f` for each type that is known to the class hierarchy.
      */
     def foreachKnownType[T](f: ObjectType ⇒ T): Unit = {
@@ -1025,7 +1074,11 @@ class ClassHierarchy private (
     }
 
     /**
-     * Returns the set of all root types. I.e., types which have no super type.
+     * Returns the set of all root types; if the class hierarchy
+     * is complete then this set contains exactly one element and
+     * that element must identify `java.lang.Object`.
+     * I.e., this set contains all types which have no super type.
+     *
      * @note
      *    If we load an application and all the jars used to implement it or a library
      *    and all the library it depends on then the class hierarchy '''should not'''

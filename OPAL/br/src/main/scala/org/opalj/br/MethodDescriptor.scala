@@ -404,6 +404,9 @@ object MethodDescriptor {
     final val JustReturnsString: MethodDescriptor =
         new NoArgumentMethodDescriptor(ObjectType.String)
 
+    final val JustTakesObject: MethodDescriptor =
+        apply(ObjectType.Object, VoidType)
+
     def withNoArgs(returnType: Type): MethodDescriptor = {
         (returnType.id: @scala.annotation.switch) match {
             case VoidType.id         ⇒ NoArgumentAndNoReturnValueMethodDescriptor

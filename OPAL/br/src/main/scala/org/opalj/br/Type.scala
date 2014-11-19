@@ -340,6 +340,9 @@ sealed abstract class FieldType extends Type {
  */
 object FieldType {
 
+    @throws[IllegalArgumentException](
+        "if the given string is not a valid field type descriptor"
+    )
     def apply(ft: String): FieldType = {
         (ft.charAt(0): @scala.annotation.switch) match {
             case 'B' ⇒ ByteType
@@ -382,6 +385,9 @@ object ReferenceType {
      *
      * @param rt A string as passed to `java.lang.Class.forName(...)`.
      */
+    @throws[IllegalArgumentException](
+        "if the given string is not a valid reference type descriptor"
+    )
     def apply(rt: String): ReferenceType = {
         if (rt.charAt(0) == '[')
             ArrayType(FieldType(rt.substring(1)))

@@ -83,7 +83,13 @@ trait Instruction {
 
     /**
      * The number of values that are popped from the operand stack. Here, long and
-     * double values are also counted as one value though they use to stack slots!
+     * double values are also counted as one value though they use to stack slots. E.g.,
+     * [[IADD]] (integer add) and [[LADD]] (long add) both pop two values and push
+     * one value.
+     *
+     * @note In case of some of the [[StackManagementInstructions]] this number is
+     *      not fixed. In that case the number depends on the concrete layout of the
+     *      operand stack.
      *
      * @param ctg A function that returns the computational type category of
      *          the value on the operand stack with a given index. The top value on
@@ -97,7 +103,14 @@ trait Instruction {
     def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int
 
     /**
-     * The number of values that are put onto the operand stack.
+     * The number of values that are put onto the operand stack. Here, long and
+     * double values are also counted as one value though they use to stack slots. E.g.,
+     * [[IADD]] (integer add) and [[LADD]] (long add) both pop two values and push
+     * one value.
+     *
+     * @note In case of some of the [[StackManagementInstructions]] this number is
+     *      not fixed. In that case the number depends on the concrete layout of the
+     *      operand stack.
      *
      * @param ctg A function that returns the computational type category of
      *          the value on the operand stack with a given index. The top value on
@@ -115,6 +128,10 @@ trait Instruction {
      */
     def readsLocal: Boolean
 
+    /**
+     * The index of the local (variable)/register that is read is returned. This
+     * method is only defined if [[readsLocal]] returns `true`.
+     */
     @throws[UnsupportedOperationException]("thrown if no local variables are read")
     def indexOfReadLocal: Int
 
@@ -123,6 +140,10 @@ trait Instruction {
      */
     def writesLocal: Boolean
 
+    /**
+     * The index of the local (variable)/register that is written. This
+     * method is only defined if [[writesLocal]] returns `true`.
+     */
     @throws[UnsupportedOperationException]("thrown if no local variable is written")
     def indexOfWrittenLocal: Int
 
@@ -167,7 +188,7 @@ object Instruction {
                         exception,
                         handler.catchType.get).isYes
             } match {
-                case Some(handler) ⇒ handler.startPC +≈: pcs
+                case Some(handler) ⇒ pcs = handler.startPC +≈: pcs
                 case _             ⇒ /* exception is not handled */
             }
         }
