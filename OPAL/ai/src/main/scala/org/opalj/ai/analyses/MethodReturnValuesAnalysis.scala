@@ -61,6 +61,8 @@ object MethodReturnValuesAnalysis {
         theProject: SomeProject,
         isInterrupted: () ⇒ Boolean): Map[Method, Option[MethodReturnValuesAnalysisDomain#DomainValue]] = {
 
+        val fieldValueInformation = theProject.get(FieldValuesKey)
+
         val methodsWithRefinedReturnValues =
             for {
                 classFile ← theProject.classFiles.par
@@ -71,7 +73,7 @@ object MethodReturnValuesAnalysis {
                 if theProject.classFile(originalReturnType.asObjectType).map(!_.isFinal).getOrElse(true)
                 if method.body.isDefined
                 ai = new InterruptableAI[Domain]
-                domain = new MethodReturnValuesAnalysisDomain(theProject, ai, method)
+                domain = new MethodReturnValuesAnalysisDomain(theProject, fieldValueInformation, ai, method)
                 result = ai(classFile, method, domain)
                 if !result.wasAborted
                 returnedValue = domain.returnedValue

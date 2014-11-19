@@ -47,68 +47,8 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
  *
  * @author Michael Eichberg
  */
-trait TypeLevelInvokeInstructions extends MethodCallsDomain {
+trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode ⇒
-
-    protected[this] def getExceptions(pc: PC): List[ExceptionValue] = {
-        var exceptionTypes: Set[ObjectType] = Set.empty
-        var exceptionValues: List[ExceptionValue] = List.empty
-
-        def add(exceptionType: ObjectType) {
-
-            if (!exceptionTypes.contains(exceptionType)) {
-                exceptionTypes += exceptionType
-                // We don't know the true type of the exception, we just
-                // know the upper bound!
-                exceptionValues ::= NonNullObjectValue(pc, exceptionType)
-            }
-        }
-
-        code.handlersFor(pc) foreach { h ⇒
-            h.catchType match {
-                case None     ⇒ add(ObjectType.Throwable)
-                case Some(ex) ⇒ add(ex)
-            }
-        }
-        // The list of exception values is in reverse order when compared to the handlers!
-        // This is by purpose to foster a faster overall evaluation. (I.e., we want
-        // to perform the abstract interpretation using more abstract values first (<=>
-        // exceptions with types higher-up in the type hierarchy).
-        exceptionValues
-    }
-
-    protected[this] def handleInvoke(
-        pc: PC,
-        returnType: Type,
-        exceptions: Iterable[ExceptionValue]): MethodCallResult = {
-        if (returnType.isVoidType) {
-            if (exceptions.isEmpty)
-                ComputationWithSideEffectOnly
-            else
-                ComputationWithSideEffectOrException(exceptions)
-        } else {
-            if (exceptions.isEmpty)
-                ComputedValue(TypedValue(pc, returnType))
-            else
-                ComputedValueOrException(TypedValue(pc, returnType), exceptions)
-        }
-    }
-
-    protected[this] def handleInstanceBasedInvoke(
-        pc: PC,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
-        val exceptions = refIsNull(pc, operands.last) match {
-            case Yes ⇒
-                return justThrows(NullPointerException(pc))
-            case Unknown if throwNullPointerExceptionOnMethodCall ⇒
-                NullPointerException(pc) :: getExceptions(pc)
-            case /*No or Unknown & DoNotThrowNullPointerException*/ _ ⇒
-                getExceptions(pc)
-        }
-        val returnType = methodDescriptor.returnType
-        handleInvoke(pc, returnType, exceptions)
-    }
 
     /*override*/ def invokevirtual(
         pc: PC,
@@ -132,26 +72,23 @@ trait TypeLevelInvokeInstructions extends MethodCallsDomain {
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: Operands): MethodCallResult =
-        handleInstanceBasedInvoke(pc, methodDescriptor, operands)
+        handleInstanceBasedInvoke(pc, methodDescriptor, receiverIsNull = No)
 
     /*override*/ def invokestatic(
         pc: PC,
         declaringClass: ObjectType,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
-        val returnType = methodDescriptor.returnType
-        handleInvoke(pc, returnType, getExceptions(pc))
-    }
+        operands: Operands): MethodCallResult =
+        handleInvoke(pc, methodDescriptor)
 
     /*override*/ def invokedynamic(
         pc: PC,
         bootstrapMethod: BootstrapMethod,
         name: String,
         methodDescriptor: MethodDescriptor,
-        operands: Operands): Computation[DomainValue, ExceptionValues] = {
-        val returnType = methodDescriptor.returnType
-        handleInvoke(pc, returnType, getExceptions(pc))
-    }
+        operands: Operands): Computation[DomainValue, ExceptionValues] =
+        handleInvoke(pc, methodDescriptor)
+
 }
 

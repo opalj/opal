@@ -47,8 +47,8 @@ import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
 
 /**
- * Enables the tracing of concrete Class values and can, e.g., be used to resolve
- * groovy's invokedynamic constructor calls.
+ * Enables the tracking of concrete `Class` values and can, e.g., be used to resolve
+ * Groovy's invokedynamic constructor calls.
  *
  * This class overrides `invokestatic` and only delegates to the default implementation
  * if it cannot successfully handle the call. Hence, this trait needs to be mixed in after
@@ -121,10 +121,12 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
                 ReferenceType(className.replace('.', '/'))
             } catch {
                 case iae: IllegalArgumentException ⇒
-                    return justThrows(
-                        InitializedObjectValue(pc, ObjectType.ClassNotFoundException)
-                    )
+                    // if "className" is not a valid descriptor
+                    // TODO record issue!
+                    val cnfe = InitializedObjectValue(pc, ObjectType.ClassNotFoundException)
+                    return justThrows(cnfe)
             }
+
         if (classValue.isObjectType) {
             val objectType = classValue.asObjectType
             if (classHierarchy.isKnown(objectType) ||

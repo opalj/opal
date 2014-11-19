@@ -42,5 +42,6 @@ class ComplexExtVTACallGraphTest extends AbstractCallGraphTest {
 
     override def testFilePath = "ai"
 
-    override def testCallGraphConfiguration = new ExtVTACallGraphAlgorithmConfiguration
+    override def testCallGraphConfiguration =
+        new ExtVTACallGraphAlgorithmConfiguration(project)
 }

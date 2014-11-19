@@ -367,9 +367,13 @@ object XHTML {
         val properties =
             htmlify(domain.properties(pc, valueToString).getOrElse("<None>"))
 
+        val instructionAsXHTML =
+            // to handle cases where the string contains "executable" (JavaScript) code
+            Unparsed(Text(instruction.toString(pc)).toString.replace("\n", "<br>"))
+
         <tr class={ if (operands eq null /*||/&& locals eq null*/ ) "not_evaluated" else "evaluated" }>
             <td class="pc">{ pcAsXHTML }</td>
-            <td class="instruction">{ Unparsed(instruction.toString(pc).replace("\n", "<br>")) }</td>
+            <td class="instruction">{ instructionAsXHTML }</td>
             <td class="stack">{ dumpStack(operands) }</td>
             {
                 if (operandsOnly) NodeSeq.Empty else {

@@ -342,7 +342,7 @@ trait XHTMLTracer extends AITracer {
     def abruptMethodExecution(
         domain: Domain)(
             pc: Int,
-            exception: domain.DomainValue): Unit = { /*ignored*/ }
+            exception: domain.ExceptionValue): Unit = { /*ignored*/ }
 
     def jumpToSubroutine(
         domain: Domain)(

@@ -144,13 +144,13 @@ object CallGraphVisualization {
                 val computedCallGraph = time {
                     val callGraphAlgorithmConfig = args(0) match {
                         case "BasicVTA" ⇒
-                            new BasicVTACallGraphAlgorithmConfiguration()
+                            new BasicVTACallGraphAlgorithmConfiguration(project)
                         case "VTA" | "DefaultVTA" ⇒
-                            new DefaultVTACallGraphAlgorithmConfiguration()
+                            new DefaultVTACallGraphAlgorithmConfiguration(project)
                         case "ExtVTA" ⇒
-                            new ExtVTACallGraphAlgorithmConfiguration()
+                            new ExtVTACallGraphAlgorithmConfiguration(project)
                         case "CHA" ⇒
-                            new CHACallGraphAlgorithmConfiguration()
+                            new CHACallGraphAlgorithmConfiguration(project)
                         case cga ⇒
                             println("Unknown call graph algorithm: "+cga+"; available: CHA, BasicVTA, DefaultVTA, ExtVTA")
                             return ;

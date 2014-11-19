@@ -44,7 +44,8 @@ trait DefaultReferenceValuesBinding
         with DefaultVMLevelExceptionsFactory {
     domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
-    type DomainReferenceValue = ReferenceValue
+    type AReferenceValue = ReferenceValue
+    type DomainReferenceValue = AReferenceValue
     type DomainNullValue = NullValue
     type DomainObjectValue = ObjectValue
     type DomainArrayValue = ArrayValue
@@ -60,11 +61,16 @@ trait DefaultReferenceValuesBinding
      *
      * This implementation always returns the singleton instance [[TheNullValue]].
      */
-    override def NullValue(valueOrigin: ValueOrigin): DomainNullValue = TheNullValue
+    override def NullValue(
+        valueOrigin: ValueOrigin): DomainNullValue = {
+
+        TheNullValue
+    }
 
     override def ObjectValue(
         valueOrigin: ValueOrigin,
         objectType: ObjectType): DomainObjectValue = {
+
         new SObjectValue(objectType)
     }
 

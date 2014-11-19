@@ -36,6 +36,7 @@ import scala.Console.GREEN
 import scala.Console.RESET
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
@@ -48,7 +49,7 @@ import org.opalj.ai.project.ComputedCallGraph
 import org.opalj.br.MethodDescriptor
 
 /**
- * A shallow analysis that tries to identify (private) methods that are dead.
+ * A shallow analysis that tries to identify ((package) private) methods that are dead.
  *
  * @author Michael Eichberg
  */
@@ -65,26 +66,44 @@ object UnusedMethods extends AnalysisExecutor {
             parameters: Seq[String],
             isInterrupted: () ⇒ Boolean) = {
 
+            import theProject.classHierarchy.isSubtypeOf
+
             val results = {
                 val ComputedCallGraph(callGraph, _, _) = theProject.get(VTACallGraphKey)
                 for {
-                    classFile ← theProject.classFiles
+                    classFile ← theProject.classFiles.par
+                    if !isInterrupted()
                     method ← classFile.methods
-                    if method.isPrivate //|| method.isPackageVisible
-                    // Handle "Singleton Pattern" related stuff
-                    if !(method.name == "<init>" && method.descriptor == MethodDescriptor.NoArgsAndReturnVoid)
-                    // Handle Serialization Stuff...
-                    //    if !(method.name == "readObject")
-                    //    if !(method.name == "writeObject")
+                    if method.body.isDefined
+                    if method.isPrivate || method.hasDefaultVisibility
                     if callGraph.calledBy(method).isEmpty
+                    if !(
+                        (method.name == "<clinit>" || method.name == "<init>") &&
+                        method.descriptor == MethodDescriptor.NoArgsAndReturnVoid
+                    )
+                    if !(
+                        Method.isObjectSerializationRelated(method) &&
+                        isSubtypeOf(classFile.thisType, ObjectType.Serializable).isYesOrUnknown
+                    )
                 } yield {
-                    method.fullyQualifiedSignature(classFile.thisType)
+                    (classFile, method)
                 }
             }
+            val sortedResults =
+                (
+                    results.seq.toSeq.sortWith { (e1, e2) ⇒
+                        val (e1ClassFile, e1Method) = e1
+                        val (e2ClassFile, e2Method) = e2
+                        val e1FQN = e1ClassFile.thisType.fqn
+                        val e2FQN = e2ClassFile.thisType.fqn
+                        e1FQN < e2FQN || (e1FQN == e2FQN && e1Method < e2Method)
+                    }
+                ).map(e ⇒ e._2.fullyQualifiedSignature(e._1.thisType))
 
             BasicReport(
-                results.mkString("Dead Methods: "+results.size+"): \n", "\n", "\n")
+                sortedResults.mkString("Dead Methods: "+results.size+"): \n", "\n", "\n")
             )
         }
     }
+
 }

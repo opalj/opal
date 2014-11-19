@@ -51,6 +51,7 @@ import org.opalj.br.analyses.Project
  */
 class MethodReturnValuesAnalysisDomain(
     override val project: SomeProject,
+    val fieldValueInformation: FieldValueInformation,
     val ai: InterruptableAI[_],
     val method: Method)
         extends CorrelationalDomain

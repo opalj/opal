@@ -47,13 +47,14 @@ import org.opalj.br.{ Type, ReferenceType, ObjectType, ArrayType, UpperTypeBound
 trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
-    type DomainReferenceValue <: ReferenceValue
-    type DomainSingleOriginReferenceValue <: SingleOriginReferenceValue with DomainReferenceValue
+    type AReferenceValue <: DomainReferenceValue with ReferenceValue
+
+    type DomainSingleOriginReferenceValue <: SingleOriginReferenceValue with AReferenceValue
     type DomainNullValue <: NullValue with DomainSingleOriginReferenceValue
     type DomainObjectValue <: ObjectValue with DomainSingleOriginReferenceValue
     type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
 
-    type DomainMultipleReferenceValues <: MultipleReferenceValues with DomainReferenceValue
+    type DomainMultipleReferenceValues <: MultipleReferenceValues with AReferenceValue
 
     implicit object DomainSingleOriginReferenceValueOrdering
             extends Ordering[DomainSingleOriginReferenceValue] {
@@ -77,7 +78,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * trait defines the additional methods needed for the refinement of the new
      * properties.
      */
-    trait ReferenceValue extends super.ReferenceValue { this: DomainReferenceValue ⇒
+    trait ReferenceValue extends super.ReferenceValue { this: AReferenceValue ⇒
 
         /**
          * Refines this value's `isNull` property, if meaningful.
@@ -101,7 +102,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          * matches this value's origin, otherwise this method just returns the original
          * value.
          */
-        def refineIsNullIf(hasOrigin: ValueOrigin)(isNull: Answer): DomainReferenceValue
+        def refineIsNullIf(hasOrigin: ValueOrigin)(isNull: Answer): ReferenceValue
 
         protected[this] final def propagateRefineIsNullIf(
             hasOrigin: ValueOrigin)(
@@ -133,7 +134,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         def refineUpperTypeBoundIf(
             hasOrigin: ValueOrigin)(
-                supertype: ReferenceType): DomainReferenceValue
+                supertype: ReferenceType): AReferenceValue
 
         protected[this] final def propagateRefineUpperTypeBoundIf(
             hasOrigin: ValueOrigin)(
@@ -590,7 +591,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             with ObjectValue {
         this: DomainObjectValue ⇒
 
-        require(isPrecise == false || (theUpperTypeBound ne ObjectType("java/nio/charset/CharsetEncoder")))
         require(this.isNull.isNoOrUnknown)
 
         override def apply(vo: ValueOrigin, isNull: Answer): DomainSingleOriginReferenceValue = {
@@ -599,7 +599,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def refineUpperTypeBoundIf(
             hasOrigin: ValueOrigin)(
-                supertype: ReferenceType): DomainReferenceValue = {
+                supertype: ReferenceType): AReferenceValue = {
             if (hasOrigin != this.origin)
                 return this
             if (isPrecise)
@@ -1129,7 +1129,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def refineIsNullIf(
             hasOrigin: ValueOrigin)(
-                isNull: Answer): DomainReferenceValue = {
+                isNull: Answer): AReferenceValue = {
             // Recall that this value's property – as a whole – can be undefined also 
             // each value's property is well defined (Yes, No)
             // Furthermore, isNull is either Yes or No and we are going to ignore
@@ -1182,7 +1182,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def refineUpperTypeBoundIf(
             hasOrigin: ValueOrigin)(
-                supertype: ReferenceType): DomainReferenceValue = {
+                supertype: ReferenceType): AReferenceValue = {
 
             var newValues = SortedSet.empty[DomainSingleOriginReferenceValue]
             var valueRefined = false

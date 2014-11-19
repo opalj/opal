@@ -107,7 +107,7 @@ trait JavaObjectConversion { domain: ReferenceValuesDomain ⇒
      * @param value The object.
      * @return A `DomainValue`.
      */
-    def toDomainValue(pc: PC, value: Object): DomainValue = {
+    def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
         if (value == null)
             return NullValue(pc)
 

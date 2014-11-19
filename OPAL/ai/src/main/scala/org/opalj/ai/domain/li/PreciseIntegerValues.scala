@@ -41,6 +41,7 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * This domain requires support for the concrete evaluation.
  *
  * @author Michael Eichberg
+ * @author David Becker
  */
 trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     this: VMLevelExceptionsFactory with Configuration ⇒
@@ -222,28 +223,35 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     //
     // UNARY EXPRESSIONS
     //
+
     override def ineg(pc: PC, value: DomainValue) = value match {
         case v: IntegerValue ⇒ IntegerValue(pc, -v.value)
-        case _               ⇒ value
+        case _               ⇒ IntegerValue(vo = pc)
     }
 
     //
     // BINARY EXPRESSIONS
     //
 
-    override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 + v2)
-        } {
-            IntegerValue(pc)
+    override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l + r)
+            case _                                  ⇒ IntegerValue(vo = pc)
         }
+    }
 
-    override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 & v2)
-        } {
-            IntegerValue(pc)
+    override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (_, IntegerValue(-1))              ⇒ value1
+            case (_, IntegerValue(0))               ⇒ value2
+            case (IntegerValue(-1), _)              ⇒ value2
+            case (IntegerValue(0), _)               ⇒ value1
+
+            case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l & r)
+
+            case _                                  ⇒ IntegerValue(vo = pc)
         }
+    }
 
     override def idiv(
         pc: PC,
@@ -267,19 +275,35 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
         }
     }
 
-    override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 * v2)
-        } {
-            IntegerValue(pc)
-        }
+    override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (_, IntegerValue(0)) ⇒ value2
+            case (_, IntegerValue(1)) ⇒ value1
+            case (IntegerValue(0), _) ⇒ value1
+            case (IntegerValue(1), _) ⇒ value2
 
-    override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 | v2)
-        } {
-            IntegerValue(pc)
+            case (IntegerValue(l), IntegerValue(r)) ⇒
+                IntegerValue(pc, l * r)
+
+            case _ ⇒
+                IntegerValue(vo = pc)
         }
+    }
+
+    override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (_, IntegerValue(-1)) ⇒ value2
+            case (_, IntegerValue(0))  ⇒ value1
+            case (IntegerValue(-1), _) ⇒ value1
+            case (IntegerValue(0), _)  ⇒ value2
+
+            case (IntegerValue(l), IntegerValue(r)) ⇒
+                IntegerValue(pc, l | r)
+
+            case _ ⇒
+                IntegerValue(vo = pc)
+        }
+    }
 
     override def irem(
         pc: PC,
@@ -304,49 +328,45 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
         }
     }
 
-    override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 << v2)
-        } {
-            IntegerValue(pc)
+    override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (IntegerValue(l), IntegerValue(s)) ⇒ IntegerValue(pc, l << s)
+            case _                                  ⇒ IntegerValue(vo = pc)
         }
+    }
 
-    override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 >> v2)
-        } {
-            IntegerValue(pc)
+    override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (IntegerValue(l), IntegerValue(s)) ⇒ IntegerValue(pc, l >> s)
+            case _                                  ⇒ IntegerValue(vo = pc)
         }
+    }
 
-    override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 - v2)
-        } {
-            IntegerValue(pc)
+    override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l - r)
+            case _                                  ⇒ IntegerValue(vo = pc)
         }
+    }
 
-    override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 >>> v2)
-        } {
-            IntegerValue(pc)
+    override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (IntegerValue(l), IntegerValue(s)) ⇒ IntegerValue(pc, l >>> s)
+            case _                                  ⇒ IntegerValue(vo = pc)
         }
+    }
 
-    override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 ^ v2)
-        } {
-            IntegerValue(pc)
+    override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l ^ r)
+            case _                                  ⇒ IntegerValue(vo = pc)
         }
+    }
 
     override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue =
         value match {
-            case v: IntegerValue ⇒
-                IntegerValue(pc, v.value + increment)
-            case _ ⇒
-                // The given value is "some (unknown) integer value"
-                // hence, we can directly return it.
-                value
+            case v: IntegerValue ⇒ IntegerValue(pc, v.value + increment)
+            case _               ⇒ IntegerValue(vo = pc)
         }
 
     //
