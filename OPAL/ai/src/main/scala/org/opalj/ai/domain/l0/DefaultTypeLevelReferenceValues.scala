@@ -179,14 +179,14 @@ trait DefaultTypeLevelReferenceValues
                             StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
                     }
 
-                case NullValue() ⇒
+                case that: NullValue ⇒
                     NoUpdate
             }
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
             other match {
-                case NullValue() ⇒ true
+                case that: NullValue ⇒ true
                 case ArrayValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
                 case _ ⇒ false
@@ -307,7 +307,7 @@ trait DefaultTypeLevelReferenceValues
                             StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
                     }
 
-                case NullValue() ⇒
+                case that: NullValue ⇒
                     NoUpdate
             }
         }
@@ -316,7 +316,7 @@ trait DefaultTypeLevelReferenceValues
             other match {
                 case SObjectValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
-                case NullValue() ⇒
+                case that: NullValue ⇒
                     true
                 case ArrayValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
@@ -425,7 +425,7 @@ trait DefaultTypeLevelReferenceValues
                             asStructuralUpdate(joinPC, newUpperTypeBound)
                     }
 
-                case NullValue() ⇒
+                case that: NullValue ⇒
                     NoUpdate
             }
         }

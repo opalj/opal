@@ -60,11 +60,16 @@ trait DefaultReferenceValuesBinding
      *
      * This implementation always returns the singleton instance [[TheNullValue]].
      */
-    override def NullValue(valueOrigin: ValueOrigin): DomainNullValue = TheNullValue
+    override def NullValue(
+        valueOrigin: ValueOrigin): DomainNullValue = {
+
+        TheNullValue
+    }
 
     override def ObjectValue(
         valueOrigin: ValueOrigin,
         objectType: ObjectType): DomainObjectValue = {
+
         new SObjectValue(objectType)
     }
 

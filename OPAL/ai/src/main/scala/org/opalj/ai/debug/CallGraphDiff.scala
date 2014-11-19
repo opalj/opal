@@ -43,7 +43,6 @@ import org.opalj.ai.project.CallGraphFactory
 import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
 import org.opalj.ai.project.ComputedCallGraph
 import org.opalj.ai.project.VTACallGraphAlgorithmConfiguration
-import org.opalj.ai.project.VTACallGraphDomain
 import org.opalj.ai.project.DefaultVTACallGraphDomain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
@@ -101,17 +100,7 @@ object CallGraphDiff extends AnalysisExecutor {
             CallGraphFactory.create(
                 project,
                 entryPoints,
-                new CHACallGraphAlgorithmConfiguration
-            //                                    new VTACallGraphAlgorithmConfiguration {
-            //                                        override def Domain[Source](
-            //                                            theProject: Project[Source],
-            //                                            cache: Cache,
-            //                                            classFile: ClassFile,
-            //                                            method: Method): VTACallGraphDomain =
-            //                                            new DefaultVTACallGraphDomain(
-            //                                                theProject, cache, classFile, method, 1
-            //                                            )
-            //                                    }
+                new CHACallGraphAlgorithmConfiguration(project)
             )
         } { t ⇒ println("creating the less precise call graph took: "+ns2sec(t)) }
 
@@ -122,15 +111,13 @@ object CallGraphDiff extends AnalysisExecutor {
             CallGraphFactory.create(
                 project,
                 entryPoints,
-                new VTACallGraphAlgorithmConfiguration {
+                new VTACallGraphAlgorithmConfiguration(project) {
                     override def Domain[Source](
-                        theProject: Project[Source],
-                        cache: Cache,
                         classFile: ClassFile,
-                        method: Method): VTACallGraphDomain =
+                        method: Method) =
                         new DefaultVTACallGraphDomain(
-                            theProject, cache, classFile, method //, 4
-                        ) with domain.ConstantFieldValuesResolution
+                            project, fieldValueInformation, cache, classFile, method //, 4
+                        )
                 })
         } { t ⇒ println("creating the more precise call graph took: "+ns2sec(t)) }
 

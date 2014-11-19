@@ -57,7 +57,6 @@ object MethodComplexityAnalysis {
             classFile ← project.classFiles.par
             method @ MethodWithBody(body) ← classFile.methods
             if method.returnType ne VoidType
-            if method.descriptor.parametersCount > 0
             if body.exceptionHandlers.isEmpty
             if !isInterrupted()
         } yield {

@@ -72,7 +72,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     /**
      * Merges those exceptions that have the same upper type bound. This ensures
      * that per upper type bound only one [[ValuesDomain.DomainValue]] (which may be a
-     * `MultipleReferenceValues`) is used.
+     * `MultipleReferenceValues`) is used. For those values that are merged, the
+     * given `pc` is used.
      */
     def mergeMultipleExceptionValues(
         pc: PC,
@@ -96,7 +97,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
 
     /**
      * Merges two computations that both return some `DomainValue` and some
-     * `ExceptionValues`.
+     * `ExceptionValues`. If values are merged the merged value will use the
+     * specified `pc`.
      */
     protected[this] def mergeDEsComputations(
         pc: PC,
@@ -138,6 +140,11 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         }
     }
 
+    /**
+     * Merges two computations that both resulted in at most one `ExceptionValue` each.
+     *
+     * If values are merged the merged value will use the specified `pc`.
+     */
     protected[this] def mergeEsComputations(
         pc: PC,
         c1: Computation[Nothing, ExceptionValues],
@@ -155,6 +162,12 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         }
     }
 
+    /**
+     * Merges two computations that both resulted in at most one `DomainValue` or
+     * at most one `ExceptionValue`.
+     *
+     * If values are merged the merged value will use the specified `pc`.
+     */
     protected[this] def mergeDEComputations(
         pc: PC,
         c1: Computation[DomainValue, ExceptionValue],
@@ -229,69 +242,21 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         /**
          * Returns `ComputationalTypeReference`.
          */
-        final override def computationalType: ComputationalType =
-            ComputationalTypeReference
+        final override def computationalType = ComputationalTypeReference
 
-        /**
-         * Returns `Yes` iff this value is guaranteed to be `null` at runtime and
-         * returns `No` iff the value is not `null` at runtime, in all other cases
-         * `Unknown` is returned.
-         *
-         * This default implementation always returns `Unknown`.
-         */
-        override def isNull: Answer = Unknown
-
-        /**
-         * Returns `true` if the type information associated with this value is precise.
-         * I.e., the type information associated with this value precisely models the
-         * runtime type. If, `isPrecise` returns true, the type of this value can
-         * generally be assumed to represent a class type (not an interface type) or
-         * an array type. However, this domain also supports the case that `isPrecise`
-         * returns `true` even though the associated type identifies an interface type
-         * or an abstract class type. The later case may be interesting in the context
-         * of classes that are generated at run time.
-         *
-         * This default implementation always returns `false`.
-         */
-        override def isPrecise: Boolean = false
-
-        /**
-         * Tests if this value's type is potentially a subtype of the given type.
-         * This test takes the precision of the type information into account.
-         * That is, if the currently available type information is not precise and
-         * the given type has a subtype that is always a subtype of the current
-         * upper type bound, then `Unknown` is returned. Given that it may be
-         * computationally intensive to determine whether two types have a common subtype
-         * it may be better to just return `Unknown` in case that this type and the
-         * given type are not in a direct inheritance relationship.
-         *
-         * @note If this value represents `null` this method is not supported.
-         *
-         * @return The default implementation always returns `Unknown`.
-         */
-        @throws[DomainException]("If this value is null (isNull.yes == true).")
-        override def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
-
-        /**
-         * Basically returns `this`.
-         */
         final override def asDomainValue(
             implicit targetDomain: Domain): targetDomain.DomainValue = {
             if (targetDomain ne domain)
                 throw new UnsupportedOperationException(
-                    "the given domain has to be equal to this value's domain")
-
+                    "the given domain has to be equal to this value's domain"
+                )
             this.asInstanceOf[targetDomain.DomainValue]
         }
 
     }
 
-    object ReferenceValue {
-        def unapply(value: ReferenceValue): Some[ReferenceValue] = Some(value)
-    }
-
     /**
-     * A reference value that has a single (upper) type (bound).
+     * A reference value with a single (upper) type (bound).
      */
     protected[this] trait SReferenceValue[T <: ReferenceType] {
         this: DomainReferenceValue ⇒
@@ -366,12 +331,15 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
      * Represents a class/interface value which may have a single class and/or
      * multiple interfaces as its upper type bound.
      */
-    protected[this] trait ObjectValue extends ReferenceValue { this: DomainObjectValue ⇒ }
+    protected[this] trait ObjectValue extends ReferenceValue {
+        this: DomainObjectValue ⇒
+    }
 
     /**
      * Represents an array value.
      */
-    protected[this] trait ArrayValue extends ReferenceValue { this: DomainArrayValue ⇒
+    protected[this] trait ArrayValue extends ReferenceValue {
+        this: DomainArrayValue ⇒
 
         /**
          * Returns `Yes` if we can statically determine that the given value can
@@ -552,13 +520,6 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     final override def refIsNull(pc: PC, value: DomainValue): Answer =
         asReferenceValue(value).isNull
 
-    /**
-     * Defines an extractor method facilitate matching `NullValue`s.
-     */
-    object NullValue {
-        def unapply(value: NullValue): Boolean = true
-    }
-
     // -----------------------------------------------------------------------------------
     //
     // ARRAY RELATED OPERATIONS
@@ -669,6 +630,25 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         pc: PC,
         arrayref: DomainValue): Computation[DomainValue, ExceptionValue] = {
         asArrayAbstraction(arrayref).length(pc)
+    }
+
+    // -----------------------------------------------------------------------------------
+    //
+    // EXTRACTORS
+    //
+    // -----------------------------------------------------------------------------------
+
+    object IsNull {
+        def unapply(value: DomainReferenceValue): Some[Answer] = Some(value.isNull)
+    }
+
+    object IsPrecise {
+        def unapply(value: DomainReferenceValue): Some[Boolean] = Some(value.isPrecise)
+    }
+
+    object UpperTypeBound {
+        def unapply(value: DomainReferenceValue): Some[UpperTypeBound] =
+            Some(value.upperTypeBound)
     }
 
     // -----------------------------------------------------------------------------------

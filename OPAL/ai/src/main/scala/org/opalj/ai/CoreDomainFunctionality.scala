@@ -112,6 +112,12 @@ trait CoreDomainFunctionality extends ValuesDomain {
         otherLocals: Locals): Update[(Operands, Locals)] = {
         beforeBaseJoin(pc)
 
+        // FOR INTERNAL DEBUGGING PURPOSES:
+        // if (thisOperands.size != otherOperands.size)
+        //    throw DomainException(
+        //        s"impossible join:$pc: $thisOperands vs. $otherOperands"
+        //    )
+
         var operandsUpdated: UpdateType = NoUpdateType
         val newOperands: Operands =
             if (thisOperands eq otherOperands) {
@@ -121,7 +127,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
                 var otherRemainingOperands = otherOperands
                 var newOperands: Operands = List.empty // during the update we build the operands stack in reverse order
 
-                while (thisRemainingOperands.nonEmpty /* && both stacks contain the same number of elements */ ) {
+                while (thisRemainingOperands.nonEmpty /* && both stacks have to contain the same number of elements */ ) {
                     val thisOperand = thisRemainingOperands.head
                     thisRemainingOperands = thisRemainingOperands.tail
                     val otherOperand = otherRemainingOperands.head

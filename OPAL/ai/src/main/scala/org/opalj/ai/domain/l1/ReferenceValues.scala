@@ -590,7 +590,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             with ObjectValue {
         this: DomainObjectValue ⇒
 
-        require(isPrecise == false || (theUpperTypeBound ne ObjectType("java/nio/charset/CharsetEncoder")))
         require(this.isNull.isNoOrUnknown)
 
         override def apply(vo: ValueOrigin, isNull: Answer): DomainSingleOriginReferenceValue = {
