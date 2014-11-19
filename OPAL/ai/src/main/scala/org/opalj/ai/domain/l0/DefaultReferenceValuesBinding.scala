@@ -44,7 +44,8 @@ trait DefaultReferenceValuesBinding
         with DefaultVMLevelExceptionsFactory {
     domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
-    type DomainReferenceValue = ReferenceValue
+    type AReferenceValue = ReferenceValue
+    type DomainReferenceValue = AReferenceValue
     type DomainNullValue = NullValue
     type DomainObjectValue = ObjectValue
     type DomainArrayValue = ArrayValue

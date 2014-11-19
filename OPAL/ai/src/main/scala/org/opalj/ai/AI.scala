@@ -854,7 +854,7 @@ trait AI[D <: Domain] {
                     exceptions.foreach(handleException)
                 }
 
-                def abruptMethodExecution(pc: Int, exception: DomainValue): Unit = {
+                def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit = {
                     if (tracer.isDefined)
                         tracer.get.abruptMethodExecution(theDomain)(pc, exception)
 

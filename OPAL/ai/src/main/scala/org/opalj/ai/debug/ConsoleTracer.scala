@@ -203,7 +203,7 @@ trait ConsoleTracer extends AITracer {
     override def abruptMethodExecution(
         domain: Domain)(
             pc: Int,
-            exception: domain.DomainValue): Unit = {
+            exception: domain.ExceptionValue): Unit = {
         println(Console.BOLD +
             Console.RED +
             pc+":RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION: "+exception +
