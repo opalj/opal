@@ -31,14 +31,23 @@ package ai
 package project
 
 import scala.collection.Set
-import scala.collection.Map
 
-import br._
+import org.opalj.ai.Domain
+import org.opalj.br.analyses.Project
+
+import br.ClassFile
+import br.Method
+import br.MethodSignature
 import br.analyses.Project
-
-import domain._
+import domain.DefaultDomainValueBinding
+import domain.DefaultHandlingOfMethodResults
+import domain.IgnoreSynchronization
+import domain.ProjectBasedClassHierarchy
+import domain.TheClassFile
+import domain.TheMethod
+import domain.TheProject
+import domain.ThrowAllPotentialExceptionsConfiguration
 import domain.l0
-import domain.l1
 
 /**
  * Domain object which is used to calculate the call graph.
@@ -51,11 +60,11 @@ class DefaultCHACallGraphDomain[Source](
     val classFile: ClassFile,
     val method: Method)
         extends Domain
-        with JoinStabilization
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject
         with ProjectBasedClassHierarchy
+        with TheClassFile
         with TheMethod
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
@@ -67,5 +76,4 @@ class DefaultCHACallGraphDomain[Source](
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
-        with CHACallGraphDomain
 

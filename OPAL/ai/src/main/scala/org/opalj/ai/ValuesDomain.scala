@@ -303,11 +303,13 @@ trait ValuesDomain {
      */
     type DomainValue >: Null <: Value with AnyRef
 
+    type DomainReferenceValue >: Null <: DomainValue
+
     /**
      * A simple type alias of the type `DomainValue`.
      * Used to facilitate comprehension.
      */
-    type ExceptionValue = DomainValue
+    type ExceptionValue = DomainReferenceValue
 
     /**
      * A type alias for `Iterable`s of `ExceptionValue`s.

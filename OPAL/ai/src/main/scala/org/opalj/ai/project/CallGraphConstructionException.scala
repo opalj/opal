@@ -43,7 +43,7 @@ import org.opalj.br.{ ClassFile, Method }
 case class CallGraphConstructionException(
         classFile: ClassFile,
         method: Method,
-        cause: Exception) {
+        cause: Throwable) {
 
     import Console._
 
@@ -52,7 +52,11 @@ case class CallGraphConstructionException(
         val realCause =
             cause match {
                 case ife: InterpretationFailedException ⇒
-                    message += "[the abstract interpretation failed] reason:\n\t"
+                    message += "the abstract interpretation failed:\n\t"
+                    message += "pc="+ife.pc+"\n\t"
+                    message += "operands="+ife.operandsArray(ife.pc)+"\n\t"
+                    message += ife.worklist.mkString("worklist=", ",", "\n\t")
+                    message += ife.evaluated.mkString("evaluated=", ",", "\n\t")
                     ife.cause
                 case _ ⇒
                     cause

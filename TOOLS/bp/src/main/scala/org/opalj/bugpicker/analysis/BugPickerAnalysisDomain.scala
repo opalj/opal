@@ -34,7 +34,7 @@ import java.net.URL
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
-import org.opalj.ai.CoRelationalDomain
+import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
 
 /**
@@ -46,7 +46,7 @@ class BugPickerAnalysisDomain(
     override val project: Project[java.net.URL],
     override val method: Method,
     override val maxCardinalityOfIntegerRanges: Long = 16l)
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with domain.DefaultDomainValueBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
         with domain.l0.DefaultTypeLevelFloatValues

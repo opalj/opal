@@ -35,11 +35,10 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
-
 import org.opalj.bi.TestSupport.locateTestResources
-
 import util.{ Answer, Yes, No, Unknown }
 import reader.Java8Framework.ClassFiles
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * Basic tests of the class hierarchy.
@@ -214,6 +213,42 @@ class ClassHierarchyTest
         preInitCH.isSubtypeOf(SeriablizableArrayOfArray, CloneableArray) should be(Yes)
 
         preInitCH.isSubtypeOf(SeriablizableArrayOfArray, AnUnknownTypeArray) should be(No)
+    }
+
+    behavior of "the ClassHierarchy's directSubtypesOf(UpperTypeBound) method"
+
+    val typesProject =
+        Project(ClassFiles(locateTestResources("classfiles/types.jar", "br")))
+
+    val cRootType = ObjectType("types/CRoot")
+    val cRootAType = ObjectType("types/CRootA")
+    val cRootAABType = ObjectType("types/CRootAAB")
+    val cRootAAABBCType = ObjectType("types/CRootAAABBC")
+    val iRootAType = ObjectType("types/IRootA")
+    val iRootBType = ObjectType("types/IRootB")
+    val iRootCType = ObjectType("types/IRootC")
+
+    it should "return the given upper type bound if it just contains a single type" in {
+        import typesProject.classHierarchy.directSubtypesOf
+        directSubtypesOf(UIDSet[ObjectType](cRootType)) should be(Set(cRootType))
+        directSubtypesOf(UIDSet[ObjectType](iRootAType)) should be(Set(iRootAType))
+        directSubtypesOf(UIDSet[ObjectType](cRootAAABBCType)) should be(Set(cRootAAABBCType))
+    }
+
+    it should "return the type that is the subtype of all types of the bound" in {
+        import typesProject.classHierarchy.directSubtypesOf
+        directSubtypesOf(UIDSet[ObjectType](iRootAType, iRootBType)) should be(Set(cRootAABType))
+        directSubtypesOf(UIDSet[ObjectType](cRootAType, iRootBType)) should be(Set(cRootAABType))
+        directSubtypesOf(UIDSet[ObjectType](iRootAType, iRootCType)) should be(Set(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ObjectType](Seq(iRootAType, iRootBType, iRootCType))) should be(Set(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ObjectType](iRootBType, iRootCType)) should be(Set(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ObjectType](cRootAType, iRootCType)) should be(Set(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ObjectType](cRootAABType, iRootCType)) should be(Set(cRootAAABBCType))
+    }
+
+    it should "not fail if no common subtype exists" in {
+        import typesProject.classHierarchy.directSubtypesOf
+        directSubtypesOf(UIDSet[ObjectType](cRootType, iRootBType)) should be(Set.empty)
     }
 
     // -----------------------------------------------------------------------------------

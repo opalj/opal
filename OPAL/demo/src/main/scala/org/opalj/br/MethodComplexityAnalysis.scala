@@ -31,42 +31,45 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
-import org.opalj.br.instructions._
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 
 /**
  * Very primitive rating of the complexity of methods.
  *
  * @author Michael Eichberg
  */
-object MethodComplexityAnalysis extends AnalysisExecutor {
+object MethodComplexityAnalysis
+        extends OneStepAnalysis[URL, BasicReport]
+        with AnalysisExecutor {
 
-    val analysis =
-        new OneStepAnalysis[URL, BasicReport] {
+    val analysis = this
 
-            override def description: String =
-                "A very simple rating of the complexity of methods."
+    override def description: String = "Estimates the complexity of interpreting the method."
 
-            def doAnalyze(
-                project: Project[URL],
-                parameters: Seq[String],
-                isInterrupted: () ⇒ Boolean) = {
+    def doAnalyze(
+        project: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
 
-                import util.PerformanceEvaluation.{ time, ns2sec }
+        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
+        var executionTimeInSecs = 0d
 
-                var executionTimeInSecs = 0d
-                val analysisResults = time {
-                    import org.opalj.br.analyses.{ MethodComplexityAnalysis ⇒ TheAnalysis }
-                    TheAnalysis.doAnalyze(project, 100, isInterrupted)
-                } { executionTime ⇒ executionTimeInSecs = ns2sec(executionTime) }
+        val analysisResults = time {
 
-                BasicReport(
-                    analysisResults.
-                        toList.map(m ⇒ (m._2, m._1)).
-                        sorted.map(m ⇒ m._1+":"+m._2.fullyQualifiedSignature(project.classFile(m._2).thisType)).
-                        mkString("\n")+"\n"+
-                        s"Rated ${analysisResults.size} methods in ${executionTimeInSecs} secs."
-                )
-            }
-        }
+            import org.opalj.br.analyses.{ MethodComplexityAnalysis ⇒ TheAnalysis }
+            TheAnalysis.doAnalyze(project, 100, isInterrupted)
+
+        } { executionTime ⇒ executionTimeInSecs = ns2sec(executionTime) }
+
+        BasicReport(
+            analysisResults.
+                toList.map(m ⇒ (m._2, m._1)).
+                sorted.map(m ⇒ m._1+":"+m._2.fullyQualifiedSignature(project.classFile(m._2).thisType)).
+                mkString("\n")+"\n"+
+                s"Rated ${analysisResults.size} methods in ${executionTimeInSecs} secs."
+        )
+    }
 }
