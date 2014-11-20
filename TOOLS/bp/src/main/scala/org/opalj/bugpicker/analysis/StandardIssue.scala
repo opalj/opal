@@ -30,6 +30,8 @@ package org.opalj
 package bugpicker
 package analysis
 
+import scala.language.existentials
+
 import scala.Console.{ GREEN, RESET }
 import scala.xml.Node
 import scala.xml.Text

@@ -192,7 +192,7 @@ trait AITracer {
     def abruptMethodExecution(
         domain: Domain)(
             pc: PC,
-            exception: domain.DomainValue): Unit
+            exception: domain.ExceptionValue): Unit
 
     /**
      * Called when the abstract interpretation of a method has completed/was

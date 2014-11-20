@@ -105,7 +105,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
 
     override def abruptMethodExecution(
         domain: Domain)(
-            pc: Int, exception: domain.DomainValue): Unit = {
+            pc: Int, exception: domain.ExceptionValue): Unit = {
         tracers foreach { _.abruptMethodExecution(domain)(pc, exception) }
     }
 

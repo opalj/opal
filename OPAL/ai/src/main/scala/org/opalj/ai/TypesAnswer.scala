@@ -232,7 +232,7 @@ trait IsAReferenceValue {
     @throws[UnsupportedOperationException](
         "the given domain has to be equal to the domain that was used to creat this object"
     )
-    def asDomainValue(implicit domain: Domain): domain.DomainValue
+    def asDomainValue(implicit domain: Domain): domain.DomainReferenceValue
 }
 
 /**

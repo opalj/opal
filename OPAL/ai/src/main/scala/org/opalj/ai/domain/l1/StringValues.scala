@@ -105,7 +105,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
         }
     }
 
-    abstract override def toDomainValue(pc: PC, value: Object): DomainValue = {
+    abstract override def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
         value match {
             case s: String ⇒ StringValue(pc, s)
             case _         ⇒ super.toDomainValue(pc, value)

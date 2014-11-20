@@ -92,7 +92,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
             }
         }
 
-        override def toDomainValue(pc: PC, value: Object): DomainValue = {
+        override def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
             lastObject = value
             super.toDomainValue(pc, value)
         }
