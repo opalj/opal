@@ -42,5 +42,6 @@ class SimpleCHACallGraphTest extends AbstractCallGraphTest {
 
     override def testFilePath = "ai"
 
-    override def testCallGraphConfiguration = new CHACallGraphAlgorithmConfiguration
+    override def testCallGraphConfiguration =
+        new CHACallGraphAlgorithmConfiguration(project)
 }

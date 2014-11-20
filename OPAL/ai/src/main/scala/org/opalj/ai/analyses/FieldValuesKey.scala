@@ -39,8 +39,7 @@ import org.opalj.br.analyses._
  *
  * @author Michael Eichberg
  */
-object FieldValuesKey
-        extends ProjectInformationKey[Map[Field, FieldValuesAnalysisDomain#DomainValue]] {
+object FieldValuesKey extends ProjectInformationKey[FieldValueInformation] {
 
     /**
      * The FieldTypesKey has no special prerequisites.
@@ -52,8 +51,7 @@ object FieldValuesKey
     /**
      * Computes the field type information.
      */
-    override protected def compute(
-        project: SomeProject): Map[Field, FieldValuesAnalysisDomain#DomainValue] = {
+    override protected def compute(project: SomeProject): FieldValueInformation = {
         // TODO Introduce the concept of a "configuration to a project"
         // TODO Use project-specific logging facility
         println("Computing field value information")

@@ -49,7 +49,7 @@ import org.opalj.ai.project.ComputedCallGraph
 import org.opalj.br.MethodDescriptor
 
 /**
- * A shallow analysis that tries to identify (private) methods that are dead.
+ * A shallow analysis that tries to identify ((package) private) methods that are dead.
  *
  * @author Michael Eichberg
  */
@@ -74,6 +74,7 @@ object UnusedMethods extends AnalysisExecutor {
                     classFile ← theProject.classFiles.par
                     if !isInterrupted()
                     method ← classFile.methods
+                    if method.body.isDefined
                     if method.isPrivate || method.hasDefaultVisibility
                     if callGraph.calledBy(method).isEmpty
                     if !(

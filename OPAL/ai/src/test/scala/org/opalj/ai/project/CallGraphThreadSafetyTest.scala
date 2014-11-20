@@ -49,18 +49,17 @@ class CallGraphThreadSafetyTest extends FlatSpec with Matchers {
 
     behavior of "OPAL's parallelized Call Graph algorithms"
 
-    def testFileName = "classfiles/callgraph.jar"
-    def testFilePath = "ai"
-    def testCallGraphAlgorithm = new CHACallGraphAlgorithmConfiguration()
-
     val CallGraphInstances = 50
 
     //
     // PROJECT SETUP
     //
-    def file = locateTestResources(testFileName, testFilePath)
-    val classFiles = Java8Framework.ClassFiles(file)
+    def testFileName = "classfiles/callgraph.jar"
+    def testFilePath = "ai"
+    def testFile = locateTestResources(testFileName, testFilePath)
+    val classFiles = Java8Framework.ClassFiles(testFile)
     val project = br.analyses.Project(classFiles)
+    def testCallGraphAlgorithm = new CHACallGraphAlgorithmConfiguration(project)
 
     //
     // GRAPH CONSTRUCTION

@@ -225,21 +225,23 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
             it("it should be able to handle basic aliasing (method: \"aliases\"") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "aliases").get
                 val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+                import result.operandsArray
+                import result.domain.IsNull
 
-                val ReferenceValue(v95) = result.operandsArray(14).head
-                v95.isNull should be(Unknown)
+                val IsNull(v95) = asReferenceValue(operandsArray(14).head)
+                v95 should be(Unknown)
 
-                val ReferenceValue(v99) = result.operandsArray(20).head
-                v99.isNull should be(No)
+                val IsNull(v99) = result.operandsArray(20).head
+                v99 should be(No)
 
-                val ReferenceValue(v111) = result.operandsArray(57).head
-                v111.isNull should be(No)
+                val IsNull(v111) = result.operandsArray(57).head
+                v111 should be(No)
 
-                val ReferenceValue(v113) = result.operandsArray(59).head
-                v113.isNull should be(No)
+                val IsNull(v113) = result.operandsArray(59).head
+                v113 should be(No)
 
-                val ReferenceValue(v117) = result.operandsArray(61).head
-                v117.isNull should be(Yes)
+                val IsNull(v117) = result.operandsArray(61).head
+                v117 should be(Yes)
             }
 
             it("it should be possible to get precise information about a method's return values (method: \"maybeNull\")") {
@@ -247,22 +249,22 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "maybeNull").get
                 val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
 
-                val ReferenceValue(firstReturn) = result.operandsArray(15).head
-                firstReturn.isNull should be(Yes)
+                val IsNull(firstReturn) = result.operandsArray(15).head
+                firstReturn should be(Yes)
 
-                val ReferenceValue(secondReturn) = result.operandsArray(23).head
-                secondReturn.isNull should be(No)
+                val IsNull(secondReturn) = result.operandsArray(23).head
+                secondReturn should be(No)
             }
 
             it("it should be able to correctly track a MultipleReferenceValue's values in the presence of aliasing (method: \"complexAliasing\")") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "complexAliasing").get
                 val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
 
-                val ReferenceValue(firstReturn) = result.operandsArray(23).head
-                firstReturn.isNull should be(Unknown)
+                val IsNull(firstReturn) = result.operandsArray(23).head
+                firstReturn should be(Unknown)
 
-                val ReferenceValue(secondReturn) = result.operandsArray(27).head
-                secondReturn.isNull should be(Unknown)
+                val IsNull(secondReturn) = result.operandsArray(27).head
+                secondReturn should be(Unknown)
 
                 val IsReferenceValue(values) = result.operandsArray(27).head
                 values.head.isNull should be(No)
@@ -291,28 +293,24 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 values2.head.isNull should be(Yes) // original value
                 values2.tail.head.isNull should be(Yes)
 
-                val ReferenceValue(value1) = result.operandsArray(58).head
-                value1.isNull should be(No)
+                asReferenceValue(result.operandsArray(58).head).isNull should be(No)
 
-                val ReferenceValue(value2) = result.operandsArray(62).head
-                value2.isNull should be(Unknown)
+                asReferenceValue(result.operandsArray(62).head).isNull should be(Unknown)
             }
 
             it("it should be able to correctly refine a MultipleReferenceValues") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "multipleReferenceValues").get
                 val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+                import result.domain.asReferenceValue
 
                 // u != null test
-                val ReferenceValue(u) = result.operandsArray(26).head
-                u.isNull should be(Unknown)
+                asReferenceValue(result.operandsArray(26).head).isNull should be(Unknown)
 
                 // first "doIt" call
-                val ReferenceValue(d1) = result.operandsArray(30).head
-                d1.isNull should be(Unknown)
+                asReferenceValue(result.operandsArray(30).head).isNull should be(Unknown)
 
                 // last "doIt" call
-                val ReferenceValue(d3) = result.operandsArray(47).head
-                d3.isNull should be(No)
+                asReferenceValue(result.operandsArray(47).head).isNull should be(No)
 
                 // the "last return" is not dead
                 result.operandsArray(45) should not be (null)

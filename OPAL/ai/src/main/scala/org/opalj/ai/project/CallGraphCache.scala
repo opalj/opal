@@ -66,11 +66,11 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  */
 class CallGraphCache[Contour, Value](
-        final val NullPointerExceptionDefaultConstructor: Option[Method]) {
+        val NullPointerExceptionDefaultConstructor: Option[Method]) {
 
     def this(project: SomeProject) = {
         this(
-            project.classFile(ObjectType("java/lang/NullPointerException")) match {
+            project.classFile(ObjectType.NullPointerException) match {
                 case Some(classFile) ⇒
                     classFile.findMethod("<init>", MethodDescriptor.NoArgsAndReturnVoid) match {
                         case c @ Some(defaultConstructor) ⇒ c

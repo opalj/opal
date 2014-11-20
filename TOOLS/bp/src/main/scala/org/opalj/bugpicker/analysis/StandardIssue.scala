@@ -30,6 +30,8 @@ package org.opalj
 package bugpicker
 package analysis
 
+import scala.language.existentials
+
 import scala.Console.{ GREEN, RESET }
 import scala.xml.Node
 import scala.xml.Text
@@ -213,7 +215,7 @@ case class StandardIssue(
         }
 
         val node =
-            <div class="an_issue" style={ s"color:${relevance.asHTMLColor};" } data-relevance={ relevance.toString } data-kind={ kind.mkString(" ") } data-category={ categories.mkString(" ") }>
+            <div class="an_issue" style={ s"color:${relevance.asHTMLColor};" } data-relevance={ relevance.value.toString } data-kind={ kind.mkString(" ") } data-category={ categories.mkString(" ") }>
                 <dl>
                     { infoNodes }
                     <dt class="issue">summary</dt>

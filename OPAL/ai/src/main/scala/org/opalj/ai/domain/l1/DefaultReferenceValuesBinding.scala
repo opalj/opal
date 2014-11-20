@@ -49,7 +49,8 @@ trait DefaultReferenceValuesBinding
 
     // Let's fix the type hierarchy
 
-    type DomainReferenceValue = ReferenceValue
+    type AReferenceValue = ReferenceValue
+    type DomainReferenceValue = AReferenceValue
 
     type DomainSingleOriginReferenceValue = SingleOriginReferenceValue
     type DomainNullValue = NullValue
