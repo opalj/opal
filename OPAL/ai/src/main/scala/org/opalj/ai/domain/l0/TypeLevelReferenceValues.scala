@@ -807,11 +807,6 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     // if its properties are correctly abstracting over the current state. Hence,
     // the same domain value is used to potentially represent different objects at
     // runtime/this domain does not support the identification of aliases.
-    // As long as the memory address/the reference of a DomainValue is used to ensure
-    // termination, we cannot propagate constraints. A different property is needed
-    // that does not depend on the reference. (I.e., we cannot simply create a new
-    // domain value whenever some operation is performed since we cannot guarantee 
-    // the termination any longer!)
 
     def refEstablishUpperBound(
         pc: PC,
