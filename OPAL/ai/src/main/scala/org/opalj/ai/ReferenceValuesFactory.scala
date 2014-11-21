@@ -213,7 +213,7 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
         InitializedObjectValue(pc, ObjectType.MethodHandle)
 
     /**
-     * Called by the AI framework for each \"load constant method type\" 
+     * Called by the AI framework for each \"load constant method type\"
      * ([[org.opalj.br.instructions.LoadMethodType]]) instruction to
      * get a domain-specific representation of the method descriptor as a `MethodType`.
      *

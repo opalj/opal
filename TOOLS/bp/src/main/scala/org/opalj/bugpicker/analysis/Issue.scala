@@ -97,21 +97,14 @@ trait Issue {
         val pc = this.pc.get
         val code = this.code.get
 
-        def default =
-            Some(
-                <div class="warning">
-                    Local variable information (debug information) is not available.
-                </div>
-            )
-
         if (this.localVariables.isEmpty) {
-            return default;
+            return None;
         }
         val localVariableValues = this.localVariables.get
 
         val localVariableDefinitions = code.localVariablesAt(pc)
         if (localVariableDefinitions.isEmpty)
-            return default;
+            return None;
 
         val lvsAsXHTML =
             for ((index, theLV) ← localVariableDefinitions) yield {
@@ -198,10 +191,12 @@ trait Issue {
     final def instruction: Option[Instruction] =
         pc.flatMap(pc ⇒ code.map(_.instructions(pc)))
 
+    final def line(pc: PC): Option[Int] = code.flatMap(_.lineNumber(pc))
+
     /**
      * The primarily affected line of source code; if available.
      */
-    final def line: Option[Int] = pc.flatMap(pc ⇒ code.flatMap(_.lineNumber(pc)))
+    final def line: Option[Int] = pc.flatMap(pc ⇒ line(pc))
 
     /**
      * An (x)HTML5 representation of the bug report, well suited for browser output.
@@ -211,6 +206,11 @@ trait Issue {
     /**
      * A representation of this bug report well suited for console output.
      */
-    def asAnsiColoredString: String
+    def asAnsiColoredString: String = {
+        project.source(classFile.thisType).map(_.toString).getOrElse("<No Source>")+":"+
+            line.map(_+":").getOrElse("") +
+            relevance.asAnsiColoredString + (": ") +
+            scala.Console.GREEN + summary + scala.Console.RESET
+    }
 }
 

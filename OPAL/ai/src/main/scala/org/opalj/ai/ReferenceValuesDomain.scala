@@ -90,7 +90,7 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * point to the same instance. The latter is, e.g., trivially the case when both
      * values have a different concrete type. Otherwise `Unknown` is returned.
      *
-     * If both values are representing the `null` value the [[Answer]] is `Yes`.
+     * If both values are representing the `null` value the [[org.opalj.util.Answer]] is `Yes`.
      *
      * @param value1 A value of computational type reference.
      * @param value2 A value of computational type reference.
@@ -103,7 +103,7 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * point to the same instance. The latter is, e.g., trivially the case when both
      * values have a different concrete type. Otherwise `Unknown` is returned.
      *
-     * If both values are representing the `null` value the [[Answer]] is `Yes`.
+     * If both values are representing the `null` value the [[org.opalj.util.Answer]] is `Yes`.
      *
      * @param value1 A value of computational type reference.
      * @param value2 A value of computational type reference.

@@ -1924,14 +1924,22 @@ trait AI[D <: Domain] {
                         val value :: rest = operands
                         val referenceType = as[INSTANCEOF](instruction).referenceType
 
+                        val valueIsNull = theDomain.refIsNull(pc, value)
                         val result =
-                            if (theDomain.refIsNull(pc, value).isYes)
+                            if (valueIsNull.isYes)
                                 theDomain.BooleanValue(pc, false)
                             else
                                 theDomain.isValueSubtypeOf(value, referenceType) match {
-                                    case Yes     ⇒ theDomain.BooleanValue(pc, true)
-                                    case No      ⇒ theDomain.BooleanValue(pc, false)
-                                    case Unknown ⇒ theDomain.BooleanValue(pc)
+                                    case No ⇒
+                                        theDomain.BooleanValue(pc, false)
+
+                                    case Yes if valueIsNull.isNo ⇒
+                                        // null instanceOf[X] is always false...
+                                        // TODO [Dependent Values] add a constraint that – if the value is 1 then the value is non-null and if is 0 then the value is null
+                                        theDomain.BooleanValue(pc, true)
+
+                                    case _ /*Unknown or valueIsNull === Unknown*/ ⇒
+                                        theDomain.BooleanValue(pc)
                                 }
                         fallThrough(result :: rest)
                     }
