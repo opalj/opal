@@ -235,15 +235,24 @@ case class StandardIssue(
             infoNodes = infoNodes ::: List(dt, dd)
         }
 
+        val localVariablesAsXHTML = localVariablesToXHTML
+        val summaryNode =
+            if (localVariablesAsXHTML.isDefined)
+                <dt class="issue">summary</dt>
+            else
+                <dt class="issue">
+                    summary<abbr class="type object_type" title="Local variable information (debug information) is not available.">&#9888;</abbr>
+                </dt>
+
         val node =
             <div class="an_issue" style={ s"color:${relevance.asHTMLColor};" } data-relevance={ relevance.value.toString } data-kind={ kind.mkString(" ") } data-category={ categories.mkString(" ") }>
                 <dl>
                     { infoNodes }
-                    <dt class="issue">summary</dt>
+                    { summaryNode }
                     <dd class="issue_message">
                         { description.getOrElse("") }
                         <p>{ instructionNode }</p>
-                        { localVariablesToXHTML.toSeq }
+                        { localVariablesAsXHTML.getOrElse(Text("")) }
                     </dd>
                 </dl>
             </div>
