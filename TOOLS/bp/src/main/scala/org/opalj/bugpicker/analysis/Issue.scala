@@ -97,21 +97,14 @@ trait Issue {
         val pc = this.pc.get
         val code = this.code.get
 
-        def default =
-            Some(
-                <div class="warning">
-                    Local variable information (debug information) is not available.
-                </div>
-            )
-
         if (this.localVariables.isEmpty) {
-            return default;
+            return None;
         }
         val localVariableValues = this.localVariables.get
 
         val localVariableDefinitions = code.localVariablesAt(pc)
         if (localVariableDefinitions.isEmpty)
-            return default;
+            return None;
 
         val lvsAsXHTML =
             for ((index, theLV) ← localVariableDefinitions) yield {
