@@ -30,8 +30,8 @@ digraph OPALDomains {
 		JoinStabilization -> CoreDomainFunctionality;
 		JoinStabilization [style=filled,fillcolor=crimson,shape=rectangle];
 
-		IdentityBasedAliasBreakUpDetection -> CoreDomainFunctionality;
-		IdentityBasedAliasBreakUpDetection [style=filled,fillcolor=crimson,shape=rectangle];
+		IdentityBasedCorrelationChangeDetection -> CoreDomainFunctionality;
+		IdentityBasedCorrelationChangeDetection [style=filled,fillcolor=crimson,shape=rectangle];
 
 		Domain -> IntegerValuesDomain;
 		Domain -> LongValuesDomain;
@@ -72,7 +72,7 @@ digraph OPALDomains {
 			DoubleValuesFactory;
 		}
 	  {rank=same;
-			IdentityBasedAliasBreakUpDetection;
+			IdentityBasedCorrelationChangeDetection;
 			JoinStabilization;
 		}
 
@@ -91,11 +91,13 @@ digraph OPALDomains {
 		ProjectBasedClassHierarchy -> ClassHierarchy;
 		ProjectBasedClassHierarchy -> TheProject [style=dashed,arrowhead=vee];
 		TheProject;
+		TheClassFile;
 		TheMethod -> TheCode ;
 		Configuration;
 
 	{rank=same;
 		TheCode;
+		TheClassFile;
 		Origin;
 		ClassHierarchy;
 		TheProject;
