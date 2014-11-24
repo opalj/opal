@@ -181,7 +181,7 @@ public class ReferenceValuesFrenzy {
 			} else
 				a = maybeNull();
 		} while (IntegerValuesFrenzy.anInt() % 2 == 1);
-		return a;
+		return a; //pc=25
 	}
 
 	static void cfDependentValues(int i) {
