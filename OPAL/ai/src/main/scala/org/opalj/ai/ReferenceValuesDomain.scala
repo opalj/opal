@@ -47,13 +47,14 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
 
     /**
      * Tries to determine if the type referred to as `subtype` is a subtype of the
-     * specified reference type `supertype`.
+     * specified reference type `supertype`. If the class hierarchy is not complete
+     * the answer may be Unknown.
      */
     /*ABSTRACT*/ def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer
 
     /**
-     * Tries to determine – under the assumption that the given `value` is not `null` – 
-     * if the runtime type of the given reference value could be a
+     * Tries to determine – '''under the assumption that the given `value` is not
+     * `null`''' – if the runtime type of the given reference value could be a
      * subtype of the specified reference type `supertype`. I.e., if the type of the
      * value is not precisely known, then all subtypes of the `value`'s type are also
      * taken into consideration when analyzing the subtype relation and only if we
@@ -75,6 +76,12 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      */
     /*ABSTRACT*/ def refIsNull(pc: PC, value: DomainValue): Answer
 
+    /**
+     * Returns `Yes` if given value is never `null`, `Unknown` if the values is maybe
+     * `null` and `No` otherwise.
+     *
+     * @param value A value of computational type reference.
+     */
     def refIsNonNull(pc: PC, value: DomainValue): Answer = refIsNull(pc, value).negate
 
     /**
@@ -83,11 +90,24 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * point to the same instance. The latter is, e.g., trivially the case when both
      * values have a different concrete type. Otherwise `Unknown` is returned.
      *
+     * If both values are representing the `null` value the [[org.opalj.util.Answer]] is `Yes`.
+     *
      * @param value1 A value of computational type reference.
      * @param value2 A value of computational type reference.
      */
     /*ABSTRACT*/ def refAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer
 
+    /**
+     * Compares the given values for reference inequality. Returns `No` if both values
+     * point to the '''same instance''' and returns `Yes` if both objects are known not to
+     * point to the same instance. The latter is, e.g., trivially the case when both
+     * values have a different concrete type. Otherwise `Unknown` is returned.
+     *
+     * If both values are representing the `null` value the [[org.opalj.util.Answer]] is `Yes`.
+     *
+     * @param value1 A value of computational type reference.
+     * @param value2 A value of computational type reference.
+     */
     def refAreNotEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer =
         refAreEqual(pc, value1, value2).negate
 
@@ -137,6 +157,10 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
         locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def RefAreEqual = refEstablishAreEqual _
 
+    /**
+     * Called by OPAL when two values were compared for reference equality and
+     * we are going to analyze the branch where the comparison failed.
+     */
     def refEstablishAreNotEqual(
         pc: PC,
         value1: DomainValue,
@@ -149,8 +173,9 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * Called by the abstract interpreter when '''the type bound of the top most stack
      * value needs to be refined'''. This method is only called by the abstract
      * interpreter iff an immediately preceding subtype query (typeOf(value) <: bound)
-     * returned `Unknown` and must not be ignored – w.r.t. the top-most stack value –
-     * by the value.
+     * returned `Unknown`. '''This method must not be ignored – w.r.t. refining the top-most
+     * stack value'''; it is e.g., used by [[org.opalj.br.instructions.CHECKCAST]]
+     * instructions.
      *
      * A domain that is able to identify aliases can use this information to propagate
      * the information to the other aliases.
@@ -185,6 +210,7 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
         componentType: FieldType): Computation[DomainValue, ExceptionValue]
 
     /**
+     * Creates a representation of a new multidimensional array.
      * The return value is either a new array or a `NegativeArraySizeException` if
      * count is negative.
      */

@@ -496,22 +496,33 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         val v2 = asReferenceValue(value2)
         val value1IsNull = v1.isNull
         val value2IsNull = v2.isNull
-        if (value1IsNull.isYes && value2IsNull.isYesOrNo)
-            // both are null or the second one is definitively not null
+        if (value1IsNull.isYes)
+            // the answer is unknown if the second value is unknown, no if the second
+            // value is no and yes if the second value is also yes
             value2IsNull
-        else if (value2IsNull.isYes && value1IsNull.isNo)
-            // both are null or the first one is definitively not null
-            No
-        else if (value1IsNull.isNoOrUnknown && value2IsNull.isNoOrUnknown &&
-            v1.isPrecise && v2.isPrecise &&
-            v1.upperTypeBound != v2.upperTypeBound)
-            No
-        else
-            // we could also check if it is conceivable that both values are not equal based 
-            // on the available type information... However, if we only have a 
-            // fragmented/incomplete class hierarchy, the information is most likely of limited
-            // value
-            Unknown
+        else if (value2IsNull.isYes)
+            // value1IsNull is either No or unknown, both represents the correct answer
+            value1IsNull
+        else {
+            val v1UTB = v1.upperTypeBound
+            val v2UTB = v2.upperTypeBound
+            if (v1.isPrecise && v2.isPrecise)
+                if (v1UTB != v2UTB)
+                    // two objects with different runtime types are never equal
+                    No
+                else
+                    // though both values have the same runtime type, we don't know
+                    // if they refere to the same object
+                    Unknown
+            else { // - both values may not be null 
+                // - at least one value is not precise
+                if (classHierarchy.isSubtypeOf(v1UTB, v2UTB).isNo &&
+                    classHierarchy.isSubtypeOf(v2UTB, v1UTB).isNo)
+                    No
+                else
+                    Unknown
+            }
+        }
     }
 
     final override def isValueSubtypeOf(
@@ -807,11 +818,6 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     // if its properties are correctly abstracting over the current state. Hence,
     // the same domain value is used to potentially represent different objects at
     // runtime/this domain does not support the identification of aliases.
-    // As long as the memory address/the reference of a DomainValue is used to ensure
-    // termination, we cannot propagate constraints. A different property is needed
-    // that does not depend on the reference. (I.e., we cannot simply create a new
-    // domain value whenever some operation is performed since we cannot guarantee 
-    // the termination any longer!)
 
     def refEstablishUpperBound(
         pc: PC,

@@ -168,10 +168,13 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
         val results = new java.util.concurrent.ConcurrentLinkedQueue[Issue]()
+        val fieldValueInformation = theProject.get(FieldValuesKey)
 
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
             val analysisDomain =
-                new BugPickerAnalysisDomain(theProject, method, maxCardinalityOfIntegerRanges)
+                new BugPickerAnalysisDomain(
+                    theProject, fieldValueInformation,
+                    method, maxCardinalityOfIntegerRanges)
             val ai =
                 new BoundedInterruptableAI[analysisDomain.type](
                     body,

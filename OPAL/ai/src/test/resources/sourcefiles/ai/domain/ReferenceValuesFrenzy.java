@@ -110,17 +110,17 @@ public class ReferenceValuesFrenzy {
 			doIt(b); // b is either the original value, o or p
 		}
 		if (b == null) {
-			doIt(a); // a is either the original value, o, p or q
+			doIt(a); // a is either o, p or q
 		} else {
 			doIt(a); // a is either o or p (and both may be null)
-			// But, if we are not able track the fact that a can only be non
-			// null if i was 1 or 2, then a may also refer to q and the 
-			// original value
+			// But, if we are not able track the fact that a can 
+			// only be non null if i was 1 or 2, then a may also 
+			// refer to q
 		}
 
 		if (o != null) {
-			doIt(a); // p should be non-null
-			doIt(b); // p should be non-null
+			doIt(a); // o should be non-null
+			doIt(b); // o should be non-null
 		}
 	}
 
@@ -200,10 +200,10 @@ public class ReferenceValuesFrenzy {
 		// b and c are (potentially) not referring to the same object
 		if (c == null) { // this just constraints "c" (not "b")
 			doIt(b); // we know nothing about b here
-			doIt(c); // c is "0"
+			doIt(c); // c is "null"
 		} else if (b != null) {
-			doIt(b); // b is non-null
-			doIt(c); // we know nothing about c
+			doIt(b); // b is not null
+			doIt(c); // c is not null
 		}
 	}
 
