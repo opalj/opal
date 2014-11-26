@@ -48,8 +48,8 @@ trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with Stri
     // FACTORY METHODS
     //
 
-    override def StringValue(pc: PC, value: String): DomainStringValue =
-        new StringValue(pc, value)
+    override def StringValue(origin: ValueOrigin, value: String): DomainStringValue =
+        new StringValue(origin, value)
 
 }
 
