@@ -31,303 +31,353 @@ package ai.domain;
 import ai.domain.IntegerValuesFrenzy;
 
 /**
- * A class that does perform a large number of operations related to reference
- * values.
+ * A class that does perform a large number of operations related to reference values.
  * 
  * @author Michael Eichberg
  */
 public class ReferenceValuesFrenzy {
 
-	static void doIt(Object o) {
-		System.out.println(o);
-	}
+    static void doIt(Object o) {
+        System.out.println(o);
+    }
 
-	static void doIt(String id, Object o) {
-		System.out.println(id + ":" + o);
-	}
+    static void doIt(String id, Object o) {
+        System.out.println(id + ":" + o);
+    }
 
-	static void printError(Object o) {
-		System.err.println(o);
-	}
+    static void printError(Object o) {
+        System.err.println(o);
+    }
 
-	//
-	// Test methods/Test Fixture
-	//
+    //
+    // Test methods/Test Fixture
+    //
 
-	static void multipleReferenceValues(String s) {
-		int i = IntegerValuesFrenzy.anInt();
-		String v = "v";
-		String u = v;
-		if (i == 0) {
-			u = s;
-		} else if (i == 1) {
-			u = null;
-		}
-		if (u != null) {
-			doIt(s); // we don't know to which value u refers to; hence s maybe
-						// null!
-			doIt(u); // u is not null and hence is guaranteed to not refer to
-						// the "null" value
-		} else
-			return;
+    static void multipleReferenceValues(String s) {
+        int i = IntegerValuesFrenzy.anInt();
+        String v = "v";
+        String u = v;
+        if (i == 0) {
+            u = s;
+        } else if (i == 1) {
+            u = null;
+        }
+        if (u != null) {
+            doIt(s); // we don't know to which value u refers to; hence s maybe
+                     // null!
+            doIt(u); // u is not null and hence is guaranteed to not refer to
+                     // the "null" value
+        } else
+            return;
 
-		// u is not null...
-		if (s == null)
-			return;
+        // u is not null...
+        if (s == null)
+            return;
 
-		doIt(u);
-		// if u refers to s; s is now non-null
-	}
+        doIt(u);
+        // if u refers to s; s is now non-null
+    }
 
-	static void relatedMultipleReferenceValues(String s) {
-		int i = IntegerValuesFrenzy.anInt();
-		Object o = maybeNull();
-		Object p = maybeNull();
-		Object q = maybeNull();
+    static void refiningNullnessOfMultipleReferenceValues() {
+        int i = IntegerValuesFrenzy.anInt();
+        Object n = maybeNull();
+        Object o = maybeNull();
+        Object m = i == 0 ? n : o;
+        if (m == null) {
+            doIt(n); // pc:27
+            doIt(o); // pc:31
 
-		Object a = null;
-		Object b = null;
+            // here (in this branch) m, may still refer to "n" and "o"
+            // (m - as a whole - has to be null, but we
+            // don't know to which value m is referring to)
+            doIt(m); // pc:35
 
-		switch (i) {
-		case 1:
-			a = o;
-			b = p;
-			break;
-		case 2:
-			a = p;
-			b = o;
-			break;
-		default:
-			a = q;
-		}
-		// Let's assume that o, p and q are different objects.
-		//
-		// Now, both: a and b may refer to o and p; however, they will never
-		// refer to the same object; hence, any constraints will not affect 
-		// both values!
+            if (o != null) {
+                doIt(n); // pc:43
+                doIt(o); // pc:47
 
-		if (a == null) {
-			doIt(b); // b is either the original value, o or p
-		}
-		if (b == null) {
-			doIt(a); // a is either o, p or q
-		} else {
-			doIt(a); // a is either o or p (and both may be null)
-			// But, if we are not able track the fact that a can 
-			// only be non null if i was 1 or 2, then a may also 
-			// refer to q
-		}
+                // here(in this branch) m only refers to "n" which is `null`
+                doIt(m); // pc:51
+            }
+        }
+    }
 
-		if (o != null) {
-			doIt(a); // o should be non-null
-			doIt(b); // o should be non-null
-		}
-	}
+    static void refiningTypeBoundOfMultipleReferenceValues() {
+        // in the following we are using excepion types, because these
+        // type information are always readily available (even if the JDK
+        // is not loaded.)
+        int i = IntegerValuesFrenzy.anInt();
+        Object n = new LinkageError("...");
+        Object o = maybeNull();
+        Object m = i == 0 ? n : o;
+        if (m instanceof Throwable) {
+            Object s = (Throwable) m;
+            doIt(n); // pc: 40
+            doIt(o); // pc: 44
 
-	// Returns either "null" or a "new Object"
-	static Object maybeNull() {
-		if (System.currentTimeMillis() % 100l > 50l)
-			return null;
-		else
-			return new Object();
-	}
+            // here (in this branch) m(s), may still refer to "n" and "o"
+            doIt(m); // pc: 48
 
-	@SuppressWarnings("all")
-	static Object aliases(Object a, Object b) {
-		if (a == null) {
-			a = b;
-			if (a instanceof java.io.Serializable) {
-				return b; // Serializable
-			}
-		} else {
-			if (b == null) {
-				return a; // non-null
-			} else {
-				// a and b are non-null
-				Object d = null;
-				if (a.hashCode() < b.hashCode()) {
-					d = a;
-				} else {
-					d = b;
-				}
-				if (d instanceof java.lang.Comparable<?>) {
-					doIt(a); // a non-null Object
-					doIt(b); // a non-null Object
-					return d; // d is of type java.lang.Comparable
-				}
-				return d; // a or b || both not null
-			}
-		}
+            if (s instanceof Exception) {
+                Exception ms = (Exception) s;
+                doIt(n); // pc: 67
+                doIt(o); // pc: 71
 
-		return null;
-	}
+                // here(in this branch) ms only refers to "o"
+                doIt(ms); // pc: 76
+            }
+        }
+    }
 
-	static Object complexAliasing(Object a) {
-		Object o = a;
-		do {
-			if (o != null)
-				break;
-			else
-				o = maybeNull();
-		} while (IntegerValuesFrenzy.anInt() % 2 == 1);
-		doIt(a); // a.isNull === Unknown
-		return o; // o.isNull === Unknown; but if o is a then o is "non-null"
-	}
+    static void relatedMultipleReferenceValues(String s) {
+        int i = IntegerValuesFrenzy.anInt();
+        Object o = maybeNull();
+        Object p = maybeNull();
+        Object q = maybeNull();
 
-	static Object iterativelyUpdated(Object a) {
-		do {
-			if (a != null) {
-				doIt(a);
-			} else
-				a = maybeNull();
-		} while (IntegerValuesFrenzy.anInt() % 2 == 1);
-		return a; //pc=25
-	}
+        Object a = null;
+        Object b = null;
 
-	static void cfDependentValues(int i) {
-		Object b = null;
-		Object c = null;
-		int j = i; // <--- j is just an alias for i
-		while (j < 2) {
-			Object a = maybeNull();
-			if (i == 1)
-				b = a; // <--- b is just an alias for a
-			else
-				c = a; // <--- c is just an alias for a
-			i++;
-			j = i;
-		}
-		// b and c are (potentially) not referring to the same object
-		if (c == null) { // this just constraints "c" (not "b")
-			doIt(b); // we know nothing about b here
-			doIt(c); // c is "null"
-		} else if (b != null) {
-			doIt(b); // b is not null
-			doIt(c); // c is not null
-		}
-	}
+        switch (i) {
+        case 1:
+            a = o;
+            b = p;
+            break;
+        case 2:
+            a = p;
+            b = o;
+            break;
+        default:
+            a = q;
+        }
+        // Let's assume that o, p and q are different objects.
+        //
+        // Now, both: a and b may refer to o and p; however, they will never
+        // refer to the same object; hence, any constraints will not affect
+        // both values!
 
-	static void swap(int index, Object[] values) {
-		Object v = values[index];
-		values[index] = values[index + 1];
-		values[index + 1] = v;
-	}
+        if (a == null) {
+            doIt(b); // b is either the original value, o or p
+        }
+        if (b == null) {
+            doIt(a); // a is either o, p or q
+        } else {
+            doIt(a); // a is either o or p (and both may be null)
+            // But, if we are not able track the fact that a can
+            // only be non null if i was 1 or 2, then a may also
+            // refer to q
+        }
 
-	static Object simpleConditionalAssignment(int i) {
-		Object o = null;
-		if (i < 0)
-			o = new Object();
-		else
-			o = new Object();
+        if (o != null) {
+            doIt(a); // pc:104:: o should be non-null
+            doIt(b); // pc:109:: -  o should be non-null
+        }
+    }
 
-		return o; // o is either one or the other object
-	}
+    // Returns either "null" or a "new Object"
+    static Object maybeNull() {
+        if (System.currentTimeMillis() % 100l > 50l)
+            return null;
+        else
+            return new Object();
+    }
 
-	static Object conditionalAssignment1() {
-		Object o = null;
-		for (int i = 0; i < 2; i++) {
-			if (i == 0)
-				o = null;
-			else
-				o = new Object();
+    @SuppressWarnings("all")
+    static Object aliases(Object a, Object b) {
+        if (a == null) {
+            a = b;
+            if (a instanceof java.io.Serializable) {
+                return b; // Serializable
+            }
+        } else {
+            if (b == null) {
+                return a; // non-null
+            } else {
+                // a and b are non-null
+                Object d = null;
+                if (a.hashCode() < b.hashCode()) {
+                    d = a;
+                } else {
+                    d = b;
+                }
+                if (d instanceof java.lang.Comparable<?>) {
+                    doIt(a); // a non-null Object
+                    doIt(b); // a non-null Object
+                    return d; // d is of type java.lang.Comparable
+                }
+                return d; // a or b || both not null
+            }
+        }
 
-			if (o == null && i != 0)
-				printError("impossible");
-		}
+        return null;
+    }
 
-		return o; // o is not null....
-	}
+    static Object complexAliasing(Object a) {
+        Object o = a;
+        do {
+            if (o != null)
+                break;
+            else
+                o = maybeNull();
+        } while (IntegerValuesFrenzy.anInt() % 2 == 1);
+        doIt(a); // a.isNull === Unknown
+        return o; // o.isNull === Unknown; but if o is a then o is "non-null"
+    }
 
-	static Object conditionalAssignment2() {
-		Object o = null;
-		for (int i = 0; i < 2; i++) {
-			if (i == 0)
-				o = new Object();
-			else
-				o = null;
+    static Object iterativelyUpdated(Object a) {
+        do {
+            if (a != null) {
+                doIt(a);
+            } else
+                a = maybeNull();
+        } while (IntegerValuesFrenzy.anInt() % 2 == 1);
+        return a;
+    }
 
-			if (o == null && i == 0)
-				printError("impossible");
-		}
+    static void cfDependentValues(int i) {
+        Object b = null;
+        Object c = null;
+        int j = i; // <--- j is just an alias for i
+        while (j < 2) {
+            Object a = maybeNull();
+            if (i == 1)
+                b = a; // <--- b is just an alias for a
+            else
+                c = a; // <--- c is just an alias for a
+            i++;
+            j = i;
+        }
+        // b and c are (potentially) not referring to the same object
+        if (c == null) { // this just constraints "c" (not "b")
+            doIt(b); // we know nothing about b here
+            doIt(c); // c is "null"
+        } else if (b != null) {
+            doIt(b); // b is not null
+            doIt(c); // c is not null
+        }
+    }
 
-		return o; // o is null....
-	}
+    static void swap(int index, Object[] values) {
+        Object v = values[index];
+        values[index] = values[index + 1];
+        values[index + 1] = v;
+    }
 
-	static void complexConditionalAssignment1() {
-		Object a = null;
-		Object b = null;
-		Object c = null;
-		Object d = null;
+    static Object simpleConditionalAssignment(int i) {
+        Object o = null;
+        if (i < 0)
+            o = new Object();
+        else
+            o = new Object();
 
-		for (int i = 0; i < 3; i++) {
-			Object o = maybeNull();
-			switch (i) {
-			case 0:
-				a = o;
-				break;
-			case 1:
-				b = o;
-				break;
-			case 2:
-				c = o;
-				break;
-			}
-		}
-		if (a == null) {
-			doIt(/* "a: a===null", */a);
-			doIt(/* "a: b.isNull.isUnknown", */b);
-			doIt(/* "a: c.isNull.isUnknown", */c);
-			doIt(/* "a: d===null", */d);
-		}
-		if (b == null) {
-			doIt(/* "b: a.isNull.isUnknown", */a);
-			doIt(/* "b: b===null", */b);
-			doIt(/* "b: c.isNull.isUnknown", */c);
-			doIt(/* "b: d===null", */d);
-		}
-		if (c == null) {
-			doIt(/* "c: a.isNull.isUnknown", */a);
-			doIt(/* "c: b.isNull.isUnknown", */b);
-			doIt(/* "c: c===null", */c);
-			doIt(/* "c: d===null", */d);
-		}
-	}
+        return o; // o is either one or the other object
+    }
 
-	// REQUIRES A CAPABLE IntegerDomain
-	static void complexConditionalAssignment2() {
-		Object a = null;
-		Object b = null;
-		Object c = null;
-		Object d = null;
+    static Object conditionalAssignment1() {
+        Object o = null;
+        for (int i = 0; i < 2; i++) {
+            if (i == 0)
+                o = null;
+            else
+                o = new Object();
 
-		for (int i = 0; i < 2; i++) {
-			Object o = maybeNull();
-			switch (i) {
-			case 0:
-				a = o;
-				break;
-			case 1:
-				b = o;
-				break;
-			case 2: // dead code...
-				c = o;
-				break;
-			}
-		}
-		if (a instanceof java.io.Serializable) {
-			doIt(a); // java.io.Serializable (or null)
-			doIt(b);
-			doIt(c);
-			doIt(d);
-		}
-		if (b instanceof java.util.Vector) {
-			doIt(a);
-			doIt(b);// java.util.Vector (or null)
-			doIt(c);
-			doIt(d);
-		}
-		if (c != null) {
-			printError("impossible");
-		}
-	}
+            if (o == null && i != 0)
+                printError("impossible");
+        }
+
+        return o; // o is not null....
+    }
+
+    static Object conditionalAssignment2() {
+        Object o = null;
+        for (int i = 0; i < 2; i++) {
+            if (i == 0)
+                o = new Object();
+            else
+                o = null;
+
+            if (o == null && i == 0)
+                printError("impossible");
+        }
+
+        return o; // o is null....
+    }
+
+    static void complexConditionalAssignment1() {
+        Object a = null;
+        Object b = null;
+        Object c = null;
+        Object d = null;
+
+        for (int i = 0; i < 3; i++) {
+            Object o = maybeNull();
+            switch (i) {
+            case 0:
+                a = o;
+                break;
+            case 1:
+                b = o;
+                break;
+            case 2:
+                c = o;
+                break;
+            }
+        }
+        if (a == null) {
+            doIt(/* "a: a===null", */a);
+            doIt(/* "a: b.isNull.isUnknown", */b);
+            doIt(/* "a: c.isNull.isUnknown", */c);
+            doIt(/* "a: d===null", */d);
+        }
+        if (b == null) {
+            doIt(/* "b: a.isNull.isUnknown", */a);
+            doIt(/* "b: b===null", */b);
+            doIt(/* "b: c.isNull.isUnknown", */c);
+            doIt(/* "b: d===null", */d);
+        }
+        if (c == null) {
+            doIt(/* "c: a.isNull.isUnknown", */a);
+            doIt(/* "c: b.isNull.isUnknown", */b);
+            doIt(/* "c: c===null", */c);
+            doIt(/* "c: d===null", */d);
+        }
+    }
+
+    // REQUIRES A CAPABLE IntegerDomain
+    static void complexConditionalAssignment2() {
+        Object a = null;
+        Object b = null;
+        Object c = null;
+        Object d = null;
+
+        for (int i = 0; i < 2; i++) {
+            Object o = maybeNull();
+            switch (i) {
+            case 0:
+                a = o;
+                break;
+            case 1:
+                b = o;
+                break;
+            case 2: // dead code...
+                c = o;
+                break;
+            }
+        }
+        if (a instanceof java.io.Serializable) {
+            doIt(a); // java.io.Serializable (or null)
+            doIt(b);
+            doIt(c);
+            doIt(d);
+        }
+        if (b instanceof java.util.Vector) {
+            doIt(a);
+            doIt(b);// java.util.Vector (or null)
+            doIt(c);
+            doIt(d);
+        }
+        if (c != null) {
+            printError("impossible");
+        }
+    }
 }
