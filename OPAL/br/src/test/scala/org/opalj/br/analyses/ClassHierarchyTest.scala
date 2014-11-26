@@ -121,6 +121,36 @@ class ClassHierarchyTest
         javaLangCH.isDirectSupertypeInformationComplete(AnUnknownType) should be(false)
     }
 
+    behavior of "the default ClassHierarchy's allSupertypesOf method w.r.t. class types"
+
+    it should "identify the same set of class as allSupertypes if the bound contains only one element" in {
+        val supertypesOfString = javaLangCH.allSupertypes(ObjectType.String, true)
+
+        supertypesOfString should be(
+            javaLangCH.allSupertypesOf(UIDSet(ObjectType.String), true)
+        )
+    }
+
+    behavior of "the default ClassHierarchy's leafTypes method w.r.t. class types"
+
+    it should "correctly return a class if we give it a class and all types it inherits from" in {
+        val supertypesOfString = javaLangCH.allSupertypes(ObjectType.String, true)
+
+        javaLangCH.leafTypes(supertypesOfString) should be(UIDSet(ObjectType.String))
+    }
+
+    it should "correctly return a class's direct supertypes if we give it all types the class inherits from" in {
+        val supertypesOfString = javaLangCH.allSupertypes(ObjectType.String, false)
+
+        javaLangCH.leafTypes(supertypesOfString) should be(
+            UIDSet(List(
+                ObjectType.Serializable,
+                ObjectType("java/lang/Comparable"),
+                ObjectType("java/lang/CharSequence")
+            ))
+        )
+    }
+
     behavior of "the default ClassHierarchy's isSubtypeOf method w.r.t. class types"
 
     it should "return Unknown if the \"subtype\" is unknown" in {
