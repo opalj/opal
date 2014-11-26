@@ -46,8 +46,8 @@ trait DefaultClassValuesBinding extends DefaultStringValuesBinding with ClassVal
     // FACTORY METHODS
     //
 
-    override def ClassValue(vo: ValueOrigin, value: Type): DomainClassValue =
-        new ClassValue(vo, value)
+    override def ClassValue(origin: ValueOrigin, value: Type): DomainClassValue =
+        new ClassValue(origin, value)
 
 }
 
