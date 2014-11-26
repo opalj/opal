@@ -1374,6 +1374,8 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
     val componentType: FieldType)
         extends ReferenceType {
 
+    assert(componentType != null)
+
     final override def isArrayType = true
 
     final override def asArrayType = this
