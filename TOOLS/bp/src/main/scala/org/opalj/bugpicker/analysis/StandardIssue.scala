@@ -64,13 +64,6 @@ case class StandardIssue(
         otherPCs: Seq[(PC, String)],
         relevance: Relevance) extends Issue {
 
-    def asAnsiColoredString: String = {
-        project.source(classFile.thisType).map(_.toString).getOrElse("<No Source>")+":"+
-            line.map(_+":").getOrElse("") +
-            relevance.asAnsiColoredString + (": ") +
-            GREEN + summary + RESET
-    }
-
     def asXHTML: Node = {
 
         val methodId: Option[String] =
@@ -81,23 +74,27 @@ case class StandardIssue(
                 (if (ln > 0) (ln - 1) else 0).toString
             }))
 
+        def createPCNode(pc: PC): Node = {
+            <span data-class={ classFile.fqn } data-method={ methodId.get } data-pc={ pc.toString } data-show="bytecode">
+                { pc.toString }
+            </span>
+        }
+
         val pcNode: Option[Node] =
             if (methodId.isDefined && pc.isDefined)
-                Some(
-                    <span data-class={ classFile.fqn } data-method={ methodId.get } data-pc={ pc.get.toString } data-show="bytecode">
-                        { pc.get.toString }
-                    </span>
-                )
+                Some(createPCNode(pc.get))
             else
                 None
 
+        def createLineNode(pc: PC, line: Int): Node = {
+            <span data-class={ classFile.fqn } data-method={ methodId.get } data-line={ line.toString } data-pc={ pc.toString } data-show="sourcecode">
+                { line.toString }
+            </span>
+        }
+
         val lineNode: Option[Node] =
             if (methodId.isDefined && pc.isDefined && line.isDefined)
-                Some(
-                    <span data-class={ classFile.fqn } data-method={ methodId.get } data-line={ line.get.toString } data-pc={ pc.get.toString } data-show="sourcecode">
-                        { line.get.toString }
-                    </span>
-                )
+                Some(createLineNode(pc.get, line.get))
             else
                 None
 
@@ -200,6 +197,27 @@ case class StandardIssue(
         if (pcNode.isDefined || lineNode.isDefined) {
             val dt = <dt>instruction</dt>
             var locations = List.empty[Node]
+
+            // Path information...
+            otherPCs.reverse.foreach { info ⇒
+                val (pc, message) = info
+                val lineNode =
+                    line(pc).map(ln ⇒
+                        <span class="line_number">line={ createLineNode(pc, ln) }</span>
+                    ).getOrElse(Text(""))
+
+                locations ::=
+                    <div class="issue_additional_info">
+                        <span class="program_counter">pc={ createPCNode(pc) }</span>
+                        { lineNode }
+                        <br/>
+                        { message }
+                    </div>
+            }
+
+            // The primary message... 
+            locations ::= <span class="issue_summary">{ summary }</span>
+            locations ::= <br/>
             lineNode.foreach(ln ⇒
                 locations =
                     <span class="line_number">line={ lineNode.get }</span> ::
@@ -207,22 +225,34 @@ case class StandardIssue(
             )
             pcNode.foreach(ln ⇒
                 locations =
-                    <span class="program_counter">line={ pcNode.get }</span> ::
+                    <span class="program_counter">pc={ pcNode.get }</span> ::
                         Text(" ") ::
                         locations
             )
-            infoNodes = infoNodes ::: List(dt, <dd> { locations } </dd>)
+
+            val dd =
+                <dd> { locations }</dd>
+            infoNodes = infoNodes ::: List(dt, dd)
         }
+
+        val localVariablesAsXHTML = localVariablesToXHTML
+        val summaryNode =
+            if (localVariablesAsXHTML.isDefined)
+                <dt class="issue">summary</dt>
+            else
+                <dt class="issue">
+                    summary<abbr class="type object_type" title="Local variable information (debug information) is not available.">&#9888;</abbr>
+                </dt>
 
         val node =
             <div class="an_issue" style={ s"color:${relevance.asHTMLColor};" } data-relevance={ relevance.value.toString } data-kind={ kind.mkString(" ") } data-category={ categories.mkString(" ") }>
                 <dl>
                     { infoNodes }
-                    <dt class="issue">summary</dt>
+                    { summaryNode }
                     <dd class="issue_message">
                         { description.getOrElse("") }
                         <p>{ instructionNode }</p>
-                        { localVariablesToXHTML.toSeq }
+                        { localVariablesAsXHTML.getOrElse(Text("")) }
                     </dd>
                 </dl>
             </div>

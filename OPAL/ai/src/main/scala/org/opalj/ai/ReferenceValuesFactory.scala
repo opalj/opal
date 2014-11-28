@@ -200,7 +200,8 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
     def ClassValue(vo: ValueOrigin, t: Type): DomainReferenceValue
 
     /**
-     * Called by the AI framework for each load constant method handle instruction to
+     * Called by the AI framework for each \"load constant method handle\"
+     * ([[org.opalj.br.instructions.LoadMethodHandle]]) instruction to
      * get a representation of/a DomainValue that represents the handle.
      *
      * @param handle A valid method handle.
@@ -212,7 +213,8 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
         InitializedObjectValue(pc, ObjectType.MethodHandle)
 
     /**
-     * Called by the AI framework for each load constant method type instruction to
+     * Called by the AI framework for each \"load constant method type\"
+     * ([[org.opalj.br.instructions.LoadMethodType]]) instruction to
      * get a domain-specific representation of the method descriptor as a `MethodType`.
      *
      * @param descriptor A valid method descriptor.

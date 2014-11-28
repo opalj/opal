@@ -24,8 +24,6 @@ fork in Test := false
 
 ////////////////////// Integration Tests
 
-parallelExecution in IntegrationTest := false
-
 logBuffered in IntegrationTest := false
 
 //javaOptions in IntegrationTest := Seq("-Xmx3G", "-ea", "-Xrs", "-esa", "-Xshare:off", "-XstartOnFirstThread", "-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts")

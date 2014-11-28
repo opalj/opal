@@ -74,7 +74,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         val theDomain = new IntegerRangesTestDomain
         import theDomain._
 
-        it("the representation of the constant integer value 0 should be an IntegerRange value") {
+        it("the representation of the integer value 0 should be an IntegerRange(0,0) value") {
             theDomain.IntegerConstant0 should be(IntegerRange(0, 0))
         }
     }

@@ -1154,14 +1154,32 @@ class ClassHierarchy private (
      * subtypes upper type bound a type in the supertypes type exists that is a
      * supertype of the respective subtype.
      */
-    protected def isSubtypeOf(
+    def isSubtypeOf(
         subtypes: UpperTypeBound,
-        supertypes: UpperTypeBound): Boolean = {
-        subtypes forall { subtype ⇒
-            supertypes exists { supertype ⇒
-                isSubtypeOf(subtype, supertype).isYes
+        supertypes: UpperTypeBound): Answer = {
+
+        Answer(
+            subtypes forall { subtype ⇒
+                var subtypingRelationUnknown = false
+                var supertypeExists =
+                    supertypes exists { supertype ⇒
+                        val isSubtypeOf = this.isSubtypeOf(subtype, supertype)
+                        isSubtypeOf match {
+                            case Yes     ⇒ true
+                            case Unknown ⇒ { subtypingRelationUnknown = true; false }
+                            case No      ⇒ false
+                        }
+                    }
+                if (supertypeExists) {
+                    true
+                } else {
+                    if (subtypingRelationUnknown)
+                        return Unknown;
+                    else
+                        false
+                }
             }
-        }
+        )
     }
 
     // -----------------------------------------------------------------------------------
