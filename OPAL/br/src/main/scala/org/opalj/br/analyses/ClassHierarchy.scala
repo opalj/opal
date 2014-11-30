@@ -624,32 +624,31 @@ class ClassHierarchy private (
      * subtypes upper type bound a type in the supertypes type exists that is a
      * supertype of the respective subtype.
      */
-    def isSubtypeOf(
-        subtypes: UpperTypeBound,
-        supertypes: UpperTypeBound): Answer = {
+    def isSubtypeOf(subtypes: UpperTypeBound, supertypes: UpperTypeBound): Answer = {
+        if (subtypes.isEmpty /*the upper type bound of "null" values*/ ||
+            subtypes == supertypes)
+            return Yes;
 
         Answer(
-            subtypes.isEmpty /*the upper type bound of "null" values*/ || {
-                supertypes forall { supertype ⇒
-                    var subtypingRelationUnknown = false
-                    var subtypeExists =
-                        subtypes exists { subtype ⇒
-                            val isSubtypeOf = this.isSubtypeOf(subtype, supertype)
-                            isSubtypeOf match {
-                                case Yes ⇒ true
-                                case Unknown ⇒
-                                    subtypingRelationUnknown = true
-                                    false /* let's continue the search */
-                                case No ⇒ false
-                            }
+            supertypes forall { supertype ⇒
+                var subtypingRelationUnknown = false
+                var subtypeExists =
+                    subtypes exists { subtype ⇒
+                        val isSubtypeOf = this.isSubtypeOf(subtype, supertype)
+                        isSubtypeOf match {
+                            case Yes ⇒ true
+                            case Unknown ⇒
+                                subtypingRelationUnknown = true
+                                false /* let's continue the search */
+                            case No ⇒ false
                         }
-                    if (subtypeExists)
-                        true
-                    else if (subtypingRelationUnknown)
-                        return Unknown;
-                    else
-                        false
-                }
+                    }
+                if (subtypeExists)
+                    true
+                else if (subtypingRelationUnknown)
+                    return Unknown;
+                else
+                    false
             }
         )
     }
