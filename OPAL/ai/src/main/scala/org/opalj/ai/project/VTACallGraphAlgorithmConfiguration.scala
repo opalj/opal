@@ -40,7 +40,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.analyses.FieldValuesKey
 
 /**
- * Configuration of a call graph algorithm that uses CHA.
+ * Configuration of a call graph algorithm that uses "variable type analysis".
  *
  * ==Thread Safety==
  * This class is thread-safe (it contains no mutable state.)
