@@ -1326,7 +1326,7 @@ class ClassHierarchy private (
             return upperTypeBoundB;
 
         if (isUnknown(upperTypeBoundA)) {
-            println(s"[warn] missing information about type $upperTypeBoundA")
+            println(s"[warn] type unknown: ${upperTypeBoundA.toJava}")
             // there is nothing that we can do...
             return UIDSet(ObjectType.Object)
         }
