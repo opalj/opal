@@ -384,14 +384,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             origin: ValueOrigin = this.origin,
             isNull: Answer = this.isNull): DomainSingleOriginReferenceValue
 
-        //        def updateTIfNot(
-        //            t: Timestamp)(
-        //                origin: ValueOrigin = this.origin,
-        //                isNull: Answer = this.isNull): DomainSingleOriginReferenceValue = {
-        //
-        //            if (this.t == t) update(origin, isNull) else updateT(origin, isNull)
-        //        }
-
         protected def refineIf(refinements: Refinements): Boolean = false
 
         final def refineIsNull(
@@ -480,23 +472,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         NoUpdate
                     else
                         TimestampUpdate(that)
-                //                case Yes ⇒
-                //                    if (this.t == that.t)
-                //                        NoUpdate
-                //                    else
-                //                       TimestampUpdate(that) //FIX?TimestampUpdate(updateT())
                 case Unknown ⇒
                     if (this.t == that.t)
                         NoUpdate
                     else
-                        TimestampUpdate(this.updateT(that.t)) //FIX?TimestampUpdate(updateT())
+                        TimestampUpdate(this.updateT(that.t))
                 case No ⇒
                     StructuralUpdate(
                         this.updateT(that.t, isNull = Unknown)
-                    //                        if (this.t == that.t)
-                    //                            update(isNull = Unknown)
-                    //                        else
-                    //                            updateT(isNull = Unknown)
                     )
             }
         }
@@ -538,14 +521,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          *
          * @param isNull Has to be `Yes`.
          */
-        //        override def update(
-        //            origin: ValueOrigin = this.origin,
-        //            isNull: Answer = Yes): DomainNullValue = {
-        //            assert(isNull.isYes, "a Null value's isNull property must be Yes")
-        //
-        //            NullValue(origin, t)
-        //        }
-
         override def updateT(
             t: Timestamp,
             origin: ValueOrigin = this.origin,
@@ -672,10 +647,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             ArrayValue(origin, isNull, isPrecise, theUpperTypeBound, t)
         }
 
-        //        override def update(origin: ValueOrigin, isNull: Answer): DomainArrayValue = {
-        //            ArrayValue(origin, isNull, isPrecise, theUpperTypeBound, t)
-        //        }
-
         def doRefineUpperTypeBound(supertype: ReferenceType): DomainSingleOriginReferenceValue = {
             assert(!isPrecise)
 
@@ -776,11 +747,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         assert(this.isNull.isNoOrUnknown)
 
-        //        override def update(origin: ValueOrigin, isNull: Answer): DomainObjectValue = {
-        //
-        //            ObjectValue(origin, isNull, isPrecise, theUpperTypeBound, t)
-        //        }
-
         override def updateT(
             t: Timestamp,
             origin: ValueOrigin, isNull: Answer): DomainObjectValue = {
@@ -811,80 +777,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 ObjectValue(this.origin, this.isNull, newUTB, t)
             }
         }
-
-        //        override protected def doJoinWithNonNullValueWithSameOrigin(
-        //            joinPC: Int,
-        //            other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
-        //            val thisUTB = this.theUpperTypeBound
-        //            other match {
-        //
-        //                case that: SObjectValue ⇒
-        //                    val thatUTB = that.theUpperTypeBound
-        //                    classHierarchy.joinObjectTypes(thisUTB, thatUTB, true) match {
-        //
-        //                        case UIDSet1(newUTB) ⇒
-        //                            if ((newUTB eq thisUTB) &&
-        //                                (this.isNull.isUnknown || that.isNull.isNo) &&
-        //                                (!this.isPrecise || that.isPrecise)) {
-        //                                // This value abstracts (w.r.t. the runtime properties)
-        //                                // over the other value, but does not represent the same
-        //                                // instance.
-        //                                MetaInformationUpdate(this.newInstance)
-        //                            } else {
-        //                                // Though the upper type bound of this value may 
-        //                                // also be an upper type bound for the other value
-        //                                // it does not precisely capture the other value's type!
-        //                                val newIsNull = this.isNull & that.isNull
-        //                                StructuralUpdate(
-        //                                    ObjectValue(this.origin, newIsNull, false, newUTB))
-        //                            }
-        //
-        //                        case newUTB /*UIDSetN*/ ⇒
-        //                            val newIsNull = this.isNull & that.isNull
-        //                            StructuralUpdate(
-        //                                ObjectValue(this.origin, newIsNull, newUTB))
-        //                    }
-        //
-        //                case that: MObjectValue ⇒
-        //                    val thatUTB = that.upperTypeBound
-        //                    classHierarchy.joinObjectTypes(thisUTB, thatUTB, true) match {
-        //
-        //                        case UIDSet1(newUTB) ⇒
-        //                            if ((newUTB eq thisUTB) &&
-        //                                (this.isNull.isUnknown || that.isNull.isNo) &&
-        //                                !this.isPrecise) {
-        //                                MetaInformationUpdate(this())
-        //                            } else {
-        //                                val newIsNull = this.isNull & that.isNull
-        //                                StructuralUpdate(
-        //                                    ObjectValue(this.origin, newIsNull, false, newUTB))
-        //                            }
-        //
-        //                        case newUTB /*UIDSet2..N*/ ⇒
-        //                            val newIsNull = this.isNull & that.isNull
-        //                            StructuralUpdate(
-        //                                ObjectValue(this.origin, newIsNull, newUTB))
-        //                    }
-        //
-        //                case that: ArrayValue ⇒
-        //                    classHierarchy.joinAnyArrayTypeWithObjectType(thisUTB) match {
-        //                        case UIDSet1(newUTB) ⇒
-        //                            if ((newUTB eq thisUTB) &&
-        //                                (this.isNull.isUnknown || that.isNull.isNo) &&
-        //                                !this.isPrecise) {
-        //                                MetaInformationUpdate(this())
-        //                            } else {
-        //                                val newIsNull = this.isNull & that.isNull
-        //                                StructuralUpdate(
-        //                                    ObjectValue(origin, newIsNull, false, newUTB))
-        //                            }
-        //
-        //                        case newUTB ⇒
-        //                            val newIsNull = this.isNull & that.isNull
-        //                            StructuralUpdate(ObjectValue(origin, newIsNull, newUTB))
-        //                    }
-        //            }
-        //        }
 
         override def abstractsOver(other: DomainValue): Boolean = {
             if (this eq other)
@@ -980,10 +872,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             with ObjectValue {
         this: DomainObjectValue ⇒
 
-        //        override def update(origin: ValueOrigin, isNull: Answer): DomainObjectValue = {
-        //            ObjectValue(origin, isNull, upperTypeBound, t)
-        //        }
-
         override def updateT(
             t: Timestamp,
             origin: ValueOrigin, isNull: Answer): DomainObjectValue = {
@@ -1033,73 +921,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             val newUTB = classHierarchy.joinReferenceTypes(thisUTB, thatUTB)
             ReferenceValue(origin, newIsNull, newIsPrecise, newUTB, newT)
         }
-
-        //        protected def doJoinWithNonNullValueWithSameOrigin(
-        //            joinPC: PC,
-        //            other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
-        //            val thisUTB = this.upperTypeBound
-        //            other match {
-        //
-        //                case that: MObjectValue ⇒
-        //                    val thatUTB = that.upperTypeBound
-        //                    classHierarchy.joinUpperTypeBounds(thisUTB, thatUTB, true) match {
-        //
-        //                        case UIDSet1(newUTB) ⇒
-        //                            val newIsNull = this.isNull & that.isNull
-        //                            StructuralUpdate(
-        //                                ObjectValue(origin, newIsNull, false, newUTB))
-        //
-        //                        case `thisUTB` if this.isNull.isUnknown || that.isNull.isNo ⇒
-        //                            MetaInformationUpdate(this.newInstance)
-        //
-        //                        case `thatUTB` if that.isNull.isUnknown || this.isNull.isNo ⇒
-        //                            StructuralUpdate(other.newInstance)
-        //
-        //                        case newUTB ⇒
-        //                            val newIsNull = this.isNull & that.isNull
-        //                            StructuralUpdate(
-        //                                ObjectValue(this.origin, newIsNull, newUTB))
-        //                    }
-        //
-        //                case that: SObjectValue ⇒
-        //                    val thatUTB = that.theUpperTypeBound
-        //                    val joinedType = classHierarchy.joinObjectTypes(thatUTB, thisUTB, true)
-        //
-        //                    joinedType match {
-        //                        case `thisUTB` if this.isNull.isUnknown || that.isNull.isNo ⇒
-        //                            MetaInformationUpdate(this.newInstance)
-        //
-        //                        case UIDSet1(newUTB) ⇒
-        //                            // Though the upper type bound of this value may 
-        //                            // also be an upper type bound for the other value
-        //                            // it does not capture the other value's type (it may be
-        //                            // to restricting)!
-        //                            val newIsNull = this.isNull & that.isNull
-        //                            StructuralUpdate(ObjectValue(origin, newIsNull, false, newUTB))
-        //
-        //                        case newUTB ⇒
-        //                            val newIsNull = this.isNull & that.isNull
-        //                            StructuralUpdate(ObjectValue(origin, newIsNull, newUTB))
-        //                    }
-        //
-        //                case that: ArrayValue ⇒
-        //                    classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(thisUTB) match {
-        //
-        //                        case `thisUTB` if this.isNull.isUnknown || that.isNull.isNo ⇒
-        //                            MetaInformationUpdate(this.newInstance)
-        //
-        //                        case UIDSet1(newUTB) ⇒
-        //                            val newIsNull = this.isNull & that.isNull
-        //                            StructuralUpdate(
-        //                                ObjectValue(this.origin, newIsNull, false, newUTB))
-        //
-        //                        case newUTB ⇒
-        //                            val newIsNull = this.isNull & that.isNull
-        //                            StructuralUpdate(
-        //                                ObjectValue(this.origin, newIsNull, newUTB))
-        //                    }
-        //            }
-        //        }
 
         override def abstractsOver(other: DomainValue): Boolean = {
             if (this eq other)
@@ -1498,29 +1319,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
             if (newValues.size == 1) {
                 refineToValue(newValues.head, isNull, this.upperTypeBound, operands, locals)
-                //                val lastValue = newValues.head
-                //                var newValue = lastValue
-                //                var isNewValueRefined = false
-                //
-                //                if (newValue.isNull != isNull) {
-                //                    newValue = newValue.doRefineIsNull(isNull)
-                //                    isNewValueRefined = true
-                //                }
-                //
-                //                if (newValue.isNull.isNo &&
-                //                    this.upperTypeBound != newValue.upperTypeBound &&
-                //                    classHierarchy.isSubtypeOf(this.upperTypeBound, newValue.upperTypeBound).isYesOrUnknown) {
-                //                    newValue = newValue.doRefineUpperTypeBound(this.upperTypeBound)
-                //                    isNewValueRefined = true
-                //                }
-                //                // we (at least) propagate the refinement of this value 
-                //                val memoryLayout @ (operands1, locals1) =
-                //                    propagateRefinement(this, newValue, operands, locals)
-                //
-                //                if (isNewValueRefined)
-                //                    propagateRefinement(lastValue, newValue, operands1, locals1)
-                //                else
-                //                    memoryLayout
             } else {
                 val newT = if (newValues.size == values.size) t else nextT()
                 val newValuesUTB = domain.upperTypeBound(newValues)
