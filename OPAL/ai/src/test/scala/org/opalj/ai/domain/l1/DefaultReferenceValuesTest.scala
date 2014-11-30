@@ -32,6 +32,7 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
+import scala.collection.SortedSet
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
@@ -39,6 +40,7 @@ import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
+import org.scalatest.Assertions._
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.ObjectType
@@ -46,14 +48,18 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.collection.mutable.Locals
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.br.ArrayType
+import org.opalj.br.IntegerType
 
 /**
+ * Tests the `ReferenceValues` domain.
+ *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
 class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTestExecution {
 
-    object TheDomain
+    class TheDomain
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
@@ -70,7 +76,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultPrimitiveValuesConversions
 
-    import TheDomain._
+    object ValuesDomain extends TheDomain
+    import ValuesDomain._
 
     //
     // TESTS
@@ -95,7 +102,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
         }
 
         //
-        // SIMPLE REFINEMENT
+        // REFINEMENT
         //
 
         describe("refining a DomainValue that represents a reference value") {
@@ -126,6 +133,81 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                     updatedOperands.head should be(theObjectValue)
                 }
             }
+
+            it("should be able to correctly handle the refinement of the nullness property of a multiple reference value that has a more precise bound than any reference value to a single value") {
+
+                val v0 = NullValue(111, 1)
+                val v1 = ObjectValue(222, Unknown, true, ObjectType("java/lang/Cloneable"), 2)
+                val v2 = ObjectValue(222, No, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")), 2)
+
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v0, v1),
+                        Unknown, true, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
+                        3)
+
+                val (refinedOperands, _) = mv1.refineIsNull(-1, No, List(mv1), Locals.empty)
+                refinedOperands.head should be(v2)
+            }
+
+            it("should be able to correctly handle the refinement of the upper type bound of a multiple reference value that has a more precise bound than any reference value to a single value") {
+
+                val v1 = ObjectValue(111, Unknown, true, ObjectType("java/lang/Object"), 1)
+                val v2 = ObjectValue(222, Unknown, false, ObjectType("java/lang/Cloneable"), 2)
+                val v3 = ObjectValue(222, Unknown, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")), 2)
+
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        Unknown, true, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
+                        3)
+
+                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, ObjectType("java/lang/Iterable"), List(mv1), Locals.empty)
+                refinedOperands.head should be(v3)
+            }
+
+            it("should be able to correctly handle the simple subsequent refinement of the upper type bound of a single value of a multiple reference value") {
+                val Member = ObjectType("java/lang/reflect/Member")
+                val Field = ObjectType("java/lang/reflect/Field")
+                val Constructor = ObjectType("java/lang/reflect/Constructor")
+
+                assert(isSubtypeOf(Field, Member).isYes)
+                assert(isSubtypeOf(Constructor, Member).isYes)
+
+                val v1 = ObjectValue(111, No, true, Field, 1)
+                val v2 = ObjectValue(222, Unknown, false, Member, 2)
+                val v3 = ObjectValue(222, Unknown, false, Constructor, 2)
+
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        Unknown, false, UIDSet(Member),
+                        3)
+
+                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, Constructor, List(mv1), Locals.empty)
+                refinedOperands.head should be(v3)
+            }
+
+            it("should be able to correctly handle the subsequent refinement of the upper type bound of a single value of a multiple reference value") {
+                val Throwable = ObjectType.Throwable
+                val Error = ObjectType.Error
+                val Exception = ObjectType.Exception
+                val RuntimeException = ObjectType.RuntimeException
+
+                val v1 = ObjectValue(111, No, true, Error, 1)
+                val v2 = ObjectValue(222, Unknown, false, Throwable, 2)
+                val v3 = ObjectValue(222, Unknown, false, RuntimeException, 2)
+
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        Unknown, false, UIDSet(Throwable),
+                        3)
+
+                val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, RuntimeException, List(mv1), Locals.empty)
+                refinedOperands.head should be(v3)
+            }
+
         }
 
         //
@@ -153,6 +235,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
         describe("joining two DomainValues that represent reference values") {
 
+            val refNull = NullValue(111)
+
             val ref1 = ObjectValue(444, No, true, ObjectType.Object)
 
             val ref1Alt = ObjectValue(444, No, true, ObjectType.Object)
@@ -165,6 +249,10 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
             val ref1MergeRef2 = ref1.join(-1, ref2).value
 
+            val ref2MergeRef3 = ref2.join(-1, ref3).value
+
+            val ref2MergeRef3MegerRefNull = ref2MergeRef3.join(-1, refNull)
+
             val ref1AltMergeRef2Alt = ref1Alt.join(-1, ref2Alt).value
 
             val ref1MergeRef2MergeRef3 = ref1MergeRef2.join(-1, ref3).value
@@ -175,35 +263,103 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 ref1.join(-1, ref1Alt) should be(MetaInformationUpdate(ref1))
             }
 
-            it("it should represent both values after a merge of two independent values") {
+            it("it should represent both values after a join of two independent values") {
                 val IsReferenceValue(values) = typeOfValue(ref1MergeRef2)
                 values.exists(_ == ref1) should be(true)
                 values.exists(_ == ref2) should be(true)
             }
 
-            it("it should represent all three values when we merge a MultipleReferenceValue with an ObjectValue if all three values are independent") {
+            it("it should represent all three values when we join a MultipleReferenceValue with an ObjectValue if all three values are independent") {
                 val IsReferenceValue(values) = typeOfValue(ref1MergeRef2MergeRef3)
                 values.exists(_ == ref1) should be(true)
                 values.exists(_ == ref2) should be(true)
                 values.exists(_ == ref3) should be(true)
             }
 
-            it("it should be able to merge two value sets that contain (reference) identical values") {
+            it("it should be able to join two value sets that contain (reference) identical values") {
                 val IsReferenceValue(values312) = typeOfValue(ref3MergeRef1MergeRef2)
                 val IsReferenceValue(values123) = typeOfValue(ref1MergeRef2MergeRef3)
                 values312.toSet should be(values123.toSet)
             }
 
-            it("it should be able to merge two value sets where the original set is a superset of the second set") {
+            it("it should be able to join two value sets where the original set is a superset of the second set") {
                 // the values represent different values in time...
                 val update = ref1MergeRef2MergeRef3.join(-1, ref1AltMergeRef2Alt)
                 if (!update.isMetaInformationUpdate)
                     fail("expected: MetaInformationUpdate; actual: "+update)
             }
 
-            it("it should be able to merge two value sets where the original set is a subset of the second set") {
+            it("it should be able to join two value sets where the original set is a subset of the second set") {
                 ref1AltMergeRef2Alt.join(-1, ref1MergeRef2MergeRef3) should be(StructuralUpdate(ref1MergeRef2MergeRef3))
             }
+
+            it("should be able to join two refined values sets") {
+                val v0 = NullValue(111)
+                val v1 = ObjectValue(444, Unknown, false, ObjectType.Object)
+                val v2 = ObjectValue(555, Unknown, false, ObjectType.Object)
+
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v0, v1, v2),
+                        Yes, true, UIDSet.empty,
+                        nextT())
+                val mv2 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        No, false, UIDSet(ObjectType.Object),
+                        nextT())
+
+                val joinResult = mv1.join(-1, mv2)
+                joinResult.updateType should be(StructuralUpdateType)
+                val joinedValue @ IsReferenceValue(values) = joinResult.value
+                assert(joinedValue.isPrecise === false)
+                joinedValue.upperTypeBound should be(UIDSet(ObjectType.Object))
+            }
+
+            it("should be able to rejoin a value") {
+                val v0 = NullValue(111, 1)
+                val v1 = ArrayValue(222, Unknown, true, ArrayType(IntegerType), 2)
+                val v2 = ArrayValue(222, No, true, ArrayType(IntegerType), 2)
+
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v0, v1),
+                        Yes, true, UIDSet.empty,
+                        3)
+                val mv2 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v0, v2),
+                        Unknown, true, UIDSet(ArrayType(IntegerType)),
+                        3)
+
+                mv1.join(-1, v2) should be(StructuralUpdate(mv2))
+            }
+
+            it("should handle an idempotent rejoin a value") {
+                val v1 = ObjectValue(111, Unknown, false, ObjectType.Object, 1)
+                val v2 = ObjectValue(222, Unknown, false, ObjectType.Object, 2)
+                val v3 = NullValue(222, 3)
+
+                val v2_join_v3 = ObjectValue(222, Unknown, false, ObjectType.Object, 3)
+
+                assert(v2.join(-1, v3) == MetaInformationUpdate(v2_join_v3))
+
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        Unknown, false, UIDSet(ObjectType.Object),
+                        -1)
+                val expected_mv1_join_v3 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2_join_v3),
+                        Unknown, false, UIDSet(ObjectType.Object),
+                        -1)
+
+                val mv1_join_v3 = mv1.join(-1, v3)
+                println(s"$mv1 join $v3 ===> $mv1_join_v3")
+                mv1_join_v3 should be(MetaInformationUpdate(expected_mv1_join_v3))
+            }
+
         }
 
         //
@@ -217,10 +373,10 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 val classFiles = ClassFiles(locateTestResources("classfiles/cornercases.jar", "ai"))
                 val classFile = classFiles.find(_._1.thisType.fqn == "cornercases/ThrowsNullValue").get._1
                 val method = classFile.methods.find(_.name == "main").get
-
-                val result = BaseAI(classFile, method, TheDomain)
+                val theDomain = new TheDomain
+                val result = BaseAI(classFile, method, theDomain)
                 val exception = result.operandsArray(20)
-                TheDomain.refIsNull(-1, exception.head) should be(No)
+                theDomain.refIsNull(-1, exception.head) should be(No)
             }
 
             val theProject = Project(locateTestResources("classfiles/ai.jar", "ai"))
@@ -229,11 +385,12 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
             it("it should be able to handle basic aliasing (method: \"aliases\"") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "aliases").get
-                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
                 import result.operandsArray
                 import result.domain.IsNull
 
-                val IsNull(v95) = asReferenceValue(operandsArray(14).head)
+                val IsNull(v95) = theDomain.asReferenceValue(operandsArray(14).head)
                 v95 should be(Unknown)
 
                 val IsNull(v99) = result.operandsArray(20).head
@@ -250,25 +407,60 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
             }
 
             it("it should be possible to get precise information about a method's return values (method: \"maybeNull\")") {
-
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "maybeNull").get
-                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
 
-                val IsNull(firstReturn) = result.operandsArray(15).head
+                val theDomain.IsNull(firstReturn) = result.operandsArray(15).head
                 firstReturn should be(Yes)
 
-                val IsNull(secondReturn) = result.operandsArray(23).head
+                val theDomain.IsNull(secondReturn) = result.operandsArray(23).head
                 secondReturn should be(No)
+            }
+
+            it("it should be possible to handle conditional assignments (method: \"simpleConditionalAssignment\")") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "simpleConditionalAssignment").get
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+
+                val value @ IsReferenceValue(values) = result.operandsArray(26).head
+                value.isNull should be(No)
+                value.isPrecise should be(true)
+                value.upperTypeBound should be(UIDSet(ObjectType.Object))
+                values.size should be(2)
+                val value6 = values.head
+                val value17 = values.tail.head
+                value6 should be(theDomain.ObjectValue(6, No, true, ObjectType.Object))
+                value17 should be(theDomain.ObjectValue(17, No, true, ObjectType.Object))
+            }
+
+            it("it should be possible to handle conditional assignments (method: \"conditionalAssignment1\")") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "conditionalAssignment1").get
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+
+                val value @ IsReferenceValue(values) = result.operandsArray(46).head
+                value.isNull should be(Unknown)
+                value.isPrecise should be(true) // one value is null and the other is precise
+                value.upperTypeBound should be(UIDSet(ObjectType.Object))
+                values.size should be(3)
+                val value0 = values.head
+                val value11 = values.tail.head
+                val value16 = values.tail.tail.head
+                value0 should be(theDomain.NullValue(0))
+                value11 should be(theDomain.NullValue(11))
+                value16 should be(theDomain.ObjectValue(16, No, true, ObjectType.Object))
             }
 
             it("it should be able to correctly track a MultipleReferenceValue's values in the presence of aliasing (method: \"complexAliasing\")") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "complexAliasing").get
-                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
 
-                val IsNull(doItCallParameter) = result.operandsArray(23).head
+                val theDomain.IsNull(doItCallParameter) = result.operandsArray(23).head
                 doItCallParameter should be(Unknown)
 
-                val IsNull(secondReturn) = result.operandsArray(27).head
+                val theDomain.IsNull(secondReturn) = result.operandsArray(27).head
                 secondReturn should be(Unknown)
 
                 val IsReferenceValue(values) = result.operandsArray(27).head
@@ -279,22 +471,25 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
             it("it should be able to correctly determine the value's properties in the presence of aliasing (method: \"iterativelyUpdated\")") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "iterativelyUpdated").get
-                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
 
                 val value @ IsReferenceValue(values) = result.operandsArray(5).head
+                values.size should be(2)
                 value.isNull should be(No)
-                values.head.isNull should be(Unknown)
+                values.head.isNull should be(No) // a is the parameter
                 values.tail.head.isNull should be(Unknown)
 
                 val returnValue @ IsReferenceValue(returnValues) = result.operandsArray(25).head
                 returnValue.isNull should be(Unknown)
-                returnValues.head.isNull should be(Unknown)
+                returnValues.head.isNull should be(No)
                 returnValues.tail.head.isNull should be(Unknown)
             }
 
-            it("it should be able to handle conditional aliasing (method: \"cfDependentValues\")") {
+            it("it should be able to handle control flow dependent values (method: \"cfDependentValues\")") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "cfDependentValues").get
-                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
 
                 val IsReferenceValue(values1) = result.operandsArray(43).head
                 values1.head.isNull should be(Yes) // original value
@@ -304,14 +499,15 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 values2.head.isNull should be(Yes) // original value
                 values2.tail.head.isNull should be(Unknown)
 
-                asReferenceValue(result.operandsArray(58).head).isNull should be(No)
+                theDomain.asReferenceValue(result.operandsArray(58).head).isNull should be(No)
 
-                asReferenceValue(result.operandsArray(62).head).isNull should be(No)
+                theDomain.asReferenceValue(result.operandsArray(62).head).isNull should be(No)
             }
 
             it("it should be able to correctly refine a MultipleReferenceValues") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "multipleReferenceValues").get
-                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
                 import result.domain.asReferenceValue
 
                 // u != null test
@@ -330,7 +526,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
             it("it should be able to correctly refine related MultipleReferenceValues (method: relatedMultipleReferenceValues)") {
                 val methods = ReferenceValuesFrenzy.methods
                 val method = methods.find(_.name == "relatedMultipleReferenceValues").get
-                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
 
                 val IsReferenceValue(values1) = result.operandsArray(77).head
                 values1.size should be(3)
@@ -365,7 +562,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
                 val methods = ReferenceValuesFrenzy.methods
                 val method = methods.find(_.name == "refiningNullnessOfMultipleReferenceValues").get
-                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
 
                 val value35 @ IsReferenceValue(values35) = result.operandsArray(35).head
                 value35.isNull should be(Yes)
@@ -382,10 +580,11 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
             it("it should be able to correctly refine the upper type bound of MultipleReferenceValues (method: refiningTypeBoundOfMultipleReferenceValues)") {
                 val methods = ReferenceValuesFrenzy.methods
                 val method = methods.find(_.name == "refiningTypeBoundOfMultipleReferenceValues").get
-                val result = BaseAI(ReferenceValuesFrenzy, method, TheDomain)
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
 
                 assert(
-                    TheDomain.isSubtypeOf(
+                    theDomain.isSubtypeOf(
                         ObjectType("java/lang/Exception"),
                         ObjectType("java/lang/Throwable")).isYes)
 

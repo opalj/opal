@@ -49,7 +49,9 @@ trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with Stri
     //
 
     override def StringValue(origin: ValueOrigin, value: String): DomainStringValue =
-        new StringValue(origin, value)
+        StringValue(origin, value, nextT())
 
+    override def StringValue(origin: ValueOrigin, value: String, t: Timestamp): DomainStringValue =
+        new StringValue(origin, value, t)
 }
 

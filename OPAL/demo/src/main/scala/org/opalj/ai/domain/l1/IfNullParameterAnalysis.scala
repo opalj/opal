@@ -112,9 +112,8 @@ object IfNullParameterAnalysis extends OneStepAnalysis[URL, BasicReport] with An
                     value
                 } else {
                     val initialReferenceValue = value.asInstanceOf[domain.SingleOriginReferenceValue]
-                    // create a new reference value (using the copy constructor)
-                    // which is not null
-                    initialReferenceValue(isNull = No)
+                    // create a new reference value which is not null
+                    initialReferenceValue.update(isNull = No)
                 }
             }
         }

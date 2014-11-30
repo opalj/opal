@@ -103,8 +103,8 @@ public class ReferenceValuesFrenzy {
     }
 
     static void refiningTypeBoundOfMultipleReferenceValues() {
-        // in the following we are using excepion types, because these
-        // type information are always readily available (even if the JDK
+        // in the following we are using excepion types, because this
+        // information is always readily available (even if the JDK
         // is not loaded.)
         int i = IntegerValuesFrenzy.anInt();
         Object n = new LinkageError("...");
@@ -131,12 +131,12 @@ public class ReferenceValuesFrenzy {
 
     static void relatedMultipleReferenceValues(String s) {
         int i = IntegerValuesFrenzy.anInt();
-        Object o = maybeNull();
-        Object p = maybeNull();
-        Object q = maybeNull();
+        Object o = maybeNull(); // pc: 4
+        Object p = maybeNull(); // pc: 8
+        Object q = maybeNull(); // pc: 12
 
-        Object a = null;
-        Object b = null;
+        Object a = null; // pc: 17
+        Object b = null; // pc: 20
 
         switch (i) {
         case 1:
@@ -156,13 +156,13 @@ public class ReferenceValuesFrenzy {
         // refer to the same object; hence, any constraints will not affect
         // both values!
 
-        if (a == null) {
+        if (a == null) { // pc[load:a]:70
             doIt(b); // b is either the original value, o or p
         }
         if (b == null) {
-            doIt(a); // a is either o, p or q
+            doIt(a); // pc: 87 // a is either o, p or q
         } else {
-            doIt(a); // a is either o or p (and both may be null)
+            doIt(a); // pc: 95 // a is either o or p (and both may be null)
             // But, if we are not able track the fact that a can
             // only be non null if i was 1 or 2, then a may also
             // refer to q
@@ -170,7 +170,7 @@ public class ReferenceValuesFrenzy {
 
         if (o != null) {
             doIt(a); // pc:104:: o should be non-null
-            doIt(b); // pc:109:: -  o should be non-null
+            doIt(b); // pc:109:: o should be non-null
         }
     }
 
@@ -227,11 +227,12 @@ public class ReferenceValuesFrenzy {
     static Object iterativelyUpdated(Object a) {
         do {
             if (a != null) {
-                doIt(a);
+                doIt(a); // pc:5 ... a may refer to: the parameter (which is then not
+                         // null), the return value of maybeNull
             } else
                 a = maybeNull();
         } while (IntegerValuesFrenzy.anInt() % 2 == 1);
-        return a;
+        return a; // pc 25 ... if a is (still) the parameter, then a must be non-null
     }
 
     static void cfDependentValues(int i) {
@@ -266,26 +267,26 @@ public class ReferenceValuesFrenzy {
     static Object simpleConditionalAssignment(int i) {
         Object o = null;
         if (i < 0)
-            o = new Object();
+            o = new Object(); // pc[new]: 6
         else
-            o = new Object();
+            o = new Object(); // pc[new]: 17
 
-        return o; // o is either one or the other object
+        return o; // pc:26 o is either one or the other object
     }
 
     static Object conditionalAssignment1() {
         Object o = null;
         for (int i = 0; i < 2; i++) {
             if (i == 0)
-                o = null;
+                o = null; // pc:11
             else
-                o = new Object();
+                o = new Object(); // pc[new]: 16
 
             if (o == null && i != 0)
-                printError("impossible");
+                printError("impossible"); // pc[call of printError]:34
         }
-
-        return o; // o is not null....
+        // To get precise results we need to do loop unrolling...
+        return o; // pc:46
     }
 
     static Object conditionalAssignment2() {
@@ -299,7 +300,7 @@ public class ReferenceValuesFrenzy {
             if (o == null && i == 0)
                 printError("impossible");
         }
-
+        // To get precise results we need to do loop unrolling...
         return o; // o is null....
     }
 
@@ -308,7 +309,7 @@ public class ReferenceValuesFrenzy {
         Object b = null;
         Object c = null;
         Object d = null;
-
+        // To get precise results we need to do loop unrolling...
         for (int i = 0; i < 3; i++) {
             Object o = maybeNull();
             switch (i) {

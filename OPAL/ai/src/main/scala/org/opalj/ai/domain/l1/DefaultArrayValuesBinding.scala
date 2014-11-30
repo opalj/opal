@@ -50,7 +50,7 @@ trait DefaultArrayValuesBinding extends l1.DefaultReferenceValuesBinding with Ar
         vo: ValueOrigin,
         theType: ArrayType,
         values: Array[DomainValue]): DomainArrayValue =
-        new ArrayValue(vo, theType, values)
+        new ArrayValue(vo, theType, values, nextT)
 
 }
 
