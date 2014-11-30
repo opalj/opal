@@ -33,12 +33,11 @@ package analyses
 import scala.annotation.tailrec
 import scala.collection.{ Map, Set, SeqView }
 import scala.collection.mutable.HashSet
-
 import util.{ Answer, Yes, No, Unknown }
 import graphs.Node
 import collection.immutable.UIDSet
-
 import ObjectType.Object
+import org.opalj.collection.immutable.UIDSet1
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -651,6 +650,46 @@ class ClassHierarchy private (
                     false
             }
         )
+    }
+
+    def isSubtypeOf(subtype: ReferenceType, supertypes: UpperTypeBound): Answer = {
+        if (supertypes.isEmpty /*the upper type bound of "null" values*/ )
+            return No;
+
+        supertypes foreach { supertype ⇒
+            isSubtypeOf(subtype, supertype) match {
+                case Yes     ⇒ /*Nothing to do*/
+                case Unknown ⇒ return Unknown
+                case No      ⇒ return No
+            }
+        }
+        // subtype is a subtype of all supertypes
+        Yes
+    }
+
+    def isSubtypeOf(subtypes: UpperTypeBound, supertype: ReferenceType): Answer = {
+
+        if (subtypes.isEmpty) /*the upper type bound of "null" values*/
+            return Yes;
+
+        var subtypingRelationUnknown = false
+        val subtypeExists =
+            subtypes exists { subtype ⇒
+                this.isSubtypeOf(subtype, supertype) match {
+                    case Yes ⇒ true
+                    case Unknown ⇒
+                        subtypingRelationUnknown = true
+                        false /* let's continue the search */
+                    case No ⇒ false
+                }
+            }
+        if (subtypeExists)
+            Yes
+        else if (subtypingRelationUnknown)
+            Unknown;
+        else
+            No
+
     }
 
     /**
@@ -1335,6 +1374,66 @@ class ClassHierarchy private (
         val allSupertypesOfB = allSupertypesOf(upperTypeBoundB, reflexive)
         val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
         leafTypes(commonSupertypes)
+    }
+
+    def joinArrayType(
+        upperTypeBoundA: ArrayType,
+        upperTypeBoundB: UIDSet[ReferenceType]): UIDSet[ReferenceType] = {
+        upperTypeBoundB match {
+            case UIDSet1(utbB: ArrayType) ⇒
+                if (utbB eq upperTypeBoundA)
+                    return upperTypeBoundB
+                else
+                    joinArrayTypes(upperTypeBoundA, utbB) match {
+                        case Left(newUTB)  ⇒ UIDSet(newUTB)
+                        case Right(newUTB) ⇒ newUTB
+                    }
+            case UIDSet1(utbB: ObjectType) ⇒
+                joinAnyArrayTypeWithObjectType(utbB)
+            case _ ⇒
+                val utbB = upperTypeBoundB.asInstanceOf[UIDSet[ObjectType]]
+                joinAnyArrayTypeWithMultipleTypesBound(utbB)
+        }
+    }
+
+    def joinReferenceType(
+        upperTypeBoundA: ReferenceType,
+        upperTypeBoundB: UIDSet[ReferenceType]): UIDSet[ReferenceType] = {
+        if (upperTypeBoundA.isArrayType)
+            joinArrayType(upperTypeBoundA.asArrayType, upperTypeBoundB)
+        else
+            upperTypeBoundB match {
+                case UIDSet1(_: ArrayType) ⇒
+                    joinAnyArrayTypeWithObjectType(upperTypeBoundA.asObjectType)
+                case UIDSet1(utbB: ObjectType) ⇒
+                    joinObjectTypes(upperTypeBoundA.asObjectType, utbB, true)
+                case _ ⇒
+                    val utbB = upperTypeBoundB.asInstanceOf[UIDSet[ObjectType]]
+                    joinObjectTypes(upperTypeBoundA.asObjectType, utbB, true)
+            }
+    }
+
+    def joinReferenceTypes(
+        upperTypeBoundA: UIDSet[ReferenceType],
+        upperTypeBoundB: UIDSet[ReferenceType]): UIDSet[ReferenceType] = {
+        if ((upperTypeBoundA eq upperTypeBoundB) || upperTypeBoundA == upperTypeBoundB)
+            return upperTypeBoundA;
+
+        if (upperTypeBoundA.isEmpty)
+            return upperTypeBoundB;
+
+        if (upperTypeBoundB.isEmpty)
+            return upperTypeBoundA;
+
+        if (upperTypeBoundA.consistsOfOneElement)
+            joinReferenceType(upperTypeBoundA.first, upperTypeBoundB)
+        else if (upperTypeBoundB.consistsOfOneElement)
+            joinReferenceType(upperTypeBoundB.first, upperTypeBoundA)
+        else
+            joinUpperTypeBounds(
+                upperTypeBoundA.asInstanceOf[UIDSet[ObjectType]],
+                upperTypeBoundB.asInstanceOf[UIDSet[ObjectType]],
+                true)
     }
 
     /**
