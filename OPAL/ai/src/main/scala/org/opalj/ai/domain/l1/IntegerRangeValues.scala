@@ -107,9 +107,10 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  *
  * @author Michael Eichberg
  * @author Christos Votskos
+ * @author David Becker
  */
-trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues {
-    domain: JoinStabilization with IdentityBasedAliasBreakUpDetection with Configuration with VMLevelExceptionsFactory ⇒
+trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFactory with ConcreteIntegerValues {
+    domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -822,23 +823,46 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         (value, shift) match {
             case (_, IntegerRange(0, 0)) ⇒
                 value
+
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
+                val maxShift = if (sub > 31 || sub < 0) 31 else sub
+                val minShift = if (slb >= 0 && slb <= 31) slb else 0
+
                 if (vlb == vub && slb == sub) {
                     val r = vlb << slb
                     IntegerRange(r)
                 } else if (vlb >= 0) {
-                    val maxShift = if (sub > 31 || sub < 0) 31 else sub
-                    val minShift = if (slb >= 0 && sub <= 31) slb else 0
+                    // max will never be negative, since shifting a 64 bit value at most 31 times always results
+                    // into a positive value
                     val max = vub.toLong << maxShift
+
                     if (max <= Int.MaxValue)
                         IntegerRange(vlb << minShift, max.toInt)
                     else
-                        IntegerValue(pc)
-                } else
-                    IntegerValue(pc)
+                        // `lb` is "(1 << maxShift) | Int.MinValue", since the smallest 
+                        // value has the most trailing zeros that will be shifted. 
+                        // By using the `or` operation after (1 << maxShift) the sign 
+                        // bit is set to one, since the smallest value is negative.
+                        //
+                        // `ub` is "(-1 << minShift) & Int.MaxValue", since the biggest 
+                        // number after a shift always has the pattern 0111..1100..0. 
+                        // The number of trailing zeros must be minShift, the sign 
+                        // bit 0 and bits between sign bit and next zero bit have to 
+                        // be 1. 
+                        // To ensure that the number is always positive the sign bit 
+                        // is set to zero by using "& Int.MaxValue".
+                        IntegerRange(
+                            (1 << maxShift) | Int.MinValue,
+                            (-1 << minShift) & Int.MaxValue)
+                } else { // case vlb < 0 && vub >= 0 && vub < 0
+                    IntegerRange(
+                        (1 << maxShift) | Int.MinValue,
+                        (-1 << minShift) & Int.MaxValue)
+                }
 
-            case _ ⇒
-                IntegerValue(pc)
+            case (_, IntegerRange(31, 31)) ⇒ IntegerRange(Int.MinValue, 0) // actually, the value is either Int.MinValue or 0
+            case (IntegerRange(-1, -1), _) ⇒ IntegerRange(Int.MinValue, -1)
+            case _                         ⇒ IntegerValue(pc)
         }
     }
 
@@ -846,12 +870,43 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
         (value, shift) match {
             case (_, IntegerRange(0, 0)) ⇒
                 value
+
+            // In this case a signed shift does not change the value ([-1,-1]).
+            case (IntegerRange(-1, -1), _) ⇒
+                value
+
+            case (IntegerRange(0, 0), _) ⇒
+                value
+
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub ⇒
                 val r = vlb >> slb
                 IntegerRange(r)
 
-            // IMPROVE [IntegerRangeValues] Generalized handling of right shifts
-            // case  (IntegerRange(vlb, vub), IntegerRange(slb, sub))  =>
+            case (_, IntegerRange(31, 31)) ⇒
+                IntegerRange(-1, 0)
+
+            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
+                // We have one "arbitrary" range of numbers to shift and one range that 
+                // should be between 0 and 31. Every number above 31 or any negative number does not make sense, since
+                // only the five least significant bits are used for shifting.
+                val maxShift = if (sub >= 0 && sub <= 31) sub else 31
+                val minShift = if (slb >= 0 && slb <= 31) slb else 0
+
+                if (vlb >= 0) {
+                    val lb = vlb >> maxShift
+                    val ub = vub >> minShift
+                    IntegerRange(lb, ub)
+
+                } else if (vlb < 0 && vub >= 0) {
+                    val lb = vlb >> minShift
+                    val ub = vub >> minShift
+                    IntegerRange(lb, ub)
+
+                } else { // case vub < 0
+                    val lb = vlb >> minShift
+                    val ub = vub >> maxShift
+                    IntegerRange(lb, ub)
+                }
 
             case _ ⇒
                 IntegerValue(pc)
@@ -869,13 +924,12 @@ trait IntegerRangeValues extends IntegerValuesDomain with ConcreteIntegerValues 
                     val result = vlb >>> slb
                     IntegerRange(result)
                 } else {
-                    // We have one "arbitrary" range of numbers to shift and one range that 
-                    // should be between 0 and 31. Every number above 31 or any negative number does not make sense, since
-                    // only the five least significant bits are used for shifting.
+                    // Recall: the shift value is at most "31" (a corresponding)
+                    // bit mask is always implicitly applied to the shift value. 
 
                     // IMPROVE [IntegerRangeValues] log suspicious shift value
                     val maxShift = if (sub > 31 || sub < 0) 31 else sub
-                    val minShift = if (slb >= 0 && sub <= 31) slb else 0
+                    val minShift = if (slb >= 0 && slb <= 31) slb else 0
 
                     if (vlb >= 0) {
                         val lb = vlb >>> maxShift

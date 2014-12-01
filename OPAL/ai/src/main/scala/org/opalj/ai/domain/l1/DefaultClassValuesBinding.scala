@@ -37,7 +37,7 @@ import org.opalj.br.Type
  * @author Arne Lottmann
  */
 trait DefaultClassValuesBinding extends DefaultStringValuesBinding with ClassValues {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
     type DomainClassValue = ClassValue
@@ -46,8 +46,10 @@ trait DefaultClassValuesBinding extends DefaultStringValuesBinding with ClassVal
     // FACTORY METHODS
     //
 
-    override def ClassValue(vo: ValueOrigin, value: Type): DomainClassValue =
-        new ClassValue(vo, value)
+    override def ClassValue(origin: ValueOrigin, value: Type): DomainClassValue =
+        ClassValue(origin, value, nextT())
 
+    def ClassValue(origin: ValueOrigin, value: Type, t: Timestamp): DomainClassValue =
+        new ClassValue(origin, value, t)
 }
 

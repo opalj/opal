@@ -44,11 +44,11 @@ class DefaultConfigurableReferenceValuesDomain[I, Source](
     val project: Project[Source],
     val classFile: ClassFile,
     val method: Method)
-        extends Domain with JoinStabilization
+        extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with ProjectBasedClassHierarchy
-        with TheProject[Source]
+        with TheProject
         with TheMethod
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization

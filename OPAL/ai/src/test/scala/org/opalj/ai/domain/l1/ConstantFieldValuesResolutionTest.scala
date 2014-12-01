@@ -53,9 +53,9 @@ class ConstantFieldValuesResolutionTest
         with ParallelTestExecution {
 
     class ConstantFieldValuesResolutionTestDomain(val project: Project[java.net.URL])
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with DefaultDomainValueBinding
-        with TheProject[java.net.URL]
+        with TheProject
         with ProjectBasedClassHierarchy
         with ThrowAllPotentialExceptionsConfiguration
         with l0.DefaultTypeLevelLongValues

@@ -37,46 +37,13 @@ import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.ai.domain._
 
-/**
- * Common interface of all domains that collect the edges of a call graph
- * that are associated with a specific method.
- *
- * Each domain instance is associated with one specific method and is intended to
- * be used only once to perform an abstract interpretation (implementations of this
- * domain will have internal state.)
- *
- * @author Michael Eichberg
- */
-trait CallGraphDomain extends Domain { this: TheProject[_] with TheMethod ⇒
+trait CallGraphExtractor {
 
-    // THE CONTEXT - SET DURING THE CREATION OF THE DOMAIN
+    type LocalCallGraphInformation = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall])
 
-    /* abstract */ val classFile: ClassFile
+    type TheDomain = Domain with ReferenceValuesDomain with TheProject with ClassHierarchy with TheClassFile with TheMethod with TheCode
 
-    // METHODS TO GET THE RESULTS AFTER THE DOMAIN WAS USED FOR THE ABSTRACT
-    // INTERPRETATION OF THIS METHOD.
-    /**
-     * Returns the list of all methods that are called by `theMethod`.
-     *
-     * ==Requirement==
-     * The list of methods that are called by a specific instruction must not
-     * contain any duplicates.
-     *
-     * @note This method should only be called after the abstract interpretation
-     *      of `theMethod` has completed.
-     */
-    def allCallEdges: (Method, Map[PC, Set[Method]])
-
-    /**
-     * Returns the list of all unresolved method calls of `theMethod`. A call
-     * cannot be resolved if, e.g., the target class file is not available or
-     * if the type of the receiver is an interface type and no appropriate implementations
-     * are found.
-     *
-     * @note This method should only be called after the abstract interpretation
-     *      of `thisMethod`.
-     */
-    def allUnresolvableMethodCalls: List[UnresolvedMethodCall]
+    def extract(aiResult: AIResult { val domain: TheDomain }): LocalCallGraphInformation
 
 }
 

@@ -30,24 +30,63 @@ package org.opalj
 package bugpicker
 package analysis
 
+/**
+ * Defines a partial order on issue that sorts [[Issue]]s
+ * first by their class, then by the method(signature) then
+ * by the line in which the issues occurs (alternatively by
+ * the pc) and at last by the summary.
+ *
+ * @author Michael Eichberg
+ */
 object IssueOrdering extends scala.math.Ordering[Issue] {
 
     def compare(x: Issue, y: Issue): Int = {
         if (x.classFile.fqn < y.classFile.fqn) {
-            -1
-        } else if (x.classFile.fqn == y.classFile.fqn) {
-            val methodComparison = x.method.compare(y.method)
-            if (methodComparison == 0) {
-                if (x.line.isDefined)
-                    x.line.get - y.line.get
-                else
-                    x.pc - y.pc
-            } else {
-                methodComparison
-            }
-        } else {
-            1
+            return -1;
         }
+        if (x.classFile.fqn > y.classFile.fqn)
+            return 1;
+
+        if (x.method.isDefined && y.method.isEmpty)
+            return 1;
+
+        if (x.method.isEmpty && y.method.isDefined)
+            return -1;
+
+        if (x.method.isEmpty && y.method.isEmpty) {
+            // if we have no method information, 
+            // we can just compare the summaries
+            return x.summary compare (y.summary);
+        }
+
+        // both methods are defined...
+        val methodComparison = x.method.compare(y.method)
+        if (methodComparison != 0)
+            return methodComparison;
+
+        (x.line, y.line) match {
+            case (Some(xl), None) ⇒
+                return -1
+            case (None, Some(yl)) ⇒
+                return 1
+            case (Some(xl), Some(yl)) if xl != yl ⇒
+                return xl - yl
+            case _ ⇒ /*go on*/
+
+        }
+
+        (x.pc, y.pc) match {
+            case (Some(_), None) ⇒
+                return -1
+            case (None, Some(_)) ⇒
+                return 1
+            case (Some(xpc), Some(ypc)) if xpc != ypc ⇒
+                return xpc - ypc
+            case _ ⇒ /*go on*/
+
+        }
+
+        return x.summary compare (y.summary);
     }
 
 }

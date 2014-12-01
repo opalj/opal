@@ -117,7 +117,7 @@ trait ValuesDomain {
          * The computational type of the value.
          *
          * The precise computational type is needed by the framework to calculate the effect
-         * of generic stack manipulation instructions (e.g., `dup_...` and swap)
+         * of generic stack manipulation instructions (e.g., `DUP_...` and `SWAP`)
          * on the stack as well as to calculate the jump targets of `RET`
          * instructions and to determine which values are actually copied by, e.g., the
          * `dup_XX` instructions.
@@ -135,18 +135,18 @@ trait ValuesDomain {
         /**
          * Joins this value and the given value.
          *
-         * This basically implements the join operator of complete lattices.
-         *
          * Join is called whenever an instruction is evaluated more than once and, hence,
          * the values found on the paths need to be joined. This method is, however,
          * only called if the two values are two different objects
-         * (`(this ne value) == true`), but both values have the
+         * (`(this ne value) === true`), but both values have the
          * ''same computational type''.
+         *
+         * This basically implements the join operator of complete lattices.
          *
          * ==Example==
          * For example, joining a `DomainValue` that represents the integer value 0
          * with a `DomainValue` that represents the integer value 1 may return a new
-         * `DomainValue` that precisely captures the range [0..'''1'''] or that captures
+         * `DomainValue` that precisely captures the range '''[0..1]''' or that captures
          * '''all positive''' integer values or just '''some integer value'''.
          *
          * ==Contract==
@@ -155,15 +155,15 @@ trait ValuesDomain {
          * the given value, the result has to be either `NoUpdate` or a `MetaInformationUpdate`.
          * In case that the given value subsumes `this` value, the result has to be
          * a `StructuralUpdate` with the given value as the new value. Hence,
-         * '''this `join` operation is not commutative'''. If a new (more abstract)
+         * ''this `join` operation is not commutative''. If a new (more abstract)
          * abstract value is created that represents both values the result always has to
          * be a `StructuralUpdate`.
          * If the result is a `StructuralUpdate` the framework will continue with the
          * interpretation.
          *
          * The termination of the abstract interpretation directly depends on the fact
-         * that at some point all values are fixed and don't change anymore. Hence,
-         * it is important that '''the type of the update is only a
+         * that at some point all (abstract) values are fixed and don't change anymore.
+         * Hence, it is important that '''the type of the update is only a
          * [[org.opalj.ai.StructuralUpdate]] if the value has changed in
          * a way relevant for future computations/analyses''' involving this value.
          * In other words, when two values are joined it has to be ensured that no
@@ -175,7 +175,7 @@ trait ValuesDomain {
          * Conceptually, the join of an object with itself has to return the object
          * itself. Note, that this is a conceptual requirement as such a call
          * (`this.doJoin(..,this)`) will not be performed by the abstract interpretation
-         * framework.
+         * framework; this case is handled by the [[join]] method.
          * However, if the join object is also used by the implementation of the domain
          * itself, it may be necessary to explicitly handle self-joins.
          *
@@ -195,7 +195,7 @@ trait ValuesDomain {
 
         /**
          * Checks that the given value and this value are compatible and – if so –
-         * calls `doJoin(PC,DomainValue)`.
+         * calls [[doJoin]].
          *
          * See `doJoin(PC,DomainValue)` for details.
          *
@@ -303,11 +303,13 @@ trait ValuesDomain {
      */
     type DomainValue >: Null <: Value with AnyRef
 
+    type DomainReferenceValue >: Null <: DomainValue
+
     /**
      * A simple type alias of the type `DomainValue`.
      * Used to facilitate comprehension.
      */
-    type ExceptionValue = DomainValue
+    type ExceptionValue = DomainReferenceValue
 
     /**
      * A type alias for `Iterable`s of `ExceptionValue`s.
@@ -315,6 +317,9 @@ trait ValuesDomain {
      */
     type ExceptionValues = Iterable[ExceptionValue]
 
+    /**
+     * The typed null value.
+     */
     private[ai] val Null: DomainValue = null
 
     /**

@@ -39,7 +39,7 @@ import scala.collection.SortedSet
  * @author Michael Eichberg
  */
 trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with StringValues {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
     type DomainStringValue = StringValue
@@ -48,8 +48,10 @@ trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with Stri
     // FACTORY METHODS
     //
 
-    override def StringValue(pc: PC, value: String): DomainStringValue =
-        new StringValue(pc, value)
+    override def StringValue(origin: ValueOrigin, value: String): DomainStringValue =
+        StringValue(origin, value, nextT())
 
+    override def StringValue(origin: ValueOrigin, value: String, t: Timestamp): DomainStringValue =
+        new StringValue(origin, value, t)
 }
 

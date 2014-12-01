@@ -32,132 +32,67 @@ package domain
 package l0
 
 import java.net.URL
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.{ ReferenceType }
+
+import scala.Console.BLUE
+import scala.Console.BOLD
+import scala.Console.GREEN
+import scala.Console.RESET
+
 import org.opalj.ai.Domain
-import org.opalj.ai.InterruptableAI
-import org.opalj.ai.IsAReferenceValue
+import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
+import org.opalj.ai.analyses.{ MethodReturnValuesAnalysisDomain ⇒ TheAnalysisDomain }
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.NoUpdate
-import org.opalj.ai.SomeUpdate
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
  *
  * @author Michael Eichberg
  */
-object MethodReturnValuesAnalysis extends AnalysisExecutor {
+object MethodReturnValuesAnalysis
+        extends AnalysisExecutor
+        with OneStepAnalysis[URL, BasicReport] {
 
-    class AnalysisDomain(
-        override val project: Project[java.net.URL],
-        val ai: InterruptableAI[_],
-        val method: Method)
-            extends Domain
-            with domain.TheProject[java.net.URL]
-            with domain.ProjectBasedClassHierarchy
-            with domain.TheMethod
-            with domain.DefaultDomainValueBinding
-            with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultTypeLevelIntegerValues
-            with domain.l0.DefaultTypeLevelLongValues
-            with domain.l0.DefaultTypeLevelFloatValues
-            with domain.l0.DefaultTypeLevelDoubleValues
-            with domain.l0.DefaultPrimitiveValuesConversions
-            with domain.l0.TypeLevelFieldAccessInstructions
-            with domain.l0.TypeLevelInvokeInstructions
-            with domain.l0.DefaultReferenceValuesBinding
-            with domain.DefaultHandlingOfMethodResults
-            with domain.IgnoreSynchronization
-            with domain.RecordReturnedValuesInfrastructure {
+    val analysis = this
 
-        type ReturnedValue = DomainValue
+    override def title: String = TheAnalysis.title
 
-        private[this] val originalReturnType: ReferenceType =
-            method.descriptor.returnType.asReferenceType
+    override def description: String = TheAnalysis.description
 
-        private[this] var theReturnedValue: DomainValue = null
+    override def doAnalyze(
+        theProject: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
+        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-        // e.g., a method that always throws an exception...
-        def returnedValue: Option[DomainValue] = Option(theReturnedValue)
-
-        protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit = {
-            if (theReturnedValue eq value)
-                return ;
-
-            if (theReturnedValue == null)
-                theReturnedValue = value
-            else {
-                theReturnedValue.join(Int.MinValue, value) match {
-                    case SomeUpdate(newValue) ⇒
-                        typeOfValue(newValue) match {
-                            case IsAReferenceValue(utb) if (utb.size == 1) && (utb.first eq originalReturnType) ⇒
-                                // the return type will not be more precise than the original type
-                                ai.interrupt()
-                            case _ ⇒
-                                theReturnedValue = newValue
-                        }
-
-                    case NoUpdate ⇒
-                    /* Nothing to do. */
-                }
-            }
-        }
-    }
-
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
-
-        override def title: String =
-            "Tries to derive more precise information about the values returned by methods."
-
-        override def description: String =
-            "Identifies methods where we can – statically – derive more precise return type/value information."
-
-        override def doAnalyze(
-            theProject: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
-
-            val candidates = new java.util.concurrent.atomic.AtomicInteger(0)
-
-            val methodsWithRefinedReturnTypes = time {
-                for {
-                    classFile ← theProject.classFiles.par
-                    method ← classFile.methods
-                    originalReturnType = method.returnType
-                    if originalReturnType.isObjectType
-                    if theProject.classFile(originalReturnType.asObjectType).map(!_.isFinal).getOrElse(true)
-                    if method.body.isDefined
-                    candidate = candidates.incrementAndGet()
-                    ai = new InterruptableAI[Domain]
-                    domain = new AnalysisDomain(theProject, ai, method)
-                    result = ai(classFile, method, domain)
-                    if !result.wasAborted
-                    returnedValue = domain.returnedValue
-                    if returnedValue.isEmpty ||
-                        returnedValue.get.asInstanceOf[IsAReferenceValue].upperTypeBound != UIDSet(originalReturnType)
-                } yield {
-                    RefinedReturnType(classFile, method, domain.returnedValue)
-                }
+        val methodsWithRefinedReturnTypes: Map[Method, Option[TheAnalysisDomain#DomainValue]] =
+            time {
+                TheAnalysis.doAnalyze(theProject, isInterrupted)
             } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
 
-            BasicReport(
-                methodsWithRefinedReturnTypes.mkString(
-                    "Methods with refined return types ("+
-                        methodsWithRefinedReturnTypes.size+" out of "+candidates.get+
-                        "): \n",
-                    "\n",
-                    "\n"))
-        }
+        val results =
+            methodsWithRefinedReturnTypes.map { result ⇒
+                val (method, value) = result
+                RefinedReturnType[TheAnalysisDomain](theProject.classFile(method), method, value)
+            }
+
+        BasicReport(
+            results.mkString(
+                "Methods with refined return types ("+results.size+"): \n",
+                "\n",
+                "\n"))
     }
 }
 
-case class RefinedReturnType(
+case class RefinedReturnType[D <: Domain](
         classFile: ClassFile,
         method: Method,
-        refinedType: Option[Domain#DomainValue]) {
+        refinedType: Option[D#DomainValue]) {
 
     override def toString = {
         import Console._

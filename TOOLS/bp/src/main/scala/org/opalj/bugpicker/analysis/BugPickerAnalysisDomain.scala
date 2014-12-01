@@ -34,8 +34,9 @@ import java.net.URL
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
-import org.opalj.ai.CoRelationalDomain
+import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
+import org.opalj.ai.analyses.FieldValueInformation
 
 /**
  * The domain that is used to identify the issues.
@@ -44,14 +45,16 @@ import org.opalj.ai.domain
  */
 class BugPickerAnalysisDomain(
     override val project: Project[java.net.URL],
+    val fieldValueInformation: FieldValueInformation,
     override val method: Method,
     override val maxCardinalityOfIntegerRanges: Long = 16l)
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with domain.DefaultDomainValueBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelFieldAccessInstructions
+        //with domain.l0.TypeLevelFieldAccessInstructions
+        with domain.l0.RefinedTypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
         with domain.l1.DefaultReferenceValuesBinding
         with domain.l1.DefaultIntegerRangeValues
@@ -63,7 +66,7 @@ class BugPickerAnalysisDomain(
         with domain.l1.DefaultConcretePrimitiveValuesConversions
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization
-        with domain.TheProject[java.net.URL]
+        with domain.TheProject
         with domain.TheMethod
         with domain.ProjectBasedClassHierarchy
 

@@ -52,7 +52,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
     private[this] val IrrelevantPC = Int.MinValue
 
     class ReflectiveInvokerTestDomain
-            extends Domain
+            extends CorrelationalDomain
             with DefaultDomainValueBinding
             with ThrowAllPotentialExceptionsConfiguration
             with l0.DefaultTypeLevelLongValues
@@ -61,7 +61,6 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
             with l0.DefaultPrimitiveValuesConversions
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
-            //    with DefaultReferenceValuesBinding
             //    with DefaultStringValuesBinding
             with l1.DefaultClassValuesBinding
             with l1.DefaultArrayValuesBinding
@@ -93,7 +92,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
             }
         }
 
-        override def toDomainValue(pc: PC, value: Object): DomainValue = {
+        override def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
             lastObject = value
             super.toDomainValue(pc, value)
         }

@@ -34,6 +34,7 @@ import scala.collection.Set
 
 import org.opalj.br.{ ClassFile, Method, MethodSignature }
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Configuration of a call graph algorithm that uses CHA.
@@ -46,18 +47,23 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-class CHACallGraphAlgorithmConfiguration extends CallGraphAlgorithmConfiguration {
+class CHACallGraphAlgorithmConfiguration(
+    val project: SomeProject)
+        extends CallGraphAlgorithmConfiguration {
 
-    type Contour = MethodSignature
-    type Value = Set[Method]
-    type Cache = CallGraphCache[Contour, Value]
-    def Cache(): this.type#Cache = new CallGraphCache[MethodSignature, Value]
+    protected type Contour = MethodSignature
+
+    protected type Value = Set[Method]
+
+    protected type Cache = CallGraphCache[Contour, Value]
+
+    protected[this] val cache: Cache = new CallGraphCache[MethodSignature, Value](project)
 
     def Domain[Source](
-        theProject: Project[Source],
-        cache: Cache,
         classFile: ClassFile,
-        method: Method): CHACallGraphDomain =
-        new DefaultCHACallGraphDomain(theProject, cache, classFile, method)
+        method: Method): CallGraphDomain =
+        new DefaultCHACallGraphDomain(project, cache, classFile, method)
+
+    val Extractor = new CHACallGraphExtractor(cache)
 }
 

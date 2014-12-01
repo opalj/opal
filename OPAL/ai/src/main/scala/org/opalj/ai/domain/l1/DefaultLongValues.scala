@@ -65,7 +65,7 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
     /**
      * Represents a concrete long value.
      */
-    case class ConcreteLongValue(override val value: Long) extends super.ConcreteLongValue {
+    case class TheLongValue(override val value: Long) extends super.ConcreteLongValue {
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
             other match {
@@ -97,6 +97,6 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
     //
     override def LongValue(pc: PC): DomainValue = ALongValue
 
-    override def LongValue(pc: PC, value: Long): DomainValue = ConcreteLongValue(value)
+    override def LongValue(pc: PC, value: Long): DomainValue = TheLongValue(value)
 
 }

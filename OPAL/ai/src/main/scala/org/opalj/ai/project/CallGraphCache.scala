@@ -31,6 +31,7 @@ package ai
 package project
 
 import br._
+import org.opalj.br.analyses.SomeProject
 
 /**
  * A '''thread-safe''' cache for information that is associated
@@ -64,7 +65,23 @@ import br._
  *
  * @author Michael Eichberg
  */
-class CallGraphCache[Contour, Value] {
+class CallGraphCache[Contour, Value](
+        val NullPointerExceptionDefaultConstructor: Option[Method]) {
+
+    def this(project: SomeProject) = {
+        this(
+            project.classFile(ObjectType.NullPointerException) match {
+                case Some(classFile) ⇒
+                    classFile.findMethod("<init>", MethodDescriptor.NoArgsAndReturnVoid) match {
+                        case c @ Some(defaultConstructor) ⇒ c
+
+                        case _ ⇒
+                            throw new UnknownError("java.lang.NullPointerException does not define a default constructor")
+                    }
+                case None ⇒ None
+            }
+        )
+    }
 
     // RECALL: scala.collection.concurrent.Map's getOrElseUpdate 
     // 			is – as of Scala 2.11.0 – NOT THREAD SAFE

@@ -59,4 +59,8 @@ trait ConcreteLongValues { this: ValuesDomain ⇒
      */
     def longValueOption(value: DomainValue): Option[Long]
 
+    object ConcreteLongValue {
+        def unapply(value: DomainValue): Option[Long] = longValueOption(value)
+    }
+
 }

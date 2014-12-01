@@ -46,7 +46,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
     class AnalysisDomain(
         override val project: Project[java.net.URL],
         val method: Method)
-            extends CoRelationalDomain
+            extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
             with domain.l0.DefaultPrimitiveValuesConversions
@@ -59,7 +59,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
             with domain.l1.DefaultIntegerRangeValues
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
-            with domain.TheProject[java.net.URL]
+            with domain.TheProject
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy {
 
@@ -100,8 +100,8 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
                     mkString("Called Native Methods ("+calledNativeMethods.size+"):\n", "\n", ""))
 
             val mutex = new Object
-            var results: List[CallWithBoundedMethodParameter] = Nil
-            def addResult(r: CallWithBoundedMethodParameter) {
+            var results: List[NativeCallWithBoundedMethodParameter] = Nil
+            def addResult(r: NativeCallWithBoundedMethodParameter) {
                 mutex.synchronized { results = r :: results }
             }
             val unboundedCalls = new java.util.concurrent.atomic.AtomicInteger(0)
@@ -133,7 +133,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
                     operands(stackIndex) match {
                         case domain.IntegerRange(lb, ub) ⇒
                             addResult(
-                                CallWithBoundedMethodParameter(
+                                NativeCallWithBoundedMethodParameter(
                                     theProject,
                                     nativeMethod,
                                     parametersCount - stackIndex,
@@ -187,7 +187,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
 
 import scala.language.existentials
 
-case class CallWithBoundedMethodParameter(
+case class NativeCallWithBoundedMethodParameter(
         project: SomeProject,
         nativeMethod: Method,
         parameterIndex: Int,

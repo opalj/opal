@@ -49,7 +49,7 @@ trait RecordMethodCallResults
         extends MethodCallResults
         with RecordLastReturnedValues
         with RecordAllThrownExceptions {
-    this: ValuesDomain with ClassHierarchy ⇒
+    this: Domain with ClassHierarchy ⇒
 
     private[this] var hasReturnedNormally: Boolean = false
 
@@ -68,7 +68,31 @@ trait RecordMethodCallResults
         }
     }
 
+    def returnedValueRemapped(
+        callerDomain: TargetDomain,
+        callerPC: PC)(
+            originalOperands: callerDomain.Operands,
+            passedParameters: Locals): Option[callerDomain.DomainValue] = {
+
+        if (allReturnedValues.isEmpty)
+            None
+        else {
+            val summarizedValue = summarize(callerPC, allReturnedValues.values)
+
+            val nthParameter = passedParameters.nthValue { _ eq summarizedValue }
+            if (nthParameter == -1)
+                Some(summarizedValue.adapt(callerDomain, callerPC))
+            else {
+                // map back to operand...
+                val mappedBackValue = originalOperands.reverse(nthParameter)
+                Some(mappedBackValue)
+            }
+        }
+    }
+
+    // [IMPROVE] Remap returned exceptions
     def thrownExceptions(target: TargetDomain, callerPC: PC): target.ExceptionValues = {
+
         val allThrownExceptions = this.allThrownExceptions //: Map[PC, ThrownException] 
         if (allThrownExceptions.isEmpty) {
             Iterable.empty
@@ -97,8 +121,7 @@ trait RecordMethodCallResults
                     case utb ⇒
                         val exceptionType =
                             classHierarchy.joinObjectTypesUntilSingleUpperBound(
-                                utb.asInstanceOf[UIDSet[ObjectType]],
-                                true)
+                                utb.asInstanceOf[UIDSet[ObjectType]])
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,
                             exceptionValuesPerType.getOrElse(
@@ -117,7 +140,7 @@ trait RecordMethodCallResults
                         exceptionValues.foreach { anExceptionValue ⇒
                             handleIsAReferenceValue(
                                 // TODO [Safety] We should make it possible that a value converts itself to a domain value
-                                anExceptionValue.asInstanceOf[DomainValue],
+                                anExceptionValue.asDomainValue(this),
                                 anExceptionValue)
                         }
 
@@ -131,7 +154,9 @@ trait RecordMethodCallResults
             exceptionValuesPerType.values.map { exceptionValuesPerType ⇒
                 summarize(callerPC, exceptionValuesPerType)
             }.map { exceptionValuePerType ⇒
-                exceptionValuePerType.adapt(target, callerPC)
+                exceptionValuePerType.
+                    adapt(target, callerPC).
+                    asInstanceOf[target.ExceptionValue]
             }
         }
     }

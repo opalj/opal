@@ -30,6 +30,14 @@ package org.opalj
 package br
 package instructions
 
+trait IStoreInstruction extends StoreLocalVariableInstruction
+
+object IStoreInstruction {
+
+    def unapply(istore: IStoreInstruction): Some[Int] = Some(istore.lvIndex)
+
+}
+
 /**
  * Store int into local variable.
  *
@@ -37,7 +45,7 @@ package instructions
  */
 case class ISTORE(
     lvIndex: Int)
-        extends StoreLocalVariableInstruction
+        extends IStoreInstruction
         with ExplicitLocalVariableIndex {
 
     final def opcode: Opcode = ISTORE.opcode

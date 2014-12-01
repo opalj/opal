@@ -32,28 +32,37 @@ package project
 
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.TheProject
+import org.opalj.ai.domain.TheClassFile
+import org.opalj.ai.domain.TheMethod
+import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.ai.domain.TheCode
 
 /**
  * Configuration of a specific call graph algorithm. Basically, the configuration
  * consist of a method to create a `Cache` object that will be used during the
- * computation of the call graph and a factory method to create new domain instance
+ * computation of the call graph and a factory method to create a new domain instance
  * for each method that is analyzed during the construction of the graph.
  *
  * @author Michael Eichberg
  */
 trait CallGraphAlgorithmConfiguration {
 
+    val project: SomeProject
+
     /**
      * The contour identifies the key of the CallGraphCache.
      */
-    type Contour
+    protected type Contour
 
     /**
      * The type of the cached values.
      */
-    type Value
+    protected type Value
 
-    type Cache <: CallGraphCache[Contour, Value]
+    protected type Cache <: CallGraphCache[Contour, Value]
 
     /**
      * Creates a new cache that is used to cache intermediate results while
@@ -61,16 +70,16 @@ trait CallGraphAlgorithmConfiguration {
      *
      * Usually created only once per run.
      */
-    def Cache(): this.type#Cache
+    protected[this] val cache: Cache
+
+    val Extractor: CallGraphExtractor
+
+    type CallGraphDomain = Domain with ReferenceValuesDomain with TheProject with ClassHierarchy with TheClassFile with TheMethod with TheCode
 
     /**
      * Returns the new domain object that will be used to analyze the given
      * method.
      */
-    def Domain[Source](
-        theProject: Project[Source],
-        cache: this.type#Cache,
-        classFile: ClassFile,
-        method: Method): CallGraphDomain
+    def Domain[Source](classFile: ClassFile, method: Method): CallGraphDomain
 
 }

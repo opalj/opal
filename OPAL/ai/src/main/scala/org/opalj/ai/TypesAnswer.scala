@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 
-import org.opalj.util.{ Answer, Yes }
+import org.opalj.util.{ Answer, Yes, Unknown }
 
 import org.opalj.br.UpperTypeBound
 import org.opalj.br.{ BaseType, ReferenceType }
@@ -133,48 +133,74 @@ trait IsDoubleValue extends IsPrimitiveValue {
 trait IsAReferenceValue {
 
     /**
-     * If `Yes` the value is statically known to be `null` at runtime. In this
-     * case the upper bound  is (has to be) empty. If the answer is `Unknown` then the
-     * analysis was not able to statically determine whether the value is `null` or
-     * is not `null`. In this case the upper bound is expected to be non-empty.
-     * If the answer is `No` then the value is statically known not to be `null`. In this
-     * case, the upper bound may precisely identify the runtime type or still just identify
-     * an upper bound.
-     */
-    def isNull: Answer
-
-    /**
      * The upper bound of the value's type. The upper bound is empty if this
-     * value is `null` (i.e., `isNull == Yes`). The upper bound will only contain
-     * a single type if the type is precise. (i.e., `isPrecise == true`). Otherwise,
+     * value is `null` (i.e., `isNull == Yes`). The upper bound is only guaranteed to contain
+     * exactly one type if the type is precise. (i.e., `isPrecise == true`). Otherwise,
      * the upper type bound may contain one or more types that are not known to be
      * in an inheritance relation, but which will ''correctly'' approximate the runtime
      * type.
      *
      * @note If only a part of a project is analyzed, the class hierarchy may be
      *      fragmented and it may happen that two classes that are indeed in an
-     *      inheritance relation – if we would analyzed the complete project – are reported
-     *      in the upper type bound.
+     *      inheritance relation – if we would analyze the complete project – are part
+     *      of the upper type bound.
      */
     def upperTypeBound: UpperTypeBound
 
     /**
-     * Returns `true` if the type information is precise. I.e., the type precisely
-     * models the runtime type of the value.
+     * If `Yes` the value is known to always be `null` at runtime. In this
+     * case the upper bound  is (has to be) empty. If the answer is `Unknown` then the
+     * analysis was not able to statically determine whether the value is `null` or
+     * is not `null`. In this case the upper bound is expected to be non-empty.
+     * If the answer is `No` then the value is statically known not to be `null`. In this
+     * case, the upper bound may precisely identify the runtime type or still just identify
+     * an upper bound.
      *
-     * @note `isPrecise` is always `true` if this value is known to be `null`.
+     * This default implementation always returns `Unknown`; this is a sound
+     * over-approximation.
+     *
+     * @note This method is expected to be overridden by subtypes.
+     *
+     * @return `Unknown`.
      */
-    def isPrecise: Boolean
+    def isNull: Answer = Unknown
 
     /**
-     * Checks if the type of this value is a subtype of the specified
-     * reference type under the assumption that this value is not `null`!
+     * Returns `true` if the type information is precise. I.e., the upper type bound
+     * precisely models the runtime type of the value.
+     *  If, `isPrecise` returns true, the type of this value can
+     * generally be assumed to represent a class type (not an interface type) or
+     * an array type. However, this domain also supports the case that `isPrecise`
+     * returns `true` even though the associated type identifies an interface type
+     * or an abstract class type. The later case may be interesting in the context
+     * of classes that are generated at run time.
+     *
+     * This default implementation always returns `false`.
+     *
+     * @note `isPrecise` is always `true` if this value is known to be `null`.
+     * @note This method is expected to be overridden by subtypes.
+     *
+     * @return `false`
+     */
+    def isPrecise: Boolean = false
+
+    /**
+     * Test if the type of this value is potentially a subtype of the specified
+     * reference type under the assumption that this value is not `null`.
+     * This test takes the precision of the type information into account.
+     * That is, if the currently available type information is not precise and
+     * the given type has a subtype that is always a subtype of the current
+     * upper type bound, then `Unknown` is returned. Given that it may be
+     * computationally intensive to determine whether two types have a common subtype
+     * it may be better to just return `Unknown` in case that this type and the
+     * given type are not in a direct inheritance relationship.
+     *
      *
      * Basically, this method implements the same semantics as the `ClassHierarchy`'s
      * `isSubtypeOf` method, but it additionally checks if the type of this value
      * ''could be a subtype'' of the given supertype. I.e., if this value's type
      * identifies a supertype of the given `supertype` and that type is not known
-     * to be precise the answer is `Unknown`.
+     * to be precise, the answer is `Unknown`.
      *
      * For example, assume that the type of this reference value is
      * `java.util.Collection` and we know/have to assume that this is only an
@@ -186,11 +212,16 @@ trait IsAReferenceValue {
      * not in an inheritance relationship. However, if the specified supertype would
      * be `java.util.List` the answer would be unknown.
      *
-     * @note The function `isSubtypeOf` is not defined if `isNull` returns `Yes`;
+     * @note The function `isValueSubtypeOf` is not defined if `isNull` returns `Yes`;
      *      if `isNull` is `Unknown` then the result is given under the
      *      assumption that the value is not `null` at runtime.
+     *      In other words, if this value represents `null` this method is not supported.
+     * @note This method is expected to be overridden by subtypes.
+     *
+     * @return  `Unknown`.
      */
-    def isValueSubtypeOf(referenceType: ReferenceType): Answer
+    @throws[DomainException]("If this value is null (isNull.yes == true).")
+    def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown
 
     /**
      * Returns this reference value as a `DomainValue` of its original domain.
@@ -201,7 +232,7 @@ trait IsAReferenceValue {
     @throws[UnsupportedOperationException](
         "the given domain has to be equal to the domain that was used to creat this object"
     )
-    def asDomainValue(implicit domain: Domain): domain.DomainValue
+    def asDomainValue(implicit domain: Domain): domain.DomainReferenceValue
 }
 
 /**

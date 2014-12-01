@@ -30,7 +30,12 @@ package org.opalj
 package ai
 package project
 
-import br._
+import scala.Console.BOLD
+import scala.Console.RESET
+
+import br.Method
+import br.MethodDescriptor
+import br.ReferenceType
 
 /**
  * Represents a method call that could not be resolved; that is, the target of

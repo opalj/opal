@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,21 +26,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package project
+package types;
 
-/**
- * Tests the VTA based `CallGraph` algorithm using a more complex (explicitly
- * annotated) project.
- *
- * @author Michael Eichberg
- */
-class ComplexVTACallGraphTest extends AbstractCallGraphTest {
+public interface IRootB {
 
-    override def testFileName = "classfiles/callgraph.jar"
+    void doB();
 
-    override def testFilePath = "ai"
-
-    override def testCallGraph = VTACallGraphKey
+    int doAndReturnB();
+    
+    int aMethod129384();
 }

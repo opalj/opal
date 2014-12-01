@@ -32,17 +32,15 @@ package domain
 package l1
 
 import scala.collection.SortedSet
-
 import org.junit.runner.RunWith
-
 import org.scalatest.ParallelTestExecution
+import org.scalatest.Assertions._
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
-
 import org.opalj.util.{ No, Unknown }
-
 import org.opalj.br.ObjectType
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * Unit tests for handling `StringValues`.
@@ -55,7 +53,7 @@ class StringValuesTest extends FlatSpec with Matchers with ParallelTestExecution
     import PlainClassesTest._
 
     object AnalysisDomain
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with PredefinedClassHierarchy
@@ -72,43 +70,56 @@ class StringValuesTest extends FlatSpec with Matchers with ParallelTestExecution
 
     import AnalysisDomain._
 
-    val s1 = StringValue(-1, "test")
+    val s1t0 = StringValue(-1, "test")
+    val s1t1 = StringValue(-1, "test")
     val s1Alt = StringValue(-1, "alt")
     val s2 = StringValue(-2, "test")
+
     val oN = ObjectValue(-1, No, true, ObjectType.String)
     val oU = ObjectValue(-1, Unknown, true, ObjectType.String)
-    val joinS1AndS2 = MultipleReferenceValues(SortedSet[DomainSingleOriginReferenceValue](s1, s2))
+
+    val msS1t0AndS2 = MultipleReferenceValues(SortedSet[DomainSingleOriginReferenceValue](s1t0, s2))
+    assert(msS1t0AndS2.upperTypeBound == UIDSet(ObjectType.String))
 
     behavior of "joining two StringValues"
 
-    it should ("result in the original value if both values are the same") in {
-        s1.join(5, s1) should be(NoUpdate)
-    }
-
-    it should ("result in a MultipleReferenceValue if both values have different origins") in {
-        s1.join(5, s2) should be(StructuralUpdate(joinS1AndS2))
+    it should ("result in a new instance if both values have the same properties but represent different instances") in {
+        val joinResult = s1t0.join(5, s1t1)
+        joinResult.value should not(be theSameInstanceAs s1t0)
+        joinResult.value should not(be theSameInstanceAs s1t1)
+        joinResult should be(MetaInformationUpdate(s1t0))
     }
 
     it should ("result in some object value if both values have the same origin but different values") in {
-        s1.join(1, s1Alt) should be(StructuralUpdate(oN))
+        // we are now referring to all "Strings"..
+        val joinResult = s1t0.join(1, s1Alt)
+        joinResult.value should not(be theSameInstanceAs s1t0)
+        joinResult.value should not(be theSameInstanceAs s1Alt)
+        joinResult should be(StructuralUpdate(oN))
     }
 
-    it should ("result in some object value if the original value is some object value") in {
-        oN.join(2, s1) should be(NoUpdate)
+    it should ("result in a new object value if the original value is some object value") in {
+        val joinResult = oN.join(2, s1t0)
+        joinResult.value should not(be theSameInstanceAs oN)
+        joinResult should be(MetaInformationUpdate(oN))
     }
 
     it should ("result in some object value if the new value is some object value") in {
-        s1.join(2, oN) should be(StructuralUpdate(oN))
+        s1t0.join(2, oN) should be(StructuralUpdate(oN))
+    }
+
+    it should ("result in a MultipleReferenceValue if both values have different origins") in {
+        s1t0.join(5, s2) should be(StructuralUpdate(msS1t0AndS2))
     }
 
     behavior of "summarization of StringValues"
 
     it should ("result in the original value") in {
-        s1.summarize(-1) should be(s1)
+        s1t0.summarize(-1) should be(s1t0)
     }
 
-    it should (" – if the values are stored in a MultipleReferenceValues– in an ObjectValue") in {
-        joinS1AndS2.summarize(-1) should be(oN)
+    it should ("result – if the values are stored in a MultipleReferenceValues – in an ObjectValue") in {
+        msS1t0AndS2.summarize(-1) should be(oN)
     }
 
 }

@@ -41,7 +41,7 @@ import org.opalj.br.ArrayType
  * @author Michael Eichberg
  */
 trait DefaultArrayValuesBinding extends l1.DefaultReferenceValuesBinding with ArrayValues {
-    domain: IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy ⇒
     //
     // FACTORY METHODS
     //
@@ -50,7 +50,7 @@ trait DefaultArrayValuesBinding extends l1.DefaultReferenceValuesBinding with Ar
         vo: ValueOrigin,
         theType: ArrayType,
         values: Array[DomainValue]): DomainArrayValue =
-        new ArrayValue(vo, theType, values)
+        new ArrayValue(vo, theType, values, nextT)
 
 }
 

@@ -112,6 +112,12 @@ trait CoreDomainFunctionality extends ValuesDomain {
         otherLocals: Locals): Update[(Operands, Locals)] = {
         beforeBaseJoin(pc)
 
+        // FOR INTERNAL DEBUGGING PURPOSES:
+        // if (thisOperands.size != otherOperands.size)
+        //    throw DomainException(
+        //        s"impossible join:$pc: $thisOperands vs. $otherOperands"
+        //    )
+
         var operandsUpdated: UpdateType = NoUpdateType
         val newOperands: Operands =
             if (thisOperands eq otherOperands) {
@@ -121,7 +127,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
                 var otherRemainingOperands = otherOperands
                 var newOperands: Operands = List.empty // during the update we build the operands stack in reverse order
 
-                while (thisRemainingOperands.nonEmpty /* && both stacks contain the same number of elements */ ) {
+                while (thisRemainingOperands.nonEmpty /* && both stacks have to contain the same number of elements */ ) {
                     val thisOperand = thisRemainingOperands.head
                     thisRemainingOperands = thisRemainingOperands.tail
                     val otherOperand = otherRemainingOperands.head
@@ -149,6 +155,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
             }
 
         var localsUpdated: UpdateType = NoUpdateType
+        var localsUpdateIsRelevant: Boolean = false // if we just have "illegal value updates" 
         val newLocals: Locals =
             if (thisLocals eq otherLocals) {
                 thisLocals
@@ -166,7 +173,10 @@ trait CoreDomainFunctionality extends ValuesDomain {
                                     thisLocal
                                 } else {
                                     localsUpdated = localsUpdated &: updatedLocal
-                                    updatedLocal.value
+                                    val value = updatedLocal.value
+                                    if (value ne TheIllegalValue)
+                                        localsUpdateIsRelevant = true
+                                    value
                                 }
                             }
                         }
@@ -175,12 +185,15 @@ trait CoreDomainFunctionality extends ValuesDomain {
                     thisLocals
                 else
                     newLocals
-
             }
 
         afterBaseJoin(pc)
 
-        val updateType = operandsUpdated &: localsUpdated
+        val updateType =
+            if (localsUpdateIsRelevant)
+                operandsUpdated &: localsUpdated
+            else
+                operandsUpdated
         joinPostProcessing(updateType, pc, thisOperands, thisLocals, newOperands, newLocals)
     }
 

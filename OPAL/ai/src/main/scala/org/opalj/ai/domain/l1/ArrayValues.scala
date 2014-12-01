@@ -47,18 +47,19 @@ import org.opalj.br._
  * @author Michael Eichberg
  */
 trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
-    domain: IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // We do not refine the type DomainArrayValue any further since we also want
     // to use the super level ArrayValue class to represent arrays for which we have
     // no further knowledge.
-    // DO NOT: type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
+    // I.E., DO NOT: type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
 
     protected class ArrayValue(
-        vo: ValueOrigin,
+        origin: ValueOrigin,
         theType: ArrayType,
-        val values: Array[DomainValue])
-            extends super.ArrayValue(vo, No, true, theType) {
+        val values: Array[DomainValue],
+        t: Timestamp)
+            extends super.ArrayValue(origin, No, true, theType, t) {
         this: DomainArrayValue ⇒
 
         override def length: Some[Int] = Some(values.size)
@@ -103,7 +104,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
                 // however, if no exception is thrown, we are no longer able to
                 // approximate the state of the array's values; some value was changed
                 // somewhere...
-                val abstractArrayValue = ArrayValue(vo, No, true, theUpperTypeBound)
+                val abstractArrayValue = ArrayValue(origin, No, true, theUpperTypeBound, t)
                 registerOnRegularControlFlowUpdater(domainValue ⇒
                     domainValue match {
                         case that: ArrayValue if that eq this ⇒ abstractArrayValue
@@ -123,7 +124,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
                     registerOnRegularControlFlowUpdater { someDomainValue ⇒
                         if (someDomainValue eq ArrayValue.this) {
                             if (newArrayValue == null) {
-                                newArrayValue = ArrayValue(vo, theType, values.updated(index, value))
+                                newArrayValue = ArrayValue(origin, theType, values.updated(index, value))
                             }
                             newArrayValue
                         } else {
@@ -172,7 +173,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
                             if (isOther) {
                                 update(other)
                             } else
-                                update(ArrayValue(vo, theType, newValues))
+                                update(ArrayValue(origin, theType, newValues))
                     }
 
                 case _ ⇒
@@ -181,7 +182,9 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
                         // => This array and the other array have a corresponding
                         //    abstract representation (w.r.t. the next abstraction level!)
                         //    but we still need to drop the concrete information
-                        StructuralUpdate(ArrayValue(vo, No, true, theUpperTypeBound))
+                        StructuralUpdate(
+                            ArrayValue(origin, No, true, theUpperTypeBound, nextT)
+                        )
                     } else {
                         answer
                     }
@@ -199,7 +202,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
                         asInstanceOf[target.DomainValue]
 
                 case thatDomain: l1.ReferenceValues ⇒
-                    thatDomain.ArrayValue(vo, No, true, theUpperTypeBound).
+                    thatDomain.ArrayValue(vo, No, true, theUpperTypeBound, thatDomain.nextT()).
                         asInstanceOf[target.DomainValue]
 
                 case thatDomain: l0.TypeLevelReferenceValues ⇒
@@ -226,13 +229,12 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
 
         protected def canEqual(other: ArrayValue): Boolean = true
 
-        override def hashCode: Int = vo * 79 + upperTypeBound.hashCode
+        override def hashCode: Int = origin * 79 + upperTypeBound.hashCode
 
         override def toString() = {
-            values.mkString(
-                theUpperTypeBound.toJava+"(origin="+vo+", size"+values.size+"=(",
-                ",",
-                "))"+";SystemID="+System.identityHashCode(this))
+            val valuesAsString = values.mkString("(", ",", ")")
+            s"${theUpperTypeBound.toJava}(origin=$origin;size=${values.size}="+
+                valuesAsString
         }
     }
 
@@ -266,9 +268,10 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
         if (intValue.isDefined && reifyArray(pc, intValue.get, arrayType)) {
             val count = intValue.get
             if (count >= 1024)
-                println(Console.YELLOW+"[warn] tracking arrays ("+arrayType.toJava+
-                    ") with more than 1024 ("+count+
-                    ") elements is not officially supported"+Console.RESET)
+                println(Console.YELLOW +
+                    s"[warn] tracking very large arrays (${arrayType.toJava}) "+
+                    "usually incurrs significant overhead without increasing "+
+                    "the precision of the analysis."+Console.RESET)
             var virtualPC = 65536 + pc * 1024
 
             val array: Array[DomainValue] = new Array[DomainValue](count)
@@ -280,7 +283,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
             }
             ArrayValue(pc, arrayType, array)
         } else {
-            ArrayValue(pc, No, isPrecise = true, arrayType)
+            ArrayValue(pc, No, isPrecise = true, arrayType, nextT())
         }
     }
 

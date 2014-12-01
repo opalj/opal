@@ -57,8 +57,8 @@ class CallGraph private[project] (
         private[this] val calledByMap: Map[Method, Map[Method, PCs]],
         private[this] val callsMap: Map[Method, Map[PC, Iterable[Method]]]) {
 
-    assert(calledByMap.values.forall(_.size > 0))
-    assert(callsMap.values.forall(_.size > 0))
+    // assert(calledByMap.values.forall(_.size > 0))
+    // assert(callsMap.values.forall(_.size > 0))
 
     /**
      * Returns the invoke instructions (by means of (`Method`,`PC`) pairs) that
@@ -115,6 +115,26 @@ class CallGraph private[project] (
 
     /** Number of methods that call at least one other method. */
     def callsCount: Int = callsMap.size
+
+    def callEdgesCount: Int = {
+        val perMethodCallTargetsCount =
+            callsMap.map { e ⇒
+                val (_, perMethodCallTargets) = e
+                perMethodCallTargets.values.map(_.size).sum
+            }
+        perMethodCallTargetsCount.sum
+    }
+
+    def calledByEdgesCount: Int = {
+        // calledByMap = Map[Method, Map[Method, PCs]]
+        val perMethodCalledByCount =
+            calledByMap.map { e ⇒
+                val (_, perMethodCallers) = e
+                perMethodCallers.values.map(_.size).sum
+            }
+
+        perMethodCalledByCount.sum
+    }
 
     /** Number of methods that are called by at least one other method. */
     def calledByCount: Int = calledByMap.size

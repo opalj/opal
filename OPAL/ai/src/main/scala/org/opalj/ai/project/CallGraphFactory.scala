@@ -32,11 +32,7 @@ package project
 
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
-
-case class ComputedCallGraph(
-    callGraph: CallGraph,
-    unresolvedMethodCalls: List[UnresolvedMethodCall],
-    constructionExceptions: List[CallGraphConstructionException])
+import org.opalj.br.instructions.INVOKESTATIC
 
 /**
  * Factory object to create call graphs.
@@ -50,17 +46,26 @@ object CallGraphFactory {
      * analyze a library/framework.
      *
      * The set of all entry points consists of:
-     * - all static initializers,
-     * - every non-private static method,
-     * - every non-private constructor,
-     * - every non-private method.
+     *  - all static initializers,
+     *  - every non-private static method,
+     *  - every non-private constructor,
+     *  - every non-private method,
+     *  - every private method related to Serialization, if the respective
+     *    declaring class is a subtype of java.io.Serializable.
      */
     def defaultEntryPointsForLibraries(project: SomeProject): List[Method] = {
+        val classHierarchy = project.classHierarchy
         for {
             classFile ← project.projectClassFiles
             method ← classFile.methods
             if method.body.isDefined
-            if !method.isPrivate
+            if !method.isPrivate ||
+                ( // the method is private, but...
+                    Method.isObjectSerializationRelated(method) &&
+                    classHierarchy.isSubtypeOf(
+                        classFile.thisType,
+                        ObjectType.Serializable).isYesOrUnknown
+                )
         } yield {
             method
         }
@@ -78,9 +83,16 @@ object CallGraphFactory {
         entryPoints: List[Method],
         configuration: CallGraphAlgorithmConfiguration): ComputedCallGraph = {
 
-        if (entryPoints.isEmpty) {
-            Console.err.println("The call graph has no entry points!")
-        }
+        if (entryPoints.isEmpty)
+            throw new IllegalArgumentException("the call graph has no entry points")
+
+        if (theProject.classHierarchy.rootTypes.tail.nonEmpty)
+            // TODO Use a Log...
+            println(
+                "[warn] missing supertype information for: "+
+                    theProject.classHierarchy.rootTypes.filterNot(_ eq ObjectType.Object).map(_.toJava).mkString(", ")
+            )
+
         import scala.collection.{ Map, Set }
         type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException])
 
@@ -88,23 +100,26 @@ object CallGraphFactory {
         import java.util.concurrent.Executors
         import java.util.concurrent.ExecutorCompletionService
 
-        val cache = configuration.Cache()
+        val extractor = configuration.Extractor
+        import extractor.extract
 
         /* START - EXECUTED CONCURRENTLY */
         def doAnalyzeMethod(method: Method): Callable[MethodAnalysisResult] =
             new Callable[MethodAnalysisResult] {
                 def call(): MethodAnalysisResult = {
                     val classFile = theProject.classFile(method)
-                    val domain = configuration.Domain(theProject, cache, classFile, method)
+                    val domain = configuration.Domain(classFile, method)
                     try {
-                        BaseAI(classFile, method, domain)
-                        (domain.allCallEdges, domain.allUnresolvableMethodCalls, None)
+                        val result = BaseAI(classFile, method, domain)
+                        val (callEdges, unresolveableMethodCalls) = extract(result)
+                        (callEdges, unresolveableMethodCalls, None)
                     } catch {
-                        case exception: Exception ⇒
+                        case ct: scala.util.control.ControlThrowable ⇒ throw ct
+                        case t: Throwable ⇒
                             (
-                                domain.allCallEdges,
-                                domain.allUnresolvableMethodCalls,
-                                Some(CallGraphConstructionException(classFile, method, exception))
+                                (method, Map.empty[PC, /*Callees*/ Set[Method]]),
+                                List.empty,
+                                Some(CallGraphConstructionException(classFile, method, t))
                             )
                     }
                 }
@@ -123,7 +138,26 @@ object CallGraphFactory {
 
         @inline def submitMethod(method: Method): Unit = {
             if (methodSubmitted.contains(method))
-                return
+                return ;
+
+            var minimumSize = 4
+            // the minimum length of a method that may call another method is 4
+            // - call to a static method without args (3 bytes)
+            // - a return (void or the result of the static method call)
+            val instructions = method.body.get.instructions
+            if (instructions.size < minimumSize)
+                return ;
+
+            if (instructions(0).opcode != INVOKESTATIC.opcode) {
+                minimumSize = 5
+                val secondInstruction = instructions(1)
+                if (secondInstruction != null && (
+                    secondInstruction.opcode < 182 ||
+                    secondInstruction.opcode > 186))
+                    minimumSize = 6
+            }
+            if (instructions.size < minimumSize)
+                return ;
 
             methodSubmitted += method
             futuresCount += 1

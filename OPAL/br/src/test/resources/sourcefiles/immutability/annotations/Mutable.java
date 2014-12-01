@@ -26,22 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-
-import org.opalj.br.ConstantFieldValue
-import org.opalj.br.ConstantInteger
-import org.opalj.br.ConstantLong
-import org.opalj.br.ConstantFloat
-import org.opalj.br.ConstantDouble
-import org.opalj.br.ConstantString
+package immutability.annotations;
 
 /**
- *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * Describes that an instance of the annotated class is mutable.
+ * 
+ * @author Andre Pacak
  */
-trait CoRelationalDomain
-    extends Domain
-    with JoinStabilization
-    with IdentityBasedAliasBreakUpDetection
+public @interface Mutable {
 
+    String value();
+}

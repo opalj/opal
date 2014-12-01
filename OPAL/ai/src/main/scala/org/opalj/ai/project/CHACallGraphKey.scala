@@ -60,9 +60,8 @@ object CHACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
     override protected def compute(project: SomeProject): ComputedCallGraph = {
         val entryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project)
         CallGraphFactory.create(
-            project,
-            entryPoints,
-            new CHACallGraphAlgorithmConfiguration())
+            project, entryPoints,
+            new CHACallGraphAlgorithmConfiguration(project))
     }
 }
 

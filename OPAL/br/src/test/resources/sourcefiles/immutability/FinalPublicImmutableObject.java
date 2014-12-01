@@ -22,23 +22,23 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
-package project
+package immutability;
+
+import immutability.helperclasses.ImmutableClass;
+import immutability.annotations.Immutable;
 
 /**
- * @author Marco Jacobasch
- * @author Michael Eichberg
+ * A simple example of an immutable class with a public final attribute which is of a
+ * reference type which is immutable itself.
+ *
+ * @author Andre Pacak
  */
-class SimpleVTACallGraphTest extends AbstractCallGraphTest {
+@Immutable("the object referred to by the final, public field is immutable")
+public class FinalPublicImmutableObject {
 
-    override def testFileName = "classfiles/simpleCallgraph.jar"
-
-    override def testFilePath = "ai"
-
-    override def testCallGraph = VTACallGraphKey
+    public final ImmutableClass object = new ImmutableClass();
 }

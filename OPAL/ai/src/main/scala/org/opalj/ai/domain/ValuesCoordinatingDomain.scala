@@ -58,7 +58,7 @@ import org.opalj.br.analyses.{ Project }
  *
  * @author Michael Eichberg
  */
-trait ValuesCoordinatingDomain extends CoRelationalDomain with Configuration {
+trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
 
     def throwAllHandledExceptionsOnMethodCall: Boolean = true
     def throwNullPointerExceptionOnMethodCall: Boolean = true
@@ -158,7 +158,7 @@ trait ValuesCoordinatingDomain extends CoRelationalDomain with Configuration {
     /*override*/ def returnVoid(pc: PC): Unit =
         throw new UnsupportedOperationException
 
-    /*override*/ def abruptMethodExecution(pc: PC, exception: DomainValue): Unit =
+    /*override*/ def abruptMethodExecution(pc: PC, exception: ExceptionValue): Unit =
         throw new UnsupportedOperationException
 
     /*override*/ def areturn(pc: PC, value: DomainValue): Unit =

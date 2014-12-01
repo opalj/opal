@@ -56,8 +56,8 @@ trait RecordJoinedThrownExceptions extends RecordThrownExceptions { domain: Valu
 
         previouslyThrownException.join(pc, thrownException) match {
             case NoUpdate                              ⇒ previouslyThrownException
-            case StructuralUpdate(exceptionValue)      ⇒ exceptionValue
-            case MetaInformationUpdate(exceptionValue) ⇒ exceptionValue
+            case StructuralUpdate(exceptionValue)      ⇒ exceptionValue.asInstanceOf[ExceptionValue]
+            case MetaInformationUpdate(exceptionValue) ⇒ exceptionValue.asInstanceOf[ExceptionValue]
         }
     }
 }

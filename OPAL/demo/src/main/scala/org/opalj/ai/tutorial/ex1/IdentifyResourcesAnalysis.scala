@@ -43,7 +43,7 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
     class AnalysisDomain(
         override val project: Project[URL],
         val method: Method)
-            extends Domain
+            extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
             with domain.l0.DefaultPrimitiveValuesConversions
@@ -57,7 +57,7 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
             with domain.l1.DefaultStringValuesBinding
             with domain.DefaultHandlingOfMethodResults
             with domain.IgnoreSynchronization
-            with domain.TheProject[URL]
+            with domain.TheProject
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy
 

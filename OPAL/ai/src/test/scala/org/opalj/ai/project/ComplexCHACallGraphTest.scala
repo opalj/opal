@@ -43,6 +43,7 @@ class ComplexCHACallGraphTest extends AbstractCallGraphTest {
 
     override def testFilePath = "ai"
 
-    override def testCallGraph = CHACallGraphKey
+    override def testCallGraphConfiguration =
+        new CHACallGraphAlgorithmConfiguration(project)
 
 }
