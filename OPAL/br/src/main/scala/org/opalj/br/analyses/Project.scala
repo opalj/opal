@@ -455,7 +455,7 @@ object Project {
         val cache = new reader.BytecodeInstructionsCache
         val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
 
-        project.extend(reader.Java8Framework.ClassFiles(file))
+        project.extend(Java8ClassFileReader.ClassFiles(file))
     }
 
     /**

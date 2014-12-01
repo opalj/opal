@@ -348,6 +348,8 @@ trait DefaultTypeLevelReferenceValues
             extends ObjectValue {
         value: DomainObjectValue ⇒
 
+        assert(upperTypeBound.size > 1)
+
         override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
         /**

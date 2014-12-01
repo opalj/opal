@@ -74,6 +74,12 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
      */
     /* ABSTRACT */ def +[X >: T <: UID](e: X): UIDSet[X]
 
+    def ++[X >: T <: UID](es: UIDSet[X]): UIDSet[X] = {
+        var newSet: UIDSet[X] = this
+        es.foreach { x ⇒ newSet = newSet + x }
+        newSet
+    }
+
     /**
      * Returns the first element of this set. I.e., the element with the smallest
      * unique id.

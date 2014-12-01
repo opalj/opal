@@ -1912,6 +1912,12 @@ trait AI[D <: Domain] {
                                             pc,
                                             supertype,
                                             operands, locals)
+                                    assert(
+                                        theDomain.isValueSubtypeOf(newOperands.head, supertype).isYes,
+                                        s"the cast of $objectref to ${supertype.toJava} failed: "+
+                                            s"the subtyping relation between ${newOperands.head} and ${supertype.toJava} is "+
+                                            theDomain.isValueSubtypeOf(newOperands.head, supertype)
+                                    )
                                     fallThrough(newOperands, newLocals)
                             }
                         }

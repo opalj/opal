@@ -105,15 +105,6 @@ class VTACallGraphExtractor(
             // Hence, the explicit support would not increase the precision.
             // This situation might change if the analysis (as a whole) is getting more
             // precise.
-            /* 
-            // CODE TO EVALUATE THE USEFULLNESS OF EXPLICITLY SUPPORTING 
-            // MULTIPLEREFERENCEVALUES
-            if (receiver.referenceValues.tail.nonEmpty) {
-                val commonUpperTypeBound = receiver.upperTypeBound.toString()
-                println("Common upper type bound: "+commonUpperTypeBound +
-                    receiver.referenceValues.mkString(" { Values: ", ",", " }\n\n"))
-            }
-            */
 
             if (receiverIsNull.isYes) {
                 addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
