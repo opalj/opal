@@ -69,10 +69,8 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
 
     type DomainClassValue <: ClassValue with DomainObjectValue
 
-    protected class ClassValue(
-        vo: ValueOrigin,
-        val value: Type)
-            extends SObjectValue(vo, No, true, ObjectType.Class) {
+    protected class ClassValue(origin: ValueOrigin, val value: Type, t: Timestamp)
+            extends SObjectValue(origin, No, true, ObjectType.Class, t) {
         this: DomainClassValue ⇒
 
         override def doJoinWithNonNullValueWithSameOrigin(
@@ -80,23 +78,39 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case that: ClassValue if this.value eq that.value ⇒
-                    NoUpdate
+                case that: ClassValue ⇒
+                    if (this.value eq that.value)
+                        if (this.t == that.t)
+                            NoUpdate
+                        else
+                            MetaInformationUpdate(ClassValue(origin, value))
+                    else
+                        StructuralUpdate(ObjectValue(origin, No, true, ObjectType.Class, nextT()))
                 case _ ⇒
-                    val answer = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
-                    if (answer == NoUpdate) {
-                        // => This class value and the other value have a corresponding
-                        //    abstract representation (w.r.t. the next abstraction level!)
-                        //    but we still need to drop the concrete information...
-                        StructuralUpdate(ObjectValue(vo, No, true, ObjectType.Class))
+                    val result = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
+                    if (result.isStructuralUpdate) {
+                        result
                     } else {
-                        answer
+                        // This (class) value and the other value may have a corresponding
+                        // abstract representation (w.r.t. the next abstraction level!)
+                        // but we still need to drop the concrete information.
+                        StructuralUpdate(result.value.update())
                     }
             }
         }
 
-        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
-            target.ClassValue(vo, this.value)
+        override def adapt(target: TargetDomain, targetOrigin: ValueOrigin): target.DomainValue =
+            target.ClassValue(targetOrigin, this.value)
+
+        override def abstractsOver(other: DomainValue): Boolean = {
+            if (this eq other)
+                return true
+
+            other match {
+                case that: ClassValue ⇒ that.value eq this.value
+                case _                ⇒ false
+            }
+        }
 
         override def equals(other: Any): Boolean =
             other match {
@@ -109,7 +123,8 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
 
         override def hashCode: Int = super.hashCode + 71 * value.hashCode
 
-        override def toString(): String = "Class(origin="+vo+", value=\""+value.toJava+"\")"
+        override def toString(): String =
+            s"Class(origin$origin;t=$t;value=${value.toJava})"
     }
 
     // Needs to be implemented since the default implementation does not make sense here
@@ -177,7 +192,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
                     }
 
                 case _ ⇒
-                    // call default handler (the first arguement is not a string)
+                    // call default handler (the first argument is not a string)
                     super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
 
             }

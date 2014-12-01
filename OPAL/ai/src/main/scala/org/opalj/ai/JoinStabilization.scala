@@ -29,6 +29,7 @@
 package org.opalj
 package ai
 
+import scala.collection.mutable.Map
 import scala.collection.mutable.AnyRefMap
 
 import org.opalj.collection.immutable.IdentityPair
@@ -118,7 +119,7 @@ trait JoinStabilization extends CoreDomainFunctionality {
     //        joinedValues.clear()
     //    }
 
-    private[this] val joinedValues =
+    protected[this] val joinedValues: Map[IdentityPair[AnyRef, AnyRef], Update[DomainValue]] =
         AnyRefMap.empty[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]
 
     /* NOT "abstract override" - this trait is by purpose not stackable! */

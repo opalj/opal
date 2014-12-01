@@ -107,7 +107,7 @@ trait Issue {
             return None;
 
         val lvsAsXHTML =
-            for ((index, theLV) ← localVariableDefinitions) yield {
+            for ((index, theLV) ← localVariableDefinitions.toSeq.sortWith((a, b) ⇒ a._1 < b._1)) yield {
                 val localValue = localVariableValues(index)
                 val localValueAsXHTML =
                     if (localValue == null)
@@ -135,7 +135,7 @@ trait Issue {
 
         Some(
             <details class="locals">
-                <summary>Local Variable State</summary>
+                <summary>Local Variable State [pc={ pc + line(pc).map(" line="+_).getOrElse("") }]</summary>
                 <table>
                     <tr><th>Index</th><th>Name</th><th>Value</th></tr>
                     { lvsAsXHTML }

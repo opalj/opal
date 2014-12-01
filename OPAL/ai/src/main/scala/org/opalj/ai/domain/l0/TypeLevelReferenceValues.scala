@@ -514,10 +514,16 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
                     // though both values have the same runtime type, we don't know
                     // if they refere to the same object
                     Unknown
-            else { // - both values may not be null 
+            else {
+                // - both values may not be null 
                 // - at least one value is not precise
                 if (classHierarchy.isSubtypeOf(v1UTB, v2UTB).isNo &&
-                    classHierarchy.isSubtypeOf(v2UTB, v1UTB).isNo)
+                    classHierarchy.isSubtypeOf(v2UTB, v1UTB).isNo &&
+                    // two interfaces that are not in an inheritance relation can 
+                    // still be implemented by the same class and, hence, the references
+                    // can still be equal
+                    v1UTB.exists(t ⇒ t.isObjectType && !classHierarchy.isInterface(t.asObjectType)) &&
+                    v2UTB.exists(t ⇒ t.isObjectType && !classHierarchy.isInterface(t.asObjectType)))
                     No
                 else
                     Unknown
