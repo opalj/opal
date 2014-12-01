@@ -441,8 +441,11 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 case None ⇒ StructuralUpdate(other.joinValue(this))
                 case Some(that) ⇒
                     if (this eq that)
-                        // this value is part of the other "MultipleReferenceValues"
-                        StructuralUpdate(other)
+                        // <=> this value is part of the other "MultipleReferenceValues",
+                        // but the MultipleReferenceValues (as a whole) may still need
+                        // to be updated if it was refined in the meantime!
+                        StructuralUpdate(other.update(other.values, this, other.t))
+
                     else {
                         // this value has the the same origin as the value found in 
                         // MultipleRefrenceValues
@@ -472,7 +475,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             joinPC: PC,
             that: DomainNullValue): Update[DomainSingleOriginReferenceValue] = {
             this.isNull match {
-                // FIX?:
                 case Yes ⇒
                     if (this.t == that.t)
                         NoUpdate

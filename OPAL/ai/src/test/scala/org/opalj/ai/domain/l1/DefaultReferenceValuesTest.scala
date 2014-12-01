@@ -490,6 +490,15 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 v117 should be(Yes)
             }
 
+            it("it should be able to handle complex refinements (method: \"complexRefinement\")") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "complexRefinement").get
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+
+                val theDomain.IsNull(lastChildAtPC22) = result.operandsArray(22).head
+                lastChildAtPC22 should be(Unknown)
+            }
+
             it("it should be possible to get precise information about a method's return values (method: \"maybeNull\")") {
                 val method = ReferenceValuesFrenzy.methods.find(_.name == "maybeNull").get
                 val theDomain = new TheDomain

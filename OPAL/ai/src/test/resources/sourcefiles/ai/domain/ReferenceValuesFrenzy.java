@@ -53,6 +53,24 @@ public class ReferenceValuesFrenzy {
     // Test methods/Test Fixture
     //
 
+    static boolean complexRefinement() {
+        // get the lastChild of result.
+        Object lastChild = maybeNull();
+
+        Object prev = lastChild;
+        while (lastChild != null) {
+            prev = lastChild;
+            lastChild = maybeNull();
+        }
+        //... here, lastChild is always null, but prev can be both
+        lastChild = prev; // pc:19 load und pc:20 store
+
+        if (lastChild != null) {
+            return false; // pc:26
+        }
+        return true; // pc:28
+    }
+
     static void multipleReferenceValues(String s) {
         int i = IntegerValuesFrenzy.anInt();
         String v = "v";
