@@ -601,7 +601,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
                 val returnValue @ IsReferenceValue(returnValues) = result.operandsArray(25).head
                 returnValue.isNull should be(Unknown)
-                returnValues.head.isNull should be(No)
+                returnValues.head.isNull should be(Unknown)
                 returnValues.tail.head.isNull should be(Unknown)
             }
 
