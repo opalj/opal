@@ -447,22 +447,25 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         StructuralUpdate(other.update(other.values, this, other.t))
 
                     else {
-                        // this value has the the same origin as the value found in 
-                        // MultipleRefrenceValues
+                        // This value has the the same origin as the value found in 
+                        // MultipleRefrenceValues.
                         val joinResult =
                             joinedValues.getOrElseUpdate(
                                 new IdentityPair(this, that),
                                 this.join(joinPC, that))
 
-                        if (joinResult.isNoUpdate || (joinResult.value eq that))
-                            // Though the referenced value does not need to be updated, 
+                        if (joinResult.isNoUpdate)
+                            StructuralUpdate(other.rejoinValue(that, this, this))
+                        else if (joinResult.value eq that) {
+                            // Though the referenced value does not need to be updated,
+                            // (this join that (<=> joinResult) => that)
                             // the MultipleReferenceValues (as a whole) may still need
-                            // to be updated!
+                            // to be updated (to relax some constraints)
                             StructuralUpdate(
                                 other.update(
                                     other.values, this,
                                     if (that.t == this.t) other.t else nextT()))
-                        else {
+                        } else {
                             val joinedValue =
                                 joinResult.value.asInstanceOf[DomainSingleOriginReferenceValue]
                             StructuralUpdate(other.rejoinValue(that, this, joinedValue))

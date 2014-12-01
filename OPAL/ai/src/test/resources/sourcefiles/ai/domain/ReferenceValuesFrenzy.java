@@ -245,8 +245,8 @@ public class ReferenceValuesFrenzy {
     static Object iterativelyUpdated(Object a) {
         do {
             if (a != null) {
-                doIt(a); // pc:5 ... a may refer to: the parameter (which is then not
-                         // null), the return value of maybeNull
+                doIt(a); // pc:5 "a" may refer to: the parameter (which is then not null)
+                         //                        the return value of maybeNull
             } else
                 a = maybeNull();
         } while (IntegerValuesFrenzy.anInt() % 2 == 1);

@@ -438,10 +438,36 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                         s"is:          $mv_actual\n"+
                         s"expected:    $mv_expected")
                 }
+            }
 
-                //               given java.lang.SecurityException(origin=7;isNull=No;isUpperBound;t=106) [#47c4e005]
-                //       join OneOf[2](java.lang.Exception(origin=7;isNull=No;isUpperBound;t=103) [#7439dd69],java.lang.Throwable(origin=61;isNull=Unknown;isUpperBound;t=107) [#27655fad]);lutb=java.lang.SecurityException;isPrecise=false;isNull=No;t=110 [#79770b00]
-                //            => OneOf[2](java.lang.Exception(origin=7;isNull=No;isUpperBound;t=103) [#7439dd69],java.lang.Throwable(origin=61;isNull=Unknown;isUpperBound;t=107) [#27655fad]);lutb=java.lang.Exception;isPrecise=false;isNull=Unknown;t=111 [#5b0a1055]
+            it("should handle a join of an ObjectValue with a MultipleReferenceValue that references the refined ObjectValue") {
+
+                val v0 = ObjectValue(111, Unknown, false, ObjectType.Object, t = 103)
+                val v1 = ObjectValue(111, No, false, ObjectType.Object, t = 103)
+                val v2 = ObjectValue(555, No, true, ObjectType.Object, t = 107)
+
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        No, true, UIDSet(ObjectType.Object),
+                        t = 3)
+
+                val mv_expected =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v0, v2),
+                        Unknown, false, UIDSet(ObjectType.Object),
+                        3)
+
+                val mv_actual = v0.join(-1, mv1)
+
+                mv_actual.updateType should be(StructuralUpdateType)
+
+                if (mv_actual.value != mv_expected) {
+                    fail(s"the join of: $v0\n"+
+                        s"with:        $mv1\n"+
+                        s"is:          ${mv_actual.value}\n"+
+                        s"expected:    $mv_expected")
+                }
             }
 
         }
@@ -570,7 +596,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 val value @ IsReferenceValue(values) = result.operandsArray(5).head
                 values.size should be(2)
                 value.isNull should be(No)
-                values.head.isNull should be(No) // a is the parameter
+                values.head.isNull should be(Unknown) // a is the parameter
                 values.tail.head.isNull should be(Unknown)
 
                 val returnValue @ IsReferenceValue(returnValues) = result.operandsArray(25).head

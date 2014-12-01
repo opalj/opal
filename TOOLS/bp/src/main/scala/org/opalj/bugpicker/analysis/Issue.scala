@@ -135,7 +135,7 @@ trait Issue {
 
         Some(
             <details class="locals">
-                <summary>Local Variable State</summary>
+                <summary>Local Variable State [pc={ pc + line(pc).map(" line="+_).getOrElse("") }]</summary>
                 <table>
                     <tr><th>Index</th><th>Name</th><th>Value</th></tr>
                     { lvsAsXHTML }
