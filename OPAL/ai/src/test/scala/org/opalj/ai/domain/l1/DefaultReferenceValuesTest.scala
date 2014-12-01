@@ -335,6 +335,58 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 mv1.join(-1, v2) should be(StructuralUpdate(mv2))
             }
 
+            it("should be able to rejoin a refined object value") {
+                val v0 = ObjectValue(222, No, false, ObjectType.Serializable, 2)
+
+                val v1 = NullValue(111, 1)
+                val v2 = ObjectValue(222, Unknown, false, ObjectType.Serializable, 2)
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        isNull = Yes, true, UIDSet.empty, t = 3)
+
+                val mv_expected =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v0, v1),
+                        Unknown, false, UIDSet(ObjectType.Serializable),
+                        3)
+
+                val mv_actual = v0.join(-1, mv1)
+                if (mv_actual != StructuralUpdate(mv_expected)) {
+                    fail(s"the join of: $v0\n"+
+                        s"with:        $mv1\n"+
+                        s"is:          $mv_actual\n"+
+                        s"expected:    StructuralUpdate($mv_expected)")
+                }
+            }
+
+            it("should be able to rejoin a refined array value") {
+                val v0 = ArrayValue(222, No, false, ArrayType(ObjectType.Serializable), 2)
+
+                val v1 = NullValue(111, 1)
+                val v2 = ArrayValue(222, Unknown, false, ArrayType(ObjectType.Serializable), 2)
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        Yes, true, UIDSet.empty,
+                        3)
+
+                val mv_expected =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v0, v1),
+                        Unknown, false, UIDSet(ArrayType(ObjectType.Serializable)),
+                        3)
+
+                val mv_actual = v0.join(-1, mv1)
+
+                if (mv_actual != StructuralUpdate(mv_expected)) {
+                    fail(s"the join of: $v0\n"+
+                        s"with:        $mv1\n"+
+                        s"is:          $mv_actual\n"+
+                        s"expected:    $mv_expected")
+                }
+            }
+
             it("should handle an idempotent rejoin a value") {
                 val v1 = ObjectValue(111, Unknown, false, ObjectType.Object, 1)
                 val v2 = ObjectValue(222, Unknown, false, ObjectType.Object, 2)
@@ -356,8 +408,40 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                         -1)
 
                 val mv1_join_v3 = mv1.join(-1, v3)
-                println(s"$mv1 join $v3 ===> $mv1_join_v3")
                 mv1_join_v3 should be(MetaInformationUpdate(expected_mv1_join_v3))
+            }
+
+            it("should handle a join of a refined ObjectValue with a MultipleReferenceValue that references the unrefined ObjectValue") {
+
+                val SecurityException = ObjectType("java/lang/SecurityException")
+                val v0 = ObjectValue(111, No, false, SecurityException, t = 106)
+                val v1 = ObjectValue(111, No, false, ObjectType.Exception, t = 103)
+                val v2 = ObjectValue(555, Unknown, false, ObjectType.Throwable, t = 107)
+
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        No, true, UIDSet(SecurityException),
+                        t = 3)
+
+                val mv_expected =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        No, false, UIDSet(SecurityException),
+                        3)
+
+                val mv_actual = v0.join(-1, mv1)
+
+                if (mv_actual != StructuralUpdate(mv_expected)) {
+                    fail(s"the join of: $v0\n"+
+                        s"with:        $mv1\n"+
+                        s"is:          $mv_actual\n"+
+                        s"expected:    $mv_expected")
+                }
+
+                //               given java.lang.SecurityException(origin=7;isNull=No;isUpperBound;t=106) [#47c4e005]
+                //       join OneOf[2](java.lang.Exception(origin=7;isNull=No;isUpperBound;t=103) [#7439dd69],java.lang.Throwable(origin=61;isNull=Unknown;isUpperBound;t=107) [#27655fad]);lutb=java.lang.SecurityException;isPrecise=false;isNull=No;t=110 [#79770b00]
+                //            => OneOf[2](java.lang.Exception(origin=7;isNull=No;isUpperBound;t=103) [#7439dd69],java.lang.Throwable(origin=61;isNull=Unknown;isUpperBound;t=107) [#27655fad]);lutb=java.lang.Exception;isPrecise=false;isNull=Unknown;t=111 [#5b0a1055]
             }
 
         }

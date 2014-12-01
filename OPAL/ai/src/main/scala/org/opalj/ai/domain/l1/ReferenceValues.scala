@@ -452,7 +452,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                                 this.join(joinPC, that))
 
                         if (joinResult.isNoUpdate || (joinResult.value eq that))
-                            StructuralUpdate(other)
+                            // Though the referenced value does not need to be updated, 
+                            // the MultipleReferenceValues (as a whole) may still need
+                            // to be updated!
+                            StructuralUpdate(
+                                other.update(
+                                    other.values, this,
+                                    if (that.t == this.t) other.t else nextT()))
                         else {
                             val joinedValue =
                                 joinResult.value.asInstanceOf[DomainSingleOriginReferenceValue]
@@ -1063,13 +1069,19 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             update(newValues, joinValue, newT)
         }
 
-        protected[this] def update(
+        protected[ReferenceValues] def update(
             newValues: SortedSet[DomainSingleOriginReferenceValue],
             joinedValue: DomainSingleOriginReferenceValue,
             newT: Timestamp): DomainMultipleReferenceValues = {
 
-            val newIsNull = domain.isNull(newValues)
-            val newIsPrecise = if (newIsNull.isYes) true else domain.isPrecise(newValues)
+            val newIsNull = {
+                val newIsNull = domain.isNull(newValues)
+                if (newIsNull.isUnknown)
+                    this.isNull & joinedValue.isNull
+                else
+                    newIsNull
+            }
+            val newIsPrecise = newIsNull.isYes || domain.isPrecise(newValues)
             val newUTB =
                 if (newIsNull.isYes)
                     UIDSet.empty[ReferenceType]
@@ -1078,14 +1090,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     val baseUTB =
                         classHierarchy.joinUpperTypeBounds(
                             this.upperTypeBound, joinedValue.upperTypeBound)
-
                     if (newValuesUTB != baseUTB &&
                         classHierarchy.isSubtypeOf(newValuesUTB, baseUTB).isYes)
                         newValuesUTB
                     else
                         baseUTB
                 }
-
             MultipleReferenceValues(newValues, newIsNull, newIsPrecise, newUTB, newT)
         }
 
@@ -1640,8 +1650,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: MultipleReferenceValues ⇒ that.values == this.values
-                case _                             ⇒ false
+                case that: MultipleReferenceValues ⇒
+                    this.isNull == that.isNull &&
+                        this.isPrecise == that.isPrecise &&
+                        this.upperTypeBound == that.upperTypeBound &&
+                        that.values == this.values
+                case _ ⇒
+                    false
             }
         }
 
