@@ -107,7 +107,7 @@ trait Issue {
             return None;
 
         val lvsAsXHTML =
-            for ((index, theLV) ← localVariableDefinitions) yield {
+            for ((index, theLV) ← localVariableDefinitions.toSeq.sortWith((a, b) ⇒ a._1 < b._1)) yield {
                 val localValue = localVariableValues(index)
                 val localValueAsXHTML =
                     if (localValue == null)
