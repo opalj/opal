@@ -45,10 +45,13 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
 
     type DomainStringValue <: StringValue with DomainObjectValue
 
+    // todo use the same t for all JVM strings 
+
     protected class StringValue(
-        pc: PC, // sets the pc value of the superclass
-        val value: String)
-            extends SObjectValue(pc, No, true, ObjectType.String) {
+        origin: ValueOrigin, // sets the pc value of the superclass
+        val value: String,
+        t: Timestamp)
+            extends SObjectValue(origin, No, true, ObjectType.String, t) {
         this: DomainStringValue ⇒
 
         require(value != null)
@@ -58,18 +61,39 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
             other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case that: StringValue if (this.value == that.value) ⇒
-                    NoUpdate
-                case _ ⇒
-                    val answer = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
-                    if (answer.isNoUpdate) {
-                        // => This string value and the other value have a corresponding
-                        //    abstract representation (w.r.t. the next abstraction level!)
-                        //    but we still need to drop the concrete information...
-                        StructuralUpdate(ObjectValue(pc, No, true, ObjectType.String))
+                case that: StringValue ⇒
+                    if (this.value == that.value) {
+                        if (this.t == that.t)
+                            NoUpdate
+                        else
+                            MetaInformationUpdate(StringValue(origin, value, t))
                     } else {
-                        answer
+                        // we have to drop the concrete information...
+                        // given that the values are different the timestamp must
+                        // be different too
+                        val newValue = ObjectValue(origin, No, true, ObjectType.String, nextT())
+                        StructuralUpdate(newValue)
                     }
+                case _ ⇒
+                    val result = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
+                    if (result.isStructuralUpdate) {
+                        result
+                    } else {
+                        // This (string) value and the other value may have a corresponding
+                        // abstract representation (w.r.t. the next abstraction level!)
+                        // but we still need to drop the concrete information.
+                        StructuralUpdate(result.value.update())
+                    }
+            }
+        }
+
+        override def abstractsOver(other: DomainValue): Boolean = {
+            if (this eq other)
+                return true
+
+            other match {
+                case that: StringValue ⇒ that.value == this.value
+                case _                 ⇒ false
             }
         }
 
@@ -90,7 +114,8 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
 
         override def hashCode: Int = super.hashCode * 41 + value.hashCode()
 
-        override def toString(): String = "String(pc="+pc+", value=\""+value+"\")"
+        override def toString(): String =
+            s""""String(origin=$origin;value="$value";t=$t)"""
 
     }
 
@@ -113,7 +138,8 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
     }
 
     // Needs to be implemented (the default implementation is now longer sufficient!)
-    override def StringValue(pc: PC, value: String): DomainObjectValue
+    override def StringValue(origin: ValueOrigin, value: String): DomainObjectValue
 
+    def StringValue(origin: ValueOrigin, value: String, t: Timestamp): DomainObjectValue
 }
 

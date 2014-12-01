@@ -89,8 +89,7 @@ object CallGraphFactory {
         if (theProject.classHierarchy.rootTypes.tail.nonEmpty)
             // TODO Use a Log...
             println(
-                "[warn] the class hierarchy is incomplete; "+
-                    "the following types have incomplete supertype information: "+
+                "[warn] missing supertype information for: "+
                     theProject.classHierarchy.rootTypes.filterNot(_ eq ObjectType.Object).map(_.toJava).mkString(", ")
             )
 

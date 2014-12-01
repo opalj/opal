@@ -199,7 +199,6 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
         val result = BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions.size should be(0)
-        println(domain.allReturnedValues.mkString("\n"))
 
         domain.allReturnedValues.size should be(1)
         domain.allReturnedValues.head should be((17, domain.IntegerRange(1)))

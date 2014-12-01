@@ -121,8 +121,7 @@ trait RecordMethodCallResults
                     case utb ⇒
                         val exceptionType =
                             classHierarchy.joinObjectTypesUntilSingleUpperBound(
-                                utb.asInstanceOf[UIDSet[ObjectType]],
-                                true)
+                                utb.asInstanceOf[UIDSet[ObjectType]])
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,
                             exceptionValuesPerType.getOrElse(
