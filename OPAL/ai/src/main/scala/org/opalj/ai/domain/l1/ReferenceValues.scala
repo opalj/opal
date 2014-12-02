@@ -673,15 +673,15 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (this.isNull.isUnknown && that.isNull.isYes)
                 return true;
 
-            if (this.isNull.isNo && that.isNull.isYesOrUnknown)
-                return false;
-
-            (!this.isPrecise || that.isPrecise) && {
-                val thatUTB = that.upperTypeBound
-                thatUTB.consistsOfOneElement &&
-                    thatUTB.first.isArrayType &&
-                    isSubtypeOf(thatUTB.first.asArrayType, this.theUpperTypeBound).isYes
-            }
+            val result =
+                (this.isNull.isUnknown || that.isNull.isNo) &&
+                    (!this.isPrecise || that.isPrecise) && {
+                        val thatUTB = that.upperTypeBound
+                        thatUTB.consistsOfOneElement &&
+                            thatUTB.first.isArrayType &&
+                            isSubtypeOf(thatUTB.first.asArrayType, this.theUpperTypeBound).isYes
+                    }
+            result
         }
 
         override def adapt(
