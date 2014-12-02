@@ -244,8 +244,14 @@ case class StandardIssue(
                     summary<abbr class="type object_type" title="Local variable information (debug information) is not available.">&#9888;</abbr>
                 </dt>
 
+        val dataKind =
+            kind.map(_.replace(' ', '_')).mkString(" ")
+
+        val dataCategories =
+            categories.map(_.replace(' ', '_')).mkString(" ")
+
         val node =
-            <div class="an_issue" style={ s"color:${relevance.asHTMLColor};" } data-relevance={ relevance.value.toString } data-kind={ kind.mkString(" ") } data-category={ categories.mkString(" ") }>
+            <div class="an_issue" style={ s"color:${relevance.asHTMLColor};" } data-relevance={ relevance.value.toString } data-kind={ dataKind } data-category={ dataCategories }>
                 <dl>
                     { infoNodes }
                     { summaryNode }

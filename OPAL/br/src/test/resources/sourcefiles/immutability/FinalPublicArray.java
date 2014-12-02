@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,54 +22,21 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package bugpicker
-package analysis
+package immutability;
 
-import scala.Console.{ RED, YELLOW, RESET }
+import immutability.annotations.Mutable;
 
 /**
- * Describes the overall relevance of a finding.
+ * A mutable class which defines a public field which is an array.
  *
- * When calculation the relevance you should take all
- * properties of the associated issue into consideration:
- *  - kind of issue
- *  - category of issue
- *  - accuracy of the analysis
- *
- * @param value A value between 1 (not really relevant) and 100 (absolutely relevant).
- *
- * @author Michael Eichberg
+ * @author Andre Pacak
  */
-case class Relevance(value: Int) extends AnyVal {
+@Mutable("public visible array")
+public class FinalPublicArray {
 
-    /**
-     * The lower the value, the "whiter" the color. If the value is 100
-     * then the color will be black.
-     */
-    def asHTMLColor = {
-        val rgbValue = 0 + (100 - value) * 2
-        s"rgb($rgbValue,$rgbValue,$rgbValue)"
-    }
-
-    def asAnsiColoredString: String = {
-        if (value > 65)
-            RED+"[error]"+RESET
-        else if (value > 32)
-            YELLOW+"[warn]"+RESET
-        else
-            "[info]"
-    }
-}
-
-object Relevance {
-    final val DefaultRelevance = Relevance(50)
-    final val High = Relevance(70)
-    final val VeryHigh = Relevance(80)
-    final val OfUtmostImportance = Relevance(99)
-    final val Undetermined = Relevance(0)
+    public final int[] array = new int[10];
 }

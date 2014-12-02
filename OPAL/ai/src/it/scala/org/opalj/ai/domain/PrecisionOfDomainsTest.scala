@@ -118,8 +118,8 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                                 val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                                 val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                                 if (!lVD.abstractsOver(rVD)) {
-                                    return Some(s"$pc: the operand stack value $lVD"+
-                                        " does not abstract over "+rVD +
+                                    return Some(s"$pc: the operand stack value $lVD (${lVD.getClass.getName})"+
+                                        s" does not abstract over $rVD (${rVD.getClass.getName})"+
                                         s" (original: $lValue join $rValue )")
                                 }
                                 true
