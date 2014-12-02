@@ -31,12 +31,12 @@ package immutability;
 import immutability.annotations.Mutable;
 
 /**
- * A mutable class which contains an array that gets returned by a public method but not
+ * A mutable class which contains an array that is returned by a public method but not
  * cloned.
  * 
  * @author Andre Pacak
  */
-@Mutable("does not clone array when returning it by a public method")
+@Mutable("does not clone the internal array when it is returned by the getArray method")
 public class ReturnNonCloneArray {
 
     private final int[] array = new int[10];

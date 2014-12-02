@@ -31,12 +31,12 @@ package immutability;
 import immutability.annotations.Immutable;
 
 /**
- * A immutable class which contains an array that gets set via a constructor but gets
- * cloned.
+ * An immutable class which references an array that is set via a constructor and which
+ * is cloned.
  * 
  * @author Andre Pacak
  */
-@Immutable("array which gets passed as an argument get cloned before it gets assigned to a field")
+@Immutable("the given array is cloned before it is assigned to a field and a clone is returned")
 public class ClonePassedArray {
 
     private final int[] array;

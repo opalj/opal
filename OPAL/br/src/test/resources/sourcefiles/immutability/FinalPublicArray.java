@@ -31,7 +31,7 @@ package immutability;
 import immutability.annotations.Mutable;
 
 /**
- * A mutable class which defines a public field which is of the type array.
+ * A mutable class which defines a public field which is an array.
  *
  * @author Andre Pacak
  */

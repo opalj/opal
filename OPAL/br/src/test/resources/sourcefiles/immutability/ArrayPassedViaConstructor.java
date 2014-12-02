@@ -31,11 +31,11 @@ package immutability;
 import immutability.annotations.Mutable;
 
 /**
- * A mutable class which contains an array which gets set via the constructor.
+ * A mutable class which references an array which is set via the constructor.
  * 
  * @author Andre Pacak
  */
-@Mutable("array is visble outside of class because constructor does not create a clone of the argument")
+@Mutable("array is visible outside of class because the constructor does not create a clone of the passed array")
 public class ArrayPassedViaConstructor {
 
     private final int[] array;

@@ -32,12 +32,12 @@ import immutability.helperclasses.ImmutableClass;
 import immutability.annotations.Immutable;
 
 /**
- * A recursive data structure that is immutable because all fields are final, immutable
- * itself
+ * A recursive data structure that is immutable because all (public) fields are final and
+ * immutable.
  * 
  * @author Andre Pacak
  */
-@Immutable("every field is immutable itself and final")
+@Immutable("all referenced objects are immutable")
 public class ImmutableRecursiveDataStructure {
 
     public final ImmutableClass object;

@@ -32,8 +32,7 @@ import immutability.helperclasses.MutableClass;
 import immutability.annotations.Mutable;
 
 /**
- * A recursive data structure that is mutable because all fields are final, mutable and
- * visible.
+ * A recursive data structure that is mutable because the referenced fields are mutable.
  * 
  * @author Andre Pacak
  */
