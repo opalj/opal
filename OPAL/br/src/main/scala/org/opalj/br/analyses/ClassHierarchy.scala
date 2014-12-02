@@ -1634,6 +1634,13 @@ class ClassHierarchy private (
         result
     }
 
+    /**
+     * Given an upper type bound '''a''' most specific type that is a common supertype
+     * of the given types is determined.
+     *
+     * @see `joinObjectTypesUntilSingleUpperBound(upperTypeBoundA: ObjectType,
+     *       upperTypeBoundB: ObjectType,reflexive: Boolean)` for further details.
+     */
     def joinObjectTypesUntilSingleUpperBound(
         upperTypeBound: UIDSet[ObjectType]): ObjectType = {
         if (upperTypeBound.consistsOfOneElement)
