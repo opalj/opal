@@ -89,7 +89,14 @@ trait DefaultTypeLevelReferenceValues
                 case No if isPrecise ||
                     supertype.isObjectType /* the array's supertypes: Object, Serializable and Cloneable are handled by domain.isSubtypeOf*/ ||
                     theUpperTypeBound.elementType.isBaseType ||
-                    (supertype.isArrayType && supertype.asArrayType.elementType.isBaseType) ⇒ No
+                    (
+                        supertype.isArrayType &&
+                        supertype.asArrayType.elementType.isBaseType &&
+                        (
+                            theUpperTypeBound.dimensions >= supertype.asArrayType.dimensions ||
+                            (theUpperTypeBound.componentType ne ObjectType.Object)
+                        )
+                    ) ⇒ No
                 case _ ⇒ Unknown
             }
         }
