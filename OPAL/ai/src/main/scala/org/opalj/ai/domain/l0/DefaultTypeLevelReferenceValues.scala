@@ -107,9 +107,10 @@ trait DefaultTypeLevelReferenceValues
                     )
 
                 case IsAReferenceValue(UIDSet1(valueType: ArrayType)) if valueType.elementType.isBaseType ⇒
-                    // supports arrays of arrays of primitive values
-                    if (theUpperTypeBound.componentType eq valueType)
-                        Yes
+                    //... we want to store an Array (of Array of ...) of primitives 
+                    // in this array
+                    if (theUpperTypeBound.componentType.isReferenceType)
+                        classHierarchy.isSubtypeOf(valueType, theUpperTypeBound.componentType.asReferenceType)
                     else
                         No
 
