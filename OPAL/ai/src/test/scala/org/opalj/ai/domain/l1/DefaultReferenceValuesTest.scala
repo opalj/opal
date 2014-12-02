@@ -208,6 +208,18 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 refinedOperands.head should be(v3)
             }
 
+            it("should be able to case an array of objects to an array of array of ints") {
+
+                // ASSERTION
+                isSubtypeOf(
+                    ArrayType(ArrayType(IntegerType)),
+                    ArrayType(ObjectType.Object)
+                ) should be(Yes)
+
+                val v1 = ArrayValue(111, No, false, ArrayType(ObjectType.Object), 1)
+                v1.isValueSubtypeOf(ArrayType(ArrayType(IntegerType))) should be(Unknown)
+            }
+
         }
 
         //
