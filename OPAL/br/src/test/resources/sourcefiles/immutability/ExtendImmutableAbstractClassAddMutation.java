@@ -37,7 +37,7 @@ import immutability.annotations.Mutable;
  * 
  * @author Andre Pacak
  */
-@Mutable("extends an abstract immutable class and defines a public setter method for a protected field")
+@Mutable("defines a public setter method for a protected field of an immutable super class")
 public abstract class ExtendImmutableAbstractClassAddMutation extends AbstractImmutableClass {
 
     public void doSomething(int x) {

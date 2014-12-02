@@ -91,6 +91,21 @@ class VTACallGraphExtractor(
             //    of the declaringClassType => the type hierarchy information is not complete;
             //    the central factory method already "handles" this issue - hence, we don't care 
 
+            // Note that explicitly supporting "MultipleReferencesValues", e.g.,
+            // to create a very precise in cases such as:
+            //     Object o = null;
+            //     if(whatever)
+            //       o = new Object();
+            //     else
+            //       o = new Vector();
+            //     o.toString //<----- the relevant call
+            // is probably not worth the effort. A simple study of the JDK has
+            // shown that in the very vast majority of cases that upper type bound
+            // of the value as such is also the upper type bound of a specific value.
+            // Hence, the explicit support would not increase the precision.
+            // This situation might change if the analysis (as a whole) is getting more
+            // precise.
+
             if (receiverIsNull.isYes) {
                 addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
                 return ;

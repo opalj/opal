@@ -57,9 +57,9 @@ trait DefaultTypeLevelReferenceValues
     //
     // -----------------------------------------------------------------------------------
 
-    type DomainNullValue <: NullValue with DomainReferenceValue
-    type DomainObjectValue <: ObjectValue with DomainReferenceValue // <= SObject.. and MObject...
-    type DomainArrayValue <: ArrayValue with DomainReferenceValue
+    type DomainNullValue <: NullValue with AReferenceValue
+    type DomainObjectValue <: ObjectValue with AReferenceValue // <= SObject.. and MObject...
+    type DomainArrayValue <: ArrayValue with AReferenceValue
 
     protected[this] class NullValue extends super.NullValue { this: DomainNullValue ⇒
 
@@ -347,6 +347,8 @@ trait DefaultTypeLevelReferenceValues
         override val upperTypeBound: UIDSet[ObjectType])
             extends ObjectValue {
         value: DomainObjectValue ⇒
+
+        assert(upperTypeBound.size > 1)
 
         override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 

@@ -36,6 +36,7 @@ import immutability.annotations.Mutable;
  *
  * @author Andre Pacak
  */
-@Mutable("extends mutable class and defines nothing itself")
+@Mutable("the superclass is mutable")
 public class ExtendMutableClass extends NonFinalPublicClass {
+    
 }

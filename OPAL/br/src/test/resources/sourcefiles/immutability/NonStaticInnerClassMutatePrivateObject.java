@@ -37,7 +37,7 @@ import immutability.annotations.Mutable;
  * 
  * @author Andre Pacak
  */
-@Mutable("inner class provides method that mutates field of enclosing class")
+@Mutable("the inner class mutates a field of the enclosing class")
 public class NonStaticInnerClassMutatePrivateObject {
 
     private final MutableClass object;

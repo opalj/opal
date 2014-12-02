@@ -36,6 +36,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
+import org.opalj.ai.analyses.FieldValueInformation
 
 /**
  * The domain that is used to identify the issues.
@@ -44,6 +45,7 @@ import org.opalj.ai.domain
  */
 class BugPickerAnalysisDomain(
     override val project: Project[java.net.URL],
+    val fieldValueInformation: FieldValueInformation,
     override val method: Method,
     override val maxCardinalityOfIntegerRanges: Long = 16l)
         extends CorrelationalDomain

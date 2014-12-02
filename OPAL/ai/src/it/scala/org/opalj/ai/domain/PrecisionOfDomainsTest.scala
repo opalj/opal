@@ -50,6 +50,7 @@ import org.scalatest.FunSpec
 class PrecisionOfDomainsTest extends FunSpec with Matchers {
 
     describe("a more precise domain") {
+
         it("should return a more precise result") {
             val project = org.opalj.br.TestSupport.createJREProject
             // The following three domains are very basic domains that – given that the
@@ -108,16 +109,18 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
             def abstractsOver(r1: AIResult, r2: AIResult): Option[String] = {
                 val codeSize = r1.operandsArray.length
 
+                var pc = -1
                 r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) ⇒
+                    pc += 1
                     (lOperands == null && rOperands == null) ||
                         (lOperands != null && (rOperands == null ||
                             lOperands.corresponds(rOperands) { (lValue, rValue) ⇒
                                 val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                                 val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                                 if (!lVD.abstractsOver(rVD)) {
-                                    return Some("the operand stack value "+lValue+
-                                        " does not abstract over "+rValue+
-                                        " the result of the join was: "+lVD.join(-1, rVD))
+                                    return Some(s"$pc: the operand stack value $lVD"+
+                                        " does not abstract over "+rVD +
+                                        s" (original: $lValue join $rValue )")
                                 }
                                 true
                             }
@@ -133,29 +136,26 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
             val classFilesPerPackageSorted = classFilesPerPackage.toSeq.sortWith(
                 (v1, v2) ⇒ v1._1 < v2._1
             )
-            for ((packageName, classFiles) ← classFilesPerPackageSorted) {
-                info("processing: "+(if (packageName.length == 0) "<DEFAULT>" else packageName))
-                for {
-                    classFile ← classFiles.par
-                    method @ MethodWithBody(body) ← classFile.methods
-                } {
-                    val a1 = BaseAI
-                    val r1 = a1(classFile, method, new TypeLevelDomain(body, project))
-                    val a2 = BaseAI
-                    val r2 = a2(classFile, method, new L1Domain(body, project))
+            for {
+                classFile ← project.classFiles.par
+                method @ MethodWithBody(body) ← classFile.methods
+            } {
+                val a1 = BaseAI
+                val r1 = a1(classFile, method, new TypeLevelDomain(body, project))
+                val a2 = BaseAI
+                val r2 = a2(classFile, method, new L1Domain(body, project))
 
-                    abstractsOver(r1, r2).foreach { m ⇒
-                        failed.set(true)
-                        println(
-                            classFile.thisType.toJava+"{ "+
-                                method.toJava+"(Instructions "+method.body.get.instructions.size+")\n"+
-                                "\t// the less precise domain did not abstract over the state of the more precise domain\n"+
-                                "\t// "+Console.BOLD + m + Console.RESET+"\n"
-                        )
-                    }
-
-                    comparisonCount.incrementAndGet()
+                abstractsOver(r1, r2).foreach { m ⇒
+                    failed.set(true)
+                    println(
+                        classFile.thisType.toJava+" \""+
+                            method.toJava+"\" /*Instructions "+method.body.get.instructions.size+"*/\n"+
+                            "\t// the less precise domain did not abstract over the state of the more precise domain\n"+
+                            "\t// "+Console.BOLD + m + Console.RESET+"\n"
+                    )
                 }
+
+                comparisonCount.incrementAndGet()
             }
 
             if (comparisonCount.get() < 2)

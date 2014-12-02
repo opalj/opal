@@ -87,7 +87,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             remainingv2s find (domain.asObjectValue(_).upperTypeBound == v1UTB) match {
                 case Some(v2) ⇒
                     remainingv2s = remainingv2s filterNot (_ == v2)
-                    v = mergeDomainValues(pc, v1, v2) :: v
+                    v = mergeDomainValues(pc, v1, v2).asInstanceOf[ExceptionValue] :: v
                 case None ⇒
                     v = v1 :: v
             }
@@ -177,11 +177,15 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             case ComputationWithResultAndException(r1, e1) ⇒
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) ⇒
-                        ComputedValueOrException(mergeDomainValues(pc, r1, r2), mergeDomainValues(pc, e1, e2))
+                        ComputedValueOrException(
+                            mergeDomainValues(pc, r1, r2) /*Value*/ ,
+                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue])
                     case ComputationWithResult(r2) ⇒
                         ComputedValueOrException(mergeDomainValues(pc, r1, r2), e1)
                     case ComputationWithException(e2) ⇒
-                        ComputedValueOrException(r1, mergeDomainValues(pc, e1, e2))
+                        ComputedValueOrException(
+                            r1,
+                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue])
                 }
 
             case ComputationWithResult(r1) ⇒
@@ -197,11 +201,14 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             case ComputationWithException(e1) ⇒
                 c2 match {
                     case ComputationWithResultAndException(r2, e2) ⇒
-                        ComputedValueOrException(r2, mergeDomainValues(pc, e1, e2))
+                        ComputedValueOrException(
+                            r2,
+                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue])
                     case ComputationWithResult(r2) ⇒
                         ComputedValueOrException(r2, e1)
                     case ComputationWithException(e2) ⇒
-                        ThrowsException(mergeDomainValues(pc, e1, e2))
+                        ThrowsException(
+                            mergeDomainValues(pc, e1, e2).asInstanceOf[ExceptionValue])
                 }
         }
     }
@@ -212,13 +219,13 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     //
     // -----------------------------------------------------------------------------------
 
-    type DomainReferenceValue <: ReferenceValue with DomainValue
+    type AReferenceValue <: DomainReferenceValue with ReferenceValue
 
-    type DomainObjectValue <: ObjectValue with DomainReferenceValue
+    type DomainObjectValue <: ObjectValue with AReferenceValue
 
-    type DomainArrayValue <: ArrayValue with DomainReferenceValue
+    type DomainArrayValue <: ArrayValue with AReferenceValue
 
-    type DomainNullValue <: NullValue with DomainReferenceValue
+    type DomainNullValue <: NullValue with AReferenceValue
 
     trait ArrayAbstraction {
 
@@ -237,7 +244,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             with Value
             with IsReferenceValue
             with ArrayAbstraction {
-        this: DomainReferenceValue ⇒
+        this: AReferenceValue ⇒
 
         /**
          * Returns `ComputationalTypeReference`.
@@ -245,12 +252,12 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         final override def computationalType = ComputationalTypeReference
 
         final override def asDomainValue(
-            implicit targetDomain: Domain): targetDomain.DomainValue = {
+            implicit targetDomain: Domain): targetDomain.DomainReferenceValue = {
             if (targetDomain ne domain)
                 throw new UnsupportedOperationException(
                     "the given domain has to be equal to this value's domain"
                 )
-            this.asInstanceOf[targetDomain.DomainValue]
+            this.asInstanceOf[targetDomain.DomainReferenceValue]
         }
 
     }
@@ -259,7 +266,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
      * A reference value with a single (upper) type (bound).
      */
     protected[this] trait SReferenceValue[T <: ReferenceType] {
-        this: DomainReferenceValue ⇒
+        this: AReferenceValue ⇒
 
         val theUpperTypeBound: T
 
@@ -446,8 +453,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
      * a type cast and is intended to be used to communicate that the value has
      * to be a reference value (if the underlying byte code is valid.)
      */
-    def asReferenceValue(value: DomainValue): DomainReferenceValue =
-        value.asInstanceOf[DomainReferenceValue]
+    def asReferenceValue(value: DomainValue): AReferenceValue =
+        value.asInstanceOf[AReferenceValue]
 
     def asObjectValue(value: DomainValue): DomainObjectValue =
         value.asInstanceOf[DomainObjectValue]
@@ -489,22 +496,39 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         val v2 = asReferenceValue(value2)
         val value1IsNull = v1.isNull
         val value2IsNull = v2.isNull
-        if (value1IsNull.isYes && value2IsNull.isYesOrNo)
-            // both are null or the second one is definitively not null
+        if (value1IsNull.isYes)
+            // the answer is unknown if the second value is unknown, no if the second
+            // value is no and yes if the second value is also yes
             value2IsNull
-        else if (value2IsNull.isYes && value1IsNull.isNo)
-            // both are null or the first one is definitively not null
-            No
-        else if (value1IsNull.isNoOrUnknown && value2IsNull.isNoOrUnknown &&
-            v1.isPrecise && v2.isPrecise &&
-            v1.upperTypeBound != v2.upperTypeBound)
-            No
-        else
-            // we could also check if it is conceivable that both values are not equal based 
-            // on the available type information... However, if we only have a 
-            // fragmented/incomplete class hierarchy, the information is most likely of limited
-            // value
-            Unknown
+        else if (value2IsNull.isYes)
+            // value1IsNull is either No or unknown, both represents the correct answer
+            value1IsNull
+        else {
+            val v1UTB = v1.upperTypeBound
+            val v2UTB = v2.upperTypeBound
+            if (v1.isPrecise && v2.isPrecise)
+                if (v1UTB != v2UTB)
+                    // two objects with different runtime types are never equal
+                    No
+                else
+                    // though both values have the same runtime type, we don't know
+                    // if they refere to the same object
+                    Unknown
+            else {
+                // - both values may not be null 
+                // - at least one value is not precise
+                if (classHierarchy.isSubtypeOf(v1UTB, v2UTB).isNo &&
+                    classHierarchy.isSubtypeOf(v2UTB, v1UTB).isNo &&
+                    // two interfaces that are not in an inheritance relation can 
+                    // still be implemented by the same class and, hence, the references
+                    // can still be equal
+                    v1UTB.exists(t ⇒ t.isObjectType && !classHierarchy.isInterface(t.asObjectType)) &&
+                    v2UTB.exists(t ⇒ t.isObjectType && !classHierarchy.isInterface(t.asObjectType)))
+                    No
+                else
+                    Unknown
+            }
+        }
     }
 
     final override def isValueSubtypeOf(
@@ -639,15 +663,15 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     // -----------------------------------------------------------------------------------
 
     object IsNull {
-        def unapply(value: DomainReferenceValue): Some[Answer] = Some(value.isNull)
+        def unapply(value: AReferenceValue): Some[Answer] = Some(value.isNull)
     }
 
     object IsPrecise {
-        def unapply(value: DomainReferenceValue): Some[Boolean] = Some(value.isPrecise)
+        def unapply(value: AReferenceValue): Some[Boolean] = Some(value.isPrecise)
     }
 
     object UpperTypeBound {
-        def unapply(value: DomainReferenceValue): Some[UpperTypeBound] =
+        def unapply(value: AReferenceValue): Some[UpperTypeBound] =
             Some(value.upperTypeBound)
     }
 
@@ -665,7 +689,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
 
     override def ReferenceValue(
         pc: PC,
-        upperTypeBound: ReferenceType): DomainReferenceValue = {
+        upperTypeBound: ReferenceType): AReferenceValue = {
         if (upperTypeBound.isArrayType)
             ArrayValue(pc, upperTypeBound.asArrayType)
         else
@@ -800,11 +824,6 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     // if its properties are correctly abstracting over the current state. Hence,
     // the same domain value is used to potentially represent different objects at
     // runtime/this domain does not support the identification of aliases.
-    // As long as the memory address/the reference of a DomainValue is used to ensure
-    // termination, we cannot propagate constraints. A different property is needed
-    // that does not depend on the reference. (I.e., we cannot simply create a new
-    // domain value whenever some operation is performed since we cannot guarantee 
-    // the termination any longer!)
 
     def refEstablishUpperBound(
         pc: PC,

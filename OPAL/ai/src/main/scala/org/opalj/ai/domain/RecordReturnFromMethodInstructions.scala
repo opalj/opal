@@ -82,7 +82,7 @@ trait RecordReturnFromMethodInstructions extends ReturnInstructionsDomain {
     }
 
     // handles all kinds of abrupt method returns 
-    override def abruptMethodExecution(pc: PC, exception: DomainValue): Unit = {
+    override def abruptMethodExecution(pc: PC, exception: ExceptionValue): Unit = {
         returnFromMethodInstructions = pc +≈: returnFromMethodInstructions
     }
 }

@@ -37,7 +37,7 @@ import immutability.annotations.Immutable;
  *
  * @author Andre Pacak
  */
-@Immutable("the fields type is immutable itself")
+@Immutable("defines a final field whose value is immutable")
 public class PrivateImmutableObject {
 
     private ImmutableClass object;

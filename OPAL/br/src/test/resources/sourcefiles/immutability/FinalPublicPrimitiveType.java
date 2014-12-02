@@ -36,7 +36,7 @@ import immutability.annotations.Immutable;
  *
  * @author Andre Pacak
  */
-@Immutable("final primitive type field")
+@Immutable("defines a final field with primitive type")
 public class FinalPublicPrimitiveType {
 
     public final int x = 1;

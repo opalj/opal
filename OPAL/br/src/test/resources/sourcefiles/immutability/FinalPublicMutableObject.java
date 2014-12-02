@@ -36,8 +36,9 @@ import immutability.annotations.Mutable;
  *
  * @author Andre Pacak
  */
-@Mutable("visibile mutable object")
+@Mutable("the object referred to by the public, final field is mutable")
 public class FinalPublicMutableObject {
 
     public final MutableClass object = new MutableClass();
+    
 }

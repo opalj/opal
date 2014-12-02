@@ -37,7 +37,7 @@ import immutability.annotations.Immutable;
  *
  * @author Andre Pacak
  */
-@Immutable("final immutable object")
+@Immutable("the object referred to by the final, public field is immutable")
 public class FinalPublicImmutableObject {
 
     public final ImmutableClass object = new ImmutableClass();

@@ -31,15 +31,15 @@ package immutability.helperclasses;
 import immutability.annotations.Mutable;
 
 /**
- * A simple mutable class with a public field of primitive type.
+ * A simple mutable class with a public int field.
  * 
  * @author Andre Pacak
  */
-@Mutable("public non-final primitive")
+@Mutable("defines a public non-final primitive field")
 public class MutableClass implements Cloneable {
 
     public int x = 0;
-    
+
     public MutableClass clone() {
         return new MutableClass();
     }

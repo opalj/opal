@@ -29,15 +29,16 @@
 package immutability;
 
 import immutability.helperclasses.ImmutableClass;
-import immutability.annotations.Immutable;
+import immutability.annotations.Mutable;
 
 /**
- * An immutable class which contains a field that references an immutable object which is
- * passed via constructor.
+ * A Mutable class which contains a field that references an object with type
+ * ImmutableClass which may, however, hold a reference to an object which is a
+ * subtype and which is mutable.
  *
  * @author Andre Pacak
  */
-@Immutable("object passed via constructor is immutable and the visible object is immutable")
+@Mutable("defines a final field which may reference an externally created, mutable object")
 public class ReferenceImmutableObjectPassedViaConstructor {
 
     private final ImmutableClass object;

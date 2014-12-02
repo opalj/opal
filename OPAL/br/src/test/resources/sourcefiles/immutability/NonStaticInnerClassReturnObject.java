@@ -37,7 +37,7 @@ import immutability.annotations.Mutable;
  * 
  * @author Andre Pacak
  */
-@Mutable("inner class provides getter method for mutable object of enclosing class")
+@Mutable("defines an inner class that provides access to the mutable object to the outside")
 public class NonStaticInnerClassReturnObject {
 
     private final MutableClass object;

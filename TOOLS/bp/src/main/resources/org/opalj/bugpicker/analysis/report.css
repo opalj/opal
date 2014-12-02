@@ -61,6 +61,14 @@ div.an_issue{
 	font-weight: 300;
 }
 
+div.issue_additional_info{
+	border-top: 1px dashed rgb(200,200,200);
+	margin-top: 0.3em;
+	padding-top: 0.3em;
+	font-weight: 300;
+}
+
+
 div.declaring_class{
 	margin-left: 8em;
 	

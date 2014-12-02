@@ -212,7 +212,7 @@ trait IsAReferenceValue {
      * not in an inheritance relationship. However, if the specified supertype would
      * be `java.util.List` the answer would be unknown.
      *
-     * @note The function `isSubtypeOf` is not defined if `isNull` returns `Yes`;
+     * @note The function `isValueSubtypeOf` is not defined if `isNull` returns `Yes`;
      *      if `isNull` is `Unknown` then the result is given under the
      *      assumption that the value is not `null` at runtime.
      *      In other words, if this value represents `null` this method is not supported.
@@ -232,7 +232,7 @@ trait IsAReferenceValue {
     @throws[UnsupportedOperationException](
         "the given domain has to be equal to the domain that was used to creat this object"
     )
-    def asDomainValue(implicit domain: Domain): domain.DomainValue
+    def asDomainValue(implicit domain: Domain): domain.DomainReferenceValue
 }
 
 /**

@@ -30,31 +30,66 @@ package org.opalj
 package ai
 package debug
 
-import br.Code
-import br.instructions.Instruction
+import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
+
+import org.opalj.ai.domain.TheCode
 
 /**
  * A tracer that prints out a trace's results on the console.
  *
  * @author Michael Eichberg
  */
-trait ConsoleTracer extends AITracer {
+trait ConsoleTracer extends AITracer { tracer ⇒
 
     import Console._
 
     val printOIDs: Boolean = false
 
+    def oidString(value: Object) =
+        "[#"+System.identityHashCode(value).toHexString+"]"
+
+    def toStringWithOID(value: Object) =
+        value+" "+oidString(value)
+
     private def correctIndent(value: Object, printOIDs: Boolean): String = {
         if (value eq null)
             "<EMPTY>"
         else {
-            val s = value.toString().replaceAll("\n\t", "\n\t\t\t").replaceAll("\n\\)", "\n\t\t)")
+            def toString(value: Object) =
+                value.toString().replaceAll("\n\t", "\n\t\t\t").replaceAll("\n\\)", "\n\t\t)")
+
+            def toStringWithOID(value: Object) =
+                toString(value)+" "+oidString(value)
+
             if (printOIDs) {
-                s+" [#"+System.identityHashCode(value).toHexString+"]"
+                value match {
+                    case rv: IsReferenceValue if rv.referenceValues.size > 1 ⇒
+                        val values = rv.referenceValues
+                        val t =
+                            if (rv.isInstanceOf[domain.l1.ReferenceValues#ReferenceValue])
+                                s";t=${rv.asInstanceOf[domain.l1.ReferenceValues#ReferenceValue].t}"
+                            else
+                                ""
+                        values.map(toStringWithOID(_)).mkString("OneOf["+values.size+"](", ",", ")") +
+                            rv.upperTypeBound.map(_.toJava).mkString(";lutb=", " with ", ";") +
+                            s"isPrecise=${rv.isPrecise};isNull=${rv.isNull}$t "+
+                            oidString(rv)
+                    case _ ⇒
+                        toStringWithOID(value)
+                }
             } else
-                s
+                toString(value)
         }
     }
+
+    private def line(domain: Domain, pc: PC): String =
+        if (domain.isInstanceOf[TheCode]) {
+            val code = domain.asInstanceOf[TheCode].code
+            code.lineNumber(pc).map("[line="+_+"]").getOrElse("")
+        } else {
+            ""
+        }
 
     override def instructionEvalution(
         domain: Domain)(
@@ -65,7 +100,7 @@ trait ConsoleTracer extends AITracer {
         val placeholder = "-"
 
         println(
-            pc+":"+instruction.toString(pc)+" [\n"+
+            pc + line(domain, pc)+":"+instruction.toString(pc)+" [\n"+
                 operands.map { o ⇒
                     correctIndent(o, printOIDs)
                 }.mkString("\toperands:\n\t\t", "\n\t\t", "\n\t;\n") +
@@ -103,7 +138,7 @@ trait ConsoleTracer extends AITracer {
             isExceptionalControlFlow: Boolean): Unit = {
         println(CYAN_B + RED+
             "rescheduled the evaluation of the instruction with the program counter: "+
-            targetPC + RESET)
+            targetPC + line(domain, targetPC) + RESET)
     }
 
     override def flow(
@@ -115,7 +150,7 @@ trait ConsoleTracer extends AITracer {
     override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC) {
         println(Console.RED_B + Console.YELLOW+
             "did not schedule the interpretation of instruction "+
-            targetPC+
+            targetPC + line(domain, targetPC)+
             "; the abstract state didn't change"+Console.RESET)
     }
 
@@ -128,7 +163,7 @@ trait ConsoleTracer extends AITracer {
             otherLocals: domain.Locals,
             result: Update[(domain.Operands, domain.Locals)]): Unit = {
 
-        print(Console.BLUE + pc+": JOIN: ")
+        print(Console.BLUE + pc + line(domain, pc)+": JOIN: ")
         result match {
             case NoUpdate ⇒ println("no changes")
             case u @ SomeUpdate((updatedOperands, updatedLocals)) ⇒
@@ -159,7 +194,14 @@ trait ConsoleTracer extends AITracer {
                         map(v ⇒
                             v._1 + {
                                 if (v._2 == v._3)
-                                    ": ✓ "+Console.GREEN
+                                    if (v._2 eq v._3)
+                                        Console.GREEN+": ✓ "
+                                    else
+                                        Console.YELLOW+":(✓) "+
+                                            oidString(v._2)+
+                                            " join "+
+                                            oidString(v._3)+
+                                            " => "
                                 else {
                                     ":\n\t\t   given "+correctIndent(v._2, printOIDs)+
                                         "\n\t\t    join "+correctIndent(v._3, printOIDs)+
@@ -182,7 +224,10 @@ trait ConsoleTracer extends AITracer {
             locals: domain.Locals,
             newOperands: domain.Operands,
             newLocals: domain.Locals): Unit = {
-        println(pc+":"+YELLOW_B + BLUE+"Establishing Constraint w.r.t. "+effectivePC+":")
+        println(
+            pc + line(domain, pc)+":"+
+                YELLOW_B + BLUE+"Establishing Constraint w.r.t. "+
+                effectivePC + line(domain, effectivePC)+":")
         val changedOperands = operands.view.zip(newOperands).filter(ops ⇒ ops._1 ne ops._2).force
         if (changedOperands.nonEmpty) {
             println(YELLOW_B + BLUE+"\tUpdated Operands:")
@@ -194,7 +239,11 @@ trait ConsoleTracer extends AITracer {
             ).filter(ops ⇒ ops._1 ne ops._2)
         if (changedLocals.hasNext) {
             println(YELLOW_B + BLUE+"\tUpdated Locals:")
-            changedLocals.foreach(locals ⇒ print(YELLOW_B + BLUE+"\t\t"+locals._3+":"+locals._1+" => "+locals._2+"\n"))
+            changedLocals.foreach(locals ⇒
+                print(YELLOW_B + BLUE+"\t\t"+locals._3+":"+
+                    toStringWithOID(locals._1)+" => "+
+                    toStringWithOID(locals._2)+"\n")
+            )
         }
         println(YELLOW_B + BLUE+"\tDone"+RESET)
 
@@ -203,18 +252,21 @@ trait ConsoleTracer extends AITracer {
     override def abruptMethodExecution(
         domain: Domain)(
             pc: Int,
-            exception: domain.DomainValue): Unit = {
-        println(Console.BOLD +
-            Console.RED +
-            pc+":RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION: "+exception +
-            Console.RESET)
+            exception: domain.ExceptionValue): Unit = {
+        println(
+            BOLD + RED + pc + line(domain, pc)+
+                ":RETURN FROM METHOD DUE TO UNHANDLED EXCEPTION: "+exception +
+                RESET)
     }
 
     override def jumpToSubroutine(
         domain: Domain)(
             pc: PC, target: PC, nestingLevel: Int): Unit = {
         import Console._
-        println(pc+":"+YELLOW_B + BOLD+"JUMP TO SUBROUTINE(Nesting level: "+nestingLevel+"): "+target + RESET)
+        println(
+            pc + line(domain, pc)+":"+YELLOW_B + BOLD+
+                "JUMP TO SUBROUTINE(Nesting level: "+nestingLevel+"): "+target +
+                RESET)
     }
 
     override def returnFromSubroutine(
@@ -222,11 +274,11 @@ trait ConsoleTracer extends AITracer {
             pc: PC,
             returnAddress: PC,
             subroutineInstructions: List[PC]): Unit = {
-        println(Console.YELLOW_B +
-            Console.BOLD +
-            pc+":RETURN FROM SUBROUTINE: target="+returnAddress+
-            " : RESETTING : "+subroutineInstructions.mkString(", ") +
-            Console.RESET)
+        println(
+            YELLOW_B + BOLD + pc + line(domain, pc)+
+                ":RETURN FROM SUBROUTINE: target="+returnAddress+
+                " : RESETTING : "+subroutineInstructions.mkString(", ") +
+                RESET)
     }
 
     /**
@@ -238,12 +290,12 @@ trait ConsoleTracer extends AITracer {
             returnAddress: PC,
             oldWorklist: List[PC],
             newWorklist: List[PC]): Unit = {
-        println(Console.GREEN_B +
-            Console.BOLD +
-            pc+":RET : target="+returnAddress+
-            " : OLD_WORKLIST : "+oldWorklist.mkString(", ")+
-            " : NEW_WORKLIST : "+newWorklist.mkString(", ") +
-            Console.RESET)
+        println(
+            GREEN_B + BOLD + pc + line(domain, pc)+
+                ":RET : target="+returnAddress+
+                " : OLD_WORKLIST : "+oldWorklist.mkString(", ")+
+                " : NEW_WORKLIST : "+newWorklist.mkString(", ") +
+                RESET)
     }
 
     override def result(result: AIResult): Unit = { /*ignored*/ }
