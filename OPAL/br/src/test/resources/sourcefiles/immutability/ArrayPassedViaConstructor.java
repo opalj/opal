@@ -26,73 +26,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+package immutability;
 
-/*VIEW SPECIFIC*/
-div#analysis_controls {
-	position: fixed;
-	top: 0px;
-	padding: 1em;
-	height: 0.9em;
-	margin: 0px;
-	width:100%;
-	overflow: hidden;
-	background-color: rgba(8, 114, 215, 0.95);
-	color: white;
-}
+import immutability.annotations.Mutable;
 
-div#analysis_controls div {
-    margin-bottom: .3em;
-}
+/**
+ * A mutable class which references an array which is set via the constructor.
+ * 
+ * @author Andre Pacak
+ */
+@Mutable("array is visible outside of class because the constructor does not create a clone of the passed array")
+public class ArrayPassedViaConstructor {
 
-div#analysis_controls:hover {
-    height: initial;
-}
+    private final int[] array;
 
-input#relevance {
-    transform: translate(0px,6px);
-    -webkit-transform: translate(0px,6px);
-    -moz-transform: translate(0px,6px);
-}
+    public ArrayPassedViaConstructor(int[] array) {
+        this.array = array;
+    }
 
-div#analysis_results {
-	padding: 0em;
-	margin-top: 3em;
-}
-
-div.an_issue{
-	padding: 0.5em;
-	background-color: rgb(241, 244, 255);
-	border: 1px solid  rgb(224, 222, 235);
-	border-top: 0px;
-}
-
-.issue{
-	margin-top: 1em;
-}
-
-.issue_message {
-	color: rgb(94,94,94);
-	font-weight: 300;
-}
-
-div.issue_additional_info{
-	border-top: 1px dashed rgb(200,200,200);
-	margin-top: 0.3em;
-	padding-top: 0.3em;
-	font-weight: 300;
-}
-
-
-div.declaring_class{
-	margin-left: 8em;
-
-}
-div.declaring_class:before{
-	content: "class:";
-}
-
-details.locals {
-	padding:0;
-	background-color: rgba(174, 177, 255, 0.24);
-	border: 1px solid rgb(172, 172, 205);
+    public int getElement(int index) {
+        if (index >= 0 && index < array.length) {
+            return array[index];
+        }
+        return -1;
+    }
 }

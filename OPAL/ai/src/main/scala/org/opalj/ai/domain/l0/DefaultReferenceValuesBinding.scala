@@ -61,31 +61,30 @@ trait DefaultReferenceValuesBinding
      *
      * This implementation always returns the singleton instance [[TheNullValue]].
      */
-    override def NullValue(
-        valueOrigin: ValueOrigin): DomainNullValue = {
+    override def NullValue(origin: ValueOrigin): DomainNullValue = {
 
         TheNullValue
     }
 
     override def ObjectValue(
-        valueOrigin: ValueOrigin,
+        origin: ValueOrigin,
         objectType: ObjectType): DomainObjectValue = {
 
         new SObjectValue(objectType)
     }
 
     override def ObjectValue(
-        valueOrigin: ValueOrigin,
+        origin: ValueOrigin,
         upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
 
         if (upperTypeBound.consistsOfOneElement)
-            ObjectValue(valueOrigin, upperTypeBound.first)
+            ObjectValue(origin, upperTypeBound.first)
         else
             new MObjectValue(upperTypeBound)
     }
 
     override protected[domain] def ArrayValue(
-        valueOrigin: ValueOrigin,
+        origin: ValueOrigin,
         arrayType: ArrayType): DomainArrayValue = {
 
         new ArrayValue(arrayType)

@@ -85,6 +85,33 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
     describe("the DefaultReferenceValues domain") {
 
+        describe("isValueSubtypeOf") {
+
+            it("should be able to cast an array of objects to an array of array of ints") {
+
+                // ASSERTION
+                isSubtypeOf(
+                    ArrayType(ArrayType(IntegerType)),
+                    ArrayType(ObjectType.Object)
+                ) should be(Yes)
+
+                val v1 = ArrayValue(111, No, false, ArrayType(ObjectType.Object), 1)
+                v1.isValueSubtypeOf(ArrayType(ArrayType(IntegerType))) should be(Unknown)
+            }
+        }
+
+        describe("abstractsOver") {
+
+            it("an ArrayValue should abstract over ifself (with a different timestamp)") {
+
+                val v1 = ArrayValue(-1, Unknown, true, ArrayType(ArrayType(IntegerType)), 1)
+                val v2 = ArrayValue(-1, Unknown, true, ArrayType(ArrayType(IntegerType)), 2)
+                v1.abstractsOver(v2) should be(true)
+                v2.abstractsOver(v1) should be(true)
+            }
+
+        }
+
         //
         // FACTORY METHODS
         //
@@ -206,18 +233,6 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
                 val (refinedOperands, _) = mv1.refineUpperTypeBound(-1, RuntimeException, List(mv1), Locals.empty)
                 refinedOperands.head should be(v3)
-            }
-
-            it("should be able to case an array of objects to an array of array of ints") {
-
-                // ASSERTION
-                isSubtypeOf(
-                    ArrayType(ArrayType(IntegerType)),
-                    ArrayType(ObjectType.Object)
-                ) should be(Yes)
-
-                val v1 = ArrayValue(111, No, false, ArrayType(ObjectType.Object), 1)
-                v1.isValueSubtypeOf(ArrayType(ArrayType(IntegerType))) should be(Unknown)
             }
 
         }

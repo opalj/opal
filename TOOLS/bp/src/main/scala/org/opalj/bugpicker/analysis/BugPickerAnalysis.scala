@@ -375,13 +375,17 @@ object BugPickerAnalysis {
             </head>
             <body>
                 <div id="analysis_controls">
-                    <span>Number of issues: { methodWithDeadCodeCount }.</span>
-                    Suppress issues with an estimated
-                    <abbr title='The importance is calculated using the available context information. E.g., a dead "default case" in a switch statement is often the result of defensive programming and, hence, not important.'>importance</abbr>
-                    less than:
-                    <abbr title="The identified issue is probably not important or is just a technical artifact.">1</abbr>
-                    <input type="range" name="relevance" id="relevance" min="1" max="100" onchange="updateRelevance(this.valueAsNumber)"/>
-                    <abbr title="The identified issue is probably very important.">100</abbr>
+                    <div>
+                        <span>Number of issues: { methodWithDeadCodeCount }.</span>
+                    </div>
+                    <div>
+                        Suppress issues with an estimated
+                        <abbr title='The importance is calculated using the available context information. E.g., a dead "default case" in a switch statement is often the result of defensive programming and, hence, not important.'>importance</abbr>
+                        less than:
+                        <abbr title="The identified issue is probably not important or is just a technical artifact.">1</abbr>
+                        <input type="range" name="relevance" id="relevance" min="1" max="100" onchange="updateRelevance(this.valueAsNumber)"/>
+                        <abbr title="The identified issue is probably very important.">100</abbr>
+                    </div>
                     <div>
                         Show all Packages:<a class="onclick" onclick="openAllPackages()">+</a><a class="onclick" onclick="closeAllPackages()">-</a>
                     </div>
