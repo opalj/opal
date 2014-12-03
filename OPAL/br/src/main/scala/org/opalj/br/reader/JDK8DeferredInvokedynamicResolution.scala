@@ -159,6 +159,11 @@ trait JDK8DeferredInvokedynamicResolution extends DeferredInvokedynamicResolutio
                 factoryMethod.name,
                 factoryMethod.descriptor
             )
+            // since invokestatic is two bytes shorter than invokedynamic, we need to fill
+            // the two-byte gap following the invokestatic with NOPs
+            val indexOfFirstGapByte = instructions(index).indexOfNextInstruction(index, false)
+            instructions(indexOfFirstGapByte) = NOP
+            instructions(indexOfFirstGapByte + 1) = NOP
             updatedClassFile = storeProxy(updatedClassFile, proxy)
         }
 

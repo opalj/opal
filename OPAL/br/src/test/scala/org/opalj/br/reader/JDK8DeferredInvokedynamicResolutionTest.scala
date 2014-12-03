@@ -49,7 +49,7 @@ import org.opalj.br.instructions.INVOKESTATIC
  *
  * @author Arne Lottmann
  */
-class FullJDK8DeferredInvokedynamicResolutionTest extends FunSpec with Matchers {
+class JDK8DeferredInvokedynamicResolutionTest extends FunSpec with Matchers {
 
     val InvokedMethod = ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedMethod")
 
