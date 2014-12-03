@@ -34,6 +34,18 @@ function updateRelevance(value){
         		e.style.display="block"
 		}
     )
+	updateNumberOfIssues();
+}
+
+function updateNumberOfIssues(){
+	var current = 0;
+	document.querySelectorAll(".an_issue").forEach(
+    	function(e){
+        	if (e.style.display == "block")
+				current++;
+		}
+    )
+	document.querySelector("#issues_displayed").innerHTML = current;
 }
 
 function openAllPackages(){
