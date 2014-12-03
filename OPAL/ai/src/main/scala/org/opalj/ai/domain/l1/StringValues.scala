@@ -104,7 +104,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
 
         override def equals(other: Any): Boolean = {
             other match {
-                case sv: StringValue ⇒ super.equals(other) && sv.value == this.value
+                case sv: StringValue ⇒ sv.value == this.value && super.equals(other)
                 case _               ⇒ false
             }
         }

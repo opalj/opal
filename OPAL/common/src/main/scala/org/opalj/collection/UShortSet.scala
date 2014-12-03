@@ -46,6 +46,11 @@ trait UShortSet {
     def +(value: UShort): UShortSet
 
     /**
+     * Creates a new set that contains this set's values as well as the given one's values.
+     */
+    def ++(values: UShortSet): UShortSet
+
+    /**
      * Creates a clone of this set that can safely be mutated.
      */
     def mutableCopy: mutable.UShortSet
