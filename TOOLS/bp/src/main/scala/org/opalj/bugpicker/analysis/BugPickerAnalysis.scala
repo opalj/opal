@@ -387,6 +387,14 @@ object BugPickerAnalysis {
                         <abbr title="The identified issue is probably very important.">100</abbr>
                     </div>
                     <div>
+                        Software Quality Attributes:
+                        <span id="filter_data-kind"> </span>
+                    </div>
+                    <div>
+                        Technical Issues:
+                        <span id="filter_data-category"> </span>
+                    </div>
+                    <div>
                         Show all Packages:<a class="onclick" onclick="openAllPackages()">+</a><a class="onclick" onclick="closeAllPackages()">-</a>
                     </div>
                 </div>

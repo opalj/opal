@@ -30,8 +30,8 @@ function updateRelevance(value){
 	document.querySelectorAll("*[data-relevance]").forEach(
     	function(e){
         	e.dataset.relevance < value ? 
-        		e.style.display="none" : 
-        		e.style.display="block"
+        		e.classList.add("hide-relevance") : 
+        		e.classList.remove("hide-relevance")
 		}
     )
 }
@@ -46,4 +46,64 @@ function closeAllPackages(){
 	document.querySelectorAll('div#analysis_results > details').forEach(
 		function(e){e.removeAttribute('open')}
 	)
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+	initFilter("kind");
+	initFilter("category");
+}, false);
+
+
+function initFilter(dataType){
+	var allValues = [];
+	document.querySelectorAll("*[data-"+dataType+"]").forEach(
+    	function(e){
+			var values = e.getAttribute("data-"+dataType).split(" ");
+			allValues = allValues.concat(values).filter (function (v, i, a) { return a.indexOf (v) == i });
+		}
+    )
+	var i = 0;
+	document.querySelector("#filter_data-"+dataType).innerHTML = 
+		ArrayJoin(allValues, 
+			function (i, e) { 
+				var name = "filter-data-" + dataType;
+				var id = name + i;
+				return "<input type='checkbox' id='"+id+"' name='"+name+"' value='"+e+"' onchange='updateFilter(\""+dataType+"\")' checked>"+
+						"<label for='"+id+"'>"+e+"</label>"; 
+			}
+		);
+	updateFilter(dataType);
+}
+
+function updateFilter(dataType){
+	document.querySelectorAll(".an_issue").forEach(
+		function(e) { 
+			e.classList.remove("show-"+dataType);
+			e.classList.remove("issue_visible");
+		});
+	document.querySelectorAll("input[name=filter-data-"+dataType+"]:checked").forEach(
+		function(f){
+			document.querySelectorAll(".an_issue[data-" + dataType + "~=" + f.getAttribute("value") + "]")
+				.forEach(function(e) { e.classList.add("show-"+dataType) } );
+		})
+		
+	// there has to be a "show-" in the className of an issue (from this filter or another) for the issue to be shown
+	document.querySelectorAll(".an_issue").forEach(
+		function(e) { 
+			if (e.className.indexOf("show-") > -1)
+				e.classList.add("issue_visible");
+		});
+}
+
+/*
+  Works similar to the join-method of Array, but uses a function for the join
+*/
+function ArrayJoin(array, joinFunc) {
+	var ArrayJoinIntern = function(internArray, index) { 
+		var element = internArray.shift();
+		return internArray.length > 0 ? 
+			joinFunc(index, element) + ArrayJoinIntern(internArray, index+1) :
+			joinFunc(index, element);
+	}
+	return ArrayJoinIntern(array, 0)
 }
