@@ -357,7 +357,7 @@ object BugPickerAnalysis {
                     methodsWithDeadCode.groupBy(dc ⇒ dc.classFile.thisType.packageName)
             val result =
                 (for { (pkg, mdc) ← groupedMessages } yield {
-                    <details>
+                    <details class="package_summary">
                         <summary class="package_summary">{ pkg.replace('/', '.') }</summary>
                         { mdc.toSeq.sorted(IssueOrdering).map(_.asXHTML) }
                     </details>

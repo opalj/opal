@@ -27,11 +27,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 function updateRelevance(value){
-	document.querySelectorAll("*[data-relevance]").forEach(
-    	function(e){
-        	e.dataset.relevance < value ? 
-        		e.style.display="none" : 
-        		e.style.display="block"
+	document.querySelector("#analysis_results").querySelectorAll("details.package_summary").forEach(
+    	function(p){
+			var package_counter = 0;
+			p.querySelectorAll("*[data-relevance]").forEach(
+				function(e){
+					if (e.dataset.relevance < value)
+						e.style.display="none";
+					else {
+						e.style.display="block";
+						package_counter++;
+					}
+				}
+			)
+			package_counter > 0 ? 
+				p.style.display="block" :
+				p.style.display="none";
 		}
     )
 	updateNumberOfIssues();
