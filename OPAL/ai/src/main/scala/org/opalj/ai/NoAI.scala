@@ -28,44 +28,37 @@
  */
 package org.opalj
 package ai
-package project
 
-import scala.collection.Set
+import scala.util.control.ControlThrowable
+import scala.collection.BitSet
 
-import org.opalj.br.{ ClassFile, Method, MethodSignature }
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
+import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-/**
- * Configuration of a call graph algorithm that uses CHA.
- *
- * ==Thread Safety==
- * This class is thread-safe (it contains no mutable state.)
- *
- * ==Usage==
- * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
- *
- * @author Michael Eichberg
- */
-class CHACallGraphAlgorithmConfiguration(
-    val project: SomeProject)
-        extends CallGraphAlgorithmConfiguration {
+import org.opalj.br._
+import org.opalj.br.instructions._
 
-    protected type Contour = MethodSignature
+object NoAI {
 
-    protected type Value = Set[Method]
+    private object TheNoAI extends AI[Domain] {
+        final override def continueInterpretation(
+            code: Code,
+            theDomain: Domain)(
+                initialWorkList: List[PC],
+                alreadyEvaluated: List[PC],
+                theOperandsArray: theDomain.OperandsArray,
+                theLocalsArray: theDomain.LocalsArray,
+                theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
 
-    protected type Cache = CallGraphCache[Contour, Value]
+            val result =
+                AIResultBuilder.aborted(
+                    code, theDomain)(
+                        List(0), List.empty, theOperandsArray, theLocalsArray, List.empty)
+            theDomain.abstractInterpretationEnded(result)
+            if (tracer.isDefined) tracer.get.result(result)
+            result
+        }
+    }
 
-    protected[this] val cache: Cache = new CallGraphCache[MethodSignature, Value](project)
+    def apply[D <: Domain](): AI[D] = TheNoAI.asInstanceOf[AI[D]]
 
-    def Domain[Source](
-        classFile: ClassFile,
-        method: Method): CallGraphDomain =
-        new DefaultCHACallGraphDomain(project, cache, classFile, method)
-
-    final val Extractor = new CHACallGraphExtractor(cache)
-
-    final val TheAI: AI[CallGraphDomain] = NoAI()
 }
-

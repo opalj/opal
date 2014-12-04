@@ -65,6 +65,8 @@ abstract class VTACallGraphAlgorithmConfiguration(
     val cache: Cache = new CallGraphCache[MethodSignature, Value](project)
 
     val Extractor = new VTACallGraphExtractor(cache)
+
+    val TheAI: AI[CallGraphDomain] = BaseAI.asInstanceOf[AI[CallGraphDomain]]
 }
 
 class BasicVTACallGraphAlgorithmConfiguration(

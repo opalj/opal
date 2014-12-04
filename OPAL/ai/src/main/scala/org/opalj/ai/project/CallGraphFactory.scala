@@ -110,7 +110,7 @@ object CallGraphFactory {
                     val classFile = theProject.classFile(method)
                     val domain = configuration.Domain(classFile, method)
                     try {
-                        val result = BaseAI(classFile, method, domain)
+                        val result = configuration.TheAI(classFile, method, domain)
                         val (callEdges, unresolveableMethodCalls) = extract(result)
                         (callEdges, unresolveableMethodCalls, None)
                     } catch {
