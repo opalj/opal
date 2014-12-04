@@ -28,12 +28,43 @@
  */
 function updateRelevance(value){
 	document.querySelectorAll("*[data-relevance]").forEach(
-    	function(e){
-        	e.dataset.relevance < value ? 
-        		e.classList.add("hide-relevance") : 
-        		e.classList.remove("hide-relevance")
+		function(e){
+			if (e.dataset.relevance < value)
+				e.classList.add("hide-relevance");
+			else
+				e.classList.remove("hide-relevance");
+		}
+	)
+	hideEmptyPackages();
+	updateNumberOfIssues();
+}
+
+function hideEmptyPackages() {
+	document.querySelector("#analysis_results").querySelectorAll("details.package_summary").forEach(
+    	function(p){
+			var package_counter = 0;
+			p.querySelectorAll(".an_issue").forEach(
+				function(e){
+					if (e.classList.contains("issue_visible") && !e.classList.contains("hide-relevance"))
+						package_counter++;
+				}
+			)
+			package_counter > 0 ? 
+				p.style.display="block" :
+				p.style.display="none";
 		}
     )
+}
+
+function updateNumberOfIssues(){
+	var current = 0;
+	document.querySelectorAll(".an_issue").forEach(
+    	function(e){
+        	if (e.classList.contains("issue_visible") && !e.classList.contains("hide-relevance"))
+				current++;
+		}
+    )
+	document.querySelector("#issues_displayed").innerHTML = current;
 }
 
 function openAllPackages(){
@@ -69,7 +100,7 @@ function initFilter(dataType){
 				var name = "filter-data-" + dataType;
 				var id = name + i;
 				return "<input type='checkbox' id='"+id+"' name='"+name+"' value='"+e+"' onchange='updateFilter(\""+dataType+"\")' checked>"+
-						"<label for='"+id+"'>"+e+"</label>"; 
+						"<label for='"+id+"'>"+e.replace("_", " ")+"</label>"; 
 			}
 		);
 	updateFilter(dataType);
@@ -93,6 +124,8 @@ function updateFilter(dataType){
 			if (e.className.indexOf("show-") > -1)
 				e.classList.add("issue_visible");
 		});
+	hideEmptyPackages();
+	updateNumberOfIssues();
 }
 
 /*
