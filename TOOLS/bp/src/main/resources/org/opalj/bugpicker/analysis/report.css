@@ -64,6 +64,15 @@ div.an_issue{
 	background-color: rgb(241, 244, 255);
 	border: 1px solid  rgb(224, 222, 235);
 	border-top: 0px;
+	display: none;
+}
+
+div.an_issue.issue_visible{
+	display: block;
+}
+
+div.an_issue.hide-relevance{
+	display: none !important;
 }
 
 .issue{
