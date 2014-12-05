@@ -41,17 +41,22 @@ div#analysis_controls {
 }
 
 div#analysis_controls div {
-    margin-bottom: .3em;
+	margin-bottom: .3em;
+}
+
+div#analysis_controls div.issue_filter {
+	border: 1px white dotted;
+	margin-right: 2em;
 }
 
 div#analysis_controls:hover {
-    height: initial;
+	height: initial;
 }
 
 input#relevance {
-    transform: translate(0px,6px);
-    -webkit-transform: translate(0px,6px);
-    -moz-transform: translate(0px,6px);
+	transform: translate(0px,6px);
+	-webkit-transform: translate(0px,6px);
+	-moz-transform: translate(0px,6px);
 }
 
 div#analysis_results {
