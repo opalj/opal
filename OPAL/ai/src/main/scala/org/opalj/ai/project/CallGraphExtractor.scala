@@ -32,18 +32,20 @@ package project
 
 import scala.collection.Set
 import scala.collection.Map
-
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.ai.domain._
+import org.opalj.br.analyses.SomeProject
 
 trait CallGraphExtractor {
 
     type LocalCallGraphInformation = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall])
 
-    type TheDomain = Domain with ReferenceValuesDomain with TheProject with ClassHierarchy with TheClassFile with TheMethod with TheCode
+    //    type TheDomain = Domain with ReferenceValuesDomain with TheProject with ClassHierarchy with TheClassFile with TheMethod with TheCode
+    //
+    //    def extract(aiResult: AIResult { val domain: TheDomain }): LocalCallGraphInformation
 
-    def extract(aiResult: AIResult { val domain: TheDomain }): LocalCallGraphInformation
+    def extract(project: SomeProject, classFile: ClassFile, method: Method): LocalCallGraphInformation
 
 }
 

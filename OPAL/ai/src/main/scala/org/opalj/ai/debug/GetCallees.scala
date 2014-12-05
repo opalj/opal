@@ -141,37 +141,32 @@ object GetCallees {
 
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](project)
         val useVTA = args.length == 4 && args(3) == "VTA"
-        type CallGraphDomain = Domain with ReferenceValuesDomain with TheProject with ClassHierarchy with TheClassFile with TheMethod with TheCode
-        val (domain: CallGraphDomain, extractor: CallGraphExtractor) =
+        type CallGraphDomain = Domain with ReferenceValuesDomain with TheProject with TheClassFile with TheMethod
+        val extractor: CallGraphExtractor =
             if (useVTA) {
                 println("USING VTA")
-                val domain =
+                def Domain(classFile: ClassFile, method: Method) =
                     new DefaultVTACallGraphDomain(
                         project, project.get(FieldValuesKey),
                         cache,
                         classFile, method /*, 4*/ )
-                (
-                    domain,
-                    new VTACallGraphExtractor(
-                        new CallGraphCache[MethodSignature, scala.collection.Set[Method]](project)
-                    )
+                new VTACallGraphExtractor(
+                    new CallGraphCache[MethodSignature, scala.collection.Set[Method]](project),
+                    Domain
                 )
+
             } else {
                 println("USING CHA")
-                val domain = new DefaultCHACallGraphDomain(project, cache, classFile, method)
-                (
-                    domain,
-                    new CHACallGraphExtractor(
-                        new CallGraphCache[MethodSignature, scala.collection.Set[Method]](project)
-                    )
+
+                new CHACallGraphExtractor(
+                    new CallGraphCache[MethodSignature, scala.collection.Set[Method]](project)
                 )
             }
 
         import org.opalj.ai.debug.XHTML.dump
 
         try {
-            val result = AI(classFile, method, domain)
-            val (allCallEdges, allUnresolvableMethodCalls) = extractor.extract(result)
+            val (allCallEdges, allUnresolvableMethodCalls) = extractor.extract(project, classFile, method)
             val (_, callees) = allCallEdges
             for ((pc, methods) ← callees) {
                 println("\n"+pc+":"+method.body.get.instructions(pc)+" calls: ")
@@ -188,7 +183,7 @@ object GetCallees {
         } catch {
             case ife: InterpretationFailedException ⇒
                 val header =
-                    Some("<p><b>"+domain.getClass().getName()+"</b></p>"+
+                    Some("<p><b>"+ife.domain.getClass().getName()+"</b></p>"+
                         ife.cause.getMessage()+"<br>"+
                         ife.getStackTrace().mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                         "Current instruction: "+ife.pc+"<br>"+

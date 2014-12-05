@@ -225,7 +225,8 @@ private class FieldStatusTracingDomain[Source](
         with l0.TypeLevelInvokeInstructions
         with l1.DefaultReferenceValuesBinding
         with l1.DefaultIntegerRangeValues
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
         with PropertyTracing
         with RecordReturnFromMethodInstructions {
 

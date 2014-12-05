@@ -62,7 +62,8 @@ class ConstraintsBetweenIntegerValuesTest extends FunSpec with Matchers with Par
             with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultIntegerRangeValues // <----- The one we are going to test
             with l1.ConstraintsBetweenIntegerValues // <----- The one we are going to test
-            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
             with PredefinedClassHierarchy

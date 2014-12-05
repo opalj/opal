@@ -28,37 +28,51 @@
  */
 package org.opalj
 package ai
+package domain
+package l1
 
-import scala.util.control.ControlThrowable
-import scala.collection.BitSet
+import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.analyses.Project
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+/**
+ * This domain uses the l1 level ''stable'', partial domains.
+ *
+ * @author Michael Eichberg
+ */
+class DefaultConfigurableIntegerRangeValuesDomain[I, Source](
+    val id: I,
+    val project: Project[Source],
+    val classFile: ClassFile,
+    val method: Method)
+        extends CorrelationalDomain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with ProjectBasedClassHierarchy
+        with TheProject
+        with TheMethod
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with l0.DefaultReferenceValuesBinding
+        with l1.DefaultIntegerRangeValues
+        with l1.ConstraintsBetweenIntegerValues
+        with l1.DefaultLongValues
+        with l1.LongValuesShiftOperators
+        with l1.ConcretePrimitiveValuesConversions {
 
-import org.opalj.br._
-import org.opalj.br.instructions._
-
-object NoAI {
-
-    private object TheNoAI extends AI[Domain] {
-        final override def continueInterpretation(
-            code: Code,
-            theDomain: Domain)(
-                initialWorkList: List[PC],
-                alreadyEvaluated: List[PC],
-                theOperandsArray: theDomain.OperandsArray,
-                theLocalsArray: theDomain.LocalsArray,
-                theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
-
-            val result =
-                AIResultBuilder.aborted(
-                    code, theDomain)(
-                        List(0), List.empty, theOperandsArray, theLocalsArray, List.empty)
-            theDomain.abstractInterpretationEnded(result)
-            if (tracer.isDefined) tracer.get.result(result)
-            result
-        }
-    }
-
-    def apply[D <: Domain](): AI[D] = TheNoAI.asInstanceOf[AI[D]]
+    type Id = I
 
 }
+
+class DefaultIntegerValuesDomain[Source](
+    project: Project[Source],
+    classFile: ClassFile,
+    method: Method)
+        extends DefaultConfigurableIntegerRangeValuesDomain[String, Source](
+            classFile.thisType.toJava+"{ "+method.toJava+"}",
+            project,
+            classFile,
+            method)

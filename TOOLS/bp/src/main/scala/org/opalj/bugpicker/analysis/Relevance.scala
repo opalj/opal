@@ -67,9 +67,13 @@ case class Relevance(value: Int) extends AnyVal {
 }
 
 object Relevance {
-    final val DefaultRelevance = Relevance(50)
-    final val High = Relevance(70)
+    final val OfUtmostRelevance = Relevance(99)
     final val VeryHigh = Relevance(80)
-    final val OfUtmostImportance = Relevance(99)
+    final val High = Relevance(70)
+    final val DefaultRelevance = Relevance(50)
+    final val Low = Relevance(30)
+    final val VeryLow = Relevance(10)
+    final val OfNoRelevance = Relevance(1)
+
     final val Undetermined = Relevance(0)
 }

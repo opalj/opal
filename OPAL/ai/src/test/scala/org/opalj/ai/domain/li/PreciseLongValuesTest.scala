@@ -61,7 +61,7 @@ class PreciseLongValuesTest extends FlatSpec with Matchers with ParallelTestExec
             with l0.DefaultReferenceValuesBinding
             with li.DefaultPreciseLongValues
             with li.DefaultPreciseIntegerValues
-            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelPrimitiveValuesConversions
             with PredefinedClassHierarchy
             with DefaultHandlingOfMethodResults
             with RecordLastReturnedValues
