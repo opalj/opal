@@ -82,4 +82,6 @@ trait CallGraphAlgorithmConfiguration {
      */
     def Domain[Source](classFile: ClassFile, method: Method): CallGraphDomain
 
+    def TheAI: AI[CallGraphDomain]
+
 }

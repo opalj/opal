@@ -112,9 +112,8 @@ object IfNullParameterAnalysis extends OneStepAnalysis[URL, BasicReport] with An
                     value
                 } else {
                     val initialReferenceValue = value.asInstanceOf[domain.SingleOriginReferenceValue]
-                    // create a new reference value (using the copy constructor)
-                    // which is not null
-                    initialReferenceValue(isNull = No)
+                    // create a new reference value which is not null
+                    initialReferenceValue.update(isNull = No)
                 }
             }
         }
@@ -131,7 +130,7 @@ object IfNullParameterAnalysis extends OneStepAnalysis[URL, BasicReport] with An
 
                 // 1. Default interpretation
                 val domain1 =
-                    new DefaultDomain(theProject, classFile, method) with RecordAllThrownExceptions
+                    new DefaultDomain(theProject, classFile, method) with domain.RecordAllThrownExceptions
                 val result1 =
                     ai.perform(method.body.get, domain1)(
                         ai.initialOperands(classFile, method, domain1),
@@ -140,7 +139,7 @@ object IfNullParameterAnalysis extends OneStepAnalysis[URL, BasicReport] with An
 
                 // 1. Interpretation under the assumption that all values are non-null
                 val domain2 =
-                    new DefaultDomain(theProject, classFile, method) with RecordAllThrownExceptions
+                    new DefaultDomain(theProject, classFile, method) with domain.RecordAllThrownExceptions
                 val nonNullLocals = setToNonNull(domain2)(ai.initialLocals(classFile, method, domain2)(None))
                 val result2 =
                     ai.perform(method.body.get, domain2)(
@@ -163,7 +162,7 @@ object IfNullParameterAnalysis extends OneStepAnalysis[URL, BasicReport] with An
                                     // We need to keep the original location, otherwise
                                     // the correlation analysis would miserably fail!
                                     ex.asInstanceOf[domain2.DomainSingleOriginReferenceValue].origin).asInstanceOf[domain1.ExceptionValue]
-                            ).toSet
+                            ).toSet[domain1.DomainReferenceValue]
                         val diff =
                             d1thrownException.diff(adaptedD2ThrownException) ++
                                 adaptedD2ThrownException.diff(d1thrownException)

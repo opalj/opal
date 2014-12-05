@@ -89,7 +89,14 @@ trait DefaultTypeLevelReferenceValues
                 case No if isPrecise ||
                     supertype.isObjectType /* the array's supertypes: Object, Serializable and Cloneable are handled by domain.isSubtypeOf*/ ||
                     theUpperTypeBound.elementType.isBaseType ||
-                    (supertype.isArrayType && supertype.asArrayType.elementType.isBaseType) ⇒ No
+                    (
+                        supertype.isArrayType &&
+                        supertype.asArrayType.elementType.isBaseType &&
+                        (
+                            theUpperTypeBound.dimensions >= supertype.asArrayType.dimensions ||
+                            (theUpperTypeBound.componentType ne ObjectType.Object)
+                        )
+                    ) ⇒ No
                 case _ ⇒ Unknown
             }
         }
@@ -107,9 +114,10 @@ trait DefaultTypeLevelReferenceValues
                     )
 
                 case IsAReferenceValue(UIDSet1(valueType: ArrayType)) if valueType.elementType.isBaseType ⇒
-                    // supports arrays of arrays of primitive values
-                    if (theUpperTypeBound.componentType eq valueType)
-                        Yes
+                    //... we want to store an Array (of Array of ...) of primitives 
+                    // in this array
+                    if (theUpperTypeBound.componentType.isReferenceType)
+                        classHierarchy.isSubtypeOf(valueType, theUpperTypeBound.componentType.asReferenceType)
                     else
                         No
 
@@ -347,6 +355,8 @@ trait DefaultTypeLevelReferenceValues
         override val upperTypeBound: UIDSet[ObjectType])
             extends ObjectValue {
         value: DomainObjectValue ⇒
+
+        assert(upperTypeBound.size > 1)
 
         override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 

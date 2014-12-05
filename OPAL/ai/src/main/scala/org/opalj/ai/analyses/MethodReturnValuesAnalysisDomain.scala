@@ -79,19 +79,20 @@ class MethodReturnValuesAnalysisDomain(
 
     private[this] var theReturnedValue: DomainValue = null
 
-    // e.g., a method that always throws an exception...
+    // e.g., a method that always throws an exception will never return a value
     def returnedValue: Option[DomainValue] = Option(theReturnedValue)
 
     protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit = {
-        if (theReturnedValue eq value)
+        val oldReturnedValue = theReturnedValue
+        if (oldReturnedValue eq value)
             return ;
 
-        if (theReturnedValue == null) {
+        if (oldReturnedValue == null) {
             theReturnedValue = value
             return ;
         }
 
-        theReturnedValue.join(Int.MinValue, value) match {
+        oldReturnedValue.join(Int.MinValue, value) match {
             case SomeUpdate(newValue) ⇒
                 typeOfValue(newValue) match {
                     case IsAReferenceValue(utb) if (utb.size == 1) && (utb.first eq originalReturnType) ⇒

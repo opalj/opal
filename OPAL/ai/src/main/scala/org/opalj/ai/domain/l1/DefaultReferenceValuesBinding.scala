@@ -39,6 +39,8 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
 
+import org.opalj.br.UpperTypeBound
+
 /**
  * @author Michael Eichberg
  */
@@ -63,39 +65,56 @@ trait DefaultReferenceValuesBinding
     // FACTORY METHODS
     //
 
-    override def NullValue(pc: PC): DomainNullValue = new NullValue(pc)
+    override def NullValue(origin: ValueOrigin, t: Timestamp): DomainNullValue =
+        new NullValue(origin, t)
 
     override protected[domain] def ObjectValue(
-        pc: PC,
+        origin: ValueOrigin,
         isNull: Answer,
         isPrecise: Boolean,
-        theUpperTypeBound: ObjectType): SObjectValue = {
-        new SObjectValue(pc, isNull, isPrecise, theUpperTypeBound)
+        theUpperTypeBound: ObjectType,
+        t: Timestamp): SObjectValue = {
+        new SObjectValue(origin, isNull, isPrecise, theUpperTypeBound, t)
     }
 
     override protected[domain] def ObjectValue(
-        pc: PC,
+        origin: ValueOrigin,
         isNull: Answer,
-        upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
+        upperTypeBound: UIDSet[ObjectType],
+        t: Timestamp): DomainObjectValue = {
 
         if (upperTypeBound.consistsOfOneElement)
-            ObjectValue(pc, isNull, false, upperTypeBound.first)
+            ObjectValue(origin, isNull, false, upperTypeBound.first, t)
         else
-            new MObjectValue(pc, isNull, upperTypeBound)
+            new MObjectValue(origin, isNull, upperTypeBound, t)
     }
 
     override protected[domain] def ArrayValue(
-        pc: PC,
+        origin: ValueOrigin,
         isNull: Answer,
         isPrecise: Boolean,
-        theUpperTypeBound: ArrayType): DomainArrayValue = {
-        new ArrayValue(pc, isNull, isPrecise, theUpperTypeBound)
+        theUpperTypeBound: ArrayType,
+        t: Timestamp): DomainArrayValue = {
+        new ArrayValue(
+            origin,
+            isNull,
+            isPrecise || theUpperTypeBound.elementType.isBaseType,
+            theUpperTypeBound,
+            t)
     }
 
     override protected[domain] def MultipleReferenceValues(
-        values: SortedSet[SingleOriginReferenceValue]): MultipleReferenceValues = {
+        values: SortedSet[DomainSingleOriginReferenceValue]): DomainMultipleReferenceValues = {
         new MultipleReferenceValues(values)
     }
 
+    override protected[domain] def MultipleReferenceValues(
+        values: SortedSet[DomainSingleOriginReferenceValue],
+        isNull: Answer,
+        isPrecise: Boolean,
+        theUpperTypeBound: UpperTypeBound,
+        t: Timestamp): DomainMultipleReferenceValues = {
+        new MultipleReferenceValues(values, isNull, isPrecise, theUpperTypeBound, t)
+    }
 }
 

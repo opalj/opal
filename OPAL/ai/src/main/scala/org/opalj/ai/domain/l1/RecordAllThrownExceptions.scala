@@ -27,49 +27,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bugpicker
-package analysis
-
-import scala.Console.{ RED, YELLOW, RESET }
+package ai
+package domain
+package l1
 
 /**
- * Describes the overall relevance of a finding.
- *
- * When calculation the relevance you should take all
- * properties of the associated issue into consideration:
- *  - kind of issue
- *  - category of issue
- *  - accuracy of the analysis
- *
- * @param value A value between 1 (not really relevant) and 100 (absolutely relevant).
+ * Records '''all''' exception values thrown by a method. I.e., for each instruction that
+ * throws an exception (or multiple exceptions) all exceptions are recorded.
  *
  * @author Michael Eichberg
  */
-case class Relevance(value: Int) extends AnyVal {
+trait RecordAllThrownExceptions extends domain.RecordThrownExceptions {
+    domain: ReferenceValues ⇒
 
-    /**
-     * The lower the value, the "whiter" the color. If the value is 100
-     * then the color will be black.
-     */
-    def asHTMLColor = {
-        val rgbValue = 0 + (100 - value) * 2
-        s"rgb($rgbValue,$rgbValue,$rgbValue)"
-    }
+    override type ThrownException = scala.collection.Set[DomainSingleOriginReferenceValue]
 
-    def asAnsiColoredString: String = {
-        if (value > 65)
-            RED+"[error]"+RESET
-        else if (value > 32)
-            YELLOW+"[warn]"+RESET
-        else
-            "[info]"
-    }
+    override protected[this] def recordThrownException(
+        pc: PC,
+        value: ExceptionValue): ThrownException =
+        value match {
+            case MultipleReferenceValues(values)        ⇒ values
+            case sorv: DomainSingleOriginReferenceValue ⇒ Set.empty + sorv
+        }
+
+    override protected[this] def joinThrownExceptions(
+        pc: PC,
+        previouslyThrownException: ThrownException,
+        value: ExceptionValue): ThrownException =
+        value match {
+            case MultipleReferenceValues(values)        ⇒ previouslyThrownException ++ values
+            case sorv: DomainSingleOriginReferenceValue ⇒ previouslyThrownException + sorv
+        }
 }
 
-object Relevance {
-    final val DefaultRelevance = Relevance(50)
-    final val High = Relevance(70)
-    final val VeryHigh = Relevance(80)
-    final val OfUtmostImportance = Relevance(99)
-    final val Undetermined = Relevance(0)
-}

@@ -27,49 +27,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bugpicker
-package analysis
+package ai
 
-import scala.Console.{ RED, YELLOW, RESET }
+import scala.util.control.ControlThrowable
+import scala.collection.BitSet
 
-/**
- * Describes the overall relevance of a finding.
- *
- * When calculation the relevance you should take all
- * properties of the associated issue into consideration:
- *  - kind of issue
- *  - category of issue
- *  - accuracy of the analysis
- *
- * @param value A value between 1 (not really relevant) and 100 (absolutely relevant).
- *
- * @author Michael Eichberg
- */
-case class Relevance(value: Int) extends AnyVal {
+import org.opalj.util.{ Answer, Yes, No, Unknown }
 
-    /**
-     * The lower the value, the "whiter" the color. If the value is 100
-     * then the color will be black.
-     */
-    def asHTMLColor = {
-        val rgbValue = 0 + (100 - value) * 2
-        s"rgb($rgbValue,$rgbValue,$rgbValue)"
+import org.opalj.br._
+import org.opalj.br.instructions._
+
+object NoAI {
+
+    private object TheNoAI extends AI[Domain] {
+        final override def continueInterpretation(
+            code: Code,
+            theDomain: Domain)(
+                initialWorkList: List[PC],
+                alreadyEvaluated: List[PC],
+                theOperandsArray: theDomain.OperandsArray,
+                theLocalsArray: theDomain.LocalsArray,
+                theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
+
+            val result =
+                AIResultBuilder.aborted(
+                    code, theDomain)(
+                        List(0), List.empty, theOperandsArray, theLocalsArray, List.empty)
+            theDomain.abstractInterpretationEnded(result)
+            if (tracer.isDefined) tracer.get.result(result)
+            result
+        }
     }
 
-    def asAnsiColoredString: String = {
-        if (value > 65)
-            RED+"[error]"+RESET
-        else if (value > 32)
-            YELLOW+"[warn]"+RESET
-        else
-            "[info]"
-    }
-}
+    def apply[D <: Domain](): AI[D] = TheNoAI.asInstanceOf[AI[D]]
 
-object Relevance {
-    final val DefaultRelevance = Relevance(50)
-    final val High = Relevance(70)
-    final val VeryHigh = Relevance(80)
-    final val OfUtmostImportance = Relevance(99)
-    final val Undetermined = Relevance(0)
 }

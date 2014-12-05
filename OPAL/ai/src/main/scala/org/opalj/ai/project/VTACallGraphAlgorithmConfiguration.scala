@@ -40,7 +40,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.analyses.FieldValuesKey
 
 /**
- * Configuration of a call graph algorithm that uses CHA.
+ * Configuration of a call graph algorithm that uses "variable type analysis".
  *
  * ==Thread Safety==
  * This class is thread-safe (it contains no mutable state.)
@@ -65,6 +65,8 @@ abstract class VTACallGraphAlgorithmConfiguration(
     val cache: Cache = new CallGraphCache[MethodSignature, Value](project)
 
     val Extractor = new VTACallGraphExtractor(cache)
+
+    val TheAI: AI[CallGraphDomain] = BaseAI.asInstanceOf[AI[CallGraphDomain]]
 }
 
 class BasicVTACallGraphAlgorithmConfiguration(

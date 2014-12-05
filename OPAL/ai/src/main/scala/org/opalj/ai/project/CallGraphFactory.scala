@@ -89,8 +89,7 @@ object CallGraphFactory {
         if (theProject.classHierarchy.rootTypes.tail.nonEmpty)
             // TODO Use a Log...
             println(
-                "[warn] the class hierarchy is incomplete; "+
-                    "the following types have incomplete supertype information: "+
+                "[warn] missing supertype information for: "+
                     theProject.classHierarchy.rootTypes.filterNot(_ eq ObjectType.Object).map(_.toJava).mkString(", ")
             )
 
@@ -111,7 +110,7 @@ object CallGraphFactory {
                     val classFile = theProject.classFile(method)
                     val domain = configuration.Domain(classFile, method)
                     try {
-                        val result = BaseAI(classFile, method, domain)
+                        val result = configuration.TheAI(classFile, method, domain)
                         val (callEdges, unresolveableMethodCalls) = extract(result)
                         (callEdges, unresolveableMethodCalls, None)
                     } catch {

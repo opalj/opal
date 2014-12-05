@@ -56,7 +56,7 @@ trait TheMethod extends TheCode {
     /**
      * Returns the code block that is currently analyzed.
      */
-    final /*override*/ def code: Code = method.body.get
+    final /*override*/ val code: Code = method.body.get
 
     /**
      * Returns the method that is currently analyzed.

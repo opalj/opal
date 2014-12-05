@@ -177,9 +177,11 @@ sealed trait CallGraphDifferenceReport {
     val callTargets: Iterable[Method]
     final override def toString: String = {
         import Console._
+        val thisClassType = project.classFile(method).thisType
         differenceClassifier +
-            project.classFile(method).thisType.toJava+"{ "+method.toJava+"{ "+
-            "PC="+pc+"(Line="+method.body.get.lineNumber(pc).getOrElse("NotAvailable")+"): "+
+            project.source(thisClassType).getOrElse("<Source File Not Available>")+": "+
+            thisClassType.toJava+"{ "+method.toJava+"{ "+
+            "pc="+pc+"(line="+method.body.get.lineNumber(pc).getOrElse("NotAvailable")+"): "+
             (
                 callTargets map { method ⇒
                     BLUE + project.classFile(method).thisType.toJava+"{ "+
