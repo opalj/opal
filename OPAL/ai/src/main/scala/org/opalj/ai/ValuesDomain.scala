@@ -209,6 +209,8 @@ trait ValuesDomain {
          *      [[doJoin]].
          */
         def join(pc: PC, that: DomainValue): Update[DomainValue] = {
+            assert(that ne this, "join is only defined for objects that are different")
+
             if ((that eq TheIllegalValue) ||
                 (this.computationalType ne that.computationalType))
                 MetaInformationUpdateIllegalValue
@@ -539,6 +541,9 @@ trait ValuesDomain {
      * This operation is commutative.
      */
     def mergeDomainValues(pc: PC, v1: DomainValue, v2: DomainValue): DomainValue = {
+        if (v1 eq v2)
+            return v1;
+
         v1.join(pc, v2) match {
             case NoUpdate      ⇒ v1
             case SomeUpdate(v) ⇒ v
