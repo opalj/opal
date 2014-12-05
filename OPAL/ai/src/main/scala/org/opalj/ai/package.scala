@@ -61,6 +61,11 @@ import org.opalj.br.instructions.Instruction
  */
 package object ai {
 
+    assert({
+        println("[info - Abstract Interpretation Framework] Assertions are enabled.")
+        true
+    })
+
     /**
      * Type alias that can be used if the AI can use all kinds of domains.
      *

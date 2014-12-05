@@ -150,7 +150,8 @@ object DefaultPreciseIntegerValuesTest {
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultReferenceValuesBinding
             with DefaultPreciseIntegerValues
-            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             with PredefinedClassHierarchy
