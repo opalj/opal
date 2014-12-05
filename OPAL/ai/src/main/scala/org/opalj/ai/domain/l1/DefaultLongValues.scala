@@ -40,14 +40,17 @@ package l1
  *
  * @author Michael Eichberg
  * @author Riadh Chtara
+ * @author David Becker
  */
-trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
+trait DefaultLongValues
+        extends DefaultDomainValueBinding
+        with LongValues {
     domain: IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
 
     /**
      * Represents a specific, but unknown long value.
      */
-    case object ALongValue extends super.ALongValue {
+    class ALongValue extends super.ALongValue {
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
             NoUpdate
@@ -60,12 +63,16 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
         override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
             target.LongValue(pc)
 
+        override def newInstance: DomainValue = ALongValue
+
     }
+
+    def ALongValue() = new ALongValue()
 
     /**
      * Represents a concrete long value.
      */
-    case class TheLongValue(override val value: Long) extends super.ConcreteLongValue {
+    case class TheLongValue(override val value: Long) extends super.DefiniteLongValue {
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
             other match {
@@ -75,7 +82,7 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
                     } else {
                         StructuralUpdate(LongValue(pc))
                     }
-                case ALongValue ⇒ StructuralUpdate(other)
+                case that: ALongValue ⇒ StructuralUpdate(other)
             }
 
         override def abstractsOver(other: DomainValue): Boolean =
@@ -90,6 +97,8 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
             target.LongValue(pc, value)
 
         override def toString: String = "LongValue(value="+value+")"
+
+        override def newInstance: DomainValue = TheLongValue(value)
     }
 
     //
