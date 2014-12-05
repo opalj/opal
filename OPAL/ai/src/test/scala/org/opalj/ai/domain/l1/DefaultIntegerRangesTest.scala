@@ -137,7 +137,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
             it("(join with itself) val ir = IntegerRange(...); ir join ir => \"NoUpdate\"") {
                 val v = IntegerRange(0, 0)
-                v.join(-1, v) should be(NoUpdate)
+                v.join(-1, IntegerRange(0, 0)) should be(NoUpdate)
             }
 
             it("(join of disjoint ranges) [Int.MinValue,-1] join [1,Int.MaxValue] => [Int.MinValue,Int.MaxValue]") {

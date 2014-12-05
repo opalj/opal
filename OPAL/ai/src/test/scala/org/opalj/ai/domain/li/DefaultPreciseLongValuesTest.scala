@@ -77,7 +77,7 @@ class DefaultPreciseLongValuesTest extends FlatSpec with Matchers with ParallelT
 
     it should ("be able to join two identical values") in {
         val v = LongRange(0, 0)
-        v.join(-1, v) should be(NoUpdate)
+        v.join(-1, LongRange(0, 0)) should be(NoUpdate)
     }
 
     it should ("be able to join two overlapping values") in {
