@@ -41,7 +41,7 @@ import scala.Console.GREEN
 import scala.Console.RESET
 import scala.collection.SortedMap
 import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.MethodWithBody
@@ -70,7 +70,11 @@ import org.opalj.br.instructions.ShiftInstruction
 import org.opalj.br.instructions.INSTANCEOF
 import org.opalj.br.instructions.ISTORE
 import org.opalj.br.instructions.IStoreInstruction
+import org.opalj.br.instructions.LStoreInstruction
 import org.opalj.ai.analyses.FieldValuesKey
+import org.opalj.ai.AIResult
+import org.opalj.ai.domain.ConcreteIntegerValues
+import org.opalj.ai.domain.ConcreteLongValues
 
 /**
  * A static analysis that analyzes the data-flow to identify various issues in the
@@ -86,9 +90,11 @@ import org.opalj.ai.analyses.FieldValuesKey
  */
 class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
-    override def title: String = "Dead/Useless/Buggy Code Identification"
+    override def title: String =
+        "Dead/Useless/Buggy Code Identification"
 
-    override def description: String = "Identifies dead/useless/buggy code using abstract interpretation."
+    override def description: String =
+        "Identifies dead/useless/buggy code by analyzing expressions."
 
     /**
      * Executes the analysis of the projects concrete methods.
@@ -98,8 +104,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
      *      - a string that matches the following pattern: `-maxEvalFactor=(\d+(?:.\d+)?)`; e.g.,
      *      `-maxEvalFactor=0.5` or `-maxEvalFactor=1.5`. A value below 0.05 is usually
      *      not useable.
-     *      - a string that machtes the following pattern: `-maxEvalTime=(\d+)`.
-     *      - a string that machtes the following pattern: `-maxCardinalityOfIntegerRanges=(\d+)`.
+     *      - a string that matches the following pattern: `-maxEvalTime=(\d+)`.
+     *      - a string that matches the following pattern: `-maxCardinalityOfIntegerRanges=(\d+)`.
      */
     override def analyze(
         theProject: Project[URL],
@@ -144,18 +150,31 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         val progressManagement =
             initProgressManagement(1 /*for the FieldValues analysis*/ + classFilesCount)
 
-        // preanalysis
+        //
+        //
+        // DO PREANALYSES
+        //
+        //
         progressManagement.start(1, "Analyzing field declarations")
         theProject.get(FieldValuesKey)
         progressManagement.end(1)
 
+        //
+        //
+        // MAIN ANALYSIS
+        //
+        //
+
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
         val results = new java.util.concurrent.ConcurrentLinkedQueue[Issue]()
+        val fieldValueInformation = theProject.get(FieldValuesKey)
 
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
             val analysisDomain =
-                new BugPickerAnalysisDomain(theProject, method, maxCardinalityOfIntegerRanges)
+                new BugPickerAnalysisDomain(
+                    theProject, fieldValueInformation,
+                    method, maxCardinalityOfIntegerRanges)
             val ai =
                 new BoundedInterruptableAI[analysisDomain.type](
                     body,
@@ -163,113 +182,34 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                     maxEvalTime,
                     doInterrupt)
             val result = ai(classFile, method, analysisDomain)
-            import result.domain.ConcreteIntegerValue
-            import result.domain.ConcreteLongValue
-            import result.domain
 
             if (!result.wasAborted) {
-                val operandsArray = result.operandsArray
 
-                val methodWithDeadCode = for {
-                    (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
-                        case (ctiPC, i: ConditionalBranchInstruction) if operandsArray(ctiPC) != null ⇒
-                            (ctiPC, i, i.nextInstructions(ctiPC, /*not required*/ null))
-                    }
-                    branchTarget ← branchTargetPCs.iterator
-                    if operandsArray(branchTarget) == null
-                } yield {
-                    val operands = operandsArray(ctiPC).take(instruction.operandCount)
-                    DeadCode(
-                        classFile, method, ctiPC,
-                        operands, Some(result.localsArray(ctiPC)),
-                        branchTarget, None)
-                }
-                for ((ln, dc) ← methodWithDeadCode.groupBy(_.line)) {
-                    ln match {
-                        case None ⇒
-                            if (dc.tail.isEmpty) {
-                                // we have just one message, but since we have 
-                                // no line number we are still "doubtful"
-                                results.add(dc.head.copy(relevance = Some(Relevance(75))))
-                            } else {
-                                dc.foreach(i ⇒ results.add(i.copy(relevance = Some(Relevance(5)))))
-                            }
-
-                        case Some(ln) ⇒
-                            if (dc.tail.isEmpty)
-                                // we have just one message,...
-                                results.add(dc.head.copy(relevance = Some(Relevance(100))))
-                            else
-                                dc.foreach(i ⇒ results.add(i.copy(relevance = Some(Relevance(10)))))
-                    }
-                }
-
-                val methodsWithUselessComputations = {
-
-                    collectWithOperandsAndIndex(result.domain)(body, result.operandsArray) {
-
-                        // HANDLING INT VALUES 
-                        //
-                        case (
-                            pc,
-                            instr @ BinaryArithmeticInstruction(ComputationalTypeInt),
-                            Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
-                            ) ⇒
-                            // The java "~" operator has no direct representation in bytecode
-                            // instead, compilers generate an "ixor" with "-1" as the
-                            // second value.
-                            if (instr.operator == "^" && a == -1)
-                                (pc, s"Constant computation: ~$b (<=> $b ${instr.operator} $a).")
-                            else
-                                (pc, s"Constant computation: $b ${instr.operator} $a.")
-
-                        case (pc, instr: INEG.type, Seq(ConcreteIntegerValue(a), _*)) ⇒
-                            (pc, s"Constant computation: -${a}")
-
-                        case (pc, instr @ IINC(index, increment), _) if result.domain.intValueOption(result.localsArray(pc)(index)).isDefined ⇒
-                            val v = result.domain.intValueOption(result.localsArray(pc)(index)).get
-                            (pc, s"Constant computation (inc): ${v} + $increment")
-
-                        // HANDLING LONG VALUES 
-                        //
-                        case (
-                            pc,
-                            instr @ BinaryArithmeticInstruction(ComputationalTypeLong),
-                            Seq(ConcreteLongValue(a), ConcreteLongValue(b), _*)
-                            ) ⇒
-                            (pc, s"Constant computation: ${b}l ${instr.operator} ${a}l.")
-                        case (
-                            pc,
-                            instr @ ShiftInstruction(ComputationalTypeLong),
-                            Seq(ConcreteLongValue(a), ConcreteIntegerValue(b), _*)
-                            ) ⇒
-                            (pc, s"Constant computation: ${b}l ${instr.operator} ${a}l.")
-
-                        case (pc, instr: LNEG.type, Seq(ConcreteLongValue(a), _*)) ⇒
-                            (pc, s"Constant computation: -${a}l")
-
-                        // HANDLING REFERENCE VALUES
-                        //
-
-                        case (
-                            pc,
-                            INSTANCEOF(referenceType),
-                            Seq(rv: domain.ReferenceValue, _*)
-                            ) if domain.intValueOption(
-                            result.operandsArray(pc + INSTANCEOF.length).head).isDefined ⇒
-                            (pc, s"Useless type test: ${rv.upperTypeBound.map(_.toJava).mkString("", " with ", "")} instanceof ${referenceType.toJava}")
-
-                    }.map { issue ⇒
-                        val (pc, message) = issue
-                        UselessComputation(
-                            classFile, method, pc,
-                            Some(result.localsArray(pc)),
-                            message)
-                    }
-                }
+                //
+                // FIND DEAD CODE
+                //
                 results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(methodsWithUselessComputations)
+                    scala.collection.JavaConversions.asJavaCollection(
+                        DeadCodeAnalysis.analyze(theProject, classFile, method, result)
+                    )
                 )
+
+                //
+                // FIND USELESS COMPUTATIONS
+                //
+                results.addAll(
+                    scala.collection.JavaConversions.asJavaCollection(
+                        UselessComputationsAnalysis.analyze(theProject, classFile, method, result)
+                    )
+                )
+
+                //
+                // FIND USELESS EXPRESSION EVALUATIONS
+                //
+
+                import result.domain.ConcreteIntegerValue
+                import result.domain.ConcreteLongValue
+                import result.domain
 
                 if (domain.code.localVariableTable.isDefined) {
                     // This analysis requires debug information to increase the likelihood
@@ -295,11 +235,39 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
                                 val lv = code.localVariable(pc, index).get
 
-                                UselessComputation(
-                                    classFile, method, pc,
-                                    Some(localsArray(pc)),
-                                    "(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+").")
+                                StandardIssue(
+                                    theProject, classFile, Some(method), Some(pc),
+                                    Some(result.operandsArray(pc)),
+                                    Some(result.localsArray(pc)),
+                                    "useless (re-)assignment",
+                                    Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
+                                    Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                                    Set(IssueKind.ConstantComputation),
+                                    Seq.empty,
+                                    new Relevance(20)
+                                )
 
+                            case (
+                                pc,
+                                LStoreInstruction(index),
+                                Seq(ConcreteLongValue(a), _*)
+                                ) if localsArray(pc) != null &&
+                                domain.longValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
+                                code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
+
+                                val lv = code.localVariable(pc, index).get
+
+                                StandardIssue(
+                                    theProject, classFile, Some(method), Some(pc),
+                                    Some(result.operandsArray(pc)),
+                                    Some(result.localsArray(pc)),
+                                    "useless (re-)assignment",
+                                    Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
+                                    Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                                    Set(IssueKind.ConstantComputation),
+                                    Seq.empty,
+                                    new Relevance(20)
+                                )
                         }
 
                     results.addAll(
@@ -385,13 +353,13 @@ object BugPickerAnalysis {
         val issuesNode: Iterable[Node] = {
             import scala.collection.SortedMap
             val groupedMessages =
-                SortedMap.empty[String, Seq[DeadCode]] ++
+                SortedMap.empty[String, Seq[Issue]] ++
                     methodsWithDeadCode.groupBy(dc ⇒ dc.classFile.thisType.packageName)
             val result =
                 (for { (pkg, mdc) ← groupedMessages } yield {
-                    <details>
+                    <details class="package_summary">
                         <summary class="package_summary">{ pkg.replace('/', '.') }</summary>
-                        { mdc.toSeq.sorted(IssueOrdering).map(_.toXHTML) }
+                        { mdc.toSeq.sorted(IssueOrdering).map(_.asXHTML) }
                     </details>
                 })
             result
@@ -407,13 +375,25 @@ object BugPickerAnalysis {
             </head>
             <body>
                 <div id="analysis_controls">
-                    <span>Number of issues: { methodWithDeadCodeCount }.</span>
-                    Suppress issues with an estimated
-                    <abbr title='The importance is calculated using the available context information. E.g., a dead "default case" in a switch statement is often the result of defensive programming and, hence, not important.'>importance</abbr>
-                    less than:
-                    <abbr title="The identified issue is probably not important or is just a technical artifact.">1</abbr>
-                    <input type="range" name="relevance" id="relevance" min="1" max="100" onchange="updateRelevance(this.valueAsNumber)"/>
-                    <abbr title="The identified issue is probably very important.">100</abbr>
+                    <div>
+                        <span>Number of issues currently displayed: <span id="issues_displayed"> { methodWithDeadCodeCount } </span> (Total issues: { methodWithDeadCodeCount })</span>
+                    </div>
+                    <div>
+                        Suppress issues with an estimated
+                        <abbr title='The importance is calculated using the available context information. E.g., a dead "default case" in a switch statement is often the result of defensive programming and, hence, not important.'>importance</abbr>
+                        less than:
+                        <abbr title="The identified issue is probably not important or is just a technical artifact.">1</abbr>
+                        <input type="range" name="relevance" id="relevance" min="1" max="100" onchange="updateRelevance(this.valueAsNumber)"/>
+                        <abbr title="The identified issue is probably very important.">100</abbr>
+                    </div>
+                    <div class="issue_filter">
+                        <span>Manifestation in the Code:</span><br/>
+                        <span id="filter_data-kind"> </span>
+                    </div>
+                    <div class="issue_filter">
+                        <span>Software Quality Attributes:</span><br/>
+                        <span id="filter_data-category"> </span>
+                    </div>
                     <div>
                         Show all Packages:<a class="onclick" onclick="openAllPackages()">+</a><a class="onclick" onclick="closeAllPackages()">-</a>
                     </div>

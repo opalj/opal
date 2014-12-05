@@ -57,9 +57,9 @@ trait DefaultTypeLevelReferenceValues
     //
     // -----------------------------------------------------------------------------------
 
-    type DomainNullValue <: NullValue with DomainReferenceValue
-    type DomainObjectValue <: ObjectValue with DomainReferenceValue // <= SObject.. and MObject...
-    type DomainArrayValue <: ArrayValue with DomainReferenceValue
+    type DomainNullValue <: NullValue with AReferenceValue
+    type DomainObjectValue <: ObjectValue with AReferenceValue // <= SObject.. and MObject...
+    type DomainArrayValue <: ArrayValue with AReferenceValue
 
     protected[this] class NullValue extends super.NullValue { this: DomainNullValue ⇒
 
@@ -89,7 +89,14 @@ trait DefaultTypeLevelReferenceValues
                 case No if isPrecise ||
                     supertype.isObjectType /* the array's supertypes: Object, Serializable and Cloneable are handled by domain.isSubtypeOf*/ ||
                     theUpperTypeBound.elementType.isBaseType ||
-                    (supertype.isArrayType && supertype.asArrayType.elementType.isBaseType) ⇒ No
+                    (
+                        supertype.isArrayType &&
+                        supertype.asArrayType.elementType.isBaseType &&
+                        (
+                            theUpperTypeBound.dimensions >= supertype.asArrayType.dimensions ||
+                            (theUpperTypeBound.componentType ne ObjectType.Object)
+                        )
+                    ) ⇒ No
                 case _ ⇒ Unknown
             }
         }
@@ -107,9 +114,10 @@ trait DefaultTypeLevelReferenceValues
                     )
 
                 case IsAReferenceValue(UIDSet1(valueType: ArrayType)) if valueType.elementType.isBaseType ⇒
-                    // supports arrays of arrays of primitive values
-                    if (theUpperTypeBound.componentType eq valueType)
-                        Yes
+                    //... we want to store an Array (of Array of ...) of primitives 
+                    // in this array
+                    if (theUpperTypeBound.componentType.isReferenceType)
+                        classHierarchy.isSubtypeOf(valueType, theUpperTypeBound.componentType.asReferenceType)
                     else
                         No
 
@@ -179,14 +187,14 @@ trait DefaultTypeLevelReferenceValues
                             StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
                     }
 
-                case NullValue() ⇒
+                case that: NullValue ⇒
                     NoUpdate
             }
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
             other match {
-                case NullValue() ⇒ true
+                case that: NullValue ⇒ true
                 case ArrayValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
                 case _ ⇒ false
@@ -307,7 +315,7 @@ trait DefaultTypeLevelReferenceValues
                             StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
                     }
 
-                case NullValue() ⇒
+                case that: NullValue ⇒
                     NoUpdate
             }
         }
@@ -316,7 +324,7 @@ trait DefaultTypeLevelReferenceValues
             other match {
                 case SObjectValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
-                case NullValue() ⇒
+                case that: NullValue ⇒
                     true
                 case ArrayValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
@@ -347,6 +355,8 @@ trait DefaultTypeLevelReferenceValues
         override val upperTypeBound: UIDSet[ObjectType])
             extends ObjectValue {
         value: DomainObjectValue ⇒
+
+        assert(upperTypeBound.size > 1)
 
         override def referenceValues: Iterable[IsAReferenceValue] = Iterable(this)
 
@@ -425,7 +435,7 @@ trait DefaultTypeLevelReferenceValues
                             asStructuralUpdate(joinPC, newUpperTypeBound)
                     }
 
-                case NullValue() ⇒
+                case that: NullValue ⇒
                     NoUpdate
             }
         }

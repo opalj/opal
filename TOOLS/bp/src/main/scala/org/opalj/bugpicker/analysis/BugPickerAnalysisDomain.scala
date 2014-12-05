@@ -34,8 +34,9 @@ import java.net.URL
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
-import org.opalj.ai.CoRelationalDomain
+import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
+import org.opalj.ai.analyses.FieldValueInformation
 
 /**
  * The domain that is used to identify the issues.
@@ -44,9 +45,10 @@ import org.opalj.ai.domain
  */
 class BugPickerAnalysisDomain(
     override val project: Project[java.net.URL],
+    val fieldValueInformation: FieldValueInformation,
     override val method: Method,
     override val maxCardinalityOfIntegerRanges: Long = 16l)
-        extends CoRelationalDomain
+        extends CorrelationalDomain
         with domain.DefaultDomainValueBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
         with domain.l0.DefaultTypeLevelFloatValues
@@ -54,7 +56,9 @@ class BugPickerAnalysisDomain(
         //with domain.l0.TypeLevelFieldAccessInstructions
         with domain.l0.RefinedTypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
-        with domain.l1.DefaultReferenceValuesBinding
+        //with domain.l1.DefaultReferenceValuesBinding
+        with domain.l1.DefaultClassValuesBinding
+        //with domain.l1.DefaultStringValuesBinding
         with domain.l1.DefaultIntegerRangeValues
         with domain.l1.MaxArrayLengthRefinement
         with domain.l1.ConstraintsBetweenIntegerValues
@@ -67,4 +71,9 @@ class BugPickerAnalysisDomain(
         with domain.TheProject
         with domain.TheMethod
         with domain.ProjectBasedClassHierarchy
+        // the following two are required to detect instructions that always throw
+        // an exception (such as div by zero, a failing checkcast, a method call that
+        // always fails etc.
+        with domain.RecordCFG
+        with domain.l1.RecordAllThrownExceptions
 

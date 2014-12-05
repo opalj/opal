@@ -50,7 +50,19 @@ object Disassembler {
         }
 
         def process(classFileName: String) {
-            val classFile = ClassFileReader.ClassFile(args(0), classFileName).head
+            var fileName =
+                if (classFileName.endsWith(".class"))
+                    classFileName
+                else {
+                    (
+                        if (classFileName.contains("."))
+                            classFileName.replace('.', '/')
+                        else
+                            classFileName
+                    )+".class"
+                }
+
+            val classFile = ClassFileReader.ClassFile(args(0), fileName).head
             processClassFile(classFile)
         }
 

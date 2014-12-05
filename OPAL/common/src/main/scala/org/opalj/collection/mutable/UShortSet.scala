@@ -50,8 +50,12 @@ trait UShortSet extends collection.UShortSet {
      */
     def +≈:(value: UShort): UShortSet
 
-    override def +(value: UShort): UShortSet = {
-        value +≈: this.mutableCopy
+    override def +(value: UShort): UShortSet = value +≈: this.mutableCopy
+
+    def ++(values: org.opalj.collection.UShortSet): UShortSet = {
+        var newValues = this.mutableCopy
+        values.foreach { value ⇒ newValues = value +≈: newValues }
+        newValues
     }
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:

@@ -146,7 +146,7 @@ trait AI[D <: Domain] {
      * This method is called by the `perform` method with the same signature. It
      * may be overridden by subclasses to perform some additional processing.
      */
-    protected def initialOperands(
+    def initialOperands(
         classFile: ClassFile,
         method: Method,
         domain: D): domain.Operands = Nil
@@ -172,7 +172,7 @@ trait AI[D <: Domain] {
      * @param domain The domain that will be used to perform computations related
      *  	to values.
      */
-    protected def initialLocals(
+    def initialLocals(
         classFile: ClassFile,
         method: Method,
         domain: D)(
@@ -854,7 +854,7 @@ trait AI[D <: Domain] {
                     exceptions.foreach(handleException)
                 }
 
-                def abruptMethodExecution(pc: Int, exception: DomainValue): Unit = {
+                def abruptMethodExecution(pc: Int, exception: ExceptionValue): Unit = {
                     if (tracer.isDefined)
                         tracer.get.abruptMethodExecution(theDomain)(pc, exception)
 
@@ -1912,6 +1912,12 @@ trait AI[D <: Domain] {
                                             pc,
                                             supertype,
                                             operands, locals)
+                                    assert(
+                                        theDomain.isValueSubtypeOf(newOperands.head, supertype).isYes,
+                                        s"the cast of $objectref to ${supertype.toJava} failed: "+
+                                            s"the subtyping relation between ${newOperands.head} and ${supertype.toJava} is "+
+                                            theDomain.isValueSubtypeOf(newOperands.head, supertype)
+                                    )
                                     fallThrough(newOperands, newLocals)
                             }
                         }
@@ -1924,14 +1930,22 @@ trait AI[D <: Domain] {
                         val value :: rest = operands
                         val referenceType = as[INSTANCEOF](instruction).referenceType
 
+                        val valueIsNull = theDomain.refIsNull(pc, value)
                         val result =
-                            if (theDomain.refIsNull(pc, value).isYes)
+                            if (valueIsNull.isYes)
                                 theDomain.BooleanValue(pc, false)
                             else
                                 theDomain.isValueSubtypeOf(value, referenceType) match {
-                                    case Yes     ⇒ theDomain.BooleanValue(pc, true)
-                                    case No      ⇒ theDomain.BooleanValue(pc, false)
-                                    case Unknown ⇒ theDomain.BooleanValue(pc)
+                                    case No ⇒
+                                        theDomain.BooleanValue(pc, false)
+
+                                    case Yes if valueIsNull.isNo ⇒
+                                        // null instanceOf[X] is always false...
+                                        // TODO [Dependent Values] add a constraint that – if the value is 1 then the value is non-null and if is 0 then the value is null
+                                        theDomain.BooleanValue(pc, true)
+
+                                    case _ /*Unknown or valueIsNull === Unknown*/ ⇒
+                                        theDomain.BooleanValue(pc)
                                 }
                         fallThrough(result :: rest)
                     }

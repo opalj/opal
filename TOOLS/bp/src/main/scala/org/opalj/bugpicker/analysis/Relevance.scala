@@ -30,6 +30,8 @@ package org.opalj
 package bugpicker
 package analysis
 
+import scala.Console.{ RED, YELLOW, RESET }
+
 /**
  * Describes the overall relevance of a finding.
  *
@@ -53,4 +55,21 @@ case class Relevance(value: Int) extends AnyVal {
         val rgbValue = 0 + (100 - value) * 2
         s"rgb($rgbValue,$rgbValue,$rgbValue)"
     }
+
+    def asAnsiColoredString: String = {
+        if (value > 65)
+            RED+"[error]"+RESET
+        else if (value > 32)
+            YELLOW+"[warn]"+RESET
+        else
+            "[info]"
+    }
+}
+
+object Relevance {
+    final val DefaultRelevance = Relevance(50)
+    final val High = Relevance(70)
+    final val VeryHigh = Relevance(80)
+    final val OfUtmostImportance = Relevance(99)
+    final val Undetermined = Relevance(0)
 }

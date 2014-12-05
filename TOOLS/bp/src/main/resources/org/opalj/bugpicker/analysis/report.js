@@ -28,12 +28,43 @@
  */
 function updateRelevance(value){
 	document.querySelectorAll("*[data-relevance]").forEach(
-    	function(e){
-        	e.dataset.relevance < value ? 
-        		e.style.display="none" : 
-        		e.style.display="block"
+		function(e){
+			if (e.dataset.relevance < value)
+				e.classList.add("hide-relevance");
+			else
+				e.classList.remove("hide-relevance");
 		}
-    )
+	)
+	hideEmptyPackages();
+	updateNumberOfIssues();
+}
+
+function hideEmptyPackages() {
+	document.querySelector("#analysis_results").querySelectorAll("details.package_summary").forEach(
+		function(p){
+			var package_counter = 0;
+			p.querySelectorAll(".an_issue").forEach(
+				function(e){
+					if (e.classList.contains("issue_visible") && !e.classList.contains("hide-relevance"))
+						package_counter++;
+				}
+			)
+			package_counter > 0 ? 
+				p.style.display="block" :
+				p.style.display="none";
+		}
+	)
+}
+
+function updateNumberOfIssues(){
+	var current = 0;
+	document.querySelectorAll(".an_issue").forEach(
+		function(e){
+			if (e.classList.contains("issue_visible") && !e.classList.contains("hide-relevance"))
+				current++;
+		}
+	)
+	document.querySelector("#issues_displayed").innerHTML = current;
 }
 
 function openAllPackages(){
@@ -46,4 +77,72 @@ function closeAllPackages(){
 	document.querySelectorAll('div#analysis_results > details').forEach(
 		function(e){e.removeAttribute('open')}
 	)
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+	initFilter("kind");
+	initFilter("category");
+}, false);
+
+var filterCount = 0;
+
+function initFilter(dataType){
+	var allValues = [];
+	document.querySelectorAll("*[data-"+dataType+"]").forEach(
+		function(e){
+			var values = e.getAttribute("data-"+dataType).split(" ");
+			allValues = allValues.concat(values).filter (function (v, i, a) { return a.indexOf (v) == i });
+		}
+	)
+	var i = 0;
+	document.querySelector("#filter_data-"+dataType).innerHTML = 
+		ArrayJoin(allValues.sort(), 
+			function (i, e) { 
+				var name = "filter-data-" + dataType;
+				var id = name + i;
+				return "<input type='checkbox' id='"+id+"' name='"+name+"' value='"+e+"' onchange='updateFilter(\""+dataType+"\")' checked>"+
+						"<label for='"+id+"'>"+e.replace("_", " ")+"</label>"; 
+			}
+		);
+	filterCount++;
+	updateFilter(dataType);
+}
+
+function updateFilter(dataType){
+	document.querySelectorAll(".an_issue").forEach(
+		function(e) { 
+			e.classList.remove("show-"+dataType);
+			e.classList.remove("issue_visible");
+		});
+	document.querySelectorAll("input[name=filter-data-"+dataType+"]:checked").forEach(
+		function(f){
+			document.querySelectorAll(".an_issue[data-" + dataType + "~=" + f.getAttribute("value") + "]")
+				.forEach(function(e) { e.classList.add("show-"+dataType) } );
+		})
+		
+	// there has to be at least as much "show-" in the className of an issue as there are filter for the issue to be shown
+	document.querySelectorAll(".an_issue").forEach(
+		function(e) { 
+			if (e.className.count("show-") >= filterCount)
+				e.classList.add("issue_visible");
+		});
+	hideEmptyPackages();
+	updateNumberOfIssues();
+}
+
+String.prototype.count = function(substring) {
+	return (this.valueOf().length - (this.valueOf().replace(new RegExp(substring, "g"), "").length)) / substring.length;
+}
+
+/*
+  Works similar to the join-method of Array, but uses a function for the join
+*/
+function ArrayJoin(array, joinFunc) {
+	var ArrayJoinIntern = function(internArray, index) { 
+		var element = internArray.shift();
+		return internArray.length > 0 ? 
+			joinFunc(index, element) + ArrayJoinIntern(internArray, index+1) :
+			joinFunc(index, element);
+	}
+	return ArrayJoinIntern(array, 0)
 }

@@ -103,7 +103,7 @@ trait ConsoleEvaluationTracer extends AITracer {
     override def abruptMethodExecution(
         domain: Domain)(
             pc: Int,
-            exception: domain.DomainValue): Unit = { /*EMPTY*/ }
+            exception: domain.ExceptionValue): Unit = { /*EMPTY*/ }
 
     override def jumpToSubroutine(
         domain: Domain)(

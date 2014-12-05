@@ -35,10 +35,10 @@ import org.opalj.br.ObjectType
 import org.opalj.br.FieldType
 import org.opalj.br.Field
 import org.opalj.br.analyses.SomeProject
-
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.ProjectBasedClassHierarchy
+import org.opalj.ai.analyses.FieldValueInformation
 
 /**
  * Queries the project information to identify fields with refined field type information.
@@ -47,6 +47,8 @@ import org.opalj.ai.domain.ProjectBasedClassHierarchy
  */
 trait RefinedTypeLevelFieldAccessInstructions extends TypeLevelFieldAccessInstructions {
     domain: ReferenceValuesDomain with ValuesFactory with Configuration with TheProject with ProjectBasedClassHierarchy ⇒
+
+    val fieldValueInformation: FieldValueInformation
 
     override def getfield(
         pc: PC,
@@ -59,7 +61,7 @@ trait RefinedTypeLevelFieldAccessInstructions extends TypeLevelFieldAccessInstru
             declaringClass, fieldName, fieldType, project
         )
         if (field.isDefined) {
-            val fieldValue = project.get(FieldValuesKey).get(field.get)
+            val fieldValue = fieldValueInformation.get(field.get)
             if (fieldValue.isDefined) {
                 return doGetfield(pc, objectref, fieldValue.get.adapt(domain, pc))
             }
@@ -81,7 +83,7 @@ trait RefinedTypeLevelFieldAccessInstructions extends TypeLevelFieldAccessInstru
             declaringClass, fieldName, fieldType, project
         )
         if (field.isDefined) {
-            val fieldValue = project.get(FieldValuesKey).get(field.get)
+            val fieldValue = fieldValueInformation.get(field.get)
             if (fieldValue.isDefined) {
                 return doGetstatic(pc, fieldValue.get.adapt(domain, pc))
             }

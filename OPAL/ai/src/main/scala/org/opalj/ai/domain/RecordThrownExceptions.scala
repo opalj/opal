@@ -90,7 +90,7 @@ trait RecordThrownExceptions extends ReturnInstructionsDomain { domain: ValuesDo
 
     def allThrownExceptions: Map[PC, ThrownException] = thrownExceptions
 
-    abstract override def abruptMethodExecution(pc: PC, exception: DomainValue) {
+    abstract override def abruptMethodExecution(pc: PC, exception: ExceptionValue) {
         thrownExceptions =
             thrownExceptions.updated(
                 pc,

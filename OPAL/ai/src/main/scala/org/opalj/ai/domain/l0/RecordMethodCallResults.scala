@@ -49,7 +49,7 @@ trait RecordMethodCallResults
         extends MethodCallResults
         with RecordLastReturnedValues
         with RecordAllThrownExceptions {
-    this: ValuesDomain with ClassHierarchy ⇒
+    this: Domain with ClassHierarchy ⇒
 
     private[this] var hasReturnedNormally: Boolean = false
 
@@ -121,8 +121,7 @@ trait RecordMethodCallResults
                     case utb ⇒
                         val exceptionType =
                             classHierarchy.joinObjectTypesUntilSingleUpperBound(
-                                utb.asInstanceOf[UIDSet[ObjectType]],
-                                true)
+                                utb.asInstanceOf[UIDSet[ObjectType]])
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,
                             exceptionValuesPerType.getOrElse(
@@ -141,7 +140,7 @@ trait RecordMethodCallResults
                         exceptionValues.foreach { anExceptionValue ⇒
                             handleIsAReferenceValue(
                                 // TODO [Safety] We should make it possible that a value converts itself to a domain value
-                                anExceptionValue.asInstanceOf[DomainValue],
+                                anExceptionValue.asDomainValue(this),
                                 anExceptionValue)
                         }
 
@@ -155,7 +154,9 @@ trait RecordMethodCallResults
             exceptionValuesPerType.values.map { exceptionValuesPerType ⇒
                 summarize(callerPC, exceptionValuesPerType)
             }.map { exceptionValuePerType ⇒
-                exceptionValuePerType.adapt(target, callerPC)
+                exceptionValuePerType.
+                    adapt(target, callerPC).
+                    asInstanceOf[target.ExceptionValue]
             }
         }
     }

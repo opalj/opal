@@ -46,6 +46,11 @@ trait UShortSet {
     def +(value: UShort): UShortSet
 
     /**
+     * Creates a new set that contains this set's values as well as the given one's values.
+     */
+    def ++(values: UShortSet): UShortSet
+
+    /**
      * Creates a clone of this set that can safely be mutated.
      */
     def mutableCopy: mutable.UShortSet
@@ -123,7 +128,7 @@ trait UShortSet {
     def last: UShort = max
 
     /**
-     * The number of elements of this set.
+     * The number of elements of this set (the complexity is O(n)).
      *
      * @note The size is calculated on demand and requires a traversal of this
      *      data structure.

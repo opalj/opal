@@ -163,7 +163,7 @@ private object NoArgumentAndNoReturnValueMethodDescriptor
     override def parametersCount: Int = 0
 
     override def equalParameters(other: MethodDescriptor): Boolean =
-        other == NoArgumentAndNoReturnValueMethodDescriptor
+        other.parametersCount == 0
 
     // the default equals and hashCode implementations are a perfect fit
 }
@@ -403,6 +403,9 @@ object MethodDescriptor {
 
     final val JustReturnsString: MethodDescriptor =
         new NoArgumentMethodDescriptor(ObjectType.String)
+
+    final val JustTakesObject: MethodDescriptor =
+        apply(ObjectType.Object, VoidType)
 
     def withNoArgs(returnType: Type): MethodDescriptor = {
         (returnType.id: @scala.annotation.switch) match {

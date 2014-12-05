@@ -38,10 +38,10 @@ import scala.collection.{ Map ⇒ AMap, Set ⇒ ASet }
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
 
+import org.opalj.util.PerformanceEvaluation.{ ns2sec, time, run }
 import br._
 import br.reader.Java8Framework.ClassFiles
 import br.analyses.{ ClassHierarchy, Project }
-
 import de._
 
 /**
@@ -59,7 +59,23 @@ import de._
  *
  * @author Michael Eichberg
  */
-class Specification {
+class Specification(val project: Project[URL]) {
+
+    def this(classFiles: Traversable[(ClassFile, URL)]) {
+        this(
+            run {
+                Project(projectClassFilesWithSources = classFiles)
+            } { (executionTime, project) ⇒
+                Console.println(
+                    Console.GREEN+
+                        "1. Reading "+
+                        project.classFilesCount+" class files took "+
+                        ns2sec(executionTime).toString+" seconds."+
+                        Console.BLACK)
+                project
+            }
+        )
+    }
 
     @volatile
     private[this] var theEnsembles: MutableMap[Symbol, (SourceElementsMatcher, ASet[VirtualSourceElement])] =
@@ -295,23 +311,9 @@ class Specification {
         s
     }
 
-    def analyze(classFiles: Traversable[(ClassFile, URL)]): Set[SpecificationViolation] = {
+    def analyze(): Set[SpecificationViolation] = {
 
         import util.PerformanceEvaluation.{ ns2sec, time, run }
-
-        // Create and update the support data structures
-        //
-        val project: Project[URL] = run {
-            Project(projectClassFilesWithSources = classFiles)
-        } { (executionTime, project) ⇒
-            Console.println(
-                Console.GREEN+
-                    "1. Reading "+
-                    project.classFilesCount+" class files took "+
-                    ns2sec(executionTime).toString+" seconds."+
-                    Console.BLACK)
-            project
-        }
 
         val dependencyStore = time {
             project.get(DependencyStoreWithoutSelfDependenciesKey)
