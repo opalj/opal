@@ -43,7 +43,7 @@ trait LongValuesFactory extends ValuesDomain { domain ⇒
      *
      * The domain may ignore the information about the origin (`vo`).
      */
-    def LongValue(vo: ValueOrigin): DomainValue
+    def LongValue(origin: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given long value
@@ -52,7 +52,7 @@ trait LongValuesFactory extends ValuesDomain { domain ⇒
      *
      * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def LongValue(vo: ValueOrigin, value: Long): DomainValue
+    def LongValue(origin: ValueOrigin, value: Long): DomainValue
 
 }
 

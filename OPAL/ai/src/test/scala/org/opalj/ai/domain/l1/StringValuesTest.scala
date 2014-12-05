@@ -66,7 +66,8 @@ class StringValuesTest extends FlatSpec with Matchers with ParallelTestExecution
         with l0.SimpleTypeLevelInvokeInstructions
         with l1.DefaultStringValuesBinding
         with l1.DefaultIntegerRangeValues
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
 
     import AnalysisDomain._
 

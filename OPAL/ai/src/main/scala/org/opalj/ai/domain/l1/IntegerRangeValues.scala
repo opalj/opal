@@ -854,14 +854,14 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                         IntegerRange(
                             (1 << maxShift) | Int.MinValue,
                             (-1 << minShift) & Int.MaxValue)
-                } else { // case vlb < 0 && vub >= 0 && vub < 0
+                } else {
                     IntegerRange(
                         (1 << maxShift) | Int.MinValue,
                         (-1 << minShift) & Int.MaxValue)
                 }
 
-            case (_, IntegerRange(31, 31)) ⇒ IntegerRange(Int.MinValue, 0) // actually, the value is either Int.MinValue or 0
             case (IntegerRange(-1, -1), _) ⇒ IntegerRange(Int.MinValue, -1)
+            case (_, IntegerRange(31, 31)) ⇒ IntegerRange(Int.MinValue, 0) // actually, the value is either Int.MinValue or 0
             case _                         ⇒ IntegerValue(pc)
         }
     }

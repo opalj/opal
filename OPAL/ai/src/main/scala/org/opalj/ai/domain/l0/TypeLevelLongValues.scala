@@ -104,14 +104,6 @@ trait TypeLevelLongValues extends LongValuesDomain {
     /**
      * @inheritdoc
      *
-     * @return The result of calling `LongValue(pc)`.
-     */
-    /*override*/ def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        LongValue(pc)
-
-    /**
-     * @inheritdoc
-     *
      * @return Either `ComputedValue(LongValue(pc))` if arithmetic exceptions should
      *      not be thrown if nothing is known about the precise value or – if the
      *      policy is to throw an ArithmeticException if in doubt – a
@@ -138,14 +130,6 @@ trait TypeLevelLongValues extends LongValuesDomain {
     /**
      * @inheritdoc
      *
-     * @return The result of calling `LongValue(pc)`.
-     */
-    /*override*/ def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        LongValue(pc)
-
-    /**
-     * @inheritdoc
-     *
      * @return Either `ComputedValue(LongValue(pc))` if arithmetic exceptions should
      *      not be thrown if nothing is known about the precise value or – if the
      *      policy is to throw an ArithmeticException if in doubt – a
@@ -166,22 +150,6 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *
      * @return The result of calling `LongValue(pc)`.
      */
-    /*override*/ def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        LongValue(pc)
-
-    /**
-     * @inheritdoc
-     *
-     * @return The result of calling `LongValue(pc)`.
-     */
-    /*override*/ def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        LongValue(pc)
-
-    /**
-     * @inheritdoc
-     *
-     * @return The result of calling `LongValue(pc)`.
-     */
     /*override*/ def lsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
@@ -190,7 +158,15 @@ trait TypeLevelLongValues extends LongValuesDomain {
      *
      * @return The result of calling `LongValue(pc)`.
      */
-    /*override*/ def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    /*override*/ def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        LongValue(pc)
+
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
+    /*override*/ def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         LongValue(pc)
 
     /**

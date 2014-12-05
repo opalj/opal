@@ -53,80 +53,80 @@ trait IntegerValuesFactory extends ValuesDomain { domain ⇒
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`vo`).
+     * The domain may ignore the information about the origin (`origin`).
      */
-    def IntegerValue(vo: ValueOrigin): DomainValue
+    def IntegerValue(origin: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given integer value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (`vo`).
+     * The domain may ignore the information about the value and the origin (`origin`).
      */
-    def IntegerValue(vo: ValueOrigin, value: Int): DomainValue
+    def IntegerValue(origin: ValueOrigin, value: Int): DomainValue
 
     /**
      * Factory method to create a representation of a boolean value if we know the
      * origin of the value.
      *
-     * The domain may ignore the information about the origin (`vo`).
+     * The domain may ignore the information about the origin (`origin`).
      */
-    def BooleanValue(vo: ValueOrigin): DomainValue
+    def BooleanValue(origin: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a representation of a boolean value with the given
      * initial value and origin.
      *
-     * The domain may ignore the information about the value and the origin (`vo`).
+     * The domain may ignore the information about the value and the origin (`origin`).
      */
-    def BooleanValue(vo: ValueOrigin, value: Boolean): DomainValue
+    def BooleanValue(origin: ValueOrigin, value: Boolean): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`vo`).
+     * The domain may ignore the information about the origin (`origin`).
      */
-    def ByteValue(vo: ValueOrigin): DomainValue
+    def ByteValue(origin: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given byte value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      *
-     * The domain may ignore the information about the value and the origin (`vo`).
+     * The domain may ignore the information about the value and the origin (`origin`).
      */
-    def ByteValue(vo: ValueOrigin, value: Byte): DomainValue
+    def ByteValue(origin: ValueOrigin, value: Byte): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`vo`).
+     * The domain may ignore the information about the origin (`origin`).
      */
-    def ShortValue(vo: ValueOrigin): DomainValue
+    def ShortValue(origin: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given short value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      */
-    def ShortValue(pc: PC, value: Short): DomainValue
+    def ShortValue(origin: ValueOrigin, value: Short): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or
      * implicitly) by the instruction with the specified program counter.
      *
-     * The domain may ignore the information about the origin (`vo`).
+     * The domain may ignore the information about the origin (`origin`).
      */
-    def CharValue(vo: ValueOrigin): DomainValue
+    def CharValue(origin: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given char value
      * and that was created (explicitly or implicitly) by the instruction with the
      * specified program counter.
      */
-    def CharValue(vo: ValueOrigin, value: Char): DomainValue
+    def CharValue(origin: ValueOrigin, value: Char): DomainValue
 }
 

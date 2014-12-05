@@ -63,7 +63,7 @@ import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
 import org.opalj.ai.Domain
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain.l0.TypeLevelReferenceValues
-import org.opalj.ai.domain.l0.DefaultPrimitiveValuesConversions
+import org.opalj.ai.domain.l0.TypeLevelPrimitiveValuesConversions
 import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
 
 /**
@@ -192,7 +192,8 @@ trait TaintAnalysisDomain[Source]
         with DomainId
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        with DefaultPrimitiveValuesConversions
+        with TypeLevelLongValuesShiftOperators
+        with TypeLevelPrimitiveValuesConversions
         with DefaultDomainValueBinding
         with DefaultTypeLevelLongValues
         with DefaultTypeLevelFloatValues

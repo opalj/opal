@@ -38,6 +38,9 @@ import org.opalj.br.MethodSignature
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.analyses.FieldValuesKey
+import org.opalj.ai.domain.TheProject
+import org.opalj.ai.domain.TheClassFile
+import org.opalj.ai.domain.TheMethod
 
 /**
  * Configuration of a call graph algorithm that uses "variable type analysis".
@@ -51,22 +54,16 @@ import org.opalj.ai.analyses.FieldValuesKey
  * @author Michael Eichberg
  */
 abstract class VTACallGraphAlgorithmConfiguration(
-    val project: SomeProject)
-        extends CallGraphAlgorithmConfiguration {
-
-    type Contour = MethodSignature
-
-    type Value = Set[Method]
-
-    type Cache = CallGraphCache[Contour, Value]
+    project: SomeProject)
+        extends DefaultCallGraphAlgorithmConfiguration(project) {
 
     val fieldValueInformation = project.get(FieldValuesKey)
 
-    val cache: Cache = new CallGraphCache[MethodSignature, Value](project)
+    type CallGraphDomain = Domain with ReferenceValuesDomain with TheProject with TheClassFile with TheMethod
 
-    val Extractor = new VTACallGraphExtractor(cache)
+    def Domain[Source](classFile: ClassFile, method: Method): CallGraphDomain
 
-    val TheAI: AI[CallGraphDomain] = BaseAI.asInstanceOf[AI[CallGraphDomain]]
+    val Extractor = new VTACallGraphExtractor(cache, Domain)
 }
 
 class BasicVTACallGraphAlgorithmConfiguration(

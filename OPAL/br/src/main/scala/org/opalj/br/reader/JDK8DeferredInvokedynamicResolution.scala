@@ -70,7 +70,8 @@ trait JDK8DeferredInvokedynamicResolution extends DeferredInvokedynamicResolutio
      */
     private def newLambdaTypeName(surroundingType: ObjectType): String = {
         val nextId = generatedTypeId.getAndIncrement()
-        new StringBuilder("Lambda$").append(surroundingType.id).append(':').append(nextId).toString
+        new StringBuilder("Lambda$").append(surroundingType.id).append(':').
+            append(nextId).toString
     }
 
     override def deferredInvokedynamicResolution(
@@ -82,73 +83,74 @@ trait JDK8DeferredInvokedynamicResolution extends DeferredInvokedynamicResolutio
 
         // gather complete information about invokedynamic instructions from the bootstrap
         // method table
-        var updatedClassFile = super.deferredInvokedynamicResolution(classFile, cp, cpEntry,
-            instructions, index)
+        var updatedClassFile = super.deferredInvokedynamicResolution(
+            classFile,
+            cp,
+            cpEntry,
+            instructions,
+            index)
 
         val invokedynamic = instructions(index).asInstanceOf[INVOKEDYNAMIC]
-        val INVOKEDYNAMIC(bootstrapMethod, indyName, indyDescriptor) = invokedynamic
-        val bootstrapArguments = bootstrapMethod.bootstrapArguments
         if (isJDK8Invokedynamic(invokedynamic)) {
+            val INVOKEDYNAMIC(
+                bootstrapMethod,
+                functionalInterfaceMethodName,
+                factoryDescriptor) = invokedynamic
+            val bootstrapArguments = bootstrapMethod.bootstrapArguments
             // apparently there are cases in the JRE where there are more than just those
             // three parameters
-            val Seq(genericDescriptor: MethodDescriptor,
+            val Seq(
+                functionalInterfaceDescriptorAfterTypeErasure: MethodDescriptor,
                 invokeTargetMethodHandle: MethodCallMethodHandle,
-                preciseDescriptor: MethodDescriptor, _*) = bootstrapArguments
-            val MethodCallMethodHandle(receiverType: ObjectType, name, descriptor) =
-                invokeTargetMethodHandle
+                functionalInterfaceDescriptorBeforeTypeErasure: MethodDescriptor, _*) =
+                bootstrapArguments
+            val MethodCallMethodHandle(
+                targetMethodOwner: ObjectType,
+                targetMethodName,
+                targetMethodDescriptor) = invokeTargetMethodHandle
 
-            val superInterface: Set[ObjectType] = Set(indyDescriptor.returnType.asObjectType)
+            val superInterface: Set[ObjectType] = Set(
+                factoryDescriptor.returnType.asObjectType)
             val typeDeclaration = TypeDeclaration(
-                ObjectType(newLambdaTypeName(receiverType)),
+                ObjectType(newLambdaTypeName(targetMethodOwner)),
                 false,
                 Some(ObjectType.Object),
                 superInterface)
 
-            val invocationInstruction = invokeTargetMethodHandle.opcodeOfUnderlyingInstruction
+            val invocationInstruction = invokeTargetMethodHandle.
+                opcodeOfUnderlyingInstruction
 
             val receiverDescriptor: MethodDescriptor =
                 if (invokeTargetMethodHandle.isInstanceOf[NewInvokeSpecialMethodHandle]) {
                     MethodDescriptor(
-                        descriptor.parameterTypes,
-                        receiverType
+                        targetMethodDescriptor.parameterTypes,
+                        targetMethodOwner
                     )
                 } else {
-                    descriptor
+                    targetMethodDescriptor
                 }
 
-            var needsBridgeMethod = genericDescriptor.returnType == ObjectType.Object &&
-                preciseDescriptor.returnType != ObjectType.Object
-
-            var i = 0
-            val genericParams = genericDescriptor.parameterTypes
-            val preciseParams = preciseDescriptor.parameterTypes
-            val count = genericDescriptor.parametersCount
-            while (!needsBridgeMethod && i < count) {
-                val gp = genericParams(i)
-                val pp = preciseParams(i)
-                if (gp != pp && gp == ObjectType.Object) {
-                    needsBridgeMethod = true
-                }
-                i += 1
-            }
+            val needsBridgeMethod = functionalInterfaceDescriptorAfterTypeErasure !=
+                functionalInterfaceDescriptorBeforeTypeErasure
 
             val bridgeMethodDescriptor: Option[MethodDescriptor] =
                 if (needsBridgeMethod) {
-                    Some(genericDescriptor)
+                    Some(functionalInterfaceDescriptorAfterTypeErasure)
                 } else None
 
             val proxy: ClassFile = ClassFileFactory.Proxy(
                 typeDeclaration,
-                indyName,
-                preciseDescriptor,
-                receiverType,
-                name,
+                functionalInterfaceMethodName,
+                functionalInterfaceDescriptorBeforeTypeErasure,
+                targetMethodOwner,
+                targetMethodName,
                 receiverDescriptor,
                 invocationInstruction,
                 bridgeMethodDescriptor
             )
             val factoryMethod =
-                if (indyName == ClassFileFactory.DefaultFactoryMethodName)
+                if (functionalInterfaceMethodName ==
+                    ClassFileFactory.DefaultFactoryMethodName)
                     proxy.findMethod(ClassFileFactory.AlternativeFactoryMethodName).get
                 else
                     proxy.findMethod(ClassFileFactory.DefaultFactoryMethodName).get
@@ -161,9 +163,9 @@ trait JDK8DeferredInvokedynamicResolution extends DeferredInvokedynamicResolutio
             )
             // since invokestatic is two bytes shorter than invokedynamic, we need to fill
             // the two-byte gap following the invokestatic with NOPs
-            val indexOfFirstGapByte = instructions(index).indexOfNextInstruction(index, false)
-            instructions(indexOfFirstGapByte) = NOP
-            instructions(indexOfFirstGapByte + 1) = NOP
+            instructions(index + 3) = NOP
+            instructions(index + 4) = NOP
+
             updatedClassFile = storeProxy(updatedClassFile, proxy)
         }
 
@@ -198,7 +200,8 @@ trait JDK8DeferredInvokedynamicResolution extends DeferredInvokedynamicResolutio
         if (!invokedynamic.bootstrapMethod.methodHandle.isInstanceOf[InvokeStaticMethodHandle])
             return false
 
-        val InvokeStaticMethodHandle(receiver, name, descriptor) = invokedynamic.bootstrapMethod.methodHandle
+        val InvokeStaticMethodHandle(receiver, name, descriptor) =
+            invokedynamic.bootstrapMethod.methodHandle
 
         return receiver == ObjectType.LambdaMetafactory &&
             (name == "metafactory" && descriptor == lambdaMetafactoryDescriptor) ||
