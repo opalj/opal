@@ -163,7 +163,7 @@ private object NoArgumentAndNoReturnValueMethodDescriptor
     override def parametersCount: Int = 0
 
     override def equalParameters(other: MethodDescriptor): Boolean =
-        other == NoArgumentAndNoReturnValueMethodDescriptor
+        other.parametersCount == 0
 
     // the default equals and hashCode implementations are a perfect fit
 }
