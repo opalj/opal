@@ -44,5 +44,9 @@ object IssueKind {
 
     final val DeadBranch = "dead branch"
 
+    final val ThrowsException = "throws exception"
+
+    final val UnguardedUse = "unguarded use"
+
     final val Unused = "unused"
 }
