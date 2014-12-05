@@ -64,6 +64,8 @@ class CHACallGraphAlgorithmConfiguration(
         method: Method): CallGraphDomain =
         new DefaultCHACallGraphDomain(project, cache, classFile, method)
 
-    val Extractor = new CHACallGraphExtractor(cache)
+    final val Extractor = new CHACallGraphExtractor(cache)
+
+    final val TheAI: AI[CallGraphDomain] = NoAI()
 }
 

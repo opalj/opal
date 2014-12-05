@@ -357,7 +357,7 @@ object BugPickerAnalysis {
                     methodsWithDeadCode.groupBy(dc ⇒ dc.classFile.thisType.packageName)
             val result =
                 (for { (pkg, mdc) ← groupedMessages } yield {
-                    <details>
+                    <details class="package_summary">
                         <summary class="package_summary">{ pkg.replace('/', '.') }</summary>
                         { mdc.toSeq.sorted(IssueOrdering).map(_.asXHTML) }
                     </details>
@@ -376,7 +376,7 @@ object BugPickerAnalysis {
             <body>
                 <div id="analysis_controls">
                     <div>
-                        <span>Number of issues: { methodWithDeadCodeCount }.</span>
+                        <span>Number of issues currently displayed: <span id="issues_displayed"> { methodWithDeadCodeCount } </span> (Total issues: { methodWithDeadCodeCount })</span>
                     </div>
                     <div>
                         Suppress issues with an estimated
@@ -385,6 +385,14 @@ object BugPickerAnalysis {
                         <abbr title="The identified issue is probably not important or is just a technical artifact.">1</abbr>
                         <input type="range" name="relevance" id="relevance" min="1" max="100" onchange="updateRelevance(this.valueAsNumber)"/>
                         <abbr title="The identified issue is probably very important.">100</abbr>
+                    </div>
+                    <div class="issue_filter">
+                        <span>Manifestation in the Code:</span><br/>
+                        <span id="filter_data-kind"> </span>
+                    </div>
+                    <div class="issue_filter">
+                        <span>Software Quality Attributes:</span><br/>
+                        <span id="filter_data-category"> </span>
                     </div>
                     <div>
                         Show all Packages:<a class="onclick" onclick="openAllPackages()">+</a><a class="onclick" onclick="closeAllPackages()">-</a>
