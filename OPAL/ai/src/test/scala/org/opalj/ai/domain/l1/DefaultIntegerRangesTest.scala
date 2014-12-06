@@ -1628,6 +1628,19 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
 
         describe("the behavior of ixor") {
+            it("x (AnIntegerValue) ^ x => [0,0]") {
+                val v = AnIntegerValue
+                val s = v
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(0)
+                        ub should ===(0)
+                    case v ⇒
+                        fail(s"expected lb == 0 and ub == 0; found $v")
+                }
+            }
+
             it("[1,5] ^ [0,3] => [0,7]") {
                 val v = IntegerRange(1, 5)
                 val s = IntegerRange(0, 3)
