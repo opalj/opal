@@ -60,7 +60,7 @@ trait DefaultPreciseLongValues extends DefaultDomainValueBinding with PreciseLon
     case class LongRange(
         val initial: Long,
         val value: Long)
-            extends super.LongValue {
+            extends super.DefiniteLongValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] =
             value match {

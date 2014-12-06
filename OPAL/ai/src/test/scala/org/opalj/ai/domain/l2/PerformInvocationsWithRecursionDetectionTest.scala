@@ -158,8 +158,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l1.DefaultReferenceValuesBinding
-            with li.DefaultPreciseIntegerValues
-            with l0.DefaultPrimitiveValuesConversions {
+            with li.DefaultPreciseIntegerValues {
         domain: Configuration ⇒
         override def maxUpdatesForIntegerValues: Long = Int.MaxValue.toLong * 2
     }
@@ -185,6 +184,8 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
             with l0.TypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
             with l0.TypeLevelFieldAccessInstructions
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
             with PerformInvocationsWithRecursionDetection

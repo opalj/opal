@@ -75,7 +75,8 @@ class FieldValuesAnalysisDomain(
         with domain.l0.DefaultTypeLevelLongValues
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.DefaultPrimitiveValuesConversions
+        with domain.l0.TypeLevelPrimitiveValuesConversions
+        with domain.l0.TypeLevelLongValuesShiftOperators
         with domain.l0.TypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
         with domain.l0.DefaultReferenceValuesBinding

@@ -36,10 +36,12 @@ package domain
 package l1
 
 /**
- * Domain to track a specific long value.
+ * This domain is able to track constant long values and to perform mathematical
+ * operations related to constant long values.
  *
  * @author Michael Eichberg
  * @author Riadh Chtara
+ * @author David Becker
  */
 trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
     domain: IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
@@ -49,23 +51,22 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
      */
     case object ALongValue extends super.ALongValue {
 
-        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
-            NoUpdate
+        override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = NoUpdate
 
         override def abstractsOver(other: DomainValue): Boolean =
             other.isInstanceOf[IsLongValue]
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(origin: ValueOrigin): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
-            target.LongValue(pc)
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
+            target.LongValue(origin)
 
     }
 
     /**
      * Represents a concrete long value.
      */
-    case class TheLongValue(override val value: Long) extends super.ConcreteLongValue {
+    class TheLongValue(override val value: Long) extends super.TheLongValue {
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
             other match {
@@ -75,7 +76,7 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
                     } else {
                         StructuralUpdate(LongValue(pc))
                     }
-                case ALongValue ⇒ StructuralUpdate(other)
+                case _ ⇒ StructuralUpdate(other)
             }
 
         override def abstractsOver(other: DomainValue): Boolean =
@@ -84,10 +85,19 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
                 case _                          ⇒ false
             }
 
-        override def summarize(pc: PC): DomainValue = this
+        override def summarize(origin: ValueOrigin): DomainValue = this
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
-            target.LongValue(pc, value)
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
+            target.LongValue(origin, value)
+
+        override def equals(other: Any): Boolean = {
+            other match {
+                case that: TheLongValue ⇒ that.value == this.value
+                case _                  ⇒ false
+            }
+        }
+
+        override def hashCode: Int = (value ^ (value >>> 32)).toInt
 
         override def toString: String = "LongValue(value="+value+")"
     }
@@ -95,8 +105,11 @@ trait DefaultLongValues extends DefaultDomainValueBinding with LongValues {
     //
     // FACTORY METHODS
     //
-    override def LongValue(pc: PC): DomainValue = ALongValue
 
-    override def LongValue(pc: PC, value: Long): DomainValue = TheLongValue(value)
+    override def LongValue(origin: ValueOrigin): DomainValue =
+        ALongValue
+
+    override def LongValue(origin: ValueOrigin, value: Long): DomainValue =
+        new TheLongValue(value)
 
 }

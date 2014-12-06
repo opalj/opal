@@ -75,7 +75,7 @@ class ExtVTACallGraphDomain[Source](
         with l1.ConstraintsBetweenIntegerValues
         with l1.DefaultLongValues
         with l1.LongValuesShiftOperators
-        with l1.DefaultConcretePrimitiveValuesConversions
+        with l1.ConcretePrimitiveValuesConversions
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l1.DefaultReferenceValuesBinding

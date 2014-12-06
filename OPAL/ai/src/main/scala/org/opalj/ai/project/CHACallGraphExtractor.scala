@@ -70,12 +70,12 @@ class CHACallGraphExtractor(
     val cache: CallGraphCache[MethodSignature, Set[Method]])
         extends CallGraphExtractor {
 
-    protected[this] class AnalysisContext(val domain: TheDomain) {
+    protected[this] class AnalysisContext(
+            val project: SomeProject,
+            val classFile: ClassFile,
+            val method: Method) {
 
-        val project = domain.project
-        val classFile = domain.classFile
-        val method = domain.method
-        val classHierarchy = domain.project.classHierarchy
+        val classHierarchy = project.classHierarchy
 
         //
         //
@@ -138,11 +138,15 @@ class CHACallGraphExtractor(
 
             if (classHierarchy.isKnown(declaringClassType)) {
                 val methodSignature = new MethodSignature(name, descriptor)
-                cache.getOrElseUpdate(declaringClassType, methodSignature) {
-                    classHierarchy.lookupImplementingMethods(
-                        declaringClassType, name, descriptor, project
-                    )
-                }
+                cache.getOrElseUpdate(declaringClassType, methodSignature)(
+                    {
+                        classHierarchy.lookupImplementingMethods(
+                            declaringClassType, name, descriptor, project
+                        )
+                    },
+                    syncOnEvaluation = true //false
+
+                )
             } else {
                 Set.empty
             }
@@ -244,13 +248,10 @@ class CHACallGraphExtractor(
         }
     }
 
-    protected def AnalysisContext(domain: TheDomain): AnalysisContext =
-        new AnalysisContext(domain)
+    def extract(project: SomeProject, classFile: ClassFile, method: Method): LocalCallGraphInformation = {
+        val context = new AnalysisContext(project, classFile, method)
 
-    def extract(result: AIResult { val domain: TheDomain }): LocalCallGraphInformation = {
-        val context = AnalysisContext(result.domain)
-
-        result.domain.code.foreach { (pc, instruction) ⇒
+        method.body.get.foreach { (pc, instruction) ⇒
             instruction.opcode match {
                 case INVOKEVIRTUAL.opcode ⇒
                     val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction

@@ -64,7 +64,6 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultPrimitiveValuesConversions
         with l0.DefaultReferenceValuesBinding
         with PredefinedClassHierarchy
 
@@ -84,7 +83,8 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with PredefinedClassHierarchy
@@ -105,11 +105,12 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelLongValues
         with TheCode
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
 
     private class Domain3(val code: Code)
         extends Domain
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
         with l0.DefaultReferenceValuesBinding
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultTypeLevelFloatValues
@@ -117,6 +118,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelLongValuesShiftOperators
         with PredefinedClassHierarchy
         with IgnoreSynchronization
         with DefaultHandlingOfMethodResults

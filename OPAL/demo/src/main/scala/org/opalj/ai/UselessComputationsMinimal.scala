@@ -63,7 +63,7 @@ object UselessComputationsMinimal
         with domain.l1.DefaultReferenceValuesBinding
         with domain.l1.DefaultIntegerRangeValues
         with domain.l1.DefaultLongValues
-        with domain.l1.DefaultConcretePrimitiveValuesConversions
+        with domain.l1.ConcretePrimitiveValuesConversions
         with domain.l1.LongValuesShiftOperators
         with domain.TheProject
         with domain.TheMethod
