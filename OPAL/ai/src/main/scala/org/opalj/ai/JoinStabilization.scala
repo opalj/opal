@@ -63,6 +63,7 @@ import org.opalj.collection.immutable.IdentityPair
  */
 trait JoinStabilization extends CoreDomainFunctionality {
 
+    // THE FOLLOWING IS AN ALTERNATIVE IMPLEMENTATION
     //    import java.util.{ IdentityHashMap ⇒ IDMap }
     //
     //    private[this] val leftValues =
