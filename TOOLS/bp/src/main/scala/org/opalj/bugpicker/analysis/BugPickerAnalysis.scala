@@ -193,6 +193,20 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                         DeadCodeAnalysis.analyze(theProject, classFile, method, result)
                     )
                 )
+                results.addAll(
+                    scala.collection.JavaConversions.asJavaCollection(
+                        GuardedAndUnguardedAccessAnalysis.analyze(theProject, classFile, method, result)
+                    )
+                )
+
+                //
+                // FIND INSTRUCTIONS THAT ALWAYS THROW AN EXCEPTION
+                //
+                results.addAll(
+                    scala.collection.JavaConversions.asJavaCollection(
+                        ThrowsExceptionAnalysis.analyze(theProject, classFile, method, result)
+                    )
+                )
 
                 //
                 // FIND USELESS COMPUTATIONS
