@@ -28,17 +28,10 @@
  */
 package org.opalj
 package ai
-package domain
-package l0
+
+import scala.language.existentials
 
 import java.net.URL
-
-import scala.Console.BLUE
-import scala.Console.BOLD
-import scala.Console.GREEN
-import scala.Console.RESET
-
-import org.opalj.ai.Domain
 import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
 import org.opalj.ai.analyses.{ MethodReturnValuesAnalysisDomain ⇒ TheAnalysisDomain }
 import org.opalj.br.ClassFile
@@ -48,6 +41,9 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
+import org.opalj.ai.analyses.{ MethodReturnValuesAnalysisDomain ⇒ TheAnalysisDomain }
+import org.opalj.br.analyses.SomeProject
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
@@ -78,11 +74,14 @@ object MethodReturnValuesAnalysis
         val results =
             methodsWithRefinedReturnTypes.map { result ⇒
                 val (method, value) = result
-                RefinedReturnType[TheAnalysisDomain](theProject.classFile(method), method, value)
+                RefinedReturnType[TheAnalysisDomain](
+                    theProject,
+                    theProject.classFile(method),
+                    method, value)
             }
 
         BasicReport(
-            results.mkString(
+            results.map(_.toString()).toSeq.sorted.mkString(
                 "Methods with refined return types ("+results.size+"): \n",
                 "\n",
                 "\n"))
@@ -90,17 +89,32 @@ object MethodReturnValuesAnalysis
 }
 
 case class RefinedReturnType[D <: Domain](
+        project: SomeProject,
         classFile: ClassFile,
         method: Method,
         refinedType: Option[D#DomainValue]) {
 
     override def toString = {
+
+        val returnType = method.descriptor.returnType
+        val additionalInfo =
+            refinedType match {
+                case value @ IsAReferenceValue(utb) ⇒
+                    if (returnType.isReferenceType && value.isValueSubtypeOf(returnType.asReferenceType).isNoOrUnknown)
+                        s"the $refinedType is not a subtype of the declared type $returnType"
+                    else if (returnType.isObjectType && project.classHierarchy.hasSubtypes(returnType.asObjectType).isNoOrUnknown)
+                        s"the $returnType has no subtypes, but we were still able to refine the value $refinedType"
+                case _ ⇒ ""
+            }
+
         import Console._
         val declaringClassOfMethod = classFile.thisType.toJava
 
         "Refined the return type of "+BOLD + BLUE +
             declaringClassOfMethod+"{ "+method.toJava+" }"+
-            " => "+GREEN + refinedType.getOrElse("\"NONE\" (the method never returns normally)") + RESET
+            " => "+GREEN +
+            refinedType.getOrElse("\"NONE\" (the method never returns normally)") +
+            RESET + RED + additionalInfo + RESET
     }
 
 }
