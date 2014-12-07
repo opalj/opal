@@ -62,8 +62,9 @@ import org.opalj.br.instructions.INVOKESTATIC
  *
  * @author Michael Eichberg
  */
-class VTACallGraphExtractor(
-    cache: CallGraphCache[MethodSignature, Set[Method]])
+class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFile with TheMethod](
+    cache: CallGraphCache[MethodSignature, Set[Method]],
+    Domain: (ClassFile, Method) ⇒ TheDomain)
         extends CallGraphExtractor {
 
     protected[this] class AnalysisContext(val domain: TheDomain) {
@@ -340,7 +341,10 @@ class VTACallGraphExtractor(
     protected def AnalysisContext(domain: TheDomain): AnalysisContext =
         new AnalysisContext(domain)
 
-    def extract(result: AIResult { val domain: TheDomain }): LocalCallGraphInformation = {
+    def extract(project: SomeProject, classFile: ClassFile, method: Method): LocalCallGraphInformation = {
+
+        val result = BaseAI(classFile, method, Domain(classFile, method))
+
         val context = AnalysisContext(result.domain)
 
         result.domain.code.foreach { (pc, instruction) ⇒

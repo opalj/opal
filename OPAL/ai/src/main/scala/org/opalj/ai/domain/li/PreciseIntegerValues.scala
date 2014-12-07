@@ -226,7 +226,7 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
 
     override def ineg(pc: PC, value: DomainValue) = value match {
         case v: IntegerValue ⇒ IntegerValue(pc, -v.value)
-        case _               ⇒ IntegerValue(vo = pc)
+        case _               ⇒ IntegerValue(origin = pc)
     }
 
     //
@@ -236,7 +236,7 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     override def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l + r)
-            case _                                  ⇒ IntegerValue(vo = pc)
+            case _                                  ⇒ IntegerValue(origin = pc)
         }
     }
 
@@ -249,7 +249,7 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
 
             case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l & r)
 
-            case _                                  ⇒ IntegerValue(vo = pc)
+            case _                                  ⇒ IntegerValue(origin = pc)
         }
     }
 
@@ -286,7 +286,7 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
                 IntegerValue(pc, l * r)
 
             case _ ⇒
-                IntegerValue(vo = pc)
+                IntegerValue(origin = pc)
         }
     }
 
@@ -301,7 +301,7 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
                 IntegerValue(pc, l | r)
 
             case _ ⇒
-                IntegerValue(vo = pc)
+                IntegerValue(origin = pc)
         }
     }
 
@@ -331,42 +331,42 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
     override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (IntegerValue(l), IntegerValue(s)) ⇒ IntegerValue(pc, l << s)
-            case _                                  ⇒ IntegerValue(vo = pc)
+            case _                                  ⇒ IntegerValue(origin = pc)
         }
     }
 
     override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (IntegerValue(l), IntegerValue(s)) ⇒ IntegerValue(pc, l >> s)
-            case _                                  ⇒ IntegerValue(vo = pc)
+            case _                                  ⇒ IntegerValue(origin = pc)
         }
     }
 
     override def isub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l - r)
-            case _                                  ⇒ IntegerValue(vo = pc)
+            case _                                  ⇒ IntegerValue(origin = pc)
         }
     }
 
     override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (IntegerValue(l), IntegerValue(s)) ⇒ IntegerValue(pc, l >>> s)
-            case _                                  ⇒ IntegerValue(vo = pc)
+            case _                                  ⇒ IntegerValue(origin = pc)
         }
     }
 
     override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l ^ r)
-            case _                                  ⇒ IntegerValue(vo = pc)
+            case _                                  ⇒ IntegerValue(origin = pc)
         }
     }
 
     override def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue =
         value match {
             case v: IntegerValue ⇒ IntegerValue(pc, v.value + increment)
-            case _               ⇒ IntegerValue(vo = pc)
+            case _               ⇒ IntegerValue(origin = pc)
         }
 
     //

@@ -56,7 +56,8 @@ private class BitNopsDomain
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultReferenceValuesBinding
         with li.DefaultPreciseIntegerValues
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
         with IgnoreSynchronization {
 
     /**

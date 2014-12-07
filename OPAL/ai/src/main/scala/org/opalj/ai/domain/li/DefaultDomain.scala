@@ -58,7 +58,7 @@ class DefaultConfigurableDomain[I, Source](
         with l1.DefaultArrayValuesBinding
         with li.DefaultPreciseIntegerValues
         with li.DefaultPreciseLongValues
-        with l1.DefaultConcretePrimitiveValuesConversions {
+        with l1.ConcretePrimitiveValuesConversions {
 
     type Id = I
 

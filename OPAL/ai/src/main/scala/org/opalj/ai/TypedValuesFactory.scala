@@ -62,16 +62,16 @@ trait TypedValuesFactory {
      * values are given and initial values need to be generated. This method is not
      * used elsewhere by the framework.
      */
-    def TypedValue(vo: ValueOrigin, valueType: Type): DomainValue = valueType match {
-        case BooleanType       ⇒ BooleanValue(vo)
-        case ByteType          ⇒ ByteValue(vo)
-        case ShortType         ⇒ ShortValue(vo)
-        case CharType          ⇒ CharValue(vo)
-        case IntegerType       ⇒ IntegerValue(vo)
-        case FloatType         ⇒ FloatValue(vo)
-        case LongType          ⇒ LongValue(vo)
-        case DoubleType        ⇒ DoubleValue(vo)
-        case rt: ReferenceType ⇒ ReferenceValue(vo, rt)
+    def TypedValue(origin: ValueOrigin, valueType: Type): DomainValue = valueType match {
+        case BooleanType       ⇒ BooleanValue(origin)
+        case ByteType          ⇒ ByteValue(origin)
+        case ShortType         ⇒ ShortValue(origin)
+        case CharType          ⇒ CharValue(origin)
+        case IntegerType       ⇒ IntegerValue(origin)
+        case FloatType         ⇒ FloatValue(origin)
+        case LongType          ⇒ LongValue(origin)
+        case DoubleType        ⇒ DoubleValue(origin)
+        case rt: ReferenceType ⇒ ReferenceValue(origin, rt)
         case VoidType ⇒
             throw DomainException("a domain value cannot have the type void")
     }
@@ -82,17 +82,17 @@ trait TypedValuesFactory {
      * E.g., for `IntegerValue`s the value is set to `0`. In case of a
      * `ReferenceType` the value is the [[ReferenceValuesFactory#NullValue]].
      */
-    final def DefaultValue(pc: PC, theType: FieldType): DomainValue = {
+    final def DefaultValue(origin: ValueOrigin, theType: FieldType): DomainValue = {
         theType match {
-            case BooleanType      ⇒ BooleanValue(pc, false)
-            case ByteType         ⇒ ByteValue(pc, 0)
-            case CharType         ⇒ CharValue(pc, 0)
-            case ShortType        ⇒ ShortValue(pc, 0)
-            case IntegerType      ⇒ IntegerValue(pc, 0)
-            case FloatType        ⇒ FloatValue(pc, 0.0f)
-            case LongType         ⇒ LongValue(pc, 0l)
-            case DoubleType       ⇒ DoubleValue(pc, 0.0d)
-            case _: ReferenceType ⇒ NullValue(pc)
+            case BooleanType      ⇒ BooleanValue(origin, false)
+            case ByteType         ⇒ ByteValue(origin, 0)
+            case CharType         ⇒ CharValue(origin, 0)
+            case ShortType        ⇒ ShortValue(origin, 0)
+            case IntegerType      ⇒ IntegerValue(origin, 0)
+            case FloatType        ⇒ FloatValue(origin, 0.0f)
+            case LongType         ⇒ LongValue(origin, 0l)
+            case DoubleType       ⇒ DoubleValue(origin, 0.0d)
+            case _: ReferenceType ⇒ NullValue(origin)
         }
     }
 }

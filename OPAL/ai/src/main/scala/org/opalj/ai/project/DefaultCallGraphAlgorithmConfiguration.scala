@@ -28,35 +28,37 @@
  */
 package org.opalj
 package ai
-package domain
-package l1
+package project
+
+import scala.collection.Set
+
+import org.opalj.br.Method
+import org.opalj.br.MethodSignature
+import org.opalj.br.analyses.SomeProject
 
 /**
- * Default implementation of a domain that performs basic conversion between integer
- * and long values.
+ * Configuration of a call graph algorithm that uses a cache that depends on the
+ * current [[MethodSignature]].
  *
- * @author Riadh Chtara
+ * ==Thread Safety==
+ * This class is thread-safe (it contains no mutable state.)
+ *
+ * ==Usage==
+ * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
+ *
  * @author Michael Eichberg
  */
-trait DefaultConcretePrimitiveValuesConversions extends l0.DefaultPrimitiveValuesConversions {
-    domain: PrimitiveValuesFactory with Configuration with ConcreteLongValues with ConcreteIntegerValues ⇒
+abstract class DefaultCallGraphAlgorithmConfiguration(
+    val project: SomeProject)
+        extends CallGraphAlgorithmConfiguration {
 
-    override def i2d(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
+    protected type Contour = MethodSignature
 
-    override def i2f(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
+    protected type Value = Set[Method]
 
-    override def i2l(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ LongValue(pc, v.toLong))(LongValue(pc))
+    protected type Cache = CallGraphCache[Contour, Value]
 
-    override def l2d(pc: PC, value: DomainValue): DomainValue =
-        longValue(value) { v ⇒ DoubleValue(pc, v.toDouble) } { DoubleValue(pc) }
+    protected[this] val cache: Cache = new CallGraphCache[MethodSignature, Value](project)
 
-    override def l2f(pc: PC, value: DomainValue): DomainValue =
-        longValue(value) { v ⇒ FloatValue(pc, v.toFloat) } { FloatValue(pc) }
-
-    override def l2i(pc: PC, value: DomainValue): DomainValue =
-        longValue(value) { v ⇒ IntegerValue(pc, v.toInt) } { IntegerValue(pc) }
 }
 

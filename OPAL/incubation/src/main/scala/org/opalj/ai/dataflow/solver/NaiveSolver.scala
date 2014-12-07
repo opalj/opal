@@ -42,16 +42,16 @@ import org.opalj.ai.domain.Configuration
  *
  * @author Michael Eichberg and Ben Hermann
  */
-trait NaiveSolver[Source, Params] extends DataFlowProblemSolver[Source, Params] {
+trait NaiveSolver[Source, Params] extends DataFlowProblemSolver[Source, Params] { solver ⇒
 
-    lazy val theDomain: Domain = new BaseDomain[Source](project) with ValuesCoordinatingDomain
+    lazy val theDomain: Domain = new ValuesCoordinatingDomain with BaseDomain[Source] { val project = solver.project }
 
     def doSolve(): String = {
         "solved"
     }
 }
 
-abstract class BaseDomain[Source](val project: Project[Source])
+trait BaseDomain[Source]
         extends CorrelationalDomain
         with domain.DefaultDomainValueBinding
         with domain.ProjectBasedClassHierarchy
@@ -59,12 +59,11 @@ abstract class BaseDomain[Source](val project: Project[Source])
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues
         with domain.l0.DefaultTypeLevelLongValues
-        with domain.l1.DefaultReferenceValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultStringValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultClassValuesBinding
+        //with domain.l1.DefaultReferenceValuesBinding
+        // with domain.l1.DefaultStringValuesBinding
+        with domain.l1.DefaultClassValuesBinding
         // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-        with domain.l1.DefaultIntegerRangeValues
-        with domain.l0.DefaultPrimitiveValuesConversions {
+        with domain.l1.DefaultIntegerRangeValues {
     domain: Configuration ⇒
 
     override protected def maxCardinalityOfIntegerRanges: Long = 20l

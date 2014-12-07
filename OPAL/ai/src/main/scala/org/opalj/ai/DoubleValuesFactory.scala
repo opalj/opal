@@ -44,7 +44,7 @@ trait DoubleValuesFactory extends ValuesDomain { domain ⇒
      *
      * The domain may ignore the information about the origin (`vo`).
      */
-    def DoubleValue(vo: ValueOrigin): DomainValue
+    def DoubleValue(origin: ValueOrigin): DomainValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given double value
@@ -53,5 +53,5 @@ trait DoubleValuesFactory extends ValuesDomain { domain ⇒
      *
      * The domain may ignore the information about the value and the origin (`vo`).
      */
-    def DoubleValue(vo: ValueOrigin, value: Double): DomainValue
+    def DoubleValue(origin: ValueOrigin, value: Double): DomainValue
 }

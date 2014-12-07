@@ -34,7 +34,7 @@ package l1
 import scala.collection.immutable.SortedSet
 
 /**
- * This domain implements the tracking of integer values at the level of sets.
+ * This domain implements the tracking of integer values using sets.
  *
  * @author Michael Eichberg
  */

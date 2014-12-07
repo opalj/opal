@@ -61,7 +61,7 @@ class PreciseLongValuesTest extends FlatSpec with Matchers with ParallelTestExec
             with l0.DefaultReferenceValuesBinding
             with li.DefaultPreciseLongValues
             with li.DefaultPreciseIntegerValues
-            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelPrimitiveValuesConversions
             with PredefinedClassHierarchy
             with DefaultHandlingOfMethodResults
             with RecordLastReturnedValues
@@ -196,6 +196,32 @@ class PreciseLongValuesTest extends FlatSpec with Matchers with ParallelTestExec
         val v1 = LongValue(-1, 7)
         val v2 = LongValue(-1, 6)
         lxor(-1, v1, v2) should be(LongValue(-1, 7 ^ 6))
+    }
+
+    //
+    // EXTRACTING INFORMATIONS FROM OPERATIONS ON SPECIFIC
+    // (BUT UNKNOWN) LongValues
+    //
+
+    it should ("be able to the calculate the result of the and of a specific (but unknown) LongValue and 0") in {
+        val v1 = ALongValue()
+        val v2 = LongValue(-1, 0)
+        land(-1, v1, v2) should be(LongValue(-1, 0))
+        land(-1, v2, v1) should be(LongValue(-1, 0))
+    }
+
+    it should ("be able to the calculate the result of the mul of a specific (but unknown) LongValue and 0") in {
+        val v1 = ALongValue()
+        val v2 = LongValue(-1, 0)
+        lmul(-1, v1, v2) should be(LongValue(-1, 0))
+        lmul(-1, v2, v1) should be(LongValue(-1, 0))
+    }
+
+    it should ("be able to the calculate the result of the or of a specific (but unknown) LongValue and -1") in {
+        val v1 = ALongValue()
+        val v2 = LongValue(-1, -1)
+        lor(-1, v1, v2) should be(LongValue(-1, -1))
+        lor(-1, v2, v1) should be(LongValue(-1, -1))
     }
 }
 

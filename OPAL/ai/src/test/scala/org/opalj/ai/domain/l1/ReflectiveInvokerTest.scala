@@ -58,7 +58,8 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             //    with DefaultStringValuesBinding
