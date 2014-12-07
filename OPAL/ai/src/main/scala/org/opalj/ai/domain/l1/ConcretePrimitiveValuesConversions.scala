@@ -28,53 +28,35 @@
  */
 package org.opalj
 package ai
-package project
-
-import scala.collection.Set
-
-import org.opalj.ai.Domain
-import org.opalj.br.analyses.Project
-
-import br.ClassFile
-import br.Method
-import br.MethodSignature
-import br.analyses.Project
-import domain.DefaultDomainValueBinding
-import domain.DefaultHandlingOfMethodResults
-import domain.IgnoreSynchronization
-import domain.ProjectBasedClassHierarchy
-import domain.TheClassFile
-import domain.TheMethod
-import domain.TheProject
-import domain.ThrowAllPotentialExceptionsConfiguration
-import domain.l0
+package domain
+package l1
 
 /**
- * Domain object which is used to calculate the call graph.
+ * Default implementation of a domain that performs basic conversion between integer
+ * and long values.
  *
+ * @author Riadh Chtara
  * @author Michael Eichberg
  */
-class DefaultCHACallGraphDomain[Source](
-    val project: Project[Source],
-    val cache: CallGraphCache[MethodSignature, Set[Method]],
-    val classFile: ClassFile,
-    val method: Method)
-        extends Domain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with TheProject
-        with ProjectBasedClassHierarchy
-        with TheClassFile
-        with TheMethod
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultTypeLevelLongValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.TypeLevelLongValuesShiftOperators
-        with l0.DefaultReferenceValuesBinding
-        with l0.TypeLevelInvokeInstructions
-        with l0.TypeLevelFieldAccessInstructions
+trait ConcretePrimitiveValuesConversions extends l0.TypeLevelPrimitiveValuesConversions {
+    domain: PrimitiveValuesFactory with Configuration with ConcreteLongValues with ConcreteIntegerValues ⇒
+
+    override def i2d(pc: PC, value: DomainValue): DomainValue =
+        intValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
+
+    override def i2f(pc: PC, value: DomainValue): DomainValue =
+        intValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
+
+    override def i2l(pc: PC, value: DomainValue): DomainValue =
+        intValue(value)(v ⇒ LongValue(pc, v.toLong))(LongValue(pc))
+
+    override def l2d(pc: PC, value: DomainValue): DomainValue =
+        longValue(value) { v ⇒ DoubleValue(pc, v.toDouble) } { DoubleValue(pc) }
+
+    override def l2f(pc: PC, value: DomainValue): DomainValue =
+        longValue(value) { v ⇒ FloatValue(pc, v.toFloat) } { FloatValue(pc) }
+
+    override def l2i(pc: PC, value: DomainValue): DomainValue =
+        longValue(value) { v ⇒ IntegerValue(pc, v.toInt) } { IntegerValue(pc) }
+}
 

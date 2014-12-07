@@ -386,12 +386,12 @@ object BugPickerAnalysis {
                         <input type="range" name="relevance" id="relevance" min="1" max="100" onchange="updateRelevance(this.valueAsNumber)"/>
                         <abbr title="The identified issue is probably very important.">100</abbr>
                     </div>
-                    <div>
-                        Manifestation in the Code:
+                    <div class="issue_filter">
+                        <span>Manifestation in the Code:</span><br/>
                         <span id="filter_data-kind"> </span>
                     </div>
-                    <div>
-                        Software Quality Attributes:
+                    <div class="issue_filter">
+                        <span>Software Quality Attributes:</span><br/>
                         <span id="filter_data-category"> </span>
                     </div>
                     <div>

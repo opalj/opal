@@ -31,32 +31,48 @@ package ai
 package domain
 package l1
 
+import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.analyses.Project
+
 /**
- * Default implementation of a domain that performs basic conversion between integer
- * and long values.
+ * This domain uses the l1 level ''stable'', partial domains.
  *
- * @author Riadh Chtara
  * @author Michael Eichberg
  */
-trait DefaultConcretePrimitiveValuesConversions extends l0.DefaultPrimitiveValuesConversions {
-    domain: PrimitiveValuesFactory with Configuration with ConcreteLongValues with ConcreteIntegerValues ⇒
+class DefaultConfigurableIntegerRangeValuesDomain[I, Source](
+    val id: I,
+    val project: Project[Source],
+    val classFile: ClassFile,
+    val method: Method)
+        extends CorrelationalDomain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with ProjectBasedClassHierarchy
+        with TheProject
+        with TheMethod
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with l0.DefaultReferenceValuesBinding
+        with l1.DefaultIntegerRangeValues
+        with l1.ConstraintsBetweenIntegerValues
+        with l1.DefaultLongValues
+        with l1.LongValuesShiftOperators
+        with l1.ConcretePrimitiveValuesConversions {
 
-    override def i2d(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
+    type Id = I
 
-    override def i2f(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
-
-    override def i2l(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ LongValue(pc, v.toLong))(LongValue(pc))
-
-    override def l2d(pc: PC, value: DomainValue): DomainValue =
-        longValue(value) { v ⇒ DoubleValue(pc, v.toDouble) } { DoubleValue(pc) }
-
-    override def l2f(pc: PC, value: DomainValue): DomainValue =
-        longValue(value) { v ⇒ FloatValue(pc, v.toFloat) } { FloatValue(pc) }
-
-    override def l2i(pc: PC, value: DomainValue): DomainValue =
-        longValue(value) { v ⇒ IntegerValue(pc, v.toInt) } { IntegerValue(pc) }
 }
 
+class DefaultIntegerValuesDomain[Source](
+    project: Project[Source],
+    classFile: ClassFile,
+    method: Method)
+        extends DefaultConfigurableIntegerRangeValuesDomain[String, Source](
+            classFile.thisType.toJava+"{ "+method.toJava+"}",
+            project,
+            classFile,
+            method)

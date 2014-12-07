@@ -74,7 +74,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
         with l0.SimpleTypeLevelInvokeInstructions
         with l1.DefaultReferenceValuesBinding // <- PRIMARY GOAL!
         with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
 
     object ValuesDomain extends TheDomain
     import ValuesDomain._

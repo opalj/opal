@@ -69,9 +69,10 @@ object MethodReturnValuesAnalysis extends AnalysisExecutor {
             extends CorrelationalDomain
             with domain.DefaultDomainValueBinding
             with domain.ThrowAllPotentialExceptionsConfiguration
-            with domain.l0.DefaultPrimitiveValuesConversions
             with domain.l0.DefaultTypeLevelIntegerValues
             with domain.l0.DefaultTypeLevelLongValues
+            with domain.l0.TypeLevelPrimitiveValuesConversions
+            with domain.l0.TypeLevelLongValuesShiftOperators
             with domain.l0.DefaultTypeLevelFloatValues
             with domain.l0.DefaultTypeLevelDoubleValues
             with domain.l0.TypeLevelFieldAccessInstructions

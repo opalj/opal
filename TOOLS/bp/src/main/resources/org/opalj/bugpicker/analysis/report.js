@@ -41,7 +41,7 @@ function updateRelevance(value){
 
 function hideEmptyPackages() {
 	document.querySelector("#analysis_results").querySelectorAll("details.package_summary").forEach(
-    	function(p){
+		function(p){
 			var package_counter = 0;
 			p.querySelectorAll(".an_issue").forEach(
 				function(e){
@@ -53,17 +53,17 @@ function hideEmptyPackages() {
 				p.style.display="block" :
 				p.style.display="none";
 		}
-    )
+	)
 }
 
 function updateNumberOfIssues(){
 	var current = 0;
 	document.querySelectorAll(".an_issue").forEach(
-    	function(e){
-        	if (e.classList.contains("issue_visible") && !e.classList.contains("hide-relevance"))
+		function(e){
+			if (e.classList.contains("issue_visible") && !e.classList.contains("hide-relevance"))
 				current++;
 		}
-    )
+	)
 	document.querySelector("#issues_displayed").innerHTML = current;
 }
 
@@ -84,18 +84,19 @@ document.addEventListener("DOMContentLoaded", function () {
 	initFilter("category");
 }, false);
 
+var filterCount = 0;
 
 function initFilter(dataType){
 	var allValues = [];
 	document.querySelectorAll("*[data-"+dataType+"]").forEach(
-    	function(e){
+		function(e){
 			var values = e.getAttribute("data-"+dataType).split(" ");
 			allValues = allValues.concat(values).filter (function (v, i, a) { return a.indexOf (v) == i });
 		}
-    )
+	)
 	var i = 0;
 	document.querySelector("#filter_data-"+dataType).innerHTML = 
-		ArrayJoin(allValues, 
+		ArrayJoin(allValues.sort(), 
 			function (i, e) { 
 				var name = "filter-data-" + dataType;
 				var id = name + i;
@@ -103,6 +104,7 @@ function initFilter(dataType){
 						"<label for='"+id+"'>"+e.replace("_", " ")+"</label>"; 
 			}
 		);
+	filterCount++;
 	updateFilter(dataType);
 }
 
@@ -118,14 +120,18 @@ function updateFilter(dataType){
 				.forEach(function(e) { e.classList.add("show-"+dataType) } );
 		})
 		
-	// there has to be a "show-" in the className of an issue (from this filter or another) for the issue to be shown
+	// there has to be at least as much "show-" in the className of an issue as there are filter for the issue to be shown
 	document.querySelectorAll(".an_issue").forEach(
 		function(e) { 
-			if (e.className.indexOf("show-") > -1)
+			if (e.className.count("show-") >= filterCount)
 				e.classList.add("issue_visible");
 		});
 	hideEmptyPackages();
 	updateNumberOfIssues();
+}
+
+String.prototype.count = function(substring) {
+	return (this.valueOf().length - (this.valueOf().replace(new RegExp(substring, "g"), "").length)) / substring.length;
 }
 
 /*

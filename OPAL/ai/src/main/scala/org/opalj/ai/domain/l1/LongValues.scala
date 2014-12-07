@@ -38,13 +38,15 @@ import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeLong
 
 /**
- * Foundation for domains that trace long values. This domain can directly be used
- * to trace simple computations related to long values.
+ * Foundation for domains that trace specific long values.
+ * This domain can directly be used to trace simple computations involving constant
+ * long values.
  *
  * @author Michael Eichberg
  * @author Riadh Chtara
+ * @author David Becker
  */
-trait LongValues extends l0.TypeLevelLongValues with ConcreteLongValues {
+trait LongValues extends LongValuesDomain with ConcreteLongValues {
     domain: IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
 
     // -----------------------------------------------------------------------------------
@@ -54,42 +56,73 @@ trait LongValues extends l0.TypeLevelLongValues with ConcreteLongValues {
     // -----------------------------------------------------------------------------------
 
     /**
-     * Represents an unknown long value.
+     * Abstracts over all values with computational type `long`.
      */
-    trait ALongValue extends LongValue { this: DomainValue ⇒
+    sealed trait LongValue extends Value with IsLongValue { this: DomainValue ⇒
+
+        final def computationalType: ComputationalType = ComputationalTypeLong
+
     }
 
     /**
-     * Represents some `long` which has the specified value.
+     * Represents an (unknown) long value.
+     *
+     * Models the top value of this domain's lattice.
      */
-    trait ConcreteLongValue extends LongValue { this: DomainValue ⇒
+    trait ALongValue extends LongValue { this: DomainValue ⇒ }
+
+    /**
+     * Represents one concrete long value.
+     */
+    trait TheLongValue extends LongValue { this: DomainValue ⇒
         val value: Long
     }
 
-    def withLongValuesOrElse[T](
-        value1: DomainValue, value2: DomainValue)(
-            ifThen: (Long, Long) ⇒ T)(orElse: ⇒ T): T =
-        value1 match {
-            case v1: ConcreteLongValue ⇒
-                value2 match {
-                    case v2: ConcreteLongValue ⇒ ifThen(v1.value, v2.value)
-                    case _                     ⇒ orElse
-                }
-            case _ ⇒
+    object TheLongValue {
+        def unapply(v: TheLongValue): Option[Long] =
+            Some(v.value)
+    }
+
+    // -----------------------------------------------------------------------------------
+    //
+    // COMPUTATIONS RELATED TO LONG VALUES
+    //
+    // -----------------------------------------------------------------------------------
+
+    //
+    // QUESTIONS ABOUT VALUES
+    //
+
+    @inline final override def longValueOption(value: DomainValue): Option[Long] =
+        value match {
+            case v: TheLongValue ⇒ Some(v.value)
+            case _               ⇒ None
+        }
+
+    @inline final override def longValue[T](
+        value: DomainValue)(
+            ifThen: Long ⇒ T)(
+                orElse: ⇒ T): T =
+        value match {
+            case v: TheLongValue ⇒ ifThen(v.value)
+            case _               ⇒ orElse
+        }
+
+    @inline protected final def longValues[T](
+        value1: DomainValue,
+        value2: DomainValue)(
+            ifThen: (Long, Long) ⇒ T)(
+                orElse: ⇒ T): T = {
+        longValue(value1) { v1 ⇒
+            longValue(value2) { v2 ⇒
+                ifThen(v1, v2)
+            } {
                 orElse
+            }
+        } {
+            orElse
         }
-
-    override def longValue[T](value: DomainValue)(ifThen: Long ⇒ T)(orElse: ⇒ T): T =
-        value match {
-            case v: ConcreteLongValue ⇒ ifThen(v.value)
-            case _                    ⇒ orElse
-        }
-
-    override def longValueOption(value: DomainValue): Option[Long] =
-        value match {
-            case v: ConcreteLongValue ⇒ Some(v.value)
-            case _                    ⇒ None
-        }
+    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -101,113 +134,149 @@ trait LongValues extends l0.TypeLevelLongValues with ConcreteLongValues {
     // UNARY EXPRESSIONS
     //
 
-    /**
-     * @inheritdoc
-     *
-     * @return The result of calling `LongValue(pc)`.
-     */
-    override def lneg(pc: PC, value: DomainValue): DomainValue =
-        value match {
-            case v: ConcreteLongValue ⇒ LongValue(pc, -v.value)
-            case _                    ⇒ LongValue(pc)
-        }
+    override def lneg(pc: PC, value: DomainValue): DomainValue = value match {
+        case v: TheLongValue ⇒ LongValue(pc, -v.value)
+        case _               ⇒ LongValue(origin = pc)
+    }
 
     //
     // RELATIONAL OPERATORS
     //
 
-    /**
-     * @inheritdoc
-     *
-     * @return The result of calling `IntegerValue(pc)`.
-     */
-    override def lcmp(pc: PC, left: DomainValue, right: DomainValue): DomainValue =
-        withLongValuesOrElse(left, right) { (l, r) ⇒
-            if (l > r) IntegerValue(pc, 1)
-            else if (l == r) IntegerValue(pc, 0)
-            else IntegerValue(pc, -1)
-        } {
-            IntegerValue(pc)
+    override def lcmp(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+        (left, right) match {
+            case (TheLongValue(l), TheLongValue(r)) ⇒
+                if (l > r)
+                    IntegerValue(pc, 1)
+                else if (l == r)
+                    IntegerValue(pc, 0)
+                else
+                    IntegerValue(pc, -1)
+            case _ ⇒
+                IntegerValue(origin = pc)
         }
+    }
 
     //
     // BINARY EXPRESSIONS
     //
 
-    override def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
-            LongValue(pc, v1 + v2)
-        } {
-            LongValue(pc)
-        }
-
-    override def lsub(pc: PC, left: DomainValue, right: DomainValue): DomainValue =
-        withLongValuesOrElse(left, right) { (l, r) ⇒
-            LongValue(pc, l - r)
-        } {
-            LongValue(pc)
-        }
-
-    override def ldiv(
-        pc: PC,
-        left: DomainValue,
-        right: DomainValue): LongValueOrArithmeticException = {
-        withLongValuesOrElse(left, right) { (l, r) ⇒
-            if (r == 0)
-                ThrowsException(ArithmeticException(pc))
-            else
-                ComputedValue(LongValue(pc, l / r))
-        } {
-            if (throwArithmeticExceptions)
-                ComputedValueOrException(LongValue(pc), ArithmeticException(pc))
-            else
-                ComputedValue(LongValue(pc))
+    override def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (TheLongValue(l), TheLongValue(r)) ⇒ LongValue(pc, l + r)
+            case _                                  ⇒ LongValue(origin = pc)
         }
     }
 
-    override def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
-            LongValue(pc, v1 & v2)
-        } {
-            LongValue(pc)
+    override def lsub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+        (left, right) match {
+            case (TheLongValue(l), TheLongValue(r)) ⇒ LongValue(pc, l - r)
+            case _                                  ⇒ LongValue(origin = pc)
         }
+    }
+
+    override def lmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (_, TheLongValue(0))               ⇒ value2
+            case (_, TheLongValue(1))               ⇒ value1
+            case (TheLongValue(0), _)               ⇒ value1
+            case (TheLongValue(1), _)               ⇒ value2
+
+            case (TheLongValue(l), TheLongValue(r)) ⇒ LongValue(pc, l * r)
+
+            case _                                  ⇒ LongValue(origin = pc)
+        }
+    }
+
+    override def ldiv(
+        pc: PC,
+        numerator: DomainValue,
+        denominator: DomainValue): LongValueOrArithmeticException = {
+
+        (numerator, denominator) match {
+
+            case (TheLongValue(n), TheLongValue(d)) ⇒
+                if (d == 0)
+                    ThrowsException(ArithmeticException(pc))
+                else
+                    ComputedValue(LongValue(pc, n / d))
+
+            case (_, TheLongValue(d)) ⇒
+                if (d == 0)
+                    ThrowsException(ArithmeticException(pc))
+                else
+                    ComputedValue(LongValue(origin = pc))
+
+            case _ ⇒
+                if (throwArithmeticExceptions)
+                    ComputedValueOrException(
+                        LongValue(origin = pc),
+                        ArithmeticException(pc))
+                else
+                    ComputedValue(LongValue(origin = pc))
+        }
+    }
 
     override def lrem(
         pc: PC,
         left: DomainValue,
         right: DomainValue): LongValueOrArithmeticException = {
-        withLongValuesOrElse(left, right) { (l, r) ⇒
-            if (r == 0)
-                ThrowsException(ArithmeticException(pc))
-            else
-                ComputedValue(LongValue(pc, l % r))
-        } {
-            if (throwArithmeticExceptions)
-                ComputedValueOrException(LongValue(pc), ArithmeticException(pc))
-            else
-                ComputedValue(LongValue(pc))
+        (left, right) match {
+
+            case (TheLongValue(n), TheLongValue(d)) ⇒
+                if (d == 0)
+                    ThrowsException(ArithmeticException(pc))
+                else
+                    ComputedValue(LongValue(pc, n % d))
+
+            case (_, TheLongValue(d)) ⇒
+                if (d == 0)
+                    ThrowsException(ArithmeticException(pc))
+                else
+                    ComputedValue(LongValue(origin = pc))
+
+            case _ ⇒
+                if (throwArithmeticExceptions)
+                    ComputedValueOrException(
+                        LongValue(origin = pc),
+                        ArithmeticException(pc))
+                else
+                    ComputedValue(LongValue(origin = pc))
         }
     }
 
-    override def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
-            LongValue(pc, v1 & v2)
-        } {
-            LongValue(pc)
-        }
+    override def land(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (_, TheLongValue(-1))              ⇒ value1
+            case (_, TheLongValue(0))               ⇒ value2
+            case (TheLongValue(-1), _)              ⇒ value2
+            case (TheLongValue(0), _)               ⇒ value1
 
-    override def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
-            LongValue(pc, v1 | v2)
-        } {
-            LongValue(pc)
-        }
+            case (TheLongValue(l), TheLongValue(r)) ⇒ LongValue(pc, l & r)
 
-    override def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        withLongValuesOrElse(value1, value2) { (v1, v2) ⇒
-            LongValue(pc, v1 ^ v2)
-        } {
-            LongValue(pc)
+            case _                                  ⇒ LongValue(origin = pc)
         }
+    }
+
+    override def lor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (_, TheLongValue(-1))              ⇒ value2
+            case (_, TheLongValue(0))               ⇒ value1
+            case (TheLongValue(-1), _)              ⇒ value1
+            case (TheLongValue(0), _)               ⇒ value2
+
+            case (TheLongValue(l), TheLongValue(r)) ⇒ LongValue(pc, l | r)
+
+            case _                                  ⇒ LongValue(origin = pc)
+        }
+    }
+
+    override def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
+            case (TheLongValue(l), TheLongValue(r)) ⇒ LongValue(pc, l ^ r)
+
+            case _                                  ⇒ LongValue(origin = pc)
+        }
+    }
 }
 

@@ -28,53 +28,45 @@
  */
 package org.opalj
 package ai
-package project
+package domain
+package l0
 
-import scala.collection.Set
-
-import org.opalj.ai.Domain
-import org.opalj.br.analyses.Project
-
-import br.ClassFile
-import br.Method
-import br.MethodSignature
-import br.analyses.Project
-import domain.DefaultDomainValueBinding
-import domain.DefaultHandlingOfMethodResults
-import domain.IgnoreSynchronization
-import domain.ProjectBasedClassHierarchy
-import domain.TheClassFile
-import domain.TheMethod
-import domain.TheProject
-import domain.ThrowAllPotentialExceptionsConfiguration
-import domain.l0
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeLong
 
 /**
- * Domain object which is used to calculate the call graph.
+ * This partial `Domain` performs all computations related to primitive long
+ * values at the type level.
+ *
+ * This domain can be used as a foundation for building more complex domains.
  *
  * @author Michael Eichberg
  */
-class DefaultCHACallGraphDomain[Source](
-    val project: Project[Source],
-    val cache: CallGraphCache[MethodSignature, Set[Method]],
-    val classFile: ClassFile,
-    val method: Method)
-        extends Domain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with TheProject
-        with ProjectBasedClassHierarchy
-        with TheClassFile
-        with TheMethod
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultTypeLevelLongValues
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelPrimitiveValuesConversions
-        with l0.TypeLevelLongValuesShiftOperators
-        with l0.DefaultReferenceValuesBinding
-        with l0.TypeLevelInvokeInstructions
-        with l0.TypeLevelFieldAccessInstructions
+trait TypeLevelLongValuesShiftOperators extends LongValuesDomain {
+
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
+    /*override*/ def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        LongValue(pc)
+
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
+    /*override*/ def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        LongValue(pc)
+
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling `LongValue(pc)`.
+     */
+    /*override*/ def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        LongValue(pc)
+
+}
 

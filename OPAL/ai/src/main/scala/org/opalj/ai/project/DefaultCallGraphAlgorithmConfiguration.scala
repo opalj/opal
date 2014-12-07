@@ -28,51 +28,37 @@
  */
 package org.opalj
 package ai
-package domain
-package l1
+package project
 
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.analyses.Project
+import scala.collection.Set
+
+import org.opalj.br.Method
+import org.opalj.br.MethodSignature
+import org.opalj.br.analyses.SomeProject
 
 /**
- * This domain uses the l1 level ''stable'', partial domains.
+ * Configuration of a call graph algorithm that uses a cache that depends on the
+ * current [[MethodSignature]].
+ *
+ * ==Thread Safety==
+ * This class is thread-safe (it contains no mutable state.)
+ *
+ * ==Usage==
+ * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
  *
  * @author Michael Eichberg
  */
-class DefaultConfigurableIntegerValuesDomain[I, Source](
-    val id: I,
-    val project: Project[Source],
-    val classFile: ClassFile,
-    val method: Method)
-        extends CorrelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with ProjectBasedClassHierarchy
-        with TheProject
-        with TheMethod
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with l0.DefaultReferenceValuesBinding
-        with l1.DefaultIntegerRangeValues
-        with l1.ConstraintsBetweenIntegerValues
-        with l1.DefaultLongValues
-        with l1.LongValuesShiftOperators
-        with l1.DefaultConcretePrimitiveValuesConversions {
+abstract class DefaultCallGraphAlgorithmConfiguration(
+    val project: SomeProject)
+        extends CallGraphAlgorithmConfiguration {
 
-    type Id = I
+    protected type Contour = MethodSignature
+
+    protected type Value = Set[Method]
+
+    protected type Cache = CallGraphCache[Contour, Value]
+
+    protected[this] val cache: Cache = new CallGraphCache[MethodSignature, Value](project)
 
 }
 
-class DefaultIntegerValuesDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends DefaultConfigurableIntegerValuesDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)

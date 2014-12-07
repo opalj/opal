@@ -59,7 +59,8 @@ class DefaultConfigurableReferenceValuesDomain[I, Source](
         with l1.DefaultReferenceValuesBinding
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultTypeLevelLongValues
-        with l0.DefaultPrimitiveValuesConversions {
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators {
 
     type Id = I
 

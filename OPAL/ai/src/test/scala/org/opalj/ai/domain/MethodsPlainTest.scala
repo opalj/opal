@@ -1120,7 +1120,8 @@ private object MethodsPlainTest {
             with DefaultTypeLevelLongValues
             with DefaultTypeLevelFloatValues
             with DefaultTypeLevelDoubleValues
-            with DefaultPrimitiveValuesConversions
+            with TypeLevelPrimitiveValuesConversions
+            with TypeLevelLongValuesShiftOperators
             with TypeLevelFieldAccessInstructions
             with SimpleTypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
