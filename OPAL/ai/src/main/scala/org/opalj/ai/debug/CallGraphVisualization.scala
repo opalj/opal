@@ -148,7 +148,7 @@ object CallGraphVisualization {
                             new CHACallGraphAlgorithmConfiguration(project)
                         case "BasicVTA" ⇒
                             new BasicVTACallGraphAlgorithmConfiguration(project)
-                        case "BasicVTAWithPreAnalyis" ⇒
+                        case "BasicVTAWithPreAnalysis" ⇒
                             new BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration(project)
                         case "VTA" | "DefaultVTA" ⇒
                             new DefaultVTACallGraphAlgorithmConfiguration(project)
