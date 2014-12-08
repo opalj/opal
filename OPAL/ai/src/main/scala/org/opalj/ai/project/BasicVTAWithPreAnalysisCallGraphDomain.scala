@@ -31,8 +31,13 @@ package ai
 package project
 
 import scala.collection.Set
+
 import org.opalj.ai.CorrelationalDomain
+import org.opalj.ai.analyses.FieldValueInformation
+import org.opalj.ai.analyses.MethodReturnValueInformation
+import org.opalj.ai.domain.TheClassFile
 import org.opalj.br.analyses.Project
+
 import br.ClassFile
 import br.Method
 import br.MethodSignature
@@ -41,23 +46,17 @@ import domain.DefaultDomainValueBinding
 import domain.DefaultHandlingOfMethodResults
 import domain.IgnoreSynchronization
 import domain.ProjectBasedClassHierarchy
-import domain.TheClassFile
 import domain.TheMethod
 import domain.TheProject
 import domain.ThrowAllPotentialExceptionsConfiguration
 import domain.l0
-import domain.l1
-import org.opalj.ai.analyses.FieldValueInformation
-import org.opalj.ai.analyses.MethodReturnValueInformation
 
 /**
- * Domain object which can used to calculate the call graph using variable type analysis.
- * This domain uses advanced domains for tracking primitive values to rule out
- * potential dead branches/method calls on dead branches.
+ * Domain object which is used to calculate the call graph using variable type analysis.
  *
  * @author Michael Eichberg
  */
-class ExtVTACallGraphDomain[Source](
+class BasicVTAWithPreAnalysisCallGraphDomain[Source](
     val project: Project[Source],
     val fieldValueInformation: FieldValueInformation,
     val methodReturnValueInformation: MethodReturnValueInformation,
@@ -68,22 +67,19 @@ class ExtVTACallGraphDomain[Source](
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject
-        with ProjectBasedClassHierarchy
         with TheClassFile
         with TheMethod
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        with l1.DefaultIntegerRangeValues
-        with l1.ConstraintsBetweenIntegerValues
-        with l1.DefaultLongValues
-        with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions
+        with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        with l1.DefaultReferenceValuesBinding
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelInvokeInstructions // the foundation
         with l0.RefinedTypeLevelInvokeInstructions
-        // with l0.TypeLevelFieldAccessInstructions
-        // Using the following domain reduces the number of call edges by ~4%
+        //with l0.TypeLevelFieldAccessInstructions
         with l0.RefinedTypeLevelFieldAccessInstructions
 

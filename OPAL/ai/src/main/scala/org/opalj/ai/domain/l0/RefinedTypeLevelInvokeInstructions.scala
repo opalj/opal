@@ -38,6 +38,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.ai.ValuesFactory
 import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.analyses.MethodReturnValueInformation
+import org.opalj.ai.project.MethodCallsDomainWithMethodLockup
 
 /**
  *

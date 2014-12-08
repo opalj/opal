@@ -82,5 +82,6 @@ class DefaultVTACallGraphDomain[Source](
         with l1.DefaultReferenceValuesBinding
         with l0.TypeLevelInvokeInstructions
         with l0.RefinedTypeLevelInvokeInstructions
-        with l0.RefinedTypeLevelFieldAccessInstructions
+        with l0.RefinedTypeLevelFieldAccessInstructions {
+}
 

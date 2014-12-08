@@ -28,7 +28,7 @@
  */
 package org.opalj
 package ai
-package domain
+package project
 
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -36,12 +36,16 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.ai.ValuesFactory
 import org.opalj.ai.IsAReferenceValue
+import org.opalj.ai.domain.MethodCallsHandling
+import org.opalj.ai.domain.Configuration
+import org.opalj.ai.domain.TheProject
+import org.opalj.ai.domain.TheCode
 
 /**
  *
  * @author Michael Eichberg
  */
-trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with project.Callees {
+trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees {
     callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
 
     protected[this] def doInvoke(

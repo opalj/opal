@@ -58,8 +58,6 @@ abstract class VTACallGraphAlgorithmConfiguration(
     project: SomeProject)
         extends DefaultCallGraphAlgorithmConfiguration(project) {
 
-    val fieldValueInformation = project.get(FieldValuesKey)
-
     type CallGraphDomain = Domain with ReferenceValuesDomain with TheProject with TheClassFile with TheMethod
 
     def Domain[Source](classFile: ClassFile, method: Method): CallGraphDomain
@@ -74,17 +72,35 @@ class BasicVTACallGraphAlgorithmConfiguration(
     def Domain[Source](
         classFile: ClassFile,
         method: Method) =
-        new BasicVTACallGraphDomain(
-            project, fieldValueInformation,
+        new BasicVTACallGraphDomain(project, cache, classFile, method)
+}
+
+abstract class VTAWithPreAnalysisCallGraphAlgorithmConfiguration(
+    project: SomeProject)
+        extends VTACallGraphAlgorithmConfiguration(project) {
+
+    val fieldValueInformation = project.get(FieldValuesKey)
+
+    val methodReturnValueInformation = project.get(MethodReturnValuesKey)
+
+}
+
+class BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration(
+    project: SomeProject)
+        extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
+
+    def Domain[Source](
+        classFile: ClassFile,
+        method: Method) =
+        new BasicVTAWithPreAnalysisCallGraphDomain(
+            project, fieldValueInformation, methodReturnValueInformation,
             cache,
             classFile, method)
 }
 
 class DefaultVTACallGraphAlgorithmConfiguration(
     project: SomeProject)
-        extends VTACallGraphAlgorithmConfiguration(project) {
-
-    val methodReturnValueInformation = project.get(MethodReturnValuesKey)
+        extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
     def Domain[Source](
         classFile: ClassFile,
@@ -97,10 +113,13 @@ class DefaultVTACallGraphAlgorithmConfiguration(
 
 class ExtVTACallGraphAlgorithmConfiguration(
     project: SomeProject)
-        extends VTACallGraphAlgorithmConfiguration(project) {
+        extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
     def Domain[Source](
         classFile: ClassFile,
         method: Method) =
-        new ExtVTACallGraphDomain(project, fieldValueInformation, cache, classFile, method)
+        new ExtVTACallGraphDomain(
+            project, fieldValueInformation, methodReturnValueInformation,
+            cache,
+            classFile, method)
 }

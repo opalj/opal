@@ -58,7 +58,6 @@ import domain.l0
  */
 class BasicVTACallGraphDomain[Source](
     val project: Project[Source],
-    val fieldValueInformation: FieldValueInformation,
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method: Method)
@@ -78,5 +77,5 @@ class BasicVTACallGraphDomain[Source](
         with l0.TypeLevelLongValuesShiftOperators
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelInvokeInstructions
-        with l0.RefinedTypeLevelFieldAccessInstructions
+        with l0.TypeLevelFieldAccessInstructions
 

@@ -43,6 +43,7 @@ import org.opalj.ai.project.CallGraphFactory
 import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
 import org.opalj.ai.project.ComputedCallGraph
 import org.opalj.ai.project.BasicVTACallGraphAlgorithmConfiguration
+import org.opalj.ai.project.BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration
 import org.opalj.ai.project.DefaultVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.project.ExtVTACallGraphAlgorithmConfiguration
 import org.opalj.graphs.Node
@@ -143,14 +144,16 @@ object CallGraphVisualization {
             memory {
                 val computedCallGraph = time {
                     val callGraphAlgorithmConfig = args(0) match {
+                        case "CHA" ⇒
+                            new CHACallGraphAlgorithmConfiguration(project)
                         case "BasicVTA" ⇒
                             new BasicVTACallGraphAlgorithmConfiguration(project)
+                        case "BasicVTAWithPreAnalyis" ⇒
+                            new BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration(project)
                         case "VTA" | "DefaultVTA" ⇒
                             new DefaultVTACallGraphAlgorithmConfiguration(project)
                         case "ExtVTA" ⇒
                             new ExtVTACallGraphAlgorithmConfiguration(project)
-                        case "CHA" ⇒
-                            new CHACallGraphAlgorithmConfiguration(project)
                         case cga ⇒
                             println("Unknown call graph algorithm: "+cga+"; available: CHA, BasicVTA, DefaultVTA, ExtVTA")
                             return ;
