@@ -41,6 +41,7 @@ import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.TheClassFile
 import org.opalj.ai.domain.TheMethod
+import org.opalj.ai.analyses.MethodReturnValuesKey
 
 /**
  * Configuration of a call graph algorithm that uses "variable type analysis".
@@ -73,17 +74,25 @@ class BasicVTACallGraphAlgorithmConfiguration(
     def Domain[Source](
         classFile: ClassFile,
         method: Method) =
-        new BasicVTACallGraphDomain(project, fieldValueInformation, cache, classFile, method)
+        new BasicVTACallGraphDomain(
+            project, fieldValueInformation,
+            cache,
+            classFile, method)
 }
 
 class DefaultVTACallGraphAlgorithmConfiguration(
     project: SomeProject)
         extends VTACallGraphAlgorithmConfiguration(project) {
 
+    val methodReturnValueInformation = project.get(MethodReturnValuesKey)
+
     def Domain[Source](
         classFile: ClassFile,
         method: Method) =
-        new DefaultVTACallGraphDomain(project, fieldValueInformation, cache, classFile, method)
+        new DefaultVTACallGraphDomain(
+            project, fieldValueInformation, methodReturnValueInformation,
+            cache,
+            classFile, method)
 }
 
 class ExtVTACallGraphAlgorithmConfiguration(

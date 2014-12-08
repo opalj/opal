@@ -42,7 +42,6 @@ class DefaultConfigurableDomain[I, Source](
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
-        with ProjectBasedClassHierarchy
         with TheProject
         with TheMethod
         with PerInstructionPostProcessing

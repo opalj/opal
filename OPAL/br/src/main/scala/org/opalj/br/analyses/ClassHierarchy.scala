@@ -456,6 +456,13 @@ class ClassHierarchy private (
      * for handling `null` values and for considering the runtime type needs to be
      * implemented by the caller of this method.
      *
+     * @note This method performs an upwards search only. E.g., given the following
+     *      type hierarchy:
+     *      `class D inherits from C`
+     *      `class E inherits from D`
+     *      and the query isSubtypeOf(D,E) the answer will be `Unknown` if `C` is
+     *      `Unknown` and `No` otherwise.
+     *
      * @param subtype Any `ObjectType`.
      * @param theSupertype Any `ObjectType`.
      * @return `Yes` if `subtype` is a subtype of the given `supertype`. `No`
@@ -463,6 +470,7 @@ class ClassHierarchy private (
      *      not conclusive. The latter can happen if the class hierarchy is not
      *      complete and hence precise information about a type's supertypes
      *      is not available.
+     *
      */
     def isSubtypeOf(subtype: ObjectType, theSupertype: ObjectType): Answer = {
         if ((subtype eq theSupertype) || (theSupertype eq Object))
@@ -1012,57 +1020,6 @@ class ClassHierarchy private (
         implementingMethods
     }
 
-    //    /**
-    //     * Returns all methods declared by this class. I.e., all methods declared by
-    //     * this class as well as all methods declared by its superclasses.
-    //     */
-    //    def allMethods(
-    //        project: SomeProject,
-    //        objectType: ObjectType,
-    //        filter: (Method) ⇒ Boolean = m ⇒ !m.isPrivate): Set[Method] = {
-    //
-    //        val allMethods = scala.collection.mutable.HashSet.empty[Method]
-    //
-    //        foreachSuperclass(objectType, project) { superclass ⇒
-    //            for (method ← superclass.methods if filter(method)) {
-    //                allMethods += method
-    //            }
-    //        }
-    //
-    //        allMethods
-    //    }
-    //
-    //    /**
-    //     * Returns the set of the most specific methods declared by the superclasses.
-    //     * A method is more specific than another method if it is
-    //     *
-    //     * @param filter Filters irrelevant methods. By default, `private` methods
-    //     *      are filtered.
-    //     */
-    //    def superMethods(
-    //        project: SomeProject,
-    //        objectType: ObjectType,
-    //        filter: (Method) ⇒ Boolean = m ⇒ !m.isPrivate): Set[Method] = {
-    //
-    //        // TODO split up...
-    //        supertypes(objectType).map(allMethods(project, _)).flatten
-    //    }
-    //
-    //    def overriddenMethods(
-    //        project: SomeProject,
-    //        objectType: ObjectType): Set[Method] = {
-    //
-    //        val ownMethods = project.classFile(objectType).get.methods
-    //        superMethods(
-    //            project,
-    //            objectType,
-    //            (m) ⇒ {
-    //                !m.isPrivate &&
-    //                    (!m.hasDefaultVisibility || objectType.packageName == project.classFile(m).thisType.packageName)
-    //            }
-    //        ).filter(sm ⇒ ownMethods.exists(_.hasSameSignature(sm)))
-    //    }
-
     /**
      * The direct subtypes of the given type.
      */
@@ -1268,18 +1225,19 @@ class ClassHierarchy private (
      *      condition. If `types` is empty, the returned leaf type is `ObjectType.Object`.
      *      which should always be a safe fallback.
      */
-    def leafTypes(
-        types: scala.collection.Set[ObjectType]): UIDSet[ObjectType] = {
+    def leafTypes(types: scala.collection.Set[ObjectType]): UIDSet[ObjectType] = {
         if (types.isEmpty)
             return UIDSet(ObjectType.Object)
 
         if (types.size == 1)
             return UIDSet(types.head)
 
-        val lts = types filter { aType ⇒
-            isUnknown(aType) ||
-                !(directSubtypesOf(aType) exists { t ⇒ types.contains(t) })
-        }
+        val lts =
+            types filter { aType ⇒
+                isUnknown(aType) ||
+                    //!(directSubtypesOf(aType) exists { t ⇒ types.contains(t) })
+                    !(types exists { t ⇒ (t ne aType) && isSubtypeOf(t, aType).isYes })
+            }
         if (lts.size == 1)
             UIDSet(lts.head)
         else {

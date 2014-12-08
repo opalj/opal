@@ -29,13 +29,11 @@
 package org.opalj
 package ai
 
-import org.opalj.ai.analyses.FieldValuesAnalysisDomain
-import org.opalj.br.Field
-
 import scala.language.existentials
 
 import org.opalj.ai.analyses.FieldValuesAnalysisDomain
 import org.opalj.br.Field
+import org.opalj.br.Method
 
 /**
  * @author Michael Eichberg
@@ -44,4 +42,5 @@ package object analyses {
 
     type FieldValueInformation = Map[Field, FieldValuesAnalysisDomain#DomainValue]
 
+    type MethodReturnValueInformation = Map[Method, Option[MethodReturnValuesAnalysisDomain#DomainValue]]
 }

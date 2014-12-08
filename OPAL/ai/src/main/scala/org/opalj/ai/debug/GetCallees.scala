@@ -48,6 +48,7 @@ import org.opalj.ai.domain.ClassHierarchy
 import org.opalj.ai.domain.TheCode
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.analyses.FieldValuesKey
+import org.opalj.ai.analyses.MethodReturnValuesKey
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -147,7 +148,8 @@ object GetCallees {
                 println("USING VTA")
                 def Domain(classFile: ClassFile, method: Method) =
                     new DefaultVTACallGraphDomain(
-                        project, project.get(FieldValuesKey),
+                        project,
+                        project.get(FieldValuesKey), project.get(MethodReturnValuesKey),
                         cache,
                         classFile, method /*, 4*/ )
                 new VTACallGraphExtractor(

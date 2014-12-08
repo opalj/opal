@@ -1105,7 +1105,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         baseUTB
                 }
             if (!valuesUpdated &&
-                this.t == null &&
+                newT == this.t &&
                 newIsNull == this.isNull &&
                 newIsPrecise == this.isPrecise &&
                 newUTB == this.upperTypeBound)

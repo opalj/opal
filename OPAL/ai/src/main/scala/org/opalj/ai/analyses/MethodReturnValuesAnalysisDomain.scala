@@ -34,7 +34,7 @@ import java.net.URL
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.analyses.{ Analysis, OneStepAnalysis, AnalysisExecutor, BasicReport, SomeProject }
 import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.{ ReferenceType }
+import org.opalj.br.{ Type, ReferenceType }
 import org.opalj.ai.Domain
 import org.opalj.ai.domain._
 import org.opalj.ai.InterruptableAI
@@ -46,6 +46,9 @@ import org.opalj.br.analyses.Project
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
+ *
+ * The analysis terminates itself when it realizes that the return type cannot be
+ * refined.
  *
  * @author Michael Eichberg
  */
@@ -62,25 +65,25 @@ class MethodReturnValuesAnalysisDomain(
         with ThrowAllPotentialExceptionsConfiguration
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultTypeLevelLongValues
-        with l0.DefaultTypeLevelFloatValues
         with l0.TypeLevelLongValuesShiftOperators
-        with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelPrimitiveValuesConversions
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        //with l0.DefaultReferenceValuesBinding
+        with l1.DefaultReferenceValuesBinding
         with l0.RefinedTypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with l0.DefaultReferenceValuesBinding
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with RecordReturnedValuesInfrastructure {
 
     type ReturnedValue = DomainValue
 
-    private[this] val originalReturnType: ReferenceType =
-        method.descriptor.returnType.asReferenceType
+    private[this] val originalReturnType: Type = method.descriptor.returnType
 
     private[this] var theReturnedValue: DomainValue = null
 
-    // e.g., a method that always throws an exception will never return a value
+    // A method that always throws an exception will never return a value.
     def returnedValue: Option[DomainValue] = Option(theReturnedValue)
 
     protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit = {
@@ -88,25 +91,25 @@ class MethodReturnValuesAnalysisDomain(
         if (oldReturnedValue eq value)
             return ;
 
-        if (oldReturnedValue == null) {
-            theReturnedValue = value
-            return ;
+        val newValue =
+            if (oldReturnedValue == null) {
+                value
+            } else {
+                val joinedValue = oldReturnedValue.join(Int.MinValue, value)
+                if (joinedValue.isNoUpdate)
+                    return ;
+                joinedValue.value
+            }
+        newValue match {
+            case value @ IsAReferenceValue(utb) if value.isNull.isUnknown &&
+                (utb.consistsOfOneElement) &&
+                (utb.first eq originalReturnType) &&
+                !value.isPrecise ⇒
+                // the return type will not be more precise than the original type
+                ai.interrupt()
+            case _ ⇒
+                theReturnedValue = newValue
         }
-
-        oldReturnedValue.join(Int.MinValue, value) match {
-            case SomeUpdate(newValue) ⇒
-                typeOfValue(newValue) match {
-                    case IsAReferenceValue(utb) if (utb.size == 1) && (utb.first eq originalReturnType) ⇒
-                        // the return type will not be more precise than the original type
-                        ai.interrupt()
-                    case _ ⇒
-                        theReturnedValue = newValue
-                }
-
-            case NoUpdate ⇒
-            /* Nothing to do. */
-        }
-
     }
 }
 

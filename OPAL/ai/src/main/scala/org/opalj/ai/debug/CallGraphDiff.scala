@@ -56,6 +56,7 @@ import org.opalj.br.analyses.ProgressManagement
 import org.opalj.util.PerformanceEvaluation.ns2sec
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.project.CallGraph
+import org.opalj.ai.analyses.MethodReturnValuesKey
 
 /**
  * Calculates and compares the results of two call graphs.
@@ -116,7 +117,9 @@ object CallGraphDiff extends AnalysisExecutor {
                         classFile: ClassFile,
                         method: Method) =
                         new DefaultVTACallGraphDomain(
-                            project, fieldValueInformation, cache, classFile, method //, 4
+                            project, fieldValueInformation, project.get(MethodReturnValuesKey),
+                            cache,
+                            classFile, method //, 4
                         )
                 })
         } { t ⇒ println("creating the more precise call graph took: "+ns2sec(t)) }
