@@ -76,11 +76,11 @@ object MethodReturnValuesAnalysis {
                 if originalReturnType.isObjectType
 
                 // ALTERNATIVE TEST: if we are only interested in type refinements but not
-                // in refinements to "null" value then we can also use the following
+                // in refinements to "null" values then we can also use the following
                 // check:
                 // if theProject.classHierarchy.hasSubtypes(originalReturnType.asObjectType).isYesOrUnknown
 
-                // We may miss some refinements to "Null" but we don't care...
+                // We may still miss some refinements to "Null" but we don't care...
                 if theProject.classFile(originalReturnType.asObjectType).map(!_.isFinal).getOrElse(true)
                 if { candidates.incrementAndGet(); true }
 
