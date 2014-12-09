@@ -1629,6 +1629,94 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
 
         describe("the behavior of ixor") {
+          it("AnIntegerValue ^ [-10,-10] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(-10,-10)
+
+                ixor(-1, v, s) should be (AnIntegerValue)
+                       
+            }
+          
+          it("[-10,-10] ^ AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(-10,-10)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be (AnIntegerValue)
+                       
+            }
+          
+          it("[-22,-2] ^ AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(-22,-2)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be (AnIntegerValue)
+                       
+            }
+          
+          it("AnIntegerValue ^ [-22,-2] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(-22,-2)
+
+                ixor(-1, v, s) should be (AnIntegerValue)
+                       
+            }
+          
+          it("AnIntegerValue ^ [2,22] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2,22)
+
+                ixor(-1, v, s) should be (AnIntegerValue)
+                       
+            }
+          
+          it("[2,22] ^ AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(2,22)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be (AnIntegerValue)
+                       
+            }
+          
+          it("[-12,12] ^ AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(-12,12)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be (AnIntegerValue)
+                       
+            }
+          
+          it("AnIntegerValue ^ [-12,12]  => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(-12,12)
+
+                ixor(-1, v, s) should be (AnIntegerValue)
+                       
+            }
+          
+          it("AnIntegerValue ^ AnIntegerValue  => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be (AnIntegerValue)
+                       
+            } 
+          
+          it("[0,0] ^ AnIntegerValue  => AnIntegerValue") {
+                val v = IntegerRange(0,0)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be (AnIntegerValue)
+                       
+            }
+          
+            it("AnIntegerValue ^ [0,0] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(0,0)
+
+                ixor(-1, v, s) should be (AnIntegerValue)
+                       
+            }
+          
             it("x (AnIntegerValue) ^ x => [0,0]") {
                 val v = AnIntegerValue
                 val s = v
