@@ -61,9 +61,9 @@ object MethodReturnValuesAnalysis {
 
     def doAnalyze(
         theProject: SomeProject,
-        isInterrupted: () ⇒ Boolean): MethodReturnValueInformation = {
+        isInterrupted: () ⇒ Boolean,
+        createDomain: (InterruptableAI[Domain], Method) ⇒ Domain with RecordReturnedValue): MethodReturnValueInformation = {
 
-        val fieldValueInformation = theProject.get(FieldValuesKey)
         val candidates = new AtomicInteger(0)
 
         val methodsWithRefinedReturnValues =
@@ -85,7 +85,7 @@ object MethodReturnValuesAnalysis {
                 if { candidates.incrementAndGet(); true }
 
                 ai = new InterruptableAI[Domain]
-                domain = new MethodReturnValuesAnalysisDomain(theProject, fieldValueInformation, ai, method)
+                domain = createDomain(ai, method)
                 result = ai(classFile, method, domain)
                 if !ai.isInterrupted
                 returnedValue = domain.returnedValue

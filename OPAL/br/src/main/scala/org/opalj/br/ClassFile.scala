@@ -121,10 +121,10 @@ final class ClassFile private (
     def isEnumDeclaration: Boolean = (accessFlags & ACC_ENUM.mask) == ACC_ENUM.mask
 
     /**
-	 * Returns true if this class file represents an interface. 
-	 *
-	 * @note From the JVM point-of-view annotations are also interfaces!
-	 */
+     * Returns true if this class file represents an interface.
+     *
+     * @note From the JVM point-of-view annotations are also interfaces!
+     */
     def isInterfaceDeclaration: Boolean = (accessFlags & ACC_INTERFACE.mask) == ACC_INTERFACE.mask
 
     def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask

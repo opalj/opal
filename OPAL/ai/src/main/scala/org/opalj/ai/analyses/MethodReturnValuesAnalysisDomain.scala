@@ -43,6 +43,8 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.SomeUpdate
 import org.opalj.br.analyses.Project
+import org.opalj.ai.project.CallGraphCache
+import org.opalj.br.MethodSignature
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
@@ -52,7 +54,7 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-class MethodReturnValuesAnalysisDomain(
+class BaseMethodReturnValuesAnalysisDomain(
     override val project: SomeProject,
     val fieldValueInformation: FieldValueInformation,
     val ai: InterruptableAI[_],
@@ -75,7 +77,7 @@ class MethodReturnValuesAnalysisDomain(
         with l0.TypeLevelInvokeInstructions
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        with RecordReturnedValuesInfrastructure {
+        with RecordReturnedValue {
 
     type ReturnedValue = DomainValue
 
@@ -113,3 +115,12 @@ class MethodReturnValuesAnalysisDomain(
     }
 }
 
+class FPMethodReturnValuesAnalysisDomain(
+    project: SomeProject,
+    fieldValueInformation: FieldValueInformation,
+    val methodReturnValueInformation: MethodReturnValueInformation,
+    override val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+    ai: InterruptableAI[_],
+    method: Method)
+        extends BaseMethodReturnValuesAnalysisDomain(project, fieldValueInformation, ai, method)
+        with l0.RefinedTypeLevelInvokeInstructions

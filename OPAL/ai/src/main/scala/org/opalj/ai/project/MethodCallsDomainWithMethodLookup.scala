@@ -40,6 +40,7 @@ import org.opalj.ai.domain.MethodCallsHandling
 import org.opalj.ai.domain.Configuration
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.TheCode
+import scala.util.control.ControlThrowable
 
 /**
  *
@@ -66,33 +67,90 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         operands: Operands,
         fallback: () ⇒ MethodCallResult): MethodCallResult = {
 
-        val receiver = operands.last.asInstanceOf[IsAReferenceValue]
-        if (receiver.isPrecise &&
-            receiver.upperTypeBound.consistsOfOneElement &&
-            receiver.upperTypeBound.first.isObjectType) {
-            doNonVirtualInvoke(
-                pc,
-                receiver.upperTypeBound.first.asObjectType,
-                methodName, methodDescriptor, operands, fallback)
-        } else
-            fallback()
+        try {
+            val receiver = operands.last.asInstanceOf[IsAReferenceValue]
+            val receiverUTB = receiver.upperTypeBound
+            if (!receiverUTB.consistsOfOneElement ||
+                !receiver.upperTypeBound.first.isObjectType)
+                return fallback()
 
+            val receiverType = receiverUTB.first.asObjectType
+            // We can resolve (statically) all calls where the type information is precise
+            // or where the declaring class is final or where the called method is final.
+
+            if (receiver.isPrecise) {
+                doNonVirtualInvoke(
+                    pc,
+                    receiverType, methodName, methodDescriptor, operands,
+                    fallback)
+            } else {
+                project.classFile(receiverType).map { receiverClassFile ⇒
+                    if (receiverClassFile.isFinal)
+                        doNonVirtualInvoke(
+                            pc,
+                            receiverType, methodName, methodDescriptor, operands, fallback)
+                    else {
+                        val targetMethod =
+                            if (receiverClassFile.isInterfaceDeclaration)
+                                classHierarchy.resolveInterfaceMethodReference(receiverType, methodName, methodDescriptor, project)
+                            else if (classHierarchy.isInterface(receiverClassFile.thisType)) {
+                                println("EERORRERERERERERERERERERERE: "+receiverClassFile)
+                                ???
+                            } else
+                                classHierarchy.resolveMethodReference(receiverType, methodName, methodDescriptor, project)
+
+                        targetMethod match {
+                            case Some(method) if method.isFinal ⇒
+                                doNonVirtualInvoke(
+                                    pc,
+                                    receiverType, methodName, methodDescriptor, operands,
+                                    fallback)
+                            case _ ⇒
+                                fallback()
+                        }
+                    }
+                }.getOrElse {
+                    fallback()
+                }
+            }
+
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct
+            case t: Throwable ⇒
+                println(
+                    Console.RED+"[error] resolving the method reference resulted in an exception: "+
+                        project.classFile(declaringClassType).map(cf ⇒ if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
+                        declaringClassType.toJava+
+                        "{ "+methodDescriptor.toJava(methodName)+" }"+Console.RESET+
+                        " "+t.getMessage)
+                t.printStackTrace()
+                fallback()
+        }
     }
 
     protected[this] def doNonVirtualInvoke(
         pc: PC,
-        declaringClass: ObjectType,
+        declaringClassType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
         operands: Operands,
         fallback: () ⇒ MethodCallResult): MethodCallResult = {
 
-        classHierarchy.resolveMethodReference(
-            // the cast is safe since arrays do not have any static/special methods
-            declaringClass.asObjectType,
-            methodName,
-            methodDescriptor,
-            project) match {
+        try {
+            val resolvedMethod =
+                project.classFile(declaringClassType) match {
+                    case Some(classFile) ⇒
+                        if (classFile.isInterfaceDeclaration)
+                            classHierarchy.resolveInterfaceMethodReference(
+                                declaringClassType, methodName, methodDescriptor, project)
+                        else
+                            classHierarchy.resolveMethodReference(
+                                declaringClassType, methodName, methodDescriptor, project)
+                    case _ ⇒
+                        return fallback();
+                }
+
+            resolvedMethod match {
                 case Some(method) ⇒
                     if (method.body.isDefined)
                         doInvoke(pc, method, operands, fallback)
@@ -101,10 +159,21 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                 case _ ⇒
                     println(
                         Console.YELLOW+"[warn] method reference cannot be resolved: "+
-                            declaringClass.toJava+
-                            "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET)
+                            declaringClassType.toJava+
+                            "{ /*non virtual*/ "+methodDescriptor.toJava(methodName)+"}"+Console.RESET)
                     fallback()
             }
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct
+            case t: Throwable ⇒
+                println(
+                    Console.RED+"[error] resolving the method reference resulted in an exception: "+
+                        project.classFile(declaringClassType).map(cf ⇒ if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
+                        declaringClassType.toJava+
+                        "{ /*non virtual*/ "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+
+                        " "+t.getMessage)
+                fallback()
+        }
     }
 
     // -----------------------------------------------------------------------------------

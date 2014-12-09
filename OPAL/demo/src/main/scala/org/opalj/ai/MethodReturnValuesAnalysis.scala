@@ -30,10 +30,7 @@ package org.opalj
 package ai
 
 import scala.language.existentials
-
 import java.net.URL
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysisDomain ⇒ TheAnalysisDomain }
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.AnalysisExecutor
@@ -41,9 +38,16 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysisDomain ⇒ TheAnalysisDomain }
+import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheMethodReturValuesAnalysis }
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.analyses.FieldValuesKey
+import org.opalj.ai.analyses.BaseMethodReturnValuesAnalysisDomain
+import org.opalj.ai.project.CallGraphCache
+import org.opalj.br.MethodSignature
+import org.opalj.ai.analyses.FPMethodReturnValuesAnalysisDomain
+import org.opalj.ai.analyses.MethodReturnValueInformation
+import org.opalj.ai.analyses.FPFieldValuesAnalysisDomain
+import org.opalj.ai.analyses.FieldValuesAnalysis
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
@@ -56,9 +60,9 @@ object MethodReturnValuesAnalysis
 
     val analysis = this
 
-    override def title: String = TheAnalysis.title
+    override def title: String = TheMethodReturValuesAnalysis.title
 
-    override def description: String = TheAnalysis.description
+    override def description: String = TheMethodReturValuesAnalysis.description
 
     override def doAnalyze(
         theProject: Project[URL],
@@ -66,15 +70,61 @@ object MethodReturnValuesAnalysis
         isInterrupted: () ⇒ Boolean) = {
         import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-        val methodsWithRefinedReturnTypes: Map[Method, Option[TheAnalysisDomain#DomainValue]] =
-            time {
-                TheAnalysis.doAnalyze(theProject, isInterrupted)
-            } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
+        var fieldValueInformation = theProject.get(FieldValuesKey)
+
+        var methodReturnValueInformation: MethodReturnValueInformation = time {
+            def createDomain(ai: InterruptableAI[Domain], method: Method) = {
+                new BaseMethodReturnValuesAnalysisDomain(
+                    theProject, fieldValueInformation, ai, method
+                )
+            }
+            TheMethodReturValuesAnalysis.doAnalyze(theProject, isInterrupted, createDomain)
+        } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
+        println("number of methods with refined returned types "+methodReturnValueInformation.size)
+
+        var continueAnalysis = true
+        val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](theProject)
+        do {
+
+            val mrva = time {
+                def createDomain(ai: InterruptableAI[Domain], method: Method) = {
+                    new FPMethodReturnValuesAnalysisDomain(
+                        theProject,
+                        fieldValueInformation, methodReturnValueInformation,
+                        cache,
+                        ai, method
+                    )
+                }
+                TheMethodReturValuesAnalysis.doAnalyze(theProject, isInterrupted, createDomain)
+            } { t ⇒ println(f"Method return values analysis time: ${ns2sec(t)}%2.2f seconds.") }
+
+            val fvta = time {
+                def createDomain(project: SomeProject, classFile: ClassFile) = {
+                    new FPFieldValuesAnalysisDomain(
+                        theProject,
+                        fieldValueInformation, methodReturnValueInformation,
+                        cache,
+                        classFile
+                    )
+                }
+                FieldValuesAnalysis.doAnalyze(theProject, createDomain, isInterrupted)
+            } { t ⇒ println(f"Field value information analysis time: ${ns2sec(t)}%2.2f seconds.") }
+
+            println("number of fields with refined types "+fieldValueInformation.size)
+            println("number of methods with refined returned types "+methodReturnValueInformation.size)
+
+            continueAnalysis =
+                mrva.size > methodReturnValueInformation.size ||
+                    fvta.size > fieldValueInformation.size
+
+            methodReturnValueInformation = mrva
+            fieldValueInformation = fvta
+        } while (continueAnalysis)
 
         val results =
-            methodsWithRefinedReturnTypes.map { result ⇒
+            methodReturnValueInformation.map { result ⇒
                 val (method, value) = result
-                RefinedReturnType[TheAnalysisDomain](
+                RefinedReturnType[Domain](
                     theProject,
                     theProject.classFile(method),
                     method, value)

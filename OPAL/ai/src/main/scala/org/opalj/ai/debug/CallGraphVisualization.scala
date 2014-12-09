@@ -75,7 +75,7 @@ object CallGraphVisualization {
     def main(args: Array[String]) {
         if ((args.size < 3) || (args.size > 4)) {
             println("You have to specify:")
-            println("\t1) The algorithm to use (CHA or VTA).")
+            println("\t1) The algorithm to use (CHA, BasicVTA, DefaultVTA, ExtVTA).")
             println("\t2) A jar/class file or a directory containing jar/class files.")
             println("\t3) A pattern that specifies which class/interface types should be included in the output.")
             println("\t4 - Optional) The number of seconds (max. 30) before the analysis starts (e.g., to attach a profiler).")
@@ -188,9 +188,10 @@ object CallGraphVisualization {
                             callees.find(e ⇒ e._2.size == maxCallTargets).get._1
                     }
                 }
+                println(f"Number of call sites: ${callGraph.callSites}%,d ")
                 println(
                     f"Number of call edges: ${callGraph.callEdgesCount}%,d"+
-                        f" /  called-by edges: ${callGraph.calledByEdgesCount}%,d")
+                        f" / called-by edges: ${callGraph.calledByEdgesCount}%,d")
                 println(
                     "Maximum number of targets for one call: "+maxCallTargets+"; method: "+
                         methodWithMethodCallWithMaxTargets.fullyQualifiedSignature(

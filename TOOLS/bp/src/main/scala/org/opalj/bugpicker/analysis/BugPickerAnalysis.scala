@@ -75,6 +75,9 @@ import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.ConcreteIntegerValues
 import org.opalj.ai.domain.ConcreteLongValues
+import org.opalj.ai.analyses.MethodReturnValuesKey
+import org.opalj.ai.project.CallGraphCache
+import org.opalj.br.MethodSignature
 
 /**
  * A static analysis that analyzes the data-flow to identify various issues in the
@@ -148,7 +151,9 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
         val progressManagement =
-            initProgressManagement(1 /*for the FieldValues analysis*/ + classFilesCount)
+            initProgressManagement(
+                1 /*the FieldValues analysis*/ + 1 /*the MethodReturnValues analysis*/ +
+                    classFilesCount)
 
         //
         //
@@ -159,6 +164,11 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         theProject.get(FieldValuesKey)
         progressManagement.end(1)
 
+        progressManagement.start(2, "Analyzing methods")
+        theProject.get(MethodReturnValuesKey)
+        progressManagement.end(2)
+
+        val PRE_ANALYSES_COUNT = 2
         //
         //
         // MAIN ANALYSIS
@@ -169,11 +179,16 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
         val results = new java.util.concurrent.ConcurrentLinkedQueue[Issue]()
         val fieldValueInformation = theProject.get(FieldValuesKey)
+        val methodReturnValueInformation = theProject.get(MethodReturnValuesKey)
+        val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](theProject)
 
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
             val analysisDomain =
                 new BugPickerAnalysisDomain(
-                    theProject, fieldValueInformation,
+                    theProject,
+                    // Map.empty, Map.empty, 
+                    fieldValueInformation, methodReturnValueInformation,
+                    cache,
                     method, maxCardinalityOfIntegerRanges)
             val ai =
                 new BoundedInterruptableAI[analysisDomain.type](
@@ -299,7 +314,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
         var analysisTime: Long = 0l
         val identifiedIssues = time {
-            val stepIds = new java.util.concurrent.atomic.AtomicInteger(1 /*.. the FieldValuesAnalysis */ )
+            val stepIds = new java.util.concurrent.atomic.AtomicInteger(PRE_ANALYSES_COUNT)
 
             for {
                 classFile ← theProject.projectClassFiles.par
