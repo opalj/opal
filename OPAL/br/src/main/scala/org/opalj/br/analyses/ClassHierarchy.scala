@@ -787,7 +787,6 @@ class ClassHierarchy private (
         project: SomeProject): Option[Method] = {
 
         project.classFile(receiverType) flatMap { classFile ⇒
-            assume(!classFile.isInterfaceDeclaration)
 
             lookupMethodDefinition(
                 receiverType,
@@ -897,7 +896,9 @@ class ClassHierarchy private (
         project: SomeProject): Option[Method] = {
 
         // TODO [Java8] Support Extension Methods!
-        assume(!isInterface(receiverType))
+        assume(
+            !isInterface(receiverType),
+            s"${receiverType.toJava} is classified as an interface; ${project.classFile(receiverType).map(_.toString).getOrElse("<precise information missing>")}")
 
         @tailrec def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
             val classFileOption = project.classFile(receiverType)
@@ -1774,7 +1775,7 @@ object ClassHierarchy {
 
         val ObjectId = ObjectType.Object.id
 
-        /**
+        /*
          * Extends the class hierarchy.
          */
         def process(
@@ -1825,7 +1826,7 @@ object ClassHierarchy {
                 typeDecl.theSuperinterfaceTypes)
         }
 
-        /**
+        /*
          * Analyzes the given class file and extends the current class hierarchy.
          */
         val processClassFile: (ClassFile) ⇒ Unit = { classFile ⇒
