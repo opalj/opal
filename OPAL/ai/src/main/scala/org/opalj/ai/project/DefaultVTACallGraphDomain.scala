@@ -31,8 +31,12 @@ package ai
 package project
 
 import scala.collection.Set
+
 import org.opalj.ai.CorrelationalDomain
+import org.opalj.ai.analyses.FieldValueInformation
+import org.opalj.ai.analyses.MethodReturnValueInformation
 import org.opalj.br.analyses.Project
+
 import br.ClassFile
 import br.Method
 import br.MethodSignature
@@ -47,7 +51,6 @@ import domain.TheProject
 import domain.ThrowAllPotentialExceptionsConfiguration
 import domain.l0
 import domain.l1
-import org.opalj.ai.analyses.FieldValueInformation
 
 /**
  * Domain object which is used to calculate the call graph using variable type analysis.
@@ -57,6 +60,7 @@ import org.opalj.ai.analyses.FieldValueInformation
 class DefaultVTACallGraphDomain[Source](
     val project: Project[Source],
     val fieldValueInformation: FieldValueInformation,
+    val methodReturnValueInformation: MethodReturnValueInformation,
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method: Method)
@@ -77,5 +81,7 @@ class DefaultVTACallGraphDomain[Source](
         with l0.TypeLevelLongValuesShiftOperators
         with l1.DefaultReferenceValuesBinding
         with l0.TypeLevelInvokeInstructions
-        with l0.RefinedTypeLevelFieldAccessInstructions
+        with l0.RefinedTypeLevelInvokeInstructions
+        with l0.RefinedTypeLevelFieldAccessInstructions {
+}
 

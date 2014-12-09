@@ -33,6 +33,7 @@ package analyses
 import org.opalj.br.Field
 import org.opalj.br.UpperTypeBound
 import org.opalj.br.analyses._
+import org.opalj.br.ClassFile
 
 /**
  * The ''key'' object to get information about the "more precise" field types.
@@ -54,12 +55,13 @@ object FieldValuesKey extends ProjectInformationKey[FieldValueInformation] {
     override protected def compute(project: SomeProject): FieldValueInformation = {
         // TODO Introduce the concept of a "configuration to a project"
         // TODO Use project-specific logging facility
-        println("Computing field value information")
+        println("computing field value information")
         val result = FieldValuesAnalysis.doAnalyze(
             project,
+            (project: SomeProject, classFile: ClassFile) ⇒ new BaseFieldValuesAnalysisDomain(project, classFile),
             () ⇒ false // make it configurable
         )
-        println("Successfully computed the field value information")
+        println(s"computed the field value information; refined the type of ${result.size} fields")
 
         result
     }

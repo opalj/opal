@@ -95,6 +95,7 @@ import instructions.PUTFIELD
 import instructions.RETURN
 import instructions.ReturnInstruction
 import org.scalatest.junit.JUnitRunner
+import org.opalj.br.instructions.INVOKEDYNAMIC
 
 /**
  * @author Arne Lottmann
@@ -102,6 +103,7 @@ import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class ClassFileFactoryTest extends FunSpec with Matchers {
     val testProject = Project(locateTestResources("classfiles/proxy.jar", "br"))
+    val lambdasProject = Project(locateTestResources("classfiles/Lambdas.jar", "br"))
 
     val StaticMethods = ObjectType("proxy/StaticMethods")
     val InstanceMethods = ObjectType("proxy/InstanceMethods")
@@ -650,6 +652,135 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     }
                     currentPC = instructions(currentPC).indexOfNextInstruction(currentPC, false)
                     instructions(currentPC) should be(ReturnInstruction(returnType))
+                }
+            }
+        }
+
+        describe("should be able to create correct proxies for method reference invokedynamics") {
+
+            describe("lambda expressions should not be identified as method references") {
+                val Lambdas = lambdasProject.projectClassFiles.find(
+                    _.fqn == "lambdas/Lambdas").get
+                it("they are not constructor references") {
+                    for {
+                        MethodWithBody(body) ← Lambdas.methods
+                        instruction ← body.instructions
+                        if instruction.isInstanceOf[INVOKEDYNAMIC]
+                        invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
+                    } {
+                        val targetMethodHandle = invokedynamic.bootstrapMethod.
+                            bootstrapArguments(1).asInstanceOf[MethodCallMethodHandle]
+                        val proxyInterfaceMethodDescriptor = invokedynamic.bootstrapMethod.
+                            bootstrapArguments(2).asInstanceOf[MethodDescriptor]
+                        assert(!ClassFileFactory.isVirtualMethodReference(
+                            targetMethodHandle.opcodeOfUnderlyingInstruction,
+                            targetMethodHandle.receiverType.asObjectType,
+                            targetMethodHandle.methodDescriptor,
+                            proxyInterfaceMethodDescriptor))
+                    }
+                }
+
+                it("nor are they virtual method calls") {
+                    for {
+                        MethodWithBody(body) ← Lambdas.methods
+                        instruction ← body.instructions
+                        if instruction.isInstanceOf[INVOKEDYNAMIC]
+                        invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
+                    } {
+                        val targetMethodHandle = invokedynamic.bootstrapMethod.
+                            bootstrapArguments(1).asInstanceOf[MethodCallMethodHandle]
+                        assert(!ClassFileFactory.isNewInvokeSpecial(
+                            targetMethodHandle.opcodeOfUnderlyingInstruction,
+                            targetMethodHandle.name))
+                    }
+                }
+            }
+
+            val MethodReferences = lambdasProject.projectClassFiles.find(
+                _.fqn == "lambdas/MethodReferences").get
+
+            describe("references to constructors") {
+                it("should be correctly identified") {
+                    val newValueMethod = MethodReferences.findMethod("newValue").get
+                    val indy = newValueMethod.body.get.instructions.find(
+                        _.isInstanceOf[INVOKEDYNAMIC]).get.asInstanceOf[INVOKEDYNAMIC]
+                    val targetMethod = indy.bootstrapMethod.bootstrapArguments(1).
+                        asInstanceOf[MethodCallMethodHandle]
+                    val opcode = targetMethod.opcodeOfUnderlyingInstruction
+                    val methodName = targetMethod.name
+                    assert(ClassFileFactory.isNewInvokeSpecial(opcode, methodName))
+                }
+
+                val SomeType = ObjectType("SomeType")
+                val proxy = ClassFileFactory.Proxy(
+                    TypeDeclaration(
+                        ObjectType("MethodRefConstructorProxy"),
+                        false,
+                        Some(ObjectType.Object),
+                        Set.empty
+                    ),
+                    "get",
+                    MethodDescriptor(ObjectType.String, SomeType),
+                    SomeType,
+                    "<init>",
+                    MethodDescriptor(ObjectType.String, SomeType),
+                    INVOKESPECIAL.opcode
+                )
+
+                val proxyMethod = proxy.findMethod("get").get
+
+                it("should result in a proxy method that creates an instance of the object first") {
+                    proxyMethod.body.get.instructions.slice(0, 4) should be(
+                        Array(
+                            NEW(SomeType),
+                            null,
+                            null,
+                            DUP
+                        ))
+                }
+            }
+
+            describe("references to instance methods") {
+                it("should be correctly identified") {
+                    val filterOutEmptyValuesMethod = MethodReferences.findMethod(
+                        "filterOutEmptyValues").get
+                    val invokedynamic = filterOutEmptyValuesMethod.body.get.instructions.
+                        find(_.isInstanceOf[INVOKEDYNAMIC]).get.asInstanceOf[INVOKEDYNAMIC]
+                    val targetMethodHandle = invokedynamic.bootstrapMethod.
+                        bootstrapArguments(1).asInstanceOf[MethodCallMethodHandle]
+                    val proxyInterfaceMethodDescriptor = invokedynamic.bootstrapMethod.
+                        bootstrapArguments(2).asInstanceOf[MethodDescriptor]
+                    assert(ClassFileFactory.isVirtualMethodReference(
+                        targetMethodHandle.opcodeOfUnderlyingInstruction,
+                        targetMethodHandle.receiverType.asObjectType,
+                        targetMethodHandle.methodDescriptor,
+                        proxyInterfaceMethodDescriptor))
+                }
+
+                val SomeOtherType = ObjectType("SomeOtherType")
+                val proxy = ClassFileFactory.Proxy(
+                    TypeDeclaration(
+                        ObjectType("InstanceMethodRefProxy"),
+                        false,
+                        Some(ObjectType.Object),
+                        Set.empty
+                    ),
+                    "isFull",
+                    MethodDescriptor(SomeOtherType, BooleanType),
+                    SomeOtherType,
+                    "isThisFull",
+                    MethodDescriptor.JustReturnsBoolean,
+                    INVOKEVIRTUAL.opcode
+                )
+
+                it("and result in a proxy method that passes in the explicit this") {
+                    val proxyMethod = proxy.findMethod("isFull").get
+                    val instructions = proxyMethod.body.get.instructions
+                    instructions(0) should be(ALOAD_1)
+                    instructions(1) should be(INVOKEVIRTUAL(
+                        SomeOtherType,
+                        "isThisFull",
+                        MethodDescriptor.JustReturnsBoolean))
                 }
             }
         }

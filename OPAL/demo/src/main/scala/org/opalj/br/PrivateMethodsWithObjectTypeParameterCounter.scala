@@ -27,61 +27,49 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
-package l0
+package br
 
+import analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.ai.analyses.BaseFieldValuesAnalysisDomain
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassFile
+import org.opalj.br.analyses.ClassHierarchy
 
 /**
- * Demonstrates how to use OPAL's FieldTypesAnalysis.
+ * Counts the number of private methods that have at least one parameter with
+ * a reference type.
  *
  * @author Michael Eichberg
  */
-object FieldTypesAnalysis extends AnalysisExecutor {
+object PrivateMethodsWithObjectTypeParameterCounter extends AnalysisExecutor {
 
     val analysis = new OneStepAnalysis[URL, BasicReport] {
 
-        override def title: String =
-            "Tries to derive more precise information about the fields of a class."
+        override def description: String = "Counts the number of private methods with at least one parameter that is an object type."
 
-        override def description: String =
-            "Identifies fields of a class where we can – statically – derive more precise type/value information."
-
-        override def doAnalyze(
-            theProject: Project[URL],
+        def doAnalyze(
+            project: Project[URL],
             parameters: Seq[String],
             isInterrupted: () ⇒ Boolean) = {
-            import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
-
-            val refinedFieldValues =
-                org.opalj.ai.analyses.FieldValuesAnalysis.doAnalyze(
-                    theProject,
-                    (project: SomeProject, classFile: ClassFile) ⇒
-                        new BaseFieldValuesAnalysisDomain(project, classFile),
-                    isInterrupted)
+            val methods =
+                for {
+                    classFile ← project.classFiles;
+                    method ← classFile.methods
+                    if method.isPrivate
+                    if method.descriptor.parameterTypes.exists { pt ⇒
+                        pt.isObjectType && {
+                            val objectType = pt.asObjectType
+                            project.classHierarchy.hasSubtypes(objectType).isYes && (
+                                project.classFile(objectType) match {
+                                    case Some(cf) ⇒ !cf.isFinal
+                                    case _        ⇒ false
+                                }
+                            )
+                        }
+                    }
+                } yield classFile.thisType.toJava+"{ "+method.toJava+" }"
 
             BasicReport(
-                refinedFieldValues.seq.map { info ⇒
-                    val (field, fieldValue) = info
-                    val classFile = theProject.classFile(field)
-                    classFile.thisType.toJava+
-                        "{ "+
-                        field.name+":"+fieldValue+
-                        " // Originaltype: "+field.fieldType.toJava+
-                        " }"
-                }.mkString("\n")+
-                    "\n"+
-                    "Number of refined field types: "+refinedFieldValues.size+"\n"
+                methods.mkString(s"${methods.size} methods found:\n\t", "\n\t", "\n")
             )
         }
     }
 }
-

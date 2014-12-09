@@ -45,11 +45,10 @@ class DefaultConfigurableReferenceValuesDomain[I, Source](
     val classFile: ClassFile,
     val method: Method)
         extends CorrelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with ProjectBasedClassHierarchy
         with TheProject
         with TheMethod
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with l0.DefaultTypeLevelFloatValues

@@ -42,6 +42,7 @@ import scala.util.control.ControlThrowable
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
+ * (`Annotation` types are also interface types and `Enum`s are class types.)
  *
  * @param minorVersion The minor part of this class file's version number.
  * @param majorVersion The major part of this class file's version number.
@@ -117,9 +118,14 @@ final class ClassFile private (
 
     def isClassDeclaration: Boolean = (accessFlags & classCategoryMask) == 0
 
-    def isEnumDeclaration: Boolean = (accessFlags & classCategoryMask) == ACC_ENUM.mask
+    def isEnumDeclaration: Boolean = (accessFlags & ACC_ENUM.mask) == ACC_ENUM.mask
 
-    def isInterfaceDeclaration: Boolean = (accessFlags & classCategoryMask) == ACC_INTERFACE.mask
+    /**
+     * Returns true if this class file represents an interface.
+     *
+     * @note From the JVM point-of-view annotations are also interfaces!
+     */
+    def isInterfaceDeclaration: Boolean = (accessFlags & ACC_INTERFACE.mask) == ACC_INTERFACE.mask
 
     def isAnnotationDeclaration: Boolean = (accessFlags & classCategoryMask) == annotationMask
 
@@ -501,7 +507,7 @@ final class ClassFile private (
                 AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
                 thisType.toJava+"\n"+
                 superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
-                (if (interfaceTypes.nonEmpty) interfaceTypes.mkString("\t\twith ", " with ", "\n") else "") +
+                (if (interfaceTypes.nonEmpty) interfaceTypes.map(_.toJava).mkString("\t\twith ", " with ", "\n") else "") +
                 annotationsToJava(runtimeVisibleAnnotations, "\t", "\n") +
                 annotationsToJava(runtimeInvisibleAnnotations, "\t", "\n")+
                 "\t{version="+majorVersion+"."+minorVersion+"}\n)"

@@ -40,9 +40,9 @@ trait FloatValuesFactory extends ValuesDomain { domain ⇒
 
     /**
      * Factory method to create a `DomainValue` with the specified origin.
-	 * The origin is typically the program counter of the instruction 
-	 * that created this value/where the value was observed for the first
-	 * time.
+     * The origin is typically the program counter of the instruction
+     * that created this value/where the value was observed for the first
+     * time.
      *
      * The domain may ignore the information about the origin (`origin`).
      */
@@ -50,9 +50,9 @@ trait FloatValuesFactory extends ValuesDomain { domain ⇒
 
     /**
      * Factory method to create a `DomainValue` with the specified origin.
-	 * The origin is typically the program counter of the instruction 
-	 * that created this value/where the value was observed for the first
-	 * time.
+     * The origin is typically the program counter of the instruction
+     * that created this value/where the value was observed for the first
+     * time.
      *
      * The domain may ignore the information about the origin (`origin`).
      */
