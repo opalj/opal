@@ -27,40 +27,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
-package l0
+package br
+package analyses
 
 import java.net.URL
-
-import scala.Console.BLUE
-import scala.Console.BOLD
-import scala.Console.GREEN
-import scala.Console.RESET
-
-import org.opalj.ai.Domain
 import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysisDomain ⇒ TheAnalysisDomain }
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
+import org.opalj.br.MethodWithBody
+import java.util.concurrent.atomic.AtomicInteger
+import org.opalj.br.instructions.VirtualMethodInvocationInstruction
+import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
 
 /**
- * A shallow analysis that tries to refine the return types of methods.
+ * A shallow analysis that identifies methods that do not perform virtual method
+ * calls.
  *
  * @author Michael Eichberg
  */
-object MethodReturnValuesAnalysis
+object MethodsWithNoVirtualMethodCalls
         extends AnalysisExecutor
         with OneStepAnalysis[URL, BasicReport] {
 
     val analysis = this
 
-    override def title: String = TheAnalysis.title
+    override def title: String = "identifies methods that perform no virtual method calls"
 
     override def description: String = TheAnalysis.description
 
@@ -70,38 +61,24 @@ object MethodReturnValuesAnalysis
         isInterrupted: () ⇒ Boolean) = {
         import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-        val methodsWithRefinedReturnTypes: Map[Method, Option[TheAnalysisDomain#DomainValue]] =
+        val allMethods = new AtomicInteger(0)
+
+        val methodsWithoutVirtualMethodCalls =
             time {
-                TheAnalysis.doAnalyze(theProject, isInterrupted)
+                for {
+                    classFile ← theProject.classFiles.par
+                    method @ MethodWithBody(body) ← classFile.methods
+                    if { allMethods.incrementAndGet(); true }
+                    if (body.instructions.exists { i ⇒ i.isInstanceOf[VirtualMethodInvocationInstruction] })
+                } yield {
+                    method.toJava(classFile)
+                }
             } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
 
-        val results =
-            methodsWithRefinedReturnTypes.map { result ⇒
-                val (method, value) = result
-                RefinedReturnType[TheAnalysisDomain](theProject.classFile(method), method, value)
-            }
-
         BasicReport(
-            results.mkString(
-                "Methods with refined return types ("+results.size+"): \n",
+            methodsWithoutVirtualMethodCalls.map(_.toString()).seq.toSeq.sorted.mkString(
+                s"${methodsWithoutVirtualMethodCalls.size} methods out of ${allMethods.get} methods with a body perfom no virtual method call\n",
                 "\n",
                 "\n"))
     }
 }
-
-case class RefinedReturnType[D <: Domain](
-        classFile: ClassFile,
-        method: Method,
-        refinedType: Option[D#DomainValue]) {
-
-    override def toString = {
-        import Console._
-        val declaringClassOfMethod = classFile.thisType.toJava
-
-        "Refined the return type of "+BOLD + BLUE +
-            declaringClassOfMethod+"{ "+method.toJava+" }"+
-            " => "+GREEN + refinedType.getOrElse("\"NONE\" (the method never returns normally)") + RESET
-    }
-
-}
-

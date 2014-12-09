@@ -28,55 +28,58 @@
  */
 package org.opalj
 package ai
-package domain
-package l0
+package project
 
+import scala.collection.Set
+
+import org.opalj.ai.CorrelationalDomain
+import org.opalj.ai.analyses.FieldValueInformation
+import org.opalj.ai.analyses.MethodReturnValueInformation
+import org.opalj.ai.domain.TheClassFile
 import org.opalj.br.analyses.Project
-import org.opalj.br.{ Method, ClassFile }
+
+import br.ClassFile
+import br.Method
+import br.MethodSignature
+import br.analyses.Project
+import domain.DefaultDomainValueBinding
+import domain.DefaultHandlingOfMethodResults
+import domain.IgnoreSynchronization
+import domain.ProjectBasedClassHierarchy
+import domain.TheMethod
+import domain.TheProject
+import domain.ThrowAllPotentialExceptionsConfiguration
+import domain.l0
 
 /**
- * A complete domain that performs all computations at the type level and which has
- * a configurable identifier.
- *
- * @note This domain is intended to be used for '''demo purposes only'''.
- *      '''Tests should create their own domains to make sure that
- *      the test results remain stable. The configuration of this
- *      domain just reflects a reasonable configuration that may
- *      change without further notice.'''
+ * Domain object which is used to calculate the call graph using variable type analysis.
  *
  * @author Michael Eichberg
  */
-class BaseConfigurableDomain[I, S](
-    val id: I,
-    val project: Project[S],
+class BasicVTAWithPreAnalysisCallGraphDomain[Source](
+    val project: Project[Source],
+    val fieldValueInformation: FieldValueInformation,
+    val methodReturnValueInformation: MethodReturnValueInformation,
+    val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method: Method)
-        extends TypeLevelDomain
+        extends CorrelationalDomain
+        with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
+        with TheProject
+        with TheClassFile
+        with TheMethod
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        with TheProject
-        with TheMethod
-        with DomainId {
-
-    type Id = I
-}
-
-/**
- * This is a ready to use domain which sets the domain identifier
- * to a string that identifies the method that is analyzed.
- *
- * This domain is primarily useful for demonstration purposes.
- *
- * @author Michael Eichberg
- */
-class BaseDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends BaseConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultTypeLevelIntegerValues
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with l0.DefaultReferenceValuesBinding
+        with l0.TypeLevelInvokeInstructions // the foundation
+        with l0.RefinedTypeLevelInvokeInstructions
+        //with l0.TypeLevelFieldAccessInstructions
+        with l0.RefinedTypeLevelFieldAccessInstructions
 

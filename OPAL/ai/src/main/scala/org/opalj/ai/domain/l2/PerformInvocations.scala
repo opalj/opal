@@ -207,7 +207,7 @@ trait PerformInvocations extends MethodCallsDomain {
         fallback: () ⇒ MethodCallResult): MethodCallResult = {
 
         classHierarchy.resolveMethodReference(
-            // the cast is safe since arrays do not have any static methods
+            // the cast is safe since arrays do not have any static/special methods
             declaringClass.asObjectType,
             methodName,
             methodDescriptor,

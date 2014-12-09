@@ -31,23 +31,21 @@ package ai
 package project
 
 import scala.collection.Set
-import scala.collection.Map
-import org.opalj.util.Answer
-import org.opalj.util.No
-import org.opalj.util.Unknown
-import br._
-import org.opalj.ai.collectWithOperandsAndIndex
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.TheProject
-import org.opalj.ai.domain.TheClassFile
-import org.opalj.ai.domain.TheMethod
-import org.opalj.ai.domain.ClassHierarchy
-import org.opalj.ai.domain.TheCode
+import scala.collection.mutable.HashSet
+
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodSignature
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.util.Answer
+import org.opalj.util.No
+import org.opalj.util.Unknown
 
 /**
  * Domain object that can be used to calculate a call graph using CHA. This domain
@@ -73,84 +71,9 @@ class CHACallGraphExtractor(
     protected[this] class AnalysisContext(
             val project: SomeProject,
             val classFile: ClassFile,
-            val method: Method) {
+            val method: Method) extends super.AnalysisContext {
 
         val classHierarchy = project.classHierarchy
-
-        //
-        //
-        // Managing/Storing Call Edges
-        //
-        //
-
-        import scala.collection.mutable.OpenHashMap
-        import scala.collection.mutable.HashSet
-
-        var unresolvableMethodCalls = List.empty[UnresolvedMethodCall]
-
-        @inline def addUnresolvedMethodCall(
-            callerClass: ReferenceType, caller: Method, pc: PC,
-            calleeClass: ReferenceType, calleeName: String, calleeDescriptor: MethodDescriptor): Unit = {
-            unresolvableMethodCalls =
-                new UnresolvedMethodCall(
-                    callerClass, caller, pc,
-                    calleeClass, calleeName, calleeDescriptor
-                ) :: unresolvableMethodCalls
-        }
-
-        def allUnresolvableMethodCalls: List[UnresolvedMethodCall] = unresolvableMethodCalls
-
-        private[this] val callEdgesMap = OpenHashMap.empty[PC, Set[Method]]
-
-        @inline final def addCallEdge(
-            pc: PC,
-            callees: Set[Method]): Unit = {
-
-            if (callEdgesMap.contains(pc)) {
-                callEdgesMap(pc) ++= callees
-            } else {
-                callEdgesMap.put(pc, callees)
-            }
-        }
-
-        def allCallEdges: (Method, Map[PC, Set[Method]]) = (method, callEdgesMap)
-
-        def addCallToNullPointerExceptionConstructor(
-            callerType: ObjectType, callerMethod: Method, pc: PC) {
-
-            cache.NullPointerExceptionDefaultConstructor match {
-                case Some(defaultConstructor) ⇒
-                    addCallEdge(pc, HashSet(defaultConstructor))
-                case _ ⇒
-                    val defaultConstructorDescriptor = MethodDescriptor.NoArgsAndReturnVoid
-                    val NullPointerException = ObjectType.NullPointerException
-                    addUnresolvedMethodCall(
-                        callerType, callerMethod, pc,
-                        NullPointerException, "<init>", defaultConstructorDescriptor
-                    )
-            }
-        }
-
-        @inline protected[this] def callees(
-            declaringClassType: ObjectType,
-            name: String,
-            descriptor: MethodDescriptor): Set[Method] = {
-
-            if (classHierarchy.isKnown(declaringClassType)) {
-                val methodSignature = new MethodSignature(name, descriptor)
-                cache.getOrElseUpdate(declaringClassType, methodSignature)(
-                    {
-                        classHierarchy.lookupImplementingMethods(
-                            declaringClassType, name, descriptor, project
-                        )
-                    },
-                    syncOnEvaluation = true //false
-
-                )
-            } else {
-                Set.empty
-            }
-        }
 
         def staticCall(
             pc: PC,

@@ -294,7 +294,7 @@ trait ValuesDomain {
          *      project-wide analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
-        def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
+        def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
             throw new DomainException("adaptation of "+this+" to "+target+" is unsupported")
 
     }
