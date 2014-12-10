@@ -28,55 +28,54 @@
  */
 package org.opalj
 package ai
-package domain
-package l0
+package project
 
-import org.opalj.br.analyses.Project
-import org.opalj.br.{ Method, ClassFile }
+import scala.collection.Set
 
-/**
- * A complete domain that performs all computations at the type level and which has
- * a configurable identifier.
- *
- * @note This domain is intended to be used for '''demo purposes only'''.
- *      '''Tests should create their own domains to make sure that
- *      the test results remain stable. The configuration of this
- *      domain just reflects a reasonable configuration that may
- *      change without further notice.'''
- *
- * @author Michael Eichberg
- */
-class BaseConfigurableDomain[I, S](
-    val id: I,
-    val project: Project[S],
-    val classFile: ClassFile,
-    val method: Method)
-        extends TypeLevelDomain
-        with ThrowAllPotentialExceptionsConfiguration
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with TheProject
-        with TheMethod
-        with DomainId {
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodSignature
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.ClassHierarchy
+import org.opalj.br.analyses.SomeProject
+import org.opalj.util.No
+import org.opalj.util.Yes
 
-    type Id = I
+trait Callees {
+
+    def project: SomeProject
+
+    def classHierarchy: ClassHierarchy
+
+    def cache: CallGraphCache[MethodSignature, Set[Method]]
+
+    @inline protected[this] def callees(
+        declaringClassType: ObjectType,
+        name: String,
+        descriptor: MethodDescriptor): Set[Method] = {
+
+        classHierarchy.hasSubtypes(declaringClassType) match {
+
+            case Yes ⇒
+                val methodSignature = new MethodSignature(name, descriptor)
+                cache.getOrElseUpdate(declaringClassType, methodSignature)(
+                    {
+                        classHierarchy.lookupImplementingMethods(
+                            declaringClassType, name, descriptor, project
+                        )
+                    },
+                    syncOnEvaluation = true //false
+                )
+
+            case No ⇒
+                classHierarchy.lookupImplementingMethods(
+                    declaringClassType, name, descriptor, project
+                )
+
+            case /*Unknown <=> the type is unknown */ _ ⇒
+                Set.empty
+        }
+    }
+
 }
-
-/**
- * This is a ready to use domain which sets the domain identifier
- * to a string that identifies the method that is analyzed.
- *
- * This domain is primarily useful for demonstration purposes.
- *
- * @author Michael Eichberg
- */
-class BaseDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends BaseConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)
 

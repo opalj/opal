@@ -78,61 +78,55 @@ import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.l1.RecordAllThrownExceptions
 import org.opalj.ai.domain.l1.ReferenceValues
 
-object DeadCodeAnalysis {
+object ThrowsExceptionAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain }): List[Issue] = {
+        result: AIResult { val domain: Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions }): List[Issue] = {
 
         val operandsArray = result.operandsArray
         val domain = result.domain
         val body = result.code
 
-        val deadCodeIssues: Seq[StandardIssue] =
+        val exceptionIssues: Seq[StandardIssue] =
             for {
-                (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
-                    case (ctiPC, i: ConditionalBranchInstruction) if operandsArray(ctiPC) != null ⇒
-                        (ctiPC, i, i.nextInstructions(ctiPC, /*not required*/ null))
+                (pc, instruction) ← body collectWithIndex {
+                    case (pc, i: Instruction) if operandsArray(pc) != null && !i.isInstanceOf[ATHROW.type] && domain.regularSuccessorsOf(pc).isEmpty && (domain.exceptionHandlerSuccessorsOf(pc).nonEmpty || domain.allThrownExceptions.get(pc).nonEmpty) ⇒
+                        (pc, i)
                 }
-                branchTarget ← branchTargetPCs.iterator
-                if operandsArray(branchTarget) == null
             } yield {
-                val operands = operandsArray(ctiPC).take(instruction.operandCount)
+                val operands = operandsArray(pc)
+                val exceptions = {
+                    var allExceptions: scala.collection.immutable.Set[result.domain.SingleOriginReferenceValue] = {
+                        if (result.domain.allThrownExceptions.get(pc).nonEmpty)
+                            scala.collection.immutable.Set.empty ++
+                                result.domain.allThrownExceptions.get(pc).get
+                        else
+                            scala.collection.immutable.Set.empty
+                    }
+
+                    result.domain.exceptionHandlerSuccessorsOf(pc).foreach { handlerPC ⇒
+                        operandsArray(handlerPC).head match {
+                            case sorv: result.domain.SingleOriginReferenceValue ⇒ allExceptions += sorv
+                            case result.domain.MultipleReferenceValues(values)  ⇒ allExceptions ++= values
+                        }
+                    }
+                    allExceptions.map(_.upperTypeBound.first().toJava).mkString(", ")
+                }
                 StandardIssue(
-                    theProject, classFile, Some(method), Some(ctiPC),
+                    theProject, classFile, Some(method), Some(pc),
                     Some(operands),
-                    Some(result.localsArray(ctiPC)),
-                    "constant expression",
-                    Some("The expression at runtime always evaluates to the same value."),
-                    Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
-                    Set(IssueKind.ConstantComputation, IssueKind.DeadBranch),
-                    Seq((branchTarget, "dead code")),
-                    Relevance.Undetermined
+                    Some(result.localsArray(pc)),
+                    "causes exception",
+                    Some("The evaluation of the expression always throws the exception(s): "+exceptions),
+                    Set(IssueCategory.Bug),
+                    Set(IssueKind.ThrowsException),
+                    Seq.empty,
+                    Relevance.VeryHigh
                 )
             }
 
-        var results: List[Issue] = List.empty
-        for ((ln, dc) ← (deadCodeIssues).groupBy(_.line)) {
-            ln match {
-                case None ⇒
-                    if (dc.tail.isEmpty) {
-                        // we have just one message, but since we have 
-                        // no line number we are still "doubtful"
-                        results ::= dc.head.copy(relevance = Relevance(75))
-                    } else {
-                        dc.foreach(i ⇒ results ::= i.copy(relevance = Relevance(5)))
-                    }
-
-                case Some(ln) ⇒
-                    if (dc.tail.isEmpty)
-                        // we have just one message,...
-                        results ::= dc.head.copy(relevance = Relevance(100))
-                    else
-                        dc.foreach(i ⇒ results ::= i.copy(relevance = Relevance(10)))
-            }
-        }
-
-        results
+        exceptionIssues.toList
     }
 
 }

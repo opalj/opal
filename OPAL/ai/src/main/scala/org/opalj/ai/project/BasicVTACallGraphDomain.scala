@@ -34,6 +34,7 @@ import scala.collection.Set
 
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.analyses.FieldValueInformation
+import org.opalj.ai.analyses.MethodReturnValueInformation
 import org.opalj.ai.domain.TheClassFile
 import org.opalj.br.analyses.Project
 
@@ -57,7 +58,6 @@ import domain.l0
  */
 class BasicVTACallGraphDomain[Source](
     val project: Project[Source],
-    val fieldValueInformation: FieldValueInformation,
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method: Method)
@@ -65,7 +65,6 @@ class BasicVTACallGraphDomain[Source](
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with TheProject
-        with ProjectBasedClassHierarchy
         with TheClassFile
         with TheMethod
         with DefaultHandlingOfMethodResults
@@ -78,5 +77,5 @@ class BasicVTACallGraphDomain[Source](
         with l0.TypeLevelLongValuesShiftOperators
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelInvokeInstructions
-        with l0.RefinedTypeLevelFieldAccessInstructions
+        with l0.TypeLevelFieldAccessInstructions
 

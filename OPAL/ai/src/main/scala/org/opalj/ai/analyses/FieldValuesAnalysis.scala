@@ -31,6 +31,7 @@ package ai
 package analyses
 
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ClassFile
 
 /**
  * This analysis performs a simple abstract interpretation of all methods of a class
@@ -80,6 +81,7 @@ object FieldValuesAnalysis {
 
     def doAnalyze(
         theProject: SomeProject,
+        createDomain: (SomeProject, ClassFile) ⇒ BaseFieldValuesAnalysisDomain,
         isInterrupted: () ⇒ Boolean) = {
         import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
@@ -90,7 +92,7 @@ object FieldValuesAnalysis {
             // fined-grained level, because we reuse the same domain instance
             // to perform an abstract interpretation of all methods of the 
             // same class file
-            domain = new FieldValuesAnalysisDomain(theProject, classFile)
+            domain = createDomain(theProject, classFile)
             if domain.hasCandidateFields
         } yield {
             classFile.methods.foreach { method ⇒

@@ -43,6 +43,6 @@ trait ProjectBasedClassHierarchy extends ClassHierarchy {
     /**
      * Returns the project's class hierarchy.
      */
-    final override val classHierarchy: TheClassHierarchy = project.classHierarchy
+    @inline final override val classHierarchy: TheClassHierarchy = project.classHierarchy
 
 }

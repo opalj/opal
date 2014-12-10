@@ -43,6 +43,8 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.SomeUpdate
 import org.opalj.br.analyses.Project
+import java.util.concurrent.atomic.AtomicInteger
+import org.opalj.br.ObjectType
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
@@ -59,9 +61,10 @@ object MethodReturnValuesAnalysis {
 
     def doAnalyze(
         theProject: SomeProject,
-        isInterrupted: () ⇒ Boolean): Map[Method, Option[MethodReturnValuesAnalysisDomain#DomainValue]] = {
+        isInterrupted: () ⇒ Boolean,
+        createDomain: (InterruptableAI[Domain], Method) ⇒ Domain with RecordReturnedValue): MethodReturnValueInformation = {
 
-        val fieldValueInformation = theProject.get(FieldValuesKey)
+        val candidates = new AtomicInteger(0)
 
         val methodsWithRefinedReturnValues =
             for {
@@ -69,19 +72,28 @@ object MethodReturnValuesAnalysis {
                 if !isInterrupted()
                 method ← classFile.methods
                 originalReturnType = method.returnType
-                if originalReturnType.isObjectType
-                if theProject.classFile(originalReturnType.asObjectType).map(!_.isFinal).getOrElse(true)
                 if method.body.isDefined
+                if originalReturnType.isObjectType
+
+                // ALTERNATIVE TEST: if we are only interested in type refinements but not
+                // in refinements to "null" values then we can also use the following
+                // check:
+                // if theProject.classHierarchy.hasSubtypes(originalReturnType.asObjectType).isYesOrUnknown
+
+                // We may still miss some refinements to "Null" but we don't care...
+                if theProject.classFile(originalReturnType.asObjectType).map(!_.isFinal).getOrElse(true)
+                if { candidates.incrementAndGet(); true }
+
                 ai = new InterruptableAI[Domain]
-                domain = new MethodReturnValuesAnalysisDomain(theProject, fieldValueInformation, ai, method)
+                domain = createDomain(ai, method)
                 result = ai(classFile, method, domain)
-                if !result.wasAborted
+                if !ai.isInterrupted
                 returnedValue = domain.returnedValue
-                if returnedValue.isEmpty /* the method does not complete normally */ ||
-                    returnedValue.get.asInstanceOf[IsAReferenceValue].upperTypeBound != UIDSet(originalReturnType)
             } yield {
                 (method, domain.returnedValue)
             }
+
+        println(s"[info] refined the return type of ${methodsWithRefinedReturnValues.size} methods out of ${candidates.get} methods")
 
         methodsWithRefinedReturnValues.seq.toMap
     }
