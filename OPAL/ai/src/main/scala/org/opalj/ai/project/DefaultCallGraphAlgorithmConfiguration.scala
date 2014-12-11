@@ -38,7 +38,7 @@ import org.opalj.br.analyses.SomeProject
 
 /**
  * Configuration of a call graph algorithm that uses a cache that depends on the
- * current [[MethodSignature]].
+ * current [[org.opalj.br.MethodSignature]].
  *
  * ==Thread Safety==
  * This class is thread-safe (it contains no mutable state.)

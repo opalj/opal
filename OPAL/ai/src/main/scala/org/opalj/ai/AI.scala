@@ -831,22 +831,29 @@ trait AI[D <: Domain] {
                 def handleException(exceptionValue: DomainValue) {
                     theDomain.typeOfValue(exceptionValue) match {
 
-                        case IsReferenceValue(Seq(exceptionValue)) ⇒
-                            val establishNonNull = exceptionValue.isNull match {
-                                case No ⇒ // just forward
-                                    doHandleTheException(exceptionValue.asDomainValue(theDomain), false)
-                                case Unknown ⇒
-                                    doHandleTheException(theDomain.NullPointerException(pc), false)
-                                    doHandleTheException(exceptionValue.asDomainValue(theDomain), true)
-                                case Yes ⇒
-                                    doHandleTheException(theDomain.NullPointerException(pc), false)
+                        case IsReferenceValue(exceptionValues) ⇒
+                            if (exceptionValues.tail.isEmpty) {
+                                val exceptionValue = exceptionValues.head
+                                val establishNonNull = exceptionValue.isNull match {
+                                    case No ⇒ // just forward
+                                        doHandleTheException(
+                                            exceptionValue.asDomainValue(theDomain), false)
+                                    case Unknown ⇒
+                                        doHandleTheException(
+                                            theDomain.NullPointerException(pc), false)
+                                        doHandleTheException(
+                                            exceptionValue.asDomainValue(theDomain), true)
+                                    case Yes ⇒
+                                        doHandleTheException(
+                                            theDomain.NullPointerException(pc), false)
+                                }
+                            } else {
+                                handleExceptions(
+                                    exceptionValues.map(_.asDomainValue(theDomain)))
                             }
 
-                        case IsReferenceValue(exceptionValues) ⇒
-                            handleExceptions(exceptionValues.map(_.asDomainValue(theDomain)))
-
                         case TypeUnknown ⇒
-                            throw new AIException("the type of the exception value is unknown")
+                            throw new AIException("type of the exception value is unknown")
                     }
                 }
 

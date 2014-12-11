@@ -282,7 +282,7 @@ package object ai {
      * operands.
      */
     def collectWithOperandsAndIndex[B](
-        domain: Domain)(
+        domain: ValuesDomain)(
             code: Code, operandsArray: domain.OperandsArray)(
                 f: PartialFunction[(PC, Instruction, domain.Operands), B]): Seq[B] = {
         val instructions = code.instructions

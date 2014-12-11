@@ -101,7 +101,10 @@ object NumericConstraints extends Enumeration(1) {
                     case GE ⇒ ==
                     case EQ ⇒ ==
                     case NE ⇒ <
-                    case _  ⇒ throw IncompatibleNumericConstraints(c1, c2)
+                    case _ ⇒
+                        throw IncompatibleNumericConstraints(
+                            "combining constraints is not possible",
+                            c1, c2)
                 }
 
             case GT ⇒
@@ -109,7 +112,10 @@ object NumericConstraints extends Enumeration(1) {
                     case GT ⇒ >
                     case GE ⇒ >
                     case NE ⇒ >
-                    case _  ⇒ throw IncompatibleNumericConstraints(c1, c2)
+                    case _ ⇒
+                        throw IncompatibleNumericConstraints(
+                            "combining constraints is not possible",
+                            c1, c2)
                 }
 
             case GE ⇒
@@ -119,7 +125,10 @@ object NumericConstraints extends Enumeration(1) {
                     case GE ⇒ >=
                     case EQ ⇒ ==
                     case NE ⇒ >
-                    case _  ⇒ throw IncompatibleNumericConstraints(c1, c2)
+                    case _ ⇒
+                        throw IncompatibleNumericConstraints(
+                            "combining constraints is not possible",
+                            c1, c2)
                 }
 
             case EQ ⇒
@@ -127,7 +136,10 @@ object NumericConstraints extends Enumeration(1) {
                     case LE ⇒ ==
                     case GE ⇒ ==
                     case EQ ⇒ ==
-                    case _  ⇒ throw IncompatibleNumericConstraints(c1, c2)
+                    case _ ⇒
+                        throw IncompatibleNumericConstraints(
+                            "combining constraints is not possible",
+                            c1, c2)
                 }
 
             case NE ⇒
@@ -137,7 +149,10 @@ object NumericConstraints extends Enumeration(1) {
                     case GT ⇒ >
                     case GE ⇒ >
                     case NE ⇒ !=
-                    case _  ⇒ throw IncompatibleNumericConstraints(c1, c2)
+                    case _ ⇒
+                        throw IncompatibleNumericConstraints(
+                            "combining constraints is not possible",
+                            c1, c2)
                 }
         }
     }

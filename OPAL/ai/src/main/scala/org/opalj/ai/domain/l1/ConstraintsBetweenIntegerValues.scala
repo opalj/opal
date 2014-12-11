@@ -31,7 +31,7 @@ package ai
 package domain
 package l1
 
-import java.util.{IdentityHashMap => IDMap}
+import java.util.{ IdentityHashMap ⇒ IDMap }
 
 import scala.collection.BitSet
 

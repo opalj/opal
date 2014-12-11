@@ -61,7 +61,7 @@ import org.opalj.util.No
 
 /**
  * A very basic analysis that determines the behavior of a method if a parameter
- * is potentially null compared to a call of the method where the parameter is guaranteed
+ * is potentially `null` compared to a call of the method where the parameter is guaranteed
  * to be non-null.
  *
  * Note that the difference may not just manifest in the number of thrown exceptions.
@@ -82,7 +82,9 @@ import org.opalj.util.No
  *
  * @author Michael Eichberg
  */
-object IfNullParameterAnalysis extends OneStepAnalysis[URL, BasicReport] with AnalysisExecutor {
+object IfNullParameterAnalysis
+        extends OneStepAnalysis[URL, BasicReport]
+        with AnalysisExecutor {
 
     val analysis = this
 
@@ -105,7 +107,7 @@ object IfNullParameterAnalysis extends OneStepAnalysis[URL, BasicReport] with An
                 defaultLocals: domain.Locals): domain.Locals = {
             defaultLocals.map { value ⇒
                 if (value == null)
-                    // not all local values are used right at the beginning
+                    // not all local values are used right from the beginning
                     null
                 else if (!value.isInstanceOf[domain.SingleOriginReferenceValue]) {
                     // we are not concerned about primitive values
