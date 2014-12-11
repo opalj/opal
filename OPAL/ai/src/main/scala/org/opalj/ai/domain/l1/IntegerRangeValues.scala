@@ -976,9 +976,15 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                     val slbBits = 32 - Integer.numberOfLeadingZeros(slb)
                     val subBits = 32 - Integer.numberOfLeadingZeros(sub)
 
-                    val intersectedBits = (vlbBits.to(vubBits).toList) intersect (slbBits.to(subBits).toList)
-
-                    val lb = if (intersectedBits.isEmpty) {
+                    // if the intersection of the bitranges of v and s are not empty than lb
+                    // can only probably be 0, since using the xor operation on the same number
+                    // results to 0.
+                    // (vub >= sub && vlb <= slb) || (sub >= vub && slb <= vlb) || 
+                    // (vub >= sub && vlb <= vub) || (sub >= vub && slb <= vub) checks if the 
+                    // intersection of v and s is empty.
+                    val lb = if ((vub >= sub && vlb <= slb) || (sub >= vub && slb <= vlb) ||
+                        (vub >= sub && vlb <= vub) || (sub >= vub && slb <= vub)) { 0 }
+                    else {
                         // The min value of a positive integer in binary notation is the number
                         // that contains the most trailing zeros. This min value can be created
                         // by setting the bits of the second largest value to zero.
@@ -989,7 +995,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                         //           zero by a number of the first range.
                         if (vubBits > subBits) 1 << subBits
                         else 1 << vubBits
-                    } else 0
+                    }
 
                     // The possible max value is the value that can be displayed by the
                     // number of bits of the biggest value in the ranges, since the zero
@@ -1027,7 +1033,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                     // The max value is calculated by setting subBits to one,
                     // since this change can result into the max number. The 
                     // or operation leading preserves the leading bits, since
-                    // those bit do not change.
+                    // those bits do not change.
                     val ub = vub | ((1 << subBits) - 1)
 
                     IntegerRange(lb, ub)
