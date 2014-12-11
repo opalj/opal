@@ -27,18 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
-package l1
-
-import scala.collection.BitSet
-
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
-import org.opalj.br.instructions.Instruction
+package constraints
 
 /**
- * Enumeration of all possible relations/constraints between two arbitrary integer values.
+ * Enumeration of all possible relations/constraints between two arbitrary numeric values.
  *
  * @author Michael Eichberg
  */
@@ -64,7 +56,7 @@ object NumericConstraints extends Enumeration(1) {
     /**
      * Returns the relation when we swap the operands.
      *
-     * E.g., `inverse(x ? y) = x ?' y`
+     * E.g., `inverse(&gt;) = &lt;`; `x < y === y > x`.
      */
     def inverse(relation: Value): Value = {
         (relation.id: @scala.annotation.switch) match {
@@ -79,13 +71,16 @@ object NumericConstraints extends Enumeration(1) {
 
     /**
      * Calculates the constraint that is in effect if both constraints need to be
-     * satisfied at the same time.
+     * satisfied at the same time. E.g., the result of combining "less than" with
+     * "equal or less than" is "less than". However, the combination of "less than"
+     * with "greater than" would throw an exception.
      *
      * @note This a '''narrowing''' operation.
+     *
      * @return The combined constraint.
-     * @throws IncompatibleConstraints exception if the combination of the constraints
-     *      doesn't make sense.
+     *
      */
+    @throws[IncompatibleNumericConstraints]("if the combination doesn't make sense")
     def combine(c1: Value, c2: Value): Value = {
         (c1.id: @scala.annotation.switch) match {
             case LT ⇒
@@ -93,7 +88,10 @@ object NumericConstraints extends Enumeration(1) {
                     case LT ⇒ <
                     case LE ⇒ <
                     case NE ⇒ <
-                    case _  ⇒ throw IncompatibleNumericConstraints(c1, c2)
+                    case _ ⇒
+                        throw IncompatibleNumericConstraints(
+                            "combining constraints is not possible",
+                            c1, c2)
                 }
 
             case LE ⇒
@@ -146,7 +144,8 @@ object NumericConstraints extends Enumeration(1) {
 
     /**
      * Joins the given constraints. I.e., returns the constraint that still has to
-     * hold if either `c1` or `c2` holds.
+     * hold if either `c1` or `c2` holds. E.g., the result of joining "<" with "==" with
+     * is "<=".
      *
      * @note This is a '''widening''' operation.
      */
