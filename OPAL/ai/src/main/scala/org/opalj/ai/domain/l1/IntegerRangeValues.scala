@@ -979,11 +979,11 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                     // if the intersection of the bitranges of v and s are not empty than lb
                     // can only probably be 0, since using the xor operation on the same number
                     // results to 0.
-                    // (vub >= sub && vlb <= slb) || (sub >= vub && slb <= vlb) || 
-                    // (vub >= sub && vlb <= vub) || (sub >= vub && slb <= vub) checks if the 
-                    // intersection of v and s is empty.
-                    val lb = if ((vub >= sub && vlb <= slb) || (sub >= vub && slb <= vlb) ||
-                        (vub >= sub && vlb <= vub) || (sub >= vub && slb <= vub)) { 0 }
+                    // ((vubBits >= subBits && vlb <= slbBits) || (subBits >= vubBits && slbBits <= vlbBits) ||
+                    //  (vubBits >= subBits && vlbBits <= vubBits) || (subBits >= vubBits && slbBits <= vubBits)) 
+                    // checks if the intersection of v and s is not empty.
+                    val lb = if ((vubBits >= subBits && vlb <= slbBits) || (subBits >= vubBits && slbBits <= vlbBits) ||
+                        (vubBits >= subBits && vlbBits <= vubBits) || (subBits >= vubBits && slbBits <= vubBits)) { 0 }
                     else {
                         // The min value of a positive integer in binary notation is the number
                         // that contains the most trailing zeros. This min value can be created
