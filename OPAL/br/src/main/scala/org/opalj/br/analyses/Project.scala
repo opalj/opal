@@ -440,21 +440,18 @@ class Project[Source] private (
  */
 object Project {
 
+    private[this] def cache = new reader.BytecodeInstructionsCache
+    lazy val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
+
     /**
      * Given a reference to a class file, jar file or a folder containing jar and class
      * files, all class files will be loaded and a project will be returned.
      */
     def apply(file: File): Project[URL] = {
-        val cache = new reader.BytecodeInstructionsCache
-        val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
-
         Project.apply[URL](Java8ClassFileReader.ClassFiles(file))
     }
 
     def extend(project: Project[URL], file: File): Project[URL] = {
-        val cache = new reader.BytecodeInstructionsCache
-        val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
-
         project.extend(Java8ClassFileReader.ClassFiles(file))
     }
 
