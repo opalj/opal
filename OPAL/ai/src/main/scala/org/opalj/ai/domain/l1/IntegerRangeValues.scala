@@ -979,8 +979,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                     // if the intersection of the bitranges of v and s are not empty than lb
                     // can only probably be 0, since using the xor operation on the same number
                     // results to 0.
-                    val lb = if (vubBits > slbBits || subBits > vlbBits) { 0 }
-                    else {
+                    val lb = if (vubBits < slbBits || subBits < vlbBits) {
                         // The min value of a positive integer in binary notation is the number
                         // that contains the most trailing zeros. This min value can be created
                         // by setting the bits of the second largest value to zero.
@@ -991,6 +990,8 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                         //           zero by a number of the first range.
                         if (vubBits > subBits) 1 << subBits
                         else 1 << vubBits
+                    } else {
+                        0
                     }
 
                     // The possible max value is the value that can be displayed by the
@@ -1005,7 +1006,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                     val slbBits = 32 - Integer.numberOfLeadingZeros(~slb)
                     val subBits = 32 - Integer.numberOfLeadingZeros(~sub)
 
-                    val lb = if (vubBits > slbBits || subBits > vlbBits) {
+                    val lb = if (vubBits < slbBits || subBits < vlbBits) {
                         // same idea like above
                         if (vlbBits > slbBits) 1 << slbBits
                         else 1 << vlbBits
