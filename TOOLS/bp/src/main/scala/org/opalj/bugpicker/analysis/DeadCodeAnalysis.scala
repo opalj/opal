@@ -73,17 +73,22 @@ import org.opalj.br.instructions.IStoreInstruction
 import org.opalj.ai.AIResult
 import org.opalj.ai.domain.ConcreteIntegerValues
 import org.opalj.ai.domain.ConcreteLongValues
+import org.opalj.br.instructions.ATHROW
+import org.opalj.ai.domain.RecordCFG
+import org.opalj.ai.domain.l1.RecordAllThrownExceptions
+import org.opalj.ai.domain.l1.ReferenceValues
 
 object DeadCodeAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult): List[Issue] = {
+        result: AIResult { val domain: Domain }): List[Issue] = {
 
         val operandsArray = result.operandsArray
+        val domain = result.domain
         val body = result.code
 
-        val deadCodeIssues =
+        val deadCodeIssues: Seq[StandardIssue] =
             for {
                 (ctiPC, instruction, branchTargetPCs) ← body collectWithIndex {
                     case (ctiPC, i: ConditionalBranchInstruction) if operandsArray(ctiPC) != null ⇒
@@ -105,8 +110,9 @@ object DeadCodeAnalysis {
                     Relevance.Undetermined
                 )
             }
+
         var results: List[Issue] = List.empty
-        for ((ln, dc) ← deadCodeIssues.groupBy(_.line)) {
+        for ((ln, dc) ← (deadCodeIssues).groupBy(_.line)) {
             ln match {
                 case None ⇒
                     if (dc.tail.isEmpty) {

@@ -83,7 +83,7 @@ object VirtualMethodInvocationInstruction {
 }
 
 /**
- * Invocation of a method where the target method is statically resovled.
+ * Invocation of a method where the target method is statically resolved.
  *
  * @author Michael Eichberg
  */

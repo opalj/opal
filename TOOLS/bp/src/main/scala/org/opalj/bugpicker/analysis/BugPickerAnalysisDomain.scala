@@ -31,12 +31,15 @@ package bugpicker
 package analysis
 
 import java.net.URL
-
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
 import org.opalj.ai.analyses.FieldValueInformation
+import org.opalj.ai.analyses.MethodReturnValueInformation
+import org.opalj.ai.domain.l0.RefinedTypeLevelInvokeInstructions
+import org.opalj.br.MethodSignature
+import org.opalj.ai.project.CallGraphCache
 
 /**
  * The domain that is used to identify the issues.
@@ -46,6 +49,8 @@ import org.opalj.ai.analyses.FieldValueInformation
 class BugPickerAnalysisDomain(
     override val project: Project[java.net.URL],
     val fieldValueInformation: FieldValueInformation,
+    val methodReturnValueInformation: MethodReturnValueInformation,
+    val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
     override val method: Method,
     override val maxCardinalityOfIntegerRanges: Long = 16l)
         extends CorrelationalDomain
@@ -56,17 +61,25 @@ class BugPickerAnalysisDomain(
         //with domain.l0.TypeLevelFieldAccessInstructions
         with domain.l0.RefinedTypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
-        with domain.l1.DefaultReferenceValuesBinding
+        with domain.l0.RefinedTypeLevelInvokeInstructions
+        //with domain.l1.DefaultReferenceValuesBinding
+        with domain.l1.DefaultClassValuesBinding
+        //with domain.l1.DefaultStringValuesBinding
         with domain.l1.DefaultIntegerRangeValues
         with domain.l1.MaxArrayLengthRefinement
         with domain.l1.ConstraintsBetweenIntegerValues
         //with domain.l1.DefaultIntegerSetValues
         with domain.l1.DefaultLongValues
         with domain.l1.LongValuesShiftOperators
-        with domain.l1.DefaultConcretePrimitiveValuesConversions
+        with domain.l1.ConcretePrimitiveValuesConversions
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization
         with domain.TheProject
         with domain.TheMethod
         with domain.ProjectBasedClassHierarchy
+        // the following two are required to detect instructions that always throw
+        // an exception (such as div by zero, a failing checkcast, a method call that
+        // always fails etc.
+        with domain.RecordCFG
+        with domain.l1.RecordAllThrownExceptions
 

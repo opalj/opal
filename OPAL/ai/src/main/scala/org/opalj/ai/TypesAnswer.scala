@@ -218,7 +218,7 @@ trait IsAReferenceValue {
      *      In other words, if this value represents `null` this method is not supported.
      * @note This method is expected to be overridden by subtypes.
      *
-     * @return  `Unknown`.
+     * @return This default implementation always returns `Unknown`.
      */
     @throws[DomainException]("If this value is null (isNull.yes == true).")
     def isValueSubtypeOf(referenceType: ReferenceType): Answer = Unknown

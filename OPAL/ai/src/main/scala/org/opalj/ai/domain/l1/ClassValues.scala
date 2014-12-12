@@ -178,7 +178,8 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             operands.nonEmpty) {
 
             operands.last match {
-                case StringValue(value) ⇒
+                case sv: StringValue ⇒
+                    val value = sv.value
                     methodDescriptor match {
                         case `forName_String` ⇒
                             simpleClassForNameCall(pc, value)

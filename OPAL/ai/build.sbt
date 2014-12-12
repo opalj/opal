@@ -2,8 +2,8 @@ name := "Abstract Interpretation Framework"
 
 version := "0.0.1-SNAPSHOT"
 
-//scalacOptions in Compile := Seq("-deprecation", "-feature", "-unchecked", "-Xlint", "-Xdisable-assertions")
-//scalacOptions in Compile += "-Xdisable-assertions"
+//scalacOptions in Compile := Seq("-deprecation", "-feature", "-unchecked", "-Xlint")
+scalacOptions in Compile += "-Xdisable-assertions"
 
 scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Abstract Interpretation Framework")
 

@@ -45,11 +45,10 @@ class DefaultConfigurableDomain[I, Source](
     val classFile: ClassFile,
     val method: Method)
         extends CorrelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with ProjectBasedClassHierarchy
         with TheProject
         with TheMethod
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         // [NOT YET NEEDED] with PerInstructionPostProcessing
@@ -65,7 +64,7 @@ class DefaultConfigurableDomain[I, Source](
         with l1.ConstraintsBetweenIntegerValues
         with l1.DefaultLongValues
         with l1.LongValuesShiftOperators
-        with l1.DefaultConcretePrimitiveValuesConversions {
+        with l1.ConcretePrimitiveValuesConversions {
 
     type Id = I
 

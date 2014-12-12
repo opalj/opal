@@ -74,7 +74,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
         with l0.SimpleTypeLevelInvokeInstructions
         with l1.DefaultReferenceValuesBinding // <- PRIMARY GOAL!
         with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
 
     object ValuesDomain extends TheDomain
     import ValuesDomain._
@@ -84,6 +85,33 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
     //
 
     describe("the DefaultReferenceValues domain") {
+
+        describe("isValueSubtypeOf") {
+
+            it("should be able to cast an array of objects to an array of array of ints") {
+
+                // ASSERTION
+                isSubtypeOf(
+                    ArrayType(ArrayType(IntegerType)),
+                    ArrayType(ObjectType.Object)
+                ) should be(Yes)
+
+                val v1 = ArrayValue(111, No, false, ArrayType(ObjectType.Object), 1)
+                v1.isValueSubtypeOf(ArrayType(ArrayType(IntegerType))) should be(Unknown)
+            }
+        }
+
+        describe("abstractsOver") {
+
+            it("an ArrayValue should abstract over ifself (with a different timestamp)") {
+
+                val v1 = ArrayValue(-1, Unknown, true, ArrayType(ArrayType(IntegerType)), 1)
+                val v2 = ArrayValue(-1, Unknown, true, ArrayType(ArrayType(IntegerType)), 2)
+                v1.abstractsOver(v2) should be(true)
+                v2.abstractsOver(v1) should be(true)
+            }
+
+        }
 
         //
         // FACTORY METHODS
@@ -335,6 +363,58 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 mv1.join(-1, v2) should be(StructuralUpdate(mv2))
             }
 
+            it("should be able to rejoin a refined object value") {
+                val v0 = ObjectValue(222, No, false, ObjectType.Serializable, 2)
+
+                val v1 = NullValue(111, 1)
+                val v2 = ObjectValue(222, Unknown, false, ObjectType.Serializable, 2)
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        isNull = Yes, true, UIDSet.empty, t = 3)
+
+                val mv_expected =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v0, v1),
+                        Unknown, false, UIDSet(ObjectType.Serializable),
+                        3)
+
+                val mv_actual = v0.join(-1, mv1)
+                if (mv_actual != StructuralUpdate(mv_expected)) {
+                    fail(s"the join of: $v0\n"+
+                        s"with:        $mv1\n"+
+                        s"is:          $mv_actual\n"+
+                        s"expected:    StructuralUpdate($mv_expected)")
+                }
+            }
+
+            it("should be able to rejoin a refined array value") {
+                val v0 = ArrayValue(222, No, false, ArrayType(ObjectType.Serializable), 2)
+
+                val v1 = NullValue(111, 1)
+                val v2 = ArrayValue(222, Unknown, false, ArrayType(ObjectType.Serializable), 2)
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        Yes, true, UIDSet.empty,
+                        3)
+
+                val mv_expected =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v0, v1),
+                        Unknown, false, UIDSet(ArrayType(ObjectType.Serializable)),
+                        3)
+
+                val mv_actual = v0.join(-1, mv1)
+
+                if (mv_actual != StructuralUpdate(mv_expected)) {
+                    fail(s"the join of: $v0\n"+
+                        s"with:        $mv1\n"+
+                        s"is:          $mv_actual\n"+
+                        s"expected:    $mv_expected")
+                }
+            }
+
             it("should handle an idempotent rejoin a value") {
                 val v1 = ObjectValue(111, Unknown, false, ObjectType.Object, 1)
                 val v2 = ObjectValue(222, Unknown, false, ObjectType.Object, 2)
@@ -356,8 +436,66 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                         -1)
 
                 val mv1_join_v3 = mv1.join(-1, v3)
-                println(s"$mv1 join $v3 ===> $mv1_join_v3")
                 mv1_join_v3 should be(MetaInformationUpdate(expected_mv1_join_v3))
+            }
+
+            it("should handle a join of a refined ObjectValue with a MultipleReferenceValue that references the unrefined ObjectValue") {
+
+                val SecurityException = ObjectType("java/lang/SecurityException")
+                val v0 = ObjectValue(111, No, false, SecurityException, t = 106)
+                val v1 = ObjectValue(111, No, false, ObjectType.Exception, t = 103)
+                val v2 = ObjectValue(555, Unknown, false, ObjectType.Throwable, t = 107)
+
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        No, true, UIDSet(SecurityException),
+                        t = 3)
+
+                val mv_expected =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        No, false, UIDSet(SecurityException),
+                        3)
+
+                val mv_actual = v0.join(-1, mv1)
+
+                if (mv_actual != StructuralUpdate(mv_expected)) {
+                    fail(s"the join of: $v0\n"+
+                        s"with:        $mv1\n"+
+                        s"is:          $mv_actual\n"+
+                        s"expected:    $mv_expected")
+                }
+            }
+
+            it("should handle a join of an ObjectValue with a MultipleReferenceValue that references the refined ObjectValue") {
+
+                val v0 = ObjectValue(111, Unknown, false, ObjectType.Object, t = 103)
+                val v1 = ObjectValue(111, No, false, ObjectType.Object, t = 103)
+                val v2 = ObjectValue(555, No, true, ObjectType.Object, t = 107)
+
+                val mv1 =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v1, v2),
+                        No, true, UIDSet(ObjectType.Object),
+                        t = 3)
+
+                val mv_expected =
+                    MultipleReferenceValues(
+                        SortedSet[DomainSingleOriginReferenceValue](v0, v2),
+                        Unknown, false, UIDSet(ObjectType.Object),
+                        3)
+
+                val mv_actual = v0.join(-1, mv1)
+
+                mv_actual.updateType should be(StructuralUpdateType)
+
+                if (mv_actual.value != mv_expected) {
+                    fail(s"the join of: $v0\n"+
+                        s"with:        $mv1\n"+
+                        s"is:          ${mv_actual.value}\n"+
+                        s"expected:    $mv_expected")
+                }
             }
 
         }
@@ -404,6 +542,15 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
                 val IsNull(v117) = result.operandsArray(61).head
                 v117 should be(Yes)
+            }
+
+            it("it should be able to handle complex refinements (method: \"complexRefinement\")") {
+                val method = ReferenceValuesFrenzy.methods.find(_.name == "complexRefinement").get
+                val theDomain = new TheDomain
+                val result = BaseAI(ReferenceValuesFrenzy, method, theDomain)
+
+                val theDomain.IsNull(lastChildAtPC22) = result.operandsArray(22).head
+                lastChildAtPC22 should be(Unknown)
             }
 
             it("it should be possible to get precise information about a method's return values (method: \"maybeNull\")") {
@@ -477,12 +624,12 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 val value @ IsReferenceValue(values) = result.operandsArray(5).head
                 values.size should be(2)
                 value.isNull should be(No)
-                values.head.isNull should be(No) // a is the parameter
+                values.head.isNull should be(Unknown) // a is the parameter
                 values.tail.head.isNull should be(Unknown)
 
                 val returnValue @ IsReferenceValue(returnValues) = result.operandsArray(25).head
                 returnValue.isNull should be(Unknown)
-                returnValues.head.isNull should be(No)
+                returnValues.head.isNull should be(Unknown)
                 returnValues.tail.head.isNull should be(Unknown)
             }
 

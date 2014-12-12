@@ -34,15 +34,12 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-
 import java.net.URL
-
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.CYAN
 import scala.Console.RED
 import scala.Console.RESET
-
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
@@ -59,8 +56,10 @@ import org.opalj.ai.project.ExtVTACallGraphDomain
 import org.opalj.ai.project.BasicVTACallGraphDomain
 import org.opalj.ai.project.UnresolvedMethodCall
 import org.opalj.ai.project.CallGraphConstructionException
-
 import org.opalj.ai.debug.{ CallGraphDifferenceReport, AdditionalCallTargets }
+import org.opalj.ai.project.CallGraphCache
+import org.opalj.ai.project.VTAWithPreAnalysisCallGraphAlgorithmConfiguration
+import org.opalj.ai.project.BasicVTAWithPreAnalysisCallGraphDomain
 
 /**
  * Compares the precision of different call graphs.
@@ -177,16 +176,20 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
 
             it("calculating the (Default) VTA based call graph multiple times for the same project should create the same call graph") {
                 info("calculating the (Default) VTA based call graph (1)")
+
                 val ComputedCallGraph(theVTACG, _, _) =
                     CallGraphFactory.create(
                         project,
                         entryPoints,
-                        new VTACallGraphAlgorithmConfiguration(project) {
+                        new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
                             override def Domain[Source](
                                 classFile: ClassFile,
                                 method: Method): CallGraphDomain =
                                 new DefaultVTACallGraphDomain(
-                                    project, fieldValueInformation, cache, classFile, method
+                                    project,
+                                    fieldValueInformation, methodReturnValueInformation,
+                                    cache,
+                                    classFile, method
                                 )
                         })
                 VTACG = theVTACG
@@ -196,12 +199,14 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                     CallGraphFactory.create(
                         project,
                         entryPoints,
-                        new VTACallGraphAlgorithmConfiguration(project) {
+                        new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
                             override def Domain[Source](
                                 classFile: ClassFile,
                                 method: Method): CallGraphDomain =
                                 new DefaultVTACallGraphDomain(
-                                    project, fieldValueInformation, cache, classFile, method
+                                    project,
+                                    fieldValueInformation, methodReturnValueInformation,
+                                    cache, classFile, method
                                 )
                         })
 
@@ -235,21 +240,50 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                                 classFile: ClassFile,
                                 method: Method): CallGraphDomain =
                                 new BasicVTACallGraphDomain(
-                                    project, fieldValueInformation, cache, classFile, method
+                                    project, cache, classFile, method
                                 )
                         })
+
+                info("calculating the default VTA with pre analysis based call graph")
+                val ComputedCallGraph(basicVTAWithPreAnalysisCG, _, _) =
+                    CallGraphFactory.create(
+                        project,
+                        entryPoints,
+                        new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
+                            override def Domain[Source](
+                                classFile: ClassFile,
+                                method: Method): CallGraphDomain =
+                                new BasicVTAWithPreAnalysisCallGraphDomain(
+                                    project,
+                                    fieldValueInformation, methodReturnValueInformation,
+                                    cache,
+                                    classFile, method
+                                )
+                        })
+
+                {
+                    val (unexpected, additional) =
+                        org.opalj.ai.debug.CallGraphComparison(project, basicVTACG, basicVTAWithPreAnalysisCG)
+                    if (unexpected.nonEmpty)
+                        fail("the comparison of the basic VTA with the one using pre analyses failed:\n"+
+                            unexpected.mkString("\n")+"\n")
+
+                }
 
                 info("calculating the default VTA based call graph")
                 val ComputedCallGraph(defaultVTACG, _, _) =
                     CallGraphFactory.create(
                         project,
                         entryPoints,
-                        new VTACallGraphAlgorithmConfiguration(project) {
+                        new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
                             override def Domain[Source](
                                 classFile: ClassFile,
                                 method: Method): CallGraphDomain =
                                 new DefaultVTACallGraphDomain(
-                                    project, fieldValueInformation, cache, classFile, method
+                                    project,
+                                    fieldValueInformation, methodReturnValueInformation,
+                                    cache,
+                                    classFile, method
                                 )
                         })
 
@@ -267,12 +301,15 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                     CallGraphFactory.create(
                         project,
                         entryPoints,
-                        new VTACallGraphAlgorithmConfiguration(project) {
+                        new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
                             override def Domain[Source](
                                 classFile: ClassFile,
                                 method: Method): CallGraphDomain =
                                 new ExtVTACallGraphDomain(
-                                    project, fieldValueInformation, cache, classFile, method
+                                    project,
+                                    fieldValueInformation, methodReturnValueInformation,
+                                    cache,
+                                    classFile, method
                                 )
                         })
 

@@ -27,52 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
-package l1
-
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.analyses.Project
+package constraints
 
 /**
- * This domain uses the l1 level ''stable'', partial domains.
- *
- * @author Michael Eichberg
+ * Exception that is if two constraints should be combined that are incompatible.
  */
-class DefaultConfigurableIntegerValuesDomain[I, Source](
-    val id: I,
-    val project: Project[Source],
-    val classFile: ClassFile,
-    val method: Method)
-        extends CorrelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with ProjectBasedClassHierarchy
-        with TheProject
-        with TheMethod
-        with DefaultHandlingOfMethodResults
-        with IgnoreSynchronization
-        with l0.DefaultTypeLevelFloatValues
-        with l0.DefaultTypeLevelDoubleValues
-        with l0.TypeLevelFieldAccessInstructions
-        with l0.TypeLevelInvokeInstructions
-        with l0.DefaultReferenceValuesBinding
-        with l1.DefaultIntegerRangeValues
-        with l1.ConstraintsBetweenIntegerValues
-        with l1.DefaultLongValues
-        with l1.LongValuesShiftOperators
-        with l1.DefaultConcretePrimitiveValuesConversions {
-
-    type Id = I
-
-}
-
-class DefaultIntegerValuesDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends DefaultConfigurableIntegerValuesDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)
+case class IncompatibleNumericConstraints(
+    message: String,
+    constraint1: NumericConstraints.Value,
+    constraint2: NumericConstraints.Value,
+    enableSuppression: Boolean = false,
+    writableStackTrace: Boolean = true)
+        extends RuntimeException(
+            s"$message (incompatible: $constraint1 and $constraint2)",
+            /*cause = */ null, enableSuppression, writableStackTrace)

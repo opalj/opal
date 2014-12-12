@@ -61,6 +61,11 @@ import org.opalj.br.instructions.Instruction
  */
 package object ai {
 
+    assert({
+        println("[info - Abstract Interpretation Framework] Assertions are enabled.")
+        true
+    })
+
     /**
      * Type alias that can be used if the AI can use all kinds of domains.
      *
@@ -277,7 +282,7 @@ package object ai {
      * operands.
      */
     def collectWithOperandsAndIndex[B](
-        domain: Domain)(
+        domain: ValuesDomain)(
             code: Code, operandsArray: domain.OperandsArray)(
                 f: PartialFunction[(PC, Instruction, domain.Operands), B]): Seq[B] = {
         val instructions = code.instructions

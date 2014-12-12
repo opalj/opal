@@ -218,7 +218,8 @@ object PerformInvocationsTestFixture {
         with l1.DefaultReferenceValuesBinding
         with l1.DefaultIntegerRangeValues
         with l0.DefaultTypeLevelLongValues
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
         with ProjectBasedClassHierarchy
         with IgnoreSynchronization
@@ -234,7 +235,8 @@ object PerformInvocationsTestFixture {
             with l1.DefaultReferenceValuesBinding
             with li.DefaultPreciseIntegerValues
             with li.DefaultPreciseLongValues
-            with l0.DefaultPrimitiveValuesConversions
+            with l1.ConcretePrimitiveValuesConversions
+            with l1.LongValuesShiftOperators
             with l0.TypeLevelFieldAccessInstructions
             with ProjectBasedClassHierarchy
             with IgnoreSynchronization

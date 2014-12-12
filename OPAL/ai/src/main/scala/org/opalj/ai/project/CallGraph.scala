@@ -57,9 +57,6 @@ class CallGraph private[project] (
         private[this] val calledByMap: Map[Method, Map[Method, PCs]],
         private[this] val callsMap: Map[Method, Map[PC, Iterable[Method]]]) {
 
-    // assert(calledByMap.values.forall(_.size > 0))
-    // assert(callsMap.values.forall(_.size > 0))
-
     /**
      * Returns the invoke instructions (by means of (`Method`,`PC`) pairs) that
      * call the given method. If this method is not called by any other method an
@@ -139,38 +136,37 @@ class CallGraph private[project] (
     /** Number of methods that are called by at least one other method. */
     def calledByCount: Int = calledByMap.size
 
+    def callSites: Int = callsMap.values.map(_.size).sum
+
     /**
      * Statistics about the number of potential targets per call site.
      * (TSV format (tab-separated file) - can easily be read by most spreadsheet
      * applications).
      */
-    def callsStatistics(maxNumberOfResults: Int = 65536): String = {
-        assume(maxNumberOfResults > 0)
+    def callsStatistics(
+        maxNumberOfResults: Int = 65534 /*65534+1 for the header === max size for common spread sheet applications*/ ): String = {
 
-        var result: List[List[String]] = List.empty
-        var resultCount = 0
-        project.methods forall { (method: Method) ⇒
+        var result: List[(String, String, String, Int, Int)] = List.empty
+        project.methods foreach { (method: Method) ⇒
             val callSites = calls(method)
-            callSites forall { callSite ⇒
+            callSites foreach { callSite ⇒
                 val (pc, targets) = callSite
-                result = List(
+                result = (
                     project.classFile(method).fqn,
                     "\""+method.toJava+"\"",
-                    pc.toString,
-                    targets.size.toString
+                    "\""+method.body.get.instructions(pc).toString(pc).replace('\n', ' ')+"\"",
+                    pc,
+                    targets.size
                 ) :: result
-                resultCount += 1
-                resultCount < maxNumberOfResults
             }
-            resultCount < maxNumberOfResults
         }
-        // add(prepend) the line with the column titles
-        result =
-            List("\"Class\"",
-                "\"Method\"",
-                "\"Callsite (PC)\"",
-                "\"Targets\"") :: result
-        result.map(_.mkString("\t")).mkString("\n")
+        result = result.sortWith((a, b) ⇒ a._5 > b._5 || (a._5 == b._5 && a._4 < b._4))
+        result = result.take(maxNumberOfResults)
+        val resultsAsString: List[List[String]] =
+            // add(prepend) the line with the column titles
+            List("\"Class\"", "\"Method\"", "\"Callsite (PC)\"", "\"Invoke\"", "\"Targets\"") ::
+                result.map { e ⇒ e.productIterator.toList.map(_.toString()) }
+        resultsAsString.map(_.mkString("\t")).mkString("\n")
     }
 
     /**

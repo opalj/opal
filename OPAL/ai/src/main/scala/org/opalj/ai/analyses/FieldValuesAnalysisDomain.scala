@@ -31,7 +31,6 @@ package ai
 package analyses
 
 import scala.collection.mutable.{ Map ⇒ MutableMap }
-
 import org.opalj.ai.Computation
 import org.opalj.ai.Domain
 import org.opalj.ai.NoUpdate
@@ -44,6 +43,10 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.UpperTypeBound
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.domain.l0.RefinedTypeLevelFieldAccessInstructions
+import org.opalj.ai.domain.l0.RefinedTypeLevelInvokeInstructions
+import org.opalj.ai.project.CallGraphCache
+import org.opalj.br.MethodSignature
 
 /**
  * A very basic domain that we use for analyzing the real type of the values stored in a
@@ -57,11 +60,12 @@ import org.opalj.br.analyses.SomeProject
  * ==Thread Safety==
  * This domain is not thread-safe. The methods of a class have to be analyzed
  * sequentially. The order in which the methods are analyzed is not relevant. However,
- * before the analysis of a method, the method [[setMethodContext]] has to be called.
+ * before the analysis of a [[org.opalj.br.Method]], the method [[setMethodContext]]
+ * has to be called.
  *
  * @author Michael Eichberg
  */
-class FieldValuesAnalysisDomain(
+class BaseFieldValuesAnalysisDomain(
     override val project: SomeProject,
     val classFile: ClassFile)
         extends Domain
@@ -75,7 +79,8 @@ class FieldValuesAnalysisDomain(
         with domain.l0.DefaultTypeLevelLongValues
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.DefaultPrimitiveValuesConversions
+        with domain.l0.TypeLevelPrimitiveValuesConversions
+        with domain.l0.TypeLevelLongValuesShiftOperators
         with domain.l0.TypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
         with domain.l0.DefaultReferenceValuesBinding
@@ -187,4 +192,14 @@ class FieldValuesAnalysisDomain(
     }
 
 }
+
+class FPFieldValuesAnalysisDomain(
+    project: SomeProject,
+    val fieldValueInformation: FieldValueInformation,
+    val methodReturnValueInformation: MethodReturnValueInformation,
+    val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+    classFile: ClassFile)
+        extends BaseFieldValuesAnalysisDomain(project, classFile)
+        with RefinedTypeLevelFieldAccessInstructions
+        with RefinedTypeLevelInvokeInstructions
 

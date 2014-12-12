@@ -71,7 +71,8 @@ class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecut
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultTypeLevelLongValues
             with l1.DefaultIntegerRangeValues
-            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
             with l1.DefaultReferenceValuesBinding
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions

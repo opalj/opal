@@ -30,26 +30,32 @@ package org.opalj
 package ai
 
 /**
+ * Defines factory methods to create concrete representations of constant
+ * float values.
+ *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author Dennis Siebert
  */
 trait FloatValuesFactory extends ValuesDomain { domain ⇒
 
     /**
-     * Factory method to create a `DomainValue` that was created (explicitly or
-     * implicitly) by the instruction with the specified program counter.
+     * Factory method to create a `DomainValue` with the specified origin.
+     * The origin is typically the program counter of the instruction
+     * that created this value/where the value was observed for the first
+     * time.
      *
-     * The domain may ignore the information about the origin (`vo`).
+     * The domain may ignore the information about the origin (`origin`).
      */
-    def FloatValue(vo: ValueOrigin): DomainValue
+    def FloatValue(origin: ValueOrigin): DomainValue
 
     /**
-     * Factory method to create a `DomainValue` that represents the given float value
-     * and that was created (explicitly or implicitly) by the instruction with the
-     * specified program counter.
+     * Factory method to create a `DomainValue` with the specified origin.
+     * The origin is typically the program counter of the instruction
+     * that created this value/where the value was observed for the first
+     * time.
      *
-     * The domain may ignore the information about the value and the origin (`vo`).
+     * The domain may ignore the information about the origin (`origin`).
      */
-    def FloatValue(vo: ValueOrigin, value: Float): DomainValue
+    def FloatValue(origin: ValueOrigin, value: Float): DomainValue
 }
 

@@ -209,6 +209,8 @@ trait ValuesDomain {
          *      [[doJoin]].
          */
         def join(pc: PC, that: DomainValue): Update[DomainValue] = {
+            assert(that ne this, "join is only defined for objects that are different")
+
             if ((that eq TheIllegalValue) ||
                 (this.computationalType ne that.computationalType))
                 MetaInformationUpdateIllegalValue
@@ -232,7 +234,7 @@ trait ValuesDomain {
          * be considered during a [[join]] of `this` value and the `other` value and that
          * could lead to a [[StructuralUpdate]].
          *
-         * This method is '''not reflexive'''.
+         * This method is '''reflexive''', I.e., every value abstracts over itself.
          *
          * [[TheIllegalValue]] only abstracts over itself.
          *
@@ -292,7 +294,7 @@ trait ValuesDomain {
          *      project-wide analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
-        def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
+        def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
             throw new DomainException("adaptation of "+this+" to "+target+" is unsupported")
 
     }
@@ -539,6 +541,9 @@ trait ValuesDomain {
      * This operation is commutative.
      */
     def mergeDomainValues(pc: PC, v1: DomainValue, v2: DomainValue): DomainValue = {
+        if (v1 eq v2)
+            return v1;
+
         v1.join(pc, v2) match {
             case NoUpdate      ⇒ v1
             case SomeUpdate(v) ⇒ v

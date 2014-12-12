@@ -31,6 +31,7 @@ package ai
 package domain
 
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy }
 
 /**
  * Provides information about the underlying project.
@@ -58,11 +59,10 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Eichberg
  */
-trait TheProject {
+trait TheProject extends ProjectBasedClassHierarchy {
 
     /**
      * Returns the project that is currently analyzed.
      */
     def project: SomeProject
-
 }
