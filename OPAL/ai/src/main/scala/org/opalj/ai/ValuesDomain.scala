@@ -234,7 +234,7 @@ trait ValuesDomain {
          * be considered during a [[join]] of `this` value and the `other` value and that
          * could lead to a [[StructuralUpdate]].
          *
-         * This method is '''not reflexive'''.
+         * This method is '''reflexive''', I.e., every value abstracts over itself.
          *
          * [[TheIllegalValue]] only abstracts over itself.
          *
