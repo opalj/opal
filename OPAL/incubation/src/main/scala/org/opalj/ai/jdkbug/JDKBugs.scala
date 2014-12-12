@@ -748,7 +748,7 @@ trait TaintAnalysisDomain[Source]
                 relevantParameters,
                 checkForFields)
 
-            val calleeParameters = calleeDomain.DomainValueTag.newArray(method.body.get.maxLocals)
+            val calleeParameters = calleeDomain.DomainValue.newArray(method.body.get.maxLocals)
             var localVariableIndex = 0
             for ((operand, index) ← operands.view.reverse.zipWithIndex) {
                 calleeParameters(localVariableIndex) =

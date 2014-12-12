@@ -31,13 +31,13 @@ package ai
 package domain
 package l1
 
-import java.util.IdentityHashMap
+import scala.reflect.ClassTag
 
+import java.util.IdentityHashMap
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
 import scala.annotation.tailrec
 import scala.collection.SortedSet
-
 import org.opalj.util.Answer
 import org.opalj.util.No
 import org.opalj.util.Unknown
@@ -84,12 +84,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type AReferenceValue <: ReferenceValue with DomainReferenceValue
+    val AReferenceValue: ClassTag[AReferenceValue]
 
     type DomainSingleOriginReferenceValue <: SingleOriginReferenceValue with AReferenceValue
+    val DomainSingleOriginReferenceValue: ClassTag[DomainSingleOriginReferenceValue]
+
     type DomainNullValue <: NullValue with DomainSingleOriginReferenceValue
     type DomainObjectValue <: ObjectValue with DomainSingleOriginReferenceValue
     type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
-
     type DomainMultipleReferenceValues <: MultipleReferenceValues with AReferenceValue
 
     type Refinements = IdentityHashMap[ /*old*/ AReferenceValue, /*new*/ AReferenceValue]
@@ -329,7 +331,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         val op = opIt.next
                         val newOp =
                             op match {
-                                case op: AReferenceValue ⇒
+                                case AReferenceValue(op) ⇒
                                     val newOp = refine(op)
                                     if (newOp.refineIf(refinements))
                                         // RESTART REFINEMENT PROCESS!
@@ -349,7 +351,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 },
                 // REGISTERS
                 locals.transform {
-                    case l: AReferenceValue ⇒
+                    case AReferenceValue(l) ⇒
                         val newL = refine(l)
                         if (newL.refineIf(refinements))
                             // RESTART REFINEMENT PROCESS!

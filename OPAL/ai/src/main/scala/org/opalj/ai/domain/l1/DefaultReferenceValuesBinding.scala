@@ -32,14 +32,19 @@ package domain
 package l1
 
 import scala.collection.SortedSet
+import scala.reflect.ClassTag
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-import org.opalj.collection.immutable.UIDSet
-
-import org.opalj.br.ObjectType
+import org.opalj.ai.CorrelationalDomainSupport
+import org.opalj.ai.IntegerValuesDomain
+import org.opalj.ai.TypedValuesFactory
+import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.ai.domain.Configuration
+import org.opalj.ai.domain.DefaultVMLevelExceptionsFactory
 import org.opalj.br.ArrayType
-
+import org.opalj.br.ObjectType
 import org.opalj.br.UpperTypeBound
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.util.Answer
 
 /**
  * @author Michael Eichberg
@@ -53,9 +58,15 @@ trait DefaultReferenceValuesBinding
 
     type AReferenceValue = ReferenceValue
     type DomainReferenceValue = AReferenceValue
+    final val AReferenceValue: ClassTag[AReferenceValue] = implicitly
+    final val DomainReferenceValue: ClassTag[DomainReferenceValue] = implicitly
 
     type DomainSingleOriginReferenceValue = SingleOriginReferenceValue
+    final val DomainSingleOriginReferenceValue: ClassTag[DomainSingleOriginReferenceValue] = implicitly
+
     type DomainNullValue = NullValue
+    final val DomainNullValue: ClassTag[DomainNullValue] = implicitly
+
     type DomainObjectValue = ObjectValue
     type DomainArrayValue = ArrayValue
 

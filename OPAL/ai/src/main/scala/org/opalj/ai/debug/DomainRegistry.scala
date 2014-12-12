@@ -149,7 +149,7 @@ object DomainRegistry {
             new domain.l1.DefaultReferenceValuesDomain(project, classFile, method)
         }
     )
-    
+
     register(
         "[l1.DefaultDomain] A classical abstract domain that tracks origin and null-ness properties of references values as well as tracks int/long values using ranges/sets.",
         classOf[domain.l1.DefaultDomain[_]],

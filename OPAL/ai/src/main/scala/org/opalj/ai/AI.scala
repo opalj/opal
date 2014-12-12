@@ -178,7 +178,7 @@ trait AI[D <: Domain] {
         domain: D)(
             someLocals: Option[IndexedSeq[domain.DomainValue]] = None): domain.Locals = {
 
-        import domain.DomainValueTag
+        import domain.DomainValue
 
         someLocals.map { l ⇒
             val maxLocals = method.body.get.maxLocals
@@ -280,7 +280,7 @@ trait AI[D <: Domain] {
             initialOperands: theDomain.Operands,
             initialLocals: theDomain.Locals): AIResult { val domain: theDomain.type } = {
 
-        import theDomain.DomainValueTag
+        import theDomain.DomainValue
 
         val codeLength = code.instructions.length
 
