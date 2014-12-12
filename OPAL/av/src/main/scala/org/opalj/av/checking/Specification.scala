@@ -425,7 +425,19 @@ object Specification {
         if (!file.isDirectory)
             throw new SpecificationError("The specified directory is not a directory: "+directoryName+".")
 
-        ClassFiles(file)
+        Project.Java8ClassFileReader.ClassFiles(file)
+    }
+
+    def SourceJAR(jarName: String): Seq[(ClassFile, URL)] = {
+        val file = new java.io.File(jarName)
+        if (!file.exists)
+            throw new SpecificationError("The specified directory does not exist: "+jarName+".")
+        if (!file.canRead)
+            throw new SpecificationError("Cannot read the specified directory: "+jarName+".")
+        if (file.isDirectory)
+            throw new SpecificationError("The specified jar file is a directory: "+jarName+".")
+
+        Project.Java8ClassFileReader.ClassFiles(file)
     }
 }
 
