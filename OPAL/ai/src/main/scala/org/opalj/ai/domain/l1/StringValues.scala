@@ -45,10 +45,8 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
 
     type DomainStringValue <: StringValue with DomainObjectValue
 
-    // todo use the same t for all JVM strings 
-
     protected class StringValue(
-        origin: ValueOrigin, // sets the pc value of the superclass
+        origin: ValueOrigin,
         val value: String,
         t: Timestamp)
             extends SObjectValue(origin, No, true, ObjectType.String, t) {
@@ -104,7 +102,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
 
         override def equals(other: Any): Boolean = {
             other match {
-                case sv: StringValue ⇒ super.equals(other) && sv.value == this.value
+                case sv: StringValue ⇒ sv.value == this.value && super.equals(other)
                 case _               ⇒ false
             }
         }
@@ -140,6 +138,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
     // Needs to be implemented (the default implementation is now longer sufficient!)
     override def StringValue(origin: ValueOrigin, value: String): DomainObjectValue
 
-    def StringValue(origin: ValueOrigin, value: String, t: Timestamp): DomainObjectValue
+    // todo use the same t for all constant JVM strings 
+    def StringValue(origin: ValueOrigin, value: String, t: Timestamp): DomainStringValue
 }
 

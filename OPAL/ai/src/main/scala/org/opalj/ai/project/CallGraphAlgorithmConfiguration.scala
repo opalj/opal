@@ -42,15 +42,13 @@ import org.opalj.ai.domain.TheCode
 
 /**
  * Configuration of a specific call graph algorithm. Basically, the configuration
- * consist of a method to create a `Cache` object that will be used during the
- * computation of the call graph and a factory method to create a new domain instance
+ * consist of the `Cache` object that will be used during the
+ * computation of the call graph and the extractor that will be used
  * for each method that is analyzed during the construction of the graph.
  *
  * @author Michael Eichberg
  */
 trait CallGraphAlgorithmConfiguration {
-
-    val project: SomeProject
 
     /**
      * The contour identifies the key of the CallGraphCache.
@@ -64,6 +62,8 @@ trait CallGraphAlgorithmConfiguration {
 
     protected type Cache <: CallGraphCache[Contour, Value]
 
+    val project: SomeProject
+
     /**
      * Creates a new cache that is used to cache intermediate results while
      * computing the call graph.
@@ -73,13 +73,5 @@ trait CallGraphAlgorithmConfiguration {
     protected[this] val cache: Cache
 
     val Extractor: CallGraphExtractor
-
-    type CallGraphDomain = Domain with ReferenceValuesDomain with TheProject with ClassHierarchy with TheClassFile with TheMethod with TheCode
-
-    /**
-     * Returns the new domain object that will be used to analyze the given
-     * method.
-     */
-    def Domain[Source](classFile: ClassFile, method: Method): CallGraphDomain
 
 }

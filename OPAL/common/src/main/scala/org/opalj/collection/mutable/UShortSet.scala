@@ -52,6 +52,12 @@ trait UShortSet extends collection.UShortSet {
 
     override def +(value: UShort): UShortSet = value +≈: this.mutableCopy
 
+    def ++(values: org.opalj.collection.UShortSet): UShortSet = {
+        var newValues = this.mutableCopy
+        values.foreach { value ⇒ newValues = value +≈: newValues }
+        newValues
+    }
+
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int
     private[mutable] def asGraph: org.opalj.graphs.Node

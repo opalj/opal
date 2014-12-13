@@ -42,7 +42,7 @@ import org.opalj.br.analyses.{ Project }
  * exchange of values between different domains.
  *
  * This domain does not prescribe the semantics of any values, but
- * instead implements all methods that perform computations.
+ * instead implements methods that perform computations.
  *
  * This domain directly inherits from [[Domain]] and can, thus, directly be used
  * to create a final domain.
@@ -58,7 +58,9 @@ import org.opalj.br.analyses.{ Project }
  *
  * @author Michael Eichberg
  */
-trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
+trait ValuesCoordinatingDomain
+        extends CorrelationalDomain
+        with Configuration {
 
     def throwAllHandledExceptionsOnMethodCall: Boolean = true
     def throwNullPointerExceptionOnMethodCall: Boolean = true
@@ -174,6 +176,43 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         throw new UnsupportedOperationException
 
     /*override*/ def lreturn(pc: PC, value: DomainValue): Unit =
+        throw new UnsupportedOperationException
+
+    /*override*/ def d2f(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/ def d2i(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/ def d2l(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+
+    /*override*/ def l2d(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/ def l2f(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/ def l2i(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+
+    /*override*/ def i2d(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/ def i2f(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/ def i2l(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+
+    /*override*/ def f2d(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/ def f2i(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/ def f2l(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+
+    /*override*/ def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+
+    /*override*/ def lshr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+
+    /*override*/ def lushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         throw new UnsupportedOperationException
 }
 

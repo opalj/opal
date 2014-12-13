@@ -2,7 +2,7 @@ import AssemblyKeys._
 
 name := "BugPicker"
 
-version := "1.1.0"
+version := "1.2.0-SNAPSHOT"
 
 scalaVersion := "2.11.4"
 

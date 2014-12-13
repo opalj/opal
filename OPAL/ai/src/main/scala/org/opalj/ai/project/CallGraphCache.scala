@@ -65,7 +65,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Michael Eichberg
  */
-class CallGraphCache[Contour, Value](
+class CallGraphCache[Contour, Value] private[this] (
         val NullPointerExceptionDefaultConstructor: Option[Method]) {
 
     def this(project: SomeProject) = {
@@ -131,7 +131,8 @@ class CallGraphCache[Contour, Value](
 
         val typeBasedCache = {
             val id = key.id
-            if (id < cache.length) cache(id)
+            if (id < cache.length)
+                cache(id)
             else {
                 val typeBasedCache = overflowCache.get(key)
                 if (typeBasedCache == null) {

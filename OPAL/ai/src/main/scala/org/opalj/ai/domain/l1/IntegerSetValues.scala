@@ -106,7 +106,7 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
     def IntegerRange(pc: PC, lb: Int, ub: Int): DomainValue = {
         if (ub.toLong - lb.toLong <= maxCardinalityOfIntegerSets)
             IntegerSet(SortedSet[Int](lb to ub: _*))
-        else IntegerValue(vo = pc)
+        else IntegerValue(origin = pc)
     }
 
     /**

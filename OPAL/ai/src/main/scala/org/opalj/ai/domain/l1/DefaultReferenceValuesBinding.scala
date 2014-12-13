@@ -32,14 +32,19 @@ package domain
 package l1
 
 import scala.collection.SortedSet
+import scala.reflect.ClassTag
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-import org.opalj.collection.immutable.UIDSet
-
-import org.opalj.br.ObjectType
+import org.opalj.ai.CorrelationalDomainSupport
+import org.opalj.ai.IntegerValuesDomain
+import org.opalj.ai.TypedValuesFactory
+import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.ai.domain.Configuration
+import org.opalj.ai.domain.DefaultVMLevelExceptionsFactory
 import org.opalj.br.ArrayType
-
+import org.opalj.br.ObjectType
 import org.opalj.br.UpperTypeBound
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.util.Answer
 
 /**
  * @author Michael Eichberg
@@ -53,9 +58,15 @@ trait DefaultReferenceValuesBinding
 
     type AReferenceValue = ReferenceValue
     type DomainReferenceValue = AReferenceValue
+    final val AReferenceValue: ClassTag[AReferenceValue] = implicitly
+    final val DomainReferenceValue: ClassTag[DomainReferenceValue] = implicitly
 
     type DomainSingleOriginReferenceValue = SingleOriginReferenceValue
+    final val DomainSingleOriginReferenceValue: ClassTag[DomainSingleOriginReferenceValue] = implicitly
+
     type DomainNullValue = NullValue
+    final val DomainNullValue: ClassTag[DomainNullValue] = implicitly
+
     type DomainObjectValue = ObjectValue
     type DomainArrayValue = ArrayValue
 
@@ -65,36 +76,42 @@ trait DefaultReferenceValuesBinding
     // FACTORY METHODS
     //
 
-    override def NullValue(pc: PC, t: Timestamp): DomainNullValue = new NullValue(pc, t)
+    override def NullValue(origin: ValueOrigin, t: Timestamp): DomainNullValue =
+        new NullValue(origin, t)
 
     override protected[domain] def ObjectValue(
-        pc: PC,
+        origin: ValueOrigin,
         isNull: Answer,
         isPrecise: Boolean,
         theUpperTypeBound: ObjectType,
         t: Timestamp): SObjectValue = {
-        new SObjectValue(pc, isNull, isPrecise, theUpperTypeBound, t)
+        new SObjectValue(origin, isNull, isPrecise, theUpperTypeBound, t)
     }
 
     override protected[domain] def ObjectValue(
-        pc: PC,
+        origin: ValueOrigin,
         isNull: Answer,
         upperTypeBound: UIDSet[ObjectType],
         t: Timestamp): DomainObjectValue = {
 
         if (upperTypeBound.consistsOfOneElement)
-            ObjectValue(pc, isNull, false, upperTypeBound.first, t)
+            ObjectValue(origin, isNull, false, upperTypeBound.first, t)
         else
-            new MObjectValue(pc, isNull, upperTypeBound, t)
+            new MObjectValue(origin, isNull, upperTypeBound, t)
     }
 
     override protected[domain] def ArrayValue(
-        pc: PC,
+        origin: ValueOrigin,
         isNull: Answer,
         isPrecise: Boolean,
         theUpperTypeBound: ArrayType,
         t: Timestamp): DomainArrayValue = {
-        new ArrayValue(pc, isNull, isPrecise, theUpperTypeBound, t)
+        new ArrayValue(
+            origin,
+            isNull,
+            isPrecise || theUpperTypeBound.elementType.isBaseType,
+            theUpperTypeBound,
+            t)
     }
 
     override protected[domain] def MultipleReferenceValues(

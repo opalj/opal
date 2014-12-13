@@ -63,7 +63,7 @@ import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
 import org.opalj.ai.Domain
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain.l0.TypeLevelReferenceValues
-import org.opalj.ai.domain.l0.DefaultPrimitiveValuesConversions
+import org.opalj.ai.domain.l0.TypeLevelPrimitiveValuesConversions
 import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
 
 /**
@@ -192,7 +192,8 @@ trait TaintAnalysisDomain[Source]
         with DomainId
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        with DefaultPrimitiveValuesConversions
+        with TypeLevelLongValuesShiftOperators
+        with TypeLevelPrimitiveValuesConversions
         with DefaultDomainValueBinding
         with DefaultTypeLevelLongValues
         with DefaultTypeLevelFloatValues
@@ -747,7 +748,7 @@ trait TaintAnalysisDomain[Source]
                 relevantParameters,
                 checkForFields)
 
-            val calleeParameters = calleeDomain.DomainValueTag.newArray(method.body.get.maxLocals)
+            val calleeParameters = calleeDomain.DomainValue.newArray(method.body.get.maxLocals)
             var localVariableIndex = 0
             for ((operand, index) ← operands.view.reverse.zipWithIndex) {
                 calleeParameters(localVariableIndex) =

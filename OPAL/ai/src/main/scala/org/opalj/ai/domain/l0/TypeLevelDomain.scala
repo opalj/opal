@@ -48,6 +48,8 @@ trait TypeLevelDomain
         with DefaultReferenceValuesBinding
         with DefaultTypeLevelIntegerValues
         with DefaultTypeLevelLongValues
+        with TypeLevelLongValuesShiftOperators
+        with TypeLevelPrimitiveValuesConversions
         with DefaultTypeLevelFloatValues
         with DefaultTypeLevelDoubleValues
         with TypeLevelFieldAccessInstructions

@@ -68,7 +68,7 @@ class DefaultPreciseIntegerValuesTest
     it should ("be able to join a value with itself") in {
         import TestDomain._
         val v = IntegerValue(SomePC, 0)
-        v.join(-1, v) should be(NoUpdate)
+        v.join(-1, IntegerValue(SomePC, 0)) should be(NoUpdate)
     }
 
     it should ("be able to join two new values") in {
@@ -150,7 +150,8 @@ object DefaultPreciseIntegerValuesTest {
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultReferenceValuesBinding
             with DefaultPreciseIntegerValues
-            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             with PredefinedClassHierarchy

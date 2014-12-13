@@ -31,8 +31,18 @@ package ai
 package domain
 package l0
 
+import scala.reflect.ClassTag
+
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.{ ObjectType, ArrayType }
+
+import org.opalj.br.ArrayType
+import org.opalj.br.ObjectType
+
+import org.opalj.ai.IntegerValuesDomain
+import org.opalj.ai.TypedValuesFactory
+import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.ai.domain.Configuration
+import org.opalj.ai.domain.DefaultVMLevelExceptionsFactory
 
 /**
  * Default implementation for handling reference values.
@@ -46,6 +56,9 @@ trait DefaultReferenceValuesBinding
 
     type AReferenceValue = ReferenceValue
     type DomainReferenceValue = AReferenceValue
+
+    final val DomainReferenceValue: ClassTag[DomainReferenceValue] = implicitly
+
     type DomainNullValue = NullValue
     type DomainObjectValue = ObjectValue
     type DomainArrayValue = ArrayValue
@@ -61,31 +74,27 @@ trait DefaultReferenceValuesBinding
      *
      * This implementation always returns the singleton instance [[TheNullValue]].
      */
-    override def NullValue(
-        valueOrigin: ValueOrigin): DomainNullValue = {
-
-        TheNullValue
-    }
+    override def NullValue(origin: ValueOrigin): DomainNullValue = TheNullValue
 
     override def ObjectValue(
-        valueOrigin: ValueOrigin,
+        origin: ValueOrigin,
         objectType: ObjectType): DomainObjectValue = {
 
         new SObjectValue(objectType)
     }
 
     override def ObjectValue(
-        valueOrigin: ValueOrigin,
+        origin: ValueOrigin,
         upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
 
         if (upperTypeBound.consistsOfOneElement)
-            ObjectValue(valueOrigin, upperTypeBound.first)
+            ObjectValue(origin, upperTypeBound.first)
         else
             new MObjectValue(upperTypeBound)
     }
 
     override protected[domain] def ArrayValue(
-        valueOrigin: ValueOrigin,
+        origin: ValueOrigin,
         arrayType: ArrayType): DomainArrayValue = {
 
         new ArrayValue(arrayType)
