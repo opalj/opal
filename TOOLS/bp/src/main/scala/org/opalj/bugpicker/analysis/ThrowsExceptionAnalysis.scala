@@ -97,12 +97,12 @@ object ThrowsExceptionAnalysis {
             } yield {
                 val operands = operandsArray(pc)
                 val exceptions = {
-                    var allExceptions: scala.collection.immutable.Set[result.domain.SingleOriginReferenceValue] = {
+                    var allExceptions: Set[result.domain.SingleOriginReferenceValue] = {
                         if (result.domain.allThrownExceptions.get(pc).nonEmpty)
-                            scala.collection.immutable.Set.empty ++
+                            Set.empty ++
                                 result.domain.allThrownExceptions.get(pc).get
                         else
-                            scala.collection.immutable.Set.empty
+                            Set.empty
                     }
 
                     result.domain.exceptionHandlerSuccessorsOf(pc).foreach { handlerPC ⇒
