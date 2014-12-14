@@ -171,7 +171,7 @@ object CallGraphFactory {
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
         while (futuresCount > 0) {
             // 1. GET NEXT RESULT
-            val (callSite @ (method, callEdges), moreUnresolvedMethodCalls, exception) =
+            val (callSite @ (_ /*method*/ , callEdges), moreUnresolvedMethodCalls, exception) =
                 completionService.take().get()
             futuresCount -= 1
 

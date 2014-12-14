@@ -101,7 +101,7 @@ trait RecordMethodCallResults
 
             def handleIsAReferenceValue(
                 exceptionValue: ExceptionValue,
-                exceptionValueProperties: IsAReferenceValue) {
+                exceptionValueProperties: IsAReferenceValue): Unit = {
                 exceptionValueProperties.upperTypeBound match {
                     case UIDSet0 ⇒
                         println("[info] [RecordMethodCallResults.thrownExceptions] Type of exception is unknown.")

@@ -347,7 +347,7 @@ class Project[Source] private (
         var pis = List.empty[AnyRef]
         val thisProjectInformation = this.projectInformation
         for (i ← (0 until thisProjectInformation.length())) {
-            var pi = thisProjectInformation.get(i)
+            val pi = thisProjectInformation.get(i)
             if (pi != null) {
                 pis = pi :: pis
             }
@@ -539,7 +539,7 @@ object Project {
         val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile]
         val sources = OpenHashMap.empty[ObjectType, Source]
 
-        def processClassFile(classFile: ClassFile, source: Option[Source]) {
+        def processClassFile(classFile: ClassFile, source: Option[Source]): Unit = {
             projectClassFiles = classFile :: projectClassFiles
             projectClassFilesCount += 1
             val objectType = classFile.thisType

@@ -56,13 +56,13 @@ class ConstantLengthInstructionTest extends FunSpec with Matchers {
 
             LoadConstantInstruction(6).length should be(2)
             LoadConstantInstruction(64).length should be(2)
-            LoadConstantInstruction(Byte.MaxValue).length should be(2)
+            LoadConstantInstruction(Byte.MaxValue.toInt).length should be(2)
 
-            LoadConstantInstruction(Byte.MaxValue + 1).length should be(3)
-            LoadConstantInstruction(Short.MaxValue / 2).length should be(3)
-            LoadConstantInstruction(Short.MaxValue).length should be(3)
+            LoadConstantInstruction(Byte.MaxValue.toInt + 1).length should be(3)
+            LoadConstantInstruction(Short.MaxValue.toInt / 2).length should be(3)
+            LoadConstantInstruction(Short.MaxValue.toInt).length should be(3)
 
-            LoadConstantInstruction(Short.MaxValue + 1).length should be(2)
+            LoadConstantInstruction(Short.MaxValue.toInt + 1).length should be(2)
             LoadConstantInstruction(Int.MaxValue / 2).length should be(2)
             LoadConstantInstruction(Int.MaxValue).length should be(2)
         }

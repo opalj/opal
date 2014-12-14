@@ -237,12 +237,12 @@ class ClassHierarchy private (
      * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
      *      `ClassHierarchy.ifKnown` for further details).
      */
-    def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit) {
+    def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
 
         // We had to change this method to get better performance.
         // The naive implementation using foreach and (mutual) recursion
         // didn't perform well.
-        @inline def processAllSubtypes() {
+        @inline def processAllSubtypes(): Unit = {
             var allSubtypes: List[Set[ObjectType]] = Nil
             val id = objectType.id
             val subclassTypes = subclassTypesMap(id)
@@ -317,7 +317,7 @@ class ClassHierarchy private (
      * @param objectType A known `ObjectType`. (See `ClassHierarchy.isKnown`,
      *      `ClassHierarchy.ifKnown` for further details).
      */
-    def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit) {
+    def foreachSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
         val id = objectType.id
         val superclassType = superclassTypeMap(id)
         if (superclassType != null) {
@@ -512,7 +512,7 @@ class ClassHierarchy private (
             } else {
                 var answer: Answer = No
                 superinterfaceTypes foreach { intermediateType ⇒
-                    var anotherAnswer = implementsInterface(intermediateType, theSupertype)
+                    val anotherAnswer = implementsInterface(intermediateType, theSupertype)
                     if (anotherAnswer.isYes)
                         return Yes
                     answer &= anotherAnswer
@@ -524,7 +524,7 @@ class ClassHierarchy private (
         @inline def isSubtypeOf(subclassType: ObjectType): Answer = {
             @inline def inheritsFromInterface(answerSoFar: Answer): Answer = {
                 if (supertypeIsInterface) {
-                    var doesInheritFromInterface =
+                    val doesInheritFromInterface =
                         implementsInterface(subclassType, theSupertype)
                     if (doesInheritFromInterface.isYes)
                         Yes
@@ -539,7 +539,7 @@ class ClassHierarchy private (
                 if (superSubclassType eq theSupertype)
                     return Yes
 
-                var answer = isSubtypeOf(superSubclassType)
+                val answer = isSubtypeOf(superSubclassType)
                 if (answer.isYes)
                     Yes
                 else
@@ -639,7 +639,7 @@ class ClassHierarchy private (
         Answer(
             supertypes forall { supertype ⇒
                 var subtypingRelationUnknown = false
-                var subtypeExists =
+                val subtypeExists =
                     subtypes exists { subtype ⇒
                         val isSubtypeOf = this.isSubtypeOf(subtype, supertype)
                         isSubtypeOf match {
@@ -902,7 +902,7 @@ class ClassHierarchy private (
 
         @tailrec def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
             val classFileOption = project.classFile(receiverType)
-            var methodOption =
+            val methodOption =
                 if (classFileOption.isDefined) {
                     val classFile = classFileOption.get
                     classFile.findMethod(methodName, methodDescriptor).orElse {
@@ -996,7 +996,7 @@ class ClassHierarchy private (
             }
 
         // Search all subclasses
-        var seenSubtypes = HashSet.empty[ObjectType]
+        val seenSubtypes = HashSet.empty[ObjectType]
         foreachSubtype(receiverType) { (subtype: ObjectType) ⇒
             if (!isInterface(subtype) && !seenSubtypes.contains(subtype)) {
                 seenSubtypes += subtype
@@ -1161,7 +1161,7 @@ class ClassHierarchy private (
                                 Some("aliceblue")
                             else
                                 None
-                        def foreachSuccessor(f: Node ⇒ Unit) {
+                        def foreachSuccessor(f: Node ⇒ Unit): Unit = {
                             directSubtypes foreach { subtype ⇒
                                 f(nodes(subtype))
                             }
@@ -1178,7 +1178,7 @@ class ClassHierarchy private (
         def uniqueId = -1
         def toHRR = None
         def backgroundColor = None
-        def foreachSuccessor(f: Node ⇒ Unit) {
+        def foreachSuccessor(f: Node ⇒ Unit): Unit = {
             /**
              * We may not see the class files of all classes that are referred
              * to in the class files that we did see. Hence, we have to be able
@@ -1782,7 +1782,7 @@ object ClassHierarchy {
             objectType: ObjectType,
             isInterfaceType: Boolean,
             theSuperclassType: Option[ObjectType],
-            theSuperinterfaceTypes: Set[ObjectType]) {
+            theSuperinterfaceTypes: Set[ObjectType]): Unit = {
 
             //
             // Update the class hierarchy from the point of view of the newly added type 

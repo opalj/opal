@@ -284,9 +284,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     var currentInstruction = 0
                     val body = method.body.get
                     val instructions = body.instructions
-                    val invoke = instructions.find(_.isInstanceOf[InvocationInstruction]).get
-                    val indexOfInvoke = instructions.indexOf(invoke)
-                    val instructionsPrecedingInvoke = instructions.slice(0, indexOfInvoke)
+
                     val parameters =
                         if (calleeTypeAndMethod._2.isStatic) {
                             method.parameterTypes
@@ -294,18 +292,20 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             calleeTypeAndMethod._1 +: method.parameterTypes
                         }
                     parameters.foreach { requiredParameter ⇒
-                        val remainingInstructions = instructions.slice(currentInstruction, instructions.size)
-                        val consumedInstructions = requiredParameter match {
-                            case IntegerType      ⇒ requireInt(remainingInstructions)
-                            case ShortType        ⇒ requireInt(remainingInstructions)
-                            case ByteType         ⇒ requireInt(remainingInstructions)
-                            case CharType         ⇒ requireInt(remainingInstructions)
-                            case BooleanType      ⇒ requireInt(remainingInstructions)
-                            case FloatType        ⇒ requireFloat(remainingInstructions)
-                            case DoubleType       ⇒ requireDouble(remainingInstructions)
-                            case LongType         ⇒ requireLong(remainingInstructions)
-                            case _: ReferenceType ⇒ requireReference(remainingInstructions)
-                        }
+                        val remainingInstructions =
+                            instructions.slice(currentInstruction, instructions.size)
+                        val consumedInstructions =
+                            requiredParameter match {
+                                case IntegerType      ⇒ requireInt(remainingInstructions)
+                                case ShortType        ⇒ requireInt(remainingInstructions)
+                                case ByteType         ⇒ requireInt(remainingInstructions)
+                                case CharType         ⇒ requireInt(remainingInstructions)
+                                case BooleanType      ⇒ requireInt(remainingInstructions)
+                                case FloatType        ⇒ requireFloat(remainingInstructions)
+                                case DoubleType       ⇒ requireDouble(remainingInstructions)
+                                case LongType         ⇒ requireLong(remainingInstructions)
+                                case _: ReferenceType ⇒ requireReference(remainingInstructions)
+                            }
                         currentInstruction += consumedInstructions
                     }
                 }
@@ -321,7 +321,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
                     val returnSize: Int =
                         if (method.returnType != VoidType) {
-                            method.returnType.computationalType.operandSize
+                            method.returnType.computationalType.operandSize.toInt
                         } else {
                             0
                         }
@@ -857,7 +857,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
             def testConstructor(
                 fieldTypes: IndexedSeq[FieldType],
-                expectedLocals: Int, expectedStack: Int) {
+                expectedLocals: Int, expectedStack: Int): Unit = {
                 val fields = fieldTypes.zipWithIndex.map { p ⇒
                     val (ft, i) = p
                     Field(bi.ACC_PRIVATE.mask, "field"+i, ft, Seq.empty)
@@ -1280,7 +1280,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
     private def testMethod(
         calleeType: ObjectType, calleeMethod: Method,
         repository: ClassFileRepository)(
-            test: (ClassFile, (ObjectType, Method)) ⇒ Unit) {
+            test: (ClassFile, (ObjectType, Method)) ⇒ Unit): Unit = {
         val calleeMethodName = calleeMethod.name
         val calleeMethodDescriptor = calleeMethod.descriptor
         val definingTypeName = calleeType.simpleName+"$"+calleeMethodName

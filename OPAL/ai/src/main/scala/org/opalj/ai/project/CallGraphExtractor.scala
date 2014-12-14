@@ -98,7 +98,7 @@ trait CallGraphExtractor { extractor ⇒
         def allCallEdges: (Method, Map[PC, Set[Method]]) = (method, callEdgesMap)
 
         def addCallToNullPointerExceptionConstructor(
-            callerType: ObjectType, callerMethod: Method, pc: PC) {
+            callerType: ObjectType, callerMethod: Method, pc: PC): Unit = {
 
             cache.NullPointerExceptionDefaultConstructor match {
                 case Some(defaultConstructor) ⇒

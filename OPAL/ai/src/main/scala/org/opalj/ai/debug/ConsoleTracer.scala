@@ -97,7 +97,6 @@ trait ConsoleTracer extends AITracer { tracer ⇒
             instruction: Instruction,
             operands: domain.Operands,
             locals: domain.Locals): Unit = {
-        val placeholder = "-"
 
         println(
             pc + line(domain, pc)+":"+instruction.toString(pc)+" [\n"+
@@ -122,7 +121,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
             alreadyEvaluated: List[PC],
             operandsArray: domain.OperandsArray,
             localsArray: domain.LocalsArray,
-            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]) {
+            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]): Unit = {
 
         println(BLACK_B + WHITE+"Starting Code Analysis"+RESET)
         println("Number of registers:      "+code.maxLocals)
@@ -145,9 +144,9 @@ trait ConsoleTracer extends AITracer { tracer ⇒
         domain: Domain)(
             currentPC: PC,
             targetPC: PC,
-            isExceptionalControlFlow: Boolean) { /* ignored */ }
+            isExceptionalControlFlow: Boolean): Unit = { /* ignored */ }
 
-    override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC) {
+    override def noFlow(domain: Domain)(currentPC: PC, targetPC: PC): Unit = {
         println(Console.RED_B + Console.YELLOW+
             "did not schedule the interpretation of instruction "+
             targetPC + line(domain, targetPC)+

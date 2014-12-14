@@ -1093,7 +1093,7 @@ class MethodsPlainTest
         val domain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "create").get
-        val result = BaseAI(classFile, method, domain)
+        /*val result =*/ BaseAI(classFile, method, domain)
 
         domain.isValueSubtypeOf(
             domain.returnedValue.get,
@@ -1104,7 +1104,7 @@ class MethodsPlainTest
         val domain = new RecordingDomain;
         import domain._
         val method = classFile.methods.find(_.name == "multipleCalls").get
-        val result = BaseAI(classFile, method, domain)
+        /*val result = */ BaseAI(classFile, method, domain)
 
         domain.returnedValue should be(None)
     }
@@ -1135,27 +1135,27 @@ private object MethodsPlainTest {
 
         var returnedValue: Option[DomainValue] = _
 
-        override def areturn(pc: Int, value: DomainValue) {
+        override def areturn(pc: Int, value: DomainValue): Unit = {
             returnedValue = Some(value)
         }
 
-        override def dreturn(pc: Int, value: DomainValue) {
+        override def dreturn(pc: Int, value: DomainValue): Unit = {
             returnedValue = Some(value)
         }
 
-        override def freturn(pc: Int, value: DomainValue) {
+        override def freturn(pc: Int, value: DomainValue): Unit = {
             returnedValue = Some(value)
         }
 
-        override def ireturn(pc: Int, value: DomainValue) {
+        override def ireturn(pc: Int, value: DomainValue): Unit = {
             returnedValue = Some(value)
         }
 
-        override def lreturn(pc: Int, value: DomainValue) {
+        override def lreturn(pc: Int, value: DomainValue): Unit = {
             returnedValue = Some(value)
         }
 
-        override def returnVoid(pc: Int) {
+        override def returnVoid(pc: Int): Unit = {
             returnedValue = None
         }
     }

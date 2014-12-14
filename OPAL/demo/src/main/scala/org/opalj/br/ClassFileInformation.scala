@@ -38,7 +38,7 @@ import org.opalj.br.reader.Java8Framework.{ ClassFile ⇒ ClassFileReader }
  */
 object ClassFileInformation {
 
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
 
         if (args.length < 2) {
             println("Usage: java …ClassFileInformation "+

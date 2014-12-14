@@ -57,8 +57,8 @@ trait DefaultReferenceValuesBinding
     // Let's fix the type hierarchy
 
     type AReferenceValue = ReferenceValue
-    type DomainReferenceValue = AReferenceValue
     final val AReferenceValue: ClassTag[AReferenceValue] = implicitly
+    type DomainReferenceValue = AReferenceValue
     final val DomainReferenceValue: ClassTag[DomainReferenceValue] = implicitly
 
     type DomainSingleOriginReferenceValue = SingleOriginReferenceValue
@@ -68,9 +68,13 @@ trait DefaultReferenceValuesBinding
     final val DomainNullValue: ClassTag[DomainNullValue] = implicitly
 
     type DomainObjectValue = ObjectValue
+    final val DomainObjectValue: ClassTag[DomainObjectValue] = implicitly
+
     type DomainArrayValue = ArrayValue
+    final val DomainArrayValue: ClassTag[DomainArrayValue] = implicitly
 
     type DomainMultipleReferenceValues = MultipleReferenceValues
+    final val DomainMultipleReferenceValues: ClassTag[DomainMultipleReferenceValues] = implicitly
 
     //
     // FACTORY METHODS

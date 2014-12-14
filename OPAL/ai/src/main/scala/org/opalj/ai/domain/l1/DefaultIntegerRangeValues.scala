@@ -140,7 +140,6 @@ trait DefaultIntegerRangeValues
         override def hashCode = this.lowerBound * 13 + this.upperBound
 
         override def equals(other: Any): Boolean = {
-            val thisValue = this
             other match {
                 case that: IntegerRange ⇒
                     (this eq that) || (
@@ -162,13 +161,22 @@ trait DefaultIntegerRangeValues
         if (value) IntegerValue(pc, 1) else IntegerValue(pc, 0)
 
     override def ByteValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ByteValue(pc: PC, value: Byte) = new IntegerRange(value, value)
+    override def ByteValue(pc: PC, value: Byte) = {
+        val theValue = value.toInt
+        new IntegerRange(theValue, theValue)
+    }
 
     override def ShortValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ShortValue(pc: PC, value: Short) = new IntegerRange(value, value)
+    override def ShortValue(pc: PC, value: Short) = {
+        val theValue = value.toInt
+        new IntegerRange(theValue, theValue)
+    }
 
     override def CharValue(pc: PC): DomainValue = AnIntegerValue()
-    override def CharValue(pc: PC, value: Char) = new IntegerRange(value, value)
+    override def CharValue(pc: PC, value: Char) = {
+        val theValue = value.toInt
+        new IntegerRange(theValue, theValue)
+    }
 
     override def IntegerValue(pc: PC): DomainValue = AnIntegerValue()
     override def IntegerValue(pc: PC, value: Int) = new IntegerRange(value, value)

@@ -56,7 +56,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
         Java8Framework.ClassFiles(testResources),
         Java8LibraryFramework.ClassFiles(rtJar))
 
-    private def testMethod(classFile: ClassFile, name: String) {
+    private def testMethod(classFile: ClassFile, name: String): Unit = {
         for {
             method @ MethodWithBody(body) ← classFile.findMethod(name)
             instruction ← body.instructions if instruction.isInstanceOf[INVOKEVIRTUAL]

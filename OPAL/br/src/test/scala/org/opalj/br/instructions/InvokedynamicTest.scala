@@ -54,7 +54,7 @@ class InvokedynamicTest extends FunSpec with Matchers {
 
     val project: SomeProject = Project(testResources)
 
-    private def testMethod(classFile: ClassFile, name: String) {
+    private def testMethod(classFile: ClassFile, name: String): Unit = {
         for {
             method @ MethodWithBody(body) ← classFile.findMethod(name)
             instruction ← body.instructions if instruction.isInstanceOf[INVOKEDYNAMIC]
@@ -145,7 +145,7 @@ class InvokedynamicTest extends FunSpec with Matchers {
                     val totalFailures = failedInstructions.size
                     val numberOfFailuresToShow = 5
                     val msg = failedInstructions.take(numberOfFailuresToShow).map({ tuple ⇒
-                        val (_, classFile, method, instruction) = tuple
+                        val (_, _ /* classFile*/ , method, instruction) = tuple
                         instruction+"\n in method "+
                             method.toJava
                     }).mkString(

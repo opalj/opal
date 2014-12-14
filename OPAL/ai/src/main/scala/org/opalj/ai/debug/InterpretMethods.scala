@@ -113,7 +113,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
 object InterpretMethodsAnalysis {
 
-    def println(s: String) {
+    def println(s: String): Unit = {
         Console.out.println(s)
         Console.flush()
     }

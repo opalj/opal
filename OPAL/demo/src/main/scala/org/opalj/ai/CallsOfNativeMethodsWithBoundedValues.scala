@@ -102,7 +102,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
 
             val mutex = new Object
             var results: List[NativeCallWithBoundedMethodParameter] = Nil
-            def addResult(r: NativeCallWithBoundedMethodParameter) {
+            def addResult(r: NativeCallWithBoundedMethodParameter): Unit = {
                 mutex.synchronized { results = r :: results }
             }
             val unboundedCalls = new java.util.concurrent.atomic.AtomicInteger(0)

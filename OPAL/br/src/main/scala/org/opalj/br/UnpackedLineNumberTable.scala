@@ -55,7 +55,7 @@ case class UnpackedLineNumberTable(
         var lastLineNumber: LineNumber = null
         breakable {
             while (lnsIterator.hasNext) {
-                var currentLineNumber = lnsIterator.next()
+                val currentLineNumber = lnsIterator.next()
                 if (currentLineNumber.startPC <= pc) {
                     lastLineNumber = currentLineNumber
                 } else {

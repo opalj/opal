@@ -64,7 +64,7 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
     registerAttributeReader(
         EnclosingMethod_attributeReader.ATTRIBUTE_NAME -> (
             (ap: AttributeParent, cp: Constant_Pool, attribute_name_index: Constant_Pool_Index, in: DataInputStream) ⇒ {
-                val attribute_length = in.readInt
+                /*val attribute_length =*/ in.readInt
                 EnclosingMethod_attribute(
                     cp,
                     attribute_name_index,

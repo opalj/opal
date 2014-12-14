@@ -105,9 +105,9 @@ class CHACallGraphExtractor(
             pc: PC,
             declaringClassType: ObjectType,
             name: String,
-            descriptor: MethodDescriptor) {
+            descriptor: MethodDescriptor): Unit = {
 
-            def handleUnresolvedMethodCall() {
+            def handleUnresolvedMethodCall(): Unit = {
                 addUnresolvedMethodCall(
                     classFile.thisType, method, pc,
                     declaringClassType, name, descriptor
@@ -139,7 +139,7 @@ class CHACallGraphExtractor(
             declaringClassType: ObjectType,
             name: String,
             descriptor: MethodDescriptor,
-            receiverIsNull: Answer) {
+            receiverIsNull: Answer): Unit = {
 
             if (receiverIsNull.isYesOrUnknown)
                 addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
@@ -156,7 +156,7 @@ class CHACallGraphExtractor(
             pc: PC,
             declaringClassType: ObjectType,
             name: String,
-            descriptor: MethodDescriptor) {
+            descriptor: MethodDescriptor): Unit = {
 
             addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
 

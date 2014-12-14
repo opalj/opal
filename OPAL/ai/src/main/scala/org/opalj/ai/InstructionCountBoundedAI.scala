@@ -88,7 +88,7 @@ object InstructionCountBoundedAI {
     def calculateMaxEvaluationCount(
         code: Code,
         maxEvaluationFactor: Double): Int = {
-        val min = code.instructions.size
+        val min = code.instructions.size.toDouble
         // this is roughly the number of instructions * ~2
         var upperBound: Double = min
 
