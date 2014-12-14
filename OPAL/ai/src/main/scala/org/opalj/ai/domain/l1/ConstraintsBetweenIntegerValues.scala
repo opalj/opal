@@ -35,9 +35,18 @@ import java.util.{ IdentityHashMap ⇒ IDMap }
 
 import scala.collection.BitSet
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
+import org.opalj.ai.AITracer
+import org.opalj.ai.CoreDomainFunctionality
+import org.opalj.ai.CorrelationalDomainSupport
+import org.opalj.ai.TheCodeStructure
+import org.opalj.ai.VMLevelExceptionsFactory
+import org.opalj.ai.domain.Configuration
 import org.opalj.br.instructions.Instruction
+import org.opalj.constraints.NumericConstraints
+import org.opalj.util.Answer
+import org.opalj.util.No
+import org.opalj.util.Unknown
+import org.opalj.util.Yes
 
 /**
  * Domain that traces the relationship between integer values.
@@ -65,7 +74,7 @@ trait ConstraintsBetweenIntegerValues
 
     abstract override def setCodeStructure(
         theInstructions: Array[Instruction],
-        theJoinInstructions: BitSet) {
+        theJoinInstructions: BitSet): Unit = {
         super.setCodeStructure(theInstructions, theJoinInstructions)
 
         constraints = new Array[ConstraintsStore](theInstructions.size)

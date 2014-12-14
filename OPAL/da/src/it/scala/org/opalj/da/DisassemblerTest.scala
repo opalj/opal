@@ -66,7 +66,7 @@ class DisassemblerTest extends FlatSpec with Matchers {
         info(s"loaded ${classFiles.size} class files")
 
         val classFilesGroupedByPackage = classFiles.groupBy { e ⇒
-            val (classFile, url) = e
+            val (classFile, _ /*url*/ ) = e
             val fqn = classFile.fqn
             if (fqn.contains('.'))
                 fqn.substring(0, fqn.lastIndexOf('.'))

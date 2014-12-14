@@ -69,7 +69,8 @@ class MethodsWithBranchesTest
             with DefaultTypeLevelLongValues
             with DefaultTypeLevelFloatValues
             with DefaultTypeLevelDoubleValues
-            with DefaultPrimitiveValuesConversions
+            with TypeLevelPrimitiveValuesConversions
+            with TypeLevelLongValuesShiftOperators
             with TypeLevelFieldAccessInstructions
             with SimpleTypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
@@ -83,7 +84,7 @@ class MethodsWithBranchesTest
         def id = "MethodsWithBranchesTestDomain: "+name
     }
 
-    private def evaluateMethod(name: String)(f: TestDomain ⇒ Unit) {
+    private def evaluateMethod(name: String)(f: TestDomain ⇒ Unit): Unit = {
         val domain = new TestDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)

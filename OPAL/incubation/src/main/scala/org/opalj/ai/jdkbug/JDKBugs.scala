@@ -63,7 +63,7 @@ import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
 import org.opalj.ai.Domain
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain.l0.TypeLevelReferenceValues
-import org.opalj.ai.domain.l0.DefaultPrimitiveValuesConversions
+import org.opalj.ai.domain.l0.TypeLevelPrimitiveValuesConversions
 import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
 
 /**
@@ -192,7 +192,8 @@ trait TaintAnalysisDomain[Source]
         with DomainId
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        with DefaultPrimitiveValuesConversions
+        with TypeLevelLongValuesShiftOperators
+        with TypeLevelPrimitiveValuesConversions
         with DefaultDomainValueBinding
         with DefaultTypeLevelLongValues
         with DefaultTypeLevelFloatValues
@@ -353,7 +354,7 @@ trait TaintAnalysisDomain[Source]
             methodDescriptor.returnType == Class)
     }
 
-    override def areturn(pc: Int, value: DomainValue) {
+    override def areturn(pc: Int, value: DomainValue): Unit = {
         // in case a relevant parameter is returned by the method
         if (origin(value).exists(orig ⇒ contextNode.identifier._1.union(taintedPCs).contains(orig))) {
             relevantValuesOrigins = (-1, new SimpleNode("return of a relevant Parameter")) :: relevantValuesOrigins
@@ -687,7 +688,7 @@ trait TaintAnalysisDomain[Source]
      */
     def computeRelevantOperands(operands: List[DomainValue]) = {
         operands.zipWithIndex.filter { operand_index ⇒
-            val (operand, index) = operand_index
+            val (operand, _ /*index*/ ) = operand_index
             origin(operand).exists { operandOrigin ⇒
                 contextNode.identifier._1.union(taintedPCs).exists(_ == operandOrigin)
             }
@@ -747,7 +748,7 @@ trait TaintAnalysisDomain[Source]
                 relevantParameters,
                 checkForFields)
 
-            val calleeParameters = calleeDomain.DomainValueTag.newArray(method.body.get.maxLocals)
+            val calleeParameters = calleeDomain.DomainValue.newArray(method.body.get.maxLocals)
             var localVariableIndex = 0
             for ((operand, index) ← operands.view.reverse.zipWithIndex) {
                 calleeParameters(localVariableIndex) =
@@ -762,7 +763,7 @@ trait TaintAnalysisDomain[Source]
                 // If we reach this point, we have an invocation of a relevant method 
                 // with a relevant parameter that is not our final sink and which is
                 // not native and which is not a recursive call
-                val v = method.body.get
+
                 // Analyze the method
                 val aiResult = BaseAI.perform(classFile, method, calleeDomain)(Some(calleeParameters))
                 if (!aiResult.domain.isRelevantValueReturned) {
@@ -791,7 +792,7 @@ trait TaintAnalysisDomain[Source]
      * For each found entry point a new RootTaintAnalysisDomain is created.
      * If the analyzed method found a bug (created a report) this report is printed.
      */
-    def findAndInspectNewEntryPoint(classFile: ClassFile) {
+    def findAndInspectNewEntryPoint(classFile: ClassFile): Unit = {
         for (method ← classFile.methods) {
             if (!isRecursiveCall(classFile, method, null)) {
                 if (!method.body.isEmpty) {
@@ -823,10 +824,10 @@ class RootTaintAnalysisDomain[Source](
         taintedFields = taintedGloableFields
 
         var nextIndex = if (id.method.isStatic) 1 else 2
-        var relevantParameters =
+        val relevantParameters =
             //compute correct index (double, long take two slots) 
             methodDescriptor.parameterTypes.zipWithIndex.map { param_idx ⇒
-                val (parameterType, index) = param_idx;
+                val (parameterType, _ /*index*/ ) = param_idx;
                 val currentIndex = nextIndex
                 nextIndex += parameterType.computationalType.operandSize
                 (parameterType, currentIndex)

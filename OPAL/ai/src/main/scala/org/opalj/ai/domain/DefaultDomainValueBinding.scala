@@ -44,7 +44,7 @@ trait DefaultDomainValueBinding extends ValuesDomain {
 
     final type DomainValue = Value
 
-    final override val DomainValueTag: ClassTag[DomainValue] = implicitly
+    final override val DomainValue: ClassTag[DomainValue] = implicitly
 
     final type DomainIllegalValue = IllegalValue
 

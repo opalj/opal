@@ -65,7 +65,6 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.DefaultTypeLevelDoubleValues
                 with l1.DefaultReferenceValuesBinding
                 with l1.DefaultIntegerRangeValues
-                with l0.DefaultPrimitiveValuesConversions
                 with ProjectBasedClassHierarchy
                 with TheProject
 
@@ -82,9 +81,10 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.DefaultTypeLevelLongValues
                 with l0.DefaultTypeLevelFloatValues
                 with l0.DefaultTypeLevelDoubleValues
-                with l0.DefaultPrimitiveValuesConversions
+                with l0.TypeLevelPrimitiveValuesConversions
                 with l0.TypeLevelFieldAccessInstructions
                 with l0.TypeLevelInvokeInstructions
+                with l0.TypeLevelLongValuesShiftOperators
                 with ProjectBasedClassHierarchy
 
             class L1Domain[I](val code: Code, val project: Project[java.net.URL])
@@ -95,9 +95,10 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l1.DefaultReferenceValuesBinding
                 with l1.DefaultIntegerRangeValues
                 with l1.DefaultLongValues
+                with l1.LongValuesShiftOperators
                 with l0.DefaultTypeLevelFloatValues
                 with l0.DefaultTypeLevelDoubleValues
-                with l0.DefaultPrimitiveValuesConversions
+                with l0.TypeLevelPrimitiveValuesConversions
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelFieldAccessInstructions
                 with ProjectBasedClassHierarchy
@@ -107,8 +108,6 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
             val ValuesDomain = new TheValuesDomain(project)
 
             def abstractsOver(r1: AIResult, r2: AIResult): Option[String] = {
-                val codeSize = r1.operandsArray.length
-
                 var pc = -1
                 r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) ⇒
                     pc += 1
@@ -131,11 +130,13 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
 
             val failed = new java.util.concurrent.atomic.AtomicBoolean(false)
             val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
-            val jreClassFiles = project.classFiles
+            /*
+			val jreClassFiles = project.classFiles
             val classFilesPerPackage = jreClassFiles.groupBy(cf ⇒ cf.thisType.packageName)
             val classFilesPerPackageSorted = classFilesPerPackage.toSeq.sortWith(
                 (v1, v2) ⇒ v1._1 < v2._1
             )
+			*/
             for {
                 classFile ← project.classFiles.par
                 method @ MethodWithBody(body) ← classFile.methods

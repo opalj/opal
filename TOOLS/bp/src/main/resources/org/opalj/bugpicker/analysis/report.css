@@ -41,17 +41,22 @@ div#analysis_controls {
 }
 
 div#analysis_controls div {
-    margin-bottom: .3em;
+	margin-bottom: .3em;
+}
+
+div#analysis_controls div.issue_filter {
+	border: 1px white dotted;
+	margin-right: 2em;
 }
 
 div#analysis_controls:hover {
-    height: initial;
+	height: initial;
 }
 
 input#relevance {
-    transform: translate(0px,6px);
-    -webkit-transform: translate(0px,6px);
-    -moz-transform: translate(0px,6px);
+	transform: translate(0px,6px);
+	-webkit-transform: translate(0px,6px);
+	-moz-transform: translate(0px,6px);
 }
 
 div#analysis_results {
@@ -64,6 +69,15 @@ div.an_issue{
 	background-color: rgb(241, 244, 255);
 	border: 1px solid  rgb(224, 222, 235);
 	border-top: 0px;
+	display: none;
+}
+
+div.an_issue.issue_visible{
+	display: block;
+}
+
+div.an_issue.hide-relevance{
+	display: none !important;
 }
 
 .issue{

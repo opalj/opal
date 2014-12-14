@@ -32,11 +32,13 @@ package domain
 package l0
 
 import java.net.URL
-
 import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
+import org.opalj.ai.analyses.BaseFieldValuesAnalysisDomain
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ClassFile
 
 /**
  * Demonstrates how to use OPAL's FieldTypesAnalysis.
@@ -62,6 +64,8 @@ object FieldTypesAnalysis extends AnalysisExecutor {
             val refinedFieldValues =
                 org.opalj.ai.analyses.FieldValuesAnalysis.doAnalyze(
                     theProject,
+                    (project: SomeProject, classFile: ClassFile) ⇒
+                        new BaseFieldValuesAnalysisDomain(project, classFile),
                     isInterrupted)
 
             BasicReport(

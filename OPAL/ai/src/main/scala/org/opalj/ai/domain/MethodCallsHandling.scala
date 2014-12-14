@@ -54,7 +54,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
         var exceptionTypes: Set[ObjectType] = Set.empty
         var exceptionValues: List[ExceptionValue] = List.empty
 
-        def add(exceptionType: ObjectType) {
+        def add(exceptionType: ObjectType): Unit = {
 
             if (!exceptionTypes.contains(exceptionType)) {
                 exceptionTypes += exceptionType

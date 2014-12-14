@@ -58,7 +58,8 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             //    with DefaultStringValuesBinding
@@ -112,7 +113,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
         val operands = List(stringValue)
 
         //static String String.valueOf(Object)
-        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
+        /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.String]
         javaResult should be("A")
     }
@@ -127,7 +128,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
         val operands = List(integerValue)
 
         //static String String.valueOf(int)
-        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
+        /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.String]
         javaResult should be("1")
     }
@@ -142,7 +143,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
         val operands = List(stringValue)
 
         //int String.length()
-        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
+        /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
         domain.lastObject /* IT IS A PRIMITIVE VALUE*/ should equal(null)
     }
 
@@ -173,7 +174,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
             receiver)
 
         //String <String>.substring(int int)
-        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
+        /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.String]
         javaResult should equal("es")
     }

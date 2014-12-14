@@ -74,7 +74,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
         with l0.SimpleTypeLevelInvokeInstructions
         with l1.DefaultReferenceValuesBinding // <- PRIMARY GOAL!
         with l0.DefaultTypeLevelIntegerValues
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
 
     object ValuesDomain extends TheDomain
     import ValuesDomain._
@@ -218,7 +219,6 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
             it("should be able to correctly handle the subsequent refinement of the upper type bound of a single value of a multiple reference value") {
                 val Throwable = ObjectType.Throwable
                 val Error = ObjectType.Error
-                val Exception = ObjectType.Exception
                 val RuntimeException = ObjectType.RuntimeException
 
                 val v1 = ObjectValue(111, No, true, Error, 1)
@@ -262,8 +262,6 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
         describe("joining two DomainValues that represent reference values") {
 
-            val refNull = NullValue(111)
-
             val ref1 = ObjectValue(444, No, true, ObjectType.Object)
 
             val ref1Alt = ObjectValue(444, No, true, ObjectType.Object)
@@ -275,10 +273,6 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
             val ref3 = ObjectValue(732, No, true, ObjectType.String)
 
             val ref1MergeRef2 = ref1.join(-1, ref2).value
-
-            val ref2MergeRef3 = ref2.join(-1, ref3).value
-
-            val ref2MergeRef3MegerRefNull = ref2MergeRef3.join(-1, refNull)
 
             val ref1AltMergeRef2Alt = ref1Alt.join(-1, ref2Alt).value
 
@@ -338,7 +332,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
                 val joinResult = mv1.join(-1, mv2)
                 joinResult.updateType should be(StructuralUpdateType)
-                val joinedValue @ IsReferenceValue(values) = joinResult.value
+                val joinedValue @ IsReferenceValue(_) = joinResult.value
                 assert(joinedValue.isPrecise === false)
                 joinedValue.upperTypeBound should be(UIDSet(ObjectType.Object))
             }

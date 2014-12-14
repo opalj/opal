@@ -60,7 +60,7 @@ trait TheCodeStructure { domain: ValuesDomain ⇒
      */
     def setCodeStructure(
         theInstructions: Array[Instruction],
-        theJoinInstructions: BitSet) {
+        theJoinInstructions: BitSet): Unit = {
 
         this.theInstructions = theInstructions
         this.theJoinInstructions = theJoinInstructions

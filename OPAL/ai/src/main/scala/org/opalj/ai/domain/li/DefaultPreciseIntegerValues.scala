@@ -118,16 +118,16 @@ trait DefaultPreciseIntegerValues
         if (value) new TheIntegerValue(1) else new TheIntegerValue(0)
 
     override def ByteValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ByteValue(pc: PC, value: Byte) = TheIntegerValue(value)
+    override def ByteValue(pc: PC, value: Byte) = TheIntegerValue(value.toInt)
 
     override def ShortValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ShortValue(pc: PC, value: Short) = TheIntegerValue(value)
+    override def ShortValue(pc: PC, value: Short) = TheIntegerValue(value.toInt)
 
     override def CharValue(pc: PC): DomainValue = AnIntegerValue()
-    override def CharValue(pc: PC, value: Char) = TheIntegerValue(value)
+    override def CharValue(pc: PC, value: Char) = TheIntegerValue(value.toInt)
 
     override def IntegerValue(pc: PC): DomainValue = AnIntegerValue()
-    override def IntegerValue(pc: PC, value: Int) = TheIntegerValue(value)
+    override def IntegerValue(pc: PC, value: Int) = TheIntegerValue(value.toInt)
 
 }
 

@@ -73,7 +73,7 @@ sealed abstract class MethodDescriptor
      */
     def selectParameter(f: FieldType ⇒ Boolean): Seq[Int] = {
         var i = 0
-        var max = parametersCount
+        val max = parametersCount
         var indexes: Seq[Int] = Nil
         while (i < max) {
             if (f(parameterType(i))) {
@@ -163,7 +163,7 @@ private object NoArgumentAndNoReturnValueMethodDescriptor
     override def parametersCount: Int = 0
 
     override def equalParameters(other: MethodDescriptor): Boolean =
-        other == NoArgumentAndNoReturnValueMethodDescriptor
+        other.parametersCount == 0
 
     // the default equals and hashCode implementations are a perfect fit
 }

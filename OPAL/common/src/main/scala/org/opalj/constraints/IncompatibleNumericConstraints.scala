@@ -27,36 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
-package l1
+package constraints
 
 /**
- * Default implementation of a domain that performs basic conversion between integer
- * and long values.
- *
- * @author Riadh Chtara
- * @author Michael Eichberg
+ * Exception that is if two constraints should be combined that are incompatible.
  */
-trait DefaultConcretePrimitiveValuesConversions extends l0.DefaultPrimitiveValuesConversions {
-    domain: PrimitiveValuesFactory with Configuration with ConcreteLongValues with ConcreteIntegerValues ⇒
-
-    override def i2d(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ DoubleValue(pc, v.toDouble))(DoubleValue(pc))
-
-    override def i2f(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ FloatValue(pc, v.toFloat))(FloatValue(pc))
-
-    override def i2l(pc: PC, value: DomainValue): DomainValue =
-        intValue(value)(v ⇒ LongValue(pc, v.toLong))(LongValue(pc))
-
-    override def l2d(pc: PC, value: DomainValue): DomainValue =
-        longValue(value) { v ⇒ DoubleValue(pc, v.toDouble) } { DoubleValue(pc) }
-
-    override def l2f(pc: PC, value: DomainValue): DomainValue =
-        longValue(value) { v ⇒ FloatValue(pc, v.toFloat) } { FloatValue(pc) }
-
-    override def l2i(pc: PC, value: DomainValue): DomainValue =
-        longValue(value) { v ⇒ IntegerValue(pc, v.toInt) } { IntegerValue(pc) }
-}
-
+case class IncompatibleNumericConstraints(
+    message: String,
+    constraint1: NumericConstraints.Value,
+    constraint2: NumericConstraints.Value,
+    enableSuppression: Boolean = false,
+    writableStackTrace: Boolean = true)
+        extends RuntimeException(
+            s"$message (incompatible: $constraint1 and $constraint2)",
+            /*cause = */ null, enableSuppression, writableStackTrace)

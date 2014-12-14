@@ -33,8 +33,8 @@ package instructions
 /**
  * Push byte.
  *
- * @note BIPUSH instructions are cached two BIPUSH instructions that push the same value
- *      are always reference identical.
+ * @note BIPUSH instructions are inherently cached; two BIPUSH instructions that
+ *      push the same value are always reference identical.
  *
  * @author Michael Eichberg
  */

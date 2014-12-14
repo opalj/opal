@@ -59,8 +59,6 @@ import org.opalj.br.instructions._
  */
 object XHTML {
 
-    private[this] val dumpMutex = new Object
-
     /**
      * Stores the time when the last dump was created.
      *
@@ -69,7 +67,7 @@ object XHTML {
      */
     private[this] var _lastDump = new java.util.concurrent.atomic.AtomicLong(0l)
 
-    private[this] def lastDump_=(currentTimeMillis: Long) {
+    private[this] def lastDump_=(currentTimeMillis: Long): Unit = {
         _lastDump.set(currentTimeMillis)
     }
 
@@ -126,8 +124,6 @@ object XHTML {
         result: AIResult,
         minimumDumpInterval: Long = 500l)(
             f: ⇒ T): T = {
-        val operandsArray = result.operandsArray
-        val localsArray = result.localsArray
         try {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f
@@ -313,7 +309,7 @@ object XHTML {
         annotations.map(_.toJava)
     }
 
-    private def caption(classFile: Option[ClassFile], method: Option[Method]): String = {
+    def caption(classFile: Option[ClassFile], method: Option[Method]): String = {
         val modifiers = if (method.isDefined && method.get.isStatic) "static " else ""
         val typeName = classFile.map(_.thisType.toJava).getOrElse("")
         val methodName = method.map(m ⇒ m.toJava).getOrElse("&lt; method &gt;")

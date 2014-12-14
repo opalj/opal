@@ -78,12 +78,13 @@ class DefaultPerInstructionPostProcessingTest
             with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultReferenceValuesBinding
             with l1.DefaultIntegerRangeValues
-            with l0.DefaultPrimitiveValuesConversions {
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators {
 
         override protected def maxCardinalityOfIntegerRanges: Long = 16l
     }
 
-    private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit) {
+    private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit): Unit = {
         val domain = new DefaultRecordingDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)

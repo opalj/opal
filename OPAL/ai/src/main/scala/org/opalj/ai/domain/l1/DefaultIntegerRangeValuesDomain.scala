@@ -39,17 +39,16 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-class DefaultConfigurableIntegerValuesDomain[I, Source](
+class DefaultConfigurableIntegerRangeValuesDomain[I, Source](
     val id: I,
     val project: Project[Source],
     val classFile: ClassFile,
     val method: Method)
         extends CorrelationalDomain
-        with DefaultDomainValueBinding
-        with ThrowAllPotentialExceptionsConfiguration
-        with ProjectBasedClassHierarchy
         with TheProject
         with TheMethod
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with l0.DefaultTypeLevelFloatValues
@@ -61,7 +60,7 @@ class DefaultConfigurableIntegerValuesDomain[I, Source](
         with l1.ConstraintsBetweenIntegerValues
         with l1.DefaultLongValues
         with l1.LongValuesShiftOperators
-        with l1.DefaultConcretePrimitiveValuesConversions {
+        with l1.ConcretePrimitiveValuesConversions {
 
     type Id = I
 
@@ -71,7 +70,7 @@ class DefaultIntegerValuesDomain[Source](
     project: Project[Source],
     classFile: ClassFile,
     method: Method)
-        extends DefaultConfigurableIntegerValuesDomain[String, Source](
+        extends DefaultConfigurableIntegerRangeValuesDomain[String, Source](
             classFile.thisType.toJava+"{ "+method.toJava+"}",
             project,
             classFile,

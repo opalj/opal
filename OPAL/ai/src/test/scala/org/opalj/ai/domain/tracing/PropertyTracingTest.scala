@@ -71,7 +71,8 @@ class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecut
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultTypeLevelLongValues
             with l1.DefaultIntegerRangeValues
-            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
             with l1.DefaultReferenceValuesBinding
             with l0.TypeLevelFieldAccessInstructions
             with l0.TypeLevelInvokeInstructions
@@ -99,7 +100,7 @@ class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecut
         def isSanitized(): Boolean = hasPropertyOnExit
     }
 
-    private def evaluateMethod(name: String)(f: AnalysisDomain ⇒ Unit) {
+    private def evaluateMethod(name: String)(f: AnalysisDomain ⇒ Unit): Unit = {
         /**
          * In this case we want to make sure that a specific value (given as a
          * parameter to a method) is always sanitized (within the method.) I.e.,

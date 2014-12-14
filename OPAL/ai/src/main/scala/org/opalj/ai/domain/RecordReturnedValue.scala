@@ -29,13 +29,25 @@
 package org.opalj
 package ai
 package domain
-package l1
+
+import language.implicitConversions
 
 /**
- * Exception that is if two constraints should be combined that are incompatible.
+ * Generic infrastructure to record the value returned by the method.
+ *
+ * ==Usage==
+ * This domain can be stacked on top of other traits that handle
+ * return instructions that return some value.
+ *
+ * ==Usage==
+ * A domain that mixes in this trait should only be used to analyze a single method.
+ *
+ * @author Michael Eichberg
  */
-case class IncompatibleNumericConstraints(
-    constraint1: NumericConstraints.Value,
-    constraint2: NumericConstraints.Value)
-        extends AIException(s"incompatible: $constraint1 and $constraint2")
+trait RecordReturnedValue extends RecordReturnedValuesInfrastructure {
+    domain: ValuesDomain ⇒
+
+    def returnedValue: Option[DomainValue]
+
+}
 

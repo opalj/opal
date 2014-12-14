@@ -76,7 +76,8 @@ class MethodsWithExceptionsTest
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l0.DefaultTypeLevelLongValues
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
         with l1.DefaultReferenceValuesBinding
@@ -84,7 +85,7 @@ class MethodsWithExceptionsTest
         /* => */ with RecordAllThrownExceptions
         /* => */ with RecordVoidReturns
 
-    private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit) {
+    private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit): Unit = {
         val domain = new DefaultRecordingDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)

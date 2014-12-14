@@ -181,7 +181,7 @@ object Instruction {
 
         var pcs = UShortSet(instruction.indexOfNextInstruction(currentPC, code))
 
-        def processException(exception: ObjectType) {
+        def processException(exception: ObjectType): Unit = {
             code.handlersFor(currentPC) find { handler ⇒
                 handler.catchType.isEmpty ||
                     Code.preDefinedClassHierarchy.isSubtypeOf(

@@ -63,7 +63,7 @@ object LoadConstantOfMethodHandlOrMethodType extends AnalysisExecutor {
             project: Project[URL],
             parameters: Seq[String],
             isInterrupted: () ⇒ Boolean) = {
-            val descriptor = MethodDescriptor(String, Class)
+
             val loads =
                 for {
                     classFile ← project.classFiles

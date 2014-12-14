@@ -48,6 +48,7 @@ import domain.ThrowAllPotentialExceptionsConfiguration
 import domain.l0
 import domain.l1
 import org.opalj.ai.analyses.FieldValueInformation
+import org.opalj.ai.analyses.MethodReturnValueInformation
 
 /**
  * Domain object which can used to calculate the call graph using variable type analysis.
@@ -59,6 +60,7 @@ import org.opalj.ai.analyses.FieldValueInformation
 class ExtVTACallGraphDomain[Source](
     val project: Project[Source],
     val fieldValueInformation: FieldValueInformation,
+    val methodReturnValueInformation: MethodReturnValueInformation,
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method: Method)
@@ -75,10 +77,13 @@ class ExtVTACallGraphDomain[Source](
         with l1.ConstraintsBetweenIntegerValues
         with l1.DefaultLongValues
         with l1.LongValuesShiftOperators
-        with l1.DefaultConcretePrimitiveValuesConversions
+        with l1.ConcretePrimitiveValuesConversions
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l1.DefaultReferenceValuesBinding
-        with l0.TypeLevelInvokeInstructions
+        with l0.TypeLevelInvokeInstructions // the foundation
+        with l0.RefinedTypeLevelInvokeInstructions
+        // with l0.TypeLevelFieldAccessInstructions
+        // Using the following domain reduces the number of call edges by ~4%
         with l0.RefinedTypeLevelFieldAccessInstructions
 

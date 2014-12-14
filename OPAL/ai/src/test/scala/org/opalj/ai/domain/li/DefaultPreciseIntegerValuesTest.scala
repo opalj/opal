@@ -68,7 +68,7 @@ class DefaultPreciseIntegerValuesTest
     it should ("be able to join a value with itself") in {
         import TestDomain._
         val v = IntegerValue(SomePC, 0)
-        v.join(-1, v) should be(NoUpdate)
+        v.join(-1, IntegerValue(SomePC, 0)) should be(NoUpdate)
     }
 
     it should ("be able to join two new values") in {
@@ -132,7 +132,7 @@ class DefaultPreciseIntegerValuesTest
     it should ("be able to analyze a method when we pass in concrete values") in {
         val domain = new DefaultPreciseIntegerValuesTest.TestDomain
         val method = ConditionalMath.findMethod("m1").get
-        val result = BaseAI.perform(ConditionalMath, method, domain)(Some(IndexedSeq(domain.IntegerValue(-1, 100))))
+        /*val result =*/ BaseAI.perform(ConditionalMath, method, domain)(Some(IndexedSeq(domain.IntegerValue(-1, 100))))
         domain.allReturnedValues should not be (empty)
         domain.allReturnedValues.head should be((29, domain.IntegerValue(SomePC, 10)))
         // domain.returnedValue(domain, -1).flatMap(domain.intValueOption(_)) should equal(Some(175))
@@ -150,7 +150,8 @@ object DefaultPreciseIntegerValuesTest {
             with l0.DefaultTypeLevelLongValues
             with l0.DefaultReferenceValuesBinding
             with DefaultPreciseIntegerValues
-            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             with PredefinedClassHierarchy

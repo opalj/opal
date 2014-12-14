@@ -42,7 +42,6 @@ class DefaultConfigurableDomain[I, Source](
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
-        with ProjectBasedClassHierarchy
         with TheProject
         with TheMethod
         with PerInstructionPostProcessing
@@ -58,7 +57,7 @@ class DefaultConfigurableDomain[I, Source](
         with l1.DefaultArrayValuesBinding
         with li.DefaultPreciseIntegerValues
         with li.DefaultPreciseLongValues
-        with l1.DefaultConcretePrimitiveValuesConversions {
+        with l1.ConcretePrimitiveValuesConversions {
 
     type Id = I
 

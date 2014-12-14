@@ -53,7 +53,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     /**
      * (Indirectly) called by OPAL for a new value-based constraint.
      */
-    /*abstract*/ def nextConstraint(constraint: ReifiedConstraint)
+    /*abstract*/ def nextConstraint(constraint: ReifiedConstraint): Unit
 
     /**
      * Representation of a reified constraint.

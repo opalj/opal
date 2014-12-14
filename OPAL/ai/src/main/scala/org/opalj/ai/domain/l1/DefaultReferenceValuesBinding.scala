@@ -32,14 +32,19 @@ package domain
 package l1
 
 import scala.collection.SortedSet
+import scala.reflect.ClassTag
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-import org.opalj.collection.immutable.UIDSet
-
-import org.opalj.br.ObjectType
+import org.opalj.ai.CorrelationalDomainSupport
+import org.opalj.ai.IntegerValuesDomain
+import org.opalj.ai.TypedValuesFactory
+import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.ai.domain.Configuration
+import org.opalj.ai.domain.DefaultVMLevelExceptionsFactory
 import org.opalj.br.ArrayType
-
+import org.opalj.br.ObjectType
 import org.opalj.br.UpperTypeBound
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.util.Answer
 
 /**
  * @author Michael Eichberg
@@ -52,14 +57,24 @@ trait DefaultReferenceValuesBinding
     // Let's fix the type hierarchy
 
     type AReferenceValue = ReferenceValue
+    final val AReferenceValue: ClassTag[AReferenceValue] = implicitly
     type DomainReferenceValue = AReferenceValue
+    final val DomainReferenceValue: ClassTag[DomainReferenceValue] = implicitly
 
     type DomainSingleOriginReferenceValue = SingleOriginReferenceValue
+    final val DomainSingleOriginReferenceValue: ClassTag[DomainSingleOriginReferenceValue] = implicitly
+
     type DomainNullValue = NullValue
+    final val DomainNullValue: ClassTag[DomainNullValue] = implicitly
+
     type DomainObjectValue = ObjectValue
+    final val DomainObjectValue: ClassTag[DomainObjectValue] = implicitly
+
     type DomainArrayValue = ArrayValue
+    final val DomainArrayValue: ClassTag[DomainArrayValue] = implicitly
 
     type DomainMultipleReferenceValues = MultipleReferenceValues
+    final val DomainMultipleReferenceValues: ClassTag[DomainMultipleReferenceValues] = implicitly
 
     //
     // FACTORY METHODS

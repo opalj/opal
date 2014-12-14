@@ -67,7 +67,8 @@ class MethodsWithArraysTest
             with DefaultTypeLevelLongValues
             with DefaultTypeLevelFloatValues
             with DefaultTypeLevelDoubleValues
-            with DefaultPrimitiveValuesConversions
+            with TypeLevelPrimitiveValuesConversions
+            with TypeLevelLongValuesShiftOperators
             with TypeLevelFieldAccessInstructions
             with SimpleTypeLevelInvokeInstructions
             with ThrowAllPotentialExceptionsConfiguration
@@ -80,7 +81,7 @@ class MethodsWithArraysTest
         def id = "MethodsWithArraysTestDomain"
     }
 
-    private def evaluateMethod(name: String, f: TestDomain ⇒ Unit) {
+    private def evaluateMethod(name: String, f: TestDomain ⇒ Unit): Unit = {
         val domain = new TestDomain
 
         val method = classFile.methods.find(_.name == name).get

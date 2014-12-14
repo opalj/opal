@@ -63,7 +63,7 @@ trait DefaultTypeLevelReferenceValues
 
     protected[this] class NullValue extends super.NullValue { this: DomainNullValue ⇒
 
-        override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             other match {
                 case _: NullValue ⇒ NoUpdate
                 case _: ReferenceValue ⇒
@@ -87,7 +87,9 @@ trait DefaultTypeLevelReferenceValues
             isSubtypeOf match {
                 case Yes ⇒ Yes
                 case No if isPrecise ||
-                    supertype.isObjectType /* the array's supertypes: Object, Serializable and Cloneable are handled by domain.isSubtypeOf*/ ||
+                    /* the array's supertypes: Object, Serializable and Cloneable 
+                     * are handled by domain.isSubtypeOf */
+                    supertype.isObjectType ||
                     theUpperTypeBound.elementType.isBaseType ||
                     (
                         supertype.isArrayType &&
@@ -149,10 +151,9 @@ trait DefaultTypeLevelReferenceValues
 
         // WIDENING OPERATION
         override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
-            require(this ne other)
-
-            val thisUpperTypeBound = this.theUpperTypeBound
+            val thisUTB = this.theUpperTypeBound
             other match {
+
                 case SObjectValue(thatUpperTypeBound) ⇒
                     classHierarchy.joinAnyArrayTypeWithObjectType(thatUpperTypeBound) match {
                         case UIDSet1(newUpperTypeBound) ⇒
@@ -176,8 +177,8 @@ trait DefaultTypeLevelReferenceValues
                     }
 
                 case ArrayValue(thatUpperTypeBound) ⇒
-                    classHierarchy.joinArrayTypes(this.theUpperTypeBound, thatUpperTypeBound) match {
-                        case Left(`thisUpperTypeBound`) ⇒
+                    classHierarchy.joinArrayTypes(thisUTB, thatUpperTypeBound) match {
+                        case Left(`thisUTB`) ⇒
                             NoUpdate
                         case Left(`thatUpperTypeBound`) ⇒
                             StructuralUpdate(other)
@@ -194,15 +195,15 @@ trait DefaultTypeLevelReferenceValues
 
         override def abstractsOver(other: DomainValue): Boolean = {
             other match {
-                case that: NullValue ⇒ true
+                case _: NullValue ⇒ true
                 case ArrayValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
                 case _ ⇒ false
             }
         }
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
-            target.ReferenceValue(pc, theUpperTypeBound)
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
+            target.ReferenceValue(origin, theUpperTypeBound)
     }
 
     /**
@@ -212,16 +213,15 @@ trait DefaultTypeLevelReferenceValues
         def unapply(value: ArrayValue): Some[ArrayType] = Some(value.theUpperTypeBound)
     }
 
-    protected trait ObjectValue extends super.ObjectValue {
-        this: DomainObjectValue ⇒
+    protected trait ObjectValue extends super.ObjectValue { this: DomainObjectValue ⇒
 
         protected def asStructuralUpdate(
-            joinPC: PC,
+            pc: PC,
             newUpperTypeBound: UIDSet[ObjectType]): Update[DomainValue] = {
             if (newUpperTypeBound.size == 1)
-                StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound.first))
+                StructuralUpdate(ObjectValue(pc, newUpperTypeBound.first))
             else
-                StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
+                StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
         }
 
         final override def load(pc: PC, index: DomainValue): ArrayLoadResult =
@@ -271,6 +271,10 @@ trait DefaultTypeLevelReferenceValues
                             domain.isSubtypeOf(supertype, theUpperTypeBound).isNo
                         ) ⇒
                     No
+                case _ if isPrecise &&
+                    // Note "reflexivity is already captured by the first isSubtypeOf call
+                    domain.isSubtypeOf(supertype, theUpperTypeBound).isYes ⇒
+                    Yes
                 case _ ⇒
                     Unknown
             }
@@ -278,9 +282,10 @@ trait DefaultTypeLevelReferenceValues
         }
 
         // WIDENING OPERATION
-        override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
+        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             val thisUpperTypeBound = this.theUpperTypeBound
             other match {
+
                 case SObjectValue(thatUpperTypeBound) ⇒
                     classHierarchy.joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true) match {
                         case UIDSet1(newUpperTypeBound) ⇒
@@ -289,9 +294,9 @@ trait DefaultTypeLevelReferenceValues
                             else if (newUpperTypeBound eq `thatUpperTypeBound`)
                                 StructuralUpdate(other)
                             else
-                                StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
+                                StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
                         case newUpperTypeBound ⇒
-                            StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
+                            StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
                     }
 
                 case MObjectValue(thatUpperTypeBound) ⇒
@@ -301,7 +306,7 @@ trait DefaultTypeLevelReferenceValues
                         case UIDSet1(`thisUpperTypeBound`) ⇒
                             NoUpdate
                         case newUpperTypeBound ⇒
-                            asStructuralUpdate(joinPC, newUpperTypeBound)
+                            asStructuralUpdate(pc, newUpperTypeBound)
                     }
 
                 case that: ArrayValue ⇒
@@ -310,9 +315,9 @@ trait DefaultTypeLevelReferenceValues
                             if (newUpperTypeBound eq `thisUpperTypeBound`)
                                 NoUpdate
                             else
-                                StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
+                                StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
                         case newUpperTypeBound ⇒
-                            StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
+                            StructuralUpdate(ObjectValue(pc, newUpperTypeBound))
                     }
 
                 case that: NullValue ⇒
@@ -329,15 +334,15 @@ trait DefaultTypeLevelReferenceValues
                 case ArrayValue(thatUpperTypeBound) ⇒
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound).isYes
                 case MObjectValue(thatUpperTypeBound) ⇒
-                    val lutb =
-                        classHierarchy.joinObjectTypes(
-                            this.theUpperTypeBound, thatUpperTypeBound, true)
-                    lutb.consistsOfOneElement && (lutb.first() eq this.theUpperTypeBound)
+                    classHierarchy.isSubtypeOf(
+                        thatUpperTypeBound,
+                        this.theUpperTypeBound
+                    ).isYes
             }
         }
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
-            target.ReferenceValue(pc, theUpperTypeBound)
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
+            target.ReferenceValue(origin, theUpperTypeBound)
 
     }
 
@@ -404,35 +409,28 @@ trait DefaultTypeLevelReferenceValues
             }
         }
 
-        override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
-            val thisUpperTypeBound = this.upperTypeBound
+        override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
+            val thisUTB = this.upperTypeBound
             other match {
-                case SObjectValue(thatUpperTypeBound) ⇒
-                    classHierarchy.joinObjectTypes(thatUpperTypeBound, thisUpperTypeBound, true) match {
-                        case `thisUpperTypeBound` ⇒
-                            NoUpdate
-                        case UIDSet1(`thatUpperTypeBound`) ⇒
-                            StructuralUpdate(other)
-                        case newUpperTypeBound ⇒
-                            asStructuralUpdate(joinPC, newUpperTypeBound)
+
+                case SObjectValue(thatUTB) ⇒
+                    classHierarchy.joinObjectTypes(thatUTB, thisUTB, true) match {
+                        case `thisUTB`          ⇒ NoUpdate
+                        case UIDSet1(`thatUTB`) ⇒ StructuralUpdate(other)
+                        case newUTB             ⇒ asStructuralUpdate(pc, newUTB)
                     }
 
-                case MObjectValue(thatUpperTypeBound) ⇒
-                    classHierarchy.joinUpperTypeBounds(thisUpperTypeBound, thatUpperTypeBound, true) match {
-                        case `thisUpperTypeBound` ⇒
-                            NoUpdate
-                        case `thatUpperTypeBound` ⇒
-                            StructuralUpdate(other)
-                        case newUpperTypeBound ⇒
-                            asStructuralUpdate(joinPC, newUpperTypeBound)
+                case MObjectValue(thatUTB) ⇒
+                    classHierarchy.joinUpperTypeBounds(thisUTB, thatUTB, true) match {
+                        case `thisUTB` ⇒ NoUpdate
+                        case `thatUTB` ⇒ StructuralUpdate(other)
+                        case newUTB    ⇒ asStructuralUpdate(pc, newUTB)
                     }
 
-                case ArrayValue(thatUpperTypeBound) ⇒
-                    classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(thisUpperTypeBound) match {
-                        case `thisUpperTypeBound` ⇒
-                            NoUpdate
-                        case newUpperTypeBound ⇒
-                            asStructuralUpdate(joinPC, newUpperTypeBound)
+                case ArrayValue(_) ⇒
+                    classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(thisUTB) match {
+                        case `thisUTB` ⇒ NoUpdate
+                        case newUTB    ⇒ asStructuralUpdate(pc, newUTB)
                     }
 
                 case that: NullValue ⇒
@@ -440,15 +438,16 @@ trait DefaultTypeLevelReferenceValues
             }
         }
 
-        override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
+        override def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
             target match {
                 case td: TypeLevelReferenceValues ⇒
-                    td.ObjectValue(pc, upperTypeBound).asInstanceOf[target.DomainValue]
+                    td.ObjectValue(origin, upperTypeBound).
+                        asInstanceOf[target.DomainValue]
                 case _ ⇒
-                    super.adapt(target, pc)
+                    super.adapt(target, origin)
             }
 
-        override def summarize(pc: PC): this.type = this
+        override def summarize(origin: ValueOrigin): this.type = this
 
         override def toString() =
             "ReferenceValue("+upperTypeBound.map(_.toJava).mkString(" with ")+")"

@@ -64,7 +64,6 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultPrimitiveValuesConversions
         with l0.DefaultReferenceValuesBinding
         with PredefinedClassHierarchy
 
@@ -84,7 +83,8 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with PredefinedClassHierarchy
@@ -105,11 +105,12 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelLongValues
         with TheCode
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
 
     private class Domain3(val code: Code)
         extends Domain
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
         with l0.DefaultReferenceValuesBinding
         with l0.DefaultTypeLevelIntegerValues
         with l0.DefaultTypeLevelFloatValues
@@ -117,6 +118,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelLongValuesShiftOperators
         with PredefinedClassHierarchy
         with IgnoreSynchronization
         with DefaultHandlingOfMethodResults
@@ -128,8 +130,6 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
     it should "always calculate the same result" in {
 
         def corresponds(r1: AIResult, r2: AIResult): Option[String] = {
-            val codeSize = r1.operandsArray.length
-
             r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) ⇒
                 (lOperands == null && rOperands == null) ||
                     (lOperands != null && rOperands != null &&
@@ -185,7 +185,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
             val r3 = a3(classFile, method, new Domain3(body))
             aiCount.incrementAndGet()
 
-            def abort(ai: InstructionCountBoundedAI[_], r: AIResult) {
+            def abort(ai: InstructionCountBoundedAI[_], r: AIResult): Unit = {
                 fail("the abstract interpretation of "+
                     classFile.thisType.toJava+
                     "{ "+method.toJava+" } was aborted after evaluating "+

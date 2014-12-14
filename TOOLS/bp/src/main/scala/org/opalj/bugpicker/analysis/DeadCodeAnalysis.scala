@@ -82,7 +82,7 @@ object DeadCodeAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions }): List[Issue] = {
+        result: AIResult { val domain: Domain }): List[Issue] = {
 
         val operandsArray = result.operandsArray
         val domain = result.domain
@@ -111,44 +111,8 @@ object DeadCodeAnalysis {
                 )
             }
 
-        val exceptionIssues: Seq[StandardIssue] =
-            for {
-                (pc, instruction) ← body collectWithIndex {
-                    case (pc, i: Instruction) if operandsArray(pc) != null && !i.isInstanceOf[ATHROW.type] && domain.regularSuccessorsOf(pc).isEmpty && (domain.exceptionHandlerSuccessorsOf(pc).nonEmpty || domain.allThrownExceptions.get(pc).nonEmpty) ⇒
-                        (pc, i)
-                }
-            } yield {
-                val operands = operandsArray(pc)
-                val exceptions = {
-                    var allExceptions: scala.collection.Set[result.domain.DomainSingleOriginReferenceValue] =
-                        if (result.domain.allThrownExceptions.get(pc).nonEmpty)
-                            result.domain.allThrownExceptions.get(pc).get
-                        else
-                            scala.collection.Set.empty
-
-                    result.domain.exceptionHandlerSuccessorsOf(pc).foreach { handlerPC ⇒
-                        operandsArray(handlerPC).head match {
-                            case sorv: result.domain.DomainSingleOriginReferenceValue ⇒ allExceptions += sorv
-                            case result.domain.MultipleReferenceValues(values)        ⇒ allExceptions ++= values
-                        }
-                    }
-                    allExceptions.map(_.upperTypeBound.first().toJava).mkString(", ")
-                }
-                StandardIssue(
-                    theProject, classFile, Some(method), Some(pc),
-                    Some(operands),
-                    Some(result.localsArray(pc)),
-                    "causes exception",
-                    Some("The evaluation of the expression always throws the exception(s): "+exceptions),
-                    Set(IssueCategory.Bug),
-                    Set(IssueKind.DeadBranch),
-                    Seq.empty,
-                    Relevance.VeryHigh
-                )
-            }
-
         var results: List[Issue] = List.empty
-        for ((ln, dc) ← (deadCodeIssues ++ exceptionIssues).groupBy(_.line)) {
+        for ((ln, dc) ← (deadCodeIssues).groupBy(_.line)) {
             ln match {
                 case None ⇒
                     if (dc.tail.isEmpty) {

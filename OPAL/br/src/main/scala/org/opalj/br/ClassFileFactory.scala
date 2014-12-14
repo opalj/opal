@@ -163,7 +163,7 @@ object ClassFileFactory {
      *
      * - `methodDescriptor`'s return type is [[VoidType]] (so no returning is necessary)
      * - `receiverMethodDescriptor`'s return type is assignable to `methodDescriptor`'s
-     * 	 (e.g. a "smaller" numerical type, (un)boxable, a subtype, etc)
+     *      (e.g. a "smaller" numerical type, (un)boxable, a subtype, etc)
      * - `receiverMethodDescriptor` returns `Object`: in this case, we assume that `Object`
      *   stands for "generic return type" and expect the receiver method to return an
      *   object of a type compatible to the forwarder method's return type
@@ -172,7 +172,7 @@ object ClassFileFactory {
      *
      * - they are identical
      * - the descriptors have the same numbers of parameters and `methodDescriptor`'s
-     * 	 parameter types can be widened/boxed/unboxed to match `receiverMethodDescriptor`'s
+     *      parameter types can be widened/boxed/unboxed to match `receiverMethodDescriptor`'s
      *   parameter types
      * - `methodDescriptor`'s first parameter is of the same type as `receiverType`,
      *   and the remaining parameters are compatible to `receiverMethodDescriptor`'s
@@ -229,21 +229,27 @@ object ClassFileFactory {
         invocationInstruction: Opcode,
         bridgeMethodDescriptor: Option[MethodDescriptor] = None): ClassFile = {
 
-        val parameters = methodDescriptor.parameterTypes
-        val parametersCount = methodDescriptor.parametersCount
+        val interfaceMethodParametersCount = methodDescriptor.parametersCount
         val receiverParameters = receiverMethodDescriptor.parameterTypes
 
         val receiverField =
-            if (invocationInstruction == INVOKESTATIC.opcode) {
+            if (invocationInstruction == INVOKESTATIC.opcode ||
+                isNewInvokeSpecial(invocationInstruction, receiverMethodName) ||
+                isVirtualMethodReference(
+                    invocationInstruction,
+                    receiverType,
+                    receiverMethodDescriptor,
+                    methodDescriptor)) {
                 IndexedSeq.empty
             } else {
                 IndexedSeq(createField(fieldType = receiverType, name = ReceiverFieldName))
             }
         val additionalFieldsForStaticParameters =
-            receiverParameters.dropRight(parametersCount).zipWithIndex.map { p ⇒
-                val (fieldType, index) = p
-                createField(fieldType = fieldType, name = s"staticParameter${index}")
-            }
+            receiverParameters.dropRight(interfaceMethodParametersCount).
+                zipWithIndex.map { p ⇒
+                    val (fieldType, index) = p
+                    createField(fieldType = fieldType, name = s"staticParameter${index}")
+                }
         val fields: IndexedSeq[Field] =
             receiverField ++ additionalFieldsForStaticParameters
 
@@ -287,6 +293,32 @@ object ClassFileFactory {
             fields,
             methods,
             IndexedSeq(VirtualTypeFlag))
+    }
+
+    /**
+     * Returns true if the method invocation described by the given Opcode and method name
+     * is a "NewInvokeSpecial" invocation (i.e. a reference to a constructor, like so:
+     * `Object::new`).
+     */
+    def isNewInvokeSpecial(opcode: Opcode, methodName: String): Boolean =
+        opcode == INVOKESPECIAL.opcode && methodName == "<init>"
+
+    /**
+     * Returns true if the given parameters identify a Java 8 method reference to an
+     * instance or interface method (i.e. a reference to a virtual method, like so:
+     * `ArrayList::size` or `List::size`). In this case, the resulting functional interface's method
+     * has one parameter more than the referenced method because the referenced method's
+     * implicit `this` parameter becomes explicit.
+     */
+    def isVirtualMethodReference(
+        opcode: Opcode,
+        targetMethodDeclaringType: ObjectType,
+        targetMethodDescriptor: MethodDescriptor,
+        proxyInterfaceMethodDescriptor: MethodDescriptor): Boolean = {
+        (opcode == INVOKEVIRTUAL.opcode || opcode == INVOKEINTERFACE.opcode) &&
+            targetMethodDescriptor.parametersCount + 1 ==
+            proxyInterfaceMethodDescriptor.parametersCount &&
+            (proxyInterfaceMethodDescriptor.parameterType(0) eq targetMethodDeclaringType)
     }
 
     /**
@@ -440,7 +472,7 @@ object ClassFileFactory {
                 numberOfInstructionsForParameterLoading +
                 3 + // INVOKESPECIAL
                 1 // ARETURN
-        val maxLocals = fieldTypes.map(_.computationalType.operandSize).sum
+        val maxLocals = fieldTypes.map(_.computationalType.operandSize.toInt).sum
         val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
         val instructions = new Array[Instruction](numberOfInstructions)
         var currentPC: Int = 0
@@ -526,7 +558,12 @@ object ClassFileFactory {
         // if the receiver method is not static, we need to push the receiver object
         // onto the stack, which we can retrieve from the receiver field on `this`
         val loadReceiverObject: Array[Instruction] =
-            if (invocationInstruction == INVOKESTATIC.opcode) {
+            if (invocationInstruction == INVOKESTATIC.opcode ||
+                isVirtualMethodReference(
+                    invocationInstruction,
+                    receiverType,
+                    receiverMethodDescriptor,
+                    methodDescriptor)) {
                 Array()
             } else if (receiverMethodName == "<init>") {
                 Array(
@@ -616,7 +653,7 @@ object ClassFileFactory {
 
         val returnValueStackSize =
             if (methodDescriptor.returnType != VoidType) {
-                methodDescriptor.returnType.computationalType.operandSize
+                methodDescriptor.returnType.computationalType.operandSize.toInt
             } else {
                 0
             }
@@ -754,9 +791,11 @@ object ClassFileFactory {
                         if (rt.isBaseType && ft.isBaseType) {
                             if (rt.isIntLikeType && ft.isIntLikeType &&
                                 rt.asIntLikeType.isWiderThan(ft.asIntLikeType)) {
-                                0 // there's no need to convert from a smaller integer type to a larger one
+                                0
+                                // there's no need to convert from a smaller 
+                                //integer type to a larger one
                             } else {
-                                1 // we only do safe conversions which always take 1 instruction
+                                1 // we only do safe conversions => 1 instruction
                             }
                         } else if ((rt.isBaseType && ft.isObjectType) ||
                             (ft.isBaseType && rt.isObjectType)) {
@@ -835,17 +874,17 @@ object ClassFileFactory {
      * converted to the required type.
      *
      * @throws IllegalArgumentException
-     * 			If  `typeOnStack` is not compatible with `toBeReturnedType` and
-     *    		`typeOnStack` is not `Object`
+     *     		If  `typeOnStack` is not compatible with `toBeReturnedType` and
+     *        	`typeOnStack` is not `Object`
      */
     def returnAndConvertInstructions(
         toBeReturnedType: FieldType, typeOnStack: FieldType): Array[Instruction] = {
 
-        if (toBeReturnedType == typeOnStack)
+        if (toBeReturnedType eq typeOnStack)
             return Array(ReturnInstruction(toBeReturnedType))
 
         val conversionInstructions: Array[Instruction] =
-            if (typeOnStack == ObjectType.Object) {
+            if (typeOnStack eq ObjectType.Object) {
                 if (toBeReturnedType.isBaseType) {
                     val baseType = toBeReturnedType.asBaseType
                     val wrapper = baseType.WrapperType
@@ -864,7 +903,8 @@ object ClassFileFactory {
                 typeOnStack.asObjectType.unboxValue
             } else {
                 throw new IllegalArgumentException(
-                    s"types are incompatible: ${toBeReturnedType.toJava} and ${typeOnStack.toJava}"
+                    "types are incompatible: "+
+                        s"${toBeReturnedType.toJava} and ${typeOnStack.toJava}"
                 )
             }
         conversionInstructions :+ ReturnInstruction(toBeReturnedType)
@@ -873,7 +913,8 @@ object ClassFileFactory {
     /**
      * Creates a bridge method using the given method descriptors, name, and type.
      *
-     * The bridge method's parameter list and return type are dictated by `bridgeMethodDescriptor`.
+     * The bridge method's parameter list and return type are dictated by
+     * `bridgeMethodDescriptor`.
      * This method generates bytecode that invokes the method described by `methodName`
      * and `targetMethodDescriptor` on `declaringType`. If parameters need to be cast
      * before invocation, the appropriate bytecode will be generated as well.
@@ -885,9 +926,7 @@ object ClassFileFactory {
         targetMethodDeclaringType: ObjectType): Method = {
 
         val bridgeMethodParameters = bridgeMethodDescriptor.parameterTypes
-        val bridgeMethodReturnType = bridgeMethodDescriptor.returnType
         val targetMethodParameters = targetMethodDescriptor.parameterTypes
-        val targetMethodReturnType = targetMethodDescriptor.returnType
         val bridgeMethodParametersCount = bridgeMethodParameters.size
 
         var numberOfInstructions = 1 // for ALOAD_0
@@ -903,7 +942,7 @@ object ClassFileFactory {
             numberOfInstructions += loadInstructions + conversionInstructions
 
             parameterIndex += 1
-            lvIndex = parameter.computationalType.operandSize
+            lvIndex = parameter.computationalType.operandSize.toInt
         }
         numberOfInstructions += 3 // invoke target method
         numberOfInstructions += 1 // return
@@ -934,18 +973,25 @@ object ClassFileFactory {
             lvIndex += parameter.computationalType.operandSize
         }
 
-        val invokeTarget = INVOKEVIRTUAL(targetMethodDeclaringType, methodName, targetMethodDescriptor)
+        val invokeTarget = INVOKEVIRTUAL(targetMethodDeclaringType, methodName,
+            targetMethodDescriptor)
         instructions(currentPC) = invokeTarget
         currentPC = invokeTarget.indexOfNextInstruction(currentPC, false)
 
         val returnInstruction = ReturnInstruction(bridgeMethodDescriptor.returnType)
         instructions(currentPC) = returnInstruction
 
-        val maxStack = targetMethodDescriptor.parameterTypes.map(_.computationalType.operandSize).sum + 1
-        val maxLocals = maxStack +
-            (if (!targetMethodDescriptor.returnType.isVoidType)
-                targetMethodDescriptor.returnType.computationalType.operandSize
-            else 0)
+        val maxStack = targetMethodDescriptor.parameterTypes.map(
+            _.computationalType.operandSize).sum + 1
+        val maxLocals =
+            maxStack +
+                {
+                    val returnType = targetMethodDescriptor.returnType
+                    if (!returnType.isVoidType)
+                        returnType.computationalType.operandSize.toInt
+                    else
+                        0
+                }
 
         Method(
             ACC_PUBLIC.mask | ACC_BRIDGE.mask | ACC_SYNTHETIC.mask,

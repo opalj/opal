@@ -149,7 +149,7 @@ class LocalsTest
         for {
             size ← 1 to 25
         } {
-            var v = Locals[Integer](size)
+            val v = Locals[Integer](size)
             for {
                 i ← 0 until size
             } {
@@ -163,7 +163,7 @@ class LocalsTest
         for {
             size ← 1 to 25
         } {
-            var v = Locals[Integer](size)
+            val v = Locals[Integer](size)
             for { i ← 0 until size } { v.set(i, i) }
 
             v.update(_ + 100)
@@ -178,7 +178,7 @@ class LocalsTest
         for {
             size ← 1 to 25
         } {
-            var v = Locals[Integer](size)
+            val v = Locals[Integer](size)
             for { i ← 0 until size } { v.set(i, i) }
 
             (v eq v.transform(id ⇒ id)) should be(true)
@@ -190,7 +190,7 @@ class LocalsTest
         for {
             size ← 1 to 25
         } {
-            var v = Locals[Integer](size)
+            val v = Locals[Integer](size)
             for { i ← 0 until size } { v.set(i, i) }
 
             val newV = v.transform(_ + 100)
@@ -203,7 +203,7 @@ class LocalsTest
 
     it should ("be able to calculate a hashCode even if it is non-full") in {
         val size = 25
-        var v = Locals[Integer](size)
+        val v = Locals[Integer](size)
         for { i ← 0 until size } {
             if (i % 2 == 0) v.set(i, i)
         }
@@ -213,8 +213,8 @@ class LocalsTest
 
     it should ("be compareable to a non-full Locals collections") in {
         val size = 25
-        var v1 = Locals[Integer](size)
-        var v2 = Locals[Integer](size)
+        val v1 = Locals[Integer](size)
+        val v2 = Locals[Integer](size)
         for { i ← 0 until size } {
             if (i % 2 == 0) v1.set(i, i)
             if (i % 2 == 0) v2.set(i, i)

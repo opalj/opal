@@ -58,7 +58,8 @@ private class ImmutabilityAnalysisDomain[Source](
         with ThrowAllPotentialExceptionsConfiguration
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
@@ -121,7 +122,7 @@ class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[So
          * ClassFiles of fields that were already seen in the current cycle of
          * classIsImmutable. Needed to prevent crashes while checking cyclic composition.
          */
-        var alreadySeenThisCycle = scala.collection.mutable.Set.empty[ClassFile]
+        val alreadySeenThisCycle = scala.collection.mutable.Set.empty[ClassFile]
 
         /**
          * ClassFiles of immutable classes that have fields with cyclic composition.

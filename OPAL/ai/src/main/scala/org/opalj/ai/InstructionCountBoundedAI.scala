@@ -38,7 +38,7 @@ import org.opalj.br.Code
  * ==Thread Safety==
  * This class is thread-safe. I.e., one instance of the InstructionCountBoundedAI can
  * be used to run multiple abstract interpretations in parallel and to ensure that they
- * terminate (as a whole) if the set threshold is exceeded.
+ * terminate (as a whole) if the threshold is exceeded.
  *
  * @param maxEvaluationCount Determines the maximum number of instructions that should
  *      be interpreted. If the interpretation did not finish before that, the abstract
@@ -50,7 +50,7 @@ import org.opalj.br.Code
  */
 class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extends AI[D] {
 
-    require(maxEvaluationCount > 0)
+    assert(maxEvaluationCount > 0)
 
     /**
      * @param maxEvaluationFactor Determines the maximum number of instruction evaluations
@@ -88,7 +88,7 @@ object InstructionCountBoundedAI {
     def calculateMaxEvaluationCount(
         code: Code,
         maxEvaluationFactor: Double): Int = {
-        val min = code.instructions.size
+        val min = code.instructions.size.toDouble
         // this is roughly the number of instructions * ~2
         var upperBound: Double = min
 

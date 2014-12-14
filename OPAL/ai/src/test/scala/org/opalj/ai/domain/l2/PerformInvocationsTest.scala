@@ -127,7 +127,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
     it should ("be able to analyze a static method that processes the results of other static methods") in {
         val method = StaticCalls.findMethod("callComplexMult").get
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
-        val result = BaseAI(StaticCalls, method, domain)
+        /*val result =*/ BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions should be(empty)
         domain.returnedValue(domain, -1).flatMap(domain.intValueOption(_)) should equal(Some(110))
@@ -183,7 +183,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
     it should ("be able to analyze a method that analyzes the correlation between values") in {
         val method = StaticCalls.findMethod("callAreEqual").get
         val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
-        val result = BaseAI(StaticCalls, method, domain)
+        /*val result =*/ BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions.size should be(2) // the ArithmeticExceptions due to "%"
 
@@ -196,7 +196,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
     it should ("be able to identify the situation where a passed value is returned as is") in {
         val method = StaticCalls.findMethod("uselessReferenceTest").get
         val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
-        val result = BaseAI(StaticCalls, method, domain)
+        /*val result =*/ BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions.size should be(0)
 
@@ -218,7 +218,8 @@ object PerformInvocationsTestFixture {
         with l1.DefaultReferenceValuesBinding
         with l1.DefaultIntegerRangeValues
         with l0.DefaultTypeLevelLongValues
-        with l0.DefaultPrimitiveValuesConversions
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
         with ProjectBasedClassHierarchy
         with IgnoreSynchronization
@@ -234,7 +235,8 @@ object PerformInvocationsTestFixture {
             with l1.DefaultReferenceValuesBinding
             with li.DefaultPreciseIntegerValues
             with li.DefaultPreciseLongValues
-            with l0.DefaultPrimitiveValuesConversions
+            with l1.ConcretePrimitiveValuesConversions
+            with l1.LongValuesShiftOperators
             with l0.TypeLevelFieldAccessInstructions
             with ProjectBasedClassHierarchy
             with IgnoreSynchronization

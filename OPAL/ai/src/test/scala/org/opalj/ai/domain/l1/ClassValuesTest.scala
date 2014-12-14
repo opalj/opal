@@ -161,18 +161,29 @@ object PlainClassesTest {
             with l0.DefaultTypeLevelFloatValues
             with l0.DefaultTypeLevelDoubleValues
             with l0.DefaultTypeLevelLongValues
-            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultClassValuesBinding {
 
         var returnedValue: Option[DomainValue] = _
-        override def areturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
-        override def dreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
-        override def freturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
-        override def ireturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
-        override def lreturn(pc: Int, value: DomainValue) { returnedValue = Some(value) }
-        override def returnVoid(pc: Int) { returnedValue = None }
+        override def areturn(pc: Int, value: DomainValue): Unit = {
+            returnedValue = Some(value)
+        }
+        override def dreturn(pc: Int, value: DomainValue): Unit = {
+            returnedValue = Some(value)
+        }
+        override def freturn(pc: Int, value: DomainValue): Unit = {
+            returnedValue = Some(value)
+        }
+        override def ireturn(pc: Int, value: DomainValue): Unit = {
+            returnedValue = Some(value)
+        }
+        override def lreturn(pc: Int, value: DomainValue): Unit = {
+            returnedValue = Some(value)
+        }
+        override def returnVoid(pc: Int): Unit = { returnedValue = None }
     }
 
     val testClassFileName = "classfiles/ai.jar"

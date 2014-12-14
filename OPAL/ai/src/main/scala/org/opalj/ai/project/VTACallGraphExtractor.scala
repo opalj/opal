@@ -32,15 +32,15 @@ package project
 
 import scala.collection.Set
 import scala.collection.Map
-
+import scala.collection.mutable.HashSet
 import org.opalj.collection.immutable.UIDSet
-
 import br._
 import br.analyses._
-
 import domain._
 import domain.l0
 import domain.l1
+import org.opalj.util.No
+import org.opalj.util.Answer
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.TheClassFile
@@ -49,6 +49,12 @@ import org.opalj.ai.domain.ClassHierarchy
 import org.opalj.ai.domain.TheCode
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.util.Yes
+import org.opalj.br.instructions.VirtualMethodInvocationInstruction
 
 /**
  * Domain object which is used to calculate the call graph.
@@ -59,19 +65,123 @@ import org.opalj.ai.domain.ClassHierarchy
  *
  * @author Michael Eichberg
  */
-class VTACallGraphExtractor(
-    cache: CallGraphCache[MethodSignature, Set[Method]])
-        extends CHACallGraphExtractor(cache) {
+class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFile with TheMethod](
+    val cache: CallGraphCache[MethodSignature, Set[Method]],
+    Domain: (ClassFile, Method) ⇒ TheDomain)
+        extends CallGraphExtractor {
 
-    protected[this] class AnalysisContext(override val domain: TheDomain)
-            extends super.AnalysisContext(domain) {
+    protected[this] class AnalysisContext(
+        val domain: TheDomain)
+            extends super.AnalysisContext {
 
-        override def virtualCall(
+        val project = domain.project
+        val classHierarchy = project.classHierarchy
+        val classFile = domain.classFile
+        val method = domain.method
+
+        def staticCall(
             pc: PC,
             declaringClassType: ObjectType,
             name: String,
             descriptor: MethodDescriptor,
-            operands: domain.Operands) {
+            operands: domain.Operands) = {
+
+            def handleUnresolvedMethodCall() = {
+                addUnresolvedMethodCall(
+                    classFile.thisType, method, pc,
+                    declaringClassType, name, descriptor
+                )
+            }
+
+            if (classHierarchy.isKnown(declaringClassType)) {
+                classHierarchy.lookupMethodDefinition(
+                    declaringClassType, name, descriptor, project) match {
+                        case Some(callee) ⇒
+                            addCallEdge(pc, HashSet(callee))
+                        case None ⇒
+                            handleUnresolvedMethodCall()
+                    }
+            } else {
+                handleUnresolvedMethodCall()
+            }
+        }
+
+        def doNonVirtualCall(
+            pc: PC,
+            declaringClassType: ObjectType,
+            name: String,
+            descriptor: MethodDescriptor,
+            receiverIsNull: Answer,
+            operands: domain.Operands): Unit = {
+
+            def handleUnresolvedMethodCall(): Unit = {
+                addUnresolvedMethodCall(
+                    classFile.thisType, method, pc,
+                    declaringClassType, name, descriptor
+                )
+            }
+
+            if (classHierarchy.isKnown(declaringClassType)) {
+                classHierarchy.lookupMethodDefinition(
+                    declaringClassType, name, descriptor, project) match {
+                        case Some(callee) ⇒
+                            val callees = HashSet(callee)
+                            addCallEdge(pc, callees)
+                        case None ⇒
+                            handleUnresolvedMethodCall()
+                    }
+            } else {
+                handleUnresolvedMethodCall()
+            }
+        }
+
+        /**
+         * @param receiverMayBeNull The parameter is `false` if:
+         *      - a static method is called,
+         *      - this is an invokespecial call (in this case the receiver is `this`),
+         *      - the receiver is known not to be null and the type is known to be precise.
+         */
+        def nonVirtualCall(
+            pc: PC,
+            declaringClassType: ObjectType,
+            name: String,
+            descriptor: MethodDescriptor,
+            receiverIsNull: Answer,
+            operands: domain.Operands): Unit = {
+
+            if (receiverIsNull.isYesOrUnknown)
+                addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
+
+            doNonVirtualCall(
+                pc,
+                declaringClassType, name, descriptor,
+                receiverIsNull, operands)
+        }
+
+        def doVirtualCall(
+            pc: PC,
+            declaringClassType: ObjectType,
+            name: String,
+            descriptor: MethodDescriptor,
+            receiverIsNull: Answer,
+            operands: domain.Operands) = {
+
+            val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
+            if (callees.isEmpty) {
+                addUnresolvedMethodCall(
+                    classFile.thisType, method, pc,
+                    declaringClassType, name, descriptor)
+            } else {
+                addCallEdge(pc, callees)
+            }
+        }
+
+        def virtualCall(
+            pc: PC,
+            declaringClassType: ObjectType,
+            name: String,
+            descriptor: MethodDescriptor,
+            operands: domain.Operands): Unit = {
             // MODIFIED CHA - we used the type information that is readily available        
             val receiver =
                 domain.typeOfValue(
@@ -162,8 +272,86 @@ class VTACallGraphExtractor(
         }
     }
 
-    override protected def AnalysisContext(domain: TheDomain): AnalysisContext =
+    protected def AnalysisContext(domain: TheDomain): AnalysisContext =
         new AnalysisContext(domain)
+
+    private[this] val chaCallGraphExctractor =
+        new CHACallGraphExtractor(cache /*it should not be used...*/ )
+
+    def extract(project: SomeProject, classFile: ClassFile, method: Method): LocalCallGraphInformation = {
+
+        // The following optimization (using the plain CHA algorithm for all methods
+        // that do not virtual method calls) may lead to some additional edges (if
+        // the underlying code contains dead code), but the improvement is worth the 
+        // few additional edges.
+        val hasVirtualMethodCalls =
+            method.body.get.instructions.exists { i ⇒
+                i.isInstanceOf[VirtualMethodInvocationInstruction]
+            }
+        if (!hasVirtualMethodCalls)
+            return chaCallGraphExctractor.extract(project, classFile, method)
+
+        // There are virtual calls, hence, we now do the call graph extraction using
+        // variable type analysis    
+
+        val result = BaseAI(classFile, method, Domain(classFile, method))
+        val context = AnalysisContext(result.domain)
+
+        result.domain.code.foreach { (pc, instruction) ⇒
+            instruction.opcode match {
+                case INVOKEVIRTUAL.opcode ⇒
+                    val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction
+                    val operands = result.operandsArray(pc)
+                    if (operands != null) {
+                        if (declaringClass.isArrayType) {
+                            context.nonVirtualCall(
+                                pc, ObjectType.Object, name, descriptor,
+                                result.domain.refIsNull(
+                                    pc, operands(descriptor.parametersCount)),
+                                operands.asInstanceOf[context.domain.Operands]
+                            )
+                        } else {
+                            context.virtualCall(
+                                pc, declaringClass.asObjectType, name, descriptor,
+                                operands.asInstanceOf[context.domain.Operands])
+                        }
+                    }
+                case INVOKEINTERFACE.opcode ⇒
+                    val INVOKEINTERFACE(declaringClass, name, descriptor) = instruction
+                    val operands = result.operandsArray(pc)
+                    if (operands != null) {
+                        context.virtualCall(
+                            pc, declaringClass, name, descriptor,
+                            operands.asInstanceOf[context.domain.Operands])
+                    }
+
+                case INVOKESPECIAL.opcode ⇒
+                    val INVOKESPECIAL(declaringClass, name, descriptor) = instruction
+                    val operands = result.operandsArray(pc)
+                    // for invokespecial the dynamic type is not "relevant" (even for Java 8) 
+                    if (operands != null) {
+                        context.nonVirtualCall(
+                            pc, declaringClass, name, descriptor,
+                            receiverIsNull = No /*the receiver is "this" object*/ ,
+                            operands.asInstanceOf[context.domain.Operands]
+                        )
+                    }
+
+                case INVOKESTATIC.opcode ⇒
+                    val INVOKESTATIC(declaringClass, name, descriptor) = instruction
+                    val operands = result.operandsArray(pc)
+                    if (operands != null) {
+                        context.staticCall(
+                            pc, declaringClass, name, descriptor,
+                            operands.asInstanceOf[context.domain.Operands])
+                    }
+                case _ ⇒
+                // Nothing to do...
+            }
+        }
+
+        (context.allCallEdges, context.unresolvableMethodCalls)
+    }
 
 }
 
