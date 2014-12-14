@@ -86,29 +86,29 @@ object ThrowsExceptionAnalysis {
 
         val operandsArray = result.operandsArray
         val domain = result.domain
-        val body = result.code
 
         val exceptionIssues: Seq[StandardIssue] =
             for {
-                (pc, instruction) ← body collectWithIndex {
+                (pc, instruction) ← result.code collectWithIndex {
                     case (pc, i: Instruction) if operandsArray(pc) != null && !i.isInstanceOf[ATHROW.type] && domain.regularSuccessorsOf(pc).isEmpty && (domain.exceptionHandlerSuccessorsOf(pc).nonEmpty || domain.allThrownExceptions.get(pc).nonEmpty) ⇒
                         (pc, i)
                 }
             } yield {
                 val operands = operandsArray(pc)
                 val exceptions = {
-                    var allExceptions: Set[result.domain.SingleOriginReferenceValue] = {
-                        if (result.domain.allThrownExceptions.get(pc).nonEmpty)
-                            Set.empty ++
-                                result.domain.allThrownExceptions.get(pc).get
+                    var allExceptions: Set[domain.DomainSingleOriginReferenceValue] = {
+                        if (domain.allThrownExceptions.get(pc).nonEmpty)
+                            Set.empty ++ domain.allThrownExceptions.get(pc).get
                         else
                             Set.empty
                     }
 
-                    result.domain.exceptionHandlerSuccessorsOf(pc).foreach { handlerPC ⇒
+                    domain.exceptionHandlerSuccessorsOf(pc).foreach { handlerPC ⇒
                         operandsArray(handlerPC).head match {
-                            case sorv: result.domain.SingleOriginReferenceValue ⇒ allExceptions += sorv
-                            case result.domain.MultipleReferenceValues(values)  ⇒ allExceptions ++= values
+                            case domain.DomainSingleOriginReferenceValue(sorv) ⇒
+                                allExceptions += sorv
+                            case domain.DomainMultipleReferenceValues(morv) ⇒
+                                allExceptions ++= morv.values
                         }
                     }
                     allExceptions.map(_.upperTypeBound.first().toJava).mkString(", ")
