@@ -71,7 +71,7 @@ object ObserverPatternUsage extends AnalysisExecutor {
             println("Overall "+project.statistics)
 
             val appTypes = appClassFiles.map(_.thisType).toSet
-            val libTypes = libClassFiles.map(_.thisType).toSet
+            //val libTypes = libClassFiles.map(_.thisType).toSet
             val classHierarchy = project.classHierarchy
             import classHierarchy.allSubtypes
 

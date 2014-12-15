@@ -39,22 +39,25 @@ import org.opalj.br.analyses._
  *
  * @author Michael Eichberg
  */
-object MethodReturnValuesKey
-        extends ProjectInformationKey[Map[Method, Option[MethodReturnValuesAnalysisDomain#DomainValue]]] {
+object MethodReturnValuesKey extends ProjectInformationKey[MethodReturnValueInformation] {
 
     override protected def requirements = Seq(FieldValuesKey)
 
     /**
      * Computes the return value information.
      */
-    override protected def compute(
-        project: SomeProject): Map[Method, Option[MethodReturnValuesAnalysisDomain#DomainValue]] = {
+    override protected def compute(project: SomeProject): MethodReturnValueInformation = {
         // TODO Introduce the concept of a "configuration to a project"
         // TODO Use project-specific logging facility
+        val fieldValueInformation = project.get(FieldValuesKey)
+
         println("Computing method return value information")
         val result = MethodReturnValuesAnalysis.doAnalyze(
             project,
-            () ⇒ false // make it configurable
+            () ⇒ false, // make it configurable
+            (ai: InterruptableAI[Domain], method: Method) ⇒
+                new BaseMethodReturnValuesAnalysisDomain(
+                    project, fieldValueInformation, ai, method)
         )
         println("Successfully computed the method return value information")
         result

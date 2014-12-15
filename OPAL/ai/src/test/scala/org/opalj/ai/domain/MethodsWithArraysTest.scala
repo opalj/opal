@@ -81,7 +81,7 @@ class MethodsWithArraysTest
         def id = "MethodsWithArraysTestDomain"
     }
 
-    private def evaluateMethod(name: String, f: TestDomain ⇒ Unit) {
+    private def evaluateMethod(name: String, f: TestDomain ⇒ Unit): Unit = {
         val domain = new TestDomain
 
         val method = classFile.methods.find(_.name == name).get

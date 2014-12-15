@@ -251,7 +251,9 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     }
 
     // Single Field Access Test
+
     def singleFieldAccessTest(method: Method, annotation: Annotation): Unit = {
+        /*TODO evaluate the result!
         val evps = annotation.elementValuePairs
         val (fqnClass) =
             evps collectFirst {
@@ -271,8 +273,8 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
             evps collectFirst {
                 case ElementValuePair("lineNumber", IntValue(lineNumber)) ⇒ lineNumber
             }
+*/
 
-        // TODO evaluate the result!
     }
 
     //

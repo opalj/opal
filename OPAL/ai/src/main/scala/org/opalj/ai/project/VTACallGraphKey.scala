@@ -30,8 +30,11 @@ package org.opalj
 package ai
 package project
 
-import br.analyses._
 import org.opalj.ai.analyses.FieldValuesKey
+import org.opalj.br.analyses.ProjectInformationKey
+
+import br.analyses.ProjectInformationKey
+import br.analyses.SomeProject
 
 /**
  * The ''key'' object to get a call graph that was calculated using the VTA algorithm.

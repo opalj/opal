@@ -27,15 +27,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
-package l1
+package constraints
 
 /**
  * Exception that is if two constraints should be combined that are incompatible.
  */
 case class IncompatibleNumericConstraints(
+    message: String,
     constraint1: NumericConstraints.Value,
-    constraint2: NumericConstraints.Value)
-        extends AIException(s"incompatible: $constraint1 and $constraint2")
-
+    constraint2: NumericConstraints.Value,
+    enableSuppression: Boolean = false,
+    writableStackTrace: Boolean = true)
+        extends RuntimeException(
+            s"$message (incompatible: $constraint1 and $constraint2)",
+            /*cause = */ null, enableSuppression, writableStackTrace)

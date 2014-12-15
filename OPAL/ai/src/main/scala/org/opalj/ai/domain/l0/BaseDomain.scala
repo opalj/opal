@@ -55,7 +55,6 @@ class BaseConfigurableDomain[I, S](
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        with ProjectBasedClassHierarchy
         with TheProject
         with TheMethod
         with DomainId {

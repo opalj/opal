@@ -31,7 +31,7 @@ package collection
 package mutable
 
 import java.util.Random
-import org.opalj.util.PerformanceEvaluation
+import org.opalj.util.PerformanceEvaluation.time
 
 object LocalsEval extends App {
 
@@ -53,7 +53,7 @@ object LocalsEval extends App {
 
     /////////
 
-    def evalUsingLocals(elems: Int) {
+    def evalUsingLocals(elems: Int): Unit = {
         var lastAvg = 0.0d
         println(elems+" elments stored in vector")
         val data_v = time(e, eMax, minRuns, {
@@ -81,7 +81,7 @@ object LocalsEval extends App {
         println(data_v.mkString("Locals(", " : ", ")"))
     }
 
-    def evalUsingArray(elems: Int) {
+    def evalUsingArray(elems: Int): Unit = {
         var lastAvg = 0.0d
         println(elems+" elments stored in array")
         val data_a = time(e, eMax, minRuns, {
@@ -90,7 +90,7 @@ object LocalsEval extends App {
             while (i < REPETITIONS) {
                 val index = r.nextInt(elems)
                 val value = r.nextInt(10)
-                var newData = new Array[Integer](elems)
+                val newData = new Array[Integer](elems)
                 System.arraycopy(data, 0, newData, 0, elems)
                 val currentValue = data(index)
                 newData(index) =

@@ -451,7 +451,7 @@ case class Code(instructions: Array[Byte]) {
                 case 117 ⇒ <span class="instruction lneg">lneg</span>
                 case 171 ⇒
                     // LOOKUPSWITCH
-                    in.skip(3 - (pc % 4)) // skip padding bytes
+                    in.skip((3 - (pc % 4)).toLong) // skip padding bytes
                     val defaultTarget = in.readInt + pc
                     val npairsCount = in.readInt
                     val table = new StringBuilder("");
@@ -514,7 +514,7 @@ case class Code(instructions: Array[Byte]) {
                     </span>
                 case 95 ⇒ <span class="instruction swap">swap</span>
                 case 170 ⇒
-                    in.skip(3 - (pc % 4)) // skip padding bytes
+                    in.skip((3 - (pc % 4)).toLong) // skip padding bytes
                     val defaultTarget = in.readInt + pc
                     val low = in.readInt
                     val high = in.readInt

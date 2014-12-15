@@ -38,18 +38,18 @@ package ai
  */
 trait VMLevelExceptionsFactory extends ValuesDomain { domain ⇒
 
-    def Throwable(pc: PC): ExceptionValue
+    def Throwable(origin: ValueOrigin): ExceptionValue
 
-    def ClassCastException(pc: PC): ExceptionValue
+    def ClassCastException(origin: ValueOrigin): ExceptionValue
 
-    def NullPointerException(pc: PC): ExceptionValue
+    def NullPointerException(origin: ValueOrigin): ExceptionValue
 
-    def NegativeArraySizeException(pc: PC): ExceptionValue
+    def NegativeArraySizeException(origin: ValueOrigin): ExceptionValue
 
-    def ArrayIndexOutOfBoundsException(pc: PC): ExceptionValue
+    def ArrayIndexOutOfBoundsException(origin: ValueOrigin): ExceptionValue
 
-    def ArrayStoreException(pc: PC): ExceptionValue
+    def ArrayStoreException(origin: ValueOrigin): ExceptionValue
 
-    def ArithmeticException(pc: PC): ExceptionValue
+    def ArithmeticException(origin: ValueOrigin): ExceptionValue
 
 }

@@ -234,7 +234,7 @@ trait ValuesDomain {
          * be considered during a [[join]] of `this` value and the `other` value and that
          * could lead to a [[StructuralUpdate]].
          *
-         * This method is '''not reflexive'''.
+         * This method is '''reflexive''', I.e., every value abstracts over itself.
          *
          * [[TheIllegalValue]] only abstracts over itself.
          *
@@ -294,8 +294,8 @@ trait ValuesDomain {
          *      project-wide analyses.
          */
         @throws[DomainException]("Adaptation of this value is not supported.")
-        def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
-            throw new DomainException("adaptation of "+this+" to "+target+" is unsupported")
+        def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
+            throw new DomainException(s"adaptation of $this to $target is unsupported")
 
     }
 
@@ -305,7 +305,26 @@ trait ValuesDomain {
      */
     type DomainValue >: Null <: Value with AnyRef
 
+    /**
+     * The class tag for the type `DomainValue`.
+     *
+     * Required to generate instances of arrays in which values of type
+     * `DomainValue` can be stored in a type-safe manner.
+     *
+     * ==Initialization==
+     * In the sub-trait or class that fixes the type of `DomainValue` it is necessary
+     * to implement this abstract `val` using:
+     * {{{
+     * val DomainValueTag : ClassTag[DomainValue] = implicitly
+     * }}}
+     * (As of Scala 2.10 it is necessary that you do not use `implicit` in the subclass -
+     * it will compile, but fail at runtime.)
+     */
+    implicit val DomainValue: ClassTag[DomainValue]
+
     type DomainReferenceValue >: Null <: DomainValue
+
+    val DomainReferenceValue: ClassTag[DomainReferenceValue]
 
     /**
      * A simple type alias of the type `DomainValue`.
@@ -328,33 +347,16 @@ trait ValuesDomain {
      * An instruction's operands are represented using a list where the first
      * element of the list represents the top level operand stack value.
      */
-    type Operands = org.opalj.ai.Operands[DomainValue] // the full package name is required by unidoc
+    type Operands = org.opalj.ai.Operands[DomainValue] // the package name is required by unidoc
 
-    type OperandsArray = org.opalj.ai.TheOperandsArray[Operands] // the full package name is required by unidoc
+    type OperandsArray = org.opalj.ai.TheOperandsArray[Operands] // the package name is required by unidoc
 
     /**
      * An instruction's current register values/locals are represented using an array.
      */
-    type Locals = org.opalj.ai.Locals[DomainValue] // the full package name is required by unidoc
+    type Locals = org.opalj.ai.Locals[DomainValue] // the package name is required by unidoc
 
-    type LocalsArray = org.opalj.ai.TheLocalsArray[Locals] // the full package name is required by unidoc
-
-    /**
-     * The class tag for the type `DomainValue`.
-     *
-     * Required to generate instances of arrays in which values of type
-     * `DomainValue` can be stored in a type-safe manner.
-     *
-     * ==Initialization==
-     * In the sub-trait or class that fixes the type of `DomainValue` it is necessary
-     * to implement this abstract `val` using:
-     * {{{
-     * val DomainValueTag : ClassTag[DomainValue] = implicitly
-     * }}}
-     * (As of Scala 2.10 it is necessary that you do not use `implicit` in the subclass -
-     * it will compile, but fail at runtime.)
-     */
-    implicit val DomainValueTag: ClassTag[DomainValue]
+    type LocalsArray = org.opalj.ai.TheLocalsArray[Locals] // the package name is required by unidoc
 
     /**
      * Represents a value that has no well defined state/type. Such values are
@@ -419,7 +421,7 @@ trait ValuesDomain {
      */
     final def StructuralUpdateIllegalValue: StructuralUpdate[Nothing] =
         throw new DomainException(
-            "implementation error (see documentation of Domain.StructuralUpdateIllegalValue())"
+            "internal error (see documentation of Domain.StructuralUpdateIllegalValue())"
         )
 
     /**

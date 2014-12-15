@@ -64,11 +64,11 @@ object InterpretMethod {
      * 		of the respective class. If the method is overloaded the first method
      * 		is returned.
      */
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
         import Console.{ RED, RESET }
         import language.existentials
 
-        def printUsage() {
+        def printUsage(): Unit = {
             println("You have to specify the method that should be analyzed.")
             println("\t1: a jar/class file or a directory containing jar/class files.")
             println("\t2: the name of a class.")
@@ -191,7 +191,6 @@ object InterpretMethod {
                     println("Finished abstract interpretation.")
                     result
                 }
-            val domain = result.domain
             writeAndOpen(dump(
                 Some(classFile),
                 Some(method),

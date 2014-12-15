@@ -125,7 +125,9 @@ class Specification(val project: Project[URL]) {
      * @throws SpecificationError If the ensemble is already defined.
      */
     @throws(classOf[SpecificationError])
-    def ensemble(ensembleSymbol: Symbol)(sourceElementMatcher: SourceElementsMatcher) {
+    def ensemble(
+        ensembleSymbol: Symbol)(
+            sourceElementMatcher: SourceElementsMatcher): Unit = {
         if (ensembles.contains(ensembleSymbol))
             throw new SpecificationError("The ensemble is already defined: "+ensembleSymbol)
 
@@ -251,19 +253,19 @@ class Specification(val project: Project[URL]) {
 
     case class SpecificationFactory(contextEnsembleSymbol: Symbol) {
 
-        def apply(sourceElementsMatcher: SourceElementsMatcher) {
+        def apply(sourceElementsMatcher: SourceElementsMatcher): Unit = {
             ensemble(contextEnsembleSymbol)(sourceElementsMatcher)
         }
 
-        def is_only_to_be_used_by(sourceEnsembleSymbols: Symbol*) {
+        def is_only_to_be_used_by(sourceEnsembleSymbols: Symbol*): Unit = {
             dependencyCheckers = GlobalIncomingConstraint(contextEnsembleSymbol, sourceEnsembleSymbols.toSeq) :: dependencyCheckers
         }
 
-        def allows_incoming_dependencies_from(sourceEnsembleSymbols: Symbol*) {
+        def allows_incoming_dependencies_from(sourceEnsembleSymbols: Symbol*): Unit = {
             dependencyCheckers = GlobalIncomingConstraint(contextEnsembleSymbol, sourceEnsembleSymbols.toSeq) :: dependencyCheckers
         }
 
-        def is_only_allowed_to_use(targetEnsembles: Symbol*) {
+        def is_only_allowed_to_use(targetEnsembles: Symbol*): Unit = {
             dependencyCheckers = LocalOutgoingConstraint(contextEnsembleSymbol, targetEnsembles.toSeq) :: dependencyCheckers
         }
     }
@@ -284,7 +286,7 @@ class Specification(val project: Project[URL]) {
      * Returns a textual representation of an ensemble.
      */
     def ensembleToString(ensembleSymbol: Symbol): String = {
-        var (sourceElementsMatcher, extension) = ensembles(ensembleSymbol)
+        val (sourceElementsMatcher, extension) = ensembles(ensembleSymbol)
         ensembleSymbol+"{"+
             sourceElementsMatcher+"  "+
             {
@@ -425,7 +427,19 @@ object Specification {
         if (!file.isDirectory)
             throw new SpecificationError("The specified directory is not a directory: "+directoryName+".")
 
-        ClassFiles(file)
+        Project.Java8ClassFileReader.ClassFiles(file)
+    }
+
+    def SourceJAR(jarName: String): Seq[(ClassFile, URL)] = {
+        val file = new java.io.File(jarName)
+        if (!file.exists)
+            throw new SpecificationError("The specified directory does not exist: "+jarName+".")
+        if (!file.canRead)
+            throw new SpecificationError("Cannot read the specified directory: "+jarName+".")
+        if (file.isDirectory)
+            throw new SpecificationError("The specified jar file is a directory: "+jarName+".")
+
+        Project.Java8ClassFileReader.ClassFiles(file)
     }
 }
 

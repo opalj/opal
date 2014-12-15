@@ -98,7 +98,7 @@ trait AnalysisExecutor {
      * Prints out general information how to use this analysis. Printed whenever
      * the set of specified parameters is not valid.
      */
-    protected def printUsage() {
+    protected def printUsage(): Unit = {
         println("Usage: java "+
             this.getClass().getName()+"\n"+
             "[-cp=<Directories or JAR/class files> (If no class path is specified the current folder is used.)]\n"+
@@ -133,7 +133,7 @@ trait AnalysisExecutor {
         def verifyFile(filename: String): Option[File] = {
             val file = new File(filename)
 
-            def showError(message: String) {
+            def showError(message: String): Unit = {
                 println(Console.RED+"[error] "+Console.RESET + message)
             }
 
@@ -261,7 +261,7 @@ trait AnalysisExecutor {
             }
         }
 
-        var project = Project(classFiles, libraryClassFiles)
+        val project = Project(classFiles, libraryClassFiles)
         print(
             project.statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).toList.sorted.
                 mkString("[info] Project statistics:\n[info]\t", "\n[info]\t", "\n")

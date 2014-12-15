@@ -66,7 +66,7 @@ package object reader {
         perFile: File ⇒ Unit = (f: File) ⇒ { /*do nothing*/ }): (Iterable[(ClassFile, URL)], List[Exception]) = {
         val exceptionsMutex = new Object
         var exceptions: List[Exception] = Nil
-        def addException(e: Exception) {
+        def addException(e: Exception): Unit = {
             exceptionsMutex.synchronized { exceptions = e :: exceptions }
         }
 

@@ -347,7 +347,7 @@ class Project[Source] private (
         var pis = List.empty[AnyRef]
         val thisProjectInformation = this.projectInformation
         for (i ← (0 until thisProjectInformation.length())) {
-            var pi = thisProjectInformation.get(i)
+            val pi = thisProjectInformation.get(i)
             if (pi != null) {
                 pis = pi :: pis
             }
@@ -440,21 +440,18 @@ class Project[Source] private (
  */
 object Project {
 
+    private[this] def cache = new reader.BytecodeInstructionsCache
+    lazy val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
+
     /**
      * Given a reference to a class file, jar file or a folder containing jar and class
      * files, all class files will be loaded and a project will be returned.
      */
     def apply(file: File): Project[URL] = {
-        val cache = new reader.BytecodeInstructionsCache
-        val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
-
         Project.apply[URL](Java8ClassFileReader.ClassFiles(file))
     }
 
     def extend(project: Project[URL], file: File): Project[URL] = {
-        val cache = new reader.BytecodeInstructionsCache
-        val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
-
         project.extend(Java8ClassFileReader.ClassFiles(file))
     }
 
@@ -542,7 +539,7 @@ object Project {
         val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile]
         val sources = OpenHashMap.empty[ObjectType, Source]
 
-        def processClassFile(classFile: ClassFile, source: Option[Source]) {
+        def processClassFile(classFile: ClassFile, source: Option[Source]): Unit = {
             projectClassFiles = classFile :: projectClassFiles
             projectClassFilesCount += 1
             val objectType = classFile.thisType

@@ -95,6 +95,7 @@ import instructions.PUTFIELD
 import instructions.RETURN
 import instructions.ReturnInstruction
 import org.scalatest.junit.JUnitRunner
+import org.opalj.br.instructions.INVOKEDYNAMIC
 
 /**
  * @author Arne Lottmann
@@ -102,6 +103,7 @@ import org.scalatest.junit.JUnitRunner
 @RunWith(classOf[JUnitRunner])
 class ClassFileFactoryTest extends FunSpec with Matchers {
     val testProject = Project(locateTestResources("classfiles/proxy.jar", "br"))
+    val lambdasProject = Project(locateTestResources("classfiles/Lambdas.jar", "br"))
 
     val StaticMethods = ObjectType("proxy/StaticMethods")
     val InstanceMethods = ObjectType("proxy/InstanceMethods")
@@ -282,9 +284,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                     var currentInstruction = 0
                     val body = method.body.get
                     val instructions = body.instructions
-                    val invoke = instructions.find(_.isInstanceOf[InvocationInstruction]).get
-                    val indexOfInvoke = instructions.indexOf(invoke)
-                    val instructionsPrecedingInvoke = instructions.slice(0, indexOfInvoke)
+
                     val parameters =
                         if (calleeTypeAndMethod._2.isStatic) {
                             method.parameterTypes
@@ -292,18 +292,20 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
                             calleeTypeAndMethod._1 +: method.parameterTypes
                         }
                     parameters.foreach { requiredParameter ⇒
-                        val remainingInstructions = instructions.slice(currentInstruction, instructions.size)
-                        val consumedInstructions = requiredParameter match {
-                            case IntegerType      ⇒ requireInt(remainingInstructions)
-                            case ShortType        ⇒ requireInt(remainingInstructions)
-                            case ByteType         ⇒ requireInt(remainingInstructions)
-                            case CharType         ⇒ requireInt(remainingInstructions)
-                            case BooleanType      ⇒ requireInt(remainingInstructions)
-                            case FloatType        ⇒ requireFloat(remainingInstructions)
-                            case DoubleType       ⇒ requireDouble(remainingInstructions)
-                            case LongType         ⇒ requireLong(remainingInstructions)
-                            case _: ReferenceType ⇒ requireReference(remainingInstructions)
-                        }
+                        val remainingInstructions =
+                            instructions.slice(currentInstruction, instructions.size)
+                        val consumedInstructions =
+                            requiredParameter match {
+                                case IntegerType      ⇒ requireInt(remainingInstructions)
+                                case ShortType        ⇒ requireInt(remainingInstructions)
+                                case ByteType         ⇒ requireInt(remainingInstructions)
+                                case CharType         ⇒ requireInt(remainingInstructions)
+                                case BooleanType      ⇒ requireInt(remainingInstructions)
+                                case FloatType        ⇒ requireFloat(remainingInstructions)
+                                case DoubleType       ⇒ requireDouble(remainingInstructions)
+                                case LongType         ⇒ requireLong(remainingInstructions)
+                                case _: ReferenceType ⇒ requireReference(remainingInstructions)
+                            }
                         currentInstruction += consumedInstructions
                     }
                 }
@@ -319,7 +321,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
                     val returnSize: Int =
                         if (method.returnType != VoidType) {
-                            method.returnType.computationalType.operandSize
+                            method.returnType.computationalType.operandSize.toInt
                         } else {
                             0
                         }
@@ -654,6 +656,135 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
             }
         }
 
+        describe("should be able to create correct proxies for method reference invokedynamics") {
+
+            describe("lambda expressions should not be identified as method references") {
+                val Lambdas = lambdasProject.projectClassFiles.find(
+                    _.fqn == "lambdas/Lambdas").get
+                it("they are not constructor references") {
+                    for {
+                        MethodWithBody(body) ← Lambdas.methods
+                        instruction ← body.instructions
+                        if instruction.isInstanceOf[INVOKEDYNAMIC]
+                        invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
+                    } {
+                        val targetMethodHandle = invokedynamic.bootstrapMethod.
+                            bootstrapArguments(1).asInstanceOf[MethodCallMethodHandle]
+                        val proxyInterfaceMethodDescriptor = invokedynamic.bootstrapMethod.
+                            bootstrapArguments(2).asInstanceOf[MethodDescriptor]
+                        assert(!ClassFileFactory.isVirtualMethodReference(
+                            targetMethodHandle.opcodeOfUnderlyingInstruction,
+                            targetMethodHandle.receiverType.asObjectType,
+                            targetMethodHandle.methodDescriptor,
+                            proxyInterfaceMethodDescriptor))
+                    }
+                }
+
+                it("nor are they virtual method calls") {
+                    for {
+                        MethodWithBody(body) ← Lambdas.methods
+                        instruction ← body.instructions
+                        if instruction.isInstanceOf[INVOKEDYNAMIC]
+                        invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
+                    } {
+                        val targetMethodHandle = invokedynamic.bootstrapMethod.
+                            bootstrapArguments(1).asInstanceOf[MethodCallMethodHandle]
+                        assert(!ClassFileFactory.isNewInvokeSpecial(
+                            targetMethodHandle.opcodeOfUnderlyingInstruction,
+                            targetMethodHandle.name))
+                    }
+                }
+            }
+
+            val MethodReferences = lambdasProject.projectClassFiles.find(
+                _.fqn == "lambdas/MethodReferences").get
+
+            describe("references to constructors") {
+                it("should be correctly identified") {
+                    val newValueMethod = MethodReferences.findMethod("newValue").get
+                    val indy = newValueMethod.body.get.instructions.find(
+                        _.isInstanceOf[INVOKEDYNAMIC]).get.asInstanceOf[INVOKEDYNAMIC]
+                    val targetMethod = indy.bootstrapMethod.bootstrapArguments(1).
+                        asInstanceOf[MethodCallMethodHandle]
+                    val opcode = targetMethod.opcodeOfUnderlyingInstruction
+                    val methodName = targetMethod.name
+                    assert(ClassFileFactory.isNewInvokeSpecial(opcode, methodName))
+                }
+
+                val SomeType = ObjectType("SomeType")
+                val proxy = ClassFileFactory.Proxy(
+                    TypeDeclaration(
+                        ObjectType("MethodRefConstructorProxy"),
+                        false,
+                        Some(ObjectType.Object),
+                        Set.empty
+                    ),
+                    "get",
+                    MethodDescriptor(ObjectType.String, SomeType),
+                    SomeType,
+                    "<init>",
+                    MethodDescriptor(ObjectType.String, SomeType),
+                    INVOKESPECIAL.opcode
+                )
+
+                val proxyMethod = proxy.findMethod("get").get
+
+                it("should result in a proxy method that creates an instance of the object first") {
+                    proxyMethod.body.get.instructions.slice(0, 4) should be(
+                        Array(
+                            NEW(SomeType),
+                            null,
+                            null,
+                            DUP
+                        ))
+                }
+            }
+
+            describe("references to instance methods") {
+                it("should be correctly identified") {
+                    val filterOutEmptyValuesMethod = MethodReferences.findMethod(
+                        "filterOutEmptyValues").get
+                    val invokedynamic = filterOutEmptyValuesMethod.body.get.instructions.
+                        find(_.isInstanceOf[INVOKEDYNAMIC]).get.asInstanceOf[INVOKEDYNAMIC]
+                    val targetMethodHandle = invokedynamic.bootstrapMethod.
+                        bootstrapArguments(1).asInstanceOf[MethodCallMethodHandle]
+                    val proxyInterfaceMethodDescriptor = invokedynamic.bootstrapMethod.
+                        bootstrapArguments(2).asInstanceOf[MethodDescriptor]
+                    assert(ClassFileFactory.isVirtualMethodReference(
+                        targetMethodHandle.opcodeOfUnderlyingInstruction,
+                        targetMethodHandle.receiverType.asObjectType,
+                        targetMethodHandle.methodDescriptor,
+                        proxyInterfaceMethodDescriptor))
+                }
+
+                val SomeOtherType = ObjectType("SomeOtherType")
+                val proxy = ClassFileFactory.Proxy(
+                    TypeDeclaration(
+                        ObjectType("InstanceMethodRefProxy"),
+                        false,
+                        Some(ObjectType.Object),
+                        Set.empty
+                    ),
+                    "isFull",
+                    MethodDescriptor(SomeOtherType, BooleanType),
+                    SomeOtherType,
+                    "isThisFull",
+                    MethodDescriptor.JustReturnsBoolean,
+                    INVOKEVIRTUAL.opcode
+                )
+
+                it("and result in a proxy method that passes in the explicit this") {
+                    val proxyMethod = proxy.findMethod("isFull").get
+                    val instructions = proxyMethod.body.get.instructions
+                    instructions(0) should be(ALOAD_1)
+                    instructions(1) should be(INVOKEVIRTUAL(
+                        SomeOtherType,
+                        "isThisFull",
+                        MethodDescriptor.JustReturnsBoolean))
+                }
+            }
+        }
+
         describe("should be able to profixy $newInstance methods") {
             it("by picking an alternate name for the factory method") {
                 val theType = ObjectType("ClassFileFactoryTest$newInstanceName")
@@ -726,7 +857,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
 
             def testConstructor(
                 fieldTypes: IndexedSeq[FieldType],
-                expectedLocals: Int, expectedStack: Int) {
+                expectedLocals: Int, expectedStack: Int): Unit = {
                 val fields = fieldTypes.zipWithIndex.map { p ⇒
                     val (ft, i) = p
                     Field(bi.ACC_PRIVATE.mask, "field"+i, ft, Seq.empty)
@@ -1149,7 +1280,7 @@ class ClassFileFactoryTest extends FunSpec with Matchers {
     private def testMethod(
         calleeType: ObjectType, calleeMethod: Method,
         repository: ClassFileRepository)(
-            test: (ClassFile, (ObjectType, Method)) ⇒ Unit) {
+            test: (ClassFile, (ObjectType, Method)) ⇒ Unit): Unit = {
         val calleeMethodName = calleeMethod.name
         val calleeMethodDescriptor = calleeMethod.descriptor
         val definingTypeName = calleeType.simpleName+"$"+calleeMethodName

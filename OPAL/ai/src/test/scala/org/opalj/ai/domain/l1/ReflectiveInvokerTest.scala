@@ -113,7 +113,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
         val operands = List(stringValue)
 
         //static String String.valueOf(Object)
-        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
+        /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.String]
         javaResult should be("A")
     }
@@ -128,7 +128,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
         val operands = List(integerValue)
 
         //static String String.valueOf(int)
-        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
+        /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "valueOf", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.String]
         javaResult should be("1")
     }
@@ -143,7 +143,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
         val operands = List(stringValue)
 
         //int String.length()
-        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
+        /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "length", descriptor, operands)
         domain.lastObject /* IT IS A PRIMITIVE VALUE*/ should equal(null)
     }
 
@@ -174,7 +174,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
             receiver)
 
         //String <String>.substring(int int)
-        val result = domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
+        /*val result =*/ domain.invokeReflective(IrrelevantPC, declaringClass, "substring", descriptor, operands)
         val javaResult = domain.lastObject.asInstanceOf[java.lang.String]
         javaResult should equal("es")
     }

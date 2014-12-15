@@ -190,7 +190,7 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
 
     override def hashCode: Int = {
         var hc = 1
-        foreach { e ⇒ hc * 41 + e.hashCode }
+        foreach { e ⇒ hc = hc * 41 + e.hashCode }
         hc
     }
 

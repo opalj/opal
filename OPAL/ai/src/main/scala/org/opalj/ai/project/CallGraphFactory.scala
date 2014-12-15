@@ -111,9 +111,6 @@ object CallGraphFactory {
                     try {
                         val (callEdges, unresolveableMethodCalls) =
                             extract(theProject, classFile, method)
-                        //                        val domain = configuration.Domain(classFile, method)
-                        //                        val result = configuration.TheAI(classFile, method, domain)
-                        //                        val (callEdges, unresolveableMethodCalls) = extract(result)
                         (callEdges, unresolveableMethodCalls, None)
                     } catch {
                         case ct: scala.util.control.ControlThrowable ⇒ throw ct
@@ -174,7 +171,7 @@ object CallGraphFactory {
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
         while (futuresCount > 0) {
             // 1. GET NEXT RESULT
-            val (callSite @ (method, callEdges), moreUnresolvedMethodCalls, exception) =
+            val (callSite @ (_ /*method*/ , callEdges), moreUnresolvedMethodCalls, exception) =
                 completionService.take().get()
             futuresCount -= 1
 
@@ -191,6 +188,9 @@ object CallGraphFactory {
             builder.addCallEdges(callSite)
         }
         executorService.shutdown()
+
+        // TODO use log
+        println("[info] finished analzying the bytecode, constructing the final call graph")
 
         ComputedCallGraph(builder.buildCallGraph, unresolvedMethodCalls, exceptions)
     }

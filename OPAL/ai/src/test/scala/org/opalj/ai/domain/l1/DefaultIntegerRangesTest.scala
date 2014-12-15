@@ -2298,7 +2298,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new IntegerRangesTestDomain
                 val method = IntegerValues.findMethod("aliasingMax5").get
-                val result = BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
@@ -2309,7 +2309,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             it("it should be able to adapt (<=) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new IntegerRangesTestDomain
                 val method = IntegerValues.findMethod("aliasingMax6").get
-                val result = BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
@@ -2320,7 +2320,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             it("it should be able to adapt (>=) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new IntegerRangesTestDomain
                 val method = IntegerValues.findMethod("aliasingMinM1").get
-                val result = BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
@@ -2331,7 +2331,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             it("it should be able to adapt (>) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new IntegerRangesTestDomain
                 val method = IntegerValues.findMethod("aliasingMin0").get
-                val result = BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
@@ -2342,7 +2342,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
                 val domain = new IntegerRangesTestDomain
                 val method = IntegerValues.findMethod("someSwitch").get
-                val result = BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 1)
                     fail("expected one result; found: "+domain.allReturnedValues)
 
@@ -2352,7 +2352,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             it("it should be able to detect contradicting conditions") {
                 val domain = new IntegerRangesTestDomain
                 val method = IntegerValues.findMethod("someComparisonThatReturns5").get
-                val result = BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected one result; found: "+domain.allReturnedValues)
 

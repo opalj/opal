@@ -72,7 +72,7 @@ object TransitiveUsage extends AnalysisExecutor {
             source: VirtualSourceElement,
             target: VirtualSourceElement,
             dType: DependencyType): Unit = {
-            def process(vse: VirtualSourceElement) {
+            def process(vse: VirtualSourceElement): Unit = {
                 vse match {
                     case VirtualClass(declaringClassType) ⇒
                         processType(declaringClassType)

@@ -80,7 +80,7 @@ trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
         propertiesArray(pc)
     }
 
-    def setProperty(pc: PC, property: DomainProperty) {
+    def setProperty(pc: PC, property: DomainProperty): Unit = {
         propertiesArray(pc) = property
     }
 

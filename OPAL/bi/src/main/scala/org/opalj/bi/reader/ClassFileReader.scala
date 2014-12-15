@@ -363,7 +363,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFiles(
         jarFile: ZipFile,
         classFileHandler: (ClassFile, URL) ⇒ Unit,
-        exceptionHandler: (Exception) ⇒ Unit) {
+        exceptionHandler: (Exception) ⇒ Unit): Unit = {
         val jarFileURL = new File(jarFile.getName()).toURI().toURL().toExternalForm()
         ClassFiles(
             "jar:"+jarFileURL+"!/",
@@ -377,7 +377,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         jarFileURL: String, // the complete path to the given jar file.
         jarFile: ZipFile,
         classFileHandler: (ClassFile, URL) ⇒ Unit,
-        exceptionHandler: (Exception) ⇒ Unit) {
+        exceptionHandler: (Exception) ⇒ Unit): Unit = {
 
         import scala.collection.JavaConversions._
         for { jarEntry ← jarFile.entries.toIterable.par } {

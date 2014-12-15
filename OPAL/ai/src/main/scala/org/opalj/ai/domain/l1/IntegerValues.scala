@@ -295,19 +295,19 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
 
     override def i2b(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toByte)
+            case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toByte.toInt)
             case v                  ⇒ v
         }
 
     override def i2c(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toChar)
+            case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toChar.toInt)
             case v                  ⇒ v
         }
 
     override def i2s(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toShort)
+            case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toShort.toInt)
             case v                  ⇒ v
         }
 

@@ -43,6 +43,7 @@ import org.opalj.ai.project.CallGraphFactory
 import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
 import org.opalj.ai.project.ComputedCallGraph
 import org.opalj.ai.project.BasicVTACallGraphAlgorithmConfiguration
+import org.opalj.ai.project.BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration
 import org.opalj.ai.project.DefaultVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.project.ExtVTACallGraphAlgorithmConfiguration
 import org.opalj.graphs.Node
@@ -71,10 +72,10 @@ object CallGraphVisualization {
      *      denote the beginning of a package name and will be used to filter
      *      the methods that are included in the call graph.
      */
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
         if ((args.size < 3) || (args.size > 4)) {
             println("You have to specify:")
-            println("\t1) The algorithm to use (CHA or VTA).")
+            println("\t1) The algorithm to use (CHA, BasicVTA, DefaultVTA, ExtVTA).")
             println("\t2) A jar/class file or a directory containing jar/class files.")
             println("\t3) A pattern that specifies which class/interface types should be included in the output.")
             println("\t4 - Optional) The number of seconds (max. 30) before the analysis starts (e.g., to attach a profiler).")
@@ -89,7 +90,7 @@ object CallGraphVisualization {
                     err.println("\t4) The number of seconds before the analysis starts (max. 30).")
                     sys.exit(-30)
                 }
-                Thread.sleep(secs * 1000)
+                Thread.sleep(secs * 1000l)
             } catch {
                 case _: NumberFormatException ⇒
                     err.println("\t4) The number of seconds before the analysis starts (max 30).")
@@ -142,15 +143,17 @@ object CallGraphVisualization {
         val ComputedCallGraph(callGraph, unresolvedMethodCalls, exceptions) =
             memory {
                 val computedCallGraph = time {
-                    val callGraphAlgorithmConfig = args(0) match {
+                    val callGraphAlgorithmConfig = callGraphAlgorithm match {
+                        case "CHA" ⇒
+                            new CHACallGraphAlgorithmConfiguration(project)
                         case "BasicVTA" ⇒
                             new BasicVTACallGraphAlgorithmConfiguration(project)
+                        case "BasicVTAWithPreAnalysis" ⇒
+                            new BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration(project)
                         case "VTA" | "DefaultVTA" ⇒
                             new DefaultVTACallGraphAlgorithmConfiguration(project)
                         case "ExtVTA" ⇒
                             new ExtVTACallGraphAlgorithmConfiguration(project)
-                        case "CHA" ⇒
-                            new CHACallGraphAlgorithmConfiguration(project)
                         case cga ⇒
                             println("Unknown call graph algorithm: "+cga+"; available: CHA, BasicVTA, DefaultVTA, ExtVTA")
                             return ;
@@ -185,9 +188,10 @@ object CallGraphVisualization {
                             callees.find(e ⇒ e._2.size == maxCallTargets).get._1
                     }
                 }
+                println(f"Number of call sites: ${callGraph.callSites}%,d ")
                 println(
                     f"Number of call edges: ${callGraph.callEdgesCount}%,d"+
-                        f" /  called-by edges: ${callGraph.calledByEdgesCount}%,d")
+                        f" / called-by edges: ${callGraph.calledByEdgesCount}%,d")
                 println(
                     "Maximum number of targets for one call: "+maxCallTargets+"; method: "+
                         methodWithMethodCallWithMaxTargets.fullyQualifiedSignature(
@@ -211,7 +215,7 @@ object CallGraphVisualization {
         import org.opalj.graphs.{ SimpleNode, Node }
         val nodes: Set[Node] = {
 
-            var nodesForMethods = scala.collection.mutable.AnyRefMap.empty[Method, Node]
+            val nodesForMethods = scala.collection.mutable.AnyRefMap.empty[Method, Node]
 
             def createNode(caller: Method): Node = {
                 if (nodesForMethods.contains(caller))

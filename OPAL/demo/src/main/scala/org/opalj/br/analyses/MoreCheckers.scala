@@ -71,12 +71,12 @@ object MoreCheckers {
 
     val results = scala.collection.mutable.Map[String, List[Long]]();
 
-    def collect(id: String, time: Long) {
+    def collect(id: String, time: Long): Unit = {
         print(id+", "+time);
         results.update(id, (time / 1000l) :: results.getOrElse(id, List()));
     }
 
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
 
         if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".jar"))) {
             printUsage
@@ -103,7 +103,7 @@ object MoreCheckers {
             System.gc();
             //}
         }
-        results.foreach(X ⇒ { var (id, times) = X; println(id+","+times.mkString(",")) })
+        results.foreach(X ⇒ { val (id, times) = X; println(id+","+times.mkString(",")) })
         results.clear();
 
         println(Console.BOLD+"\n\n\n\nMEASUREMENT PHASE"+Console.RESET)
@@ -117,7 +117,7 @@ object MoreCheckers {
             System.gc();
             println();
         }
-        results.foreach(X ⇒ { var (id, times) = X; println(id+","+times.mkString(",")) })
+        results.foreach(X ⇒ { val (id, times) = X; println(id+","+times.mkString(",")) })
 
         sys.exit(0)
     }
@@ -125,7 +125,7 @@ object MoreCheckers {
     // The following code is meant to show how easy it is to write analyses;
     // it is not meant to demonstrate how to write such analyses in an efficient
     // manner. (However, the performance is still acceptable.)
-    def analyze(jarFiles: Array[String]) {
+    def analyze(jarFiles: Array[String]): Unit = {
         var classFilesCount = 0
         val classFiles = memory {
             val cf = for (
@@ -154,7 +154,7 @@ object MoreCheckers {
         println(", " /*"\tViolations: "*/ +protectedFields.size)
 
         // FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)
-        var cloneableNoClone = time {
+        val cloneableNoClone = time {
             // Weakness: We will not identify cloneable classes in projects, where we extend a predefined
             // class (of the JDK) that indirectly inherits from Cloneable.
             val cloneable = ObjectType("java/lang/Cloneable")
@@ -173,7 +173,7 @@ object MoreCheckers {
         println(", "+cloneableNoClone.size)
 
         // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
-        var cloneDoesNotCallSuperClone = time {
+        val cloneDoesNotCallSuperClone = time {
             for {
                 classFile ← classFiles
                 if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
@@ -192,7 +192,7 @@ object MoreCheckers {
         println(", " /*"\tViolations: "*/ +cloneDoesNotCallSuperClone.size /*+": "+cloneDoesNotCallSuperClone.mkString("; ")*/ )
 
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
-        var cloneButNotCloneable = time {
+        val cloneButNotCloneable = time {
             for {
                 classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superclassType.isDefined
                 method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ← classFile.methods
@@ -204,7 +204,7 @@ object MoreCheckers {
         // FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)
         // FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)
         // This class defines a covariant version of compareTo().  To correctly override the compareTo() method in the Comparable interface, the parameter of compareTo() must have type java.lang.Object.
-        var covariantCompareToMethods = time {
+        val covariantCompareToMethods = time {
             // Weakness: In a project, where we extend a predefined class (of the JDK) that
             // inherits from Comparable and in which we define covariant comparesTo method,
             // we will not be able to identify this issue unless we have identified the whole
@@ -265,7 +265,7 @@ object MoreCheckers {
         //        println("\tViolations: "+abstractClassThatDefinesCovariantEquals.size)
         //        //abstractClassThatDefinesCovariantEquals.foreach((t) => {println(t._1.thisClass.className+ " "+ t._2.name)});
         // FINDBUGS: EQ_ABSTRACT_SELF - a covariant equals method that is abstract (the following reflects the implemented checker)
-        var abstractCovariantEquals = time {
+        val abstractCovariantEquals = time {
             for (
                 classFile ← classFiles;
                 method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisType), BooleanType)) ← classFile.methods if method.isAbstract
@@ -274,7 +274,7 @@ object MoreCheckers {
         println(", " /*"\tViolations: "*/ +abstractCovariantEquals.size)
 
         // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
-        var classesWithPublicFinalizeMethods = time {
+        val classesWithPublicFinalizeMethods = time {
             for {
                 classFile ← classFiles
                 if classFile.methods.exists(_ match { case Method(ACC_PUBLIC(), "finalize", HasNoArgsAndReturnsVoid()) ⇒ true; case _ ⇒ false })

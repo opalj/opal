@@ -73,7 +73,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
 
     test("test that all constructors are returned") {
         assert(
-            immutableList.constructors.size == 2
+            immutableList.constructors.size.toInt == 2
         )
     }
 
@@ -106,7 +106,7 @@ class ClassFileTest extends FunSuite with Matchers with ParallelTestExecution {
             ).isDefined
         )
 
-        assert(immutableList.instanceMethods.size == 4)
+        assert(immutableList.instanceMethods.size.toInt == 4)
     }
 
     test("that findField on a class without fields does not fail") {

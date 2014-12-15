@@ -67,7 +67,7 @@ trait DefaultPreciseLongValues extends DefaultDomainValueBinding with PreciseLon
                 case ALongValue() ⇒ StructuralUpdate(value)
                 case LongRange(otherInitial, otherValue) ⇒
                     // First check if they are growing in the same direction...
-                    var increasing = (this.value - this.initial >= 0)
+                    val increasing = (this.value - this.initial >= 0)
                     if (increasing != (otherValue - otherInitial) >= 0)
                         return StructuralUpdate(ALongValue())
 

@@ -50,7 +50,6 @@ object AccessFlags {
     }
 
     def classFlagsToJava(accessFlags: Int): String = {
-        val ctx = AccessFlagsContexts.CLASS_FLAGS
         // ACC_PUBLIC,ACC_FINAL,ACC_SUPER,ACC_INTERFACE,ACC_ABSTRACT,
         // ACC_SYNTHETIC,ACC_ANNOTATION,ACC_ENUM
         var flags = List.empty[String]

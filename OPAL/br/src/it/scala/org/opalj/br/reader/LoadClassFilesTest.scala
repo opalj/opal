@@ -52,7 +52,7 @@ import org.scalatest.ParallelTestExecution
 @RunWith(classOf[JUnitRunner])
 class LoadClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARALLELIZED*/ {
 
-    def simpleValidator(classFile: ClassFile) {
+    def simpleValidator(classFile: ClassFile): Unit = {
         assert(!(classFile.thisType.fqn eq null))
     }
 

@@ -32,6 +32,7 @@ package project
 
 import scala.collection.Set
 import scala.collection.Map
+import scala.collection.mutable.HashSet
 import org.opalj.collection.immutable.UIDSet
 import br._
 import br.analyses._
@@ -52,6 +53,8 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.util.Yes
+import org.opalj.br.instructions.VirtualMethodInvocationInstruction
 
 /**
  * Domain object which is used to calculate the call graph.
@@ -63,87 +66,18 @@ import org.opalj.br.instructions.INVOKESTATIC
  * @author Michael Eichberg
  */
 class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFile with TheMethod](
-    cache: CallGraphCache[MethodSignature, Set[Method]],
+    val cache: CallGraphCache[MethodSignature, Set[Method]],
     Domain: (ClassFile, Method) ⇒ TheDomain)
         extends CallGraphExtractor {
 
-    protected[this] class AnalysisContext(val domain: TheDomain) {
+    protected[this] class AnalysisContext(
+        val domain: TheDomain)
+            extends super.AnalysisContext {
 
         val project = domain.project
+        val classHierarchy = project.classHierarchy
         val classFile = domain.classFile
         val method = domain.method
-        val classHierarchy = domain.project.classHierarchy
-
-        //
-        //
-        // Managing/Storing Call Edges
-        //
-        //
-
-        import scala.collection.mutable.OpenHashMap
-        import scala.collection.mutable.HashSet
-
-        var unresolvableMethodCalls = List.empty[UnresolvedMethodCall]
-
-        @inline def addUnresolvedMethodCall(
-            callerClass: ReferenceType, caller: Method, pc: PC,
-            calleeClass: ReferenceType, calleeName: String, calleeDescriptor: MethodDescriptor): Unit = {
-            unresolvableMethodCalls =
-                new UnresolvedMethodCall(
-                    callerClass, caller, pc,
-                    calleeClass, calleeName, calleeDescriptor
-                ) :: unresolvableMethodCalls
-        }
-
-        def allUnresolvableMethodCalls: List[UnresolvedMethodCall] = unresolvableMethodCalls
-
-        private[this] val callEdgesMap = OpenHashMap.empty[PC, Set[Method]]
-
-        @inline final def addCallEdge(
-            pc: PC,
-            callees: Set[Method]): Unit = {
-
-            if (callEdgesMap.contains(pc)) {
-                callEdgesMap(pc) ++= callees
-            } else {
-                callEdgesMap.put(pc, callees)
-            }
-        }
-
-        def allCallEdges: (Method, Map[PC, Set[Method]]) = (method, callEdgesMap)
-
-        def addCallToNullPointerExceptionConstructor(
-            callerType: ObjectType, callerMethod: Method, pc: PC) {
-
-            cache.NullPointerExceptionDefaultConstructor match {
-                case Some(defaultConstructor) ⇒
-                    addCallEdge(pc, HashSet(defaultConstructor))
-                case _ ⇒
-                    val defaultConstructorDescriptor = MethodDescriptor.NoArgsAndReturnVoid
-                    val NullPointerException = ObjectType.NullPointerException
-                    addUnresolvedMethodCall(
-                        callerType, callerMethod, pc,
-                        NullPointerException, "<init>", defaultConstructorDescriptor
-                    )
-            }
-        }
-
-        @inline protected[this] def callees(
-            declaringClassType: ObjectType,
-            name: String,
-            descriptor: MethodDescriptor): Set[Method] = {
-
-            if (classHierarchy.isKnown(declaringClassType)) {
-                val methodSignature = new MethodSignature(name, descriptor)
-                cache.getOrElseUpdate(declaringClassType, methodSignature) {
-                    classHierarchy.lookupImplementingMethods(
-                        declaringClassType, name, descriptor, project
-                    )
-                }
-            } else {
-                Set.empty
-            }
-        }
 
         def staticCall(
             pc: PC,
@@ -178,9 +112,9 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             name: String,
             descriptor: MethodDescriptor,
             receiverIsNull: Answer,
-            operands: domain.Operands) {
+            operands: domain.Operands): Unit = {
 
-            def handleUnresolvedMethodCall() {
+            def handleUnresolvedMethodCall(): Unit = {
                 addUnresolvedMethodCall(
                     classFile.thisType, method, pc,
                     declaringClassType, name, descriptor
@@ -213,7 +147,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             name: String,
             descriptor: MethodDescriptor,
             receiverIsNull: Answer,
-            operands: domain.Operands) {
+            operands: domain.Operands): Unit = {
 
             if (receiverIsNull.isYesOrUnknown)
                 addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
@@ -247,7 +181,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             declaringClassType: ObjectType,
             name: String,
             descriptor: MethodDescriptor,
-            operands: domain.Operands) {
+            operands: domain.Operands): Unit = {
             // MODIFIED CHA - we used the type information that is readily available        
             val receiver =
                 domain.typeOfValue(
@@ -341,10 +275,26 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
     protected def AnalysisContext(domain: TheDomain): AnalysisContext =
         new AnalysisContext(domain)
 
+    private[this] val chaCallGraphExctractor =
+        new CHACallGraphExtractor(cache /*it should not be used...*/ )
+
     def extract(project: SomeProject, classFile: ClassFile, method: Method): LocalCallGraphInformation = {
 
-        val result = BaseAI(classFile, method, Domain(classFile, method))
+        // The following optimization (using the plain CHA algorithm for all methods
+        // that do not virtual method calls) may lead to some additional edges (if
+        // the underlying code contains dead code), but the improvement is worth the 
+        // few additional edges.
+        val hasVirtualMethodCalls =
+            method.body.get.instructions.exists { i ⇒
+                i.isInstanceOf[VirtualMethodInvocationInstruction]
+            }
+        if (!hasVirtualMethodCalls)
+            return chaCallGraphExctractor.extract(project, classFile, method)
 
+        // There are virtual calls, hence, we now do the call graph extraction using
+        // variable type analysis    
+
+        val result = BaseAI(classFile, method, Domain(classFile, method))
         val context = AnalysisContext(result.domain)
 
         result.domain.code.foreach { (pc, instruction) ⇒
