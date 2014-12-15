@@ -41,7 +41,7 @@ import java.io.File
  */
 object ClassHierarchyExtractor {
 
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
 
         import reader.Java8Framework.ClassFiles
 
@@ -53,7 +53,6 @@ object ClassHierarchyExtractor {
 
         val supertypeName = args(0).replace('.', '/')
         val filterPrefix = args(1).replace('.', '/')
-        val jars = args.drop(2)
 
         val classFiles =
             (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
@@ -78,7 +77,7 @@ object ClassHierarchyExtractor {
             classHierarchy.allSubtypes(supertype, true).filter { candidateType ⇒
                 candidateType.fqn.startsWith(filterPrefix)
             }
-        var specLines = allRelevantSubtypes.map { aType ⇒
+        val specLines = allRelevantSubtypes.map { aType ⇒
             var specLine =
                 (
                     if (classHierarchy.isInterface(aType))

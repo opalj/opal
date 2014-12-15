@@ -6,7 +6,7 @@ version := "1.2.0-SNAPSHOT"
 
 scalaVersion := "2.11.4"
 
-scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
+scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked", "-Xlint", "-Xfuture")
 
 scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - BugPicker")
 

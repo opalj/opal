@@ -74,7 +74,7 @@ trait ConstraintsBetweenIntegerValues
 
     abstract override def setCodeStructure(
         theInstructions: Array[Instruction],
-        theJoinInstructions: BitSet) {
+        theJoinInstructions: BitSet): Unit = {
         super.setCodeStructure(theInstructions, theJoinInstructions)
 
         constraints = new Array[ConstraintsStore](theInstructions.size)

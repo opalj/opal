@@ -53,7 +53,7 @@ trait ConsoleEvaluationTracer extends AITracer {
     import Console._
 
     private[this] var indent = 0
-    private[this] def printIndent() { (0 until indent) foreach (i ⇒ print("\t")) }
+    private[this] def printIndent(): Unit = { (0 until indent) foreach (i ⇒ print("\t")) }
 
     def reset(): Unit = { indent = 0 }
 

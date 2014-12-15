@@ -37,7 +37,7 @@ package analyses
  */
 object ClassHierarchyVisualizer {
 
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
 
         import graphs.{ Node, toDot }
 

@@ -52,17 +52,17 @@ object TestSupport {
      */
     def locateTestResources(resourceName: String, subProjectFolder: String): File = {
         { // if the current path is set to OPAL's root folder
-            var file = new File("OPAL/"+subProjectFolder+"/src/test/resources/"+resourceName)
+            val file = new File("OPAL/"+subProjectFolder+"/src/test/resources/"+resourceName)
             if (file.exists()) return file
         }
         { // if the current path is set to "<SUB-PROJECT>/<BIN>"
-            var file = new File("../../"+subProjectFolder+"src/test/resources/"+resourceName)
+            val file = new File("../../"+subProjectFolder+"src/test/resources/"+resourceName)
             if (file.exists()) return file
         }
 
         {
             // if we are in the sub-project's root folder
-            var file = new File("../"+subProjectFolder+"/src/test/resources/"+resourceName)
+            val file = new File("../"+subProjectFolder+"/src/test/resources/"+resourceName)
             if (file.exists()) return file
         }
         {
@@ -70,7 +70,7 @@ object TestSupport {
             // if the current path is set to "target/scala-.../classes"
             if ("""target/scala\-[\w\.]+/classes$""".r.findFirstIn(userDir).isDefined) {
 
-                var file = new File("../../../src/test/resources/"+resourceName)
+                val file = new File("../../../src/test/resources/"+resourceName)
                 if (file.exists()) return file
             }
         }

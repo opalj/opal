@@ -103,7 +103,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
     //
 
     test("parse various class file signatures in parallel") {
-        def parse(s: String) {
+        def parse(s: String): Unit = {
             val r = SignatureParser.parseClassSignature(s)
             assert(r ne null)
         }
@@ -111,7 +111,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
     }
 
     test("parse various field type signatures in parallel") {
-        def parse(s: String) {
+        def parse(s: String): Unit = {
             val r = SignatureParser.parseFieldTypeSignature(s)
             assert(r ne null)
         }
@@ -119,7 +119,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
     }
 
     test("parse various method type signatures in parallel") {
-        def parse(s: String) {
+        def parse(s: String): Unit = {
             val r = SignatureParser.parseMethodTypeSignature(s)
             assert(r ne null)
         }
@@ -133,7 +133,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
     //
 
     val ClassFileSignatures: Array[String] =
-        """
+        s"""
 	<A:Ljava/lang/Object;>Ljava/lang/Object;Lde/tud/cs/st/util/collection/Store<TA;>;Lscala/ScalaObject;
 	<A:Ljava/lang/Object;>Ljava/lang/Object;Lde/tud/cs/st/util/collection/WorkList<TA;>;Lscala/ScalaObject;
 	<A:Ljava/lang/Object;>Ljava/lang/Object;Lscala/Iterable<TA;>;Lscala/ScalaObject;
@@ -151,8 +151,8 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	<This::Lde/tud/cs/st/util/OrderedTreeSetElement<TThis;>;>Ljava/lang/Object;Lscala/ScalaObject;
 	Lde/tud/cs/st/sae/GroundTerms<Lscala/Nothing;>;Lscala/ScalaObject;
 	Lde/tud/cs/st/sae/GroundTerms<TT;>;
-	Ljava/lang/Enum<Lde/tud/bat/io/xml/writer/XMLClassFileWriterConfiguration$DocumentType;>;
-	Ljava/lang/Enum<Lde/tud/bat/quadruples/Use$RefType;>;
+	Ljava/lang/Enum<Lde/tud/bat/io/xml/writer/XMLClassFileWriterConfiguration$$DocumentType;>;
+	Ljava/lang/Enum<Lde/tud/bat/quadruples/Use$$RefType;>;
 	Ljava/lang/Enum<Lde/tud/cs/se/flashcards/model/learning/LearningStrategies;>;
 	Ljava/lang/Object;Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/ClassFile;>;
 	Ljava/lang/Object;Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/ExceptionHandler;>;
@@ -179,8 +179,8 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	""".trim.split("\n").map(_.trim())
 
     val FieldTypeSignatures: Array[String] =
-        """
-	Lde/tud/bat/instruction/executiongraph/StackLayout$ShrinkableArrayList<Lde/tud/bat/type/ValueType;>;
+        s"""
+	Lde/tud/bat/instruction/executiongraph/StackLayout$$ShrinkableArrayList<Lde/tud/bat/type/ValueType;>;
 	Lde/tud/cs/st/bat/resolved/ConstantValue<*>;
 	Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ElementValuePairTerm;>;
 	Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ExceptionTableEntryTerm;>;
@@ -207,7 +207,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	Ljava/util/ArrayList<Lde/tud/bat/quadruples/ExceptionHandler;>;
 	Ljava/util/ArrayList<Lde/tud/bat/quadruples/MethodParameter;>;
 	Ljava/util/ArrayList<Lde/tud/bat/quadruples/Statement;>;
-	Ljava/util/ArrayList<Lde/tud/bat/quadruples/Switch$Case;>;
+	Ljava/util/ArrayList<Lde/tud/bat/quadruples/Switch$$Case;>;
 	Ljava/util/ArrayList<Lde/tud/bat/type/FormalTypeParameter;>;
 	Ljava/util/ArrayList<Lde/tud/bat/type/ObjectType;>;
 	Ljava/util/ArrayList<Lde/tud/cs/se/flashcards/model/Flashcard;>;
@@ -265,11 +265,11 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	Ljava/util/Set<Lde/tud/cs/st/columbus/Component;>;
 	Ljava/util/Set<Lde/tud/cs/st/columbus/ServiceSpecification;>;
 	Ljava/util/Set<Ljava/lang/ClassLoader;>;
-	Ljava/util/Stack<Lde/tud/bat/classfile/impl/CodeImpl$Code_JumpTarget;>;
+	Ljava/util/Stack<Lde/tud/bat/classfile/impl/CodeImpl$$Code_JumpTarget;>;
 	Ljava/util/Stack<Lde/tud/bat/io/xml/reader/exceptionhandler/TryBlock;>;
 	Ljava/util/Stack<Lde/tud/bat/type/Type;>;
 	Ljava/util/Stack<Ljavax/swing/event/ListDataEvent;>;
-	Ljava/util/Vector<Lde/tud/bat/classfile/impl/CodeImpl$Code_JumpTarget;>;
+	Ljava/util/Vector<Lde/tud/bat/classfile/impl/CodeImpl$$Code_JumpTarget;>;
 	Ljava/util/Vector<Lde/tud/bat/type/Type;>;
 	Ljava/util/Vector<Lde/tud/cs/se/flashcards/model/Command;>;
 	Lscala/collection/immutable/Map<Ljava/lang/String;Lscala/collection/immutable/Set<Ljava/lang/String;>;>;
@@ -294,16 +294,16 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	Lscala/List<[Lde/tud/cs/st/sae/Term;>;
 	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/AccessFlag;>;
 	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;
-	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Annotation;>;
-	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$ElementValuePair;>;
-	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$ExceptionTableEntry;>;
-	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Field_Info;>;
-	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$InnerClassesEntry;>;
-	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LineNumberTableEntry;>;
-	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LocalVariableTableEntry;>;
-	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LocalVariableTypeTableEntry;>;
-	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Method_Info;>;
-	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$StackMapFrame;>;
+	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;>;
+	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$ElementValuePair;>;
+	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$ExceptionTableEntry;>;
+	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Field_Info;>;
+	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$InnerClassesEntry;>;
+	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LineNumberTableEntry;>;
+	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LocalVariableTableEntry;>;
+	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LocalVariableTypeTableEntry;>;
+	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Method_Info;>;
+	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$StackMapFrame;>;
 	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/VerificationTypeInfo;>;
 	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Annotation;>;
 	Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/ElementValue;>;
@@ -333,7 +333,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
   	""".trim.split("\n").map(_.trim())
 
     val MethodTypeSignatures: Array[String] =
-        """
+        s"""
 	()Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/ParameterAnnotation;>;
 	()Lde/tud/bat/util/BATIterator<Lde/tud/bat/instruction/Instruction;>;
 	()Lde/tud/bat/util/BATIterator<Lde/tud/bat/type/FormalTypeParameter;>;
@@ -393,7 +393,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	()Lscala/Collection<Lde/tud/cs/st/util/trees/TreeNode;>;
 	()Lscala/Function1<Lde/tud/cs/st/prolog/ISOProlog;Ljava/lang/Object;>;
 	()Lscala/Function3<Ljava/io/DataInputStream;Lscala/RandomAccessSeq<TA;>;Ljava/lang/Integer;Ljava/lang/Object;>;
-	()Lscala/Iterator<Lscala/Enumeration$Value;>;
+	()Lscala/Iterator<Lscala/Enumeration$$Value;>;
 	()Lscala/Iterator<TA;>;
 	()Lscala/List<Lde/tud/cs/st/bat/resolved/ObjectType;>;
 	()Lscala/List<Lde/tud/cs/st/sae/Fact;>;
@@ -403,14 +403,14 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	()Lscala/List<[Lde/tud/cs/st/sae/Term;>;
 	()Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/AccessFlag;>;
 	()Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;
-	()Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$StackMapFrame;>;
+	()Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$StackMapFrame;>;
 	()Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/VerificationTypeInfo;>;
 	()Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Annotation;>;
 	()Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Method_Info;>;
 	()Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/StackMapFrame;>;
 	()Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/VerificationTypeInfo;>;
 	()Lscala/RandomAccessSeq<Ljava/lang/Integer;>;
-	()Lscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Annotation;>;>;
+	()Lscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;>;>;
 	()Lscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Annotation;>;>;
 	()Lscala/RandomAccessSeq<Lscala/Tuple2<Ljava/lang/Integer;Ljava/lang/Integer;>;>;
 	()Lscala/Seq<Lde/tud/cs/st/bat/resolved/ObjectType;>;
@@ -422,25 +422,25 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	()Lscala/Seq<Lscala/xml/Elem;>;
 	()Lscala/Tuple2<Ljava/lang/Integer;Ljava/lang/Integer;>;
 	()Lscala/Tuple2<TA;Lde/tud/cs/st/util/collection/Store<TA;>;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lde/tud/cs/st/sae/Atom;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lde/tud/cs/st/sae/Fact;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lde/tud/cs/st/sae/FloatAtom;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lde/tud/cs/st/sae/GroundTerm;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/sae/GroundTerm;>;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lde/tud/cs/st/sae/GroundTerms<Lscala/Nothing;>;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lde/tud/cs/st/sae/parser/Program;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lde/tud/cs/st/sae/Rule;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lde/tud/cs/st/sae/Term;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lde/tud/cs/st/sae/Variable;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Ljava/lang/Float;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Ljava/lang/Long;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Ljava/lang/Object;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Ljava/lang/String;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lscala/List<Lde/tud/cs/st/sae/GroundTerm;>;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lscala/List<Lde/tud/cs/st/sae/Term;>;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<Lscala/List<TT;>;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<[Lde/tud/cs/st/sae/GroundTerm;>;
-	()Lscala/util/parsing/combinator/Parsers$Parser<[Lde/tud/cs/st/sae/Term;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lde/tud/cs/st/sae/Atom;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lde/tud/cs/st/sae/Fact;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lde/tud/cs/st/sae/FloatAtom;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lde/tud/cs/st/sae/GroundTerm;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/sae/GroundTerm;>;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lde/tud/cs/st/sae/GroundTerms<Lscala/Nothing;>;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lde/tud/cs/st/sae/parser/Program;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lde/tud/cs/st/sae/Rule;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lde/tud/cs/st/sae/Term;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lde/tud/cs/st/sae/Variable;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Ljava/lang/Float;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Ljava/lang/Long;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Ljava/lang/Object;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Ljava/lang/String;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lscala/List<Lde/tud/cs/st/sae/GroundTerm;>;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lscala/List<Lde/tud/cs/st/sae/Term;>;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<Lscala/List<TT;>;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<[Lde/tud/cs/st/sae/GroundTerm;>;
+	()Lscala/util/parsing/combinator/Parsers$$Parser<[Lde/tud/cs/st/sae/Term;>;
 	()TA;
 	()TE;
 	()TT;
@@ -450,54 +450,54 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	(I)TA;
 	(I)TT;
 	(I)TThis;
-	(IIIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LocalVariableTableEntry;
-	(IIIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LocalVariableTypeTableEntry;
+	(IIIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LocalVariableTableEntry;
+	(IIIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LocalVariableTypeTableEntry;
 	(IIIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/LocalVariableTableEntry;
 	(IIIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/LocalVariableTypeTableEntry;
 	(IIIIILscala/RandomAccessSeq<Ljava/lang/Integer;>;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
-	(IIIIILscala/RandomAccessSeq<Ljava/lang/Integer;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Field_Info;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Method_Info;>;Lscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$ClassFile;
+	(IIIIILscala/RandomAccessSeq<Ljava/lang/Integer;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Field_Info;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Method_Info;>;Lscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$ClassFile;
 	(IIIIILscala/RandomAccessSeq<Ljava/lang/Integer;>;Lscala/RandomAccessSeq<TA;>;Lscala/RandomAccessSeq<TA;>;Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/prolog/ClassFileFact;
 	(IIIIILscala/RandomAccessSeq<Ljava/lang/Integer;>;Lscala/RandomAccessSeq<TA;>;Lscala/RandomAccessSeq<TA;>;Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/ClassFile;
-	(IIIILde/tud/cs/st/bat/native/reader/BasicJava6Framework$Code;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$ExceptionTableEntry;>;Lscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;)V
-	(IIIILde/tud/cs/st/bat/native/reader/BasicJava6Framework$Code;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$ExceptionTableEntry;>;Lscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Code_attribute;
+	(IIIILde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Code;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$ExceptionTableEntry;>;Lscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;)V
+	(IIIILde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Code;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$ExceptionTableEntry;>;Lscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Code_attribute;
 	(IIIILjava/lang/Object;Lscala/RandomAccessSeq<Ljava/lang/Object;>;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
-	(IIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$ExceptionTableEntry;
-	(IIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$InnerClassesEntry;
+	(IIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$ExceptionTableEntry;
+	(IIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$InnerClassesEntry;
 	(IIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/ExceptionTableEntry;
 	(IIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/InnerClassesEntry;
 	(IIII[Lde/tud/cs/st/bat/resolved/Instruction;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/ExceptionTableEntry;>;Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/Code_attribute;
 	(IIILde/tud/cs/st/bat/resolved/ObjectType;Lde/tud/cs/st/bat/resolved/ObjectType;Lscala/Seq<Lde/tud/cs/st/bat/resolved/ObjectType;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Field_Info;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Method_Info;>;Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;)V
-	(IIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$EnclosingMethod_attribute;
+	(IIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$EnclosingMethod_attribute;
 	(IIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/EnclosingMethod_attribute;
 	(IIILscala/RandomAccessSeq<Ljava/lang/Integer;>;)V
 	(IIILscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;)V
-	(IIILscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Field_Info;
-	(IIILscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Method_Info;
+	(IIILscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Field_Info;
+	(IIILscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Method_Info;
 	(IIILscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/prolog/FieldFact;
 	(IIILscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/prolog/MethodFact;
 	(IIILscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/Field_Info;
 	(IIILscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/Method_Info;
-	(IILde/tud/cs/st/bat/native/ElementValue;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$AnnotationDefault_attribute;
+	(IILde/tud/cs/st/bat/native/ElementValue;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$AnnotationDefault_attribute;
 	(IILde/tud/cs/st/bat/resolved/ElementValue;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/AnnotationDefault_attribute;
-	(IILjava/lang/String;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$SourceDebugExtension_attribute;
+	(IILjava/lang/String;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$SourceDebugExtension_attribute;
 	(IILjava/lang/String;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/SourceDebugExtension_attribute;
 	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/ElementValue;
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$ConstantValue_attribute;
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LineNumberTableEntry;
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Signature_attribute;
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$SourceFile_attribute;
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$ConstantValue_attribute;
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LineNumberTableEntry;
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Signature_attribute;
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$SourceFile_attribute;
 	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/SourceFile_attribute;
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Annotation;>;)V
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Annotation;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$RuntimeInvisibleAnnotations_attribute;
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Annotation;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$RuntimeVisibleAnnotations_attribute;
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LineNumberTableEntry;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LineNumberTable_attribute;
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LocalVariableTableEntry;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LocalVariableTable_attribute;
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LocalVariableTypeTableEntry;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LocalVariableTypeTable_attribute;
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$StackMapFrame;>;)V
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$StackMapFrame;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$StackMapTable_attribute;
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/VerificationTypeInfo;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$StackMapFrame;
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;>;)V
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$RuntimeInvisibleAnnotations_attribute;
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$RuntimeVisibleAnnotations_attribute;
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LineNumberTableEntry;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LineNumberTable_attribute;
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LocalVariableTableEntry;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LocalVariableTable_attribute;
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LocalVariableTypeTableEntry;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LocalVariableTypeTable_attribute;
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$StackMapFrame;>;)V
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$StackMapFrame;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$StackMapTable_attribute;
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/VerificationTypeInfo;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$StackMapFrame;
 	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/VerificationTypeInfo;>;)V
-	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/VerificationTypeInfo;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/VerificationTypeInfo;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$StackMapFrame;
+	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/VerificationTypeInfo;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/VerificationTypeInfo;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$StackMapFrame;
 	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/VerificationTypeInfo;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/VerificationTypeInfo;>;)V
 	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Annotation;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/RuntimeInvisibleAnnotations_attribute;
 	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Annotation;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/RuntimeVisibleAnnotations_attribute;
@@ -510,26 +510,26 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/VerificationTypeInfo;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/VerificationTypeInfo;>;)Lde/tud/cs/st/bat/resolved/StackMapFrame;
 	(IILscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/VerificationTypeInfo;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/VerificationTypeInfo;>;)V
 	(IILscala/RandomAccessSeq<Ljava/lang/Integer;>;Ljava/lang/Object;)Ljava/lang/Object;
-	(IILscala/RandomAccessSeq<Ljava/lang/Integer;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Exceptions_attribute;
+	(IILscala/RandomAccessSeq<Ljava/lang/Integer;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Exceptions_attribute;
 	(IILscala/RandomAccessSeq<Ljava/lang/Integer;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/Exceptions_attribute;
 	(IILscala/RandomAccessSeq<Ljava/lang/Object;>;)Ljava/lang/Object;
 	(IILscala/RandomAccessSeq<Ljava/lang/Object;>;Ljava/lang/Object;)Ljava/lang/Object;
 	(IILscala/RandomAccessSeq<Ljava/lang/Object;>;Lscala/RandomAccessSeq<Ljava/lang/Object;>;)Ljava/lang/Object;
-	(IILscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Annotation;>;>;)V
-	(IILscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Annotation;>;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$RuntimeInvisibleParameterAnnotations_attribute;
-	(IILscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Annotation;>;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$RuntimeVisibleParameterAnnotations_attribute;
+	(IILscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;>;>;)V
+	(IILscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;>;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$RuntimeInvisibleParameterAnnotations_attribute;
+	(IILscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;>;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$RuntimeVisibleParameterAnnotations_attribute;
 	(IILscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Annotation;>;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/RuntimeInvisibleParameterAnnotations_attribute;
 	(IILscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Annotation;>;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/RuntimeVisibleParameterAnnotations_attribute;
 	(IILscala/RandomAccessSeq<Lscala/Tuple2<Ljava/lang/Integer;Ljava/lang/Integer;>;>;)V
 	(II[Lde/tud/cs/st/bat/resolved/Instruction;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/ExceptionTableEntry;>;Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;)V
-	(ILde/tud/cs/st/bat/native/ElementValue;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$ElementValuePair;
+	(ILde/tud/cs/st/bat/native/ElementValue;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$ElementValuePair;
 	(ILde/tud/cs/st/bat/resolved/ElementValue;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/ElementValuePair;
 	(ILde/tud/cs/st/sae/GroundTerms<TT;>;)V
 	(ILjava/lang/String;Lde/tud/cs/st/bat/resolved/FieldDescriptor;Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;)V
 	(ILjava/lang/String;Lde/tud/cs/st/bat/resolved/MethodDescriptor;Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;)V
 	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/ElementValue;
-	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Deprecated_attribute;
-	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Synthetic_attribute;
+	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Deprecated_attribute;
+	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Synthetic_attribute;
 	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/VerificationTypeInfo;
 	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;
 	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/prolog/TypeTerm;
@@ -547,20 +547,20 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lscala/Tuple2<Ljava/lang/String;Lde/tud/cs/st/bat/resolved/MethodDescriptor;>;
 	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lscala/Tuple3<Lde/tud/cs/st/bat/resolved/ObjectType;Ljava/lang/String;Lde/tud/cs/st/bat/resolved/FieldType;>;
 	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lscala/Tuple3<Lde/tud/cs/st/bat/resolved/ObjectType;Ljava/lang/String;Lde/tud/cs/st/bat/resolved/MethodDescriptor;>;
-	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$ElementValuePair;>;)V
-	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$ElementValuePair;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Annotation;
-	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$InnerClassesEntry;>;)V
-	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$InnerClassesEntry;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$InnerClasses_attribute;
-	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LineNumberTableEntry;>;)V
-	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LocalVariableTableEntry;>;)V
-	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$LocalVariableTypeTableEntry;>;)V
+	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$ElementValuePair;>;)V
+	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$ElementValuePair;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;
+	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$InnerClassesEntry;>;)V
+	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$InnerClassesEntry;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$InnerClasses_attribute;
+	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LineNumberTableEntry;>;)V
+	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LocalVariableTableEntry;>;)V
+	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$LocalVariableTypeTableEntry;>;)V
 	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/ElementValuePair;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/Annotation;
 	(ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/InnerClassesEntry;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/InnerClasses_attribute;
 	(ILscala/RandomAccessSeq<Ljava/lang/Integer;>;)V
 	(ILscala/RandomAccessSeq<Ljava/lang/Object;>;Ljava/lang/Object;)Ljava/lang/Object;
 	(ILscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;)Lde/tud/cs/st/bat/prolog/SyntheticTerm;
 	(ILscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;)Z
-	(I[BLscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Unknown_attribute;
+	(I[BLscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Unknown_attribute;
 	(I[BLscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/Unknown_attribute;
 	(Lalice/tuprolog/Prolog;)Ljava/util/Set<Lde/tud/cs/st/columbus/Component;>;
 	(Lalice/tuprolog/Prolog;Ljava/util/Set<Lde/tud/cs/st/columbus/Component;>;)V
@@ -583,7 +583,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	(Lde/tud/bat/io/xml/writer/bytecodeinstructions/WrapperHandler;Lde/tud/bat/instruction/Instruction;Ljava/util/Vector<Lorg/jdom/Element;>;)V
 	(Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/Annotation;>;)I
 	(Lde/tud/bat/util/BATIterator<Lde/tud/bat/type/Type;>;)Z
-	(Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Annotation;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/ElementValue;
+	(Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/ElementValue;
 	(Lde/tud/cs/st/bat/prolog/ClassCategoryAtom;Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;>;Lde/tud/cs/st/bat/prolog/VisibilityAtom;Lde/tud/cs/st/bat/prolog/FinalTerm;Lde/tud/cs/st/bat/prolog/AbstractTerm;Lde/tud/cs/st/bat/prolog/SyntheticTerm;Lde/tud/cs/st/bat/prolog/DeprecatedTerm;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/prolog/FieldFact;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/prolog/MethodFact;>;)V
 	(Lde/tud/cs/st/bat/prolog/MethodKeyAtom;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ExceptionTableEntryTerm;>;)V
 	(Lde/tud/cs/st/bat/prolog/MethodKeyAtom;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/LineNumberTableEntryTerm;>;)Lde/tud/cs/st/bat/prolog/LineNumbersTableFact;
@@ -631,7 +631,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	(Ljava/lang/reflect/Constructor<*>;)V
 	(Ljava/lang/String;)Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/Attribute;>;
 	(Ljava/lang/String;)Ljava/util/Set<Lde/tud/cs/st/columbus/Component;>;
-	(Ljava/lang/String;)Lscala/Option<Lscala/Enumeration$Value;>;
+	(Ljava/lang/String;)Lscala/Option<Lscala/Enumeration$$Value;>;
 	(Ljava/lang/String;I)Lscala/Tuple2<Lde/tud/cs/st/bat/resolved/FieldType;Ljava/lang/Integer;>;
 	(Ljava/lang/String;Lde/tud/cs/st/columbus/Container;Ljava/util/Set<Lde/tud/cs/st/columbus/Component;>;Ljava/util/Set<Lde/tud/cs/st/columbus/ServiceSpecification;>;Ljava/util/List<Lorg/apache/commons/vfs/FileObject;>;Lorg/apache/commons/vfs/FileObject;)V
 	(Ljava/lang/String;Ljava/util/Map<Ljava/lang/Object;Ljava/lang/Object;>;)Ljava/lang/String;
@@ -669,16 +669,16 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	(Lorg/jdom/Element;Lde/tud/bat/classfile/structure/ClassFileElement;)Ljava/util/ArrayList<Lde/tud/bat/classfile/structure/Annotation;>;
 	(Lscala/collection/immutable/Set<Lde/tud/cs/st/util/graphs/Node;>;)Ljava/lang/String;
 	(Lscala/collection/immutable/Set<Ljava/lang/String;>;Ljava/lang/String;)Lscala/collection/immutable/Set<Ljava/lang/String;>;
-	(Lscala/collection/mutable/Map<Ljava/lang/String;Lde/tud/cs/st/sae/Variable;>;)Lscala/util/parsing/combinator/Parsers$Parser<Lde/tud/cs/st/sae/Term;>;
-	(Lscala/collection/mutable/Map<Ljava/lang/String;Lde/tud/cs/st/sae/Variable;>;)Lscala/util/parsing/combinator/Parsers$Parser<Lde/tud/cs/st/sae/Variable;>;
+	(Lscala/collection/mutable/Map<Ljava/lang/String;Lde/tud/cs/st/sae/Variable;>;)Lscala/util/parsing/combinator/Parsers$$Parser<Lde/tud/cs/st/sae/Term;>;
+	(Lscala/collection/mutable/Map<Ljava/lang/String;Lde/tud/cs/st/sae/Variable;>;)Lscala/util/parsing/combinator/Parsers$$Parser<Lde/tud/cs/st/sae/Variable;>;
 	(Lscala/Function0<Ljava/io/InputStream;>;)Ljava/lang/Object;
 	(Lscala/Function0<TT;>;)[TT;
 	(Lscala/Function1<Lde/tud/cs/st/sae/Term;Ljava/lang/Object;>;)V
 	(Lscala/Function1<Lde/tud/cs/st/util/graphs/Node;Ljava/lang/Object;>;)V
 	(Lscala/Function1<Lde/tud/cs/st/util/trees/TreeNode;Ljava/lang/Object;>;)V
-	(Lscala/Function1<Lscala/Enumeration$Value;Ljava/lang/Boolean;>;)Lscala/Iterator<Lscala/Enumeration$Value;>;
-	(Lscala/Function1<Lscala/Enumeration$Value;Ljava/lang/Boolean;>;)Z
-	(Lscala/Function1<Lscala/Enumeration$Value;Ljava/lang/Object;>;)V
+	(Lscala/Function1<Lscala/Enumeration$$Value;Ljava/lang/Boolean;>;)Lscala/Iterator<Lscala/Enumeration$$Value;>;
+	(Lscala/Function1<Lscala/Enumeration$$Value;Ljava/lang/Boolean;>;)Z
+	(Lscala/Function1<Lscala/Enumeration$$Value;Ljava/lang/Object;>;)V
 	(Lscala/Function1<Lscala/Nothing;Ljava/lang/Object;>;)V
 	(Lscala/Function1<TA;Ljava/lang/Object;>;)V
 	(Lscala/Function1<TA;Ljava/lang/String;>;Ljava/lang/String;)Ljava/lang/String;
@@ -691,7 +691,7 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	(Lscala/List<Ljava/lang/Object;>;)Lde/tud/cs/st/sae/parser/Program;
 	(Lscala/List<TT;>;)[TT;
 	(Lscala/List<[Lde/tud/cs/st/sae/Term;>;)V
-	(Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;IIIIILscala/RandomAccessSeq<Ljava/lang/Integer;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Field_Info;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Method_Info;>;Lscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;)V
+	(Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;IIIIILscala/RandomAccessSeq<Ljava/lang/Integer;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Field_Info;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Method_Info;>;Lscala/Seq<Lde/tud/cs/st/bat/native/Attribute;>;)V
 	(Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/ElementValue;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/ElementValue;
 	(Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Annotation;>;)Lscala/xml/Elem;
 	(Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Annotation;>;)V
@@ -717,17 +717,17 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	(Lscala/Tuple2<Ljava/lang/Object;Ljava/lang/Object;>;)V
 	(Lscala/Tuple2<Ljava/lang/String;Lscala/Function3<Ljava/io/DataInputStream;Ljava/lang/Object;Ljava/lang/Integer;Ljava/lang/Object;>;>;)V
 	(Lscala/Tuple2<Ljava/lang/String;Lscala/Function3<Ljava/io/DataInputStream;Lscala/RandomAccessSeq<TA;>;Ljava/lang/Integer;Ljava/lang/Object;>;>;)V
-	(Lscala/util/parsing/combinator/Parsers$$tilde<Ljava/lang/String;[Lde/tud/cs/st/sae/GroundTerm;>;)Lde/tud/cs/st/sae/Fact;
-	(Lscala/util/parsing/combinator/Parsers$$tilde<Ljava/lang/String;[Lde/tud/cs/st/sae/GroundTerm;>;)Lde/tud/cs/st/sae/GroundTerm;
-	(Lscala/util/parsing/combinator/Parsers$$tilde<Ljava/lang/String;[Lde/tud/cs/st/sae/Term;>;)Lde/tud/cs/st/sae/Term;
-	(Lscala/util/parsing/combinator/Parsers$$tilde<Lscala/util/parsing/combinator/Parsers$$tilde<Lde/tud/cs/st/sae/Term;Ljava/lang/String;>;[Lde/tud/cs/st/sae/Term;>;)Lde/tud/cs/st/sae/Rule;
+	(Lscala/util/parsing/combinator/Parsers$$$$tilde<Ljava/lang/String;[Lde/tud/cs/st/sae/GroundTerm;>;)Lde/tud/cs/st/sae/Fact;
+	(Lscala/util/parsing/combinator/Parsers$$$$tilde<Ljava/lang/String;[Lde/tud/cs/st/sae/GroundTerm;>;)Lde/tud/cs/st/sae/GroundTerm;
+	(Lscala/util/parsing/combinator/Parsers$$$$tilde<Ljava/lang/String;[Lde/tud/cs/st/sae/Term;>;)Lde/tud/cs/st/sae/Term;
+	(Lscala/util/parsing/combinator/Parsers$$$$tilde<Lscala/util/parsing/combinator/Parsers$$$$tilde<Lde/tud/cs/st/sae/Term;Ljava/lang/String;>;[Lde/tud/cs/st/sae/Term;>;)Lde/tud/cs/st/sae/Rule;
 	(TA;)V
 	(TA;Lde/tud/cs/st/util/collection/Store<TA;>;)V
 	(TT;)V
 	(TThis;)Z
 	(TThis;TThis;I)TThis;
 	([BLjava/util/Hashtable<Lde/tud/bat/instruction/Instruction;Ljava/lang/Integer;>;)V
-	([BLscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$Code;
+	([BLscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Code;
 	([BLscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)[Lde/tud/cs/st/bat/resolved/Instruction;
 	([Lde/tud/cs/st/columbus/Component;)Ljava/util/Map<Lde/tud/cs/st/columbus/Component;Ljava/lang/Object;>;
 	([Ljava/lang/Class<*>;)Lde/tud/bat/util/BATIterator<Lde/tud/bat/type/Type;>;
@@ -738,13 +738,13 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 	<A:Ljava/lang/Object;>(Lde/tud/cs/st/util/collection/WorkList<TA;>;Lscala/Function1<TA;Ljava/lang/Object;>;)V
 	<A:Ljava/lang/Object;>(Lscala/Seq<TA;>;)Lde/tud/cs/st/util/collection/Store<TA;>;
 	<A:Ljava/lang/Object;>(TA;)Lde/tud/cs/st/util/collection/WorkList<TA;>;
-	<B:Ljava/lang/Object;>(Lscala/Function1<Lscala/Enumeration$Value;Lscala/Iterator<TB;>;>;)Lscala/Iterator<TB;>;
-	<B:Ljava/lang/Object;>(Lscala/Function1<Lscala/Enumeration$Value;TB;>;)Lscala/Iterator<TB;>;
+	<B:Ljava/lang/Object;>(Lscala/Function1<Lscala/Enumeration$$Value;Lscala/Iterator<TB;>;>;)Lscala/Iterator<TB;>;
+	<B:Ljava/lang/Object;>(Lscala/Function1<Lscala/Enumeration$$Value;TB;>;)Lscala/Iterator<TB;>;
 	<B:Ljava/lang/Object;>(TB;)Lde/tud/cs/st/util/collection/LinkedListStore<TB;>;
 	<B:Ljava/lang/Object;>(TB;)Lde/tud/cs/st/util/collection/Store<TB;>;
 	<I:Ljava/io/InputStream;T:Ljava/lang/Object;>(Lscala/Function0<TI;>;Lscala/Function1<TI;TT;>;)TT;
 	<T::Lde/tud/cs/st/sae/GroundTerm;>([TT;)Lde/tud/cs/st/sae/GroundTerms<TT;>;
-	<T::Lde/tud/cs/st/sae/Term;>(Lscala/Function0<Lscala/util/parsing/combinator/Parsers$Parser<TT;>;>;)Lscala/util/parsing/combinator/Parsers$Parser<[TT;>;
+	<T::Lde/tud/cs/st/sae/Term;>(Lscala/Function0<Lscala/util/parsing/combinator/Parsers$$Parser<TT;>;>;)Lscala/util/parsing/combinator/Parsers$$Parser<[TT;>;
 	<T:Ljava/lang/Object;>()Lscala/Function1<Lscala/Function0<TT;>;[TT;>;
 	<T:Ljava/lang/Object;>(ILscala/Function0<TT;>;)[TT;
 	<T:Ljava/lang/Object;>(Lde/tud/bat/classfile/structure/ClassFileElement;)Lde/tud/bat/classfile/structure/MemberValueConstant<TT;>;

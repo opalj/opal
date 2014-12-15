@@ -51,7 +51,7 @@ object AnalysesHelpers {
     /**
      * Used as return type of [[getReadFields]].
      */
-    private type ReadFieldInfo = ((ClassFile, Method), (ObjectType, String, Type))
+    type ReadFieldInfo = ((ClassFile, Method), (ObjectType, String, Type))
 
     /**
      * Returns all declared fields that are read by a method in the analyzed classes

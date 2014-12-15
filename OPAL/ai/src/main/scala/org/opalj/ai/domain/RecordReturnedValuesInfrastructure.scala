@@ -53,27 +53,27 @@ trait RecordReturnedValuesInfrastructure extends ReturnInstructionsDomain {
 
     protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit
 
-    abstract override def areturn(pc: PC, value: DomainValue) {
+    abstract override def areturn(pc: PC, value: DomainValue): Unit = {
         doRecordReturnedValue(pc, value)
         super.areturn(pc, value)
     }
 
-    abstract override def dreturn(pc: PC, value: DomainValue) {
+    abstract override def dreturn(pc: PC, value: DomainValue): Unit = {
         doRecordReturnedValue(pc, value)
         super.dreturn(pc, value)
     }
 
-    abstract override def freturn(pc: PC, value: DomainValue) {
+    abstract override def freturn(pc: PC, value: DomainValue): Unit = {
         doRecordReturnedValue(pc, value)
         super.freturn(pc, value)
     }
 
-    abstract override def ireturn(pc: PC, value: DomainValue) {
+    abstract override def ireturn(pc: PC, value: DomainValue): Unit = {
         doRecordReturnedValue(pc, value)
         super.ireturn(pc, value)
     }
 
-    abstract override def lreturn(pc: PC, value: DomainValue) {
+    abstract override def lreturn(pc: PC, value: DomainValue): Unit = {
         doRecordReturnedValue(pc, value)
         super.lreturn(pc, value)
     }

@@ -37,10 +37,10 @@ package br
  */
 trait NoSourceElementsVisitor extends SourceElementsVisitor[Unit] {
 
-    override def visit(classFile: ClassFile) { /* EMPTY */ }
+    override def visit(classFile: ClassFile): Unit = { /* EMPTY */ }
 
-    override def visit(classFile: ClassFile, method: Method) { /* EMPTY */ }
+    override def visit(classFile: ClassFile, method: Method): Unit = { /* EMPTY */ }
 
-    override def visit(classFile: ClassFile, field: Field) { /* EMPTY */ }
+    override def visit(classFile: ClassFile, field: Field): Unit = { /* EMPTY */ }
 }
 

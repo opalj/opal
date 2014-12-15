@@ -53,8 +53,6 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
     describe("the generation of Proxy classes") {
 
         val testProject = Project(locateTestResources("classfiles", "br"))
-        val regularClassFiles = testProject.classFilesCount
-        val methodsCount = testProject.methodsCount
 
         val proxies: Iterable[(ClassFile, java.net.URL)] = testProject.methods.map { m ⇒
             val t = testProject.classFile(m).thisType
@@ -89,7 +87,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         m.descriptor,
                         invocationInstruction)
 
-                def verifyMethod(classFile: ClassFile, method: Method) {
+                def verifyMethod(classFile: ClassFile, method: Method): Unit = {
                     val domain = new BaseDomain(testProject, classFile, method)
                     val result = BaseAI(classFile, method, domain)
 
@@ -150,7 +148,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         extendedProject.source(cf.thisType) should be('defined)
                 }
                 proxies foreach { p ⇒
-                    val (proxy, source) = p
+                    val (proxy, _/* source*/) = p
                     extendedProject.classFile(proxy.thisType) should be('defined)
                     extendedProject.source(proxy.thisType) should be('defined)
                 }

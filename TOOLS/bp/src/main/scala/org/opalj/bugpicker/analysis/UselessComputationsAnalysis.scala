@@ -75,6 +75,9 @@ import org.opalj.ai.domain.ConcreteIntegerValues
 import org.opalj.ai.domain.ConcreteLongValues
 import org.opalj.ai.domain.l1.ReferenceValues
 
+/**
+ * @author Michael Eichberg
+ */
 object UselessComputationsAnalysis {
 
     def analyze(

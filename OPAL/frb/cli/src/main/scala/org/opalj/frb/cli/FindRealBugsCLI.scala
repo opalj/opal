@@ -53,7 +53,7 @@ object FindRealBugsCLI extends ProgressListener {
      * @param errorMessage Error message to show, if non-empty string (default: empty
      * string).
      */
-    private def printUsageAndExit(errorMessage: String = "") {
+    private def printUsageAndExit(errorMessage: String): Unit = {
         if (errorMessage.length > 0) {
             println(Console.RED+"error: "+Console.RESET + errorMessage)
         }
@@ -84,7 +84,7 @@ object FindRealBugsCLI extends ProgressListener {
     var libraryInputFiles = Set[String]()
     var analysisClassNames = Set[String]()
 
-    private def parseArgs(args: Array[String]) {
+    private def parseArgs(args: Array[String]): Unit = {
         var i = 0
         while (i < args.size) {
             val arg = args(i)
@@ -123,7 +123,7 @@ object FindRealBugsCLI extends ProgressListener {
      *
      * @param args List of command line arguments.
      */
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
         parseArgs(args)
 
         if (inputFiles.size == 0) {
@@ -222,7 +222,7 @@ object FindRealBugsCLI extends ProgressListener {
         position: Int,
         total: Int,
         status: String,
-        message: String) {
+        message: String): Unit = {
         println(color+"["+position+"/"+total+"]"+Console.RESET+
             " "+status+" "+message)
     }
@@ -230,7 +230,7 @@ object FindRealBugsCLI extends ProgressListener {
     /**
      * Called at the beginning of each analysis.
      */
-    override def analysisStarted(analysis: Analysis, position: Int, total: Int) {
+    override def analysisStarted(analysis: Analysis, position: Int, total: Int): Unit = {
         printProgress(Console.GREEN, position, total, "running",
             "               \t"+analysis.title)
     }
@@ -243,7 +243,7 @@ object FindRealBugsCLI extends ProgressListener {
         position: Int,
         total: Int,
         seconds: Double,
-        reports: AnalysisReports) {
+        reports: AnalysisReports): Unit = {
         progressLock.synchronized {
             analysesTotalSeconds += seconds
         }

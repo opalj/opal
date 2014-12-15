@@ -66,7 +66,7 @@ trait SourcesAndSinks {
             new AValueLocationMatcher {
 
                 def apply(project: SomeProject) = {
-                    var map = scala.collection.mutable.AnyRefMap.empty[Method, Set[ValueOrigin]]
+                    val map = scala.collection.mutable.AnyRefMap.empty[Method, Set[ValueOrigin]]
                     for {
                         classFile ← project.classFiles
                         if filter(classFile)

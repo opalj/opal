@@ -30,52 +30,41 @@ package org.opalj
 package ai
 package debug
 
-import org.opalj.br.{ ClassFile, Method, MethodSignature }
-import org.opalj.br.analyses.{ Project, SomeProject }
-import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.ai.project.VTACallGraphAlgorithmConfiguration
-import org.opalj.ai.project.DefaultVTACallGraphDomain
-import org.opalj.ai.project.DefaultCHACallGraphDomain
-import org.opalj.ai.project.CallGraphCache
-import org.opalj.ai.project.VTACallGraphExtractor
-import org.opalj.ai.project.CHACallGraphExtractor
-import org.opalj.ai.project.CallGraphExtractor
+import scala.language.existentials
+
+import scala.Console.RED
+import scala.Console.RESET
+
 import org.opalj.ai.Domain
-import org.opalj.ai.domain.TheProject
-import org.opalj.ai.domain.TheClassFile
-import org.opalj.ai.domain.TheMethod
-import org.opalj.ai.domain.ClassHierarchy
-import org.opalj.ai.domain.TheCode
-import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.InterpretationFailedException
+import org.opalj.ai.ReferenceValuesDomain
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.MethodReturnValuesKey
+import org.opalj.ai.debug.XHTML.dump
+import org.opalj.ai.domain.TheClassFile
+import org.opalj.ai.domain.TheMethod
+import org.opalj.ai.domain.TheProject
+import org.opalj.ai.project.CHACallGraphExtractor
+import org.opalj.ai.project.CallGraphCache
+import org.opalj.ai.project.CallGraphExtractor
+import org.opalj.ai.project.DefaultVTACallGraphDomain
+import org.opalj.ai.project.VTACallGraphExtractor
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.MethodSignature
+import org.opalj.br.analyses.Project
 
 /**
- * A small basic framework that facilitates the abstract interpretation of a
- * specific method using a configurable domain.
+ * Prints out information about the callees of a specific method.
  *
  * @author Michael Eichberg
  */
 object GetCallees {
 
-    private object AI extends AI[Domain] {
-
-        override def isInterrupted = Thread.interrupted()
-
-        override val tracer = Some(new ConsoleTracer {})
-
-    }
-
     /**
-     * Traces the interpretation of a single method and prints out the results.
-     *
-     * @param args The first element must be the name of a class file, a jar file
-     * 		or a directory containing the former. The second element must
-     * 		denote the name of a class and the third must denote the name of a method
-     * 		of the respective class. If the method is overloaded the first method
-     * 		is returned.
+     * Prints information about the callees of a method.
      */
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
         import Console.{ RED, RESET }
         import language.existentials
 
@@ -142,7 +131,6 @@ object GetCallees {
 
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](project)
         val useVTA = args.length == 4 && args(3) == "VTA"
-        type CallGraphDomain = Domain with ReferenceValuesDomain with TheProject with TheClassFile with TheMethod
         val extractor: CallGraphExtractor =
             if (useVTA) {
                 println("USING VTA")

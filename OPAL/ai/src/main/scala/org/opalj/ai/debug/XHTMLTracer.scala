@@ -70,7 +70,7 @@ trait XHTMLTracer extends AITracer {
         flow = List.empty[FlowEntity] :: flow
         flow
     }
-    private[this] def addFlowEntity(flowEntity: FlowEntity) {
+    private[this] def addFlowEntity(flowEntity: FlowEntity): Unit = {
         if (flow.head.exists(_.pc == flowEntity.pc))
             newBranch()
 
@@ -136,8 +136,7 @@ trait XHTMLTracer extends AITracer {
             }
         val dialogs =
             for {
-                pathWithColumnIndex ← inOrderFlow.zipWithIndex
-                (path, index) = pathWithColumnIndex
+                (path, index) ← inOrderFlow.zipWithIndex
                 flowEntity ← path
             } yield {
                 val dialogId = "dialog"+flowEntity.flowId
@@ -272,7 +271,7 @@ trait XHTMLTracer extends AITracer {
             alreadyEvaluated: List[PC],
             operandsArray: domain.OperandsArray,
             localsArray: domain.LocalsArray,
-            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]) {
+            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]): Unit = {
         if ((this.code eq code) || (this.code == null))
             this.code = code
         else

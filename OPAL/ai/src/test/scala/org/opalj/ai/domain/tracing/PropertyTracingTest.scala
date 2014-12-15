@@ -100,7 +100,7 @@ class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecut
         def isSanitized(): Boolean = hasPropertyOnExit
     }
 
-    private def evaluateMethod(name: String)(f: AnalysisDomain ⇒ Unit) {
+    private def evaluateMethod(name: String)(f: AnalysisDomain ⇒ Unit): Unit = {
         /**
          * In this case we want to make sure that a specific value (given as a
          * parameter to a method) is always sanitized (within the method.) I.e.,

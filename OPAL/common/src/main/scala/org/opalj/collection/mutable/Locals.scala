@@ -144,7 +144,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
      */
     def mapToVector[X](f: T ⇒ X): scala.collection.immutable.Vector[X] = {
         var newLocals = scala.collection.immutable.Vector.empty[X]
-        foreach { e ⇒ newLocals :+ f(e) }
+        foreach { e ⇒ newLocals = newLocals :+ f(e) }
         newLocals
     }
 
@@ -223,7 +223,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     override def hashCode: Int = {
         var hc = 1
-        foreach { e ⇒ hc * 41 + { if (e ne null) e.hashCode else 7 } }
+        foreach { e ⇒ hc = hc * 41 + { if (e ne null) e.hashCode else 7 } }
         hc
     }
 

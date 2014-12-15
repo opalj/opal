@@ -266,7 +266,7 @@ private class FieldStatusTracingDomain[Source](
         pc: PC,
         accessClass: ObjectType,
         fieldName: String,
-        fieldType: FieldType)(actOnRelevantFieldAccess: (PC, Field) ⇒ Unit) {
+        fieldType: FieldType)(actOnRelevantFieldAccess: (PC, Field) ⇒ Unit): Unit = {
 
         // The class type used in this instruction is just the context through which the
         // field is accessed, not necessarily the class that declared the field.
@@ -412,7 +412,7 @@ private class FieldStatusTracingDomain[Source](
         getProperty(pc).status
     }
 
-    private def setStatusAt(pc: PC, status: FieldStatus) {
+    private def setStatusAt(pc: PC, status: FieldStatus): Unit = {
         setProperty(pc, new FieldStatusProperty(status))
     }
 

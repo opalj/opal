@@ -72,7 +72,7 @@ object CallGraphVisualization {
      *      denote the beginning of a package name and will be used to filter
      *      the methods that are included in the call graph.
      */
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
         if ((args.size < 3) || (args.size > 4)) {
             println("You have to specify:")
             println("\t1) The algorithm to use (CHA, BasicVTA, DefaultVTA, ExtVTA).")
@@ -90,7 +90,7 @@ object CallGraphVisualization {
                     err.println("\t4) The number of seconds before the analysis starts (max. 30).")
                     sys.exit(-30)
                 }
-                Thread.sleep(secs * 1000)
+                Thread.sleep(secs * 1000l)
             } catch {
                 case _: NumberFormatException ⇒
                     err.println("\t4) The number of seconds before the analysis starts (max 30).")
@@ -143,7 +143,7 @@ object CallGraphVisualization {
         val ComputedCallGraph(callGraph, unresolvedMethodCalls, exceptions) =
             memory {
                 val computedCallGraph = time {
-                    val callGraphAlgorithmConfig = args(0) match {
+                    val callGraphAlgorithmConfig = callGraphAlgorithm match {
                         case "CHA" ⇒
                             new CHACallGraphAlgorithmConfiguration(project)
                         case "BasicVTA" ⇒
@@ -215,7 +215,7 @@ object CallGraphVisualization {
         import org.opalj.graphs.{ SimpleNode, Node }
         val nodes: Set[Node] = {
 
-            var nodesForMethods = scala.collection.mutable.AnyRefMap.empty[Method, Node]
+            val nodesForMethods = scala.collection.mutable.AnyRefMap.empty[Method, Node]
 
             def createNode(caller: Method): Node = {
                 if (nodesForMethods.contains(caller))

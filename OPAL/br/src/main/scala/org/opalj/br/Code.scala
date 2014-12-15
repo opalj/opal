@@ -115,7 +115,7 @@ final class Code private (
         while (pc < instructionsCount) {
             val instruction = instructions(pc)
             val nextPC = pcOfNextInstruction(pc)
-            @inline def runtimeSuccessor(pc: PC) {
+            @inline def runtimeSuccessor(pc: PC): Unit = {
                 if (isReached.contains(pc))
                     joinInstructions += pc
                 else
