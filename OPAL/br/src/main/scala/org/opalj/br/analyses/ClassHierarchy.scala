@@ -1179,7 +1179,7 @@ class ClassHierarchy private (
         def toHRR = None
         def backgroundColor = None
         def foreachSuccessor(f: Node ⇒ Unit): Unit = {
-            /**
+            /*
              * We may not see the class files of all classes that are referred
              * to in the class files that we did see. Hence, we have to be able
              * to handle partial class hierarchies.

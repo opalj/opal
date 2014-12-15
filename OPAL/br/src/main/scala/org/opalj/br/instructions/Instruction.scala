@@ -83,7 +83,7 @@ trait Instruction {
 
     /**
      * The number of values that are popped from the operand stack. Here, long and
-     * double values are also counted as one value though they use to stack slots. E.g.,
+     * double values are also counted as one value though they use two stack slots. E.g.,
      * [[IADD]] (integer add) and [[LADD]] (long add) both pop two values and push
      * one value.
      *
@@ -97,14 +97,14 @@ trait Instruction {
      *          or two stack slots (for category 2 values.)
      * @note Several stack management instructions manipulate the stack in a generic
      *          manner and the precise effect depends on the type. E.g., the [[POP2]]
-     *          instruction may just pop one ''categeory 2'' value (of type `long` or `double`)
-     *          or two ''category 1'' values.
+     *          instruction may just pop one ''categeory 2'' value 
+     *          (of type `long` or `double`) or two ''category 1'' values.
      */
     def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int
 
     /**
      * The number of values that are put onto the operand stack. Here, long and
-     * double values are also counted as one value though they use to stack slots. E.g.,
+     * double values are also counted as one value though they use two stack slots. E.g.,
      * [[IADD]] (integer add) and [[LADD]] (long add) both pop two values and push
      * one value.
      *
@@ -118,8 +118,8 @@ trait Instruction {
      *          or two stack slots (for category 2 values.)
      * @note Several stack management instructions manipulate the stack in a generic
      *          manner and the precise effect depends on the type. E.g., the [[DUP2]]
-     *          instruction may just duplicate one ''categeory 2'' value (of type long or double)
-     *          or two ''category 1'' values.
+     *          instruction may just duplicate one ''categeory 2'' value (result is 1) 
+     *          (of type long or double) or two ''category 1'' values (result is 2).
      */
     def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int
 
