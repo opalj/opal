@@ -133,9 +133,6 @@ object DependencyAnalysis extends AnalysisExecutor {
             pm.progress(1, EventType.Start, Some("setup"))
 
             import scala.collection.mutable.{ HashSet, HashMap }
-            // Collect the number of outgoing dependencies per package 
-            // FQPN = FullyQualifiedPackageName
-            val dependenciesPerFQPN = HashMap.empty[String, Int]
 
             val rootPackages = project.rootPackages
 
@@ -215,9 +212,9 @@ object DependencyAnalysis extends AnalysisExecutor {
             pm.progress(3, EventType.Start, Some("creating HTML"))
 
             // get packages and sort them
-            var packages = dependencyProcessor.currentPackages.toSeq.sorted
+            val packages = dependencyProcessor.currentPackages.toSeq.sorted
 
-            var maxCount = dependencyProcessor.currentMaxDependencyCount
+            val maxCount = dependencyProcessor.currentMaxDependencyCount
 
             var data = ("["+packages.foldRight("")(
                 (p1, l1) ⇒ "["+

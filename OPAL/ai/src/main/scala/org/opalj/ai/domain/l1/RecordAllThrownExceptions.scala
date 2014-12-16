@@ -47,7 +47,7 @@ trait RecordAllThrownExceptions extends domain.RecordThrownExceptions {
         value: ExceptionValue): ThrownException =
         value match {
             case MultipleReferenceValues(values)        ⇒ values
-            case sorv: DomainSingleOriginReferenceValue ⇒ Set.empty + sorv
+            case DomainSingleOriginReferenceValue(sorv) ⇒ Set.empty + sorv
         }
 
     override protected[this] def joinThrownExceptions(
@@ -56,7 +56,7 @@ trait RecordAllThrownExceptions extends domain.RecordThrownExceptions {
         value: ExceptionValue): ThrownException =
         value match {
             case MultipleReferenceValues(values)        ⇒ previouslyThrownException ++ values
-            case sorv: DomainSingleOriginReferenceValue ⇒ previouslyThrownException + sorv
+            case DomainSingleOriginReferenceValue(sorv) ⇒ previouslyThrownException + sorv
         }
 }
 

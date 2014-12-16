@@ -40,7 +40,7 @@ import org.opalj.bi.TestSupport.locateTestResources
 
 trait AnalysisIntegrationTest extends FlatSpec with Matchers with ParallelTestExecution {
 
-    protected def println(m: String) { info(m) }
+    protected def println(m: String): Unit = { info(m) }
 
     def createProject(jarFileName: String): Project[URL] = {
         AnalysisIntegrationTest.createProject(Seq(jarFileName), println)

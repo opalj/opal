@@ -82,7 +82,7 @@ object DeadCodeAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain }): List[Issue] = {
+        result: AIResult): List[Issue] = {
 
         val operandsArray = result.operandsArray
         val domain = result.domain

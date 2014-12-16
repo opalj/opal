@@ -86,21 +86,19 @@ trait CompactLineNumberTable_attributeBinding
      * Merge all line number tables and create a single sorted line number table.
      */
     registerAttributesPostProcessor { attributes ⇒
-        val (lineNumberTables, otherAttributes) =
+        val (lineNumberTables, _ /*otherAttributes*/ ) =
             attributes partition {
                 _ match {
                     case lnt: CompactLineNumberTable ⇒ true
                     case _                           ⇒ false
                 }
             }
-        lineNumberTables match {
-            case Seq()    ⇒ attributes
-            case Seq(lnt) ⇒ attributes
-            case lnts ⇒
-                throw new UnsupportedOperationException(
-                    "multiple line number tables are not yet supported;"+
-                        "contact Michael Eichberg")
-        }
+        if (lineNumberTables.isEmpty || lineNumberTables.tail.isEmpty)
+            // we have at most one line number table
+            attributes
+        else throw new UnsupportedOperationException(
+            "multiple line number tables are not yet supported; contact the OPAL team")
+
     }
 }
 

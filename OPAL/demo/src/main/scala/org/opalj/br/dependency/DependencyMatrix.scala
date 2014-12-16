@@ -48,7 +48,7 @@ object DependencyMatrix {
         println("Usage: java …DependencyMatrix <JAR file containing class files>+")
     }
 
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
 
         if (args.length == 0 ||
             !args.forall(arg ⇒ arg.endsWith(".zip") ||
@@ -70,7 +70,7 @@ object DependencyMatrix {
         sys.exit(0)
     }
 
-    def analyze(jarFiles: Array[String]) {
+    def analyze(jarFiles: Array[String]): Unit = {
         import scala.collection.mutable.Map
         import scala.collection.mutable.Set
         val dependencyMatrix = Map[VirtualSourceElement, Set[(VirtualSourceElement, DependencyType)]]()
@@ -80,8 +80,7 @@ object DependencyMatrix {
                     override def processDependency(
                         source: VirtualSourceElement,
                         target: VirtualSourceElement,
-                        dType: DependencyType) {
-                        val emptySet: Set[(VirtualSourceElement, DependencyType)] = Set.empty
+                        dType: DependencyType): Unit = {
                         dependencyMatrix.get(source) match {
                             case Some(s) ⇒ s += ((target, dType))
                             case None    ⇒ dependencyMatrix += (source -> Set((target, dType)))

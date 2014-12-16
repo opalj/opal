@@ -178,7 +178,7 @@ trait AI[D <: Domain] {
         domain: D)(
             someLocals: Option[IndexedSeq[domain.DomainValue]] = None): domain.Locals = {
 
-        import domain.DomainValueTag
+        import domain.DomainValue
 
         someLocals.map { l ⇒
             val maxLocals = method.body.get.maxLocals
@@ -280,7 +280,7 @@ trait AI[D <: Domain] {
             initialOperands: theDomain.Operands,
             initialLocals: theDomain.Locals): AIResult { val domain: theDomain.type } = {
 
-        import theDomain.DomainValueTag
+        import theDomain.DomainValue
 
         val codeLength = code.instructions.length
 
@@ -445,7 +445,7 @@ trait AI[D <: Domain] {
             targetPC: PC,
             isExceptionalControlFlow: Boolean,
             operands: Operands,
-            locals: Locals) {
+            locals: Locals): Unit = {
 
             import util.removeFirstUnless
 
@@ -455,7 +455,7 @@ trait AI[D <: Domain] {
             // - the main loop that processes the worklist
 
             val currentOperands = operandsArray(targetPC)
-            var wasJoinPerformed =
+            val wasJoinPerformed =
                 if (currentOperands == null) {
                     // we analyze the instruction for the first time 
                     operandsArray(targetPC) = operands
@@ -674,7 +674,7 @@ trait AI[D <: Domain] {
                  */
                 def ifXX(domainTest: SingleValueDomainTest,
                          yesConstraint: SingleValueConstraint,
-                         noConstraint: SingleValueConstraint) {
+                         noConstraint: SingleValueConstraint): Unit = {
 
                     val branchInstruction = as[SimpleConditionalBranchInstruction](instruction)
                     val operand = operands.head
@@ -718,7 +718,7 @@ trait AI[D <: Domain] {
                  */
                 def ifTcmpXX(domainTest: TwoValuesDomainTest,
                              yesConstraint: TwoValuesConstraint,
-                             noConstraint: TwoValuesConstraint) {
+                             noConstraint: TwoValuesConstraint): Unit = {
 
                     val branchInstruction = as[SimpleConditionalBranchInstruction](instruction)
                     val right = operands.head
@@ -775,12 +775,12 @@ trait AI[D <: Domain] {
                  */
                 def doHandleTheException(
                     exceptionValue: ExceptionValue,
-                    establishNonNull: Boolean) {
+                    establishNonNull: Boolean): Unit = {
 
                     def gotoExceptionHandler(
                         pc: PC,
                         branchTarget: PC,
-                        upperBound: Option[ObjectType]) {
+                        upperBound: Option[ObjectType]): Unit = {
                         val operands = List(exceptionValue)
                         val memoryLayout1 @ (updatedOperands1, updatedLocals1) =
                             if (establishNonNull)
@@ -828,13 +828,13 @@ trait AI[D <: Domain] {
                         abruptMethodExecution(pc, exceptionValue)
                 }
 
-                def handleException(exceptionValue: DomainValue) {
+                def handleException(exceptionValue: DomainValue): Unit = {
                     theDomain.typeOfValue(exceptionValue) match {
 
                         case IsReferenceValue(exceptionValues) ⇒
                             if (exceptionValues.tail.isEmpty) {
                                 val exceptionValue = exceptionValues.head
-                                val establishNonNull = exceptionValue.isNull match {
+                                exceptionValue.isNull match {
                                     case No ⇒ // just forward
                                         doHandleTheException(
                                             exceptionValue.asDomainValue(theDomain), false)
@@ -876,7 +876,7 @@ trait AI[D <: Domain] {
 
                 def computationWithException(
                     computation: Computation[Nothing, ExceptionValue],
-                    rest: Operands) {
+                    rest: Operands): Unit = {
 
                     if (computation.throwsException)
                         handleException(computation.exceptions)
@@ -886,7 +886,7 @@ trait AI[D <: Domain] {
 
                 def computationWithExceptions(
                     computation: Computation[Nothing, ExceptionValues],
-                    rest: Operands) {
+                    rest: Operands): Unit = {
 
                     if (computation.returnsNormally)
                         fallThrough(rest)
@@ -896,7 +896,7 @@ trait AI[D <: Domain] {
 
                 def computationWithReturnValueAndException(
                     computation: Computation[DomainValue, ExceptionValue],
-                    rest: Operands) {
+                    rest: Operands): Unit = {
 
                     if (computation.hasResult)
                         fallThrough(computation.result :: rest)
@@ -906,7 +906,7 @@ trait AI[D <: Domain] {
 
                 def computationWithReturnValueAndExceptions(
                     computation: Computation[DomainValue, ExceptionValues],
-                    rest: Operands) {
+                    rest: Operands): Unit = {
 
                     if (computation.hasResult)
                         fallThrough(computation.result :: rest)
@@ -917,7 +917,7 @@ trait AI[D <: Domain] {
 
                 def computationWithOptionalReturnValueAndExceptions(
                     computation: Computation[DomainValue, ExceptionValues],
-                    rest: Operands) {
+                    rest: Operands): Unit = {
 
                     if (computation.returnsNormally) {
                         if (computation.hasResult)
@@ -1176,7 +1176,7 @@ trait AI[D <: Domain] {
                         // the exception handlers of the current method in the order that 
                         // they appear in the corresponding exception handler table.
                         val exceptionValue = operands.head
-                        handleException(operands.head)
+                        handleException(exceptionValue)
 
                     //
                     // CREATE ARRAY
@@ -1253,7 +1253,7 @@ trait AI[D <: Domain] {
                     case 85 /*castore*/ ⇒ {
                         val value :: index :: arrayref :: rest = operands
                         val computation = theDomain.castore(pc, value, index, arrayref)
-                        fallThrough(rest)
+                        computationWithExceptions(computation, rest)
                     }
 
                     case 49 /*daload*/ ⇒ {

@@ -76,17 +76,6 @@ class AnonymousInnerClassShouldBeStatic[Source] extends FindRealBugsAnalysis[Sou
     }
 
     /**
-     * A heuristic for determining inner classes by the encoding in the name.
-     * It checks whether the class name contains '$' or '+'.
-     *
-     * @param classFile The class to check.
-     * @return Whether the class is an inner class.
-     */
-    private def isInnerClass(classFile: ClassFile): Boolean = {
-        lastIndexOfInnerClassEncoding(classFile.thisType.fqn) >= 0
-    }
-
-    /**
      * A heuristic for determining anonymous inner classes by the encoding in the name.
      *
      * @param classFile The class to check.

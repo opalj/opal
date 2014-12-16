@@ -188,7 +188,7 @@ trait DataFlowProblem[Source, P] {
      */
     def sinkInstructions(): Map[Method, Set[PC]]
 
-    protected[this] def analyzeFeasability() {
+    protected[this] def analyzeFeasability(): Unit = {
         val sourceValuesCount = sourceValues.values.view.map(pcs ⇒ pcs.size).sum
         if (project.methodsCount / 10 < sourceValuesCount) {
             Console.out.println(

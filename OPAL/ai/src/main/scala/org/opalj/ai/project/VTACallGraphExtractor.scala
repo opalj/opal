@@ -112,9 +112,9 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             name: String,
             descriptor: MethodDescriptor,
             receiverIsNull: Answer,
-            operands: domain.Operands) {
+            operands: domain.Operands): Unit = {
 
-            def handleUnresolvedMethodCall() {
+            def handleUnresolvedMethodCall(): Unit = {
                 addUnresolvedMethodCall(
                     classFile.thisType, method, pc,
                     declaringClassType, name, descriptor
@@ -147,7 +147,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             name: String,
             descriptor: MethodDescriptor,
             receiverIsNull: Answer,
-            operands: domain.Operands) {
+            operands: domain.Operands): Unit = {
 
             if (receiverIsNull.isYesOrUnknown)
                 addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
@@ -181,7 +181,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             declaringClassType: ObjectType,
             name: String,
             descriptor: MethodDescriptor,
-            operands: domain.Operands) {
+            operands: domain.Operands): Unit = {
             // MODIFIED CHA - we used the type information that is readily available        
             val receiver =
                 domain.typeOfValue(

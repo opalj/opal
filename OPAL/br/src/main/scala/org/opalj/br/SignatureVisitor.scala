@@ -56,67 +56,67 @@ trait SignatureVisitor[T] {
 }
 trait TraversingVisitor extends SignatureVisitor[Unit] {
 
-    override def visit(cs: ClassSignature) {
+    override def visit(cs: ClassSignature): Unit = {
         cs.formalTypeParameters foreach (_.foreach(_.accept(this)))
         cs.superClassSignature.accept(this)
         cs.superInterfacesSignature.foreach(_.accept(this))
     }
 
-    override def visit(mts: MethodTypeSignature) {
+    override def visit(mts: MethodTypeSignature): Unit = {
         mts.formalTypeParameters.foreach(_.foreach(_.accept(this)))
         mts.parametersTypeSignatures.foreach(_.accept(this))
         mts.returnTypeSignature.accept(this)
         mts.throwsSignature.foreach(_.accept(this))
     }
 
-    override def visit(cts: ClassTypeSignature) {
+    override def visit(cts: ClassTypeSignature): Unit = {
         cts.simpleClassTypeSignature.accept(this)
         cts.classTypeSignatureSuffix.foreach(_.accept(this))
     }
 
-    override def visit(ats: ArrayTypeSignature) {
+    override def visit(ats: ArrayTypeSignature): Unit = {
         ats.typeSignature.accept(this)
     }
 
-    override def visit(tvs: TypeVariableSignature) { /* Leafnode */ }
+    override def visit(tvs: TypeVariableSignature): Unit = { /* Leafnode */ }
 
-    override def visit(scts: SimpleClassTypeSignature) {
+    override def visit(scts: SimpleClassTypeSignature): Unit = {
         scts.typeArguments.foreach(_.foreach(_.accept(this)))
     }
 
-    override def visit(ftp: FormalTypeParameter) {
+    override def visit(ftp: FormalTypeParameter): Unit = {
         ftp.classBound.foreach(_.accept(this))
         ftp.interfaceBound.foreach(_.accept(this))
     }
 
-    override def visit(pta: ProperTypeArgument) {
+    override def visit(pta: ProperTypeArgument): Unit = {
         pta.varianceIndicator.foreach(_.accept(this))
         pta.fieldTypeSignature.accept(this)
     }
 
-    override def visit(cvi: CovariantIndicator) { /* Leafnode */ }
+    override def visit(cvi: CovariantIndicator): Unit = { /* Leafnode */ }
 
-    override def visit(cvi: ContravariantIndicator) { /* Leafnode */ }
+    override def visit(cvi: ContravariantIndicator): Unit = { /* Leafnode */ }
 
-    override def visit(wc: Wildcard) { /* Leafnode */ }
+    override def visit(wc: Wildcard): Unit = { /* Leafnode */ }
 
-    override def visit(bt: BooleanType) { /* Leafnode */ }
+    override def visit(bt: BooleanType): Unit = { /* Leafnode */ }
 
-    override def visit(bt: ByteType) { /* Leafnode */ }
+    override def visit(bt: ByteType): Unit = { /* Leafnode */ }
 
-    override def visit(it: IntegerType) { /* Leafnode */ }
+    override def visit(it: IntegerType): Unit = { /* Leafnode */ }
 
-    override def visit(lt: LongType) { /* Leafnode */ }
+    override def visit(lt: LongType): Unit = { /* Leafnode */ }
 
-    override def visit(ct: CharType) { /* Leafnode */ }
+    override def visit(ct: CharType): Unit = { /* Leafnode */ }
 
-    override def visit(st: ShortType) { /* Leafnode */ }
+    override def visit(st: ShortType): Unit = { /* Leafnode */ }
 
-    override def visit(ft: FloatType) { /* Leafnode */ }
+    override def visit(ft: FloatType): Unit = { /* Leafnode */ }
 
-    override def visit(dt: DoubleType) { /* Leafnode */ }
+    override def visit(dt: DoubleType): Unit = { /* Leafnode */ }
 
-    override def visit(vt: VoidType) { /* Leafnode */ }
+    override def visit(vt: VoidType): Unit = { /* Leafnode */ }
 
 }
 
@@ -129,14 +129,17 @@ trait TraversingVisitor extends SignatureVisitor[Unit] {
  * case, however, the given function f also has to be thread safe.
  */
 class TypesVisitor(val f: Type ⇒ Unit) extends TraversingVisitor {
-    override def visit(cts: ClassTypeSignature) { f(cts.objectType); super.visit(cts) }
-    override def visit(bt: BooleanType) { f(bt) }
-    override def visit(bt: ByteType) { f(bt) }
-    override def visit(it: IntegerType) { f(it) }
-    override def visit(lt: LongType) { f(lt) }
-    override def visit(ct: CharType) { f(ct) }
-    override def visit(st: ShortType) { f(st) }
-    override def visit(ft: FloatType) { f(ft) }
-    override def visit(dt: DoubleType) { f(dt) }
-    override def visit(vt: VoidType) { f(vt) }
+    override def visit(cts: ClassTypeSignature): Unit = {
+        f(cts.objectType)
+        super.visit(cts)
+    }
+    override def visit(bt: BooleanType): Unit = { f(bt) }
+    override def visit(bt: ByteType): Unit = { f(bt) }
+    override def visit(it: IntegerType): Unit = { f(it) }
+    override def visit(lt: LongType): Unit = { f(lt) }
+    override def visit(ct: CharType): Unit = { f(ct) }
+    override def visit(st: ShortType): Unit = { f(st) }
+    override def visit(ft: FloatType): Unit = { f(ft) }
+    override def visit(dt: DoubleType): Unit = { f(dt) }
+    override def visit(vt: VoidType): Unit = { f(vt) }
 }

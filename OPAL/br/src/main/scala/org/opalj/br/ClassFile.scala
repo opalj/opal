@@ -336,7 +336,7 @@ final class ClassFile private (
         new Iterator[Method] {
             var i = -1
 
-            private def lookupNextConstructor() {
+            private def lookupNextConstructor(): Unit = {
                 i += 1
                 if (i >= methods.size)
                     i = -1
