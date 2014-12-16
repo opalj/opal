@@ -40,7 +40,7 @@ import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
 
 import br._
 import br.reader.Java8Framework.ClassFiles
-import br.analyses.{ ClassHierarchy, Project }
+import br.analyses.{ ClassHierarchy, Project, SomeProject }
 
 import de._
 
@@ -48,18 +48,32 @@ import de._
  * Used to report deviations between the specified and the implemented architecture.
  */
 case class SpecificationViolation(
+        project: SomeProject,
         dependencyChecker: DependencyChecker,
         source: VirtualSourceElement,
+        sourceLineNumber: Int = 1,
         target: VirtualSourceElement,
+        targetLineNumber: Int = 1,
         dependencyType: DependencyType,
         description: String) {
 
     override def toString(): String = {
-        Console.RED +
-            description+" between "+Console.BLUE + dependencyChecker.sourceEnsembles.mkString(", ") + Console.RED+
-            " and "+Console.BLUE + dependencyChecker.targetEnsembles.mkString(", ") + Console.RESET+": "+
-            source.toJava+" "+
-            Console.BOLD + dependencyType + Console.RESET+" "+
-            target.toJava
+        var javaSource = source.toJava
+        var javaTarget = target.toJava
+
+        if (javaSource.contains("{")) {
+            javaSource = javaSource.substring(0, javaSource.indexOf("{"))
+        }
+        javaSource = "("+javaSource+".java:"+source.getLineNumber(project).getOrElse("1):"+source.toJava)+")"
+
+        if (javaTarget.contains("{")) {
+            javaTarget = javaTarget.substring(0, javaTarget.indexOf("{"))
+        }
+        javaTarget = "("+javaTarget+".java:"+target.getLineNumber(project).getOrElse("1):"+target.toJava)+")"
+
+        description+" between "+dependencyChecker.sourceEnsembles.mkString(", ")+
+            " and "+dependencyChecker.targetEnsembles.mkString(", ")+": "+
+            javaSource+" "+dependencyType+" "+
+            javaTarget
     }
 }
