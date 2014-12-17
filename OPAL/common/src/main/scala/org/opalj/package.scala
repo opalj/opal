@@ -183,12 +183,12 @@ package object opalj {
     def commonPackage(
         fqnA: String, fqnB: String,
         packageSeperator: Char = '.'): Option[String] = {
-        val packageSeperatorIndex = fqnA.indexOf(packageSeperator) + 1
+        val packageSeperatorIndex = fqnA.indexOf(packageSeperator.toInt) + 1
         if (packageSeperatorIndex <= 0)
             return None;
 
         val rootPackage = fqnA.substring(0, packageSeperatorIndex)
-        if (packageSeperatorIndex == fqnB.indexOf(packageSeperator) + 1 &&
+        if (packageSeperatorIndex == fqnB.indexOf(packageSeperator.toInt) + 1 &&
             rootPackage == fqnB.substring(0, packageSeperatorIndex)) {
             commonPackage(
                 fqnA.substring(packageSeperatorIndex, fqnA.length()),
@@ -223,7 +223,7 @@ package object opalj {
         packageSeperator: Char = '.'): String = {
 
         commonPackage(definingTypeFQN, memberTypeFQN) match {
-            case Some(commonPackages) if commonPackages.indexOf(packageSeperator) < commonPackages.length - 1 ⇒
+            case Some(commonPackages) if commonPackages.indexOf(packageSeperator.toInt) < commonPackages.length - 1 ⇒
                 // we have more than one common package...
                 val beforeLastCommonPackageIndex = commonPackages.dropRight(1).lastIndexOf('.')
                 val length = memberTypeFQN.length

@@ -31,13 +31,13 @@ package ai
 package domain
 package l1
 
-import java.util.IdentityHashMap
+import scala.reflect.ClassTag
 
+import java.util.IdentityHashMap
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
 import scala.annotation.tailrec
 import scala.collection.SortedSet
-
 import org.opalj.util.Answer
 import org.opalj.util.No
 import org.opalj.util.Unknown
@@ -84,13 +84,22 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type AReferenceValue <: ReferenceValue with DomainReferenceValue
+    val AReferenceValue: ClassTag[AReferenceValue]
 
     type DomainSingleOriginReferenceValue <: SingleOriginReferenceValue with AReferenceValue
+    val DomainSingleOriginReferenceValue: ClassTag[DomainSingleOriginReferenceValue]
+
     type DomainNullValue <: NullValue with DomainSingleOriginReferenceValue
+    val DomainNullValue: ClassTag[DomainNullValue]
+
     type DomainObjectValue <: ObjectValue with DomainSingleOriginReferenceValue
+    val DomainObjectValue: ClassTag[DomainObjectValue]
+
     type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
+    val DomainArrayValue: ClassTag[DomainArrayValue]
 
     type DomainMultipleReferenceValues <: MultipleReferenceValues with AReferenceValue
+    val DomainMultipleReferenceValues: ClassTag[DomainMultipleReferenceValues]
 
     type Refinements = IdentityHashMap[ /*old*/ AReferenceValue, /*new*/ AReferenceValue]
 
@@ -329,7 +338,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         val op = opIt.next
                         val newOp =
                             op match {
-                                case op: AReferenceValue ⇒
+                                case AReferenceValue(op) ⇒
                                     val newOp = refine(op)
                                     if (newOp.refineIf(refinements))
                                         // RESTART REFINEMENT PROCESS!
@@ -349,7 +358,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 },
                 // REGISTERS
                 locals.transform {
-                    case l: AReferenceValue ⇒
+                    case AReferenceValue(l) ⇒
                         val newL = refine(l)
                         if (newL.refineIf(refinements))
                             // RESTART REFINEMENT PROCESS!
@@ -374,6 +383,17 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             updateT(this.t, origin, isNull)
         }
 
+        /**
+         * Creates a new instance of this object where the timestamp is set to the
+         * given timestamp `t`. Optionally, it is also possible to update the `origin`
+         * and `isNull` information.
+         *
+         * @example A typical usage:
+         *  {{{
+         *  val v : SingleOriginReferenceValue = ???
+         *  val newV = v.updateT(nextT, isNull = Unknown)
+         *  }}}
+         */
         /*ABSTRACT*/ def updateT(
             t: Timestamp,
             origin: ValueOrigin = this.origin,
@@ -495,10 +515,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             assert(this ne other)
 
             other match {
-                case that: DomainSingleOriginReferenceValue ⇒
+                case DomainSingleOriginReferenceValue(that) ⇒
                     if (this.origin == that.origin)
                         that match {
-                            case that: DomainNullValue ⇒
+                            case DomainNullValue(that) ⇒
                                 doJoinWithNullValueWithSameOrigin(joinPC, that)
                             case _ ⇒
                                 doJoinWithNonNullValueWithSameOrigin(joinPC, that)
@@ -508,7 +528,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             SortedSet[DomainSingleOriginReferenceValue](this, that)
                         StructuralUpdate(MultipleReferenceValues(values))
                     }
-                case that: DomainMultipleReferenceValues ⇒
+                case DomainMultipleReferenceValues(that) ⇒
                     doJoinWithMultipleReferenceValues(joinPC, that)
             }
         }
@@ -1436,7 +1456,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             domain.isNull(filteredValues),
                         domain.isPrecise(filteredValues),
                         newUTB,
-                        nextT
+                        newT
                     )
                 propagateRefinement(this, newValue, operands, locals)
             }
@@ -1509,7 +1529,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
             other match {
 
-                case thatValue: DomainSingleOriginReferenceValue ⇒
+                case DomainSingleOriginReferenceValue(thatValue) ⇒
                     this.values.find(_.origin == thatValue.origin) match {
                         case Some(thisValue) ⇒
                             doReJoinSingleOriginReferenceValue(joinPC, thisValue, thatValue)
@@ -1536,7 +1556,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                                     joinResult match {
                                         case NoUpdate ⇒
                                             newValues += thisValue
-                                        case update @ SomeUpdate(otherValue: DomainSingleOriginReferenceValue) ⇒
+                                        case update @ SomeUpdate(DomainSingleOriginReferenceValue(otherValue)) ⇒
                                             updateType = updateType &: update
                                             newValues += otherValue
                                     }
@@ -1650,7 +1670,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             assert(upperTypeBound.first.isArrayType, s"$upperTypeBound (values=$values)")
 
             if (values.find(_.isInstanceOf[ObjectValue]).nonEmpty) {
-                var thrownExceptions: List[ExceptionValue] = Nil
                 if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)
                     ComputedValueOrException(IntegerValue(pc), NullPointerException(pc))
                 else

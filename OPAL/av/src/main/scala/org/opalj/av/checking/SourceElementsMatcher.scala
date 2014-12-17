@@ -71,7 +71,7 @@ trait SourceElementsMatcher { left ⇒
         matchedClassFiles: Traversable[ClassFile]): Set[VirtualSourceElement] = {
 
         import scala.collection.mutable.HashSet
-        var sourceElements: HashSet[VirtualSourceElement] = HashSet.empty
+        val sourceElements: HashSet[VirtualSourceElement] = HashSet.empty
 
         matchedClassFiles foreach { classFile ⇒
             val declaringClassType = classFile.thisType

@@ -39,7 +39,7 @@ import org.opalj.util.OpeningFileFailedException
  */
 object Disassembler {
 
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
 
         if (args.length < 1) {
             println("Usage: java …Disassembler "+
@@ -49,8 +49,8 @@ object Disassembler {
             sys.exit(-1)
         }
 
-        def process(classFileName: String) {
-            var fileName =
+        def process(classFileName: String): Unit = {
+            val fileName =
                 if (classFileName.endsWith(".class"))
                     classFileName
                 else {
@@ -66,7 +66,7 @@ object Disassembler {
             processClassFile(classFile)
         }
 
-        def processClassFile(classFile: ClassFile) {
+        def processClassFile(classFile: ClassFile): Unit = {
             try {
                 val file = writeAndOpen(classFile.toXHTML.toString, classFile.fqn, ".html")
                 println(

@@ -83,7 +83,7 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure {
 
     def allReturnedValues: Map[PC, ReturnedValue] = returnedValues
 
-    protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue) {
+    protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit = {
         returnedValues =
             returnedValues.updated(
                 pc,

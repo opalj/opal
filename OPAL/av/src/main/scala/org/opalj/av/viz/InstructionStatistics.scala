@@ -108,14 +108,14 @@ object InstructionStatistics extends AnalysisExecutor {
                 // Find all immediate child packages. Note that a child package's name 
                 // can contain multiple simple package names if the intermediate
                 // packages have only one subpackage.
-                var childPNs = HashSet.empty[String]
+                val childPNs = HashSet.empty[String]
                 for {
                     fqpn ← instructionsPerFQPN.keys
                     if fqpn.length > rootFQPN.length()
                     if fqpn.startsWith(rootFQPN)
                     if fqpn.charAt(rootFQPN.length()) == '/' // javax is not a subpackage of java..
                 } {
-                    var pnsToRemove = HashSet.empty[String]
+                    val pnsToRemove = HashSet.empty[String]
                     var pnNeedToBeAdded = true
                     for (childPN ← childPNs) {
                         if (childPN.startsWith(fqpn)) {

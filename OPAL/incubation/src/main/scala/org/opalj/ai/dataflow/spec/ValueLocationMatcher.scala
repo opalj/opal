@@ -79,7 +79,7 @@ case class Calls(
     def apply(project: SomeProject): Map[Method, Set[PC]] = {
         import scala.collection.mutable.{ HashMap, HashSet }
 
-        var result = HashMap.empty[Method, HashSet[PC]]
+        val result = HashMap.empty[Method, HashSet[PC]]
         for {
             classFile ← project.classFiles
             method @ MethodWithBody(body) ← classFile.methods

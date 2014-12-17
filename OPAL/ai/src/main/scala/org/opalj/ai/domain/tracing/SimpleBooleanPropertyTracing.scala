@@ -64,7 +64,7 @@ trait SimpleBooleanPropertyTracing
         override def toString: String = domain.propertyName+"("+state+")"
     }
 
-    def updateProperty(pc: Int, newState: Boolean) {
+    def updateProperty(pc: Int, newState: Boolean): Unit = {
         setProperty(pc, new BooleanProperty(newState))
     }
 

@@ -250,7 +250,7 @@ package object ai {
         targetDomain: ValuesDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
 
         import org.opalj.collection.mutable.Locals
-        implicit val domainValueTag = targetDomain.DomainValueTag
+        implicit val domainValue = targetDomain.DomainValue
         val parameters = Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
         var localVariableIndex = 0
         var index = 0
@@ -282,7 +282,7 @@ package object ai {
      * operands.
      */
     def collectWithOperandsAndIndex[B](
-        domain: Domain)(
+        domain: ValuesDomain)(
             code: Code, operandsArray: domain.OperandsArray)(
                 f: PartialFunction[(PC, Instruction, domain.Operands), B]): Seq[B] = {
         val instructions = code.instructions

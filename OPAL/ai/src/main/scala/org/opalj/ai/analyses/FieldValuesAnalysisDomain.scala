@@ -60,7 +60,8 @@ import org.opalj.br.MethodSignature
  * ==Thread Safety==
  * This domain is not thread-safe. The methods of a class have to be analyzed
  * sequentially. The order in which the methods are analyzed is not relevant. However,
- * before the analysis of a method, the method [[setMethodContext]] has to be called.
+ * before the analysis of a [[org.opalj.br.Method]], the method [[setMethodContext]]
+ * has to be called.
  *
  * @author Michael Eichberg
  */

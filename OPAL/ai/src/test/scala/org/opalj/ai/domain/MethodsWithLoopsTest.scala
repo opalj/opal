@@ -101,7 +101,8 @@ class MethodsWithLoopsTest
             with IgnoreSynchronization
 
         val method = findMethod("endless")
-        val result = BaseAI(classFile, method, MostBasicDomain)
+        /*val result =*/ BaseAI(classFile, method, MostBasicDomain)
+        // if we reach this point, everything is OK
     }
 
 }

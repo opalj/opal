@@ -61,7 +61,7 @@ import org.opalj.util.No
 
 /**
  * A very basic analysis that determines the behavior of a method if a parameter
- * is potentially null compared to a call of the method where the parameter is guaranteed
+ * is potentially `null` compared to a call of the method where the parameter is guaranteed
  * to be non-null.
  *
  * Note that the difference may not just manifest in the number of thrown exceptions.
@@ -82,7 +82,9 @@ import org.opalj.util.No
  *
  * @author Michael Eichberg
  */
-object IfNullParameterAnalysis extends OneStepAnalysis[URL, BasicReport] with AnalysisExecutor {
+object IfNullParameterAnalysis
+        extends OneStepAnalysis[URL, BasicReport]
+        with AnalysisExecutor {
 
     val analysis = this
 
@@ -105,7 +107,7 @@ object IfNullParameterAnalysis extends OneStepAnalysis[URL, BasicReport] with An
                 defaultLocals: domain.Locals): domain.Locals = {
             defaultLocals.map { value ⇒
                 if (value == null)
-                    // not all local values are used right at the beginning
+                    // not all local values are used right from the beginning
                     null
                 else if (!value.isInstanceOf[domain.SingleOriginReferenceValue]) {
                     // we are not concerned about primitive values
@@ -131,19 +133,17 @@ object IfNullParameterAnalysis extends OneStepAnalysis[URL, BasicReport] with An
                 // 1. Default interpretation
                 val domain1 =
                     new DefaultDomain(theProject, classFile, method) with domain.RecordAllThrownExceptions
-                val result1 =
-                    ai.perform(method.body.get, domain1)(
-                        ai.initialOperands(classFile, method, domain1),
-                        ai.initialLocals(classFile, method, domain1)(None)
-                    )
+                ai.perform(method.body.get, domain1)(
+                    ai.initialOperands(classFile, method, domain1),
+                    ai.initialLocals(classFile, method, domain1)(None)
+                )
 
                 // 1. Interpretation under the assumption that all values are non-null
                 val domain2 =
                     new DefaultDomain(theProject, classFile, method) with domain.RecordAllThrownExceptions
                 val nonNullLocals = setToNonNull(domain2)(ai.initialLocals(classFile, method, domain2)(None))
-                val result2 =
-                    ai.perform(method.body.get, domain2)(
-                        ai.initialOperands(classFile, method, domain2), nonNullLocals)
+                ai.perform(method.body.get, domain2)(
+                    ai.initialOperands(classFile, method, domain2), nonNullLocals)
 
                 // Let's calculate the diff. The basic idea is to iterate over 
                 // all thrown exceptions and to throw away those that are 

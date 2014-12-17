@@ -472,7 +472,7 @@ object ClassFileFactory {
                 numberOfInstructionsForParameterLoading +
                 3 + // INVOKESPECIAL
                 1 // ARETURN
-        val maxLocals = fieldTypes.map(_.computationalType.operandSize).sum
+        val maxLocals = fieldTypes.map(_.computationalType.operandSize.toInt).sum
         val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
         val instructions = new Array[Instruction](numberOfInstructions)
         var currentPC: Int = 0
@@ -653,7 +653,7 @@ object ClassFileFactory {
 
         val returnValueStackSize =
             if (methodDescriptor.returnType != VoidType) {
-                methodDescriptor.returnType.computationalType.operandSize
+                methodDescriptor.returnType.computationalType.operandSize.toInt
             } else {
                 0
             }
@@ -926,9 +926,7 @@ object ClassFileFactory {
         targetMethodDeclaringType: ObjectType): Method = {
 
         val bridgeMethodParameters = bridgeMethodDescriptor.parameterTypes
-        val bridgeMethodReturnType = bridgeMethodDescriptor.returnType
         val targetMethodParameters = targetMethodDescriptor.parameterTypes
-        val targetMethodReturnType = targetMethodDescriptor.returnType
         val bridgeMethodParametersCount = bridgeMethodParameters.size
 
         var numberOfInstructions = 1 // for ALOAD_0
@@ -944,7 +942,7 @@ object ClassFileFactory {
             numberOfInstructions += loadInstructions + conversionInstructions
 
             parameterIndex += 1
-            lvIndex = parameter.computationalType.operandSize
+            lvIndex = parameter.computationalType.operandSize.toInt
         }
         numberOfInstructions += 3 // invoke target method
         numberOfInstructions += 1 // return
@@ -985,10 +983,15 @@ object ClassFileFactory {
 
         val maxStack = targetMethodDescriptor.parameterTypes.map(
             _.computationalType.operandSize).sum + 1
-        val maxLocals = maxStack +
-            (if (!targetMethodDescriptor.returnType.isVoidType)
-                targetMethodDescriptor.returnType.computationalType.operandSize
-            else 0)
+        val maxLocals =
+            maxStack +
+                {
+                    val returnType = targetMethodDescriptor.returnType
+                    if (!returnType.isVoidType)
+                        returnType.computationalType.operandSize.toInt
+                    else
+                        0
+                }
 
         Method(
             ACC_PUBLIC.mask | ACC_BRIDGE.mask | ACC_SYNTHETIC.mask,

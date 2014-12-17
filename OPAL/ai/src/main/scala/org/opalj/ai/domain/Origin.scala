@@ -91,7 +91,7 @@ trait Origin { domain: ValuesDomain ⇒
             case _                         ⇒ Iterable.empty
         }
 
-    def foreachOrigin(value: DomainValue, f: (ValueOrigin) ⇒ Unit) {
+    def foreachOrigin(value: DomainValue, f: (ValueOrigin) ⇒ Unit): Unit = {
         value match {
             case sov: SingleOriginValue    ⇒ f(sov.origin)
             case mov: MultipleOriginsValue ⇒ mov.origins.foreach(f)

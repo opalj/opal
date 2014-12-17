@@ -52,11 +52,11 @@ class AnalysisAggregator[Source, AnalysisResult]
 
     protected[this] var analyzeInParallel = true
 
-    def register(analysis: Analysis[Source, AnalysisResult]) {
+    def register(analysis: Analysis[Source, AnalysisResult]): Unit = {
         this.synchronized(analyses = analysis :: analyses)
     }
 
-    def setAnalyzeInParallel(analyzeInParallel: Boolean) {
+    def setAnalyzeInParallel(analyzeInParallel: Boolean): Unit = {
         this.synchronized(this.analyzeInParallel = analyzeInParallel)
     }
 
