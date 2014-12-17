@@ -292,6 +292,13 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 ior(-1, v, s) should be(AnIntegerValue)
             }
 
+            it("AnIntegerValue | [0,0] => AnIntegerRange") {
+                val v = AnIntegerValue
+                val s = IntegerRange(0, 0)
+
+                ior(-1, v, s) should be theSameInstanceAs (v)
+            }
+
             it("[Int.MinValue,Int.MaxValue] | [8,19] => [Int.MinValue, Int.MaxValue]") {
                 val v = IntegerRange(Int.MinValue, Int.MaxValue)
                 val s = IntegerRange(8, 19)
@@ -1045,7 +1052,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = IntegerRange(0, 0)
                 val v2 = AnIntegerValue()
 
-                isub(-1, v2, v1) should be(AnIntegerValue)
+                isub(-1, v2, v1) should be theSameInstanceAs (v2)
             }
 
             it("[Int.MinValue,3] - [3,2] => AnIntegerValue") {
@@ -1626,6 +1633,539 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                     case v ⇒ fail(s"expected lb <= 0 and ub >=45; found $v")
                 }
             }
+        }
+
+        describe("the behavior of ixor") {
+            it("AnIntegerValue ^ [-10,-10] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(-10, -10)
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("[-10,-10] ^ AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(-10, -10)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("[-22,-2] ^ AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(-22, -2)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("AnIntegerValue ^ [-22,-2] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(-22, -2)
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("AnIntegerValue ^ [2,22] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2, 22)
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("[2,22] ^ AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(2, 22)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("[-12,12] ^ AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(-12, 12)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("AnIntegerValue ^ [-12,12]  => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(-12, 12)
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("AnIntegerValue ^ AnIntegerValue  => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("[0,0] ^ AnIntegerValue  => AnIntegerValue") {
+                val v = IntegerRange(0, 0)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("AnIntegerValue ^ [0,0] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(0, 0)
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("x (AnIntegerValue) ^ x => [0,0]") {
+                val v = AnIntegerValue
+                val s = v
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(0)
+                        ub should ===(0)
+                    case v ⇒
+                        fail(s"expected lb == 0 and ub == 0; found $v")
+                }
+            }
+
+            it("[1,5] ^ [0,3] => [0,7]") {
+                val v = IntegerRange(1, 5)
+                val s = IntegerRange(0, 3)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (0)
+                        ub should be >= (7)
+                    case v ⇒
+                        fail(s"expected lb <= 0 and ub >= 7; found $v")
+                }
+            }
+
+            it("[-1,5] ^ [0,3] => [-4,7]") {
+                val v = IntegerRange(-1, 5)
+                val s = IntegerRange(0, 3)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-4)
+                        ub should be >= (7)
+                    case v ⇒
+                        fail(s"expected lb <= -4 and ub >= 7; found $v")
+                }
+            }
+
+            it("[-10,-5] ^ [0,3] => [-12,-5]") {
+                val v = IntegerRange(-10, -5)
+                val s = IntegerRange(0, 3)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-12)
+                        ub should be >= (-5)
+                    case v ⇒
+                        fail(s"expected lb <= -12 and ub >= -5; found $v")
+                }
+            }
+
+            it("[10,50] ^ [12,31] => [0,63]") {
+                val v = IntegerRange(10, 50)
+                val s = IntegerRange(12, 31)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (0)
+                        ub should be >= (63)
+                    case v ⇒
+                        fail(s"expected lb <= 0 and ub >= 63; found $v")
+                }
+            }
+
+            it("[-10,50] ^ [12,31] => [-32,63]") {
+                val v = IntegerRange(-10, 50)
+                val s = IntegerRange(12, 31)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-32)
+                        ub should be >= (63)
+                    case v ⇒
+                        fail(s"expected lb <= -32 and ub >= 63; found $v")
+                }
+            }
+
+            it("[-5,-1] ^ [-8,-6] => [1,7]") {
+                val v = IntegerRange(-5, -1)
+                val s = IntegerRange(-8, -6)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (1)
+                        ub should be >= (7)
+                    case v ⇒
+                        fail(s"expected lb <= 1 and ub >= 7; found $v")
+                }
+            }
+
+            it("[-5,-1] ^ [-80,-60] => [56,79]") {
+                val v = IntegerRange(-5, -1)
+                val s = IntegerRange(-80, -60)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (56)
+                        ub should be >= (79)
+                    case v ⇒
+                        fail(s"expected lb <= 56 and ub >= 79; found $v")
+                }
+            }
+
+            it("[-500,-100] ^ [-120,-100] => [0,511]") {
+                val v = IntegerRange(-500, -100)
+                val s = IntegerRange(-120, -100)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (0)
+                        ub should be >= (511)
+                    case v ⇒
+                        fail(s"expected lb <= 0 and ub >= 511; found $v")
+                }
+            }
+
+            it("[-1,-1] ^ [-120,-100] => [99,119]") {
+                val v = IntegerRange(-1, -1)
+                val s = IntegerRange(-120, -100)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (99)
+                        ub should be >= (119)
+                    case v ⇒
+                        fail(s"expected lb <= 99 and ub >= 119; found $v")
+                }
+            }
+
+            it("[-5,-1] ^ [9,12] => [-16,-9]") {
+                val v = IntegerRange(-5, -1)
+                val s = IntegerRange(9, 12)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-16)
+                        ub should be >= (-9)
+                    case v ⇒
+                        fail(s"expected lb <= -16 and ub >= -9; found $v")
+                }
+            }
+
+            it("[-50,-30] ^ [0,45] => [-64,-1]") {
+                val v = IntegerRange(-50, -30)
+                val s = IntegerRange(0, 45)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-64)
+                        ub should be >= (-1)
+                    case v ⇒
+                        fail(s"expected lb <= -64 and ub >= -1; found $v")
+                }
+            }
+
+            it("[Int.MinValue,Int.MinValue+100] ^ [0,45] => [-2147483648,-2147483521]") {
+                val v = IntegerRange(Int.MinValue, Int.MinValue + 100)
+                val s = IntegerRange(0, 45)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2147483648)
+                        ub should be >= (-2147483521)
+                    case v ⇒
+                        fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
+                }
+            }
+
+            it("[Int.MinValue,Int.MinValue+100] ^ [40,45] => [-2147483648,-2147483521]") {
+                val v = IntegerRange(Int.MinValue, Int.MinValue + 100)
+                val s = IntegerRange(40, 45)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2147483648)
+                        ub should be >= (-2147483521)
+                    case v ⇒
+                        fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
+                }
+            }
+
+            it("[0,12] ^ [-14,-10] => [-16,-1]") {
+                val v = IntegerRange(0, 12)
+                val s = IntegerRange(-14, -10)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-16)
+                        ub should be >= (-1)
+                    case v ⇒
+                        fail(s"expected lb <= -16 and ub >= -1; found $v")
+                }
+            }
+
+            it("[40,45] ^ [Int.MinValue,Int.MinValue+100] => [-2147483648,-2147483521]") {
+                val v = IntegerRange(40, 45)
+                val s = IntegerRange(Int.MinValue, Int.MinValue + 100)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2147483648)
+                        ub should be >= (-2147483521)
+                    case v ⇒
+                        fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
+                }
+            }
+
+            it(" [0,45] ^ [-50,-30] => [-64,-1]") {
+                val v = IntegerRange(0, 45)
+                val s = IntegerRange(-50, -30)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-64)
+                        ub should be >= (-1)
+                    case v ⇒
+                        fail(s"expected lb <= -64 and ub >= -1; found $v")
+                }
+            }
+
+            it(" [-1,1] ^ [0,12] => [-13,13]") {
+                val v = IntegerRange(-1, 1)
+                val s = IntegerRange(0, 12)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-13)
+                        ub should be >= (13)
+                    case v ⇒
+                        fail(s"expected lb <= -13 and ub >= 13; found $v")
+                }
+            }
+
+            it(" [-1,19] ^ [10,18] => [-19,31]") {
+                val v = IntegerRange(-1, 19)
+                val s = IntegerRange(10, 18)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-19)
+                        ub should be >= (31)
+                    case v ⇒
+                        fail(s"expected lb <= -19 and ub >= 31; found $v")
+                }
+            }
+
+            it(" [-25,19] ^ [10,18] => [-32,31]") {
+                val v = IntegerRange(-25, 19)
+                val s = IntegerRange(10, 18)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-32)
+                        ub should be >= (31)
+                    case v ⇒
+                        fail(s"expected lb <= -32 and ub >= 31; found $v")
+                }
+            }
+
+            it(" [-25,19] ^ [Int.MaxValue-25,Int.MaxValue] => [-2147483648,2147483647]") {
+                val v = IntegerRange(-25, 19)
+                val s = IntegerRange(Int.MaxValue - 25, Int.MaxValue)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2147483648)
+                        ub should be >= (2147483647)
+                    case v ⇒
+                        fail(s"expected lb <= -2147483648 and ub >= 2147483647; found $v")
+                }
+            }
+
+            it("[Int.MaxValue-25,Int.MaxValue] ^ [-25,19] => [-2147483648,2147483647]") {
+                val v = IntegerRange(Int.MaxValue - 25, Int.MaxValue)
+                val s = IntegerRange(-25, 19)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2147483648)
+                        ub should be >= (2147483647)
+                    case v ⇒
+                        fail(s"expected lb <= -2147483648 and ub >= 2147483647; found $v")
+                }
+            }
+
+            it("[10,18] ^ [-25,19] => [-32,31]") {
+                val v = IntegerRange(10, 18)
+                val s = IntegerRange(-25, 19)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-32)
+                        ub should be >= (31)
+                    case v ⇒
+                        fail(s"expected lb <= -32 and ub >= 31; found $v")
+                }
+            }
+
+            it("[-25,19] ^ [-5,-1] => [-24,28]") {
+                val v = IntegerRange(-25, 19)
+                val s = IntegerRange(-5, -1)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-24)
+                        ub should be >= (28)
+                    case v ⇒
+                        fail(s"expected lb <= -32 and ub >= 31; found $v")
+                }
+            }
+
+            it(" [-5,-1] ^ [-25,19] => [-24,28]") {
+                val v = IntegerRange(-5, -1)
+                val s = IntegerRange(-25, 19)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-24)
+                        ub should be >= (28)
+                    case v ⇒
+                        fail(s"expected lb <= -32 and ub >= 31; found $v")
+                }
+            }
+
+            it(" [-1,1] ^ [-1,1] => [-2,1]") {
+                val v = IntegerRange(-1, 1)
+                val s = IntegerRange(-1, 1)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2)
+                        ub should be >= (1)
+                    case v ⇒
+                        fail(s"expected lb <= -2 and ub >= 1; found $v")
+                }
+            }
+
+            it(" [-15,12] ^ [-1,34] => [-48,46]") {
+                val v = IntegerRange(-15, 12)
+                val s = IntegerRange(-1, 34)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-48)
+                        ub should be >= (46)
+                    case v ⇒
+                        fail(s"expected lb <= -48 and ub >= 46; found $v")
+                }
+            }
+
+            it(" [0,0] ^ [-1,34] => [-1,34]") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(-1, 34)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-1)
+                        ub should be >= (34)
+                    case v ⇒
+                        fail(s"expected lb <= -1 and ub >= 34; found $v")
+                }
+            }
+
+            it(" [-1,0] ^ [-1,34] => [-35,34]") {
+                val v = IntegerRange(-1, 0)
+                val s = IntegerRange(-1, 34)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-35)
+                        ub should be >= (34)
+                    case v ⇒
+                        fail(s"expected lb <= -35 and ub >= 34; found $v")
+                }
+            }
+
+            it(" [0,0] ^ [34,34] => [34,34]") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(34, 34)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(34)
+                        ub should ===(34)
+                    case v ⇒
+                        fail(s"expected lb <= 34 and ub >= 34; found $v")
+                }
+            }
+
+            it(" [Int.MinValue,Int.MaxValue] ^ [Int.MinValue,Int.MaxValue] => [Int.MinValue,Int.MaxValue]") {
+                val v = IntegerRange(Int.MinValue, Int.MaxValue)
+                val s = IntegerRange(Int.MinValue, Int.MaxValue)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(Int.MinValue)
+                        ub should ===(Int.MaxValue)
+                    case v ⇒
+                        fail(s"expected lb <= Int.MinValue (-2147483648) and ub >= Int.MaxValue (2147483647); found $v")
+                }
+            }
+
+            it(" [-8569,-8400] ^ [50000,50500] => [-58880,-57857]") {
+                val v = IntegerRange(Int.MinValue, Int.MaxValue)
+                val s = IntegerRange(Int.MinValue, Int.MaxValue)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-58880)
+                        ub should be >= (-57857)
+                    case v ⇒
+                        fail(s"expected lb <= -58880 and ub >= -57857; found $v")
+                }
+            }
+
+            it(" [8569,12000] ^ [0,60] => [8512,12031]") {
+                val v = IntegerRange(8569, 12000)
+                val s = IntegerRange(0, 60)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (8512)
+                        ub should be >= (12031)
+                    case v ⇒
+                        fail(s"expected lb <= 8512 and ub >= 12031; found $v")
+                }
+            }
+
+            it(" [-1,0] ^ [100,102] => [-103,102]") {
+                val v = IntegerRange(-1, 0)
+                val s = IntegerRange(100, 102)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-103)
+                        ub should be >= (102)
+                    case v ⇒
+                        fail(s"expected lb <= -103 and ub >= 102; found $v")
+                }
+            }
+
         }
 
         describe("the behavior of ishl") {
