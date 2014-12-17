@@ -37,11 +37,10 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
  *
- *
  * @author Michael Eichberg
  */
-trait MaxArrayLengthRefinement extends ReferenceValuesDomain {
-    domain: IntegerRangeValues ⇒
+trait MaxArrayLengthRefinement extends l0.TypeLevelReferenceValues {
+    domain: IntegerRangeValues with Configuration with ClassHierarchy ⇒
 
     abstract override def arraylength(
         pc: PC,
