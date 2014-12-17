@@ -36,19 +36,13 @@ import scala.reflect.ClassTag
  * Provides information about the origin of a value.
  *
  * ==Usage==
- * An analysis that requires information about the origin of a value should declare
- * a corresponding self-type dependency. E.g.,
- * {{{
- * class MyAnalysis extends... {this: Origin =>
- *  ...
- * }
- * }}}
- * Additionally, the analysis has to make sure that the analysis used to capture
- * information about values provides the necessary information.
+ *
+ * I.e., ''just mixing in this trait will not provide origin information about values''.
  *
  * ==Implementation==
  * This trait should be inherited from by all domains that make information about
- * the origin of a value available.
+ * the origin of a value available (see [[org.opalj.ai.domain.l1.ReferenceValues]]
+ * as an example).
  *
  * @author Michael Eichberg
  */
