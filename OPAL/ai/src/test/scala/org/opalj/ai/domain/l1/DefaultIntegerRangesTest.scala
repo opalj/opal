@@ -1807,7 +1807,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val s = IntegerRange(-8, -6)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case IntegerRange(lb, ub) ⇒
                         lb should be <= (1)
                         ub should be >= (7)
                     case v ⇒
@@ -1820,7 +1820,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val s = IntegerRange(-80, -60)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case IntegerRange(lb, ub) ⇒
                         lb should be <= (56)
                         ub should be >= (79)
                     case v ⇒
@@ -1833,7 +1833,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val s = IntegerRange(-120, -100)
 
                 ixor(-1, v, s) match {
-                    case (IntegerRange(lb, ub)) ⇒
+                    case IntegerRange(lb, ub) ⇒
                         lb should be <= (0)
                         ub should be >= (511)
                     case v ⇒
