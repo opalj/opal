@@ -58,6 +58,7 @@ import de._
  * ensemble is allowed to depend on a specific ensemble.
  *
  * @author Michael Eichberg
+ * @author Marco Torsello
  */
 class Specification(val project: Project[URL]) {
 

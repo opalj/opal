@@ -36,6 +36,7 @@ import org.opalj.br.analyses.SomeProject
  * always detached from the concrete source element that represents the implementation.
  *
  * @author Michael Eichberg
+ * @author Marco Torsello
  */
 sealed trait VirtualSourceElement
         extends SourceElement

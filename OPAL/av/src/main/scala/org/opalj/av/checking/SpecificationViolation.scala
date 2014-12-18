@@ -64,12 +64,12 @@ case class SpecificationViolation(
         if (javaSource.contains("{")) {
             javaSource = javaSource.substring(0, javaSource.indexOf("{"))
         }
-        javaSource = "("+javaSource+".java:"+source.getLineNumber(project).getOrElse("1):"+source.toJava)+")"
+        javaSource = "("+javaSource+".java:"+source.getLineNumber(project).getOrElse("1):"+javaSource)+")"
 
         if (javaTarget.contains("{")) {
             javaTarget = javaTarget.substring(0, javaTarget.indexOf("{"))
         }
-        javaTarget = "("+javaTarget+".java:"+target.getLineNumber(project).getOrElse("1):"+target.toJava)+")"
+        javaTarget = "("+javaTarget+".java:"+target.getLineNumber(project).getOrElse("1):"+javaTarget)+")"
 
         description+" between "+dependencyChecker.sourceEnsembles.mkString(", ")+
             " and "+dependencyChecker.targetEnsembles.mkString(", ")+": "+
