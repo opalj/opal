@@ -963,59 +963,80 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
 
     override def ixor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         if (value1 eq value2)
-            return IntegerValue(pc, 0)
+            return IntegerValue(pc, 0);
 
         (value1, value2) match {
-            case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) if vlb == vub && slb == sub ⇒
-                IntegerRange(vlb ^ slb)
 
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
-                if (vlb >= 0 && slb >= 0) {
-                    val vlbBits = 32 - Integer.numberOfLeadingZeros(vlb)
-                    val vubBits = 32 - Integer.numberOfLeadingZeros(vub)
-                    val slbBits = 32 - Integer.numberOfLeadingZeros(slb)
-                    val subBits = 32 - Integer.numberOfLeadingZeros(sub)
+                if (vlb == vub && slb == sub)
+                    IntegerRange(vlb ^ slb)
 
-                    // if the intersection of the bitranges of v and s are not empty than lb
-                    // can only probably be 0, since using the xor operation on the same number
-                    // results to 0.
-                    val lb = if (vubBits < slbBits || subBits < vlbBits) {
-                        // The min value of a positive integer in binary notation is the number
-                        // that contains the most trailing zeros. This min value can be created
-                        // by setting the bits of the second largest value to zero.
-                        // Example:  [1, 5], [8, 14]
-                        //           5 = 101 (num of bits 3), 14 = 1110 (num of bits 4)
-                        //           the min number is 1000, since it is possible that
-                        //           the the 3 trailing bits are switched to
-                        //           zero by a number of the first range.
-                        if (vubBits > subBits) 1 << subBits
-                        else 1 << vubBits
-                    } else {
-                        0
-                    }
+                else if (vlb >= 0 && slb >= 0) {
+                    val smallerUB = Math.min(vub, sub)
+                    val smallerUBLZ = Integer.numberOfLeadingZeros(smallerUB)
 
-                    // The possible max value is the value that can be displayed by the
-                    // number of bits of the biggest value in the ranges, since the zero
-                    // bits can be switched to zero.
-                    val ub = if (vubBits > subBits) (1 << vubBits) - 1 else (1 << subBits) - 1
+                    // Calculate the upper bound
+                    // Idea: 1. Get the leading bit sequence of the larger value.
+                    //       (leading means: all bits up until the highest-order 
+                    //        bit of the lower value)
+                    //       2. Set all subsequent bits to "1"
+                    // Example:
+                    // ub1 = 0101 0000 
+                    // ub2 = 0000 1010 
+                    // ub^ = 0101 1111 
+                    val ub = Math.max(vub, sub) | (-1 >>> smallerUBLZ)
+
+                    val lb =
+                        // Calculate the lower bound _if the ranges are not overlapping_
+                        // Idea: 1. Get the leading bit sequence of the lower bound of the
+                        //       range with the larger values.
+                        //       (leading means: all bits up until the highest-order 
+                        //        bit of the upper bound of the range of smaller values)
+                        //       2. Set all subsequent bits to "0"
+                        // Example:
+                        // ub1 = 0101 0000 (ub1 = 80(dez))
+                        // lb1 = 0100 1110 (lb1 = 78(dez))
+                        // ub2 = 0000 0100 (ub1 = 4(dez))
+                        // lb2 = 0000 0001 (lb1 = 1(dez))
+                        // lb^ = 0100 1000 (lb  = 72(dez))
+                        if (vub < slb || sub < vlb) {
+                            // the ranges are non-overlapping                                    
+                            val largerLB = Math.max(vlb, slb)
+                            largerLB & (-1 << (32 - smallerUBLZ))
+                        } else {
+                            // the ranges are overlapping
+                            0
+                        }
 
                     IntegerRange(lb, ub)
+
                 } else if (vub < 0 && sub < 0) {
-                    val vlbBits = 32 - Integer.numberOfLeadingZeros(~vlb)
-                    val vubBits = 32 - Integer.numberOfLeadingZeros(~vub)
-                    val slbBits = 32 - Integer.numberOfLeadingZeros(~slb)
-                    val subBits = 32 - Integer.numberOfLeadingZeros(~sub)
+                    def numberOfLeadingOnes(value: Int) = Integer.numberOfLeadingZeros(~value)
 
-                    val lb = if (vubBits < slbBits || subBits < vlbBits) {
-                        // same idea like above
-                        if (vlbBits > slbBits) 1 << slbBits
-                        else 1 << vlbBits
-                    } else 0
+                    val vlbLOs = numberOfLeadingOnes(vlb)
+                    val slbLOs = numberOfLeadingOnes(slb)
 
-                    // same idea like above
-                    val ub = if (vlbBits > slbBits) (1 << vlbBits) - 1 else (1 << slbBits) - 1
+                    // Example (the ranges are not overlapping)
+                    // lb1 = 1010 1101 ... ub1 = 1110 0000
+                    // lb2 = 1111 0111 ... ub2 = 1111 1101
+                    // ub^ = 0101 1111 ... lb^ = 0000 0000
+                    val ub =
+                        if (vlbLOs != slbLOs)
+                            ~Math.min(vlb, slb) | (-1 >>> (Math.max(vlbLOs, slbLOs) - 1))
+                        else
+                            (1 << (32 - vlbLOs)) - 1
+
+                    val lb =
+                        if (vub < slb) {
+                            ~vub & (-1 << (32 - numberOfLeadingOnes(slb)))
+                        } else if (sub < vlb) {
+                            ~sub & (-1 << (32 - numberOfLeadingOnes(vlb)))
+                        } else
+                            // the ranges are overlapping
+                            0
 
                     IntegerRange(lb, ub)
+
                 } else if (vub < 0 && slb >= 0) {
                     val subBits = 32 - Integer.numberOfLeadingZeros(sub)
 
@@ -1046,7 +1067,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
 
                     // same idea like above
                     val lb = (vlb >> subBits) << subBits
-                    val ub = if (vubBits > subBits) (1 << vubBits) - 1 else (1 << subBits) - 1
+                    val ub = (1 << (if (vubBits > subBits) vubBits else subBits)) - 1
 
                     IntegerRange(lb, ub)
                 } else if (slb < 0 && sub >= 0 && vlb >= 0) {
@@ -1055,48 +1076,46 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
 
                     // same idea like first case: vlb >= 0 && slb >= 0
                     val lb = (slb >> vubBits) << vubBits
-                    val ub = if (subBits > vubBits) (1 << subBits) - 1 else (1 << vubBits) - 1
+                    val ub = (1 << (if (subBits > vubBits) subBits else vubBits)) - 1
 
                     IntegerRange(lb, ub)
                 } else if (vlb < 0 && vub >= 0 && sub < 0) {
                     val vlbBits = 32 - Integer.numberOfLeadingZeros(~vlb)
                     val vubBits = 32 - Integer.numberOfLeadingZeros(vub)
                     val slbBits = 32 - Integer.numberOfLeadingZeros(~slb)
-                    val subBits = 32 - Integer.numberOfLeadingZeros(~sub)
 
                     // same idea like first case: vlb >= 0 && slb >= 0
                     val lb = (slb >> vubBits) << vubBits
-                    val ub = if (vlbBits > slbBits) (1 << vlbBits) - 1 else (1 << slbBits) - 1
+                    val ub = (1 << (if (vlbBits > slbBits) vlbBits else slbBits)) - 1
 
                     IntegerRange(lb, ub)
                 } else if (slb < 0 && sub >= 0 && vub < 0) {
                     val vlbBits = 32 - Integer.numberOfLeadingZeros(~vlb)
-                    val vubBits = 32 - Integer.numberOfLeadingZeros(~vub)
                     val slbBits = 32 - Integer.numberOfLeadingZeros(~slb)
                     val subBits = 32 - Integer.numberOfLeadingZeros(sub)
 
                     // same idea like first case: vlb >= 0 && slb >= 0
                     val lb = (vlb >> subBits) << subBits
-                    val ub = if (slbBits > vlbBits) (1 << slbBits) - 1 else (1 << vlbBits) - 1
-
+                    val ub = (1 << (if (slbBits > vlbBits) slbBits else vlbBits)) - 1
                     IntegerRange(lb, ub)
+
                 } else { // case [-,+] [-,+]
                     val vlbBits = 32 - Integer.numberOfLeadingZeros(~vlb)
                     val vubBits = 32 - Integer.numberOfLeadingZeros(vub)
                     val slbBits = 32 - Integer.numberOfLeadingZeros(~slb)
                     val subBits = 32 - Integer.numberOfLeadingZeros(sub)
 
-                    // The min value can be calculated by either using the min neg value of range s and
-                    // max pos value of range v or vice versa.
-                    val lbTestMinVal1 = if (slbBits > vubBits) (-1 << slbBits) else (-1 << vubBits)
-                    val lbTestMinVal2 = if (subBits > vlbBits) (-1 << subBits) else (-1 << vlbBits)
-                    val lb = if (lbTestMinVal1 < lbTestMinVal2) lbTestMinVal1 else lbTestMinVal2
+                    // The min value can be calculated by either using the min neg 
+                    // value of range s and max pos value of range v or vice versa.
+                    val lbCand1 = -1 << (if (slbBits > vubBits) slbBits else vubBits)
+                    val lbCand2 = -1 << (if (subBits > vlbBits) subBits else vlbBits)
+                    val lb = Math.min(lbCand1, lbCand2)
 
-                    // The max value can be calculated by either using the min neg value of range s and v
-                    // or the max value of range s and v.
-                    val ubTestMinVal1 = if (slbBits > vlbBits) (1 << slbBits) - 1 else (1 << vlbBits) - 1
-                    val ubTestMinVal2 = if (subBits > vubBits) (1 << subBits) - 1 else (1 << vubBits) - 1
-                    val ub = if (ubTestMinVal1 > ubTestMinVal2) ubTestMinVal1 else ubTestMinVal2
+                    // The max value can be calculated by either using the min neg 
+                    // value of range s and v or the max value of range s and v.
+                    val ubCand1 = (1 << (if (slbBits > vlbBits) slbBits else vlbBits)) - 1
+                    val ubCand2 = (1 << (if (subBits > vubBits) subBits else vubBits)) - 1
+                    val ub = Math.max(ubCand1, ubCand2)
 
                     IntegerRange(lb, ub)
                 }
