@@ -36,7 +36,7 @@ import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
 
 /**
- * Implementation of an abstract interpretation framework – also referred to as OPAL.
+ * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
  *
  * Please note, that OPAL/the abstract interpreter just refers to the classes and traits
  * defined in this package (`ai`). The classes and traits defined in the sub-packages
