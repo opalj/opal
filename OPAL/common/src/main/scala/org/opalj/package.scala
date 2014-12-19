@@ -42,8 +42,13 @@ import scala.reflect.macros.blackbox.Context
  * that is designed with performance, scalability and adaptability in mind.
  *
  * Its main components are:
- *  - a library for reading in Java bytecode and creating arbitrary representations
- *  - an easily customizable framework for the abstract interpretation of Java bytecode.
+ *  - a library (`Common`) that defines functionality that is generally useful
+ *    in the context of static analyses.
+ *  - a library for parsing Java bytecode (`Bytecode Infrastructure`).
+ *  - a library to create an in-memory representation of Java bytecode
+ *    (`Bytecode Disassembler`).
+ *  - a scalable, easily customizable framework for the abstract interpretation of
+ *    Java bytecode.
  *  - a library to extract dependencies between code elements.
  *
  * ==General Design Decisions==
@@ -54,19 +59,25 @@ import scala.reflect.macros.blackbox.Context
  * client side.
  *
  * ===No `null` Values===
- * OPAL generally does not make use of `null` values in its public interface. I.e.,
- * fields that are accessible  will never contain `null` values and methods will never
- * return `null`. '''If a method accepts `null` as a value for a parameter or returns
- * a `null` value it is always explicitly documented.'''
- * In general, the behavior of methods that are passed `null` values is undefined.
+ * Unless explicitly noted, '''OPAL does not `null` values'''
+ * I.e., fields that are accessible will never contain `null` values and methods will
+ * never return `null`.  '''If a method accepts `null` as a value for a parameter or
+ * returns a `null` value it is always explicitly documented.'''
+ * In general, the behavior of methods that are passed `null` values is undefined unless
+ * explicitly documented.
  *
  * ===No Typecasts for Collections===
- * For efficiency reasons OPAL sometimes uses mutable data-structures during construction
- * time. After construction time, these data-structures are generally represented using
+ * For efficiency reasons, OPAL sometimes uses mutable data-structures internally.
+ * After construction time, these data-structures are generally represented using
  * their generic interfaces (e.g., `scala.collection.{Set,Map}`). However, a downcast
  * (e.g., to add/remove elements) is always forbidden as it would effectively prevent the
  * thread-safety properties. Furthermore, the concrete data-structure is always
  * considered an implementation detail and may change at any time.
+ *
+ * ===Assertions===
+ * OPAL makes heavy use of Scala's '''Assertion Facility''' to facilitate writing correct
+ * analysis. Hence, for production builds (after thorouhg testing(!)) it is
+ * higly recommend to build OPAL again using `-Xdisable-assertions`.
  *
  * @author Michael Eichberg
  */
@@ -76,14 +87,16 @@ package object opalj {
 
     /**
      * A simple type alias that can be used to communicate that the respective
-     * value will only take values in the range of unsigned short values.
+     * value will/should only take values in the range of unsigned short values.
      */
     type UShort = Int
 
     /**
-     * A program counter identifies an instruction in the code array.
+     * A program counter identifies an instruction in a code array.
      *
-     * A program counter is a value in the range `[0/*UShort.min*/, 65535/*UShort.max*/]`
+     * A program counter is a value in the range `[0/*UShort.min*/, 65535/*UShort.max*/]`.
+     *
+     * @note This type alias serves comprehension purposes.
      */
     type PC = UShort
 
@@ -92,7 +105,7 @@ package object opalj {
      *
      * Using PCs is in particular well suited for small(er) collections.
      *
-     * @note This type alias serves comprehension purposes only.
+     * @note This type alias serves comprehension purposes.
      */
     type PCs = collection.UShortSet
 
@@ -111,7 +124,8 @@ package object opalj {
     def process[C <: Closeable, T](closable: C)(r: C ⇒ T): T = {
         // Implementation Note
         // Creating the closeable (I) in the try block doesn't make sense, hence
-        // we don't need a by-name parameter.
+        // we don't need a by-name parameter. (If creating the closable fails, 
+        // then there is nothing to close.)
         try {
             r(closable)
         } finally {
@@ -120,7 +134,7 @@ package object opalj {
     }
 
     /**
-     * This function takes a `Source` and a function `r` that will
+     * This function takes a `Source` object and a function `r` that will
      * process the source.
      * This function takes care of the correct handling of resources.
      * When `r` has finished processing the source or throws an exception,
@@ -140,7 +154,7 @@ package object opalj {
      * Iterates over a given array `a` and calls the given function `f` for
      * each non-null value in the array.
      *
-     * '''This is a macro.'''
+     * @note '''This is a macro.'''
      */
     def foreachNonNullValueOf[T <: AnyRef](
         a: Array[T])(
@@ -152,7 +166,8 @@ package object opalj {
      * @note This is not the same as a type conversion as the "sign-bit" is not treated
      *      as such. I.e., after conversion of the `Int` value -1, the `Long` value
      *      will be `4294967295` (both have the same bit mask:
-     *      `11111111111111111111111111111111`).
+     *      `11111111111111111111111111111111`); in other words, the long's sign bit will
+     *      still be `0`.
      */
     final def i2lBitMask(value: Int): Long = {
         (value >>> 16).toLong << 16 | (value & 0xFFFF).toLong
@@ -182,13 +197,13 @@ package object opalj {
      */
     def commonPackage(
         fqnA: String, fqnB: String,
-        packageSeperator: Char = '.'): Option[String] = {
-        val packageSeperatorIndex = fqnA.indexOf(packageSeperator.toInt) + 1
+        packageSeperatorChar: Int = '.'): Option[String] = {
+        val packageSeperatorIndex = fqnA.indexOf(packageSeperatorChar) + 1
         if (packageSeperatorIndex <= 0)
             return None;
 
         val rootPackage = fqnA.substring(0, packageSeperatorIndex)
-        if (packageSeperatorIndex == fqnB.indexOf(packageSeperator.toInt) + 1 &&
+        if (packageSeperatorIndex == fqnB.indexOf(packageSeperatorChar) + 1 &&
             rootPackage == fqnB.substring(0, packageSeperatorIndex)) {
             commonPackage(
                 fqnA.substring(packageSeperatorIndex, fqnA.length()),
@@ -204,7 +219,7 @@ package object opalj {
 
     /**
      * Abbreviates the given `memberTypeFQN` by abbreviating the common packages
-     * (except of the last shared package) of both fully qualified type nams using '…'.
+     * (except of the last shared package) of both fully qualified type names using '…'.
      *
      * @example
      * {{{
@@ -220,14 +235,14 @@ package object opalj {
      */
     def abbreviateFQN(
         definingTypeFQN: String, memberTypeFQN: String,
-        packageSeperator: Char = '.'): String = {
+        packageSeperatorChar: Int = '.'): String = {
 
         commonPackage(definingTypeFQN, memberTypeFQN) match {
-            case Some(commonPackages) if commonPackages.indexOf(packageSeperator.toInt) < commonPackages.length - 1 ⇒
+            case Some(commonPackages) if commonPackages.indexOf(packageSeperatorChar) < commonPackages.length - 1 ⇒
                 // we have more than one common package...
-                val beforeLastCommonPackageIndex = commonPackages.dropRight(1).lastIndexOf('.')
+                val beforeLastCommonPackageIndex = commonPackages.dropRight(1).lastIndexOf(packageSeperatorChar)
                 val length = memberTypeFQN.length
-                val packagesCount = commonPackages.count(_ == '.') - 1
+                val packagesCount = commonPackages.count(_ == packageSeperatorChar) - 1
                 val packageAbbreviation = "." * packagesCount
                 packageAbbreviation +
                     memberTypeFQN.substring(beforeLastCommonPackageIndex + 1, length)

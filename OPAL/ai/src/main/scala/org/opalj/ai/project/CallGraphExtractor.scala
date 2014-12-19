@@ -45,6 +45,9 @@ import org.opalj.util.Yes
 import org.opalj.util.No
 import org.opalj.br.MethodSignature
 
+/**
+ * @author Michael Eichberg
+ */
 trait CallGraphExtractor { extractor ⇒
 
     type LocalCallGraphInformation = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall])

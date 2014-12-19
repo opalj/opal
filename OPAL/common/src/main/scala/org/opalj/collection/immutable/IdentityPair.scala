@@ -30,6 +30,8 @@ package org.opalj
 package collection
 package immutable
 
+import java.lang.System.identityHashCode
+
 /**
  * Encapsulates a pair of values that is intended to be used as a key in Maps.
  * Compared to a standard pair (Tuple2), however, comparison of two `IdentityPair`
@@ -50,9 +52,10 @@ package immutable
  *
  * @author Michael Eichberg
  */
-final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
-        _1: T1,
-        _2: T2) extends Product2[T1, T2] {
+case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
+    _1: T1,
+    _2: T2)
+        extends Product2[T1, T2] {
 
     override def canEqual(other: Any): Boolean = other.isInstanceOf[IdentityPair[_, _]]
 
@@ -63,6 +66,5 @@ final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
         }
     }
 
-    override def hashCode: Int =
-        System.identityHashCode(_1) * 113 + System.identityHashCode(_2)
+    override def hashCode: Int = identityHashCode(_1) * 113 + identityHashCode(_2)
 }

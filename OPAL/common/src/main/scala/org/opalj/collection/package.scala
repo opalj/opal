@@ -29,7 +29,7 @@
 package org.opalj
 
 /**
- * Various helper methods related to Scala and OPAL collections.
+ * Defines helper methods related to Scala's and OPAL's collections APIs.
  *
  * @author Michael Eichberg
  */
@@ -44,19 +44,18 @@ package object collection {
     /**
      * If the `ConcurrentHashMap` (map) contains the key, the respective value is
      * returned. Otherwise, the given function `f` is evaluated and that value is
-     * stored in the map and also returned. Please note, that it is possible that `f`
-     * is evaluated but the result is not used, if another thread has already
-     * associated a value with the respective key. In that case the result of the
-     * evaluation of `f` is
-     * completely thrown away.
+     * stored in the map and also returned.
+     *
+     * @note It is possible that `f` is evaluated but the result is not used, if
+     *      another thread has already associated a value with the respective key.
+     *      In that case the result of the evaluation of `f` is completely thrown away.
      */
-    def putIfAbsentAndGet[K, V](
-        map: CMap[K, V], key: K, f: ⇒ V): V = {
+    def putIfAbsentAndGet[K, V](map: CMap[K, V], key: K, f: ⇒ V): V = {
         val value = map.get(key)
         if (value != null) {
             value
         } else {
-            val newValue = f // we may evaluate f multiple times w.r.t. the same VirtualSourceElement
+            val newValue = f // we may evaluate f multiple times w.r.t. the same key
             val existingValue = map.putIfAbsent(key, newValue)
             if (existingValue != null)
                 existingValue
@@ -66,13 +65,13 @@ package object collection {
     }
 
     /**
-     * Converts a multi-map (a Map that contains maps) based on
+     * Converts a multi-map (a Map that contains Maps) based on
      * `java.util.concurrent.ConcurrentHashMap`s into a corresponding multi-map
-     * based on `scala.collection.immutable.Map`s.
+     * based on `scala.collection.immutable.HashMap`s.
      * E.g.,
      * {{{
-     * val source : CMap[VirtualSourceElement, CMap[ArrayType, Set[DependencyType]]] =...
-     * val target : Map[VirtualSourceElement, Map[ArrayType, Set[DependencyType]]] = convert(source)
+     * val source : CMap[SourceElement, CMap[ArrayType, Set[DType]]] =...
+     * val target : Map[SourceElement, Map[ArrayType, Set[DType]]] = convert(source)
      * }}}
      */
     def convert[K, SubK, V](map: CMap[K, CMap[SubK, V]]): Map[K, Map[SubK, V]] = {
