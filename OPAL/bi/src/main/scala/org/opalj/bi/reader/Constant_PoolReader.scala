@@ -122,7 +122,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
 
     def Constant_Pool(in: DataInputStream): Constant_Pool = {
 
-        /**
+        /*
          * The value of the constant_pool_count item is equal to the
          * number of entries in the constant_pool table plus one. A
          * constant_pool index is considered valid if it is greater than zero
@@ -136,7 +136,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
          */
         val constant_pool_count = in.readUnsignedShort
 
-        /**
+        /*
          * The format of each constant_pool table entry is indicated by its ﬁrst
          * “tag” byte.
          *
@@ -151,34 +151,52 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
             val tag = in.readUnsignedByte
             constant_pool_entries(i) = (tag: @scala.annotation.switch) match {
                 case CONSTANT_Class_ID ⇒
-                    i += 1; CONSTANT_Class_info(in.readUnsignedShort)
+                    i += 1
+                    CONSTANT_Class_info(in.readUnsignedShort)
                 case CONSTANT_Fieldref_ID ⇒
-                    i += 1; CONSTANT_Fieldref_info(in.readUnsignedShort, in.readUnsignedShort)
+                    i += 1
+                    CONSTANT_Fieldref_info(in.readUnsignedShort, in.readUnsignedShort)
                 case CONSTANT_Methodref_ID ⇒
-                    i += 1; CONSTANT_Methodref_info(in.readUnsignedShort, in.readUnsignedShort)
+                    i += 1
+                    CONSTANT_Methodref_info(in.readUnsignedShort, in.readUnsignedShort)
                 case CONSTANT_InterfaceMethodref_ID ⇒
-                    i += 1; CONSTANT_InterfaceMethodref_info(in.readUnsignedShort, in.readUnsignedShort)
+                    i += 1
+                    CONSTANT_InterfaceMethodref_info(
+                        in.readUnsignedShort,
+                        in.readUnsignedShort)
                 case CONSTANT_String_ID ⇒
-                    i += 1; CONSTANT_String_info(in.readUnsignedShort)
+                    i += 1
+                    CONSTANT_String_info(in.readUnsignedShort)
                 case CONSTANT_Integer_ID ⇒
-                    i += 1; CONSTANT_Integer_info(in.readInt)
+                    i += 1
+                    CONSTANT_Integer_info(in.readInt)
                 case CONSTANT_Float_ID ⇒
-                    i += 1; CONSTANT_Float_info(in.readFloat)
+                    i += 1
+                    CONSTANT_Float_info(in.readFloat)
                 case CONSTANT_Long_ID ⇒
-                    i += 2; CONSTANT_Long_info(in.readLong)
+                    i += 2
+                    CONSTANT_Long_info(in.readLong)
                 case CONSTANT_Double_ID ⇒
-                    i += 2; CONSTANT_Double_info(in.readDouble)
+                    i += 2
+                    CONSTANT_Double_info(in.readDouble)
                 case CONSTANT_NameAndType_ID ⇒
-                    i += 1; CONSTANT_NameAndType_info(in.readUnsignedShort, in.readUnsignedShort)
+                    i += 1
+                    CONSTANT_NameAndType_info(in.readUnsignedShort, in.readUnsignedShort)
                 case CONSTANT_Utf8_ID ⇒
-                    i += 1; CONSTANT_Utf8_info(in.readUTF)
+                    i += 1
+                    CONSTANT_Utf8_info(in.readUTF)
                 case CONSTANT_MethodHandle_ID ⇒
-                    i += 1; CONSTANT_MethodHandle_info(in.readUnsignedByte, in.readUnsignedShort)
+                    i += 1
+                    CONSTANT_MethodHandle_info(in.readUnsignedByte, in.readUnsignedShort)
                 case CONSTANT_MethodType_ID ⇒
-                    i += 1; CONSTANT_MethodType_info(in.readUnsignedShort)
+                    i += 1
+                    CONSTANT_MethodType_info(in.readUnsignedShort)
                 case CONSTANT_InvokeDynamic_ID ⇒
-                    i += 1; CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
-                case _ ⇒ throw new BytecodeProcessingFailedException("unknown constant pool tag: "+tag)
+                    i += 1
+                    CONSTANT_InvokeDynamic_info(in.readUnsignedShort, in.readUnsignedShort)
+                case _ ⇒
+                    throw new BytecodeProcessingFailedException(
+                        s"unsupported constant pool tag id: $tag")
             }
         }
         constant_pool_entries
