@@ -224,7 +224,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             }
 
             val upperTypeBound = receiver.upperTypeBound
-            if (upperTypeBound.consistsOfOneElement) {
+            if (upperTypeBound.hasOneElement) {
                 val theType = upperTypeBound.first
                 if (theType.isArrayType)
                     doNonVirtualCall(

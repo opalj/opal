@@ -34,8 +34,8 @@ import scala.annotation.tailrec
 
 /**
  * An immutable, sorted set of elements of type `UID`.
- * The decision whether the element is already contained in this set is solely based on
- * the element's unique id.
+ *
+ * Contains checks etc. are based on the element's unique id.
  *
  * [[UIDSet$]]s are constructed using the factory methods of the companion object.
  *
@@ -44,9 +44,7 @@ import scala.annotation.tailrec
 sealed trait UIDSet[+T <: UID] { thisSet ⇒
 
     /**
-     * Number of elements of this set.
-     *
-     * In general, this operation takes O(1) steps.
+     * Number of elements of this set (Complexity O(1)).
      */
     /* ABSTRACT */ def size: Int
 
@@ -61,11 +59,9 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
     def nonEmpty: Boolean = !isEmpty
 
     /**
-     * Tests if this set consists of exactly one element.
-     *
-     * This test has guaranteed complexity O(1).
+     * Tests if the size of this set is "1" (Guaranteed complexity O(1)).
      */
-    def consistsOfOneElement: Boolean = false
+    def hasOneElement: Boolean = false
 
     /**
      * Adds the given element, if the element is not already stored in
@@ -74,6 +70,10 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
      */
     /* ABSTRACT */ def +[X >: T <: UID](e: X): UIDSet[X]
 
+    /**
+     * Adds the given elements to this set. Each new element is added using the primitive
+     * [[+]] operation.
+     */
     def ++[X >: T <: UID](es: UIDSet[X]): UIDSet[X] = {
         var newSet: UIDSet[X] = this
         es.foreach { x ⇒ newSet = newSet + x }
@@ -87,6 +87,8 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
     /* ABSTRACT */ @throws[NoSuchElementException]("If the set is empty.")
     def first(): T
 
+    def head: T = first()
+
     /**
      * Returns the remaining elements of this set. This operation has linear complexity.
      */
@@ -96,7 +98,7 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
     /**
      * Passes all elements of this list to the given function.
      */
-    /* ABSTRACT */ def foreach(f: T ⇒ Unit): Unit
+    /* ABSTRACT */ def foreach[U](f: T ⇒ U): Unit
 
     /**
      * Returns `true` if all elements satisfy the given predicate, `false` otherwise.
@@ -231,7 +233,7 @@ object UIDSet0 extends UIDSet[Nothing] {
 
     override def tail: UIDSet[Nothing] = throw new NoSuchElementException
 
-    override def foreach(f: Nothing ⇒ Unit): Unit = {}
+    override def foreach[U](f: Nothing ⇒ U): Unit = {}
 
     override def exists[X >: Nothing](f: X ⇒ Boolean): Boolean = false
 
@@ -243,7 +245,8 @@ object UIDSet0 extends UIDSet[Nothing] {
 
     override def foldLeft[B](b: B)(op: (B, Nothing) ⇒ B): B = b
 
-    override def reduce[X >: Nothing](op: (X, X) ⇒ X): X = throw new UnsupportedOperationException
+    override def reduce[X >: Nothing](op: (X, X) ⇒ X): X =
+        throw new UnsupportedOperationException
 
     override def toSeq = Seq.empty[Nothing]
 
@@ -265,13 +268,11 @@ private[collection] trait NonEmptyUIDSet[+T <: UID] extends UIDSet[T] {
 /**
  * A [[UIDSet]] that contains a single element.
  */
-final class UIDSet1[T <: UID](
-    final val e: T)
-        extends NonEmptyUIDSet[T] { thisSet ⇒
+final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisSet ⇒
 
     final override def size = 1
 
-    final override def consistsOfOneElement: Boolean = true
+    final override def hasOneElement: Boolean = true
 
     override def +[X >: T <: UID](o: X): UIDSet[X] = UIDSet(e, o) // <= factory method
 
@@ -279,7 +280,7 @@ final class UIDSet1[T <: UID](
 
     override def tail: UIDSet[T] = UIDSet0
 
-    override def foreach(f: T ⇒ Unit): Unit = f(e)
+    override def foreach[U](f: T ⇒ U): Unit = f(e)
 
     override def forall[X >: T](f: X ⇒ Boolean): Boolean = f(e)
 
@@ -291,9 +292,11 @@ final class UIDSet1[T <: UID](
 
     override def map[X](f: T ⇒ X): Set[X] = Set.empty + (f(e))
 
-    override def filter[X >: T](f: X ⇒ Boolean): UIDSet[T] = if (f(e)) this else UIDSet0
+    override def filter[X >: T](f: X ⇒ Boolean): UIDSet[T] =
+        if (f(e)) this else UIDSet0
 
-    override def filterNot[X >: T](f: X ⇒ Boolean): UIDSet[T] = if (!f(e)) this else UIDSet0
+    override def filterNot[X >: T](f: X ⇒ Boolean): UIDSet[T] =
+        if (!f(e)) this else UIDSet0
 
     override def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = op(b, e)
 
@@ -314,7 +317,7 @@ final class UIDSet1[T <: UID](
 
 }
 /**
- * Extractor methods for a single element set of UID elements.
+ * Extractor for UIDSets with exactly one element.
  */
 object UIDSet1 {
 
@@ -329,7 +332,8 @@ object UIDSet1 {
  * @author Michael Eichberg
  */
 final class UIDSet2[T <: UID] private[collection] (
-    final val e1: T, final val e2: T)
+    final val e1: T,
+    final val e2: T)
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override def size = 2
@@ -354,7 +358,7 @@ final class UIDSet2[T <: UID] private[collection] (
 
     override def tail: UIDSet[T] = new UIDSet1(e2)
 
-    override def foreach(f: T ⇒ Unit): Unit = { f(e1); f(e2) }
+    override def foreach[U](f: T ⇒ U): Unit = { f(e1); f(e2) }
 
     override def forall[X >: T](f: X ⇒ Boolean): Boolean = f(e1) && f(e2)
 
@@ -396,30 +400,22 @@ final class UIDSet2[T <: UID] private[collection] (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: UIDSet2[T] ⇒
-                this.e1.id == that.e1.id &&
-                    this.e2.id == that.e2.id
-            case _ ⇒
-                false
+            case that: UIDSet2[T] ⇒ this.e1.id == that.e1.id && this.e2.id == that.e2.id
+            case _                ⇒ false
         }
     }
 
     override def hashCode: Int = (41 + e1.id) * 41 + e2.id
 
 }
-object UIDSet2 {
-    def unapply[T <: UID](uidSet: UIDSet2[T]): Option[UIDSet2[T]] = {
-        if (uidSet.isInstanceOf[UIDSet2[T]])
-            Some(uidSet.asInstanceOf[UIDSet2[T]])
-        else
-            None
-    }
-}
+
 /**
  * A set of three elements with different unique ids.
  */
 final class UIDSet3[T <: UID] private[collection] (
-    final val e1: T, final val e2: T, final val e3: T)
+    final val e1: T,
+    final val e2: T,
+    final val e3: T)
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override def size = 3
@@ -449,7 +445,7 @@ final class UIDSet3[T <: UID] private[collection] (
 
     override def tail = new UIDSet2(e2, e3)
 
-    override def foreach(f: T ⇒ Unit): Unit = { f(e1); f(e2); f(e3) }
+    override def foreach[U](f: T ⇒ U): Unit = { f(e1); f(e2); f(e3) }
 
     override def forall[X >: T](f: X ⇒ Boolean): Boolean = f(e1) && f(e2) && f(e3)
 
@@ -490,11 +486,15 @@ final class UIDSet3[T <: UID] private[collection] (
     override def hashCode: Int = ((41 + e1.id) * 41 + e2.id) * 41 + e3.id
 
 }
+
 /**
- * A set of three elements with different unique ids.
+ * A set of four elements with different unique ids.
  */
 final class UIDSet4[T <: UID] private[collection] (
-    final val e1: T, final val e2: T, final val e3: T, final val e4: T)
+    final val e1: T,
+    final val e2: T,
+    final val e3: T,
+    final val e4: T)
         extends NonEmptyUIDSet[T] { thisSet ⇒
 
     override def size = 4
@@ -529,7 +529,7 @@ final class UIDSet4[T <: UID] private[collection] (
 
     override def tail = new UIDSet3(e2, e3, e4)
 
-    override def foreach(f: T ⇒ Unit): Unit = { f(e1); f(e2); f(e3); f(e4) }
+    override def foreach[U](f: T ⇒ U): Unit = { f(e1); f(e2); f(e3); f(e4) }
 
     override def reduce[X >: T](op: (X, X) ⇒ X): X = op(op(op(e1, e2), e3), e4)
 
@@ -573,6 +573,7 @@ final class UIDSet4[T <: UID] private[collection] (
     override def hashCode: Int = (((41 + e1.id) * 41 + e2.id) * 41 + e3.id) * 41 + e4.id
 
 }
+
 private final class UIDArraySet[T <: UID](
     private final val es: Array[UID])
         extends NonEmptyUIDSet[T] { thisSet ⇒
@@ -582,9 +583,11 @@ private final class UIDArraySet[T <: UID](
     }
     override def size = es.size
 
-    override def foreach(f: T ⇒ Unit): Unit = { es.foreach(e ⇒ f(e.asInstanceOf[T])) }
+    override def foreach[U](f: T ⇒ U): Unit = { es.foreach(e ⇒ f(e.asInstanceOf[T])) }
 
     override def first = es(0).asInstanceOf[T]
+
+    def last = es(es.length - 1).asInstanceOf[T]
 
     override def tail = {
         if (es.size == 5)
