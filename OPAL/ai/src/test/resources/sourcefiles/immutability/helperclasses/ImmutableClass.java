@@ -26,21 +26,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package immutability;
+package immutability.helperclasses;
 
-import immutability.helperclasses.ImmutableClass;
-import immutability.annotations.Mutable;
+import immutability.annotations.Immutable;
 
 /**
- * A mutable class which defines a new method and extends an immutable class which has a
- * private non-final field.
- *
+ * A simple immutable class with a non-final field which is of primitive type 
+ * that is not mutated.
+ * 
  * @author Andre Pacak
  */
-@Mutable("defines a public setter for a field of an immutable super class")
-public class ExtendImmutableClassAddMutableMethod extends ImmutableClass {
+@Immutable("contains a final primitive type field")
+public class ImmutableClass {
 
-    public void setX(int x) {
-        this.x = x;
+    protected final int x = 0;
+
+    public int getX() {
+        return this.x;
     }
 }
