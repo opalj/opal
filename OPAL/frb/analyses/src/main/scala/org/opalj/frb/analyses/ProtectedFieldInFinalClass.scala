@@ -30,7 +30,6 @@ package org.opalj
 package frb
 package analyses
 
-import br._
 import br.analyses._
 
 /**

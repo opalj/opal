@@ -29,7 +29,6 @@
 package org.opalj
 package frb
 
-import analyses._
 import br._
 import br.analyses._
 import br.reader._

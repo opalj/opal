@@ -29,8 +29,6 @@
 package org.opalj
 package ai
 
-import scala.collection.immutable.SortedSet
-
 /**
  * Defines the factory method to create `IntegerRange` values.
  *

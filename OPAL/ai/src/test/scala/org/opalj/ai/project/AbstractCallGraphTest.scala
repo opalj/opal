@@ -52,8 +52,6 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
 
     val ignoreCallTargetsOutsideOfProject: Boolean = true
 
-    import Console._
-
     //
     // Override to specify other fixtures or callgraph algorithms
     //

@@ -29,8 +29,6 @@
 package org.opalj
 package ai
 
-import scala.language.higherKinds
-
 /**
  * Encapsulates an updated value and qualifies the type of the update.
  *

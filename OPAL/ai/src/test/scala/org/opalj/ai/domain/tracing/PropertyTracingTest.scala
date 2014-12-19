@@ -37,8 +37,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
-import org.scalatest.time._
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 
 import org.opalj.bi.TestSupport.locateTestResources

@@ -77,8 +77,6 @@ class MethodsWithLoopsTest
 
     behavior of "the abstract interpreter when analyzing methods with loops"
 
-    import org.opalj.ai.domain.l0._
-
     //
     // RETURNS
     it should "be able to analyze a method that never terminates" in {

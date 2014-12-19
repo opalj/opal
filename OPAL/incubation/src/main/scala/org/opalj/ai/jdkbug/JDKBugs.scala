@@ -35,14 +35,11 @@ import scala.language.existentials
 import java.net.URL
 import org.opalj.graphs._
 import br._
-import org.opalj.br.instructions._
 import org.opalj.br.analyses.{ Project, OneStepAnalysis, AnalysisExecutor, ReportableAnalysisResult }
 import project.{ AIProject, OptionalReport }
 import domain._
 import domain.l0._
 import domain.l1._
-import domain.tracing._
-import debug.XHTML._
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
 import org.opalj.ai.domain.l1.DefaultStringValuesBinding

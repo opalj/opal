@@ -29,8 +29,6 @@
 package org.opalj
 package de
 
-import br._
-
 /**
  * Enumeration of all kinds of dependencies that are extracted by the
  * [[DependencyExtractor]].

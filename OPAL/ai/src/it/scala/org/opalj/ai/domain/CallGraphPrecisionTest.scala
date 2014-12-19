@@ -43,7 +43,6 @@ import scala.Console.RESET
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain
 import org.opalj.ai.project.CallGraph
 import org.opalj.ai.project.CHACallGraphAlgorithmConfiguration

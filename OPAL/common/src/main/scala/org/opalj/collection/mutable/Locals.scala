@@ -33,8 +33,6 @@ package mutable
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
-import Locals._
-
 /**
  * Conceptually, an array that enables random access and which is heavily optimized for
  * small(er) collections (up to 12 elements) that are frequently compared and updated

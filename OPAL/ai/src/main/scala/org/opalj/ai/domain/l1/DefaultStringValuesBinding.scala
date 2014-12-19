@@ -31,9 +31,13 @@ package ai
 package domain
 package l1
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+import scala.reflect.ClassTag
 
-import scala.collection.SortedSet
+import org.opalj.ai.CorrelationalDomainSupport
+import org.opalj.ai.IntegerValuesDomain
+import org.opalj.ai.TypedValuesFactory
+import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.ai.domain.Configuration
 
 /**
  * @author Michael Eichberg

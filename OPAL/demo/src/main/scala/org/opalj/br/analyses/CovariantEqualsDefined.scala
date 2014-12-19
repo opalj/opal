@@ -30,7 +30,6 @@ package org.opalj
 package br
 package analyses
 
-import instructions._
 import java.net.URL
 
 /**

@@ -33,7 +33,6 @@ package viz
 import java.net.URL
 
 import br._
-import br.instructions._
 import br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 
 /**

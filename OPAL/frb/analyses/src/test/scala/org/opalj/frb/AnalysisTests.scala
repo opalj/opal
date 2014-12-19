@@ -29,7 +29,6 @@
 package org.opalj
 package frb
 
-import br._
 import br.reader._
 import br.analyses._
 import org.scalatest._

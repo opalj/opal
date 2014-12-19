@@ -30,9 +30,6 @@ package org.opalj
 package ai
 package project
 
-import org.opalj.br._
-import org.opalj.br.analyses.SomeProject
-
 /**
  * Representation of a computed call graph.
  *

@@ -30,9 +30,6 @@ package org.opalj
 package br
 package analyses
 
-import java.net.URL
-import java.io.File
-
 /**
  * Each report takes a severity parameter, which can be one of these pre-defined objects:
  *  - [[Severity.Error]]

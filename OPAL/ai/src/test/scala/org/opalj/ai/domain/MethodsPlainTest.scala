@@ -69,7 +69,6 @@ class MethodsPlainTest
     // RETURNS
     it should "be able to analyze a method that does nothing" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "nop").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -116,7 +115,6 @@ class MethodsPlainTest
     // LDC
     it should "be able to analyze a method that returns a fixed string value" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "sLDC").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -125,7 +123,6 @@ class MethodsPlainTest
 
     it should "be able to analyze a method that returns a fixed class value" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "cLDC").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -145,7 +142,6 @@ class MethodsPlainTest
     }
     it should "be able to analyze a method that just returns a parameter string" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "sOne").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -611,7 +607,6 @@ class MethodsPlainTest
     // TYPE CHECKS
     it should "be able to correctly handle casts" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "asSimpleMethods").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -631,7 +626,6 @@ class MethodsPlainTest
     // GETTER AND SETTER FOR FIELDS
     it should "be able to analyze a classical setter method" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "setValue").get
         val result = BaseAI(classFile, method, domain)
 
@@ -652,7 +646,6 @@ class MethodsPlainTest
     // GETTER AND SETTER FOR STATIC FIELDS
     it should "be able to analyze a classical static setter method" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "setSValue").get
         val result = BaseAI(classFile, method, domain)
         result should not be (null)
@@ -725,7 +718,6 @@ class MethodsPlainTest
 
     it should "be able to analyze object load and store commands" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "localSimpleMethod").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -877,7 +869,6 @@ class MethodsPlainTest
     // CREATE ARRAY
     it should "be able to analyze a new boolean array" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "createNewBooleanArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -888,7 +879,6 @@ class MethodsPlainTest
 
     it should "be able to analyze a new char array" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "createNewCharArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -899,7 +889,6 @@ class MethodsPlainTest
 
     it should "be able to analyze a new float array" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "createNewFloatArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -910,7 +899,6 @@ class MethodsPlainTest
 
     it should "be able to analyze a new double array" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "createNewDoubleArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -922,7 +910,6 @@ class MethodsPlainTest
 
     it should "be able to analyze a new byte array" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "createNewByteArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -933,7 +920,6 @@ class MethodsPlainTest
 
     it should "be able to analyze a new short array" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "createNewShortArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -944,7 +930,6 @@ class MethodsPlainTest
 
     it should "be able to analyze the creation of a new int array" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "createNewIntArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -955,7 +940,6 @@ class MethodsPlainTest
 
     it should "be able to analyze the creation of a new long array" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "createNewLongArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -967,7 +951,6 @@ class MethodsPlainTest
 
     it should "be able to analyze the creation of a new Object array" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "createNewSimpleMethodsArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -978,7 +961,6 @@ class MethodsPlainTest
 
     it should "be able to analyze the creation of a new multidimensional Object array" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "createNewMultiSimpleMethodsArray").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -991,7 +973,6 @@ class MethodsPlainTest
     // LOAD FROM AND STORE VALUE IN ARRAYS
     it should "be able to analyze loads and stores of an object in an array" in {
         val domain = new RecordingDomain
-        import domain._
         val method = classFile.methods.find(_.name == "objectArray").get
         val result = BaseAI(classFile, method, domain)
 
@@ -1091,7 +1072,6 @@ class MethodsPlainTest
 
     it should "be able to analyze a method that creates an instance of an object using reflection" in {
         val domain = new RecordingDomain;
-        import domain._
         val method = classFile.methods.find(_.name == "create").get
         /*val result =*/ BaseAI(classFile, method, domain)
 
@@ -1102,7 +1082,6 @@ class MethodsPlainTest
 
     it should "be able to analyze a method that creates an object and which calls multiple methods of the new object" in {
         val domain = new RecordingDomain;
-        import domain._
         val method = classFile.methods.find(_.name == "multipleCalls").get
         /*val result = */ BaseAI(classFile, method, domain)
 

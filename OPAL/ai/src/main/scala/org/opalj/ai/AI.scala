@@ -280,8 +280,6 @@ trait AI[D <: Domain] {
             initialOperands: theDomain.Operands,
             initialLocals: theDomain.Locals): AIResult { val domain: theDomain.type } = {
 
-        import theDomain.DomainValue
-
         val codeLength = code.instructions.length
 
         val operandsArray = new Array[theDomain.Operands](codeLength)
@@ -405,8 +403,6 @@ trait AI[D <: Domain] {
         import theDomain.{ IntIsGreaterThanOrEqualTo, IntIsGreaterThanOrEqualTo0 }
         import theDomain.{ intIsLessThanOrEqualTo, intIsLessThanOrEqualTo0 }
         import theDomain.{ IntIsLessThanOrEqualTo, IntIsLessThanOrEqualTo0 }
-
-        import ObjectType._
 
         type SingleValueDomainTest = (PC, DomainValue) ⇒ Answer
         type TwoValuesDomainTest = (PC, DomainValue, DomainValue) ⇒ Answer

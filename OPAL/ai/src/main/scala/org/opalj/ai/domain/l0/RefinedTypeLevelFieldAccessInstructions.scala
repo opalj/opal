@@ -33,9 +33,6 @@ package l0
 
 import org.opalj.br.ObjectType
 import org.opalj.br.FieldType
-import org.opalj.br.Field
-import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.ProjectBasedClassHierarchy
 import org.opalj.ai.analyses.FieldValueInformation

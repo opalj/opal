@@ -29,11 +29,11 @@
 package org.opalj.ai.tutorial.base
 
 import java.net.URL
-import org.opalj._
-import org.opalj.br._
-import org.opalj.br.analyses._
-import org.opalj.br.instructions._
-import org.opalj.ai._
+
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 
 object AnalysisTemplate extends AnalysisExecutor {
 

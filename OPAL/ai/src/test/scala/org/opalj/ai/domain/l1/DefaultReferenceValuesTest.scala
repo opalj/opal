@@ -37,10 +37,8 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
-import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
-import org.scalatest.Assertions._
 import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.ObjectType

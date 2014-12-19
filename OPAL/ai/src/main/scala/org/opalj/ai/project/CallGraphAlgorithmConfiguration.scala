@@ -30,15 +30,7 @@ package org.opalj
 package ai
 package project
 
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.TheProject
-import org.opalj.ai.domain.TheClassFile
-import org.opalj.ai.domain.TheMethod
-import org.opalj.ai.domain.ClassHierarchy
-import org.opalj.ai.domain.TheCode
 
 /**
  * Configuration of a specific call graph algorithm. Basically, the configuration

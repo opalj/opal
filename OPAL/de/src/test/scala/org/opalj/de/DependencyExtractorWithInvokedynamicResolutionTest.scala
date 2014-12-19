@@ -31,9 +31,8 @@ package de
 
 import org.scalatest.FunSuite
 
-import br._
-import br.instructions.INVOKEDYNAMIC
-import ai.invokedynamic._
+import org.opalj.br.instructions.INVOKEDYNAMIC
+import org.opalj.ai.invokedynamic._
 
 /**
  * Tests that the dependency extractor with support for invokedynamic does not miss some

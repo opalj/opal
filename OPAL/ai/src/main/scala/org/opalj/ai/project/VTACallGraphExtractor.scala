@@ -45,10 +45,7 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.TheClassFile
 import org.opalj.ai.domain.TheMethod
-import org.opalj.ai.domain.ClassHierarchy
-import org.opalj.ai.domain.TheCode
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.domain.ClassHierarchy
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL

@@ -33,7 +33,6 @@ package analyses
 import AnalysesHelpers._
 import br._
 import br.analyses._
-import br.instructions._
 
 /**
  * This analysis reports classes that have a `clone()` method but do not implement

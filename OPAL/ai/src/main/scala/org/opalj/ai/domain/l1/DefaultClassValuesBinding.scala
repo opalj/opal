@@ -31,6 +31,13 @@ package ai
 package domain
 package l1
 
+import scala.reflect.ClassTag
+
+import org.opalj.ai.CorrelationalDomain
+import org.opalj.ai.IntegerValuesDomain
+import org.opalj.ai.TypedValuesFactory
+import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.ai.domain.Configuration
 import org.opalj.br.Type
 
 /**
@@ -39,15 +46,15 @@ import org.opalj.br.Type
 trait DefaultClassValuesBinding extends DefaultStringValuesBinding with ClassValues {
     domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
-    // Let's fix the type hierarchy
     type DomainClassValue = ClassValue
+    val DomainClassValue: ClassTag[DomainClassValue] = implicitly
 
     //
     // FACTORY METHODS
     //
 
     override def ClassValue(origin: ValueOrigin, value: Type): DomainClassValue =
-        ClassValue(origin, value, nextT())
+        new ClassValue(origin, value, nextT())
 
     def ClassValue(origin: ValueOrigin, value: Type, t: Timestamp): DomainClassValue =
         new ClassValue(origin, value, t)

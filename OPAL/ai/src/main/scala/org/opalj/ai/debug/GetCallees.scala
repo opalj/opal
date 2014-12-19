@@ -35,15 +35,10 @@ import scala.language.existentials
 import scala.Console.RED
 import scala.Console.RESET
 
-import org.opalj.ai.Domain
 import org.opalj.ai.InterpretationFailedException
-import org.opalj.ai.ReferenceValuesDomain
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.ai.debug.XHTML.dump
-import org.opalj.ai.domain.TheClassFile
-import org.opalj.ai.domain.TheMethod
-import org.opalj.ai.domain.TheProject
 import org.opalj.ai.project.CHACallGraphExtractor
 import org.opalj.ai.project.CallGraphCache
 import org.opalj.ai.project.CallGraphExtractor

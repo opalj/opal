@@ -31,8 +31,7 @@ package de
 
 import java.net.URL
 
-import br._
-import br.analyses._
+import org.opalj.br.analyses._
 
 /**
  * Counts the number of dependencies found in a project.
@@ -53,7 +52,7 @@ object DependencyCounting extends AnalysisExecutor with OneStepAnalysis[URL, Bas
         println("Press enter to start the dependency collection.")
         scala.io.StdIn.readLine
 
-        import util.PerformanceEvaluation._
+        import org.opalj.util.PerformanceEvaluation._
         val counter = time {
             val counter = new DependencyCountingDependencyProcessor with FilterSelfDependencies
             val extractor = new DependencyExtractor(counter)

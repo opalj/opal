@@ -36,10 +36,6 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
-import org.opalj.br.reader.Java8FrameworkWithCaching
-import org.opalj.br.reader.Java8LibraryFramework.{ ClassFiles ⇒ LibraryClassFiles }
-import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.analyses.{ Project, ProgressManagement }
 import org.opalj.ai.debug.InterpretMethodsAnalysis.interpret
 
 /**

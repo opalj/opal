@@ -30,8 +30,6 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import bi.AccessFlags
-import bi.AccessFlagsContexts
 
 /**
  * @author Wael Alkhatib

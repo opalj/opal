@@ -41,7 +41,6 @@ import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.UpperTypeBound
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain.l0.RefinedTypeLevelFieldAccessInstructions
 import org.opalj.ai.domain.l0.RefinedTypeLevelInvokeInstructions

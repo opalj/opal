@@ -29,9 +29,6 @@
 package org.opalj
 package ai
 
-import scala.language.existentials
-
-import org.opalj.ai.analyses.BaseFieldValuesAnalysisDomain
 import org.opalj.br.Field
 import org.opalj.br.Method
 

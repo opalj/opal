@@ -33,14 +33,14 @@ package spec
 
 import scala.collection.{ Map, Set }
 
-import bi.AccessFlagsMatcher
+//import bi.AccessFlagsMatcher
 
 import br._
 import br.analyses._
 import br.instructions._
 
-import domain._
-import domain.l0._
+//import domain._
+//import domain.l0._
 
 trait ValueLocationMatcher extends AValueLocationMatcher {
 

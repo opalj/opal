@@ -36,7 +36,6 @@ import scala.collection.mutable.HashSet
 import scala.collection.Map
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.ai.domain._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ClassHierarchy
 import org.opalj.br.ReferenceType

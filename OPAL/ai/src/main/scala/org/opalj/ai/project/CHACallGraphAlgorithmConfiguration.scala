@@ -30,10 +30,6 @@ package org.opalj
 package ai
 package project
 
-import scala.collection.Set
-
-import org.opalj.br.{ ClassFile, Method, MethodSignature }
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 
 /**

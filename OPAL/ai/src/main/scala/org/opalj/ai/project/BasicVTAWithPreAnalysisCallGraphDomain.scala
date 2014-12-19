@@ -35,21 +35,18 @@ import scala.collection.Set
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValueInformation
+import org.opalj.ai.domain.DefaultDomainValueBinding
+import org.opalj.ai.domain.DefaultHandlingOfMethodResults
+import org.opalj.ai.domain.IgnoreSynchronization
 import org.opalj.ai.domain.TheClassFile
+import org.opalj.ai.domain.TheMethod
+import org.opalj.ai.domain.TheProject
+import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
+import org.opalj.ai.domain.l0
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.MethodSignature
 import org.opalj.br.analyses.Project
-
-import br.ClassFile
-import br.Method
-import br.MethodSignature
-import br.analyses.Project
-import domain.DefaultDomainValueBinding
-import domain.DefaultHandlingOfMethodResults
-import domain.IgnoreSynchronization
-import domain.ProjectBasedClassHierarchy
-import domain.TheMethod
-import domain.TheProject
-import domain.ThrowAllPotentialExceptionsConfiguration
-import domain.l0
 
 /**
  * Domain object which is used to calculate the call graph using variable type analysis.

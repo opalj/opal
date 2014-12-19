@@ -33,8 +33,7 @@ import java.net.URL
 
 import org.scalatest.FunSuite
 
-import br.reader.Java8Framework.ClassFiles
-import DependencyType._
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Tests that the dependency extractor does not miss some dependencies and

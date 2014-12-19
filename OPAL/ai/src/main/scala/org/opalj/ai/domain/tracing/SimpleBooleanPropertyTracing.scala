@@ -31,10 +31,12 @@ package ai
 package domain
 package tracing
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import br._
-import br.instructions.ReturnInstruction
+import org.opalj.ai.Domain
+import org.opalj.ai.NoUpdate
+import org.opalj.ai.Update
+import org.opalj.ai.domain.RecordReturnFromMethodInstructions
+import org.opalj.ai.domain.TheCode
+import org.opalj.br.instructions.ReturnInstruction
 
 /**
  * Enables the tracing of a single boolean property where the precise semantics

@@ -31,7 +31,6 @@ package de
 
 import br._
 import br.instructions._
-import br.analyses.SomeProject
 
 /**
  * Traverses a [[org.opalj.br.SourceElement]] and identifies all dependencies between the element
