@@ -40,6 +40,7 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  *
  * @author Arne Lottmann
  */
+// TODO Seems to be dead code!
 trait InvokedynamicResolver {
 
     def resolveInvokedynamic(instruction: INVOKEDYNAMIC): ResolutionResult

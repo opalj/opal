@@ -39,6 +39,7 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  * @author Arne Lottmann
  * @author Michael Eichberg
  */
+// TODO Seems to be dead code!
 sealed trait ResolutionResult {
 
     /**
