@@ -121,8 +121,8 @@ object UShortSetDemo {
 
     val theSet = UShortSet.empty                  //> theSet  : org.opalj.collection.mutable.UShortSet = UShortSet()
 
-    theSet                                        //> res39: org.opalj.collection.mutable.UShortSet = UShortSet()
-    +61149                                        //> res40: Int = 61149
-    +61154                                        //> res41: Int = 61154
-    +61158                                        //> res42: Int = 61158
+    theSet +                                      //> res39: org.opalj.collection.mutable.UShortSet = UShortSet()
+    61149 +                                       //> res40: Int = 61149
+    61154 +                                       //> res41: Int = 61154
+    61158                                         //> res42: Int = 61158
 }
