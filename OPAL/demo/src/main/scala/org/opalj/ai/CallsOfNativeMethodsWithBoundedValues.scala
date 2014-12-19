@@ -126,7 +126,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
                 val result = BaseAI(callerClassFile, caller, domain)
 
                 for {
-                    pc ← pcs
+                    pc: PC ← pcs
                     operands = result.operandsArray(pc)
                     if operands != null //<= this is practically the only place where a null check is necessary
                     stackIndex ← stackIndexes
