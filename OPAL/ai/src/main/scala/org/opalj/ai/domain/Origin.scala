@@ -30,23 +30,19 @@ package org.opalj
 package ai
 package domain
 
+import scala.reflect.ClassTag
+
 /**
  * Provides information about the origin of a value.
  *
  * ==Usage==
- * An analysis that requires information about the origin of a value should declare
- * a corresponding self-type dependency. E.g.,
- * {{{
- * class MyAnalysis extends... {this: Origin =>
- *  ...
- * }
- * }}}
- * Additionally, the analysis has to make sure that the analysis used to capture
- * information about values provides the necessary information.
+ *
+ * I.e., ''just mixing in this trait will not provide origin information about values''.
  *
  * ==Implementation==
  * This trait should be inherited from by all domains that make information about
- * the origin of a value available.
+ * the origin of a value available (see [[org.opalj.ai.domain.l1.ReferenceValues]]
+ * as an example).
  *
  * @author Michael Eichberg
  */
@@ -59,19 +55,23 @@ trait Origin { domain: ValuesDomain ⇒
         }
     }
 
+    trait ValueWithOriginInformation {
+        def origins: Iterable[ValueOrigin]
+    }
+
     /**
      * Should be mixed in by `Value`s that have a single origin.
      */
-    trait SingleOriginValue {
+    trait SingleOriginValue extends ValueWithOriginInformation {
         def origin: ValueOrigin
+        final def origins = Iterable(origin)
     }
 
     /**
      * Should be mixed in by `Value` classes that capture information about all origins
      * of a value.
      */
-    trait MultipleOriginsValue {
-        def origins: Iterable[ValueOrigin]
+    trait MultipleOriginsValue extends ValueWithOriginInformation {
     }
 
     /**
@@ -86,9 +86,8 @@ trait Origin { domain: ValuesDomain ⇒
      */
     def origin(value: DomainValue): Iterable[ValueOrigin] =
         value match {
-            case sov: SingleOriginValue    ⇒ Iterable[ValueOrigin](sov.origin)
-            case mov: MultipleOriginsValue ⇒ mov.origins
-            case _                         ⇒ Iterable.empty
+            case vo: ValueWithOriginInformation ⇒ vo.origins
+            case _                              ⇒ Iterable.empty
         }
 
     def foreachOrigin(value: DomainValue, f: (ValueOrigin) ⇒ Unit): Unit = {
@@ -98,5 +97,19 @@ trait Origin { domain: ValuesDomain ⇒
             case _                         ⇒ /* nothing to do */
         }
     }
+
+}
+
+object Origin {
+
+    def unapply(value: Origin#SingleOriginValue): Option[Int] =
+        Some(value.origin)
+
+}
+
+object Origins {
+
+    def unapply(value: Origin#ValueWithOriginInformation): Option[Iterable[ValueOrigin]] =
+        Some(value.origins)
 
 }

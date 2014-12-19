@@ -38,6 +38,10 @@ import org.opalj.br.analyses.SomeProject
 /**
  * Basic representation of a (calculated) call graph.
  *
+ * ==Terminology==
+ * A method that calls another method is referred to as the `caller`. The method
+ * that is called is called the `callee`. Hence, a caller calls a callee.
+ *
  * ==Thread Safety==
  * The call graph is effectively immutable and can be accessed by multiple
  * threads concurrently.
