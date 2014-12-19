@@ -33,6 +33,7 @@ package l1
 
 import org.opalj.util.No
 import org.opalj.br.ObjectType
+import scala.reflect.ClassTag
 
 /**
  * Enables the tracing of concrete string values and can, e.g., be used to
@@ -44,6 +45,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
+    val DomainStringValue: ClassTag[DomainStringValue]
 
     protected class StringValue(
         origin: ValueOrigin,
