@@ -2,8 +2,7 @@ name := "Abstract Interpretation Framework"
 
 version := "0.0.1-SNAPSHOT"
 
-//scalacOptions in Compile := Seq("-deprecation", "-feature", "-unchecked", "-Xlint")
-scalacOptions in Compile += "-Xdisable-assertions"
+//scalacOptions in Compile ++= Seq("-Xdisable-assertions", "-Yinline", "-Yconst-opt", "-Ydead-code")
 
 // We don't want the build to be aborted by inter-project links that are reported by
 // scaladoc as errors if we publish the projects; hence, we do not use the 

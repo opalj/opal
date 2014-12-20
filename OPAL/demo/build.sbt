@@ -1,8 +1,6 @@
-name := "Demo"
+name := "Demos"
 
 version := "ALWAYS-SNAPSHOT"
-
-scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
 
 scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Demos")
 

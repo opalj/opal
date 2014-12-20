@@ -1,4 +1,4 @@
-name := "Developer Tools"
+name := "OPAL-Developer Tools"
 
 version := "0.8.0-SNAPSHOT"
 

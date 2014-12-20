@@ -29,10 +29,12 @@
 package org.opalj
 package br
 
-import analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 import java.net.URL
 
 /**
+ * Evaluates the number of locals (Local Variables/Registers) required to evaluate a method.
+ *
  * @author Michael Eichberg
  */
 object MaxLocalsEvaluation extends AnalysisExecutor {
@@ -55,18 +57,22 @@ object MaxLocalsEvaluation extends AnalysisExecutor {
                 classFile ← project.classFiles;
                 method @ MethodWithBody(body) ← classFile.methods
             } {
-                val parametersCount = method.descriptor.parametersCount + (if (method.isStatic) 0 else 1)
+                val parametersCount = 
+					method.descriptor.parametersCount + 
+						(if (method.isStatic) 0 else 1)
                 require(body.maxLocals >= parametersCount)
 
-                methodParametersDistribution = methodParametersDistribution.updated(
-                    parametersCount,
-                    methodParametersDistribution.getOrElse(parametersCount, 0) + 1
-                )
+                methodParametersDistribution = 
+					methodParametersDistribution.updated(
+                    	parametersCount,
+                    	methodParametersDistribution.getOrElse(parametersCount, 0) + 1
+ 					)
 
-                maxLocalsDistrbution = maxLocalsDistrbution.updated(
-                    body.maxLocals,
-                    maxLocalsDistrbution.getOrElse(body.maxLocals, 0) + 1
-                )
+                maxLocalsDistrbution = 
+					maxLocalsDistrbution.updated(
+                    	body.maxLocals,
+                    	maxLocalsDistrbution.getOrElse(body.maxLocals, 0) + 1
+                	)
             }
 
             BasicReport("Results\n\n"+
