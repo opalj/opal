@@ -31,7 +31,8 @@ package br
 package analyses
 
 /**
- * Creates a `dot` (Graphviz) based representation of the class hierarchy.
+ * Creates a `dot` (Graphviz) based representation of the class hierarchy
+ * of the specified jar file(s).
  *
  * @author Michael Eichberg
  */
