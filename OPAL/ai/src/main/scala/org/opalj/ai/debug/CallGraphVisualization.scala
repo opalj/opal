@@ -52,7 +52,7 @@ import org.opalj.util.PerformanceEvaluation.asMB
 import org.opalj.util.PerformanceEvaluation.memory
 import org.opalj.util.PerformanceEvaluation.ns2sec
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.writeAndOpen
+import org.opalj.io.writeAndOpen
 
 /**
  * Visualizes call graphs using Graphviz.

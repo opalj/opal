@@ -41,8 +41,7 @@ import org.opalj.br.analyses.ClassHierarchy
 import org.opalj.br.ReferenceType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.util.Yes
-import org.opalj.util.No
+
 import org.opalj.br.MethodSignature
 
 /**

@@ -181,7 +181,7 @@ object GetCallees {
                         header,
                         ife.domain)(
                             ife.operandsArray, ife.localsArray)
-                org.opalj.util.writeAndOpen(
+                org.opalj.io.writeAndOpen(
                     evaluationDump,
                     "StateOfFailedAbstractInterpretation",
                     ".html")

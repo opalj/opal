@@ -29,7 +29,6 @@
 package org.opalj.ai.tutorial.ex1
 
 import java.net.URL
-import org.opalj._
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._

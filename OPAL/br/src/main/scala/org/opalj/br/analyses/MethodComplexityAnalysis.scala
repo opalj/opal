@@ -31,6 +31,7 @@ package br
 package analyses
 
 import org.opalj.UShort
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.instructions._
 
 /**

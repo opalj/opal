@@ -30,6 +30,7 @@ package org.opalj
 
 import java.io.File
 import java.io.IOException
+import java.io.Closeable
 
 import scala.xml.Node
 import scala.util.control.ControlThrowable
@@ -39,7 +40,7 @@ import scala.util.control.ControlThrowable
  *
  * @author Michael Eichberg
  */
-package object util {
+package object io {
 
     /**
      * Writes the XML document to a temporary file and opens the file in the
@@ -110,51 +111,44 @@ package object util {
     }
 
     /**
-     * Tries to locate the JRE's library folder. (I.e., the
-     * location in which the rt.jar file and the other jar files belonging to the
-     * Java runtime environment can be found).
+     * This function takes a `Closeable` resource and a function `r` that will
+     * process the `Closeable` resource.
+     * This function takes care of the correct handling of `Closeable` resources.
+     * When `r` has finished processing the resource or throws an exception, the
+     * resource is closed.
+     *
+     * @note If `closable` is `null`, `null` is passed to `r`.
+     *
+     * @param closable The `Closeable` resource.
+     * @param r The function that processes the `resource`.
      */
-    lazy val JRELibraryFolder: File = {
-        val paths =
-            System.getProperties().getProperty("sun.boot.class.path").split(File.pathSeparator)
-        var libPath =
-            paths.find(_.endsWith("rt.jar")).map { path ⇒
-                path.substring(0, path.length() - 6)
-            }.getOrElse("null")
-
-        if (libPath == null) {
-            libPath = System.getProperty("sun.boot.library.path")
-            if (libPath == null) {
-                throw new RuntimeException("cannot locate the JRE libraries")
-            }
+    def process[C <: Closeable, T](closable: C)(r: C ⇒ T): T = {
+        // Implementation Note
+        // Creating the closeable (I) in the try block doesn't make sense, hence
+        // we don't need a by-name parameter. (If creating the closable fails, 
+        // then there is nothing to close.)
+        try {
+            r(closable)
+        } finally {
+            if (closable != null) closable.close()
         }
-
-        new File(libPath)
     }
 
     /**
-     * Tries to locate the JRE's library folder. (I.e., the
-     * location in which the rt.jar file and the other jar files belonging to the
-     * Java runtime environment can be found).
+     * This function takes a `Source` object and a function `r` that will
+     * process the source.
+     * This function takes care of the correct handling of resources.
+     * When `r` has finished processing the source or throws an exception,
+     * the source is closed.
+     *
+     * @note If `source` is `null`, `null` is passed to `r`.
      */
-    lazy val RTJar: File = {
-        val paths =
-            System.getProperties().getProperty("sun.boot.class.path").split(File.pathSeparator)
-        val rtJarPath =
-            paths.find(_.endsWith("rt.jar")).getOrElse("null")
-
-        if (rtJarPath == null) {
-            val rtJarCandidates =
-                new File(System.getProperty("sun.boot.library.path")).listFiles(
-                    new java.io.FilenameFilter() {
-                        def accept(dir: File, name: String) = name == "rt.jar"
-                    }
-                )
-            if (rtJarCandidates.length != 1) {
-                throw new RuntimeException("cannot locate the JRE libraries")
-            }
-            rtJarCandidates(0)
-        } else
-            new File(rtJarPath)
+    def processSource[C <: scala.io.Source, T](source: C)(r: C ⇒ T): T = {
+        try {
+            r(source)
+        } finally {
+            if (source != null) source.close()
+        }
     }
+
 }

@@ -34,7 +34,7 @@ import java.net.URL
 import scala.collection.SortedMap
 
 import org.opalj.util.PerformanceEvaluation.ns2sec
-import org.opalj.util.writeAndOpen
+import org.opalj.io.writeAndOpen
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.debug.XHTML

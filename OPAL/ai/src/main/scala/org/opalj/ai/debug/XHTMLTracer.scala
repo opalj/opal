@@ -32,7 +32,7 @@ package debug
 
 import scala.language.existentials
 
-import org.opalj.util.writeAndOpen
+import org.opalj.io.writeAndOpen
 import org.opalj.br.Code
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.br.instructions.FieldAccess

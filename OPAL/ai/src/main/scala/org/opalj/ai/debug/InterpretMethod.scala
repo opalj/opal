@@ -175,7 +175,7 @@ object InterpretMethod {
                 }
 
         import debug.XHTML.dump
-        import org.opalj.util.writeAndOpen
+        import org.opalj.io.writeAndOpen
 
         try {
             val result =

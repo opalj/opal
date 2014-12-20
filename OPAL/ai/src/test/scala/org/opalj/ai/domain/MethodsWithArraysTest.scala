@@ -40,8 +40,6 @@ import org.scalatest.Matchers
 
 import org.opalj.bi.TestSupport.locateTestResources
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import br._
 import br.reader.Java8Framework.ClassFiles
 import l0._

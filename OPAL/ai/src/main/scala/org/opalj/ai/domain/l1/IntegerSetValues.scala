@@ -33,7 +33,6 @@ package l1
 
 import scala.collection.immutable.SortedSet
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br._
 
 /**

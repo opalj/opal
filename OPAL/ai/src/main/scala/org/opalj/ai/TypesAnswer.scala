@@ -29,8 +29,6 @@
 package org.opalj
 package ai
 
-import org.opalj.util.{ Answer, Yes, Unknown }
-
 import org.opalj.br.UpperTypeBound
 import org.opalj.br.{ BaseType, ReferenceType }
 import org.opalj.br.{ BooleanType, ByteType, CharType, ShortType, IntegerType, LongType }

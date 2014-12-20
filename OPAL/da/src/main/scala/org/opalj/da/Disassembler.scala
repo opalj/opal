@@ -29,8 +29,8 @@
 package org.opalj
 package da
 
-import org.opalj.util.writeAndOpen
-import org.opalj.util.OpeningFileFailedException
+import org.opalj.io.writeAndOpen
+import org.opalj.io.OpeningFileFailedException
 
 /**
  * Disassembles the specified class file(s).

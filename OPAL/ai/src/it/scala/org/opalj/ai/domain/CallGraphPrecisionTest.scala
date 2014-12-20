@@ -146,8 +146,8 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         }
                     } else {
                         while (newMethodsIterator.hasNext) {
-                            val newMethod = newMethodsIterator.next
-                            val method = methodsIterator.next
+                            val newMethod = newMethodsIterator.next()
+                            val method = methodsIterator.next()
 
                             if (newMethod.toJava != method.toJava) {
                                 fail(s"the methods associated with the class ${classFile.thisType} differ")

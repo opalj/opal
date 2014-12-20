@@ -40,9 +40,6 @@ import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 
 import org.opalj.bi.TestSupport.locateTestResources
-
-import org.opalj.util._
-
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
 

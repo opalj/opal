@@ -56,7 +56,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.No
+
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.br.ArrayType

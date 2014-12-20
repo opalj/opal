@@ -31,8 +31,6 @@ package ai
 package domain
 package li
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 /**
  * Basic implementation of the `PreciseIntegerValues` trait that requires that
  * `Domain`'s  `Value` trait is not extended.

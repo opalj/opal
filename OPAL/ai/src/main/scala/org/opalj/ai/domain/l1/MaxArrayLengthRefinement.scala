@@ -31,8 +31,6 @@ package ai
 package domain
 package l1
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**

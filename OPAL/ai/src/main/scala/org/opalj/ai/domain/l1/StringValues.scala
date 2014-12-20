@@ -31,7 +31,6 @@ package ai
 package domain
 package l1
 
-import org.opalj.util.No
 import org.opalj.br.ObjectType
 import scala.reflect.ClassTag
 

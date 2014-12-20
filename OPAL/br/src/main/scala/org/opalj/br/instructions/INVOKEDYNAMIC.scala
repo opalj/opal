@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.bytecode.BytecodeProcessingFailedException
+
 /**
  * Represents an "incomplete" invoke dynamic instruction. Here, incomplete refers
  * to the fact that not all information is yet available because it is not

@@ -40,7 +40,7 @@ import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles

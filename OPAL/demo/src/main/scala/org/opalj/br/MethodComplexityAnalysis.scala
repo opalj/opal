@@ -35,6 +35,7 @@ import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * Very primitive rating of the complexity of methods.

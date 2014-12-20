@@ -30,9 +30,6 @@ package org
 
 import scala.language.experimental.macros
 
-import java.io.InputStream
-import java.io.Closeable
-
 import scala.reflect.ClassTag
 import scala.reflect.api.Trees
 import scala.reflect.macros.blackbox.Context
@@ -92,65 +89,6 @@ package object opalj {
     type UShort = Int
 
     /**
-     * A program counter identifies an instruction in a code array.
-     *
-     * A program counter is a value in the range `[0/*UShort.min*/, 65535/*UShort.max*/]`.
-     *
-     * @note This type alias serves comprehension purposes.
-     */
-    type PC = UShort
-
-    /**
-     * A collection of program counters using a UShortSet as its backing collection.
-     *
-     * Using PCs is in particular well suited for small(er) collections.
-     *
-     * @note This type alias serves comprehension purposes.
-     */
-    type PCs = collection.UShortSet
-
-    /**
-     * This function takes a `Closeable` resource and a function `r` that will
-     * process the `Closeable` resource.
-     * This function takes care of the correct handling of `Closeable` resources.
-     * When `r` has finished processing the resource or throws an exception, the
-     * resource is closed.
-     *
-     * @note If `closable` is `null`, `null` is passed to `r`.
-     *
-     * @param closable The `Closeable` resource.
-     * @param r The function that processes the `resource`.
-     */
-    def process[C <: Closeable, T](closable: C)(r: C ⇒ T): T = {
-        // Implementation Note
-        // Creating the closeable (I) in the try block doesn't make sense, hence
-        // we don't need a by-name parameter. (If creating the closable fails, 
-        // then there is nothing to close.)
-        try {
-            r(closable)
-        } finally {
-            if (closable != null) closable.close()
-        }
-    }
-
-    /**
-     * This function takes a `Source` object and a function `r` that will
-     * process the source.
-     * This function takes care of the correct handling of resources.
-     * When `r` has finished processing the source or throws an exception,
-     * the source is closed.
-     *
-     * @note If `source` is `null`, `null` is passed to `r`.
-     */
-    def processSource[C <: scala.io.Source, T](source: C)(r: C ⇒ T): T = {
-        try {
-            r(source)
-        } finally {
-            if (source != null) source.close()
-        }
-    }
-
-    /**
      * Iterates over a given array `a` and calls the given function `f` for
      * each non-null value in the array.
      *
@@ -171,84 +109,6 @@ package object opalj {
      */
     final def i2lBitMask(value: Int): Long = {
         (value >>> 16).toLong << 16 | (value & 0xFFFF).toLong
-    }
-
-    /**
-     * Returns the package definitions shared by both fully qualified type names.
-     * If both types do not define a common package `None` is returned.
-     *
-     * @example
-     * {{{
-     * scala> org.opalj.commonPackage("a.b.T","a.c.T")
-     * res: Option[String] = Some(a.)
-     *
-     * scala> org.opalj.commonPackage("a.b.T","a.T")
-     * res: Option[String] = Some(a.)
-     *
-     * scala> org.opalj.commonPackage("a.b.T","a.b.T")
-     * res: Option[String] = Some(a.b.)
-     *
-     * scala> org.opalj.commonPackage("c.b.T","a.T")
-     * res: Option[String] = None
-     *
-     * scala> org.opalj.commonPackage("a.b.T","d.c.T")
-     * res: Option[String] = None
-     * }}}
-     */
-    def commonPackage(
-        fqnA: String, fqnB: String,
-        packageSeperatorChar: Int = '.'): Option[String] = {
-        val packageSeperatorIndex = fqnA.indexOf(packageSeperatorChar) + 1
-        if (packageSeperatorIndex <= 0)
-            return None;
-
-        val rootPackage = fqnA.substring(0, packageSeperatorIndex)
-        if (packageSeperatorIndex == fqnB.indexOf(packageSeperatorChar) + 1 &&
-            rootPackage == fqnB.substring(0, packageSeperatorIndex)) {
-            commonPackage(
-                fqnA.substring(packageSeperatorIndex, fqnA.length()),
-                fqnB.substring(packageSeperatorIndex, fqnB.length())
-            ) match {
-                    case Some(childPackage) ⇒ Some(rootPackage + childPackage)
-                    case None               ⇒ Some(rootPackage)
-                }
-        } else {
-            None
-        }
-    }
-
-    /**
-     * Abbreviates the given `memberTypeFQN` by abbreviating the common packages
-     * (except of the last shared package) of both fully qualified type names using '…'.
-     *
-     * @example
-     * {{{
-     * scala> org.opalj.abbreviateFQN("a.b.T","a.T") // <= no abbrev.
-     * res: String = a.T
-     *
-     * scala> org.opalj.abbreviateFQN("a.b.T","a.b.T")
-     * res: String = …b.T
-     *
-     * scala> org.opalj.abbreviateFQN("a.b.c.T","a.b.c.T.X")
-     * res: String = …c.T.X
-     * }}}
-     */
-    def abbreviateFQN(
-        definingTypeFQN: String, memberTypeFQN: String,
-        packageSeperatorChar: Int = '.'): String = {
-
-        commonPackage(definingTypeFQN, memberTypeFQN) match {
-            case Some(commonPackages) if commonPackages.indexOf(packageSeperatorChar) < commonPackages.length - 1 ⇒
-                // we have more than one common package...
-                val beforeLastCommonPackageIndex = commonPackages.dropRight(1).lastIndexOf(packageSeperatorChar)
-                val length = memberTypeFQN.length
-                val packagesCount = commonPackages.count(_ == packageSeperatorChar) - 1
-                val packageAbbreviation = "." * packagesCount
-                packageAbbreviation +
-                    memberTypeFQN.substring(beforeLastCommonPackageIndex + 1, length)
-            case _ ⇒
-                memberTypeFQN
-        }
     }
 
     /**

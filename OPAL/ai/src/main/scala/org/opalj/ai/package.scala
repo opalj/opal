@@ -109,6 +109,9 @@ package object ai {
      */
     type ValueOrigin = Int
 
+    type PC = org.opalj.br.PC
+    type PCs = org.opalj.br.PCs
+
     type PrimitiveValuesFactory = IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
     type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with VMLevelExceptionsFactory with TypedValuesFactory
     type TargetDomain = ValuesDomain with ValuesFactory

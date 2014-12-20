@@ -38,8 +38,6 @@ import org.opalj.br.MethodSignature
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ClassHierarchy
 import org.opalj.br.analyses.SomeProject
-import org.opalj.util.No
-import org.opalj.util.Yes
 
 trait Callees {
 

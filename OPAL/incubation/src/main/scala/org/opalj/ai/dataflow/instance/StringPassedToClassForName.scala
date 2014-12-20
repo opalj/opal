@@ -31,6 +31,7 @@ package ai
 package dataflow
 package instance
 
+import org.opalj.io.process
 import org.opalj.bi.AccessFlagsMatcher._
 import org.opalj.br._
 import org.opalj.br.analyses._

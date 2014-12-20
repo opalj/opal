@@ -29,8 +29,9 @@
 package org.opalj
 package de
 
-import br._
-import br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.br._
+import org.opalj.br.instructions._
 
 /**
  * Traverses a [[org.opalj.br.SourceElement]] and identifies all dependencies between the element

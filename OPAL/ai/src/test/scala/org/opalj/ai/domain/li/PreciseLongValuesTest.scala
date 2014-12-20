@@ -31,8 +31,6 @@ package ai
 package domain
 package li
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec

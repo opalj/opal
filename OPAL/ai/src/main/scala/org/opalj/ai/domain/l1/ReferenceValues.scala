@@ -38,10 +38,7 @@ import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
 import scala.annotation.tailrec
 import scala.collection.SortedSet
-import org.opalj.util.Answer
-import org.opalj.util.No
-import org.opalj.util.Unknown
-import org.opalj.util.Yes
+
 import org.opalj.collection.immutable.IdentityPair
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet0

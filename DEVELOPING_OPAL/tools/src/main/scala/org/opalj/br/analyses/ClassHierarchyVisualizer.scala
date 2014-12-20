@@ -61,6 +61,6 @@ object ClassHierarchyVisualizer {
             }
 
         val dotGraph = toDot.generateDot(Set(classHierarchy.toGraph), "back")
-        org.opalj.util.writeAndOpen(dotGraph, "ClassHiearachy", ".dot")
+        org.opalj.io.writeAndOpen(dotGraph, "ClassHiearachy", ".dot")
     }
 }

@@ -32,7 +32,9 @@ package reader
 
 import java.io.DataInputStream
 
-import reflect.ClassTag
+import scala.reflect.ClassTag
+
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * Defines a template method to read in a class file's constant pool.

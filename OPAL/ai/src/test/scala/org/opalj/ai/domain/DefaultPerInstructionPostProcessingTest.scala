@@ -40,8 +40,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import org.opalj.br._
 
 /**

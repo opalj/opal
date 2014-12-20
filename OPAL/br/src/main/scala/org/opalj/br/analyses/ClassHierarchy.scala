@@ -33,11 +33,13 @@ package analyses
 import scala.annotation.tailrec
 import scala.collection.{ Map, Set, SeqView }
 import scala.collection.mutable.HashSet
-import util.{ Answer, Yes, No, Unknown }
-import graphs.Node
-import collection.immutable.UIDSet
-import ObjectType.Object
+
+import org.opalj.io.processSource
+import org.opalj.graphs.Node
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.br.ObjectType.Object
 import org.opalj.collection.immutable.UIDSet1
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains

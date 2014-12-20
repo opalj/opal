@@ -39,8 +39,7 @@ import br.analyses._
 import domain._
 import domain.l0
 import domain.l1
-import org.opalj.util.No
-import org.opalj.util.Answer
+
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.TheClassFile
@@ -50,7 +49,7 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.util.Yes
+
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
 
 /**

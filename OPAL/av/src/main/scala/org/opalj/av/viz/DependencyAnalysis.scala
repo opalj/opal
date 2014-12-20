@@ -37,7 +37,7 @@ import scala.language.reflectiveCalls
 import scala.collection.mutable.HashMap
 import scala.util.Random
 
-import org.opalj.util.writeAndOpen
+import org.opalj.io.writeAndOpen
 import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.Project
 import org.opalj.de.DependencyExtractor

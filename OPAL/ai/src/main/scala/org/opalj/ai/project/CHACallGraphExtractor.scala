@@ -43,9 +43,6 @@ import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.util.Answer
-import org.opalj.util.No
-import org.opalj.util.Unknown
 
 /**
  * Domain object that can be used to calculate a call graph using CHA. This domain

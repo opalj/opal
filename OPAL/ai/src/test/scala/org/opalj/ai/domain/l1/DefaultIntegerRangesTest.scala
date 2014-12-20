@@ -37,7 +37,6 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.{ ObjectType, ArrayType, IntegerType }
 
 /**

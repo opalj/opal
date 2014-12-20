@@ -36,10 +36,9 @@ import org.opalj.ai.ReferenceValuesDomain
 import org.opalj.ai.TypedValuesFactory
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.util.Unknown
-import org.opalj.util.Yes
+
 import org.opalj.br.Method
-import org.opalj.util.Answer
+
 import scala.collection.Set
 
 /**

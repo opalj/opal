@@ -27,7 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package util
 
 /**
  * Models a three state answer ([[Yes]], [[No]], [[Unknown]]).
@@ -39,21 +38,21 @@ sealed trait Answer {
     /**
      * Returns `true` if and only if this answer is `Yes`.
      *
-     * Effectively the same as a comparison with "Yes".
+     * Effectively the same as a comparison with [[Yes]].
      */
     def isYes: Boolean
 
     /**
      * Returns `true` if and only if this answer is `No`.
      *
-     * Effectively the same as a comparison with "No".
+     * Effectively the same as a comparison with [[No]].
      */
     def isNo: Boolean
 
     /**
      * Returns `true` if and only if this answer is `Unknown`.
      *
-     * Effectively the same as a comparison with "Unknown".
+     * Effectively the same as a comparison with [[Unknown]].
      */
     def isUnknown: Boolean
 
@@ -112,6 +111,7 @@ sealed trait Answer {
  * @author Michael Eichberg
  */
 object Answer {
+
     /**
      * Returns [[org.opalj.util.Yes]] if `value` is `true` and
      * [[org.opalj.util.No]] otherwise.

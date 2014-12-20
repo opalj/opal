@@ -32,8 +32,7 @@ package ai
 import scala.util.control.ControlThrowable
 import scala.collection.BitSet
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.instructions._
 

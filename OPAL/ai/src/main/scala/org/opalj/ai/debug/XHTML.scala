@@ -43,7 +43,8 @@ import scala.xml.Unparsed
 import scala.xml.Text
 import scala.xml.Unparsed
 
-import org.opalj.util.writeAndOpen
+import org.opalj.io.writeAndOpen
+import org.opalj.io.process
 import org.opalj.br._
 import org.opalj.br.instructions._
 

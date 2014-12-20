@@ -228,7 +228,7 @@ object InterpretMethodsAnalysis {
                     Some("Exceptions Thrown During Interpretation"),
                     scala.xml.NodeSeq.fromSeq(body.toSeq))
             val file =
-                org.opalj.util.writeAndOpen(
+                org.opalj.io.writeAndOpen(
                     node,
                     "ExceptionsOfCrashedAbstractInterpretations", ".html")
 

@@ -44,7 +44,6 @@ import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.UpperTypeBound
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.util.Answer
 
 /**
  * @author Michael Eichberg

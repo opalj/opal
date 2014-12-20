@@ -80,6 +80,24 @@ package object br {
     type Opcode = Int
 
     /**
+     * A program counter identifies an instruction in a code array.
+     *
+     * A program counter is a value in the range `[0/*UShort.min*/, 65535/*UShort.max*/]`.
+     *
+     * @note This type alias serves comprehension purposes.
+     */
+    type PC = UShort
+
+    /**
+     * A collection of program counters using a UShortSet as its backing collection.
+     *
+     * Using PCs is in particular well suited for small(er) collections.
+     *
+     * @note This type alias serves comprehension purposes.
+     */
+    type PCs = org.opalj.collection.UShortSet
+
+    /**
      * Converts a given list of annotations into a Java-like representation.
      */
     def annotationsToJava(

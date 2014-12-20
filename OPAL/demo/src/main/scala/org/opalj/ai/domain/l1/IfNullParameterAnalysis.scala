@@ -57,7 +57,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.No
 
 /**
  * A very basic analysis that determines the behavior of a method if a parameter

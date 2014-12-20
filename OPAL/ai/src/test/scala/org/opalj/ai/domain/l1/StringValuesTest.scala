@@ -37,7 +37,6 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
-import org.opalj.util.{ No, Unknown }
 import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UIDSet
 
