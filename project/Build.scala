@@ -19,7 +19,7 @@ object OPALBuild extends Build {
 		Seq(Defaults.itSettings : _*) ++
 		Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest)) ++
 		Seq(libraryDependencies  ++= Seq(
-			"junit" % "junit" % "4.11" % "test,it",
+			"junit" % "junit" % "4.12" % "test,it",
 			"org.scalatest" %% "scalatest" % "2.2.1" % "test,it"))
 
 	lazy val buildSettingsWithScoverage = 
@@ -108,7 +108,7 @@ object OPALBuild extends Build {
 	 .configs(IntegrationTest)
 	 
 	lazy val opalDeveloperTools = Project(
-		id = "OpalDeveloperTools",
+		id = "OPAL-DeveloperTools",
 		base = file("DEVELOPING_OPAL/tools")
 	).dependsOn(de % "test->test;compile->compile")
 	 .configs(IntegrationTest)
@@ -116,7 +116,7 @@ object OPALBuild extends Build {
 	// This project validates OPAL's implemented architecture; hence
 	// it is not a "project" in the classical sense!
 	lazy val VALIDATE = Project(
-		id = "VALIDATE_OPAL",
+		id = "OPAL-Validate",
 		base = file("DEVELOPING_OPAL/validate"),
 		settings = buildSettings ++ 
 			Seq(publishArtifact := false)
