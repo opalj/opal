@@ -43,8 +43,8 @@ object OPALBuild extends Build {
 		da,
 		de,
 		av,
-		opalDeveloperTools,
-		VALIDATE,
+		DeveloperTools,
+		Validate,
 		demos,
 		findRealBugsAnalyses,
 		findRealBugsCLI,
@@ -107,27 +107,29 @@ object OPALBuild extends Build {
 	).dependsOn(de % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 	 
-	lazy val opalDeveloperTools = Project(
+	lazy val DeveloperTools = Project(
 		id = "OPAL-DeveloperTools",
-		base = file("DEVELOPING_OPAL/tools")
+		base = file("DEVELOPING_OPAL/tools"),
+		settings = buildSettings ++ 
+			Seq(publishArtifact := false)
 	).dependsOn(de % "test->test;compile->compile")
 	 .configs(IntegrationTest)
 
 	// This project validates OPAL's implemented architecture; hence
 	// it is not a "project" in the classical sense!
-	lazy val VALIDATE = Project(
+	lazy val Validate = Project(
 		id = "OPAL-Validate",
 		base = file("DEVELOPING_OPAL/validate"),
 		settings = buildSettings ++ 
 			Seq(publishArtifact := false)
 	).dependsOn(
-		opalDeveloperTools % "test->test;compile->compile;it->it",
+		DeveloperTools % "test->test;compile->compile;it->it",
 		av % "test->test;compile->compile;it->it")
 	 .configs(IntegrationTest)
 
 	lazy val demos = Project(
 		id = "Demos",
-		base = file("OPAL/demo"),
+		base = file("OPAL/demos"),
 		settings = buildSettings ++ 
 			Seq(publishArtifact := false)
 	).dependsOn(av)
