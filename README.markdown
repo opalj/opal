@@ -1,6 +1,6 @@
 # Overview
 OPAL is an extensible library for analyzing Java bytecode. OPAL is completely written in Scala and leverages Scala's 
-advanced language features to provide a new and previously unseen level of customizability and scalability. 
+advanced language features to provide a new and previously unseen level of flexibility and ease of use. 
 OPAL was designed from the ground up with *extensibility*, *adaptability* and *scalability* in mind. 
 
 # Project Structure
