@@ -36,8 +36,8 @@ import scala.collection.mutable.{ Map ⇒ MutableMap }
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.collection.UID
 
-import br._
-import br.analyses.SomeProject
+import org.opalj.br._
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Builds a call graph by first collecting all call graph edges before the final
@@ -76,8 +76,8 @@ class CallGraphBuilder(val project: SomeProject) {
      */
     def buildCallGraph(): CallGraph = {
 
-        import concurrent._
-        import concurrent.duration._
+        import scala.concurrent._
+        import scala.concurrent.duration._
         import ExecutionContext.Implicits.global
 
         import scala.collection.mutable.{ OpenHashMap, AnyRefMap, WrappedArray }

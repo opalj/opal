@@ -509,8 +509,8 @@ object Project {
         handleInconsistentProject: (InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
 
         import scala.collection.mutable.{ Set, Map }
-        import concurrent.{ Future, Await, ExecutionContext }
-        import concurrent.duration.Duration
+        import scala.concurrent.{ Future, Await, ExecutionContext }
+        import scala.concurrent.duration.Duration
         import ExecutionContext.Implicits.global
 
         val classHierarchyFuture: Future[ClassHierarchy] = Future {

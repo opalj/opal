@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package util
+package concurrent
 
 /**
  * A basic facility to model shared and exclusive access to some functionality/data
