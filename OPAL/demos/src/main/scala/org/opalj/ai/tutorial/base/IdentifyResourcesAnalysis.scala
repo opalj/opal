@@ -37,81 +37,78 @@ import org.opalj.ai._
 /**
  * @author Michael Eichberg
  */
-object IdentifyResourcesAnalysis extends AnalysisExecutor {
+object IdentifyResourcesAnalysis extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    val analysis = this
 
-        override def title: String = "File Object Creation Using Constant Strings"
+    override def description: String =
+        "Identifies java.io.File object instantiations using constant strings."
 
-        override def description: String =
-            "Identifies java.io.File object instantiations using constant strings."
+    override def doAnalyze(
+        theProject: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
+        // Step 1
+        // Find all methods that create "java.io.File(<String>)" objects.
+        val callSites = (for {
+            cf ← theProject.classFiles.par
+            m @ MethodWithBody(body) ← cf.methods
+        } yield {
+            val pcs = for {
+                pc ← body.collectWithIndex {
+                    case (
+                        pc,
+                        INVOKESPECIAL(
+                            ObjectType("java/io/File"),
+                            "<init>",
+                            SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
+                        ) ⇒ pc
+                }
+            } yield pc
+            (cf, m, pcs)
+        }).filter(_._3.size > 0)
 
-        override def doAnalyze(
-            theProject: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            // Step 1
-            // Find all methods that create "java.io.File(<String>)" objects.
-            val callSites = (for {
-                cf ← theProject.classFiles.par
-                m @ MethodWithBody(body) ← cf.methods
-            } yield {
-                val pcs = for {
-                    pc ← body.collectWithIndex {
-                        case (
-                            pc,
-                            INVOKESPECIAL(
-                                ObjectType("java/io/File"),
-                                "<init>",
-                                SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
-                            ) ⇒ pc
-                    }
-                } yield pc
-                (cf, m, pcs)
-            }).filter(_._3.size > 0)
+        // Step 2
+        // Perform a simple abstract interpretation to check if there is some
+        // method that pass a constant string to a method
+        class AnalysisDomain(
+            override val project: Project[URL],
+            val method: Method)
+                extends CorrelationalDomain
+                with domain.TheProject
+                with domain.TheMethod
+                with domain.DefaultDomainValueBinding
+                with domain.ThrowAllPotentialExceptionsConfiguration
+                with domain.l0.DefaultTypeLevelIntegerValues
+                with domain.l0.DefaultTypeLevelLongValues
+                with domain.l0.TypeLevelPrimitiveValuesConversions
+                with domain.l0.TypeLevelLongValuesShiftOperators
+                with domain.l0.DefaultTypeLevelFloatValues
+                with domain.l0.DefaultTypeLevelDoubleValues
+                with domain.l0.TypeLevelFieldAccessInstructions
+                with domain.l0.TypeLevelInvokeInstructions
+                with domain.l1.DefaultStringValuesBinding
+                with domain.DefaultHandlingOfMethodResults
+                with domain.IgnoreSynchronization
+                with domain.ProjectBasedClassHierarchy
 
-            // Step 2
-            // Perform a simple abstract interpretation to check if there is some
-            // method that pass a constant string to a method
-            class AnalysisDomain(
-                override val project: Project[URL],
-                val method: Method)
-                    extends CorrelationalDomain
-                    with domain.TheProject
-                    with domain.TheMethod
-                    with domain.DefaultDomainValueBinding
-                    with domain.ThrowAllPotentialExceptionsConfiguration
-                    with domain.l0.DefaultTypeLevelIntegerValues
-                    with domain.l0.DefaultTypeLevelLongValues
-                    with domain.l0.TypeLevelPrimitiveValuesConversions
-                    with domain.l0.TypeLevelLongValuesShiftOperators
-                    with domain.l0.DefaultTypeLevelFloatValues
-                    with domain.l0.DefaultTypeLevelDoubleValues
-                    with domain.l0.TypeLevelFieldAccessInstructions
-                    with domain.l0.TypeLevelInvokeInstructions
-                    with domain.l1.DefaultStringValuesBinding
-                    with domain.DefaultHandlingOfMethodResults
-                    with domain.IgnoreSynchronization
-                    with domain.ProjectBasedClassHierarchy
+        val callSitesWithConstantStringParameter =
+            for {
+                (cf, m, pcs) ← callSites
+                result = BaseAI(cf, m, new AnalysisDomain(theProject, m))
+                (pc, value) ← pcs.map(pc ⇒ (pc, result.operandsArray(pc))).collect {
+                    case (pc, result.domain.StringValue(value) :: _) ⇒ (pc, value)
+                }
+            } yield (cf, m, pc, value)
 
-            val callSitesWithConstantStringParameter =
-                for {
-                    (cf, m, pcs) ← callSites
-                    result = BaseAI(cf, m, new AnalysisDomain(theProject, m))
-                    (pc, value) ← pcs.map(pc ⇒ (pc, result.operandsArray(pc))).collect {
-                        case (pc, result.domain.StringValue(value) :: _) ⇒ (pc, value)
-                    }
-                } yield (cf, m, pc, value)
-
-            def callSiteToString(callSite: (ClassFile, Method, PC, String)): String = {
-                val (cf, m, pc, v) = callSite
-                cf.thisType.toJava+"{ "+m.toJava+"{"+pc+": \""+v+"\" } }"
-            }
-
-            BasicReport(
-                callSitesWithConstantStringParameter.map(callSiteToString(_)).
-                    mkString("Methods:\n", "\n", ".\n"))
+        def callSiteToString(callSite: (ClassFile, Method, PC, String)): String = {
+            val (cf, m, pc, v) = callSite
+            cf.thisType.toJava+"{ "+m.toJava+"{"+pc+": \""+v+"\" } }"
         }
+
+        BasicReport(
+            callSitesWithConstantStringParameter.map(callSiteToString(_)).
+                mkString("Methods:\n", "\n", ".\n"))
     }
 }
 

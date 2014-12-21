@@ -35,16 +35,16 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 
-object AnalysisTemplate extends AnalysisExecutor {
+object AnalysisTemplate extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    val analysis = this
 
-        override def doAnalyze(
-            theProject: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            BasicReport(theProject.statistics.mkString("\n"))
-        }
+    def doAnalyze(
+        theProject: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
+        BasicReport(theProject.statistics.mkString("\n"))
     }
+
 }
 
