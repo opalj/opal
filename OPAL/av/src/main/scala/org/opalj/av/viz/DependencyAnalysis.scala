@@ -62,6 +62,11 @@ import org.opalj.br.analyses.Project
 object DependencyAnalysis extends AnalysisExecutor {
 
     val template = this.getClass().getResource("DependencyAnalysis.html.template")
+    if (template eq null)
+        throw new RuntimeException(
+            "the HTML template (DependencyAnalysis.html.template) cannot be found"
+        )
+
     val colors = Set("#E41A1C", "#FFFF33", "#FF7F00", "#999999", "#984EA3", "#377EB8", "#4DAF4A", "#F781BF", "#A65628")
 
     var mainPackage: String = ""
@@ -163,7 +168,9 @@ object DependencyAnalysis extends AnalysisExecutor {
                     target: VirtualSourceElement,
                     dType: DependencyType): Unit = {
                     if (source.isClass && target.isClass)
-                        addDependency(source.asInstanceOf[VirtualClass].thisType.packageName, target.asInstanceOf[VirtualClass].thisType.packageName)
+                        addDependency(
+                            source.asInstanceOf[VirtualClass].thisType.packageName,
+                            target.asInstanceOf[VirtualClass].thisType.packageName)
                 }
 
                 def getPackageName(pn: String): String = {
@@ -185,7 +192,9 @@ object DependencyAnalysis extends AnalysisExecutor {
                     arrayType: ArrayType,
                     dType: DependencyType): Unit = {
                     if (source.isClass && arrayType.componentType.isObjectType)
-                        addDependency(source.asInstanceOf[VirtualClass].thisType.packageName, arrayType.componentType.asInstanceOf[ObjectType].packageName)
+                        addDependency(
+                            source.asInstanceOf[VirtualClass].thisType.packageName,
+                            arrayType.componentType.asInstanceOf[ObjectType].packageName)
                 }
 
                 def currentDependencyCount(source: String, target: String): Int = {
