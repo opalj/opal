@@ -45,9 +45,6 @@ import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
 import org.opalj.br.ArrayType
 import org.opalj.br.IntegerType
 import org.opalj.br.ObjectType
-import org.opalj.util.No
-import org.opalj.util.Unknown
-import org.opalj.util.Yes
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
@@ -76,7 +73,8 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
             with l1.DefaultIntegerSetValues // <----- The one we are going to test
-            with l0.DefaultPrimitiveValuesConversions
+            with l0.TypeLevelPrimitiveValuesConversions
+            with l0.TypeLevelLongValuesShiftOperators
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
             with PredefinedClassHierarchy
@@ -109,8 +107,12 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
             it("(join of two sets with positive values that do not exceed the cardinality); i1 join i2 => \"StructuralUpdate(IntegerSet(0, 1, 2, 3, 4, 5, 6, 9))\"") {
                 val v1 = IntegerSet(SortedSet[Int](0, 2, 4, 6, 9))
                 val v2 = IntegerSet(SortedSet[Int](1, 3, 5, 6))
-                v1.join(-1, v2) should be(StructuralUpdate(IntegerSet(SortedSet[Int](0, 1, 2, 3, 4, 5, 6, 9))))
-                v2.join(-1, v1) should be(StructuralUpdate(IntegerSet(SortedSet[Int](0, 1, 2, 3, 4, 5, 6, 9))))
+
+                v1.join(-1, v2) should be(StructuralUpdate(
+                    IntegerSet(SortedSet[Int](0, 1, 2, 3, 4, 5, 6, 9))))
+
+                v2.join(-1, v1) should be(StructuralUpdate(
+                    IntegerSet(SortedSet[Int](0, 1, 2, 3, 4, 5, 6, 9))))
             }
 
             it("(join of two sets with positive and negative values that exceed the cardinality); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
@@ -123,8 +125,12 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
             it("(join of two sets with positive and negative values that do not exceed the cardinality); i1 join i2 => \"StructuralUpdate(IntegerSet(-10, -7, -3, -1, 0, 5, 6, 9))\"") {
                 val v1 = IntegerSet(SortedSet[Int](-7, -3, 0, 6, 9))
                 val v2 = IntegerSet(SortedSet[Int](-10, -1, 5, 6))
-                v1.join(-1, v2) should be(StructuralUpdate(IntegerSet(SortedSet[Int](-10, -7, -3, -1, 0, 5, 6, 9))))
-                v2.join(-1, v1) should be(StructuralUpdate(IntegerSet(SortedSet[Int](-10, -7, -3, -1, 0, 5, 6, 9))))
+
+                v1.join(-1, v2) should be(StructuralUpdate(
+                    IntegerSet(SortedSet[Int](-10, -7, -3, -1, 0, 5, 6, 9))))
+
+                v2.join(-1, v1) should be(StructuralUpdate(
+                    IntegerSet(SortedSet[Int](-10, -7, -3, -1, 0, 5, 6, 9))))
             }
         }
 
@@ -133,9 +139,10 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
 
         describe("the behavior of the join operation if we do not exceed the max. spread") {
 
-            it("(join with itself) val ir = IntegerSet(...); ir join ir => \"NoUpdate\"") {
-                val v = IntegerSet(0)
-                v.join(-1, v) should be(NoUpdate)
+            it("(join with itself) IntegerSet(0) join IntegerSet(0) => \"NoUpdate\"") {
+                val v1 = IntegerSet(0)
+                val v2 = IntegerSet(0)
+                v1.join(-1, v2) should be(NoUpdate)
             }
 
             it("(join of disjoint sets) {Int.MinValue,-1} join {1,Int.MaxValue} => {Int.MinValue,-1,1,Int.MaxValue}") {
@@ -1153,12 +1160,27 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 }
             }
 
-            describe("the behavior of the greater than (<) operator") {
+            describe("the behavior of the small than (<) operator") {
 
                 it("a specific (but unknown) value compared (<) with itself should be No") {
                     val p = AnIntegerValue
                     intIsLessThan(IrrelevantPC, p, p) should be(No)
                 }
+
+                it("{0,3} < {4,10} should be No") {
+                    val p1 = IntegerSet(SortedSet[Int](0, 3))
+                    val p2 = IntegerSet(SortedSet[Int](4, 10))
+                    intIsLessThan(IrrelevantPC, p1, p2) should be(Yes)
+                    intIsLessThan(IrrelevantPC, p2, p1) should be(No)
+                }
+
+                it("{0,3} < {0,3} should be Unknown") {
+                    val p1 = IntegerSet(SortedSet[Int](0, 3))
+                    val p2 = IntegerSet(SortedSet[Int](0, 3))
+                    intIsLessThan(IrrelevantPC, p1, p2) should be(Unknown)
+                    intIsLessThan(IrrelevantPC, p2, p1) should be(Unknown) // reflexive
+                }
+
             }
 
             describe("the behavior of the equals (==) operator") {
@@ -1260,7 +1282,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
                     val domain = new IntegerSetsTestDomain
                     val method = IntegerValues.findMethod("someSwitch").get
-                    val result = BaseAI(IntegerValues, method, domain)
+                    /*val result =*/ BaseAI(IntegerValues, method, domain)
                     if (domain.allReturnedValues.size != 1)
                         fail("expected one result; found: "+domain.allReturnedValues)
 
