@@ -39,8 +39,8 @@ import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
-import org.opalj.bi.TestSupport.locateTestResources
 
+import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -113,6 +113,34 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
         describe("isMorePreciseThan") {
 
+            it("an ObjectValue should not be more precise than a second value with the same properties") {
+
+                val v1 = ObjectValue(-1, Unknown, false, ObjectType.Object, 1)
+                val v2 = ObjectValue(-1, Unknown, false, ObjectType.Object, 1)
+
+                assert(v1.abstractsOver(v2))
+                assert(v2.abstractsOver(v1))
+                assert(v1.join(-1, v2).isNoUpdate)
+                assert(v2.join(-1, v1).isNoUpdate)
+
+                v1.isMorePreciseThan(v2) should be(false)
+                v2.isMorePreciseThan(v1) should be(false)
+            }
+
+            it("an ObjectValue should not be more precise than a second value with the same properties, but a different timestamp") {
+
+                val v1 = ObjectValue(-1, Unknown, true, ObjectType.Object, 1)
+                val v2 = ObjectValue(-1, Unknown, true, ObjectType.Object, 2)
+
+                assert(v1.abstractsOver(v2))
+                assert(v2.abstractsOver(v1))
+                assert(!v1.join(-1, v2).isStructuralUpdate)
+                assert(!v2.join(-1, v1).isStructuralUpdate)
+
+                v1.isMorePreciseThan(v2) should be(false)
+                v2.isMorePreciseThan(v1) should be(false)
+            }
+
             it("an ArrayValue should not be more precise than itself") {
 
                 val v1 = ArrayValue(-1, Unknown, true, ArrayType(ArrayType(IntegerType)), 1)
@@ -127,14 +155,6 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 v2.isMorePreciseThan(v1) should be(false)
             }
 
-            it("an IllegalValue should not be more precise than an ObjectValue and vice versa") {
-
-                val v1 = ValuesDomain.TheIllegalValue
-                val v2 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/Object"), 1)
-                v1.isMorePreciseThan(v2) should be(false)
-                v2.isMorePreciseThan(v1) should be(false)
-            }
-
             it("a NullValue should be more precise than an ObjectValue but not vice versa") {
                 val v1 = NullValue(-1, 2)
                 val v2 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/Object"), 1)
@@ -142,7 +162,8 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 v2.isMorePreciseThan(v1) should be(false)
             }
 
-            it("an ObjectValue of type java/lang/String should be more precise than an ObjectValue of type java/lang/Object but not vice versa") {
+            it("an ObjectValue of type java/lang/String should be more precise than "+
+                "an ObjectValue of type java/lang/Object but not vice versa") {
                 val v1 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/String"), 1)
                 val v2 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/Object"), 2)
                 v1.isMorePreciseThan(v2) should be(true)
@@ -349,6 +370,12 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
             it("it should be able to join two value sets where the original set is a subset of the second set") {
                 ref1AltMergeRef2Alt.join(-1, ref1MergeRef2MergeRef3) should be(StructuralUpdate(ref1MergeRef2MergeRef3))
+            }
+
+            it("should be able to join two values with the exact same properties") {
+                val v1 = ObjectValue(-1, Unknown, false, ObjectType.Object, 1)
+                val v2 = ObjectValue(-1, Unknown, false, ObjectType.Object, 1)
+                v1.join(-1, v2) should be(NoUpdate)
             }
 
             it("should be able to join two refined values sets") {

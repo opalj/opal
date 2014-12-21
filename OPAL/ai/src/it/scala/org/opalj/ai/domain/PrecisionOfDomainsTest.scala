@@ -121,6 +121,11 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                                         s" does not abstract over $rVD (${rVD.getClass.getName})"+
                                         s" (original: $lValue join $rValue )")
                                 }
+								if (lVD.isMorePreciseThan(rVD)) {
+                                    return Some(s"$pc: the operand stack value $lVD#${System.identityHashCode(lVD)} (${lVD.getClass.getName})"+
+                                        s" is more precise than $rVD#${System.identityHashCode(rVD)} (${rVD.getClass.getName})"+
+                                        s" (original: $lValue join $rValue )")							
+								}
                                 true
                             }
                         ))
@@ -150,7 +155,8 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                     failed.set(true)
                     println(
                         classFile.thisType.toJava+" \""+
-                            method.toJava+"\" /*Instructions "+method.body.get.instructions.size+"*/\n"+
+                            method.toJava+"\" /*Instructions "+
+							method.body.get.instructions.size+"*/\n"+
                             "\t// the less precise domain did not abstract over the state of the more precise domain\n"+
                             "\t// "+Console.BOLD + m + Console.RESET+"\n"
                     )
