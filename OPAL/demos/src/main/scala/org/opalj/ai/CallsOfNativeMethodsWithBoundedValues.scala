@@ -119,20 +119,20 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
                 // For the stack we don't distinguish between computational type
                 // one and two category values; hence, no complex mapping is required.
                 stackIndexes = parameterIndexes.map((parametersCount - 1) - _)
-                (caller, pcs) ← callGraph.calledBy(nativeMethod)
+                (caller, callerPCs) ← callGraph.calledBy(nativeMethod)
+                domain = new AnalysisDomain(theProject, caller)
+                callerClassFile = theProject.classFile(caller)
+                result = BaseAI(callerClassFile, caller, domain)
             } {
-                val domain = new AnalysisDomain(theProject, caller)
-                val callerClassFile = theProject.classFile(caller)
-                val result = BaseAI(callerClassFile, caller, domain)
-
+                val pcs: Seq[UShort] = callerPCs.toSeq
                 for {
-                    pc: PC ← pcs
+                    pc ← pcs
                     operands = result.operandsArray(pc)
                     if operands != null //<= this is practically the only place where a null check is necessary
                     stackIndex ← stackIndexes
                 } {
                     operands(stackIndex) match {
-                        case domain.IntegerRange(lb, ub) ⇒
+                        case result.domain.IntegerRange(lb, ub) ⇒
                             addResult(
                                 NativeCallWithBoundedMethodParameter(
                                     theProject,
