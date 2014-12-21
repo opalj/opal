@@ -55,8 +55,6 @@ import org.opalj.ai.project.ExtVTACallGraphDomain
 import org.opalj.ai.project.BasicVTACallGraphDomain
 import org.opalj.ai.project.UnresolvedMethodCall
 import org.opalj.ai.project.CallGraphConstructionException
-import org.opalj.ai.debug.{ CallGraphDifferenceReport, AdditionalCallTargets }
-import org.opalj.ai.project.CallGraphCache
 import org.opalj.ai.project.VTAWithPreAnalysisCallGraphAlgorithmConfiguration
 import org.opalj.ai.project.BasicVTAWithPreAnalysisCallGraphDomain
 
