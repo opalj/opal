@@ -40,6 +40,7 @@ import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.collection.SortedMap
+import org.opalj.io.process
 import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.analyses.ProgressManagement

@@ -33,6 +33,7 @@ package analysis
 import scala.xml.Node
 import scala.xml.Text
 import org.opalj.collection.mutable.Locals
+import org.opalj.br.{ PC, PCs }
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.ClassFile
 import org.opalj.br.Method

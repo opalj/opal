@@ -49,6 +49,7 @@ import org.opalj.ai.debug.XHTML
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
+import org.opalj.br.{ PC, PCs }
 import org.opalj.br.Code
 import org.opalj.ai.collectWithOperandsAndIndex
 import org.opalj.ai.BoundedInterruptableAI

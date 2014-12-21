@@ -45,6 +45,8 @@ import scalafx.scene.layout.VBox
 import scalafx.stage.Stage
 import scalafx.scene.control.Hyperlink
 
+import org.opalj.io.processSource
+
 class AboutDialog(owner: Stage, showUrl: String ⇒ Unit) extends DialogStage(owner) {
     self ⇒
 

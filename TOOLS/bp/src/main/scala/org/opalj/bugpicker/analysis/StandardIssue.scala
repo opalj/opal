@@ -35,6 +35,7 @@ import scala.language.existentials
 import scala.Console.{ GREEN, RESET }
 import scala.xml.Node
 import scala.xml.Text
+import org.opalj.br.PC
 import org.opalj.br.methodToXHTML
 import org.opalj.br.typeToXHTML
 import org.opalj.collection.mutable.Locals
