@@ -116,12 +116,14 @@ trait DefaultIntegerRangeValues
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
-            (this eq other) || (other match {
-                case that: IntegerRange ⇒
-                    this.lowerBound <= that.lowerBound &&
-                        this.upperBound >= that.upperBound
-                case _ ⇒ false
-            })
+            (this eq other) || (
+                other match {
+                    case that: IntegerRange ⇒
+                        this.lowerBound <= that.lowerBound &&
+                            this.upperBound >= that.upperBound
+                    case _ ⇒ false
+                }
+            )
         }
 
         override def summarize(pc: PC): DomainValue = this
@@ -156,30 +158,31 @@ trait DefaultIntegerRangeValues
 
     override def IntegerRange(lb: Int, ub: Int): IntegerRange = new IntegerRange(lb, ub)
 
-    override def BooleanValue(pc: PC): DomainValue = AnIntegerValue()
-    override def BooleanValue(pc: PC, value: Boolean): DomainValue =
-        if (value) IntegerValue(pc, 1) else IntegerValue(pc, 0)
+    override def BooleanValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainValue =
+        if (value) IntegerValue(origin, 1) else IntegerValue(origin, 0)
 
-    override def ByteValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ByteValue(pc: PC, value: Byte) = {
+    override def ByteValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def ByteValue(origin: ValueOrigin, value: Byte) = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def ShortValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ShortValue(pc: PC, value: Short) = {
+    override def ShortValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def ShortValue(origin: ValueOrigin, value: Short) = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def CharValue(pc: PC): DomainValue = AnIntegerValue()
-    override def CharValue(pc: PC, value: Char) = {
+    override def CharValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def CharValue(origin: ValueOrigin, value: Char) = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def IntegerValue(pc: PC): DomainValue = AnIntegerValue()
-    override def IntegerValue(pc: PC, value: Int) = new IntegerRange(value, value)
+    override def IntegerValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def IntegerValue(origin: ValueOrigin, value: Int) =
+        new IntegerRange(value, value)
 
 }
 

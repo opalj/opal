@@ -34,7 +34,6 @@ package l1
 import scala.Iterable
 import scala.collection.immutable.SortedSet
 import org.junit.runner.RunWith
-import org.opalj.ai.Domain
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.domain.DefaultDomainValueBinding
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
