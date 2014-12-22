@@ -255,6 +255,43 @@ trait ValuesDomain {
         }
 
         /**
+         * Returns `true` iff the abstract state represented by this value
+         * is more precise than the state of the given value. In other
+         * words if every possible runtime value represented by this value
+         * is also represented by the given value and both are not equal.
+         *
+         * The abstract state generally encompasses every information that would
+         * be considered during a [[join]] of `this` value and the `other` value and that
+         * could lead to a [[StructuralUpdate]].
+         *
+         * This method is '''irreflexive'''.
+         *
+         * [[TheIllegalValue]] is not more precise than anything.
+         *
+         */
+        def isMorePreciseThan(other: DomainValue): Boolean = {
+            if (this eq other)
+                return false
+            if ((this eq TheIllegalValue) || (other eq TheIllegalValue))
+                return false
+
+            val result = other.join(Int.MinValue /*Irrelevant*/ , this)
+
+            if (result.isNoUpdate)
+                return true
+
+            if (result.isMetaInformationUpdate) {
+                val resultOWA = this.join(Int.MinValue /*Irrelevant*/ , other)
+
+                return !(resultOWA.isNoUpdate ||
+                    resultOWA.isMetaInformationUpdate)
+            }
+
+            return false
+
+        }
+
+        /**
          * Creates a summary of this value.
          *
          * In general, creating a summary of a value may be useful/required
