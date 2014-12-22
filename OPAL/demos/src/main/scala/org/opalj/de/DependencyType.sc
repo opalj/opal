@@ -29,6 +29,10 @@
 package org.opalj
 package de
 
+/**
+ * For efficiency reasons, it is possible to associate dependencies with id (in
+ * the range [0..63] which is then used for a BitMask.
+ */
 object DependencyTypeSheet {
 
     val dt_1 = DependencyType.EXTENDS
