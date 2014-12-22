@@ -93,7 +93,7 @@ class ImmutabilityAnalysisTest
 }
 
 private object ImmutabilityAnalysisTest {
-    val resources = locateTestResources("classfiles/immutability.jar", "ai")
+    val resources = locateTestResources("classfiles/immutability.jar", "br")
     val project = Project(resources)
 
 }

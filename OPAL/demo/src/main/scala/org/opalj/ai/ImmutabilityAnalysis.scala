@@ -28,8 +28,14 @@
  */
 package org.opalj
 package ai
-package analyses
 
+import java.net.URL
+
+import org.opalj.ai.analyses.Immutability
+import org.opalj.ai.analyses.{ ImmutabilityAnalysis ⇒ IA }
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 
 /**
@@ -37,40 +43,24 @@ import org.opalj.br.analyses.Project
  *
  * @author Andre Pacak
  */
-object ImmutabilityChecker {
-    private def printUsage(): Unit = {
-        println("Usage: java …Main <JAR file containing class files>+")
-    }
+object ImmutabilityAnalysis extends AnalysisExecutor {
 
-    def main(args: Array[String]): Unit = {
-        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".jar"))) {
-            printUsage
-            sys.exit(1)
-        }
+    val analysis = new OneStepAnalysis[URL, BasicReport] {
 
-        for (arg ← args) {
-            val file = new java.io.File(arg)
-            if (!file.canRead() || file.isDirectory) {
-                println("The file: "+file+" cannot be read.");
-                printUsage
-                sys.exit(1)
-            }
-        }
+        override def doAnalyze(
+            theProject: Project[URL],
+            parameters: Seq[String],
+            isInterrupted: () ⇒ Boolean): BasicReport = {
 
-        for (arg ← args) {
-            println(Console.BOLD+"analyzing "+arg.toString())
-            val file = new java.io.File(arg)
-            val project = Project(file)
-            val classFiles = project.classFiles.filter {
+            val result = IA.doAnalyze(theProject, isInterrupted)
+            val classFiles = theProject.classFiles.filter {
                 classFile ⇒
                     classFile.isClassDeclaration &&
                         !classFile.isInnerClass
             }
-
-            val result = ImmutabilityAnalysis.doAnalyze(project, () ⇒ false)
             val relevantClasses = result.filter {
                 x ⇒
-                    val classFile = project.classFile(x._1)
+                    val classFile = theProject.classFile(x._1)
                     classFile.nonEmpty &&
                         classFile.get.isClassDeclaration &&
                         !classFile.get.isInnerClass
@@ -84,11 +74,13 @@ object ImmutabilityChecker {
             }
             val mutableClasses = relevantClasses.filter { _._2 == Immutability.Mutable }
             val unknownClasses = relevantClasses.filter { _._2 == Immutability.Unknown }
-            println("The Jar contains "+classFiles.size+" Classes")
-            println(immutableClasses.size+" classes are immutable")
-            println(condimmutableClasses.size+" classes are conditionally immutable")
-            println(mutableClasses.size+" classes are mutable")
-            println(unknownClasses.size+" classes cannot be classified")
+            val message = new StringBuffer("The Jar contains "+classFiles.size+" Classes\n")
+            message append immutableClasses.size+" classes are immutable\n"
+            message append condimmutableClasses.size+" classes are conditionally immutable\n"
+            message append mutableClasses.size+" classes are mutable\n"
+            message append unknownClasses.size+" classes cannot be classified"
+
+            BasicReport(message.toString)
         }
     }
 }
