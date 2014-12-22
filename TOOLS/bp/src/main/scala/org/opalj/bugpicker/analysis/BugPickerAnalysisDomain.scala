@@ -69,8 +69,8 @@ class BugPickerAnalysisDomain(
         with domain.l1.MaxArrayLengthRefinement
         with domain.l1.ConstraintsBetweenIntegerValues
         //with domain.l1.DefaultIntegerSetValues
-        with domain.l1.DefaultLongValues
-        with domain.l1.LongValuesShiftOperators
+        with domain.l1.DefaultLongSetValues
+        with domain.l1.LongSetValuesShiftOperators
         with domain.l1.ConcretePrimitiveValuesConversions
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization
