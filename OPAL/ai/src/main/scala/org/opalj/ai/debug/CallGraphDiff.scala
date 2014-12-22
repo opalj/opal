@@ -62,31 +62,30 @@ import org.opalj.ai.analyses.MethodReturnValuesKey
  *
  * @author Michael Eichberg
  */
-object CallGraphDiff extends AnalysisExecutor {
+object CallGraphDiff extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    val analysis = this
 
-        override def title: String = "Identify differences between two call graphs."
+    override def title: String = "identifies differences between two call graphs"
 
-        override def description: String = "Identifies methods that do not have the same call graph information."
+    override def description: String = "Identifies methods that do not have the same call graph information."
 
-        override def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            val (unexpected, additional) = callGraphDiff(project, Console.println, isInterrupted)
-            if (unexpected.nonEmpty || additional.nonEmpty) {
-                var r = "Found the following difference(s):\n"
-                if (additional.nonEmpty) {
-                    r = additional.mkString(r+"Additional:\n", "\n\n", "\n\n")
-                }
-                if (unexpected.nonEmpty) {
-                    r = unexpected.mkString(r+"Unexpected:\n", "\n\n", "\n\n")
-                }
-                BasicReport(r)
-            } else
-                BasicReport("No differences found.")
-        }
+    override def doAnalyze(
+        project: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
+        val (unexpected, additional) = callGraphDiff(project, Console.println, isInterrupted)
+        if (unexpected.nonEmpty || additional.nonEmpty) {
+            var r = "Found the following difference(s):\n"
+            if (additional.nonEmpty) {
+                r = additional.mkString(r+"Additional:\n", "\n\n", "\n\n")
+            }
+            if (unexpected.nonEmpty) {
+                r = unexpected.mkString(r+"Unexpected:\n", "\n\n", "\n\n")
+            }
+            BasicReport(r)
+        } else
+            BasicReport("No differences found.")
     }
 
     def callGraphDiff(
@@ -177,10 +176,11 @@ sealed trait CallGraphDifferenceReport {
     val method: Method
     val pc: PC
     val callTargets: Iterable[Method]
+
     final override def toString: String = {
-        import Console._
+
         val thisClassType = project.classFile(method).thisType
-        differenceClassifier +
+        differenceClassifier+" "+
             project.source(thisClassType).getOrElse("<Source File Not Available>")+": "+
             thisClassType.toJava+"{ "+method.toJava+"{ "+
             "pc="+pc+"(line="+method.body.get.lineNumber(pc).getOrElse("NotAvailable")+"): "+
@@ -200,7 +200,7 @@ case class AdditionalCallTargets(
         pc: PC,
         callTargets: Iterable[Method]) extends CallGraphDifferenceReport {
 
-    final val differenceClassifier = BLUE+"[Additional] "+RESET
+    final val differenceClassifier = BLUE+"[Additional]"+RESET
 }
 
 /**
@@ -212,5 +212,5 @@ case class UnexpectedCallTargets(
         pc: PC,
         callTargets: Iterable[Method]) extends CallGraphDifferenceReport {
 
-    final val differenceClassifier = RED+"[Unexpected] "+RESET
+    final val differenceClassifier = RED+"[Unexpected]"+RESET
 }
