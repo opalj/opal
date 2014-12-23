@@ -113,6 +113,45 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
         }
 
+        describe("isMorePreciseThan") {
+
+            it("an ArrayValue should not be more precise than itself") {
+
+                val v1 = ArrayValue(-1, Unknown, true, ArrayType(ArrayType(IntegerType)), 1)
+                v1.isMorePreciseThan(v1) should be(false)
+            }
+
+            it("an ArrayValue should not be more precise than itself (with a different timestamp)") {
+
+                val v1 = ArrayValue(-1, Unknown, true, ArrayType(ArrayType(IntegerType)), 1)
+                val v2 = ArrayValue(-1, Unknown, true, ArrayType(ArrayType(IntegerType)), 2)
+                v1.isMorePreciseThan(v2) should be(false)
+                v2.isMorePreciseThan(v1) should be(false)
+            }
+
+            it("an IllegalValue should not be more precise than an ObjectValue and vice versa") {
+
+                val v1 = ValuesDomain.TheIllegalValue
+                val v2 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/Object"), 1)
+                v1.isMorePreciseThan(v2) should be(false)
+                v2.isMorePreciseThan(v1) should be(false)
+            }
+
+            it("a NullValue should be more precise than an ObjectValue but not vice versa") {
+                val v1 = NullValue(-1, 2)
+                val v2 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/Object"), 1)
+                v1.isMorePreciseThan(v2) should be(true)
+                v2.isMorePreciseThan(v1) should be(false)
+            }
+
+            it("an ObjectValue of type java/lang/String should be more precise than an ObjectValue of type java/lang/Object but not vice versa") {
+                val v1 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/String"), 1)
+                val v2 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/Object"), 2)
+                v1.isMorePreciseThan(v2) should be(true)
+                v2.isMorePreciseThan(v1) should be(false)
+            }
+        }
+
         //
         // FACTORY METHODS
         //
