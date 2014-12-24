@@ -30,6 +30,7 @@ package org.opalj
 package av
 
 import scala.language.implicitConversions
+import scala.language.existentials
 
 import java.net.URL
 
@@ -51,9 +52,7 @@ case class SpecificationViolation(
         project: SomeProject,
         dependencyChecker: DependencyChecker,
         source: VirtualSourceElement,
-        sourceLineNumber: Int = 1,
         target: VirtualSourceElement,
-        targetLineNumber: Int = 1,
         dependencyType: DependencyType,
         description: String) {
 

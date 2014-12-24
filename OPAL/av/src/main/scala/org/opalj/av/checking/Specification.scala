@@ -30,14 +30,11 @@ package org.opalj
 package av
 
 import scala.language.implicitConversions
-
 import java.net.URL
-
 import scala.util.matching.Regex
 import scala.collection.{ Map ⇒ AMap, Set ⇒ ASet }
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
-
 import org.opalj.util.PerformanceEvaluation.{ ns2sec, time, run }
 import br._
 import br.reader.Java8Framework.ClassFiles
@@ -198,9 +195,7 @@ class Specification(val project: Project[URL]) {
                     project,
                     this,
                     incomingElement,
-                    1,
                     targetEnsembleElement,
-                    1,
                     dependencyType,
                     "violation of a global incoming constraint ")
             }
@@ -244,9 +239,7 @@ class Specification(val project: Project[URL]) {
                     project,
                     this,
                     sourceElement,
-                    1,
                     targetElement,
-                    1,
                     dependencyType,
                     "violation of a local outgoing constraint")
             }
@@ -432,7 +425,7 @@ object Specification {
         if (!file.exists)
             throw new SpecificationError("The specified directory does not exist: "+jarName+".")
         if (!file.canRead)
-            throw new SpecificationError("Cannot read the specified directory: "+jarName+".")
+            throw new SpecificationError("Cannot read the specified JAR: "+jarName+".")
         if (file.isDirectory)
             throw new SpecificationError("The specified jar file is a directory: "+jarName+".")
 
