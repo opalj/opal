@@ -182,15 +182,14 @@ trait AI[D <: Domain] {
         someLocals.map { l ⇒
             val maxLocals = method.body.get.maxLocals
 
-            if (l.size < (method.parameterTypes.size + (if (method.isStatic) 0 else 1)))
-                throw new IllegalArgumentException(
-                    "the number of initial locals is less than the number of parameters"
-                )
-
-            if (l.size > maxLocals)
-                throw new IllegalArgumentException(
-                    "the number of initial locals is larger than max locals"
-                )
+            assert(checkAssert)
+            assert(
+                l.size >= (method.parameterTypes.size + (if (method.isStatic) 0 else 1)),
+                "the number of initial locals is less than the number of parameters"
+            )
+            assert(l.size <= maxLocals,
+                "the number of initial locals is larger than max locals"
+            )
 
             // ... the number of given locals is smaller than or equal to the number of 
             // max locals (the former number still has to be larger or equal to the 

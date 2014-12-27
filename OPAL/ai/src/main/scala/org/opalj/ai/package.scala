@@ -61,10 +61,16 @@ import org.opalj.br.instructions.Instruction
  */
 package object ai {
 
-    assert({
-        println("[info - Abstract Interpretation Framework] Assertions are enabled.")
+    lazy val checkAssert: Boolean = {
+        try {
+            assert(false) // <= test whether assertions are turned on or off...
+            println("[info - Abstract Interpretation Framework]] Production Build")
+        } catch {
+            case ae: AssertionError ⇒
+                println("[info - Abstract Interpretation Framework] Assertions are enabled.")
+        }
         true
-    })
+    }
 
     /**
      * Type alias that can be used if the AI can use all kinds of domains.

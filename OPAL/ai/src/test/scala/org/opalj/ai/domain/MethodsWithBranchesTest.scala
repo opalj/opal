@@ -89,7 +89,7 @@ class MethodsWithBranchesTest
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 
-        org.opalj.ai.debug.XHTML.dumpOnFailureDuringValidation(
+        org.opalj.ai.util.XHTML.dumpOnFailureDuringValidation(
             Some(classFile),
             Some(method),
             method.body.get,

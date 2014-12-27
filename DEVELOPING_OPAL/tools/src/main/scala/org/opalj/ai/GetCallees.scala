@@ -38,7 +38,8 @@ import scala.Console.RESET
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.MethodReturnValuesKey
-import org.opalj.ai.debug.XHTML.dump
+import org.opalj.ai.util.XHTML
+import org.opalj.ai.util.XHTML.dump
 import org.opalj.ai.project.CHACallGraphExtractor
 import org.opalj.ai.project.CallGraphCache
 import org.opalj.ai.project.CallGraphExtractor
@@ -147,8 +148,6 @@ object GetCallees {
                     new CallGraphCache[MethodSignature, scala.collection.Set[Method]](project)
                 )
             }
-
-        import org.opalj.ai.debug.XHTML.dump
 
         try {
             val (allCallEdges, allUnresolvableMethodCalls) = extractor.extract(project, classFile, method)

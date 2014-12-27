@@ -52,7 +52,7 @@ import br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecution {
 
-    import debug.XHTML.dumpOnFailureDuringValidation
+    import util.XHTML.dumpOnFailureDuringValidation
     import PropertyTracingTest._
 
     class AnalysisDomain(val method: Method)

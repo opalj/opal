@@ -28,7 +28,6 @@
  */
 package org.opalj
 package ai
-package debug
 
 import scala.language.existentials
 
@@ -40,8 +39,8 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.ai.debug.XHTML.dumpLocals
-import org.opalj.ai.debug.XHTML.dumpStack
+import org.opalj.ai.util.XHTML.dumpLocals
+import org.opalj.ai.util.XHTML.dumpStack
 
 case class FlowEntity(
         pc: PC,

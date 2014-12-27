@@ -74,19 +74,36 @@ object UselessComputationsMinimal
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean) = {
 
-        val results = (for {
-            classFile ← theProject.classFiles.par
-            method @ MethodWithBody(body) ← classFile.methods
-            result = BaseAI(classFile, method, new AnalysisDomain(theProject, method))
-        } yield {
+        //        val results = (for {
+        //            classFile ← theProject.classFiles.par
+        //            method @ MethodWithBody(body) ← classFile.methods
+        //            result = BaseAI(classFile, method, new AnalysisDomain(theProject, method))
+        //        } yield {
+        //            import result.domain.ConcreteIntegerValue
+        //            collectWithOperandsAndIndex(result.domain)(body, result.operandsArray) {
+        //                case (
+        //                    pc, _: IFICMPInstruction, Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
+        //                    ) ⇒
+        //                    s"${classFile.thisType.toJava}{ ${method.toJava}{ /*pc=$pc:*/ comparison of constant values: $a and $b } }"
+        //            }
+        //        }).flatten.seq
+
+        val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
+        theProject.parForeachMethodWithBody { m ⇒
+            val (_ /*source*/ , classFile, method) = m
+            val result = BaseAI(classFile, method, new AnalysisDomain(theProject, method))
             import result.domain.ConcreteIntegerValue
-            collectWithOperandsAndIndex(result.domain)(body, result.operandsArray) {
+            collectWithOperandsAndIndex(result.domain)(method.body.get, result.operandsArray) {
                 case (
-                    pc, _: IFICMPInstruction, Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
+                    pc,
+                    _: IFICMPInstruction,
+                    Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                     ) ⇒
-                    s"${classFile.thisType.toJava}{ ${method.toJava}{ /*pc=$pc:*/ comparison of constant values: $a and $b } }"
+                    val result = s"${classFile.thisType.toJava}{ ${method.toJava}{ /*pc=$pc:*/ comparison of constant values: $a and $b } }"
+                    results.add(result)
             }
-        }).flatten.seq
+        }
+        import scala.collection.JavaConversions._
 
         BasicReport(results.mkString(s"${results.size} Useless computations:\n", "\n", "\n"))
     }

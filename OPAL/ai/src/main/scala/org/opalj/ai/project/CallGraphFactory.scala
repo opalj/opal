@@ -34,6 +34,8 @@ import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
 
+import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+
 /**
  * Factory object to create call graphs.
  *
@@ -130,8 +132,7 @@ object CallGraphFactory {
             new scala.collection.mutable.HashSet[Method]() {
                 override def initialSize: Int = theProject.methodsCount
             }
-        val executorService =
-            Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() /*+ 1*/ )
+        val executorService = Executors.newFixedThreadPool(NumberOfThreadsForCPUBoundTasks)
         val completionService =
             new ExecutorCompletionService[MethodAnalysisResult](executorService)
 

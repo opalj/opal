@@ -110,9 +110,8 @@ private class UShortSet2(private var value: Int) extends UShortSet {
     }
 
     def +≈:(newValue: UShort): UShortSet = {
-        assert(
-            newValue >= MinValue && newValue <= MaxValue,
-            "value out of range: "+newValue)
+        assert(checkAssert)
+        assert(newValue >= MinValue && newValue <= MaxValue, s"no ushort value: newValue")
 
         if (notFull) {
             val value = this.value
@@ -218,8 +217,10 @@ private class UShortSet4(private var value: Long) extends UShortSet {
     }
 
     def +≈:(uShortValue: UShort): UShortSet = {
-        if (uShortValue < MinValue || uShortValue > MaxValue)
-            throw new IllegalArgumentException("value out of range: "+uShortValue)
+        assert(checkAssert)
+        assert(
+            uShortValue >= MinValue && uShortValue <= MaxValue,
+            s"no ushort value: $uShortValue")
 
         val newValue: Long = uShortValue.toLong
         val value1 = this.value1
@@ -410,8 +411,10 @@ private class UShortSetNode(
     override def forall(f: UShort ⇒ Boolean): Boolean = set1.forall(f) && set2.forall(f)
 
     def +≈:(uShortValue: UShort): UShortSet = {
-        if (uShortValue < MinValue || uShortValue > MaxValue)
-            throw new IllegalArgumentException("value out of range: "+uShortValue)
+        assert(checkAssert)
+        assert(
+            uShortValue >= MinValue && uShortValue <= MaxValue,
+            s"no ushort value: $uShortValue")
 
         val set1Max = set1.max
         if (set1Max > uShortValue ||
@@ -467,9 +470,9 @@ private object EmptyUShortSet extends UShortSet {
     def contains(uShortValue: UShort): Boolean = false
     def foreach[U](f: UShort ⇒ U): Unit = { /*Nothing to do.*/ }
     override def forall(f: UShort ⇒ Boolean): Boolean = true
-    def +≈:(uShortValue: UShort): UShortSet = UShortSet(uShortValue)
     def max = throw new NoSuchElementException("the set is empty")
     def min = throw new NoSuchElementException("the set is empty")
+    def +≈:(uShortValue: UShort): UShortSet = UShortSet(uShortValue)
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
@@ -495,8 +498,8 @@ object UShortSet {
      * @param value An unsigned short value; i.e., an integer value in the range [0,0xFFFF).
      */
     @inline def apply(value: UShort): UShortSet = {
-        if (value < MinValue || value > MaxValue)
-            throw new IllegalArgumentException("value out of range: "+value)
+        assert(checkAssert)
+        assert(value >= MinValue && value <= MaxValue, s"value out of range: $value")
 
         new UShortSet2(value)
     }
@@ -508,6 +511,7 @@ object UShortSet {
      * @param uShortValue2 An integer value in the range [0,0xFFFF).
      */
     @inline def apply(value1: UShort, value2: UShort): UShortSet = {
+        assert(checkAssert)
         assert(value1 >= MinValue && value1 <= MaxValue, s"value out of range: $value1")
         assert(value2 >= MinValue && value2 <= MaxValue, s"value out of range: $value2")
 

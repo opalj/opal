@@ -28,18 +28,18 @@
  */
 package org.opalj
 package ai
-package debug
+package util
 
 import br._
 import br.analyses.SomeProject
 
 /**
  * The domain registry is a registry for all domains that can be instantiated given
- * a `Project`, `ClassFile` and `Method`.
+ * a `Project`, `ClassFile` and `Method` object.
  *
  * The registry was developed to support tools for debugging purposes that let
- * the user/developer choose between different domains to do an abstract interpretation
- * and to see the resulting output.
+ * the user/developer choose between different domains. After choosing a domain,
+ * an abstract interpretation can be performend.
  *
  * The compatible domains that are part of OPAL-AI are already registered.
  *

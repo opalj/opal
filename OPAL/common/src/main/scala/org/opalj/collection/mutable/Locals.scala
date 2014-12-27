@@ -110,9 +110,9 @@ sealed trait Locals[T >: Null <: AnyRef] {
     }
 
     /**
-     * Counts the number of (non-null) values that do not match the given given predicate;
-     * the count of the first element that matches the predicate is returned. If
-     * no value matches the predicate -1 is returned.
+     * Counts the number of '''non-null''' values that do not match the given given predicate;
+     * the index of the first element that matches the predicate is returned. If
+     * no value matches the value -1 is returned.
      */
     def nthValue[X >: T](f: X ⇒ Boolean): Int = {
         val max = size
@@ -1562,7 +1562,6 @@ object Locals {
                     new Locals3(data(4), data(5), data(6)),
                     new Locals4(data(7), data(8), data(9), data(10)))
             case x ⇒
-                if (x > 11)
                     new Locals12_N[T](
                         new Locals11(
                             new Locals4(data(0), data(1), data(2), data(3)),
@@ -1570,8 +1569,6 @@ object Locals {
                             new Locals4(data(7), data(8), data(9), data(10))),
                         data.drop(11).toArray
                     )
-                else
-                    throw new IllegalArgumentException("size has to be >= 0")
         }
     }
 
@@ -1589,11 +1586,7 @@ object Locals {
             case 9  ⇒ new Locals9[T]()
             case 10 ⇒ new Locals10[T]()
             case 11 ⇒ new Locals11[T]()
-            case x ⇒
-                if (x > 11)
-                    new Locals12_N[T](x)
-                else
-                    throw new IllegalArgumentException("size has to be >= 0")
+            case x ⇒ new Locals12_N[T](x)
         }
     }
 }

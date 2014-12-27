@@ -53,7 +53,7 @@ class DefaultPerInstructionPostProcessingTest
         with Matchers
         with ParallelTestExecution {
 
-    import debug.XHTML.dumpOnFailureDuringValidation
+    import util.XHTML.dumpOnFailureDuringValidation
     import domain.l1
     import MethodsWithExceptionsTest._
     import org.opalj.collection.mutable.UShortSet

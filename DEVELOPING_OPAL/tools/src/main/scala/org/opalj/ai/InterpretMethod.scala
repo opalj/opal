@@ -28,12 +28,12 @@
  */
 package org.opalj
 package ai
-package debug
 
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.{ Project, SomeProject }
-
 import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.ai.util.XHTML.dump
+import org.opalj.io.writeAndOpen
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -72,8 +72,8 @@ object InterpretMethod {
             println("You have to specify the method that should be analyzed.")
             println("\t1: a jar/class file or a directory containing jar/class files.")
             println("\t2: the name of a class.")
-            println("\t3: the simple name or signature of a method of the class.")
-            println("\t4[Optional]: -domain=CLASS the name of class of the configurable domain to use.")
+            println("\t3: the simple name or signature of a method of the specified class.")
+            println("\t4[Optional]: -domain=CLASS the name of the class of the configurable domain to use.")
             println("\t5[Optional]: -trace={true,false} default:true")
         }
 
@@ -170,12 +170,10 @@ object InterpretMethod {
                     case None ⇒
                         println(RED+
                             "[error] Cannot find the method: "+methodName+"."+RESET +
-                            classFile.methods.map(m ⇒ m.descriptor.toJava(m.name)).toSet.toSeq.sorted.mkString(" Candidates: ", ", ", "."))
+                            classFile.methods.map(m ⇒ m.descriptor.toJava(m.name)).toSet.
+                            toSeq.sorted.mkString(" Candidates: ", ", ", "."))
                         return ;
                 }
-
-        import debug.XHTML.dump
-        import org.opalj.io.writeAndOpen
 
         try {
             val result =
@@ -185,7 +183,10 @@ object InterpretMethod {
                     val body = method.body.get
                     println("Starting abstract interpretation of: ")
                     println("\t"+classFile.thisType.toJava+"{")
-                    println("\t\t"+method.toJava+"[instructions="+body.instructions.size+"; #max_stack="+body.maxStack+"; #locals="+body.maxLocals+"]")
+                    println("\t\t"+method.toJava+
+                        "[instructions="+body.instructions.size+
+                        "; #max_stack="+body.maxStack+
+                        "; #locals="+body.maxLocals+"]")
                     println("\t}")
                     val result = BaseAI(classFile, method, createDomain(project, classFile, method))
                     println("Finished abstract interpretation.")
@@ -198,7 +199,7 @@ object InterpretMethod {
                 Some(
                     "Created: "+(new java.util.Date).toString+"<br>"+
                         "Domain: "+domainClass.getName+"<br>"+
-                        XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
+                        util.XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
                 result.domain)(
                     result.operandsArray,
                     result.localsArray),
@@ -212,7 +213,7 @@ object InterpretMethod {
                         ife.cause.getMessage+"<br>"+
                         ife.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                         "Current instruction: "+ife.pc+"<br>"+
-                        XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
+                        util.XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
                         ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
                     )
                 val evaluationDump =

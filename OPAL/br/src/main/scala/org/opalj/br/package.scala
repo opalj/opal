@@ -49,6 +49,17 @@ import scala.xml.Text
  */
 package object br {
 
+    lazy val checkAssert: Boolean = {
+        try {
+            assert(false) // <= test whether assertions are turned on or off...
+            println("[info - Bytecode Representation] Production Build")
+        } catch {
+            case ae: AssertionError ⇒
+                println("[info - Bytecode Representation] Development Build using Assertions")
+        }
+        true
+    }
+
     type Attributes = Seq[Attribute]
 
     type ElementValuePairs = IndexedSeq[ElementValuePair]

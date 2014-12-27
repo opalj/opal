@@ -28,7 +28,6 @@
  */
 package org.opalj
 package ai
-package debug
 
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction

@@ -39,6 +39,13 @@ import scala.collection.parallel.immutable.ParVector
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
 import scala.collection.SortedMap
+import scala.collection.generic.FilterMonadic
+import scala.reflect.ClassTag
+import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
+import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -70,11 +77,13 @@ import scala.collection.SortedMap
 class Project[Source] private (
         val projectClassFiles: List[ClassFile],
         val libraryClassFiles: List[ClassFile],
+        private[this] val methods: Array[Method], // the concrete methods, sorted by size in descending order
         private[this] val projectTypes: Set[ObjectType],
         private[this] val fieldToClassFile: AnyRefMap[Field, ClassFile],
         private[this] val methodToClassFile: AnyRefMap[Method, ClassFile],
         private[this] val objectTypeToClassFile: OpenHashMap[ObjectType, ClassFile],
         private[this] val sources: OpenHashMap[ObjectType, Source],
+        private[this] val methodsWithClassFilesAndSource: Array[(Source, ClassFile, Method)], // the concrete methods, sorted by size in descending order
         val projectClassFilesCount: Int,
         val projectMethodsCount: Int,
         val projectFieldsCount: Int,
@@ -124,14 +133,40 @@ class Project[Source] private (
         packages
     }
 
-    //    def innerClasses(classFile: ClassFile): Traversable[ClassFile] = {
-    //        val innerClasses = classFile.innerClasses
-    //        if (innerClasses.isDefined) {
-    //            innerClasses.get
-    //        } else {
-    //            Traversable.empty
-    //        }
-    //    }
+    def methodsWithBody: Iterable[Method] = methods
+
+    def parForeachMethodWithBody[T](f: Function[(Source, ClassFile, Method), T]): Unit = {
+        val concreteMethodsCount = methodsWithClassFilesAndSource.length
+        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, concreteMethodsCount)
+        if (concreteMethodsCount == 0)
+            return ;
+        if (parallelizationLevel == 1) {
+            methodsWithClassFilesAndSource.foreach(f)
+            return ;
+        }
+
+        val nextMethod = new java.util.concurrent.atomic.AtomicInteger(0)
+        val threads = new Array[Thread](parallelizationLevel)
+
+        { // Start parallel execution
+            var i = 0
+            while (i < parallelizationLevel) {
+                val thread = new Thread(new Runnable {
+                    def run(): Unit = {
+                        var mi: Int = -1
+                        while ({ mi = nextMethod.getAndIncrement; mi } < concreteMethodsCount) {
+                            f(methodsWithClassFilesAndSource(mi))
+                        }
+                    }
+                })
+                thread.start()
+                threads(i) = thread
+                i += 1
+            }
+        }
+
+        threads.foreach { _.join }
+    }
 
     /**
      * Determines for all packages of this project that contain at least one class
@@ -205,22 +240,22 @@ class Project[Source] private (
         groups
     }
 
-    def classFilesWithSources: Iterable[(Source, ClassFile)] = {
-        projectClassFiles.view.map(cf ⇒ (sources(cf.thisType), cf)) ++
-            libraryClassFiles.view.map(cf ⇒ (sources(cf.thisType), cf))
+    def classFilesWithSources: Iterable[(ClassFile, Source)] = {
+        projectClassFiles.view.map(cf ⇒ (cf, sources(cf.thisType))) ++
+            libraryClassFiles.view.map(cf ⇒ (cf, sources(cf.thisType)))
     }
 
     def methods: Iterable[Method] = methodToClassFile.keys
 
     def fields: Iterable[Field] = fieldToClassFile.keys
 
-    private[analyses] def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = {
+    def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = {
         projectClassFiles.view.map { classFile ⇒
             (classFile, sources(classFile.thisType))
         }
     }
 
-    private[analyses] def libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = {
+    def libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = {
         libraryClassFiles.view.map { classFile ⇒
             (classFile, sources(classFile.thisType))
         }
@@ -596,14 +631,26 @@ object Project {
         fieldToClassFile.repack()
         methodToClassFile.repack()
 
+        val methodsSortedBySize =
+            methodToClassFile.keysIterator.filter(_.body.isDefined).toList.sortWith { (m1, m2) ⇒
+                m1.body.get.instructions.size > m2.body.get.instructions.size
+            }.toArray
+
+        val methodsSortedBySizeWithClassFileAndSource =
+            methodToClassFile.filter(_._1.body.isDefined).toList.sortWith { (v1, v2) ⇒
+                v1._1.body.get.instructions.size > v2._1.body.get.instructions.size
+            }.map(e ⇒ (sources(e._2.thisType), e._2, e._1)).toArray
+
         new Project(
             projectClassFiles,
             libraryClassFiles,
+            methodsSortedBySize,
             projectTypes,
             fieldToClassFile,
             methodToClassFile,
             objectTypeToClassFile,
             sources,
+            methodsSortedBySizeWithClassFileAndSource,
             projectClassFilesCount,
             projectMethodsCount,
             projectFieldsCount,

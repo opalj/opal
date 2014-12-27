@@ -55,6 +55,7 @@ import org.opalj.ai.project.ExtVTACallGraphDomain
 import org.opalj.ai.project.BasicVTACallGraphDomain
 import org.opalj.ai.project.UnresolvedMethodCall
 import org.opalj.ai.project.CallGraphConstructionException
+import org.opalj.ai.project.CallGraphComparison
 import org.opalj.ai.project.VTAWithPreAnalysisCallGraphAlgorithmConfiguration
 import org.opalj.ai.project.BasicVTAWithPreAnalysisCallGraphDomain
 
@@ -101,7 +102,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
 
                 info("comparing the call graphs")
                 val (unexpected, additional) =
-                    org.opalj.ai.debug.CallGraphComparison(project, theCHACG, newCHACG)
+                    CallGraphComparison(project, theCHACG, newCHACG)
                 unexpected should be(empty)
                 additional should be(empty)
             }
@@ -137,9 +138,11 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                 } {
                     if (newClassFile.methods.size != classFile.methods.size) {
                         mutex.synchronized {
+                            val newMethods = newClassFile.methods.map(_.toJava()).mkString("\n", ",\n", "\n")
+                            val currentMethods = classFile.methods.map(_.toJava()).mkString("\n", ",\n", "\n")
                             deviations =
                                 s"the classfiles for type ${newClassFile.thisType} contain "+
-                                    s"different methods: ${newClassFile.methods.map(_.toJava()).mkString("\n", ",\n", "\n")} vs. ${classFile.methods.map(_.toJava()).mkString("\n", ",\n", "\n")}" ::
+                                    s"different methods: ${newMethods} vs. ${currentMethods}" ::
                                     deviations
                         }
                     } else {
@@ -208,14 +211,14 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
 
                 info("comparing the call graphs")
                 val (unexpected, additional) =
-                    org.opalj.ai.debug.CallGraphComparison(project, theVTACG, newVTACG)
+                    CallGraphComparison(project, theVTACG, newVTACG)
                 unexpected should be(empty)
                 additional should be(empty)
             }
 
             it("the call graph created using CHA should be less precise than the one created using VTA") {
                 val (unexpected, _ /*additional*/ ) =
-                    org.opalj.ai.debug.CallGraphComparison(project, CHACG, VTACG)
+                    CallGraphComparison(project, CHACG, VTACG)
                 if (unexpected.nonEmpty)
                     fail("the comparison of the CHA and the default VTA based call graphs failed:\n"+
                         unexpected.mkString("\n")+"\n")
@@ -259,7 +262,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
 
                 {
                     val (unexpected, _ /* additional*/ ) =
-                        org.opalj.ai.debug.CallGraphComparison(project, basicVTACG, basicVTAWithPreAnalysisCG)
+                        org.opalj.ai.project.CallGraphComparison(project, basicVTACG, basicVTAWithPreAnalysisCG)
                     if (unexpected.nonEmpty)
                         fail("the comparison of the basic VTA with the one using pre analyses failed:\n"+
                             unexpected.mkString("\n")+"\n")
@@ -285,7 +288,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
 
                 {
                     val (unexpected, _ /*additional*/ ) =
-                        org.opalj.ai.debug.CallGraphComparison(project, basicVTACG, defaultVTACG)
+                        CallGraphComparison(project, basicVTACG, defaultVTACG)
                     if (unexpected.nonEmpty)
                         fail("the comparison of the basic and the default VTA based call graphs failed:\n"+
                             unexpected.mkString("\n")+"\n")
@@ -313,7 +316,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
 
                 {
                     val (unexpected, _ /* additional*/ ) =
-                        org.opalj.ai.debug.CallGraphComparison(project, defaultVTACG, extVTACG)
+                        CallGraphComparison(project, defaultVTACG, extVTACG)
                     if (unexpected.nonEmpty)
                         fail("the comparison of the default and the ext VTA based call graphs failed:\n"+
                             unexpected.mkString("\n")+"\n")

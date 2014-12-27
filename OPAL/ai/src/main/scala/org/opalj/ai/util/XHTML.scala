@@ -28,7 +28,7 @@
  */
 package org.opalj
 package ai
-package debug
+package util
 
 import java.awt.Desktop
 import java.io.FileOutputStream

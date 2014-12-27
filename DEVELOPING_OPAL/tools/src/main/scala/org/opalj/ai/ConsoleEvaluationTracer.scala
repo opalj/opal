@@ -28,10 +28,9 @@
  */
 package org.opalj
 package ai
-package debug
 
-import br.Code
-import br.instructions.Instruction
+import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
 
 /**
  * A tracer that primarily prints out the evaluation order of the instructions on the

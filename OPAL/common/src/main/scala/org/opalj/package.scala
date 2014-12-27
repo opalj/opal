@@ -80,6 +80,17 @@ import scala.reflect.macros.blackbox.Context
  */
 package object opalj {
 
+    lazy val checkAssert: Boolean = {
+        try {
+            assert(false)
+            println("[info - OPALJ Common] Production Build - Assertions are disabled")
+        } catch {
+            case ae: AssertionError ⇒
+                println("[info - OPALJ Common] Development Build - Assertions are enabled")
+        }
+        true
+    }
+
     final val WEBPAGE = "http://www.opal-project.de"
 
     /**

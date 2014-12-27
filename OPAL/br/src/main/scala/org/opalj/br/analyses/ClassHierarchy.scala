@@ -1409,6 +1409,7 @@ class ClassHierarchy private (
         upperTypeBoundB: ObjectType,
         reflexive: Boolean): UIDSet[ObjectType] = {
 
+			assert(checkAssert)
         assert(
             reflexive || (
                 (upperTypeBoundA ne ObjectType.Object) &&

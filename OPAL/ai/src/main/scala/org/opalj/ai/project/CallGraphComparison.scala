@@ -28,106 +28,22 @@
  */
 package org.opalj
 package ai
-package debug
+package project
 
 import scala.language.existentials
+
 import java.net.URL
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.CYAN
 import scala.Console.RED
 import scala.Console.RESET
-import org.opalj.ai.domain
-import org.opalj.ai.project.CHACallGraphAlgorithmConfiguration
-import org.opalj.ai.project.CallGraphFactory
-import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
-import org.opalj.ai.project.ComputedCallGraph
-import org.opalj.ai.project.VTAWithPreAnalysisCallGraphAlgorithmConfiguration
-import org.opalj.ai.project.DefaultVTACallGraphDomain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.ProgressManagement
-import org.opalj.util.PerformanceEvaluation.ns2sec
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.project.CallGraph
-import org.opalj.ai.analyses.MethodReturnValuesKey
-
-/**
- * Calculates and compares the results of two call graphs.
- *
- * @author Michael Eichberg
- */
-object CallGraphDiff extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
-
-    override def title: String = "identifies differences between two call graphs"
-
-    override def description: String = "Identifies methods that do not have the same call graph information."
-
-    override def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
-        val (unexpected, additional) = callGraphDiff(project, Console.println, isInterrupted)
-        if (unexpected.nonEmpty || additional.nonEmpty) {
-            var r = "Found the following difference(s):\n"
-            if (additional.nonEmpty) {
-                r = additional.mkString(r+"Additional:\n", "\n\n", "\n\n")
-            }
-            if (unexpected.nonEmpty) {
-                r = unexpected.mkString(r+"Unexpected:\n", "\n\n", "\n\n")
-            }
-            BasicReport(r)
-        } else
-            BasicReport("No differences found.")
-    }
-
-    def callGraphDiff(
-        project: Project[_],
-        println: String ⇒ Unit,
-        isInterrupted: () ⇒ Boolean): (List[CallGraphDifferenceReport], List[CallGraphDifferenceReport]) = {
-        // TODO Add support for interrupting the calculation of the control-flow graph
-        import CallGraphFactory.defaultEntryPointsForLibraries
-        val entryPoints = defaultEntryPointsForLibraries(project)
-        val ComputedCallGraph(lessPreciseCG, _, _) = time {
-            CallGraphFactory.create(
-                project,
-                entryPoints,
-                new CHACallGraphAlgorithmConfiguration(project)
-            )
-        } { t ⇒ println("creating the less precise call graph took: "+ns2sec(t)) }
-
-        if (isInterrupted())
-            return null;
-
-        val ComputedCallGraph(morePreciseCG, _, _) = time {
-            CallGraphFactory.create(
-                project,
-                entryPoints,
-                new VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
-                    override def Domain[Source](
-                        classFile: ClassFile,
-                        method: Method) =
-                        new DefaultVTACallGraphDomain(
-                            project, fieldValueInformation, methodReturnValueInformation,
-                            cache,
-                            classFile, method //, 4
-                        )
-                })
-        } { t ⇒ println("creating the more precise call graph took: "+ns2sec(t)) }
-
-        if (isInterrupted())
-            return null;
-
-        CallGraphComparison(project, lessPreciseCG, morePreciseCG)
-    }
-}
+import org.opalj.ai.domain
+import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
+import org.opalj.br.analyses.SomeProject
 
 /**
  * Helper functionality to compare two call graphs.
@@ -195,10 +111,11 @@ sealed trait CallGraphDifferenceReport {
 }
 
 case class AdditionalCallTargets(
-        project: SomeProject,
-        method: Method,
-        pc: PC,
-        callTargets: Iterable[Method]) extends CallGraphDifferenceReport {
+    project: SomeProject,
+    method: Method,
+    pc: PC,
+    callTargets: Iterable[Method])
+        extends CallGraphDifferenceReport {
 
     final val differenceClassifier = BLUE+"[Additional]"+RESET
 }
@@ -207,10 +124,11 @@ case class AdditionalCallTargets(
  *
  */
 case class UnexpectedCallTargets(
-        project: SomeProject,
-        method: Method,
-        pc: PC,
-        callTargets: Iterable[Method]) extends CallGraphDifferenceReport {
+    project: SomeProject,
+    method: Method,
+    pc: PC,
+    callTargets: Iterable[Method])
+        extends CallGraphDifferenceReport {
 
     final val differenceClassifier = RED+"[Unexpected]"+RESET
 }

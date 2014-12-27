@@ -37,6 +37,7 @@ import scala.util.control.ControlThrowable
 
 import org.opalj.br._
 import org.opalj.br.analyses._
+import org.opalj.ai.util.XHTML
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using
@@ -160,7 +161,8 @@ object InterpretMethodsAnalysis {
                                         classFile.thisType.toJava+"{ "+method.toJava +
                                             RED+"[aborted after evaluating "+
                                             ai.currentEvaluationCount+
-                                            " instructions (size of instructions array="+body.instructions.size+
+                                            " instructions (size of instructions array="+
+                                            body.instructions.size+
                                             "; max="+ai.maxEvaluationCount+")]"+
                                             RESET+" }")
 
@@ -170,7 +172,9 @@ object InterpretMethodsAnalysis {
                             }
                         }
                         if (beVerbose)
-                            println(classFile.thisType.toJava+"{ "+method.toJava + GREEN+"[finished]"+RESET+" }")
+                            println(
+                                classFile.thisType.toJava+
+                                    "{ "+method.toJava + GREEN+"[finished]"+RESET+" }")
                         methodsCount.incrementAndGet()
                         None
                     } catch {
@@ -181,8 +185,7 @@ object InterpretMethodsAnalysis {
                                 project.source(classFile.thisType).get.toString,
                                 classFile,
                                 method,
-                                t)
-                            )
+                                t))
                     }
                 }
 
@@ -191,7 +194,7 @@ object InterpretMethodsAnalysis {
 
         val collectedExceptions = time('OVERALL) {
             val result = (
-                for { (source, classFile) ← project.classFilesWithSources.par } yield {
+                for { (classFile, source) ← project.classFilesWithSources.par } yield {
 
                     if (beVerbose) println(BOLD + source.toString + RESET)
 
