@@ -110,7 +110,6 @@ private class UShortSet2(private var value: Int) extends UShortSet {
     }
 
     def +≈:(newValue: UShort): UShortSet = {
-        assert(checkAssert)
         assert(newValue >= MinValue && newValue <= MaxValue, s"no ushort value: newValue")
 
         if (notFull) {
@@ -217,7 +216,6 @@ private class UShortSet4(private var value: Long) extends UShortSet {
     }
 
     def +≈:(uShortValue: UShort): UShortSet = {
-        assert(checkAssert)
         assert(
             uShortValue >= MinValue && uShortValue <= MaxValue,
             s"no ushort value: $uShortValue")
@@ -411,7 +409,6 @@ private class UShortSetNode(
     override def forall(f: UShort ⇒ Boolean): Boolean = set1.forall(f) && set2.forall(f)
 
     def +≈:(uShortValue: UShort): UShortSet = {
-        assert(checkAssert)
         assert(
             uShortValue >= MinValue && uShortValue <= MaxValue,
             s"no ushort value: $uShortValue")
@@ -498,7 +495,6 @@ object UShortSet {
      * @param value An unsigned short value; i.e., an integer value in the range [0,0xFFFF).
      */
     @inline def apply(value: UShort): UShortSet = {
-        assert(checkAssert)
         assert(value >= MinValue && value <= MaxValue, s"value out of range: $value")
 
         new UShortSet2(value)
@@ -511,7 +507,6 @@ object UShortSet {
      * @param uShortValue2 An integer value in the range [0,0xFFFF).
      */
     @inline def apply(value1: UShort, value2: UShort): UShortSet = {
-        assert(checkAssert)
         assert(value1 >= MinValue && value1 <= MaxValue, s"value out of range: $value1")
         assert(value2 >= MinValue && value2 <= MaxValue, s"value out of range: $value2")
 

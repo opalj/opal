@@ -29,11 +29,12 @@
 package org.opalj
 
 import scala.language.existentials
-
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
+import scala.annotation.elidable
+import scala.annotation.elidable.ASSERTION
 
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
@@ -61,15 +62,29 @@ import org.opalj.br.instructions.Instruction
  */
 package object ai {
 
-    lazy val checkAssert: Boolean = {
+    private[this] final val checkAssert: Boolean = {
         try {
-            assert(false) // <= test whether assertions are turned on or off...
-            println("[info - Abstract Interpretation Framework]] Production Build")
+            scala.Predef.assert(false) // <= test whether assertions are turned on or off...
+            println("[info - Abstract Interpretation Framework]] Production Build - Assertions are disabled")
         } catch {
             case ae: AssertionError ⇒
-                println("[info - Abstract Interpretation Framework] Assertions are enabled.")
+                println("[info - Abstract Interpretation Framework] Development Build - Assertions are enabled.")
         }
         true
+    }
+
+    // "override" Scala Predef's corresponding assert method
+    @elidable(ASSERTION)
+    def assert(assertion: Boolean): Unit = {
+        if (checkAssert && !assertion)
+            throw new java.lang.AssertionError("assertion failed")
+    }
+
+    // "override" Scala Predef's corresponding assert method
+    @elidable(ASSERTION) @inline
+    final def assert(assertion: Boolean, message: ⇒ Any): Unit = {
+        if (checkAssert && !assertion)
+            throw new java.lang.AssertionError("assertion failed: "+message)
     }
 
     /**

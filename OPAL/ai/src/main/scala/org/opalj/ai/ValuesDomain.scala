@@ -276,7 +276,7 @@ trait ValuesDomain {
          *      a comparison with an IllegalValue is not well defined.)
          */
         def isMorePreciseThan(other: DomainValue): Boolean = {
-            assert(this.computationalType == other.computationalType)
+            assert(this.computationalType eq other.computationalType)
 
             if (this eq other)
                 return false;

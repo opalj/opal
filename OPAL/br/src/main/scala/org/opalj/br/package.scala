@@ -31,6 +31,8 @@ package org.opalj
 import org.opalj.collection.immutable.UIDSet
 import scala.xml.Node
 import scala.xml.Text
+import scala.annotation.elidable
+import scala.annotation.elidable.ASSERTION
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -49,15 +51,29 @@ import scala.xml.Text
  */
 package object br {
 
-    lazy val checkAssert: Boolean = {
+    private[this] final val checkAssert: Boolean = {
         try {
-            assert(false) // <= test whether assertions are turned on or off...
-            println("[info - Bytecode Representation] Production Build")
+            scala.Predef.assert(false) // <= test whether assertions are turned on or off...
+            println("[info - Bytecode Representation] Production Build - Assertions are disabled")
         } catch {
             case ae: AssertionError ⇒
-                println("[info - Bytecode Representation] Development Build using Assertions")
+                println("[info - Bytecode Representation] Development Build - Assertions are enabled")
         }
         true
+    }
+
+    // "override" Scala Predef's corresponding assert method
+    @elidable(ASSERTION)
+    def assert(assertion: Boolean): Unit = {
+        if (checkAssert && !assertion)
+            throw new java.lang.AssertionError("assertion failed")
+    }
+
+    // "override" Scala Predef's corresponding assert method
+    @elidable(ASSERTION) @inline
+    final def assert(assertion: Boolean, message: ⇒ Any): Unit = {
+        if (checkAssert && !assertion)
+            throw new java.lang.AssertionError("assertion failed: "+message)
     }
 
     type Attributes = Seq[Attribute]

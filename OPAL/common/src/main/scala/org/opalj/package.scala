@@ -29,10 +29,11 @@
 package org
 
 import scala.language.experimental.macros
-
 import scala.reflect.ClassTag
 import scala.reflect.api.Trees
 import scala.reflect.macros.blackbox.Context
+import scala.annotation.elidable
+import scala.annotation.elidable.ASSERTION
 
 /**
  * OPAL is a Scala-based framework for the static analysis of Java bytecode
@@ -80,15 +81,28 @@ import scala.reflect.macros.blackbox.Context
  */
 package object opalj {
 
-    lazy val checkAssert: Boolean = {
+    private[this] final val checkAssert: Boolean = {
         try {
-            assert(false)
+            scala.Predef.assert(false)
             println("[info - OPALJ Common] Production Build - Assertions are disabled")
         } catch {
             case ae: AssertionError ⇒
                 println("[info - OPALJ Common] Development Build - Assertions are enabled")
         }
         true
+    }
+
+    // "override" Scala Predef's corresponding assert method
+    @elidable(ASSERTION) def assert(assertion: Boolean): Unit = {
+        if (checkAssert && !assertion)
+            throw new java.lang.AssertionError("assertion failed")
+    }
+
+    // "override" Scala Predef's corresponding assert method
+    @elidable(ASSERTION)
+    @inline final def assert(assertion: Boolean, message: ⇒ Any): Unit = {
+        if (checkAssert && !assertion)
+            throw new java.lang.AssertionError("assertion failed: "+message)
     }
 
     final val WEBPAGE = "http://www.opal-project.de"

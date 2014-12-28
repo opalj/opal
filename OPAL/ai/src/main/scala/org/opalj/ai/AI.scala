@@ -182,7 +182,6 @@ trait AI[D <: Domain] {
         someLocals.map { l ⇒
             val maxLocals = method.body.get.maxLocals
 
-            assert(checkAssert)
             assert(
                 l.size >= (method.parameterTypes.size + (if (method.isStatic) 0 else 1)),
                 "the number of initial locals is less than the number of parameters"
