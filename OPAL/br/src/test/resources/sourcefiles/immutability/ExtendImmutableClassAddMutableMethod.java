@@ -28,7 +28,7 @@
  */
 package immutability;
 
-import immutability.helperclasses.ImmutableClass;
+import immutability.helperclasses.AbstractImmutableClass;
 import immutability.annotations.Mutable;
 
 /**
@@ -38,9 +38,13 @@ import immutability.annotations.Mutable;
  * @author Andre Pacak
  */
 @Mutable("defines a public setter for a field of an immutable super class")
-public class ExtendImmutableClassAddMutableMethod extends ImmutableClass {
+public class ExtendImmutableClassAddMutableMethod extends AbstractImmutableClass {
 
     public void setX(int x) {
         this.x = x;
+    }
+
+    @Override
+    public void doSomething() {
     }
 }
