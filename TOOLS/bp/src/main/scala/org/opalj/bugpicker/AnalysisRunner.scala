@@ -33,7 +33,7 @@ import java.io.File
 import java.net.URL
 import scala.io.Source
 import scala.xml.{ Node ⇒ xmlNode }
-import org.opalj.ai.debug.XHTML
+import org.opalj.ai.common.XHTML
 import org.opalj.br.analyses.Project
 import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue

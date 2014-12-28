@@ -43,7 +43,7 @@ import org.opalj.io.writeAndOpen
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
-import org.opalj.ai.util.XHTML
+import org.opalj.ai.common.XHTML
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
@@ -132,7 +132,7 @@ class DefaultDomainTest extends FlatSpec with Matchers {
                 }
 
             val node =
-                util.XHTML.createXHTML(
+                XHTML.createXHTML(
                     Some("Exceptions Thrown During Interpretation"),
                     scala.xml.NodeSeq.fromSeq(body.toSeq))
             val file = writeAndOpen(node, "CrashedAbstractInterpretationsReport", ".html")

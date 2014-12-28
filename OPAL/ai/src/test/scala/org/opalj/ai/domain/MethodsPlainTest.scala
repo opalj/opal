@@ -43,6 +43,7 @@ import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.ai.domain.l0._
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 
 /**
  * Basic tests of the abstract interpreter.
@@ -58,7 +59,6 @@ class MethodsPlainTest
 
     private[this] val IrrelevantPC = Int.MinValue
 
-    import util.XHTML.dumpOnFailureDuringValidation
     import MethodsPlainTest._
 
     behavior of "the abstract interpreter"

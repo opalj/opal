@@ -46,7 +46,7 @@ import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project,
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.MethodWithBody
-import org.opalj.ai.debug.XHTML
+import org.opalj.ai.common.XHTML
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.br.Code
@@ -77,7 +77,7 @@ import org.opalj.ai.AIResult
 import org.opalj.ai.domain.ConcreteIntegerValues
 import org.opalj.ai.domain.ConcreteLongValues
 import org.opalj.ai.analyses.MethodReturnValuesKey
-import org.opalj.ai.project.CallGraphCache
+import org.opalj.ai.analyses.cg.CallGraphCache
 import org.opalj.br.MethodSignature
 
 /**

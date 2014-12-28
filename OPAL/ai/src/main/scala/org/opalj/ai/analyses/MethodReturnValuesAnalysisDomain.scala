@@ -34,9 +34,10 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.Type
 import org.opalj.ai.domain._
+import org.opalj.ai.domain.RecordReturnedValue
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.IsAReferenceValue
-import org.opalj.ai.project.CallGraphCache
+import org.opalj.ai.analyses.cg.CallGraphCache
 import org.opalj.br.MethodSignature
 
 /**
@@ -66,7 +67,7 @@ class BaseMethodReturnValuesAnalysisDomain(
         with l0.DefaultTypeLevelDoubleValues
         //with l0.DefaultReferenceValuesBinding
         with l1.DefaultReferenceValuesBinding
-        with l0.RefinedTypeLevelFieldAccessInstructions
+        with la.RefinedTypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
@@ -116,4 +117,4 @@ class FPMethodReturnValuesAnalysisDomain(
     ai: InterruptableAI[_],
     method: Method)
         extends BaseMethodReturnValuesAnalysisDomain(project, fieldValueInformation, ai, method)
-        with l0.RefinedTypeLevelInvokeInstructions
+        with la.RefinedTypeLevelInvokeInstructions

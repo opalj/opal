@@ -34,6 +34,8 @@ import java.net.URL
 import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.Method
 import org.opalj.br.{ ReferenceType, ObjectType, IntegerType }
+import org.opalj.ai.analyses.cg.ComputedCallGraph
+import org.opalj.ai.analyses.cg.VTACallGraphKey
 
 /**
  * Demonstrates how to identify if an integer value that is passed to a native
@@ -80,8 +82,8 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
             parameters: Seq[String],
             isInterrupted: () ⇒ Boolean) = {
             println("Calculating CallGraph")
-            val project.ComputedCallGraph(callGraph, /*we don't care about unresolved methods etc. */ _, _) =
-                theProject.get(project.VTACallGraphKey)
+            val ComputedCallGraph(callGraph, /*we don't care about unresolved methods etc. */ _, _) =
+                theProject.get(VTACallGraphKey)
 
             println("Identify native methods with integer parameters")
             val calledNativeMethods: scala.collection.parallel.ParIterable[Method] =

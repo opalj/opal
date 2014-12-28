@@ -35,7 +35,7 @@ import scala.io.Source
 import scala.xml.{ Node ⇒ xmlNode }
 
 import org.opalj.io.process
-import org.opalj.ai.debug.XHTML
+import org.opalj.ai.common.XHTML
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.analysis.AnalysisParameters

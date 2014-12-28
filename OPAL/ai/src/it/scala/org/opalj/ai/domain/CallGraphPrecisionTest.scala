@@ -44,20 +44,20 @@ import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain
-import org.opalj.ai.project.CallGraph
-import org.opalj.ai.project.CHACallGraphAlgorithmConfiguration
-import org.opalj.ai.project.CallGraphFactory
-import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
-import org.opalj.ai.project.ComputedCallGraph
-import org.opalj.ai.project.VTACallGraphAlgorithmConfiguration
-import org.opalj.ai.project.DefaultVTACallGraphDomain
-import org.opalj.ai.project.ExtVTACallGraphDomain
-import org.opalj.ai.project.BasicVTACallGraphDomain
-import org.opalj.ai.project.UnresolvedMethodCall
-import org.opalj.ai.project.CallGraphConstructionException
-import org.opalj.ai.project.CallGraphComparison
-import org.opalj.ai.project.VTAWithPreAnalysisCallGraphAlgorithmConfiguration
-import org.opalj.ai.project.BasicVTAWithPreAnalysisCallGraphDomain
+import org.opalj.ai.analyses.cg.CallGraph
+import org.opalj.ai.analyses.cg.CHACallGraphAlgorithmConfiguration
+import org.opalj.ai.analyses.cg.CallGraphFactory
+import org.opalj.ai.analyses.cg.CallGraphFactory.defaultEntryPointsForLibraries
+import org.opalj.ai.analyses.cg.ComputedCallGraph
+import org.opalj.ai.analyses.cg.VTACallGraphAlgorithmConfiguration
+import org.opalj.ai.analyses.cg.DefaultVTACallGraphDomain
+import org.opalj.ai.analyses.cg.ExtVTACallGraphDomain
+import org.opalj.ai.analyses.cg.BasicVTACallGraphDomain
+import org.opalj.ai.analyses.cg.UnresolvedMethodCall
+import org.opalj.ai.analyses.cg.CallGraphConstructionException
+import org.opalj.ai.analyses.cg.CallGraphComparison
+import org.opalj.ai.analyses.cg.VTAWithPreAnalysisCallGraphAlgorithmConfiguration
+import org.opalj.ai.analyses.cg.BasicVTAWithPreAnalysisCallGraphDomain
 
 /**
  * Compares the precision of different call graphs.
@@ -262,7 +262,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
 
                 {
                     val (unexpected, _ /* additional*/ ) =
-                        org.opalj.ai.project.CallGraphComparison(project, basicVTACG, basicVTAWithPreAnalysisCG)
+                        CallGraphComparison(project, basicVTACG, basicVTAWithPreAnalysisCG)
                     if (unexpected.nonEmpty)
                         fail("the comparison of the basic VTA with the one using pre analyses failed:\n"+
                             unexpected.mkString("\n")+"\n")

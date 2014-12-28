@@ -57,7 +57,7 @@ import scalafx.concurrent.Task
 import scalafx.concurrent.Service
 import javafx.concurrent.{ Service ⇒ jService, Task ⇒ jTask }
 import scalafx.application.Platform
-import org.opalj.ai.debug.XHTML
+import org.opalj.ai.common.XHTML
 import scalafx.scene.layout.BorderPane
 import scalafx.concurrent.WorkerStateEvent
 import scalafx.stage.StageStyle

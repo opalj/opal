@@ -37,7 +37,7 @@ import scala.util.control.ControlThrowable
 
 import org.opalj.br._
 import org.opalj.br.analyses._
-import org.opalj.ai.util.XHTML
+import org.opalj.ai.common.XHTML
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using

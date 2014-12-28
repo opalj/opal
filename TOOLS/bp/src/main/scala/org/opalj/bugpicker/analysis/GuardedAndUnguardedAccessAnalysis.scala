@@ -45,7 +45,7 @@ import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project,
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.MethodWithBody
-import org.opalj.ai.debug.XHTML
+import org.opalj.ai.common.XHTML
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin

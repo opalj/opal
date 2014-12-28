@@ -41,6 +41,7 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 
 import br._
 import br.reader.Java8Framework.ClassFiles
@@ -58,7 +59,6 @@ class MethodsWithExceptionsTest
         with Matchers
         with ParallelTestExecution {
 
-    import util.XHTML.dumpOnFailureDuringValidation
     import domain.l1
     import MethodsWithExceptionsTest._
     import org.opalj.collection.mutable.UShortSet

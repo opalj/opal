@@ -40,7 +40,7 @@ import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.ParallelTestExecution
 
 import org.opalj.bi.TestSupport.locateTestResources
-
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import br._
 import br.reader.Java8Framework.ClassFiles
 
@@ -52,7 +52,6 @@ import br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecution {
 
-    import util.XHTML.dumpOnFailureDuringValidation
     import PropertyTracingTest._
 
     class AnalysisDomain(val method: Method)

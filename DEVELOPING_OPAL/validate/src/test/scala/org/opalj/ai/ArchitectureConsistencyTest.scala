@@ -57,23 +57,35 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                 Specification.SourceDirectory("OPAL/ai/target/scala-2.11/classes")
             ) {
 
-                ensemble('Core) {
-                    "org.opalj.ai.*" except
-                        classes("""org\.opalj\.ai\..+Test.*""".r)
+                ensemble('Util) { "org.opalj.ai.util.*" }
+
+                ensemble('AI) {
+                    "org.opalj.ai.*" except classes("""org\.opalj\.ai\..+Test.*""".r)
                 }
 
-                ensemble('Domain_Tracing) {
-                    "org.opalj.ai.domain.tracing.*" except
-                        classes("""org\.opalj\.ai\.domain\.tracing\..+Test.*""".r)
-                }
-
-                ensemble('Util) {
-                    "org.opalj.ai.util.*"
-                }
-
-                ensemble('Domains) {
+                ensemble('Domain) {
                     "org.opalj.ai.domain.*" except
                         classes("""org\.opalj\.ai\.domain\..+Test.*""".r)
+                }
+                ensemble('DomainL0) {
+                    "org.opalj.ai.domain.l0.*" except
+                        classes("""org\.opalj\.ai\.domain\.l0\..+Test.*""".r)
+                }
+                ensemble('DomainL1) {
+                    "org.opalj.ai.domain.l1.*" except
+                        classes("""org\.opalj\.ai\.domain\.l1\..+Test.*""".r)
+                }
+                ensemble('DomainL2) {
+                    "org.opalj.ai.domain.l2.*" except
+                        classes("""org\.opalj\.ai\.domain\.l2\..+Test.*""".r)
+                }
+                ensemble('DomainLI) {
+                    "org.opalj.ai.domain.li.*" except
+                        classes("""org\.opalj\.ai\.domain\.li\..+Test.*""".r)
+                }
+                ensemble('DomainTracing) {
+                    "org.opalj.ai.domain.tracing.*" except
+                        classes("""org\.opalj\.ai\.domain\.tracing\..+Test.*""".r)
                 }
 
                 ensemble('Project) {
@@ -81,21 +93,37 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
                         classes("""org\.opalj\.ai\.project\..+Test.*""".r)
                 }
 
-                ensemble('Debug) {
-                    "org.opalj.ai.debug.*"
+                ensemble('DomainLA) {
+                    "org.opalj.ai.domain.la.*" except
+                        classes("""org\.opalj\.ai\.domain\.la\..+Test.*""".r)
                 }
+                ensemble('Analyses) { "org.opalj.ai.analyses.**" }
+                ensemble('AnalysesCallGraph) { "org.opalj.ai.analyses.cg.*" }
+
+                ensemble('Common) { "org.opalj.ai.common.*" }
 
                 'Util is_only_allowed_to_use empty
 
-                'Core is_only_allowed_to_use ('Util)
+                'AI is_only_allowed_to_use ('Util)
 
-                'Domains is_only_allowed_to_use ('Util, 'Core)
+                'Domain is_only_allowed_to_use ('Util, 'AI)
 
-                'Project is_only_allowed_to_use ('Util, 'Core, 'Domains)
+                'DomainL0 is_only_allowed_to_use ('Util, 'AI, 'Domain)
+                'DomainL1 is_only_allowed_to_use ('Util, 'AI, 'Domain, 'DomainL0)
+                'DomainL2 is_only_allowed_to_use ('Util, 'AI, 'Domain, 'DomainL0, 'DomainL1)
+                'DomainLI is_only_allowed_to_use ('Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2)
 
-                'Domain_Tracing is_only_allowed_to_use ('Util, 'Core, 'Domains)
+                'DomainTracing is_only_allowed_to_use ('Util, 'AI, 'Domain)
 
-                // 'Debug is allowed to use everything  
+                'Project is_only_allowed_to_use ('Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLI)
+
+                // we have a cyclic dependency between code in ..ai.domain.la and 
+                // ai.analyses.** which is "intended" since we do fix-point 
+                // computations
+                'DomainLA is_only_allowed_to_use ('Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLI, 'Analyses)
+                'Analyses is_only_allowed_to_use ('Util, 'AI, 'Domain, 'DomainL0, 'DomainL1, 'DomainL2, 'DomainLI, 'DomainLA, 'Project)
+
+                // 'Common is allowed to use everything  
             }
 
         val result = expected.analyze()

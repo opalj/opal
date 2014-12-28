@@ -30,24 +30,26 @@ package org.opalj
 package ai
 
 import scala.language.existentials
+
 import java.net.URL
+
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheMethodReturValuesAnalysis }
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.MethodSignature
+import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheMethodReturValuesAnalysis }
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.BaseMethodReturnValuesAnalysisDomain
-import org.opalj.ai.project.CallGraphCache
-import org.opalj.br.MethodSignature
 import org.opalj.ai.analyses.FPMethodReturnValuesAnalysisDomain
 import org.opalj.ai.analyses.MethodReturnValueInformation
 import org.opalj.ai.analyses.FPFieldValuesAnalysisDomain
 import org.opalj.ai.analyses.FieldValuesAnalysis
+import org.opalj.ai.analyses.cg.CallGraphCache
 
 /**
  * A shallow analysis that tries to refine the return types of methods.

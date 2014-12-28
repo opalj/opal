@@ -37,9 +37,8 @@ import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValueInformation
-import org.opalj.ai.domain.l0.RefinedTypeLevelInvokeInstructions
 import org.opalj.br.MethodSignature
-import org.opalj.ai.project.CallGraphCache
+import org.opalj.ai.analyses.cg.CallGraphCache
 
 /**
  * The domain that is used to identify the issues.
@@ -59,9 +58,9 @@ class BugPickerAnalysisDomain(
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues
         //with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.RefinedTypeLevelFieldAccessInstructions
+        with domain.la.RefinedTypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
-        with domain.l0.RefinedTypeLevelInvokeInstructions
+        with domain.la.RefinedTypeLevelInvokeInstructions
         //with domain.l1.DefaultReferenceValuesBinding
         with domain.l1.DefaultClassValuesBinding
         //with domain.l1.DefaultStringValuesBinding

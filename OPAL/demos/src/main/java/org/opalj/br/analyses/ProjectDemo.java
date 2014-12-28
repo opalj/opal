@@ -37,8 +37,8 @@ import org.opalj.br.Method;
 import org.opalj.ai.AIResult;
 import org.opalj.ai.BaseAI;
 import org.opalj.ai.Domain;
-import org.opalj.ai.util.DomainRegistry;
-import org.opalj.ai.util.XHTML;
+import org.opalj.ai.common.DomainRegistry;
+import org.opalj.ai.common.XHTML;
 
 /**
  * Demonstrates how to create and access a <code>Project</code> using Java.

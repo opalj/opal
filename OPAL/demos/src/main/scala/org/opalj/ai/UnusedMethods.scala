@@ -44,8 +44,8 @@ import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IF0Instruction
 import org.opalj.br.instructions.IFICMPInstruction
-import org.opalj.ai.project.VTACallGraphKey
-import org.opalj.ai.project.ComputedCallGraph
+import org.opalj.ai.analyses.cg.VTACallGraphKey
+import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.br.MethodDescriptor
 
 /**

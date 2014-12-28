@@ -55,21 +55,18 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
             ) {
 
                 ensemble('Bi) {
-                    "org.opalj.bi.**" except
+                    "org.opalj.bi.*" except
                         classes("""org\.opalj\.bi\..+Test.*""".r)
                 }
 
-                //
-                // The utility code
-                //
-
-                ensemble('Util) {
-                    "org.opalj.util.**"
+                ensemble('Reader) {
+                    "org.opalj.bi.reader.*" except
+                        classes("""org\.opalj\.bi\.reader\..+Test.*""".r)
                 }
 
-                'Util is_only_allowed_to_use empty
+                'Bi is_only_allowed_to_use empty
 
-                'Bi is_only_allowed_to_use ('Util)
+                // 'Reader is allowed to use everything
 
             }
 

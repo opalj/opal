@@ -32,7 +32,8 @@ package ai
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.{ Project, SomeProject }
 import org.opalj.ai.domain.l0.BaseDomain
-import org.opalj.ai.util.XHTML.dump
+import org.opalj.ai.common.XHTML
+import org.opalj.ai.common.XHTML.dump
 import org.opalj.io.writeAndOpen
 
 /**
@@ -199,7 +200,7 @@ object InterpretMethod {
                 Some(
                     "Created: "+(new java.util.Date).toString+"<br>"+
                         "Domain: "+domainClass.getName+"<br>"+
-                        util.XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
+                        XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
                 result.domain)(
                     result.operandsArray,
                     result.localsArray),
@@ -213,7 +214,7 @@ object InterpretMethod {
                         ife.cause.getMessage+"<br>"+
                         ife.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
                         "Current instruction: "+ife.pc+"<br>"+
-                        util.XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
+                        XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
                         ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
                     )
                 val evaluationDump =

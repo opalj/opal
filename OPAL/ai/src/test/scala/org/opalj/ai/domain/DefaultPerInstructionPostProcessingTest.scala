@@ -41,6 +41,7 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 
 import org.opalj.br._
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 
 /**
  * Tests the `DefaultPerInstructionPostProcessing`.
@@ -53,7 +54,6 @@ class DefaultPerInstructionPostProcessingTest
         with Matchers
         with ParallelTestExecution {
 
-    import util.XHTML.dumpOnFailureDuringValidation
     import domain.l1
     import MethodsWithExceptionsTest._
     import org.opalj.collection.mutable.UShortSet
