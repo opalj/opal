@@ -118,8 +118,6 @@ class IincTracingDomain
          * no update is needed since we don't care about `SomeValue`s.
          */
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
-            assert(this.computationalType == value.computationalType)
-
             if (value.isInstanceOf[IincResults]) {
                 // Preserve IINC results only
                 StructuralUpdate(value)
