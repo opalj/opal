@@ -26,21 +26,48 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package immutability;
+package org.opalj
+package ai
 
-import immutability.helperclasses.AbstractImmutableClass;
-import immutability.annotations.Mutable;
+import java.net.URL
+
+import org.opalj.ai.analyses.MutabilityRating.Unknown
+import org.opalj.ai.analyses.ImmutabilityAnalysis
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 
 /**
- * A mutable class which extends an immutable abstract class but adds mutation via a
- * method override.
- * 
+ * A analysis that collects all classes that are immutable inside a jar.
+ *
  * @author Andre Pacak
  */
-@Mutable("defines a public setter method for a protected field of an immutable super class")
-public abstract class ExtendImmutableAbstractClassAddMutation extends AbstractImmutableClass {
+object MutabilityAssessment extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
 
-    public void doSomething(int x) {
-        this.x = x;
+    val analysis = this
+
+    override def doAnalyze(
+        theProject: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean): BasicReport = {
+
+        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
+
+        var message = ""
+        val result =
+            time {
+                ImmutabilityAnalysis.doAnalyze(theProject, isInterrupted)
+            } { t ⇒
+                message += f"Analysis time: ${ns2sec(t)}%2.2f seconds. Result:\n"
+            }
+        val classesWithMutabilityRating = result //.filter(_._2 != Unknown)
+        val classesPerMutabilityRating =
+            classesWithMutabilityRating.groupBy(_._2). // grouped by mutability rating
+                map(e ⇒ e._2.keys.map(_.toJava).mkString(e._1.toString+" ("+(e._2.size)+") :\n\t", ",\n\t", "\n"))
+
+        message += classesPerMutabilityRating.mkString("\n")
+        BasicReport(message)
     }
+
 }

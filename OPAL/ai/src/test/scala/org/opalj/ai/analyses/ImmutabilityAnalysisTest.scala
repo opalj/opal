@@ -38,62 +38,52 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.ObjectType
 import org.scalatest.junit.JUnitRunner
 
+import org.opalj.ai.analyses.MutabilityRating._
+
 /**
- * A test that looks if the classifications of the SimpleImmutableAnalysis
- * matches the mutability annotiations.
+ * Tests that the rating of the `ImmutabilityAnalysis` is always a sound approximation.
  *
  * @author Andre Pacak
  */
 @RunWith(classOf[JUnitRunner])
-class ImmutabilityAnalysisTest
-        extends FlatSpec
-        with Matchers {
+class ImmutabilityAnalysisTest extends FlatSpec with Matchers {
 
     import ImmutabilityAnalysisTest._
 
-    val immutableAnnotation =
+    final val ImmutableAnnotation =
         ObjectType("immutability/annotations/Immutable")
-    val mutableAnnotation =
+    final val ConditionallyImmutableAnnotation =
+        ObjectType("immutability/annotations/conditionallyImmutableAnnotation")
+    final val MutableAnnotation =
         ObjectType("immutability/annotations/Mutable")
 
-    val result = ImmutabilityAnalysis.doAnalyze(project, () ⇒ false)
-
-    behavior of "bytecode representations immutability check"
+    behavior of "the ImmutabiliyAnalysis"
 
     for {
-        (objectType, classification) ← result
+        (objectType, mutabilityRating) ← ImmutabilityAnalysis.doAnalyze(project)
         classFile ← project.classFile(objectType)
-        if !classFile.isInnerClass
-    } yield {
-        //we assume that a class has only one annotation concerning mutability
-        //and has not other annotations attached to it
-        val m = classFile.annotations.filter {
-            annotation ⇒
-                annotation.annotationType == immutableAnnotation ||
-                    annotation.annotationType == mutableAnnotation
+        // This test assumes that a class has at most one that specifies its mutability.
+        expectedMutabilityRating = classFile.annotations.map(_.annotationType).collectFirst[MutabilityRating] {
+            case ImmutableAnnotation              ⇒ Immutable
+            case ConditionallyImmutableAnnotation ⇒ ConditionallyImmutable
+            case MutableAnnotation                ⇒ Mutable
         }
-        if (m.nonEmpty) {
-            val hasMutableAnnotation = m.head.annotationType == mutableAnnotation
-            val mutability =
-                if (hasMutableAnnotation)
-                    "not be marked as immmutable"
-                else
-                    "be marked as immmutable"
-            val isNotImmutable = classification != Immutability.Immutable
-            //check that no objectType that is mutable gets classfied as immutable
-            if (hasMutableAnnotation) {
-                classFile.thisType.simpleName should mutability in {
-
-                    isNotImmutable should be(hasMutableAnnotation)
-
-                }
-            }
+        // the jar also contains some "helper" classes without a mutability rating
+        if expectedMutabilityRating.isDefined
+    } yield {
+        it should s"rate the class ${objectType.toJava} as ${expectedMutabilityRating.get} (or less)" in {
+            if (mutabilityRating.id > expectedMutabilityRating.get.id)
+                fail(s"the result of the immutability analysis is $mutabilityRating")
+            else
+                info(s"actual classification: ${mutabilityRating}")
         }
     }
 }
 
 private object ImmutabilityAnalysisTest {
+
     val resources = locateTestResources("classfiles/immutability.jar", "br")
+
     val project = Project(resources)
 
 }

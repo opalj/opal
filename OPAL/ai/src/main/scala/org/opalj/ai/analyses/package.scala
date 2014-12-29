@@ -40,4 +40,6 @@ package object analyses {
     type FieldValueInformation = Map[Field, BaseFieldValuesAnalysisDomain#DomainValue]
 
     type MethodReturnValueInformation = Map[Method, Option[Domain#DomainValue]]
+
+    type MutabilityRating = MutabilityRating.Value
 }
