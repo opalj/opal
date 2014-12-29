@@ -36,10 +36,10 @@ import immutability.annotations.Immutable;
  * 
  * @author Andre Pacak
  */
-@Immutable("defines a mutable field that is not mutated")
+@Immutable("contains a final primitive type field")
 public class ImmutableClass {
 
-    protected int x = 0;
+    protected final int x = 0;
 
     public int getX() {
         return this.x;
