@@ -30,6 +30,7 @@ package org.opalj
 package av
 
 import scala.language.implicitConversions
+import scala.language.existentials
 
 import java.net.URL
 
@@ -40,7 +41,7 @@ import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
 
 import br._
 import br.reader.Java8Framework.ClassFiles
-import br.analyses.{ ClassHierarchy, Project }
+import br.analyses.{ ClassHierarchy, Project, SomeProject }
 
 import de._
 
@@ -48,6 +49,7 @@ import de._
  * Used to report deviations between the specified and the implemented architecture.
  */
 case class SpecificationViolation(
+        project: SomeProject,
         dependencyChecker: DependencyChecker,
         source: VirtualSourceElement,
         target: VirtualSourceElement,
@@ -55,11 +57,22 @@ case class SpecificationViolation(
         description: String) {
 
     override def toString(): String = {
-        Console.RED +
-            description+" between "+Console.BLUE + dependencyChecker.sourceEnsembles.mkString(", ") + Console.RED+
-            " and "+Console.BLUE + dependencyChecker.targetEnsembles.mkString(", ") + Console.RESET+": "+
-            source.toJava+" "+
-            Console.BOLD + dependencyType + Console.RESET+" "+
-            target.toJava
+        var javaSource = source.toJava
+        var javaTarget = target.toJava
+
+        if (javaSource.contains("{")) {
+            javaSource = javaSource.substring(0, javaSource.indexOf("{"))
+        }
+        javaSource = "("+javaSource+".java:"+source.getLineNumber(project).getOrElse("1):"+javaSource)+")"
+
+        if (javaTarget.contains("{")) {
+            javaTarget = javaTarget.substring(0, javaTarget.indexOf("{"))
+        }
+        javaTarget = "("+javaTarget+".java:"+target.getLineNumber(project).getOrElse("1):"+javaTarget)+")"
+
+        description+" between "+dependencyChecker.sourceEnsembles.mkString(", ")+
+            " and "+dependencyChecker.targetEnsembles.mkString(", ")+": "+
+            javaSource+" "+dependencyType+" "+
+            javaTarget
     }
 }
