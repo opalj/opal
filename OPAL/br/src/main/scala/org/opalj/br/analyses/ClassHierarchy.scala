@@ -295,6 +295,22 @@ class ClassHierarchy private (
     }
 
     /**
+     * Executes the given function `f` for each direct subclass of the given `ObjectType`.
+     * In this case the subclass relation is '''not reflexive'''.
+     *
+     * Subtypes for which no `ClassFile` object is available are ignored.
+     */
+    def foreachDirectSubclass[T](
+        objectType: ObjectType, project: SomeProject)(
+            f: ClassFile ⇒ T): Unit = {
+        val subclassTypes = subclassTypesMap(objectType.id)
+        if (subclassTypes ne null)
+            subclassTypes foreach { ot ⇒
+                project.classFile(ot) foreach (f)
+            }
+    }
+
+    /**
      * Tests if a subclass of the given `ObjectType` exists that has the given property.
      * In this case the subclass relation is '''not reflexive'''.
      *
