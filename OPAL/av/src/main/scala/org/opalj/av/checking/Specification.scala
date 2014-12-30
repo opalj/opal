@@ -30,14 +30,11 @@ package org.opalj
 package av
 
 import scala.language.implicitConversions
-
 import java.net.URL
-
 import scala.util.matching.Regex
 import scala.collection.{ Map ⇒ AMap, Set ⇒ ASet }
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
-
 import org.opalj.util.PerformanceEvaluation.{ ns2sec, time, run }
 import br._
 import br.reader.Java8Framework.ClassFiles
@@ -58,6 +55,7 @@ import de._
  * ensemble is allowed to depend on a specific ensemble.
  *
  * @author Michael Eichberg
+ * @author Marco Torsello
  */
 class Specification(val project: Project[URL]) {
 
@@ -67,11 +65,9 @@ class Specification(val project: Project[URL]) {
                 Project(projectClassFilesWithSources = classFiles)
             } { (executionTime, project) ⇒
                 Console.println(
-                    Console.GREEN+
-                        "1. Reading "+
+                    "1. Reading "+
                         project.classFilesCount+" class files took "+
-                        ns2sec(executionTime).toString+" seconds."+
-                        Console.BLACK)
+                        ns2sec(executionTime).toString+" seconds.")
                 project
             }
         )
@@ -196,6 +192,7 @@ class Specification(val project: Project[URL]) {
                 if !(sourceEnsembleElements.contains(incomingElement) || targetEnsembleElements.contains(incomingElement))
             } yield {
                 SpecificationViolation(
+                    project,
                     this,
                     incomingElement,
                     targetEnsembleElement,
@@ -239,6 +236,7 @@ class Specification(val project: Project[URL]) {
                 dependencyType ← dependencyTypes
             } yield {
                 SpecificationViolation(
+                    project,
                     this,
                     sourceElement,
                     targetElement,
@@ -321,10 +319,8 @@ class Specification(val project: Project[URL]) {
             project.get(DependencyStoreWithoutSelfDependenciesKey)
         } { executionTime ⇒
             Console.println(
-                Console.GREEN+
-                    "2.1. Preprocessing dependencies took "+
-                    ns2sec(executionTime).toString+" seconds."+
-                    Console.BLACK)
+                "2.1. Preprocessing dependencies took "+
+                    ns2sec(executionTime).toString+" seconds.")
         }
         println("Dependencies between source elements: "+dependencyStore.dependencies.size)
         println("Dependencies on primitive types: "+dependencyStore.dependenciesOnBaseTypes.size)
@@ -350,10 +346,8 @@ class Specification(val project: Project[URL]) {
             }
         } { executionTime ⇒
             Console.println(
-                Console.GREEN+
-                    "2.2. Postprocessing dependencies took "+
-                    ns2sec(executionTime).toString+" seconds."+
-                    Console.BLACK)
+                "2.2. Postprocessing dependencies took "+
+                    ns2sec(executionTime).toString+" seconds.")
         }
         println("Number of source elements: "+allSourceElements.size)
         println("Outgoing dependencies: "+theOutgoingDependencies.size)
@@ -369,7 +363,7 @@ class Specification(val project: Project[URL]) {
                     sourceElementMatcher.synchronized {
                         val extension = sourceElementMatcher.extension(project)
                         if (extension.isEmpty && sourceElementMatcher != NoSourceElementsMatcher)
-                            Console.println(Console.RED+"   "+ensembleSymbol+" ("+extension.size+")"+Console.BLACK)
+                            Console.println("   "+ensembleSymbol+" ("+extension.size+")")
                         else
                             Console.println("   "+ensembleSymbol+" ("+extension.size+")")
 
@@ -387,10 +381,8 @@ class Specification(val project: Project[URL]) {
             Console.println("   => Other source elements: "+unmatchedSourceElements.size)
         } { executionTime ⇒
             Console.println(
-                Console.GREEN+
-                    "3. Determing the extension of the ensembles finished in "+
-                    ns2sec(executionTime).toString+" seconds."+
-                    Console.BLACK)
+                "3. Determing the extension of the ensembles finished in "+
+                    ns2sec(executionTime).toString+" seconds.")
         }
 
         // Check all rules
@@ -407,11 +399,9 @@ class Specification(val project: Project[URL]) {
             Set.empty ++ (result.filter(_.nonEmpty).flatten)
         } { executionTime ⇒
             Console.println(
-                Console.GREEN+
-                    "4. Checking the specified dependency constraints finished in "+
+                "4. Checking the specified dependency constraints finished in "+
                     ns2sec(executionTime).toString+
-                    " seconds."+
-                    Console.BLACK)
+                    " seconds.")
         }
     }
 
@@ -435,7 +425,7 @@ object Specification {
         if (!file.exists)
             throw new SpecificationError("The specified directory does not exist: "+jarName+".")
         if (!file.canRead)
-            throw new SpecificationError("Cannot read the specified directory: "+jarName+".")
+            throw new SpecificationError("Cannot read the specified JAR: "+jarName+".")
         if (file.isDirectory)
             throw new SpecificationError("The specified jar file is a directory: "+jarName+".")
 
