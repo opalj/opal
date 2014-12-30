@@ -287,10 +287,10 @@ class ClassHierarchy private (
      * Subtypes for which no `ClassFile` object is available are ignored.
      */
     def foreachSubclass(
-        objectType: ObjectType,
-        project: SomeProject)(f: ClassFile ⇒ Unit): Unit = {
+        objectType: ObjectType, project: SomeProject)(
+            f: ClassFile ⇒ Unit): Unit = {
         foreachSubtype(objectType) { objectType ⇒
-            project.classFile(objectType).map(f)
+            project.classFile(objectType) foreach (f)
         }
     }
 
@@ -318,7 +318,7 @@ class ClassHierarchy private (
      */
     def existsSubclass(objectType: ObjectType, project: SomeProject)(f: ClassFile ⇒ Boolean): Boolean = {
         foreachSubtype(objectType) { objectType ⇒
-            project.classFile(objectType) map { cf ⇒
+            project.classFile(objectType) foreach { cf ⇒
                 if (f(cf))
                     return true
             }
@@ -866,7 +866,7 @@ class ClassHierarchy private (
         project: SomeProject): Option[Method] = {
 
         classFile.interfaceTypes foreach { superinterface: ObjectType ⇒
-            project.classFile(superinterface) map { superclass ⇒
+            project.classFile(superinterface) foreach { superclass ⇒
                 val result =
                     lookupMethodInInterface(
                         superclass,
