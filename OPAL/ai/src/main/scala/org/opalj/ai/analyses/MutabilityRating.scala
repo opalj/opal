@@ -31,9 +31,10 @@ package ai
 package analyses
 
 /**
- * Enumeration of the mutability ratings that can be associated with a class. The
- * highest rating a class can have is "Immutable", then "Conditionally Immutable",
- * then "Mutable" and then "Unknown".
+ * Enumeration of the mutability ratings that can be associated with a class type. The
+ * highest rating a class type can have is "Immutable", then "Conditionally Immutable",
+ * then "Mutable" and then "Unknown". In most cases analyses that use the mutability
+ * rating can treat [[Mutable]] and [[Unknown]] in the same manner.
  *
  * A class is considered immutable if the state of a class does not change after
  * initialization; this includes all classes referenced by the class (transitive hull).
@@ -45,11 +46,17 @@ package analyses
  * the declared fields. I.e., a method that has, e.g., a call time dependent behavior,
  * but which does not mutate the state of the class does not affect the mutability rating.
  *
+ * The mutability assessment is by default done on a per class basis and only includes
+ * the super classes of a class. A rating that includes all usages is only meaningful
+ * if we analyze an application.
+ *
  * ==Thread-safe Lazily Initialized Fields==
  * A field that is initialized lazily in a thread-safe manner; i.e.,
  * which is set at most once after construction and which is always set to the
  * same value independent of the time of (lazy) initialization, may not affect the
- * mutability rating. However, an analysis may rate such a class as mutable.
+ * mutability rating. However, an analysis may rate such a class as mutable. An
+ * example of such a field is the field that stores the lazily calculated hashCode of
+ * a `String` object.
  *
  * ==Inheritance==
  *  - Instances of `java.lang.Object` are immutable. However, if a class defines a
@@ -61,11 +68,19 @@ package analyses
  * considered to be mutable. I.e., a subclass can never have a higher mutability rating
  * than a superclass.
  *  - All classes for which the superclasstype information is not complete are rated
- * as unknown.
+ * as unknown. (Interfaces are generally ignored as they are always immutable.)
  *
  * ==Native Methods==
  * A class that defines native instance methods (native methods that are not static)
- * are generally considered mutable - except of `java.lang.Object`.
+ * is generally considered mutable - except of `java.lang.Object`.
+ *
+ * ==Class Instances==
+ * The mutability of class instances is determined by analyzing the class instance
+ * only.
+ *
+ * ==Interfaces==
+ * Are not considered during the analysis as they are always immutable. (All fiels are
+ * `static` and `final`.)
  *
  * @author Andre Pacak
  * @author Michael Eichberg
