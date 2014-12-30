@@ -53,7 +53,7 @@ class ImmutabilityAnalysisTest extends FlatSpec with Matchers {
     final val ImmutableAnnotation =
         ObjectType("immutability/annotations/Immutable")
     final val ConditionallyImmutableAnnotation =
-        ObjectType("immutability/annotations/conditionallyImmutableAnnotation")
+        ObjectType("immutability/annotations/ConditionallyImmutable")
     final val MutableAnnotation =
         ObjectType("immutability/annotations/Mutable")
 

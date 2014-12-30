@@ -29,15 +29,15 @@
 package immutability;
 
 import immutability.helperclasses.MutableClass;
-import immutability.annotations.Mutable;
+import immutability.annotations.ConditionallyImmutable;
 
 /**
- * A mutable class which contains a mutable object and an inner class that has a method
- * which return the refernce
+ * A conditionally immutable class which contains a reference to a mutable object and an
+ * inner class that has a method which returns the reference.
  * 
  * @author Andre Pacak
  */
-@Mutable("defines an inner class that provides access to the mutable object to the outside")
+@ConditionallyImmutable("defines an inner class that provides access to the mutable object to the outside")
 public class NonStaticInnerClassReturnObject {
 
     private final MutableClass object;
