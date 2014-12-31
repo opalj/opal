@@ -53,7 +53,8 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
     it should "be well modularized in the sense that a superpackage does not depend on a subpackage" in {
         val expected =
             new Specification(
-                Specification.SourceDirectory("OPAL/de/target/scala-2.11/classes")
+                Specification.SourceDirectory("OPAL/de/target/scala-2.11/classes"),
+                useAnsiColors = true
             ) {
 
                 val DependencyExtractorElements: SourceElementsMatcher =
@@ -79,7 +80,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
             }
 
         val result = expected.analyze()
-        result.mkString("\n") should be("")
+        result.map(_.toString(useAnsiColors = true)).mkString("\n") should be("")
     }
 
 }

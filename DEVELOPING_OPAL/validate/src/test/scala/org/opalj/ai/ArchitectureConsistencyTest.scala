@@ -27,7 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
 package ai
 
 import org.junit.runner.RunWith
@@ -54,7 +53,8 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
     it should "be consistent with the specified architecture" in {
         val expected =
             new Specification(
-                Specification.SourceDirectory("OPAL/ai/target/scala-2.11/classes")
+                Specification.SourceDirectory("OPAL/ai/target/scala-2.11/classes"),
+                useAnsiColors = true
             ) {
 
                 ensemble('Util) { "org.opalj.ai.util.*" }
@@ -128,7 +128,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
 
         val result = expected.analyze()
         if (result.nonEmpty) {
-            println("Violations:\n\t"+result.mkString("\n\t"))
+            println("Violations:\n\t"+result.map(_.toString(useAnsiColors = true)).mkString("\n\t"))
             fail("The implemented and the specified architecture are not consistent (see the console for details).")
         }
     }
