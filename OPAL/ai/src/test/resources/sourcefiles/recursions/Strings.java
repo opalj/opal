@@ -29,10 +29,10 @@
 package recursions;
 
 /**
- * Class used as fixture for String values.
+ * Class used as fixture for analyses/tests that identify (endless) recursive
+ * calls related to String values.
  * 
  * @author Marco Jacobasch
- *
  */
 public class Strings {
 

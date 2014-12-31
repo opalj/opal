@@ -29,10 +29,10 @@
 package recursions;
 
 /**
- * Class used as fixture for float values.
+ * Class used as fixture for analyses/tests that identify (endless) recursive
+ * calls related to float values.
  * 
  * @author Marco Jacobasch
- *
  */
 public class Floats {
 
