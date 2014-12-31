@@ -29,11 +29,14 @@
 package org.opalj
 package br
 
+import org.opalj.br.analyses.SomeProject
+
 /**
  * A `VirtualSourceElement` is the representation of some source element that is
  * always detached from the concrete source element that represents the implementation.
  *
  * @author Michael Eichberg
+ * @author Marco Torsello
  */
 sealed trait VirtualSourceElement
         extends SourceElement
@@ -50,6 +53,11 @@ sealed trait VirtualSourceElement
 
     def toJava: String
 
+    /**
+     * Returns the best line number information available.
+     */
+    def getLineNumber(project: SomeProject): Option[Int]
+
 }
 
 /**
@@ -63,6 +71,8 @@ final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement
     override def isClass = true
 
     override def toJava: String = thisType.toJava
+
+    def getLineNumber(project: SomeProject): Option[Int] = Some(1)
 
     override def compare(that: VirtualSourceElement): Int = {
         //x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
@@ -105,6 +115,8 @@ final case class VirtualField(
 
     override def toJava: String =
         declaringClassType.toJava+"{ "+fieldType.toJava+" "+name+"; }"
+
+    def getLineNumber(project: SomeProject): Option[Int] = None
 
     override def compare(that: VirtualSourceElement): Int = {
         // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
@@ -157,6 +169,16 @@ sealed class VirtualMethod(
     override def toJava: String =
         declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
 
+    def getLineNumber(project: SomeProject): Option[Int] = {
+        if (declaringClassType.isArrayType)
+            return None;
+
+        project.classFile(declaringClassType.asObjectType).flatMap(cf ⇒
+            cf.findMethod(name, descriptor).flatMap(m ⇒
+                m.body.flatMap(b ⇒
+                    b.firstLineNumber)))
+    }
+
     override def compare(that: VirtualSourceElement): Int = {
         // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
         that match {
@@ -201,8 +223,7 @@ object VirtualMethod {
         Some((
             virtualMethod.declaringClassType,
             virtualMethod.name,
-            virtualMethod.descriptor
-        ))
+            virtualMethod.descriptor))
     }
 }
 
@@ -231,7 +252,6 @@ object VirtualForwardingMethod {
             virtualMethod.declaringClassType,
             virtualMethod.name,
             virtualMethod.descriptor,
-            virtualMethod.target
-        ))
+            virtualMethod.target))
     }
 }
