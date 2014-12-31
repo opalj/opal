@@ -819,8 +819,8 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
         // RECALL THAT ONLY THE FIVE LOWEST BITS OF THE SHIFT VALUE ARE CONSIDERED!
         // I.E. THE SHIFT IS ALWAYS BETWEEN 0 AND 31 BITS
         (value, shift) match {
-            case (_, IntegerRange(0, 0)) ⇒
-                value
+            case (_, IntegerRange(0, 0)) ⇒ value
+            case (IntegerRange(0, 0), _) ⇒ value
 
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
                 val maxShift = if (sub > 31 || sub < 0) 31 else sub
