@@ -62,7 +62,7 @@ object DependencyType extends Enumeration(0 /* <= value of first enumeration val
 
     val LOCAL_VARIABLE_TYPE = Value("the method has a LOCAL VARIABLE with TYPE")
 
-    val TYPECAST = Value("performs a refrence based TYPE CAST")
+    val TYPECAST = Value("performs a reference based TYPE CAST")
     val TYPECHECK = Value("performs a TYPE CHECK using \"instanceOf\"")
 
     val CREATES_ARRAY = Value("CREATES a new ARRAY of type")
