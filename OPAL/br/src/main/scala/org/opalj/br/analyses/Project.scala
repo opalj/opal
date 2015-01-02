@@ -135,6 +135,14 @@ class Project[Source] private (
 
     def methodsWithBody: Iterable[Method] = methods
 
+    /**
+     * Iterates over all methods with a body in parallel.
+     *
+     * This method maximizes utilization by allowing each thread to pick the next
+     * unanalyzed method as soon as the thread has finished analyzing the previous method.
+     * I.e., each thread is not assigned a fixed batch of methods. Additionally, the
+     * methods are analyzed ordered by their length (longest first).
+     */
     def parForeachMethodWithBody[T](f: Function[(Source, ClassFile, Method), T]): Unit = {
         val concreteMethodsCount = methodsWithClassFilesAndSource.length
         val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, concreteMethodsCount)

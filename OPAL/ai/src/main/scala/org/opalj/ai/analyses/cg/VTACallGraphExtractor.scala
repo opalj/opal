@@ -199,7 +199,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             //    the central factory method already "handles" this issue - hence, we don't care 
 
             // Note that explicitly supporting "MultipleReferencesValues", e.g.,
-            // to create a very precise in cases such as:
+            // to create a very precise call graph in cases such as:
             //     Object o = null;
             //     if(whatever)
             //       o = new Object();
@@ -207,11 +207,11 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             //       o = new Vector();
             //     o.toString //<----- the relevant call
             // is probably not worth the effort. A simple study of the JDK has
-            // shown that in the very vast majority of cases that upper type bound
+            // shown that in the very vast majority of cases the upper type bound
             // of the value as such is also the upper type bound of a specific value.
             // Hence, the explicit support would not increase the precision.
-            // This situation might change if the analysis (as a whole) is getting more
-            // precise.
+            // '''This situation might change if the analysis (as a whole) is getting more
+            // precise.'''
 
             if (receiverIsNull.isYes) {
                 addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
@@ -275,12 +275,15 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
     private[this] val chaCallGraphExctractor =
         new CHACallGraphExtractor(cache /*it should not be used...*/ )
 
-    def extract(project: SomeProject, classFile: ClassFile, method: Method): LocalCallGraphInformation = {
+    def extract(
+        project: SomeProject,
+        classFile: ClassFile,
+        method: Method): LocalCallGraphInformation = {
 
         // The following optimization (using the plain CHA algorithm for all methods
         // that do not virtual method calls) may lead to some additional edges (if
         // the underlying code contains dead code), but the improvement is worth the 
-        // few additional edges.
+        // very few additional edges due to statically identifiable dead code!
         val hasVirtualMethodCalls =
             method.body.get.instructions.exists { i ⇒
                 i.isInstanceOf[VirtualMethodInvocationInstruction]
@@ -295,7 +298,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
         val context = AnalysisContext(result.domain)
 
         result.domain.code.foreach { (pc, instruction) ⇒
-            instruction.opcode match {
+            (instruction.opcode: @scala.annotation.switch) match {
                 case INVOKEVIRTUAL.opcode ⇒
                     val INVOKEVIRTUAL(declaringClass, name, descriptor) = instruction
                     val operands = result.operandsArray(pc)
