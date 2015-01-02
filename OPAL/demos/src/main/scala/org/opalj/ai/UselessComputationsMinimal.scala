@@ -93,7 +93,7 @@ object UselessComputationsMinimal
             val (_ /*source*/ , classFile, method) = m
             val result = BaseAI(classFile, method, new AnalysisDomain(theProject, method))
             import result.domain.ConcreteIntegerValue
-            collectWithOperandsAndIndex(result.domain)(method.body.get, result.operandsArray) {
+            collectPCWithOperands(result.domain)(method.body.get, result.operandsArray) {
                 case (
                     pc,
                     _: IFICMPInstruction,

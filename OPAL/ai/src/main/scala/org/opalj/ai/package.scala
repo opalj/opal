@@ -305,7 +305,7 @@ package object ai {
      * Collects the result of a match of a partial function against an instruction's
      * operands.
      */
-    def collectWithOperandsAndIndex[B](
+    def collectPCWithOperands[B](
         domain: ValuesDomain)(
             code: Code, operandsArray: domain.OperandsArray)(
                 f: PartialFunction[(PC, Instruction, domain.Operands), B]): Seq[B] = {
@@ -325,6 +325,24 @@ package object ai {
             pc = instruction.indexOfNextInstruction(pc, code)
         }
         result.reverse
+    }
+
+    def foreachPCWithOperands[U](
+        domain: ValuesDomain)(
+            code: Code, operandsArray: domain.OperandsArray)(
+                f: Function[(PC, Instruction, domain.Operands), U]): Unit = {
+        val instructions = code.instructions
+        val max_pc = instructions.size
+        var pc = 0
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            val operands = operandsArray(pc)
+            if (operands ne null) {
+                val params = (pc, instruction, operands)
+                f(params)
+            }
+            pc = instruction.indexOfNextInstruction(pc, code)
+        }
     }
 
     //    /**

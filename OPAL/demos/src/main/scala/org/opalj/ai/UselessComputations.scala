@@ -93,7 +93,7 @@ object UselessComputations extends AnalysisExecutor {
                     result = BaseAI(classFile, method, new AnalysisDomain(theProject, method))
                 } yield {
                     import result._
-                    val results = collectWithOperandsAndIndex(domain)(body, operandsArray) {
+                    val results = collectPCWithOperands(domain)(body, operandsArray) {
                         // WE NEED TO FIX THE REFERENCEVALUES DOMAIN
                         //                        case (
                         //                            pc,

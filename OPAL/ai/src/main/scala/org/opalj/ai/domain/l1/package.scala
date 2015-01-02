@@ -67,7 +67,7 @@ package object l1 {
         // as usual in OPAL, we assume that the bytecode is valid; i.e., there will 
         // be one constructor call
 
-        (org.opalj.ai.collectWithOperandsAndIndex(domain)(code, operandsArray) {
+        (org.opalj.ai.collectPCWithOperands(domain)(code, operandsArray) {
             case (pc, constructorCall @ INVOKESPECIAL(_, "<init>", md), operands) if operands.length >= md.parametersCount &&
                 domain.asObjectValue(operands(md.parametersCount)).origin == receiverOrigin ⇒ pc
         })
