@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -49,7 +49,7 @@ import org.opalj.ai.common.XHTML
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.br.Code
-import org.opalj.ai.collectWithOperandsAndIndex
+import org.opalj.ai.collectPCWithOperands
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.domain
 import org.opalj.br.instructions.Instruction
@@ -85,7 +85,6 @@ object DeadCodeAnalysis {
         result: AIResult): List[Issue] = {
 
         val operandsArray = result.operandsArray
-        val domain = result.domain
         val body = result.code
 
         val deadCodeIssues: Seq[StandardIssue] =
@@ -116,7 +115,7 @@ object DeadCodeAnalysis {
             ln match {
                 case None ⇒
                     if (dc.tail.isEmpty) {
-                        // we have just one message, but since we have 
+                        // we have just one message, but since we have
                         // no line number we are still "doubtful"
                         results ::= dc.head.copy(relevance = Relevance(75))
                     } else {

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -45,7 +45,6 @@ import scalafx.scene.web.WebView
 import scalafx.stage.Screen
 import scalafx.stage.Stage
 import scalafx.stage.WindowEvent
-import scalafx.application.JFXApp.PrimaryStage
 import scalafx.geometry.Orientation
 import scalafx.scene.input.KeyCombination
 import scalafx.scene.input.KeyCodeCombination
@@ -95,7 +94,7 @@ class BugPicker extends Application {
     var project: Project[URL] = null
     var sources: Seq[File] = Seq.empty
 
-    override def start(jStage: javafx.stage.Stage) {
+    override def start(jStage: javafx.stage.Stage): Unit = {
         val stage: Stage = jStage
 
         val sourceView: WebView = new WebView {
@@ -124,12 +123,12 @@ class BugPicker extends Application {
         def screenForStage(stage: Stage): Screen =
             Screen.screensForRectangle(stage.x(), stage.y(), stage.width(), stage.height()).head
 
-        def maximizeOnCurrentScreen(stage: Stage) {
+        def maximizeOnCurrentScreen(stage: Stage): Unit = {
             val currentScreen = screenForStage(stage)
             maximizeOnScreen(stage, currentScreen)
         }
 
-        def maximizeOnScreen(stage: Stage, screen: Screen) {
+        def maximizeOnScreen(stage: Stage, screen: Screen): Unit = {
             val screenDimensions = screen.getVisualBounds()
             stage.x = screenDimensions.minX
             stage.y = screenDimensions.minY
@@ -247,7 +246,7 @@ class BugPicker extends Application {
         stage.title = "BugPicker"
 
         stage.scene = new Scene {
-            val theScene = this
+
             root = new VBox {
                 vgrow = Priority.ALWAYS
                 hgrow = Priority.ALWAYS
@@ -314,7 +313,7 @@ object BugPicker {
         Some(new Rectangle2D(x.toDouble, y.toDouble, w.toDouble, h.toDouble))
     }
 
-    def storeWindowSizeInPreferences(width: Double, height: Double, x: Double, y: Double) {
+    def storeWindowSizeInPreferences(width: Double, height: Double, x: Double, y: Double): Unit = {
         val size = s"${width};${height};${x};${y}"
         BugPicker.PREFERENCES.put(BugPicker.PREFERENCES_KEY_WINDOW_SIZE, size)
     }
@@ -332,7 +331,7 @@ object BugPicker {
         new AnalysisParameters(maxEvalTime, maxEvalFactor, maxCardinalityOfIntegerRanges)
     }
 
-    def storeParametersToPreferences(parameters: AnalysisParameters) {
+    def storeParametersToPreferences(parameters: AnalysisParameters): Unit = {
         PREFERENCES.putInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
             parameters.maxEvalTime)
@@ -344,7 +343,7 @@ object BugPicker {
             parameters.maxCardinalityOfIntegerRanges)
     }
 
-    def storeFilesToPreferences(loadedFiles: LoadedFiles) {
+    def storeFilesToPreferences(loadedFiles: LoadedFiles): Unit = {
         def filesToPref(key: String, files: Seq[File]) =
             PREFERENCES.put(key, files.mkString(File.pathSeparator))
 
@@ -365,7 +364,7 @@ object BugPicker {
         Some(LoadedFiles(projectFiles = classes, projectSources = sources, libraries = libs))
     }
 
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
         Application.launch(classOf[BugPicker], args: _*)
     }
 }

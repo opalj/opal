@@ -49,7 +49,7 @@ import org.opalj.ai.common.XHTML
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.br.Code
-import org.opalj.ai.collectWithOperandsAndIndex
+import org.opalj.ai.collectPCWithOperands
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.domain
 import org.opalj.br.instructions.Instruction
@@ -96,7 +96,7 @@ object UselessComputationsAnalysis {
             val defaultRelevance = Relevance.DefaultRelevance
             val defaultIIncRelevance = Relevance(5)
 
-            collectWithOperandsAndIndex(domain)(body, operandsArray) {
+            collectPCWithOperands(domain)(body, operandsArray) {
 
                 // HANDLING INT VALUES 
                 //

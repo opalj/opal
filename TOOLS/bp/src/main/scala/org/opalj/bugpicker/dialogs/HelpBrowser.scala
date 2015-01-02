@@ -76,12 +76,12 @@ object HelpBrowser extends Stage {
 
     initStyle(StageStyle.DECORATED)
 
-    private def updateView(topic: HelpTopic, browser: WebView) {
+    private def updateView(topic: HelpTopic, browser: WebView): Unit = {
         browser.engine.loadContent(topic.content)
         title = s"BugPicker Help - ${topic.title}"
     }
 
-    override def show() {
+    override def show(): Unit = {
         centerOnScreen()
         super.show()
     }

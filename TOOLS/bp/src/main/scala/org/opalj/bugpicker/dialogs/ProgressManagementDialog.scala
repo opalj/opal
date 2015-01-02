@@ -77,7 +77,7 @@ class ProgressManagementDialog(
     val cancelAnalysisAndCloseWindow: () ⇒ Unit = () ⇒ {
         reportView.engine.loadContent(Messages.ANALYSES_CANCELLING)
         val listener = new ChangeListener[State] {
-            override def changed(obs: ObservableValue[_ <: State], oldValue: State, newValue: State) {
+            override def changed(obs: ObservableValue[_ <: State], oldValue: State, newValue: State): Unit = {
                 Platform.runLater {
                     interrupted() = true
                     theStage.close
