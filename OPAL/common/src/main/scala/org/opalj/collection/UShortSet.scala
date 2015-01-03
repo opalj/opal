@@ -30,18 +30,18 @@ package org.opalj
 package collection
 
 /**
- * A sorted set of unsigned short values.
+ * A compact, sorted set of unsigned short values.
  *
  * @author Michael Eichberg
  */
-trait UShortSet {
+trait UShortSet extends scala.collection.Traversable[UShort] {
 
     /**
-     * Returns a new set that contains this set's values and the given value.
+     * Adds the given value to this set's values.
      *
      * Even if the given value is already in this set a fresh copy is returned unless
      * this set is already "full". In the latter case `this` set is returned.
-     * This porperty ensures that the set appears to be immutable.
+     * This property ensures that the set appears to be immutable.
      */
     def +(value: UShort): UShortSet
 
@@ -51,7 +51,7 @@ trait UShortSet {
     def ++(values: UShortSet): UShortSet
 
     /**
-     * Creates a clone of this set that can safely be mutated.
+     * Returns a set object that can safely be mutated.
      */
     def mutableCopy: mutable.UShortSet
 
@@ -67,7 +67,7 @@ trait UShortSet {
      * Executes the given function `f` for each value of this set, starting with
      * the smallest value.
      */
-    def foreach(f: UShort ⇒ Unit): Unit
+    def foreach[U](f: UShort ⇒ U): Unit
 
     /**
      * Returns `true` if the predicate `f` returns true for all values of the set.
@@ -86,7 +86,7 @@ trait UShortSet {
         result
     }
 
-    def filter(f: UShort ⇒ Boolean): UShortSet = {
+    override def filter(f: UShort ⇒ Boolean): UShortSet = {
         var result: mutable.UShortSet = mutable.UShortSet.empty
         foreach(v ⇒ if (f(v)) result = v +≈: result)
         result
@@ -110,22 +110,21 @@ trait UShortSet {
      *      (e.g., foreach and contains) as they are guaranteed to be optimized for
      *      performance.
      */
-    def iterable: Iterable[Int]
+    def iterable: Iterable[UShort]
 
     /**
-     * The maximum value in this set.
+     * Returns the maximum value stored in this set.
      */
     def max: UShort
 
     /**
-     * The minimum value.
+     * Returns the minimum value stored in this set.
      */
     def min: UShort
 
-    /**
-     * The last value in this set which is also the maximum value.
-     */
-    def last: UShort = max
+    override def last: UShort = max
+
+    override def head: UShort = min
 
     /**
      * The number of elements of this set (the complexity is O(n)).
@@ -135,12 +134,9 @@ trait UShortSet {
      */
     def size: Int
 
-    /**
-     * Returns `true` if this set is empty.
-     */
     def isEmpty: Boolean
 
-    def nonEmpty: Boolean = !isEmpty
+    override def nonEmpty: Boolean = !isEmpty
 
     override def toString: String = iterator.mkString("UShortSet(", ",", ")")
 }

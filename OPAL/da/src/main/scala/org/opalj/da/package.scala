@@ -141,7 +141,7 @@ package object da {
 
     def abbreviateFQN(definingTypeFQN: String, memberTypeFQN: String): Node = {
         val abbreviatedMemberTypeFQN =
-            org.opalj.abbreviateFQN(definingTypeFQN, memberTypeFQN, '.')
+            org.opalj.bytecode.abbreviateFQN(definingTypeFQN, memberTypeFQN, '.')
 
         if (abbreviatedMemberTypeFQN == memberTypeFQN)
             <span class="fqn"> { memberTypeFQN } </span>

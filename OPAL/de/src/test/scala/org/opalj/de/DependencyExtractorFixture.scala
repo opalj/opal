@@ -38,8 +38,6 @@ import org.opalj.bi.TestSupport.locateTestResources
 import br._
 import br.reader.Java8Framework.ClassFiles
 
-import DependencyType._
-
 /**
  * Functionality useful when testing a dependency extractor.
  *

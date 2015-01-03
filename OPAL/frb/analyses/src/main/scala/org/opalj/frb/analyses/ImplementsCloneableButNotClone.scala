@@ -33,7 +33,6 @@ package analyses
 import AnalysesHelpers._
 import br._
 import br.analyses._
-import br.instructions._
 
 /**
  * This analysis reports classes which implement `java.lang.Cloneable` but do not

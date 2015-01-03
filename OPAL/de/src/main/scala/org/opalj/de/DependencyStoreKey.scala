@@ -32,9 +32,6 @@ package de
 import br.analyses.SomeProject
 import br.analyses.ProjectInformationKey
 
-import scala.collection.Map
-import scala.collection.Set
-
 /**
  * Key that can be used to get a `DependencyStore` that contains all dependencies.
  *

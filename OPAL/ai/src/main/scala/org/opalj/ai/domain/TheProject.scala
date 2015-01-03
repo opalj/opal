@@ -31,7 +31,6 @@ package ai
 package domain
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.{ ClassHierarchy ⇒ TheClassHierarchy }
 
 /**
  * Provides information about the underlying project.

@@ -33,11 +33,13 @@ package analyses
 import scala.annotation.tailrec
 import scala.collection.{ Map, Set, SeqView }
 import scala.collection.mutable.HashSet
-import util.{ Answer, Yes, No, Unknown }
-import graphs.Node
-import collection.immutable.UIDSet
-import ObjectType.Object
+
+import org.opalj.io.processSource
+import org.opalj.graphs.Node
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.br.ObjectType.Object
 import org.opalj.collection.immutable.UIDSet1
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -285,11 +287,27 @@ class ClassHierarchy private (
      * Subtypes for which no `ClassFile` object is available are ignored.
      */
     def foreachSubclass(
-        objectType: ObjectType,
-        project: SomeProject)(f: ClassFile ⇒ Unit): Unit = {
+        objectType: ObjectType, project: SomeProject)(
+            f: ClassFile ⇒ Unit): Unit = {
         foreachSubtype(objectType) { objectType ⇒
-            project.classFile(objectType).map(f)
+            project.classFile(objectType) foreach (f)
         }
+    }
+
+    /**
+     * Executes the given function `f` for each direct subclass of the given `ObjectType`.
+     * In this case the subclass relation is '''not reflexive'''.
+     *
+     * Subtypes for which no `ClassFile` object is available are ignored.
+     */
+    def foreachDirectSubclass[T](
+        objectType: ObjectType, project: SomeProject)(
+            f: ClassFile ⇒ T): Unit = {
+        val subclassTypes = subclassTypesMap(objectType.id)
+        if (subclassTypes ne null)
+            subclassTypes foreach { ot ⇒
+                project.classFile(ot) foreach (f)
+            }
     }
 
     /**
@@ -300,7 +318,7 @@ class ClassHierarchy private (
      */
     def existsSubclass(objectType: ObjectType, project: SomeProject)(f: ClassFile ⇒ Boolean): Boolean = {
         foreachSubtype(objectType) { objectType ⇒
-            project.classFile(objectType) map { cf ⇒
+            project.classFile(objectType) foreach { cf ⇒
                 if (f(cf))
                     return true
             }
@@ -848,7 +866,7 @@ class ClassHierarchy private (
         project: SomeProject): Option[Method] = {
 
         classFile.interfaceTypes foreach { superinterface: ObjectType ⇒
-            project.classFile(superinterface) map { superclass ⇒
+            project.classFile(superinterface) foreach { superclass ⇒
                 val result =
                     lookupMethodInInterface(
                         superclass,
@@ -1307,7 +1325,7 @@ class ClassHierarchy private (
         upperTypeBoundB: UIDSet[ObjectType],
         reflexive: Boolean): UIDSet[ObjectType] = {
 
-        if (upperTypeBoundB.consistsOfOneElement) {
+        if (upperTypeBoundB.hasOneElement) {
             val upperTypeBound =
                 if (upperTypeBoundA eq upperTypeBoundB.first()) {
                     if (reflexive)
@@ -1384,9 +1402,9 @@ class ClassHierarchy private (
         if (upperTypeBoundB.isEmpty)
             return upperTypeBoundA;
 
-        if (upperTypeBoundA.consistsOfOneElement)
+        if (upperTypeBoundA.hasOneElement)
             joinReferenceType(upperTypeBoundA.first, upperTypeBoundB)
-        else if (upperTypeBoundB.consistsOfOneElement)
+        else if (upperTypeBoundB.hasOneElement)
             joinReferenceType(upperTypeBoundB.first, upperTypeBoundA)
         else
             joinUpperTypeBounds(
@@ -1498,7 +1516,7 @@ class ClassHierarchy private (
                 newUpperTypeBound += Cloneable
             if (newUpperTypeBound.isEmpty)
                 UIDSet(Object)
-            else if (newUpperTypeBound.consistsOfOneElement)
+            else if (newUpperTypeBound.hasOneElement)
                 UIDSet(newUpperTypeBound.first)
             else
                 newUpperTypeBound
@@ -1602,7 +1620,7 @@ class ClassHierarchy private (
      */
     def joinObjectTypesUntilSingleUpperBound(
         upperTypeBound: UIDSet[ObjectType]): ObjectType = {
-        if (upperTypeBound.consistsOfOneElement)
+        if (upperTypeBound.hasOneElement)
             upperTypeBound.first
         else
             upperTypeBound reduce { (c, n) ⇒
@@ -1620,9 +1638,9 @@ class ClassHierarchy private (
             utbB
         else if (utbB.isEmpty)
             utbA
-        else if (utbA.consistsOfOneElement &&
+        else if (utbA.hasOneElement &&
             utbA.first.isArrayType) {
-            if (utbB.consistsOfOneElement) {
+            if (utbB.hasOneElement) {
                 if (utbB.first.isArrayType) {
                     val joinedArrayType =
                         joinArrayTypes(
@@ -1643,7 +1661,7 @@ class ClassHierarchy private (
                     utbB.asInstanceOf[UIDSet[ObjectType]]
                 )
             }
-        } else if (utbB.consistsOfOneElement) {
+        } else if (utbB.hasOneElement) {
             if (utbB.first.isArrayType) {
                 joinAnyArrayTypeWithMultipleTypesBound(
                     utbA.asInstanceOf[UIDSet[ObjectType]]

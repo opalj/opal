@@ -37,7 +37,6 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.{ ObjectType, ArrayType, IntegerType }
 
 /**
@@ -45,6 +44,7 @@ import org.opalj.br.{ ObjectType, ArrayType, IntegerType }
  *
  * @author Michael Eichberg
  * @author Christos Votskos
+ * @author David Becker
  */
 @RunWith(classOf[JUnitRunner])
 class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestExecution {
@@ -72,11 +72,11 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
     describe("central properties of domains that use IntegerRange values") {
 
-        val theDomain = new IntegerRangesTestDomain
+        val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
         import theDomain._
 
         it("the representation of the integer value 0 should be an IntegerRange(0,0) value") {
-            theDomain.IntegerConstant0 should be(IntegerRange(0, 0))
+            IntegerConstant0 should be(IntegerRange(0, 0))
         }
     }
 
@@ -131,10 +131,10 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         }
 
-        val theDomain = new IntegerRangesTestDomain
-        import theDomain._
-
         describe("the behavior of the join operation if we do not exceed the max. spread") {
+
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("(join with itself) val ir = IntegerRange(...); ir join ir => \"NoUpdate\"") {
                 val v = IntegerRange(0, 0)
@@ -173,7 +173,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 assert(result.value ne v1)
             }
 
-            it("(join of a \"point\" range with a non-overlapping range) [0,0] join [1,Int.MaxValue]") {
+            it("(join of a \"point\" range with a non-overlapping range) [0,0] join [1,Int.MaxValue] => [0,Int.MaxValue]") {
                 val v1 = IntegerRange(lb = 0, ub = 0)
                 val v2 = IntegerRange(lb = 1, ub = 2147483647)
                 v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 2147483647)))
@@ -183,6 +183,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
 
         describe("the behavior of the \"summarize\" function") {
+
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("it should be able to handle overlapping values") {
                 val v1 = IntegerRange(-1, 3)
@@ -225,6 +228,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         describe("the behavior of imul") {
 
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
+
             it("[0,3] * [0,2] => [lb*lb=0,ub*ub=6]") {
                 val v1 = IntegerRange(0, 3)
                 val v2 = IntegerRange(0, 2)
@@ -249,7 +255,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 imul(-1, v2, v1) should be(IntegerRange(-2, 6))
             }
 
-            it("[-3,3] * [-3,2] => [lb*ub=-6,lb*lb=9]") {
+            it("[-3,3] * [-3,2] => [ub*lb=-9,lb*lb=9]") {
                 val v1 = IntegerRange(-3, 3)
                 val v2 = IntegerRange(-3, 2)
 
@@ -281,9 +287,58 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 imul(-1, v2, v1) should be(AnIntegerValue())
             }
 
+            it("The result of the multiplying a range r by [1,1] should be r itself; [2,4] * [1,1] => [2,4]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(1, 1)
+                imul(-1, v1, v2) should be theSameInstanceAs (v1)
+                imul(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("A specific (but unknown) value v1 * [1,1] should be v1 itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(1, 1)
+
+                imul(-1, v1, v2) should be theSameInstanceAs (v1)
+                imul(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of multiplying a specific (but unknown) value v1 by a \"point\" range != [1,1] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 2)
+
+                imul(-1, v1, v2) should not be theSameInstanceAs(v1)
+                imul(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of multiplying a specific (but unknown) value v1 by [2,4] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 4)
+
+                imul(-1, v1, v2) should not be theSameInstanceAs(v1)
+                imul(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of multiplying a range by r@[0,0] should be r itself; [2,4] * [0,0] => [0,0]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(0, 0)
+
+                imul(-1, v1, v2) should be theSameInstanceAs (v2)
+                imul(-1, v2, v1) should be theSameInstanceAs (v2)
+            }
+
+            it("A specific (but unknown) value * r@[0,0] should be r itself") {
+                val v1 = AnIntegerValue()
+                val v2 = IntegerRange(0, 0)
+
+                imul(-1, v1, v2) should be theSameInstanceAs (v2)
+                imul(-1, v2, v1) should be theSameInstanceAs (v2)
+            }
         }
 
         describe("the behavior of ior") {
+
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("AnIntegerValue | [8,19] => AnIntegerRange") {
                 val v = AnIntegerValue
@@ -622,9 +677,103 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                         fail(s"expected [-1,-1]; found $v")
                 }
             }
+
+            it("The result of the or of a range r and [0,0] should be r itself; [2,4] | [0,0] => [2,4]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(0, 0)
+
+                ior(-1, v1, v2) should be theSameInstanceAs (v1)
+                ior(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("A specific (but unknown) value v1 | [0,0] should be v1 itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(0, 0)
+
+                ior(-1, v1, v2) should be theSameInstanceAs (v1)
+                ior(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of the or of a specific (but unknown) value v1 and a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 2)
+
+                ior(-1, v1, v2) should not be theSameInstanceAs(v1)
+                ior(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of the or of a specific (but unknown) value v1 and [2,4] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 4)
+
+                ior(-1, v1, v2) should not be theSameInstanceAs(v1)
+                ior(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of the or of a range and r@[-1,-1] should be r itself; [2,4] | [-1,-1] => [-1,-1]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(-1, -1)
+
+                ior(-1, v1, v2) should be theSameInstanceAs (v2)
+                ior(-1, v2, v1) should be theSameInstanceAs (v2)
+            }
+
+            it("A specific (but unknown) value | r@[-1,-1] should be r itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(-1, -1)
+
+                ior(-1, v1, v2) should be theSameInstanceAs (v2)
+                ior(-1, v2, v1) should be theSameInstanceAs (v2)
+            }
+        }
+
+        describe("the behavior of ineg") {
+
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
+
+            it("-[0,5] => [-5,0]") {
+                val v1 = IntegerRange(0, 5)
+
+                ineg(-1, v1) should be(IntegerRange(-5, 0))
+            }
+
+            it("-[0,0] => [0,0]") {
+                val v1 = IntegerRange(0)
+
+                ineg(-1, v1) should be(IntegerRange(0))
+            }
+
+            it("-[-17,31] => [-31,17]") {
+                val v1 = IntegerRange(-17, 31)
+
+                ineg(-1, v1) should be(IntegerRange(-31, 17))
+            }
+
+            it("-(-[-17,31]) => [-17,31]") {
+                val v1 = IntegerRange(-17, 31)
+
+                ineg(-1, ineg(-1, v1)) should be(IntegerRange(-17, 31))
+            }
+
+            it("-[Int.MinValue,Int.MinValue] => [Int.MinValue,Int.MinValue]") {
+                val v1 = IntegerRange(Int.MinValue)
+
+                ineg(-1, v1) should be(IntegerRange(Int.MinValue))
+            }
+
+            it("-[Int.MinValue,3] => AnIntegerValue") {
+                val v1 = IntegerRange(Int.MinValue, 3)
+
+                ineg(-1, v1) should be(AnIntegerValue)
+            }
+
         }
 
         describe("the behavior of ishr") {
+
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("[-100,-100] >> [4,4] => [-7, -7]") {
                 val v = IntegerRange(-100, -100)
@@ -964,9 +1113,83 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 ishr(-1, v, s) should be theSameInstanceAs v
             }
+
+            it("The result of right-shifting a range r (negative values) by [0,0] should be r itself; [-4,-2] >> [0,0] => [-4,-2]") {
+                val v = IntegerRange(-4, -2)
+                val s = IntegerRange(0, 0)
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("A specific (but unknown) value v1 right-shifted by [0,0] should be v1 itself") {
+                val v = AnIntegerValue
+                val s = IntegerRange(0, 0)
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[0,0] right-shifted by a specific (but unknown) IntegerValue should be r itself") {
+                val v = IntegerRange(0, 0)
+                val s = AnIntegerValue
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[0,0] right-shifted by a \"point\" range should be r itself") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(2, 2)
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[0,0] right-shifted by [2,4] should be r itself") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(2, 4)
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[-1,-1] right-shifted by a specific (but unknown) IntegerValue should be r itself") {
+                val v = IntegerRange(-1, -1)
+                val s = AnIntegerValue
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[-1,-1] right-shifted by a \"point\" range should be r itself") {
+                val v = IntegerRange(-1, -1)
+                val s = IntegerRange(2, 2)
+
+                ishr(-1, v, s) should be theSameInstanceAs v
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[-1,-1] right-shifted by [2,4] should be r itself") {
+                val v = IntegerRange(-1, -1)
+                val s = IntegerRange(2, 4)
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("A specific (but unknown) value v1 right-shifted by a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2, 2)
+
+                ishr(-1, v, s) should not be theSameInstanceAs(v)
+            }
+
+            it("A specific (but unknown) value v1 right-shifted by [2,4] should be a specific (but unknown) value different from v1") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2, 4)
+
+                ishr(-1, v, s) should not be theSameInstanceAs(v)
+            }
         }
 
         describe("the behavior of iadd") {
+
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("[0,3] + [0,2] => [0,5]") {
                 val v1 = IntegerRange(0, 3)
@@ -1003,7 +1226,6 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             it("[Int.MinValue,3] + [3,2] => [Int.MinValue+3,5]") {
                 val v1 = IntegerRange(Int.MinValue, 3)
                 val v2 = IntegerRange(3, 2)
-
                 iadd(-1, v1, v2) should be(IntegerRange(Int.MinValue + 3, 5))
                 iadd(-1, v2, v1) should be(IntegerRange(Int.MinValue + 3, 5))
             }
@@ -1011,14 +1233,50 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             it("[-3,-1] + [-3,Int.MaxValue] => [-6,Int.MaxValue-1]") {
                 val v1 = IntegerRange(-3, -1)
                 val v2 = IntegerRange(-3, Int.MaxValue)
-
                 iadd(-1, v1, v2) should be(IntegerRange(-6, Int.MaxValue - 1))
                 iadd(-1, v2, v1) should be(IntegerRange(-6, Int.MaxValue - 1))
             }
 
+            it("[Int.MinValue,3] + [-3,2] => AnIntegerValue") {
+                val v1 = IntegerRange(Int.MinValue, 3)
+                val v2 = IntegerRange(-3, 2)
+                iadd(-1, v1, v2) should be(AnIntegerValue)
+                iadd(-1, v2, v1) should be(AnIntegerValue)
+            }
+
+            it("A specific (but unknown) value v1 + [0,0] should be v1 itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(0, 0)
+                iadd(-1, v1, v2) should be theSameInstanceAs (v1)
+                iadd(-1, v1, v2) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of adding [0,0] to a range r should be r itself; [2,4] + [0,0] => [2,4]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(0, 0)
+                iadd(-1, v1, v2) should be theSameInstanceAs (v1)
+                iadd(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of adding a specific (but unknown) value v1 to a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 2)
+                iadd(-1, v1, v2) should not be theSameInstanceAs(v1)
+                iadd(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of adding a specific (but unknown) value v1 to a [2,4] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 4)
+                iadd(-1, v1, v2) should not be theSameInstanceAs(v1)
+                iadd(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
         }
 
         describe("the behavior of isub") {
+
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("[0,3] - [0,2] => [-2,3]") {
                 val v1 = IntegerRange(0, 3)
@@ -1088,9 +1346,41 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 isub(-1, v, v) should be(IntegerRange(0, 0))
             }
+
+            it("A specific (but unknown) value v1 - [0,0] should be v1 itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(0, 0)
+
+                isub(-1, v1, v2) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of subtracting a range r by [0,0] should be r itself; [2,4] - [0,0] => [2,4]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(0, 0)
+
+                isub(-1, v1, v2) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of subtracting a \"point\" range != [0,0] by a specific (but unknown) value v1 should be a specific (but unknown) value different from v1") {
+                val v1 = IntegerRange(2, 2)
+                val v2 = AnIntegerValue
+
+                isub(-1, v1, v2) should not be theSameInstanceAs(v2)
+            }
+
+            it("The result of subtracting [2,4] by a specific (but unknown) value v1 should be a specific (but unknown) value different from v1") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = AnIntegerValue
+
+                isub(-1, v1, v2) should not be theSameInstanceAs(v2)
+            }
+
         }
 
         describe("the behavior of idiv") {
+
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("[1,3] / [2,2] => [0,1]") {
                 val v1 = IntegerRange(1, 3)
@@ -1161,14 +1451,14 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
 
-            it("[Int.MinValue,-1] / Int.MaxValue => [1,1]") {
+            it("[Int.MinValue,-1] / Int.MaxValue => [1,0]") {
                 val v1 = IntegerRange(Int.MinValue, -1)
                 val v2 = IntegerRange(Int.MaxValue, Int.MaxValue)
 
                 idiv(-1, v1, v2) should be(ComputedValue(IntegerRange(-1, 0)))
             }
 
-            it("[Int.MinValue,Int.MaxValue] / Int.MaxValue => [1,1]") {
+            it("[Int.MinValue,Int.MaxValue] / Int.MaxValue => [-1,1]") {
                 val v1 = IntegerRange(Int.MinValue, Int.MaxValue)
                 val v2 = IntegerRange(Int.MaxValue, Int.MaxValue)
 
@@ -1177,6 +1467,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
 
         describe("the behavior of irem") {
+
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("AnIntegerValue % AnIntegerValue => AnIntegerValue + Exception") {
                 val v1 = AnIntegerValue()
@@ -1282,7 +1575,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 result.result should be(IntegerRange(0, 15))
             }
 
-            it("(the dividend and the divisor are point values) [2,2] % [16,16] => [0,1]") {
+            it("(the dividend and the divisor are point values) [2,2] % [16,16] => [2,2]") {
                 val v1 = IntegerRange(2, 2)
                 val v2 = IntegerRange(16, 16)
 
@@ -1292,6 +1585,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
 
         describe("the behavior of iand") {
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("[3,3] & [255,255] => [0,0]") {
                 val v = IntegerRange(3, 3)
@@ -1348,9 +1643,67 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 iand(-1, v, s) should be(AnIntegerValue)
             }
+
+            it("[-2,-2] & AnIntegerValue  => AnIntegerValue") {
+                val v1 = IntegerRange(-2, -2)
+                val v2 = AnIntegerValue
+
+                iand(-1, v1, v2) should be(AnIntegerValue)
+            }
+
+            it("The result of the and of a range r and [1,1] should be r itself; [2,4] & [-1,-1] => [2,4]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(-1, -1)
+
+                iand(-1, v1, v2) should be theSameInstanceAs (v1)
+                iand(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("A specific (but unknown) value v1 & [-1,-1] should be v1 itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(-1, -1)
+
+                iand(-1, v1, v2) should be theSameInstanceAs (v1)
+                iand(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of the and of a specific (but unknown) value v1 and a \"point\" != [-1,-1] range should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 2)
+
+                iand(-1, v1, v2) should not be theSameInstanceAs(v1)
+                iand(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of the and of a specific (but unknown) value v1 and [2,4] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 4)
+
+                iand(-1, v1, v2) should not be theSameInstanceAs(v1)
+                iand(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of the and of a range and r@[0,0] should be r itself; [2,4] & [0,0] => [0,0]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(0, 0)
+
+                iand(-1, v1, v2) should be theSameInstanceAs (v2)
+                iand(-1, v2, v1) should be theSameInstanceAs (v2)
+            }
+
+            it("A specific (but unknown) value & r@[0,0] should be r itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(0, 0)
+
+                iand(-1, v1, v2) should be theSameInstanceAs (v2)
+                iand(-1, v2, v1) should be theSameInstanceAs (v2)
+            }
         }
 
         describe("the behavior of iushr") {
+
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("""(two "point" ranges where both values are larger than zero) [7,7] >>> [2,2] => -1 >>> 2 === 1073741823""") {
                 val v = IntegerRange(7, 7)
@@ -1636,6 +1989,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
 
         describe("the behavior of ixor") {
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
+
             it("AnIntegerValue ^ [-10,-10] => AnIntegerValue") {
                 val v = AnIntegerValue
                 val s = IntegerRange(-10, -10)
@@ -2169,6 +2525,10 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
 
         describe("the behavior of ishl") {
+
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
+
             it("[10,22] << [12,31] => [-2147483648,2013265920]") {
                 val v = IntegerRange(10, 22)
                 val s = IntegerRange(12, 31)
@@ -2299,7 +2659,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
 
-            it("[-1,5] << [Int.MaxValue,Int.MaxValue] => [-2147483648,00]") {
+            it("[-1,5] << [Int.MaxValue,Int.MaxValue] => [-2147483648,0]") {
                 val v = IntegerRange(-1, 5)
                 val s = IntegerRange(Int.MaxValue, Int.MaxValue)
 
@@ -2312,7 +2672,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
 
-            it("[-10,-5] << [Int.MaxValue,Int.MaxValue] => [-2147483648,00]") {
+            it("[-10,-5] << [Int.MaxValue,Int.MaxValue] => [-2147483648,0]") {
                 val v = IntegerRange(-10, 5)
                 val s = IntegerRange(Int.MaxValue, Int.MaxValue)
 
@@ -2546,9 +2906,75 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 ishl(-1, v, s) should be(IntegerRange(4, 16))
             }
 
+            it("The result of left-shifting a range r (positive values) by [0,0] should be r itself; [2,4] << [0,0] => [2,4]") {
+                val v = IntegerRange(2, 4)
+                val s = IntegerRange(0, 0)
+
+                ishl(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("The result of left-shifting a range r (negative values) by [0,0] should be r itself; [-4,-2] << [0,0] => [-4,-2]") {
+                val v = IntegerRange(-4, -2)
+                val s = IntegerRange(0, 0)
+
+                ishl(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("A specific (but unknown) value v1 left-shifted by [0,0] should be v1 itself") {
+                val v = AnIntegerValue
+                val s = IntegerRange(0, 0)
+
+                ishl(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[0,0] left-shifted by a specific (but unknown) IntegerValue should be r itself") {
+                val v = IntegerRange(0, 0)
+                val s = AnIntegerValue
+
+                ishl(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[0,0] left-shifted by a \"point\" range should be r itself") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(2, 2)
+
+                ishl(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[0,0] left-shifted by [2,4] should be r itself") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(2, 4)
+
+                ishl(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[-1,-1] left-shifted by a specific (but unknown) IntegerValue should be [Int.MinValue, -1]") {
+                val v = IntegerRange(-1, -1)
+                val s = AnIntegerValue
+
+                ishl(-1, v, s) should be(IntegerRange(Int.MinValue, -1))
+            }
+
+            it("A specific (but unknown) value v1 left-shifted by a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2, 2)
+
+                ishl(-1, v, s) should not be theSameInstanceAs(v)
+            }
+
+            it("A specific (but unknown) value v1 left-shifted by [2,4] should be a specific (but unknown) value different from v1") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2, 4)
+
+                ishl(-1, v, s) should not be theSameInstanceAs(v)
+            }
+
         }
 
         describe("the behavior of the i2b cast operator") {
+
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("(byte)AnIntegerValue => [-128,+127]") {
                 val v1 = AnIntegerValue
@@ -2568,6 +2994,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         describe("the behavior of the i2s cast operator") {
 
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
+
             it("(short)AnIntegerValue => [-Short.MinValue,Short.MaxValue]") {
                 val v1 = AnIntegerValue
                 i2s(-1, v1) should be(IntegerRange(Short.MinValue, Short.MaxValue))
@@ -2586,6 +3015,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
 
         describe("the behavior of the relational operators") {
+            val theDomain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             describe("the behavior of the greater or equal than (>=) operator") {
                 it("[3,3] >= [0,2] => Yes") {
@@ -2825,7 +3256,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         describe("hanlding of complex dependent casts and moduluo operations") {
 
             it("the analysis should be correct in the presence of type casts (\"randomModulo\")") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("randomModulo").get
                 val result = BaseAI(IntegerValues, method, domain)
                 result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
@@ -2836,7 +3267,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         describe("constraint propagation") {
 
             it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax5").get
                 /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
@@ -2847,7 +3278,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should be able to adapt (<=) the bounds of an IntegerRange value in the presences of aliasing") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax6").get
                 /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
@@ -2858,7 +3289,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should be able to adapt (>=) the bounds of an IntegerRange value in the presences of aliasing") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMinM1").get
                 /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
@@ -2869,7 +3300,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should be able to adapt (>) the bounds of an IntegerRange value in the presences of aliasing") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMin0").get
                 /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
@@ -2880,7 +3311,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("someSwitch").get
                 /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 1)
@@ -2890,7 +3321,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should be able to detect contradicting conditions") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("someComparisonThatReturns5").get
                 /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
@@ -2917,7 +3348,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should be possible to identify dead code - even for complex conditions") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new IntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("deadCode").get
                 val result = BaseAI(IntegerValues, method, domain)
                 result.operandsArray(47) should be(null)

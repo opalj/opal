@@ -33,20 +33,22 @@ package l1
 
 import scala.collection.immutable.SortedSet
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br._
 
 /**
  * This domain enables the tracking of integer values using sets. The cardinality of
  * the set can be configured to facilitate different needs with regard to the
- * desired precision. Often, a very small cardinality (e.g., 2 or 8) may be
+ * desired precision. Often, a very small cardinality (e.g., between 2 or 8) may be
  * completely sufficient and a large cardinality does not significantly add to the
  * overall precision.
  *
  * @author Michael Eichberg
  * @author David Becker
  */
-trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactory with ConcreteIntegerValues {
+trait IntegerSetValues
+        extends IntegerValuesDomain
+        with IntegerRangeValuesFactory
+        with ConcreteIntegerValues {
     domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------
@@ -61,7 +63,7 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
      * In many cases a rather (4-16) small number is completely sufficient to
      * capture typically variability.
      */
-    protected def maxCardinalityOfIntegerSets: Int = 8
+    def maxCardinalityOfIntegerSets: Int = 8
 
     /**
      * Abstracts over all values with computational type `integer`.
@@ -73,7 +75,7 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
     }
 
     /**
-     * Represents an (unknown) integer value.
+     * Represents a specific but unknown integer value.
      *
      * Models the top value of this domain's lattice.
      */
@@ -123,7 +125,7 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
     // -----------------------------------------------------------------------------------
 
     //
-    // QUESTION'S ABOUT VALUES
+    // QUESTIONS ABOUT VALUES
     //
 
     @inline final override def intValue[T](
@@ -436,15 +438,15 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
     /*override*/ def ineg(pc: PC, value: DomainValue) =
         value match {
             case IntegerSet(values) ⇒ IntegerSet(values.map(-_))
-            case _                  ⇒ IntegerValue(pc)
+            case _                  ⇒ IntegerValue(origin = pc)
         }
 
     //
     // BINARY EXPRESSIONS
     //
 
-    /*override*/ def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
+    /*override*/ def iadd(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+        (left, right) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 val results =
                     for (leftValue ← leftValues; rightValue ← rightValues) yield {
@@ -453,49 +455,68 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
                 if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
-                    IntegerValue(pc)
+                    IntegerValue(origin = pc)
             case _ ⇒
-                // we have to create a new instance... even if we just add "0"
-                IntegerValue(pc)
+                IntegerValue(origin = pc)
         }
     }
 
     /*override*/ def iinc(pc: PC, value: DomainValue, increment: Int): DomainValue = {
         value match {
             case IntegerSet(values) ⇒ IntegerSet(values.map(_ + increment))
-            case _                  ⇒ IntegerValue(pc)
+            case _                  ⇒ IntegerValue(origin = pc)
         }
     }
 
     /*override*/ def isub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
         (left, right) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
-                val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
-                    leftValue - rightValue
-                }
+                val results =
+                    for (leftValue ← leftValues; rightValue ← rightValues) yield {
+                        leftValue - rightValue
+                    }
                 if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
-                    IntegerValue(pc)
+                    IntegerValue(origin = pc)
             case _ ⇒
-                // we have to create a new instance... even if we just add "0"
-                IntegerValue(pc)
+                IntegerValue(origin = pc)
         }
     }
 
-    /*override*/ def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
-                val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
-                    leftValue * rightValue
-                }
-                if (results.size <= maxCardinalityOfIntegerSets)
-                    IntegerSet(results)
-                else
-                    IntegerValue(pc)
+    /*override*/ def imul(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+        left match {
+            case (IntegerSet(leftValues)) ⇒
+                if (leftValues.size == 1 && leftValues.head == 0)
+                    left
+                else if (leftValues.size == 1 && leftValues.head == 1)
+                    right
+                else right match {
+                    case (IntegerSet(rightValues)) ⇒
+                        val results =
+                            for (leftValue ← leftValues; rightValue ← rightValues) yield {
+                                leftValue * rightValue
+                            }
+                        if (results.size <= maxCardinalityOfIntegerSets)
+                            IntegerSet(results)
+                        else
+                            IntegerValue(origin = pc)
+                    case _ ⇒
+                        IntegerValue(origin = pc)
 
+                }
             case _ ⇒
-                IntegerValue(pc)
+                right match {
+                    case (IntegerSet(rightValues)) ⇒
+                        if (rightValues.size == 1 && rightValues.head == 0)
+                            right
+                        else if (rightValues.size == 1 && rightValues.head == 1)
+                            left
+                        else
+                            IntegerValue(origin = pc)
+                    case _ ⇒
+                        IntegerValue(origin = pc)
+                }
         }
     }
 
@@ -511,9 +532,11 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
                     ComputedValue(IntegerSet(results))
             } else {
                 if (exception)
-                    ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
+                    ComputedValueOrException(
+                        IntegerValue(origin = pc),
+                        ArithmeticException(pc))
                 else
-                    ComputedValue(IntegerValue(pc))
+                    ComputedValue(IntegerValue(origin = pc))
             }
         } else {
             if (exception)
@@ -544,15 +567,19 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
                     if (rightValues.size == 1)
                         ThrowsException(ArithmeticException(pc))
                     else
-                        ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
+                        ComputedValueOrException(
+                            IntegerValue(origin = pc),
+                            ArithmeticException(pc))
                 } else
-                    ComputedValue(IntegerValue(pc))
+                    ComputedValue(IntegerValue(origin = pc))
 
             case _ ⇒
                 if (throwArithmeticExceptions)
-                    ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
+                    ComputedValueOrException(
+                        IntegerValue(origin = pc),
+                        ArithmeticException(pc))
                 else
-                    ComputedValue(IntegerValue(pc))
+                    ComputedValue(IntegerValue(origin = pc))
         }
     }
 
@@ -578,47 +605,89 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
                     if (rightValues.size == 1)
                         ThrowsException(ArithmeticException(pc))
                     else
-                        ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
+                        ComputedValueOrException(
+                            IntegerValue(origin = pc),
+                            ArithmeticException(pc))
                 } else
-                    ComputedValue(IntegerValue(pc))
+                    ComputedValue(IntegerValue(origin = pc))
 
             case _ ⇒
                 if (throwArithmeticExceptions)
-                    ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
+                    ComputedValueOrException(
+                        IntegerValue(origin = pc),
+                        ArithmeticException(pc))
                 else
-                    ComputedValue(IntegerValue(pc))
+                    ComputedValue(IntegerValue(origin = pc))
         }
     }
 
-    /*override*/ def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
-                val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
-                    leftValue & rightValue
-                }
-                if (results.size <= maxCardinalityOfIntegerSets)
-                    IntegerSet(results)
-                else
-                    IntegerValue(pc)
+    /*override*/ def iand(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+        left match {
+            case (IntegerSet(leftValues)) ⇒
+                if (leftValues.size == 1 && leftValues.head == -1)
+                    right
+                else if (leftValues.size == 1 && leftValues.head == 0)
+                    left
+                else right match {
+                    case (IntegerSet(rightValues)) ⇒
+                        val results =
+                            for (leftValue ← leftValues; rightValue ← rightValues) yield {
+                                leftValue & rightValue
+                            }
+                        if (results.size <= maxCardinalityOfIntegerSets)
+                            IntegerSet(results)
+                        else
+                            IntegerValue(origin = pc)
+                    case _ ⇒
+                        IntegerValue(origin = pc)
 
+                }
             case _ ⇒
-                IntegerValue(pc)
+                right match {
+                    case (IntegerSet(rightValues)) ⇒
+                        if (rightValues.size == 1 && rightValues.head == -1)
+                            left
+                        else if (rightValues.size == 1 && rightValues.head == 0)
+                            right
+                        else
+                            IntegerValue(origin = pc)
+                    case _ ⇒
+                        IntegerValue(origin = pc)
+                }
         }
     }
 
-    /*override*/ def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
-            case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
-                val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
-                    leftValue | rightValue
+    /*override*/ def ior(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
+        left match {
+            case (IntegerSet(leftValues)) ⇒
+                if (leftValues.size == 1 && leftValues.head == -1)
+                    left
+                else if (leftValues.size == 1 && leftValues.head == 0)
+                    right
+                else right match {
+                    case (IntegerSet(rightValues)) ⇒
+                        val results =
+                            for (leftValue ← leftValues; rightValue ← rightValues) yield {
+                                leftValue | rightValue
+                            }
+                        if (results.size <= maxCardinalityOfIntegerSets)
+                            IntegerSet(results)
+                        else
+                            IntegerValue(origin = pc)
+                    case _ ⇒
+                        IntegerValue(origin = pc)
                 }
-                if (results.size <= maxCardinalityOfIntegerSets)
-                    IntegerSet(results)
-                else
-                    IntegerValue(pc)
-
             case _ ⇒
-                IntegerValue(pc)
+                right match {
+                    case (IntegerSet(rightValues)) ⇒
+                        if (rightValues.size == 1 && rightValues.head == -1)
+                            right
+                        else if (rightValues.size == 1 && rightValues.head == 0)
+                            left
+                        else
+                            IntegerValue(origin = pc)
+                    case _ ⇒ IntegerValue(origin = pc)
+                }
         }
     }
 
@@ -631,10 +700,10 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
                 if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
-                    IntegerValue(pc)
+                    IntegerValue(origin = pc)
 
             case _ ⇒
-                IntegerValue(pc)
+                IntegerValue(origin = pc)
         }
     }
 
@@ -647,10 +716,10 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
                 if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
-                    IntegerValue(pc)
+                    IntegerValue(origin = pc)
 
             case _ ⇒
-                IntegerValue(pc)
+                IntegerValue(origin = pc)
         }
     }
 
@@ -664,10 +733,10 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
                 if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
-                    IntegerValue(pc)
+                    IntegerValue(origin = pc)
 
             case _ ⇒
-                IntegerValue(pc)
+                IntegerValue(origin = pc)
         }
     }
 
@@ -681,10 +750,10 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
                 if (results.size <= maxCardinalityOfIntegerSets)
                     IntegerSet(results)
                 else
-                    IntegerValue(pc)
+                    IntegerValue(origin = pc)
 
             case _ ⇒
-                IntegerValue(pc)
+                IntegerValue(origin = pc)
         }
     }
 
@@ -695,19 +764,19 @@ trait IntegerSetValues extends IntegerValuesDomain with IntegerRangeValuesFactor
     /*override*/ def i2b(pc: PC, value: DomainValue): DomainValue =
         value match {
             case IntegerSet(values) ⇒ IntegerSet(values.map(_.toByte.toInt))
-            case _                  ⇒ IntegerValue(pc)
+            case _                  ⇒ IntegerValue(origin = pc)
         }
 
     /*override*/ def i2c(pc: PC, value: DomainValue): DomainValue =
         value match {
             case IntegerSet(values) ⇒ IntegerSet(values.map(_.toChar.toInt))
-            case _                  ⇒ IntegerValue(pc)
+            case _                  ⇒ IntegerValue(origin = pc)
         }
 
     /*override*/ def i2s(pc: PC, value: DomainValue): DomainValue =
         value match {
             case IntegerSet(values) ⇒ IntegerSet(values.map(_.toShort.toInt))
-            case _                  ⇒ IntegerValue(pc)
+            case _                  ⇒ IntegerValue(origin = pc)
         }
 
 }

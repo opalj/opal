@@ -31,17 +31,7 @@ package ai
 package dataflow
 
 import java.net.URL
-
-import scala.collection.{ Map, Set }
-
-import bi.AccessFlagsMatcher
-
-import br._
 import br.analyses._
-import br.instructions._
-
-import domain._
-import domain.l0._
 
 /**
  * Support methods to make it possible to solve a single [[DataFlowProblem]].

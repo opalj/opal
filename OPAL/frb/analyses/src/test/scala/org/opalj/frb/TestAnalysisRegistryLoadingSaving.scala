@@ -33,7 +33,6 @@
 package org.opalj
 package frb
 
-import br._
 import java.io.IOException
 import java.io.File
 

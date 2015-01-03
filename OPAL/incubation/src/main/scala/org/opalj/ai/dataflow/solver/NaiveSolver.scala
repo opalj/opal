@@ -31,8 +31,6 @@ package ai
 package dataflow
 package solver
 
-import org.opalj.br.Method
-import org.opalj.br.analyses.Project
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.ValuesCoordinatingDomain
 import org.opalj.ai.domain.Configuration

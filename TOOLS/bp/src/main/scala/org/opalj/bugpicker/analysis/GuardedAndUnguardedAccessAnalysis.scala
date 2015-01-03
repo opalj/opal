@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -45,12 +45,13 @@ import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project,
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.MethodWithBody
-import org.opalj.ai.debug.XHTML
+import org.opalj.ai.common.XHTML
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
+import org.opalj.br.PC
 import org.opalj.br.Code
-import org.opalj.ai.collectWithOperandsAndIndex
+import org.opalj.ai.collectPCWithOperands
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.domain
 import org.opalj.br.instructions.Instruction
@@ -85,7 +86,7 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 
-// This is only a very shallow (but always correct) analysis; if we would integrate 
+// This is only a very shallow (but always correct) analysis; if we would integrate
 // the analysis with the evaluation process more precise results would be possible
 object GuardedAndUnguardedAccessAnalysis {
 
@@ -94,7 +95,6 @@ object GuardedAndUnguardedAccessAnalysis {
         result: AIResult { val domain: Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions }): List[Issue] = {
 
         val operandsArray = result.operandsArray
-        val domain = result.domain
         val body = result.code
 
         val guardedAccesses =

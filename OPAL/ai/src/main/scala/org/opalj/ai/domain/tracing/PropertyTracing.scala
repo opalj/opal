@@ -31,8 +31,6 @@ package ai
 package domain
 package tracing
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import br._
 
 /**

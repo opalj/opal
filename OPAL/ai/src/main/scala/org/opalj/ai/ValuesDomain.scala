@@ -245,13 +245,59 @@ trait ValuesDomain {
          */
         def abstractsOver(other: DomainValue): Boolean = {
             if (this eq other)
-                return true
+                return true;
 
             val result = this.join(Int.MinValue /*Irrelevant*/ , other)
             result.isNoUpdate ||
                 (result.isMetaInformationUpdate &&
                     (result ne MetaInformationUpdateIllegalValue)
                 )
+        }
+
+        /**
+         * Returns `true` iff the abstract state represented by this value
+         * is more precise than the state of the given value. In other
+         * words if every possible runtime value represented by this value
+         * is also represented by the given value, but both '''are not equal''';
+         * in other words, this method is '''irreflexive'''.
+         *
+         * The considered abstract state generally encompasses every
+         * information that would be considered during a [[join]] of `this`
+         * value and the `other` value and that could lead to a
+         * [[StructuralUpdate]].
+         *
+         * @note It is recommended to overwrite this method. The default
+         *      implementation relies on [[join]] which usually performs
+         * 		too much to make a decision.
+         *
+         * @param other Another `DomainValue` with the same computational
+         * 		type as this value.
+         * 		(The `IllegalValue` has no computational type and, hence,
+         *      a comparison with an IllegalValue is not well defined.)
+         */
+        def isMorePreciseThan(other: DomainValue): Boolean = {
+            assert(this.computationalType eq other.computationalType)
+
+            if (this eq other)
+                return false;
+
+            other.join(Int.MinValue /*Irrelevant*/ , this).updateType match {
+                case StructuralUpdateType ⇒
+                    // i.e., either this value abstracts over the other value
+                    // or this and the other value are not in a more/less precise
+                    // relation
+                    false
+                case NoUpdateType
+                    // ... if the other values abstracts over this value (or equals
+                    // this value).
+                    | MetaInformationUpdateType // W.r.t. the props. relevant for a join: 
+                    // the other value is either more precise than this value or is 
+                    // equal to this value, but some property that is not relevant to
+                    // a join has changed. We now have to rule out the case 
+                    // that the other is actually more precise than this and
+                    ⇒
+                    this.join(Int.MinValue /*Irrelevant*/ , other).isStructuralUpdate
+            }
         }
 
         /**

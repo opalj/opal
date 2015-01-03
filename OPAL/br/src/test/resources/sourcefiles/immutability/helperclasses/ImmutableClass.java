@@ -31,15 +31,14 @@ package immutability.helperclasses;
 import immutability.annotations.Immutable;
 
 /**
- * A simple immutable class with a non-final field which is of primitive type 
- * that is not mutated.
+ * A simple immutable class with a final field with a primitive type.
  * 
  * @author Andre Pacak
  */
-@Immutable("defines a mutable field that is not mutated")
+@Immutable("only defines a final field with a primitive type (int)")
 public class ImmutableClass {
 
-    protected int x = 0;
+    protected final int x = 0;
 
     public int getX() {
         return this.x;

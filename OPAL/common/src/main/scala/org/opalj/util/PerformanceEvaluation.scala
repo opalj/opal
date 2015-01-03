@@ -29,6 +29,8 @@
 package org.opalj
 package util
 
+import org.opalj.concurrent.Locking
+
 /**
  * Measures the execution time of some code.
  *

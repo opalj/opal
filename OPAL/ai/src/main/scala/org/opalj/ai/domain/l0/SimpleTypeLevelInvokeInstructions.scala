@@ -31,8 +31,6 @@ package ai
 package domain
 package l0
 
-import org.opalj.util.{ Yes, Unknown }
-
 import org.opalj.br.{ ObjectType, ReferenceType }
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.BootstrapMethod

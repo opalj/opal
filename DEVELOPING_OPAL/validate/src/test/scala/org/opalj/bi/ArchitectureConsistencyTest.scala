@@ -51,31 +51,29 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
     it should "be consistent with the specified architecture" in {
         val expected =
             new Specification(
-                Specification.SourceDirectory("OPAL/bi/target/scala-2.11/classes")
+                Specification.SourceDirectory("OPAL/bi/target/scala-2.11/classes"),
+                useAnsiColors = true
             ) {
 
                 ensemble('Bi) {
-                    "org.opalj.bi.**" except
+                    "org.opalj.bi.*" except
                         classes("""org\.opalj\.bi\..+Test.*""".r)
                 }
 
-                //
-                // The utility code
-                //
-
-                ensemble('Util) {
-                    "org.opalj.util.**"
+                ensemble('Reader) {
+                    "org.opalj.bi.reader.*" except
+                        classes("""org\.opalj\.bi\.reader\..+Test.*""".r)
                 }
 
-                'Util is_only_allowed_to_use empty
+                'Bi is_only_allowed_to_use empty
 
-                'Bi is_only_allowed_to_use ('Util)
+                // 'Reader is allowed to use everything
 
             }
 
         val result = expected.analyze()
         if (result.nonEmpty) {
-            println("Violations:\n\t"+result.mkString("\n\t"))
+            println("Violations:\n\t"+result.map(_.toString(useAnsiColors = true)).mkString("\n\t"))
             fail("The implemented and the specified architecture are not consistent (see the console for details).")
         }
     }

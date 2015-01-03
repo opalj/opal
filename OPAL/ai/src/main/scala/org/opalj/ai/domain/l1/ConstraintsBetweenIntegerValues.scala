@@ -43,10 +43,6 @@ import org.opalj.ai.VMLevelExceptionsFactory
 import org.opalj.ai.domain.Configuration
 import org.opalj.br.instructions.Instruction
 import org.opalj.constraints.NumericConstraints
-import org.opalj.util.Answer
-import org.opalj.util.No
-import org.opalj.util.Unknown
-import org.opalj.util.Yes
 
 /**
  * Domain that traces the relationship between integer values.

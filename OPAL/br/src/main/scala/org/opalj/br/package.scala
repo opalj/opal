@@ -31,6 +31,8 @@ package org.opalj
 import org.opalj.collection.immutable.UIDSet
 import scala.xml.Node
 import scala.xml.Text
+import scala.annotation.elidable
+import scala.annotation.elidable.ASSERTION
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -48,6 +50,31 @@ import scala.xml.Text
  * @author Michael Eichberg
  */
 package object br {
+
+    private[this] final val checkAssert: Boolean = {
+        try {
+            scala.Predef.assert(false) // <= test whether assertions are turned on or off...
+            println("[info - Bytecode Representation] Production Build - Assertions are disabled")
+        } catch {
+            case ae: AssertionError ⇒
+                println("[info - Bytecode Representation] Development Build - Assertions are enabled")
+        }
+        true
+    }
+
+    // "override" Scala Predef's corresponding assert method
+    @elidable(ASSERTION)
+    def assert(assertion: Boolean): Unit = {
+        if (checkAssert && !assertion)
+            throw new java.lang.AssertionError("assertion failed")
+    }
+
+    // "override" Scala Predef's corresponding assert method
+    @elidable(ASSERTION) @inline
+    final def assert(assertion: Boolean, message: ⇒ Any): Unit = {
+        if (checkAssert && !assertion)
+            throw new java.lang.AssertionError("assertion failed: "+message)
+    }
 
     type Attributes = Seq[Attribute]
 
@@ -78,6 +105,24 @@ package object br {
     type SourceElementID = Int
 
     type Opcode = Int
+
+    /**
+     * A program counter identifies an instruction in a code array.
+     *
+     * A program counter is a value in the range `[0/*UShort.min*/, 65535/*UShort.max*/]`.
+     *
+     * @note This type alias serves comprehension purposes.
+     */
+    type PC = UShort
+
+    /**
+     * A collection of program counters using a UShortSet as its backing collection.
+     *
+     * Using PCs is in particular well suited for small(er) collections.
+     *
+     * @note This type alias serves comprehension purposes.
+     */
+    type PCs = org.opalj.collection.UShortSet
 
     /**
      * Converts a given list of annotations into a Java-like representation.

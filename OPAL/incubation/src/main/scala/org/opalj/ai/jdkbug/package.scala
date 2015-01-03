@@ -29,8 +29,8 @@
 package org.opalj
 package ai
 
-import br._
-import domain.DefaultDomainValueBinding
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
 
 /**
  * Contains definitions that are used by the elements specified in JDKBugs

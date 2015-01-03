@@ -34,19 +34,23 @@ import scala.language.existentials
 
 import java.net.URL
 
+import scala.Console.{ RED, BLUE, RESET, BOLD }
 import scala.util.matching.Regex
 import scala.collection.{ Map ⇒ AMap, Set ⇒ ASet }
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
 
-import br._
-import br.reader.Java8Framework.ClassFiles
-import br.analyses.{ ClassHierarchy, Project, SomeProject }
+import org.opalj.br._
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.br.analyses.{ ClassHierarchy, Project, SomeProject }
 
-import de._
+import org.opalj.de._
 
 /**
  * Used to report deviations between the specified and the implemented architecture.
+ *
+ * @author Michael Eichberg
+ * @author Marco Torsello
  */
 case class SpecificationViolation(
         project: SomeProject,
@@ -57,22 +61,38 @@ case class SpecificationViolation(
         description: String) {
 
     override def toString(): String = {
-        var javaSource = source.toJava
-        var javaTarget = target.toJava
+        toString(useAnsiColors = false)
+    }
 
-        if (javaSource.contains("{")) {
-            javaSource = javaSource.substring(0, javaSource.indexOf("{"))
-        }
-        javaSource = "("+javaSource+".java:"+source.getLineNumber(project).getOrElse("1):"+javaSource)+")"
+    def toString(useAnsiColors: Boolean): String = {
+        //        var javaSource = source.toJava
+        //        var javaTarget = target.toJava
+        //
+        //        if (javaSource.contains("{")) {
+        //            javaSource = javaSource.substring(0, javaSource.indexOf("{"))
+        //        }
+        //        javaSource = "("+javaSource+".java:"+source.getLineNumber(project).getOrElse("1):"+javaSource)+")"
+        //
+        //        if (javaTarget.contains("{")) {
+        //            javaTarget = javaTarget.substring(0, javaTarget.indexOf("{"))
+        //        }
+        //        javaTarget = "("+javaTarget+".java:"+target.getLineNumber(project).getOrElse("1):"+javaTarget)+")"
 
-        if (javaTarget.contains("{")) {
-            javaTarget = javaTarget.substring(0, javaTarget.indexOf("{"))
-        }
-        javaTarget = "("+javaTarget+".java:"+target.getLineNumber(project).getOrElse("1):"+javaTarget)+")"
+        val sourceLineNumber = source.getLineNumber(project).getOrElse(1)
+        val javaSource = s"(${source.classType.toJava}.java:${sourceLineNumber})"
+        val targetLineNumber = target.getLineNumber(project).getOrElse(1)
+        val javaTarget = s"(${target.classType.toJava}.java:${targetLineNumber})"
 
-        description+" between "+dependencyChecker.sourceEnsembles.mkString(", ")+
-            " and "+dependencyChecker.targetEnsembles.mkString(", ")+": "+
-            javaSource+" "+dependencyType+" "+
-            javaTarget
+        if (useAnsiColors)
+            RED + description+
+                " between "+BLUE + dependencyChecker.sourceEnsembles.mkString(", ") + RED+
+                " and "+BLUE + dependencyChecker.targetEnsembles.mkString(", ") + RESET+": "+
+                javaSource+" "+BOLD + dependencyType + RESET+" "+javaTarget
+        else
+            description+
+                " between "+dependencyChecker.sourceEnsembles.mkString(", ")+
+                " and "+dependencyChecker.targetEnsembles.mkString(", ")+": "+
+                javaSource+" "+dependencyType+" "+javaTarget
+
     }
 }

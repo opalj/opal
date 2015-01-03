@@ -111,7 +111,7 @@ class JoinObjectTypesTest
 
     describe("the behavior of the method joinObjectTypes(ObjectType,ObjectType) of ClassHierachy") {
         // uncomment to display the test graph:
-        //        util.writeAndOpen((toDot.generateDot(Set(classhierachy.toGraph))), "test", ".dot")
+        //        io.writeAndOpen((toDot.generateDot(Set(classhierachy.toGraph))), "test", ".dot")
 
         describe("the behavior of joins with classes") {
             describe("the behavior of joins with sets containing one class") {

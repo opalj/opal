@@ -1,10 +1,10 @@
 name := "Common"
 
-version := "0.8.0-SNAPSHOT"
+version := "0.8.0"
 
-scalacOptions in (Compile, doc) := Seq("-deprecation", "-feature", "-unchecked")
+scalacOptions in (Compile, doc) := Opts.doc.title("OPAL-Common") 
 
-scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL-Common Functionality") 
+//scalacOptions in Compile += "-Xdisable-assertions"
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 

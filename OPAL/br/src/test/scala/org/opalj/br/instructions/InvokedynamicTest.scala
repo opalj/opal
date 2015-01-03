@@ -36,7 +36,7 @@ import org.scalatest.Matchers
 import org.scalatest.FunSpec
 
 import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.util.JRELibraryFolder
+import org.opalj.bytecode.JRELibraryFolder
 
 import org.opalj.br.reader.Java8Framework
 import analyses.{ Project, SomeProject }

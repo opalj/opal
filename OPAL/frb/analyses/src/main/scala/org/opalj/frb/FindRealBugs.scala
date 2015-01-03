@@ -29,14 +29,16 @@
 package org.opalj
 package frb
 
-import analyses._
-import br._
-import br.analyses._
-import br.reader._
 import java.net.URL
 import java.io._
 import java.util.Properties
+
 import scala.collection.JavaConversions._
+
+import org.opalj.io.process
+import org.opalj.br._
+import org.opalj.br.analyses._
+import org.opalj.br.reader._
 
 /**
  * FindRealBugs is a QA-tool using the OPAL(AI) framework to perform static code analysis

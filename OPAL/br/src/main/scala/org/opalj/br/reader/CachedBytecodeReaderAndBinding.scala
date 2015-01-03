@@ -32,7 +32,8 @@ package reader
 
 import scala.collection.concurrent.TrieMap
 
-import instructions._
+import org.opalj.br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and

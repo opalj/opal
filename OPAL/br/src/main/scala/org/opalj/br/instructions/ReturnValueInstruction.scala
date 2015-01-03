@@ -30,8 +30,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
-
 /**
  * An instruction that returns a value calculated by the method.
  *

@@ -31,13 +31,7 @@ package ai
 package domain
 package l2
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
-import org.opalj.collection.mutable.Locals
-
 import org.opalj.br._
-import org.opalj.br.instructions._
-import org.opalj.br.analyses.{ Project, ClassHierarchy }
 
 /**
  * Mix in this trait if methods that are called by `invokeXXX` instructions should
@@ -46,7 +40,7 @@ import org.opalj.br.analyses.{ Project, ClassHierarchy }
  * @author Michael Eichberg
  */
 trait PerformInvocations extends MethodCallsDomain {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode with domain.ClassHierarchy ⇒
+    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
 
     /**
      * Identifies recursive calls.

@@ -42,6 +42,8 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.ParallelTestExecution
 
+import org.opalj.io.process
+
 /**
  * This test(suite) just loads a very large number of class files to make sure the library
  * can handle them and to test the "corner" cases. Basically, we test for NPEs,
@@ -58,7 +60,7 @@ class LoadClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
 
     behavior of "OPAL"
 
-    val jreLibFolder: File = org.opalj.util.JRELibraryFolder
+    val jreLibFolder: File = org.opalj.bytecode.JRELibraryFolder
 
     var count = 0
     for {

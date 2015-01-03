@@ -30,8 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import language.implicitConversions
-
 /**
  * Generic infrastructure to record the values returned by the method.
  * (Note that the computational type

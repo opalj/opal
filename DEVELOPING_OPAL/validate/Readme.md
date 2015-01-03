@@ -1,2 +1,3 @@
 #Overview
-This project contains integration tests and the specification of the intended architecture of OPALs projects. The latter is validated when the tests are run.
+This project contains cross-project integration tests as well as the specification of the intended architecture of OPAL (projects). 
+The latter is validated when the tests are run.
