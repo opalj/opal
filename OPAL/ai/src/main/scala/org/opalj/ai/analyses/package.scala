@@ -29,9 +29,6 @@
 package org.opalj
 package ai
 
-import scala.language.existentials
-
-import org.opalj.ai.analyses.BaseFieldValuesAnalysisDomain
 import org.opalj.br.Field
 import org.opalj.br.Method
 
@@ -43,4 +40,6 @@ package object analyses {
     type FieldValueInformation = Map[Field, BaseFieldValuesAnalysisDomain#DomainValue]
 
     type MethodReturnValueInformation = Map[Method, Option[Domain#DomainValue]]
+
+    type MutabilityRating = MutabilityRating.Value
 }

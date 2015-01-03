@@ -33,7 +33,6 @@ import scala.collection.{ Map, Set }
 
 import br.analyses.SomeProject
 import br.Method
-import br.MethodDescriptor
 
 /**
  * Supports the specification and solving of data-flow problems.

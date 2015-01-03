@@ -36,7 +36,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 import org.opalj.bi.TestSupport.locateTestResources
-import util.{ Answer, Yes, No, Unknown }
+
 import reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable.UIDSet
 

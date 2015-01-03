@@ -30,8 +30,6 @@ package org.opalj
 package de
 
 import br._
-import br.analyses.SomeProject
-import br.analyses.ProjectInformationKey
 
 /**
  * Collects all dependencies extracted by a [[DependencyExtractor]].

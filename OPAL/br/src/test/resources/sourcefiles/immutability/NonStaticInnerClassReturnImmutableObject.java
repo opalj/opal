@@ -29,6 +29,7 @@
 package immutability;
 
 import immutability.helperclasses.ImmutableClass;
+import immutability.annotations.Immutable;
 import immutability.annotations.Mutable;
 
 /**
@@ -37,7 +38,7 @@ import immutability.annotations.Mutable;
  *
  * @author Andre Pacak
  */
-@Mutable("the field of the enclosing class, which gets returned by a method of the inner class, is potentially mutable (after a downcast)")
+@Immutable("the field of the enclosing class, which gets returned by a method of the inner class, is immutable (a downcast is not possible(!))")
 public class NonStaticInnerClassReturnImmutableObject {
 
     private final ImmutableClass object;

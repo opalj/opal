@@ -32,7 +32,6 @@ package analyses
 
 import br._
 import br.analyses._
-import br.instructions._
 
 /**
  * This analysis reports classes that have some `equals()` method(s), but not

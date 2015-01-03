@@ -36,6 +36,7 @@ import scala.reflect.ClassTag
 
 import org.opalj.bi.{ AttributeParent, AttributesParent }
 import org.opalj.bi.reader.Constant_PoolReader
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * A representation of the constant pool.

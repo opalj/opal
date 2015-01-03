@@ -28,15 +28,16 @@
  */
 package immutability;
 
-import immutability.annotations.Mutable;
+import immutability.annotations.ConditionallyImmutable;
 
 /**
- * A mutable class which defines a public field which is an array.
+ * A conditionally immutable class which defines a public field which is an array.
  *
  * @author Andre Pacak
  */
-@Mutable("public visible array")
+@ConditionallyImmutable("public visible array")
 public class FinalPublicArray {
 
     public final int[] array = new int[10];
+
 }

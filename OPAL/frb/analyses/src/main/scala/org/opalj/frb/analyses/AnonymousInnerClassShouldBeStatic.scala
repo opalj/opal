@@ -30,10 +30,10 @@ package org.opalj
 package frb
 package analyses
 
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import br._
 import br.analyses._
 import br.instructions._
-import util._
 
 /**
  * This analysis reports anonymous inner classes that do not use their reference to the

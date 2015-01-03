@@ -28,6 +28,8 @@
  */
 package org.opalj
 
+import org.opalj.io.process
+
 package object bugpicker {
 
     lazy val htmlCSS: String =

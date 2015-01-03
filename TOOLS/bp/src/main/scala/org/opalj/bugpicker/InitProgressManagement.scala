@@ -51,17 +51,16 @@ class InitProgressManagement(
         final def progress(step: Int, evt: EventType.Value, msg: Option[String]): Unit = evt match {
             case EventType.Start ⇒ {
                 Platform.runLater(new Runnable() {
-                    override def run() {
+                    override def run(): Unit = {
                         progressListView.items() += step.toString+": "+msg.get
                         progressListItems += ((step.toString, msg.get))
                         progressListView.scrollTo(progressListView.getItems.size() - 1)
                     }
-                }
-                )
+                })
             }
             case EventType.End ⇒ {
                 Platform.runLater(new Runnable() {
-                    override def run() {
+                    override def run(): Unit = {
                         progressListView.items() -= step.toString+": "+progressListItems.get(step.toString).get
                         progressListItems.remove(step.toString)
                         val prog = step.toDouble / classCount

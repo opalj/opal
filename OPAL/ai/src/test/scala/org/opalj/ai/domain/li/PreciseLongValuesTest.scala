@@ -31,14 +31,11 @@ package ai
 package domain
 package li
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
-import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 

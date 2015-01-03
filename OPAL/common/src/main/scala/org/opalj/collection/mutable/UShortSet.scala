@@ -30,7 +30,7 @@ package org.opalj
 package collection
 package mutable
 
-import UShort.{ MinValue, MaxValue }
+import org.opalj.UShort.{ MinValue, MaxValue }
 
 /**
  * A memory-efficient, mutable, sorted set of unsigned short values that
@@ -44,9 +44,9 @@ trait UShortSet extends collection.UShortSet {
      * Adds the given value to this set if it is not already contained in this set.
      * If this set has enough space to hold the additional value, a reference to this
      * set is returned. Otherwise, a new set is created and a reference to that set
-     * is returned. Hence, the return value ''must not'' be ignored.
+     * is returned. Hence, '''the return value must not be ignored'''.
      *
-     * @return The set with the given value.
+     * @return The "new" set with the given value.
      */
     def +≈:(value: UShort): UShortSet
 
@@ -91,64 +91,66 @@ private class UShortSet2(private var value: Int) extends UShortSet {
 
     def min: UShort = value1
 
-    def size: Int = if (notFull) 1 else 2
+    override def size: Int = if (notFull) 1 else 2
 
-    def contains(uShortValue: UShort): Boolean = {
-        val value1 = this.value1
-        value1 == uShortValue || (uShortValue > value1 && value2 == uShortValue)
+    def contains(value: UShort): Boolean = {
+        this.value1 == value || (value > 0 && this.value2 == value)
     }
 
-    def foreach(f: /*ushortValue:*/ UShort ⇒ Unit): Unit =
-        { f(value1); val value2 = this.value2; if (value2 > 0) f(value2) }
+    def foreach[U](f: UShort ⇒ U): Unit = {
+        f(value1)
+        // if this set contains more than one value...
+        val value2 = this.value2
+        if (value2 > 0) f(value2)
+    }
 
-    def forall(f: /*ushortValue:*/ UShort ⇒ Boolean): Boolean = {
+    override def forall(f: UShort ⇒ Boolean): Boolean = {
         val value2 = this.value2
         f(value1) && ((value2 == 0) || f(value2))
     }
 
-    def +≈:(uShortValue: UShort): UShortSet = {
-        if (uShortValue < MinValue || uShortValue > MaxValue)
-            throw new IllegalArgumentException("value out of range: "+uShortValue)
+    def +≈:(newValue: UShort): UShortSet = {
+        assert(newValue >= MinValue && newValue <= MaxValue, s"no ushort value: newValue")
 
         if (notFull) {
             val value = this.value
             // update this set's container, if necessary 
-            if (uShortValue < value)
-                this.value = (value << 16) | uShortValue
-            else if (uShortValue > value)
-                this.value = (uShortValue << 16) | value
+            if (newValue < value)
+                this.value = (value << 16) | newValue
+            else if (newValue > value)
+                this.value = (newValue << 16) | value
 
             this // this set..
         } else {
             // this set is full...
             val value1 = this.value1
-            if (uShortValue < value1) {
+            if (newValue < value1) {
                 // the new value is smaller than the first value
-                new UShortSet4((i2lBitMask(value) << 16) | uShortValue)
-            } else if (uShortValue == value1) {
+                new UShortSet4((i2lBitMask(value) << 16) | newValue)
+            } else if (newValue == value1) {
                 // the new value is already in the set
                 this
             } else {
                 // the new value is larger than the first value...
                 val value2 = this.value2
-                if (uShortValue < value2) {
+                if (newValue < value2) {
                     // the new value is smaller than the second value
                     new UShortSet4(
-                        value1.toLong | (uShortValue.toLong << 16) | (value2.toLong << 32)
+                        value1.toLong | (newValue.toLong << 16) | (value2.toLong << 32)
                     )
-                } else if (uShortValue == value2)
+                } else if (newValue == value2)
                     // the new value is equal to the second value
                     this
                 else /*uShortValue > value2*/ {
                     new UShortSet4(
-                        i2lBitMask(value) | (i2lBitMask(uShortValue) << 32)
+                        i2lBitMask(value) | (i2lBitMask(newValue) << 32)
                     )
                 }
             }
         }
     }
 
-    def isEmpty = false
+    override def isEmpty = false
 
     def iterator: Iterator[UShort] =
         if (notFull)
@@ -202,7 +204,7 @@ private class UShortSet4(private var value: Long) extends UShortSet {
 
     def min: UShort = value1.toInt
 
-    def size: Int = if (notFull) 3 else 4
+    override def size: Int = if (notFull) 3 else 4
 
     def mutableCopy: mutable.UShortSet = {
         if (notFull)
@@ -214,8 +216,9 @@ private class UShortSet4(private var value: Long) extends UShortSet {
     }
 
     def +≈:(uShortValue: UShort): UShortSet = {
-        if (uShortValue < MinValue || uShortValue > MaxValue)
-            throw new IllegalArgumentException("value out of range: "+uShortValue)
+        assert(
+            uShortValue >= MinValue && uShortValue <= MaxValue,
+            s"no ushort value: $uShortValue")
 
         val newValue: Long = uShortValue.toLong
         val value1 = this.value1
@@ -279,15 +282,15 @@ private class UShortSet4(private var value: Long) extends UShortSet {
         }
     }
 
-    def contains(uShortValue: UShort): Boolean = {
+    def contains(value: UShort): Boolean = {
         val value3 = this.value3
-        if (uShortValue < value3) // this test also handles the nonFull case!
-            value1 == uShortValue || value2 == uShortValue
+        if (value < value3) // this test also handles the nonFull case!
+            value1 == value || value2 == value
         else
-            value3 == uShortValue || value4 == uShortValue
+            value3 == value || value4 == value
     }
 
-    def foreach(f: /*ushortValue:*/ UShort ⇒ Unit): Unit = {
+    def foreach[U](f: UShort ⇒ U): Unit = {
         f(value1.toInt)
         f(value2.toInt)
         f(value3.toInt)
@@ -295,7 +298,7 @@ private class UShortSet4(private var value: Long) extends UShortSet {
         if (value4 > 0l) f(value4.toInt)
     }
 
-    def forall(f: /*ushortValue:*/ UShort ⇒ Boolean): Boolean = {
+    override def forall(f: UShort ⇒ Boolean): Boolean = {
         val value4 = this.value4
         f(value1.toInt) &&
             f(value2.toInt) &&
@@ -303,7 +306,7 @@ private class UShortSet4(private var value: Long) extends UShortSet {
             ((value4 == 0l) || f(value4.toInt))
     }
 
-    def isEmpty = false
+    override def isEmpty = false
 
     def iterator: Iterator[UShort] = new Iterator[UShort] {
         private var i = 0;
@@ -391,25 +394,24 @@ private class UShortSetNode(
 
     def iterable = set1.iterable ++ set2.iterable
 
-    def size: Int = set1.size + set2.size
+    override def size: Int = set1.size + set2.size
 
-    def contains(uShortValue: UShort): Boolean =
-        if (set1.max > uShortValue)
-            set1.contains(uShortValue)
-        else if (set1.max == uShortValue)
+    def contains(value: UShort): Boolean =
+        if (set1.max > value)
+            set1.contains(value)
+        else if (set1.max == value)
             true
         else
-            set2.contains(uShortValue)
+            set2.contains(value)
 
-    def foreach(f: /*ushortValue:*/ UShort ⇒ Unit): Unit =
-        { set1.foreach(f); set2.foreach(f) }
+    def foreach[U](f: UShort ⇒ U): Unit = { set1.foreach(f); set2.foreach(f) }
 
-    def forall(f: /*ushortValue:*/ UShort ⇒ Boolean): Boolean =
-        set1.forall(f) && set2.forall(f)
+    override def forall(f: UShort ⇒ Boolean): Boolean = set1.forall(f) && set2.forall(f)
 
     def +≈:(uShortValue: UShort): UShortSet = {
-        if (uShortValue < MinValue || uShortValue > MaxValue)
-            throw new IllegalArgumentException("value out of range: "+uShortValue)
+        assert(
+            uShortValue >= MinValue && uShortValue <= MaxValue,
+            s"no ushort value: $uShortValue")
 
         val set1Max = set1.max
         if (set1Max > uShortValue ||
@@ -437,7 +439,7 @@ private class UShortSetNode(
         }
     }
 
-    def isEmpty = false
+    override def isEmpty = false
 
     override def hashCode = (set1.hashCode() * 37 + set2.hashCode()) * 37
 
@@ -456,22 +458,18 @@ private class UShortSetNode(
             List(set1.asGraph, set2.asGraph))
 }
 
-object UShortSetNode {
-
-}
-
 private object EmptyUShortSet extends UShortSet {
-    def isEmpty = true
-    def size: Int = 0
+    override def isEmpty = true
+    override def size: Int = 0
     def mutableCopy: mutable.UShortSet = this
     def iterator = Iterator.empty
     def iterable = Iterable.empty
     def contains(uShortValue: UShort): Boolean = false
-    def foreach(f: /*ushortValue:*/ UShort ⇒ Unit): Unit = { /*Nothing to do.*/ }
-    def forall(f: /*ushortValue:*/ UShort ⇒ Boolean): Boolean = true
+    def foreach[U](f: UShort ⇒ U): Unit = { /*Nothing to do.*/ }
+    override def forall(f: UShort ⇒ Boolean): Boolean = true
+    def max = throw new NoSuchElementException("the set is empty")
+    def min = throw new NoSuchElementException("the set is empty")
     def +≈:(uShortValue: UShort): UShortSet = UShortSet(uShortValue)
-    def max = throw new UnsupportedOperationException("the set is empty")
-    def min = throw new UnsupportedOperationException("the set is empty")
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
@@ -494,13 +492,12 @@ object UShortSet {
     /**
      * Creates a new set of unsigned short values which contains the given value.
      *
-     * @param uShortValue An integer value in the range [0,0xFFFF).
+     * @param value An unsigned short value; i.e., an integer value in the range [0,0xFFFF).
      */
-    @inline def apply(uShortValue: UShort): UShortSet = {
-        if (uShortValue < MinValue || uShortValue > MaxValue)
-            throw new IllegalArgumentException("value out of range: "+uShortValue)
+    @inline def apply(value: UShort): UShortSet = {
+        assert(value >= MinValue && value <= MaxValue, s"value out of range: $value")
 
-        new UShortSet2(uShortValue)
+        new UShortSet2(value)
     }
 
     /**
@@ -509,31 +506,26 @@ object UShortSet {
      * @param uShortValue1 An integer value in the range [0,0xFFFF).
      * @param uShortValue2 An integer value in the range [0,0xFFFF).
      */
-    @inline def apply(uShortValue1: UShort, uShortValue2: UShort): UShortSet = {
-        if (uShortValue1 < MinValue || uShortValue1 > MaxValue)
-            throw new IllegalArgumentException("value out of range: "+uShortValue1)
-        if (uShortValue2 < MinValue || uShortValue2 > MaxValue)
-            throw new IllegalArgumentException("value out of range: "+uShortValue2)
+    @inline def apply(value1: UShort, value2: UShort): UShortSet = {
+        assert(value1 >= MinValue && value1 <= MaxValue, s"value out of range: $value1")
+        assert(value2 >= MinValue && value2 <= MaxValue, s"value out of range: $value2")
 
-        if (uShortValue1 == uShortValue2)
-            new UShortSet2(uShortValue1)
-        else if (uShortValue1 < uShortValue2)
-            new UShortSet2(uShortValue1, uShortValue2)
+        if (value1 == value2)
+            new UShortSet2(value1)
+        else if (value1 < value2)
+            new UShortSet2(value1, value2)
         else
-            new UShortSet2(uShortValue2, uShortValue1)
+            new UShortSet2(value2, value1)
     }
 
     /**
      * Creates a new sorted set of unsigned short values.
      */
-    def create(uShortValues: UShort*): UShortSet = {
-        uShortValues match {
-            case Nil ⇒
-                EmptyUShortSet
-            case Seq(uShortValue) ⇒
-                apply(uShortValue)
-            case values ⇒
-                (apply(values.head) /: values.tail)((s, v) ⇒ v +≈: s)
+    def create(values: UShort*): UShortSet = {
+        values match {
+            case Nil        ⇒ EmptyUShortSet
+            case Seq(value) ⇒ apply(value)
+            case values     ⇒ (apply(values.head) /: values.tail)((s, v) ⇒ v +≈: s)
         }
     }
 }

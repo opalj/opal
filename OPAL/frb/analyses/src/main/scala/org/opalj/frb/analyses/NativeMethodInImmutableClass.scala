@@ -34,7 +34,6 @@ import AnalysesHelpers._
 
 import br._
 import br.analyses._
-import br.instructions._
 
 /**
  * This analysis reports classes that are annotated with an annotation with the simple

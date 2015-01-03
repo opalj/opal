@@ -30,8 +30,11 @@ package org.opalj
 package br
 package analyses
 
-import java.net.URL
-import java.io.File
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.Type
 
 /**
  * Common superclass of all reporters that depend on the source file's of a specific

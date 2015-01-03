@@ -31,11 +31,7 @@ package de
 
 import org.opalj.br._
 import org.opalj.br.instructions._
-import org.opalj.br.analyses.SomeProject
-
 import org.opalj.ai.invokedynamic._
-
-import DependencyType._
 
 /**
  * A [[DependencyExtractor]] that delegates the extraction of `Invokedynamic` related

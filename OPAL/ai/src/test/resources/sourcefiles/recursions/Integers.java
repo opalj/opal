@@ -28,6 +28,12 @@
  */
 package recursions;
 
+/**
+ * Class used as fixture for analyses/tests that identify (endless) recursive
+ * calls related to Integer values.
+ * 
+ * @author Marco Jacobasch
+ */
 public class Integers {
 
     // nothing

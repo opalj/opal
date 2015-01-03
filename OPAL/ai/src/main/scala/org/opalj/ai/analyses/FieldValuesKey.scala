@@ -30,10 +30,9 @@ package org.opalj
 package ai
 package analyses
 
-import org.opalj.br.Field
-import org.opalj.br.UpperTypeBound
-import org.opalj.br.analyses._
 import org.opalj.br.ClassFile
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
 
 /**
  * The ''key'' object to get information about the "more precise" field types.

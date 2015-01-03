@@ -31,10 +31,10 @@ package recursions;
 import java.util.List;
 
 /**
- * Class used as fixture for objects.
+ * Class used as fixture for analyses/tests that identify (endless) recursive
+ * calls related to objects.
  * 
  * @author Marco Jacobasch
- *
  */
 public class Objects {
 

@@ -64,7 +64,7 @@ class DialogStage(owner: Window) extends Stage {
 
 object DialogStage {
 
-    def showMessage(theTitle: String, message: String, owner: Window) {
+    def showMessage(theTitle: String, message: String, owner: Window): Unit = {
         val stage = new DialogStage(owner) {
             theStage ⇒
             title = theTitle

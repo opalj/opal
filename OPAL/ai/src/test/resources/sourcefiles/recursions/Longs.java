@@ -29,10 +29,10 @@
 package recursions;
 
 /**
- * Class used as fixture for long values.
+ * Class used as fixture for analyses/tests that identify (endless) recursive
+ * calls related to long values.
  * 
  * @author Marco Jacobasch
- *
  */
 public class Longs {
 

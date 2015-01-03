@@ -29,7 +29,6 @@
 package org.opalj
 package ai
 
-import org.opalj.util.Answer
 import org.opalj.br.{ ReferenceType, ArrayType, FieldType }
 
 /**

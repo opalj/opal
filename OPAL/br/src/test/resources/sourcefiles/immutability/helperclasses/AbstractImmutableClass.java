@@ -38,7 +38,7 @@ import immutability.annotations.Immutable;
 @Immutable("no field is mutated")
 public abstract class AbstractImmutableClass {
 
-    protected int x;
+    private int x;
 
     public AbstractImmutableClass(int x) {
         this.x = x;

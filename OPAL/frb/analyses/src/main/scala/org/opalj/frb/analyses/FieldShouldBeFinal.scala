@@ -31,9 +31,7 @@ package frb
 package analyses
 
 import AnalysesHelpers._
-import br._
 import br.analyses._
-import br.instructions._
 
 /**
  * This analysis reports `public|protected static` fields (excluding arrays/hash tables)
