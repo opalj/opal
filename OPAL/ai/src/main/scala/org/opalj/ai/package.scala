@@ -29,11 +29,12 @@
 package org.opalj
 
 import scala.language.existentials
-
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
+import scala.annotation.elidable
+import scala.annotation.elidable.ASSERTION
 
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
@@ -61,10 +62,30 @@ import org.opalj.br.instructions.Instruction
  */
 package object ai {
 
-    assert({
-        println("[info - Abstract Interpretation Framework] Assertions are enabled.")
+    private[this] final val checkAssert: Boolean = {
+        try {
+            scala.Predef.assert(false) // <= test whether assertions are turned on or off...
+            println("[info - Abstract Interpretation Framework]] Production Build - Assertions are disabled")
+        } catch {
+            case ae: AssertionError ⇒
+                println("[info - Abstract Interpretation Framework] Development Build - Assertions are enabled.")
+        }
         true
-    })
+    }
+
+    // "override" Scala Predef's corresponding assert method
+    @elidable(ASSERTION)
+    def assert(assertion: Boolean): Unit = {
+        if (checkAssert && !assertion)
+            throw new java.lang.AssertionError("assertion failed")
+    }
+
+    // "override" Scala Predef's corresponding assert method
+    @elidable(ASSERTION) @inline
+    final def assert(assertion: Boolean, message: ⇒ Any): Unit = {
+        if (checkAssert && !assertion)
+            throw new java.lang.AssertionError("assertion failed: "+message)
+    }
 
     /**
      * Type alias that can be used if the AI can use all kinds of domains.
@@ -108,6 +129,9 @@ package object ai {
      * currently only used for the implicit value of `IF_XXX` instructions.
      */
     type ValueOrigin = Int
+
+    type PC = org.opalj.br.PC
+    type PCs = org.opalj.br.PCs
 
     type PrimitiveValuesFactory = IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
     type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with VMLevelExceptionsFactory with TypedValuesFactory
@@ -281,7 +305,7 @@ package object ai {
      * Collects the result of a match of a partial function against an instruction's
      * operands.
      */
-    def collectWithOperandsAndIndex[B](
+    def collectPCWithOperands[B](
         domain: ValuesDomain)(
             code: Code, operandsArray: domain.OperandsArray)(
                 f: PartialFunction[(PC, Instruction, domain.Operands), B]): Seq[B] = {
@@ -301,6 +325,24 @@ package object ai {
             pc = instruction.indexOfNextInstruction(pc, code)
         }
         result.reverse
+    }
+
+    def foreachPCWithOperands[U](
+        domain: ValuesDomain)(
+            code: Code, operandsArray: domain.OperandsArray)(
+                f: Function[(PC, Instruction, domain.Operands), U]): Unit = {
+        val instructions = code.instructions
+        val max_pc = instructions.size
+        var pc = 0
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            val operands = operandsArray(pc)
+            if (operands ne null) {
+                val params = (pc, instruction, operands)
+                f(params)
+            }
+            pc = instruction.indexOfNextInstruction(pc, code)
+        }
     }
 
     //    /**

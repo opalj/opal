@@ -33,8 +33,6 @@ package l0
 
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
-import org.opalj.util.Unknown
-import org.opalj.util.Yes
 
 /**
  * Implements the handling of field access instructions at the type level.

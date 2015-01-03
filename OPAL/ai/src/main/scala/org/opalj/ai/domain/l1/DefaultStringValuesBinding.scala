@@ -31,9 +31,13 @@ package ai
 package domain
 package l1
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+import scala.reflect.ClassTag
 
-import scala.collection.SortedSet
+import org.opalj.ai.CorrelationalDomainSupport
+import org.opalj.ai.IntegerValuesDomain
+import org.opalj.ai.TypedValuesFactory
+import org.opalj.ai.domain.ClassHierarchy
+import org.opalj.ai.domain.Configuration
 
 /**
  * @author Michael Eichberg
@@ -41,17 +45,20 @@ import scala.collection.SortedSet
 trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with StringValues {
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
-    // Let's fix the type hierarchy
     type DomainStringValue = StringValue
+    final val DomainStringValue: ClassTag[DomainStringValue] = implicitly
 
     //
     // FACTORY METHODS
     //
 
     override def StringValue(origin: ValueOrigin, value: String): DomainStringValue =
-        StringValue(origin, value, nextT())
+        new StringValue(origin, value, nextT())
 
-    override def StringValue(origin: ValueOrigin, value: String, t: Timestamp): DomainStringValue =
+    override def StringValue(
+        origin: ValueOrigin,
+        value: String,
+        t: Timestamp): DomainStringValue =
         new StringValue(origin, value, t)
 }
 

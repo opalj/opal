@@ -29,11 +29,6 @@
 package org.opalj
 package ai
 
-import scala.reflect.ClassTag
-
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeReturnAddress
-
 /**
  * Defines the core functionality that is shared across all [[Domain]]s that implement
  * the operations related to different kinds of values and instructions. It primarily

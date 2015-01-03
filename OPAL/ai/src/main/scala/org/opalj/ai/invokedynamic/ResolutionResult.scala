@@ -30,8 +30,6 @@ package org.opalj
 package ai
 package invokedynamic
 
-import scala.language.existentials
-
 import org.opalj.br._
 import org.opalj.br.instructions.INVOKEDYNAMIC
 
@@ -41,6 +39,7 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  * @author Arne Lottmann
  * @author Michael Eichberg
  */
+// TODO Seems to be dead code!
 sealed trait ResolutionResult {
 
     /**

@@ -30,12 +30,10 @@ package org.opalj
 package frb
 package analyses
 
-import org.opalj.util._
-
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
-
 import org.opalj.ai._
 import org.opalj.ai.domain._
 import org.opalj.ai.domain.l0._
@@ -120,8 +118,6 @@ class IincTracingDomain
          * no update is needed since we don't care about `SomeValue`s.
          */
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
-            assert(this.computationalType == value.computationalType)
-
             if (value.isInstanceOf[IincResults]) {
                 // Preserve IINC results only
                 StructuralUpdate(value)

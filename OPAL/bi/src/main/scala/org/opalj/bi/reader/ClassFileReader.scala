@@ -30,10 +30,14 @@ package org.opalj
 package bi
 package reader
 
-import java.io.{ File, FileInputStream, InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
+import java.io.File
+import java.io.{ FileInputStream, InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
 import java.util.zip.{ ZipFile, ZipEntry }
 import java.net.URL
 import java.util.zip.ZipInputStream
+
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.io.process
 
 /**
  * Implements the template method to read in a Java class file. Additionally,

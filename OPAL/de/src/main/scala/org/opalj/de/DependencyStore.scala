@@ -33,7 +33,6 @@ import scala.collection.Map
 import scala.collection.Set
 
 import br._
-import br.analyses.SomeProject
 import br.analyses.ProjectInformationKey
 
 /**

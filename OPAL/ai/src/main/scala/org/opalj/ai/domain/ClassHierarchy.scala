@@ -30,7 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.util.Answer
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.{ ClassHierarchy ⇒ DefaultClassHierarchy }
 

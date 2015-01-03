@@ -40,11 +40,9 @@ import org.scalatest.junit.JUnitRunner
 
 import org.opalj.bi.TestSupport.locateTestResources
 
-import org.opalj.util._
 import org.opalj.br._
-import org.opalj.br.analyses.{ SomeProject, Project }
+import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.domain.l1._
 import org.opalj.ai.domain.l0.RecordMethodCallResults
 
 /**
@@ -63,7 +61,6 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
     it should ("be able to analyze a simple static method that does nothing") in {
         val method = StaticCalls.findMethod("doNothing").get
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
-        import domain._
         val result = BaseAI(StaticCalls, method, domain)
         result.domain.returnedNormally should be(true)
     }

@@ -51,6 +51,13 @@ sealed trait VirtualSourceElement
      */
     override def compare(that: VirtualSourceElement): Int
 
+    /**
+     * Returns the class type of this `VirtualSourceElement`. If this `VirtualSourceElement`
+     * is a [[VirtualClass]] the returned type is the declared class else it is the
+     * declaring class.
+     */
+    def classType: ReferenceType
+
     def toJava: String
 
     /**
@@ -68,7 +75,9 @@ sealed trait VirtualSourceElement
  */
 final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement {
 
-    override def isClass = true
+    override def isClass: Boolean = true
+
+    override def classType: ObjectType = thisType
 
     override def toJava: String = thisType.toJava
 
@@ -82,7 +91,7 @@ final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement
         }
     }
 
-    override def hashCode = thisType.id
+    override def hashCode: Int = thisType.id
 
     /**
      * Two objects of type `VirtualClass` are considered equal if they represent
@@ -111,7 +120,9 @@ final case class VirtualField(
         name: String,
         fieldType: FieldType) extends VirtualClassMember {
 
-    override def isField = true
+    override def isField: Boolean = true
+
+    override def classType: ObjectType = declaringClassType
 
     override def toJava: String =
         declaringClassType.toJava+"{ "+fieldType.toJava+" "+name+"; }"
@@ -140,7 +151,7 @@ final case class VirtualField(
         }
     }
 
-    override def hashCode =
+    override def hashCode: Int =
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + fieldType.id
 
     override def equals(other: Any): Boolean = {
@@ -164,7 +175,9 @@ sealed class VirtualMethod(
         val name: String,
         val descriptor: MethodDescriptor) extends VirtualClassMember {
 
-    override def isMethod = true
+    override def isMethod: Boolean = true
+
+    override def classType: ReferenceType = declaringClassType
 
     override def toJava: String =
         declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
@@ -199,7 +212,7 @@ sealed class VirtualMethod(
         }
     }
 
-    override def hashCode =
+    override def hashCode: Int =
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + descriptor.hashCode()
 
     override def equals(other: Any): Boolean = {

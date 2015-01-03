@@ -30,9 +30,11 @@ package org.opalj
 package ai
 package analyses
 
+import org.opalj.ai.Domain
+import org.opalj.ai.InterruptableAI
 import org.opalj.br.Method
-import org.opalj.br.UpperTypeBound
-import org.opalj.br.analyses._
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
 
 /**
  * The ''key'' object to get information about the "more precise" return values.

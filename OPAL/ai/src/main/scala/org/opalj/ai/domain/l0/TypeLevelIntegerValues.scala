@@ -33,8 +33,6 @@ package l0
 
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeInt
-import org.opalj.util.Answer
-import org.opalj.util.Unknown
 
 /**
  * Domain that performs computations related to integer values at the type level.

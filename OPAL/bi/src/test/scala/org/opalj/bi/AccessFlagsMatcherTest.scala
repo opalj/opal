@@ -32,7 +32,6 @@ package bi
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
@@ -42,10 +41,7 @@ import org.scalatest.ParallelTestExecution
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class AccessFlagsMatcherTest
-        extends FlatSpec
-        with Matchers /*with BeforeAndAfterAll */
-        with ParallelTestExecution {
+class AccessFlagsMatcherTest extends FlatSpec with Matchers with ParallelTestExecution {
 
     import AccessFlagsMatcher._
 

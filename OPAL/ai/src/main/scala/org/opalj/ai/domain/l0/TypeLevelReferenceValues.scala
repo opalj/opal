@@ -40,10 +40,6 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.UpperTypeBound
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.util.Answer
-import org.opalj.util.No
-import org.opalj.util.Unknown
-import org.opalj.util.Yes
 
 /**
  * Implements the foundations for performing computations related to reference values.

@@ -30,8 +30,6 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.UShortSet
-
 /**
  * An arithmetic instruction that takes all its operands from the stack and, hence,
  * the constant length "1"; i.e., only one byte is needed to encode the instruction.

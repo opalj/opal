@@ -39,7 +39,7 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestSupport.locateTestResources
-
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import br._
 import br.reader.Java8Framework.ClassFiles
 import l0._
@@ -89,7 +89,7 @@ class MethodsWithBranchesTest
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 
-        org.opalj.ai.debug.XHTML.dumpOnFailureDuringValidation(
+        dumpOnFailureDuringValidation(
             Some(classFile),
             Some(method),
             method.body.get,

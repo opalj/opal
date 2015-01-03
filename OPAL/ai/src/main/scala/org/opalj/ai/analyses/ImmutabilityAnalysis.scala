@@ -31,102 +31,98 @@ package ai
 package analyses
 
 import java.net.URL
-import scala.collection.mutable.HashMap
-import org.opalj.br.ClassFile
-import org.opalj.br.Field
+import scala.collection.Map
+import scala.collection.concurrent.{ TrieMap ⇒ ConcurrentMap }
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-
-object Immutability extends Enumeration {
-    type Immutability = Value
-    val Immutable, Mutable, ConditionallyImmutable, Unknown = Value
-}
+import org.opalj.ai.analyses.MutabilityRating._
+import org.opalj.br.ClassFile
 
 /**
- * An analysis that determines which classes in a project are immutable,
- * conditionally immutable, mutable and cannot be classified.
- *
- * We traverse of the class hierarchy. We classify java.lang.Object as
- * Immutability.Immutable manually because it contains non-static native methods
- * and would be normally be classified as Immutability.Mutable.
- *
- * If a object type gets classified as Immutability.Mutable or Immutability.Unknown
- * all subtypes get classified the same as the supertype.
- *
- * An object type gets classified as Immutability.Immutable if all fields are final and
- * of base type. Every other object type gets classified as Immutability.Unknown.
+ * This analysis determines which classes in a project are immutable,
+ * conditionally immutable or mutable. If this analysis cannot finally assess
+ * the mutability of a class, the result will be unknown. In general, the analysis
+ * will always only assess a class as conditionally immutable or immutable if the
+ * analysis can guarantee the property to always hold.
  *
  * @author Andre Pacak
+ * @author Michael Eichberg
  */
 object ImmutabilityAnalysis {
 
+    private def fieldBasedRating(
+        classFile: ClassFile,
+        superclassTypeRating: MutabilityRating): MutabilityRating = {
+
+        assert(!(classFile.thisType eq ObjectType.Object))
+        assert(!classFile.isInterfaceDeclaration)
+        assert(superclassTypeRating.id > Mutable.id)
+
+        var rating = superclassTypeRating
+
+        classFile.fields.foreach { field ⇒
+            if (field.isFinal) {
+                if (field.fieldType.isReferenceType)
+                    rating = ConditionallyImmutable
+                // else 
+                //  (field.isBaseType === true) => nothing to do
+            } else {
+                return Unknown;
+            }
+        }
+
+        rating
+    }
+
     /**
-     * This method classifies the Immutability of all object types that the
-     * project contains.
+     * Rates the mutability of all class files of the project.
      *
-     * @param project the project that contains the classfiles that get classified.
-     * @param isInterrupted a function that can interrupt the algorithm from the outside.
-     * @return Map that maps from object type to immutabililty classification.
+     * @param project The project that we are analyzing.
+     * @param isInterrupted A function that can interrupt the algorithm from the outside.
+     * @return A map with mutability ratings for class types.
      */
     def doAnalyze(
         project: Project[URL],
-        isInterrupted: () ⇒ Boolean): HashMap[ObjectType, Immutability.Value] = {
+        isInterrupted: () ⇒ Boolean = () ⇒ false): Map[ObjectType, MutabilityRating] = {
+        val classHierarchy = project.classHierarchy
+        import classHierarchy.foreachDirectSubclass
 
-        val objectClassification = HashMap.empty[ObjectType, Immutability.Value]
+        val classification = ConcurrentMap.empty[ObjectType, MutabilityRating]
+        classification(ObjectType.Object) = Immutable // initial configuration
 
-        //insert java.lang.Object
-        //assign Immutability.Immutable even when it contains native methods.
-        objectClassification(ObjectType.Object) = Immutability.Immutable
-
-        def traverse(objectType: ObjectType): Unit = {
+        def traverse(classFile: ClassFile, superclassTypeRating: MutabilityRating): Unit = {
             if (isInterrupted())
-                return
-            var result = Immutability.Unknown
-            if (!(objectClassification contains objectType)) {
-                result = classify(objectType)
-                objectClassification(objectType) = result
-            } else {
-                result = objectClassification(objectType)
-            }
+                return ;
 
-            val subtypes = project.classHierarchy.directSubtypesOf(objectType)
-            result match {
-                case (Immutability.Immutable | Immutability.ConditionallyImmutable) ⇒
-                    subtypes.foreach {
-                        subtype ⇒
-                            traverse(subtype)
+            val classType = classFile.thisType
+            fieldBasedRating(classFile, superclassTypeRating) match {
+                case r @ (Immutable | ConditionallyImmutable) ⇒
+                    classification(classType) = r
+                    foreachDirectSubclass(classType, project) { subclass ⇒
+                        traverse(subclass, superclassTypeRating)
                     }
-                case classification @ _ ⇒
-                    project.classHierarchy.allSubtypes(objectType, false).foreach {
-                        subtype ⇒
-                            objectClassification(subtype) = classification
+                case r @ (Mutable | Unknown) ⇒
+                    classification(classType) = r
+                    classHierarchy.foreachSubtype(classType) { subclassType ⇒
+                        classification(subclassType) = r
                     }
             }
         }
 
-        def classify(objectType: ObjectType): Immutability.Value = {
-            val classFile = project.classFile(objectType)
-            if (objectType == ObjectType.Object)
-                return Immutability.Immutable
-            if (objectClassification contains objectType)
-                return objectClassification(objectType)
-            //objectType can not be classified
-            if (classFile.isEmpty)
-                return Immutability.Unknown
-            val fields = classFile.get.fields
-            val allFieldsFinalAndBaseType = fields.forall {
-                field ⇒
-                    field.isFinal && field.fieldType.isBaseType
-            }
-            if (allFieldsFinalAndBaseType)
-                Immutability.Immutable
-            else
-                Immutability.Unknown
-
+        // 1. Do the basic classification
+        // "java.lang.Object" is at the root of the class hierarchy and we can only 
+        // assess classes for which all super class type information exists.
+        foreachDirectSubclass(ObjectType.Object, project) { subclass ⇒
+            traverse(subclass, Immutable)
         }
 
-        //java.lang.Object is the root of the class hierarchy
-        traverse(ObjectType.Object)
-        objectClassification
+        // 2. (Re-)Analyze all class files marked as ConditionallyImmutable to 
+        // check if the transitive hull only contains ConditionallyImmutable or Immutable
+        // classes. If so, the class can be reranked to Immutable.
+
+        // TODO... Fixpoint computation
+
+        // we are done...
+        classification
     }
 }
