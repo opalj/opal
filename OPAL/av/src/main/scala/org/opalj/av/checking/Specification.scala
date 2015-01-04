@@ -149,6 +149,11 @@ class Specification(
     }
 
     /**
+     * Returns a symbol as ensemble ID.
+     */
+    def EnsembleID(ensemblename: String): Symbol = Symbol(ensemblename)
+
+    /**
      * Represents an ensemble that contains no source elements. This can be used, e.g.,
      * to specify that a (set of) specific source element(s) is not allowed to depend
      * on any other source elements (belonging to the project).
@@ -262,6 +267,54 @@ class Specification(
             sourceEnsemble+" is_only_allowed_to_use ("+targetEnsembles.mkString(",")+")"
     }
 
+    /**
+     * Supports the not_allowed outgoing constraints from an ensemble to
+     * one or more ensembles. When looking for incoming not_allowed
+     * violations, the function will check if a VirtualSourceElement has
+     * a dependencies going to other VirtualSourceElement.
+     * Example: when element x is not allowed to use element z then the
+     * function will check if x uses z and will return a violation if
+     * it does.
+     * @author Samuel Beracasa
+     */
+    case class LocalOutgoingNotAllowedConstraint(
+        sourceEnsemble: Symbol,
+        targetEnsembles: Seq[Symbol])
+            extends DependencyChecker {
+
+        override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
+
+        override def violations(): ASet[SpecificationViolation] = {
+            val unknownEnsembles = targetEnsembles.filterNot(ensembles.contains(_)).mkString(",")
+            if (unknownEnsembles.nonEmpty)
+                throw new SpecificationError("Unknown ensemble(s): "+unknownEnsembles);
+            val sourceEnsembleElements = ensembles(sourceEnsemble)._2
+            val notAllowedTargetSourceElements = (Set[VirtualSourceElement]() /:
+                targetEnsembles)(_ ++ ensembles(_)._2)
+
+            for {
+                sourceElement ← sourceEnsembleElements
+                targets = outgoingDependencies.get(sourceElement)
+                if targets.isDefined
+                (targetElement, dependencyTypes) ← targets.get
+                dependencyType ← dependencyTypes
+                if (notAllowedTargetSourceElements contains targetElement)
+                if !(unmatchedSourceElements contains targetElement)
+            } yield {
+                SpecificationViolation(
+                    project,
+                    this,
+                    sourceElement,
+                    targetElement,
+                    dependencyType,
+                    "violation of a local outgoing not allowed constraint")
+            }
+        }
+
+        override def toString =
+            sourceEnsemble+" is_not_allowed_to_use ("+targetEnsembles.mkString(",")+")"
+    }
+
     case class SpecificationFactory(contextEnsembleSymbol: Symbol) {
 
         def apply(sourceElementsMatcher: SourceElementsMatcher): Unit = {
@@ -278,6 +331,10 @@ class Specification(
 
         def is_only_allowed_to_use(targetEnsembles: Symbol*): Unit = {
             dependencyCheckers = LocalOutgoingConstraint(contextEnsembleSymbol, targetEnsembles.toSeq) :: dependencyCheckers
+        }
+
+        def is_not_allowed_to_use(targetEnsembles: Symbol*): Unit = {
+            dependencyCheckers = LocalOutgoingNotAllowedConstraint(contextEnsembleSymbol, targetEnsembles.toSeq) :: dependencyCheckers
         }
     }
 
