@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,6 +30,7 @@ package org.opalj
 package ai
 package analyses
 
+import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
 
@@ -85,23 +86,27 @@ object FieldValuesAnalysis {
         isInterrupted: () ⇒ Boolean) = {
         import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-        val refinedFieldTypes = for {
-            classFile ← theProject.classFiles.par
-            if !isInterrupted()
-            // this analysis does not support parallelization at a more 
-            // fined-grained level, because we reuse the same domain instance
-            // to perform an abstract interpretation of all methods of the 
-            // same class file
-            domain = createDomain(theProject, classFile)
-            if domain.hasCandidateFields
-        } yield {
-            classFile.methods.foreach { method ⇒
-                if (method.body.isDefined) {
-                    domain.setMethodContext(method)
-                    BaseAI(classFile, method, domain)
+        val refinedFieldTypes = {
+            val parClassFiles = theProject.classFiles.par
+            parClassFiles.tasksupport = OPALExecutionContextTaskSupport
+            for {
+                classFile ← parClassFiles
+                if !isInterrupted()
+                // this analysis does not support parallelization at a more
+                // fined-grained level, because we reuse the same domain instance
+                // to perform an abstract interpretation of all methods of the
+                // same class file
+                domain = createDomain(theProject, classFile)
+                if domain.hasCandidateFields
+            } yield {
+                classFile.methods.foreach { method ⇒
+                    if (method.body.isDefined) {
+                        domain.setMethodContext(method)
+                        BaseAI(classFile, method, domain)
+                    }
                 }
+                domain.fieldsWithRefinedValues
             }
-            domain.fieldsWithRefinedValues
         }
         refinedFieldTypes.flatten.seq.toMap
     }
