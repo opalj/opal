@@ -19,12 +19,8 @@ object OPALBuild extends Build {
 		Seq(Defaults.itSettings : _*) ++
 		Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest)) ++
 		Seq(libraryDependencies  ++= Seq(
-			"junit" % "junit" % "4.11" % "test,it",
+			"junit" % "junit" % "4.12" % "test,it",
 			"org.scalatest" %% "scalatest" % "2.2.1" % "test,it"))
-
-	lazy val buildSettingsWithScoverage = 
-		buildSettings ++ 
-		ScoverageSbtPlugin.instrumentSettings
 
 	def getScalariformPreferences(dir: File) = PreferencesImporterExporter.loadPreferences(
 		(file("Scalariform Formatter Preferences.properties").getPath))
@@ -43,8 +39,8 @@ object OPALBuild extends Build {
 		da,
 		de,
 		av,
-		opalDeveloperTools,
-		VALIDATE,
+		DeveloperTools,
+		Validate,
 		demos,
 		findRealBugsAnalyses,
 		findRealBugsCLI,
@@ -59,34 +55,34 @@ object OPALBuild extends Build {
 	lazy val common = Project(
 		id = "Common",
 		base = file("OPAL/common"),
-		settings = buildSettingsWithScoverage
+		settings = buildSettings
 	).configs(IntegrationTest)
 
 	lazy val bi = Project(
 		id = "BytecodeInfrastructure",
 		base = file("OPAL/bi"),
-		settings = buildSettingsWithScoverage
+		settings = buildSettings
 	).dependsOn(common % "it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 
 	lazy val br = Project(
 		id = "BytecodeRepresentation",
 		base = file("OPAL/br"),
-		settings = buildSettingsWithScoverage 
+		settings = buildSettings
 	).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 
 	lazy val da = Project(
 		id = "BytecodeDisassembler",
 		base = file("OPAL/da"),
-		settings = buildSettingsWithScoverage 
+		settings = buildSettings
 	).dependsOn(bi % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 
 	lazy val ai = Project(
 		id = "AbstractInterpretationFramework",
 		base = file("OPAL/ai"),
-		settings = buildSettingsWithScoverage 
+		settings = buildSettings
 	).dependsOn(br % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 
@@ -96,40 +92,39 @@ object OPALBuild extends Build {
 	lazy val de = Project(
 		id = "DependenciesExtractionLibrary",
 		base = file("OPAL/de"),
-		settings = buildSettingsWithScoverage
+		settings = buildSettings
 	).dependsOn(ai % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 
 	lazy val av = Project(
 		id = "ArchitectureValidation",
 		base = file("OPAL/av"),
-		settings = buildSettingsWithScoverage
+		settings = buildSettings
 	).dependsOn(de % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 	 
-	lazy val opalDeveloperTools = Project(
-		id = "OpalDeveloperTools",
-		base = file("DEVELOPING_OPAL/tools")
+	lazy val DeveloperTools = Project(
+		id = "OPAL-DeveloperTools",
+		base = file("DEVELOPING_OPAL/tools"),
+		settings = buildSettings ++ Seq(publishArtifact := false)
 	).dependsOn(de % "test->test;compile->compile")
 	 .configs(IntegrationTest)
 
 	// This project validates OPAL's implemented architecture; hence
 	// it is not a "project" in the classical sense!
-	lazy val VALIDATE = Project(
-		id = "VALIDATE_OPAL",
+	lazy val Validate = Project(
+		id = "OPAL-Validate",
 		base = file("DEVELOPING_OPAL/validate"),
-		settings = buildSettings ++ 
-			Seq(publishArtifact := false)
+		settings = buildSettings ++ Seq(publishArtifact := false)
 	).dependsOn(
-		opalDeveloperTools % "test->test;compile->compile;it->it",
+		DeveloperTools % "test->test;compile->compile;it->it",
 		av % "test->test;compile->compile;it->it")
 	 .configs(IntegrationTest)
 
 	lazy val demos = Project(
 		id = "Demos",
-		base = file("OPAL/demo"),
-		settings = buildSettings ++ 
-			Seq(publishArtifact := false)
+		base = file("OPAL/demos"),
+		settings = buildSettings ++ Seq(publishArtifact := false)
 	).dependsOn(av)
 	 .configs(IntegrationTest)
 
@@ -142,7 +137,7 @@ object OPALBuild extends Build {
 	lazy val findRealBugsAnalyses = Project(
 		id = "FindRealBugsAnalyses",
 		base = file("OPAL/frb/analyses"),
-		settings = buildSettingsWithScoverage
+		settings = buildSettings
 	).dependsOn(ai % "test->test;compile->compile;it->it")
 	 .configs(IntegrationTest)
 
@@ -150,7 +145,7 @@ object OPALBuild extends Build {
 		id = "FindRealBugsCLI",
 		base = file("OPAL/frb/cli"),
 		settings =
-			buildSettingsWithScoverage ++
+			buildSettings ++
 			sbtassembly.Plugin.assemblySettings ++
 			Seq (
 				test in assembly := {},
@@ -163,9 +158,7 @@ object OPALBuild extends Build {
 	lazy val incubation = Project(
 		id = "Incubation",
 		base = file("OPAL/incubation"),
-		settings = buildSettings ++ Seq(
-			publishArtifact := false
-		)
+		settings = buildSettings ++ Seq(publishArtifact := false)
 	).dependsOn(av % "it->it;it->test;test->test;compile->compile")
 	 .configs(IntegrationTest)
 

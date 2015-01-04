@@ -32,7 +32,6 @@ package cli
 
 import br._
 import br.analyses._
-import br.reader._
 import util.PerformanceEvaluation
 import java.net.URL
 import java.text.DecimalFormat

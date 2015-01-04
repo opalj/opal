@@ -32,7 +32,6 @@ package analyses
 
 import org.opalj.br._
 import org.opalj.br.analyses._
-import org.opalj.br.instructions._
 import org.opalj.ai._
 import org.opalj.ai.domain._
 import org.opalj.ai.domain.tracing._

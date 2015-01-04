@@ -4,6 +4,16 @@ scala:
    - 2.11.4
 jdk:
   - oraclejdk8
+
+script:
+  - export SBT_OPTS="-XX:+CMSClassUnloadingEnabled -XX:PermSize=256M -XX:MaxPermSize=512M"
+  - sbt clean coverage test
+  - sbt coverageAggregate
+
+after_script:
+  - mkdir -p shippable/codecoverage
+  - mv target/scala-2.11/coverage-report/cobertura.xml $PWD/shippable/codecoverage/
+  
 notifications:
   email:
     - eichberg@informatik.tu-darmstadt.de

@@ -44,7 +44,6 @@ import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.UpperTypeBound
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.util.Answer
 
 /**
  * @author Michael Eichberg
@@ -98,7 +97,7 @@ trait DefaultReferenceValuesBinding
         upperTypeBound: UIDSet[ObjectType],
         t: Timestamp): DomainObjectValue = {
 
-        if (upperTypeBound.consistsOfOneElement)
+        if (upperTypeBound.hasOneElement)
             ObjectValue(origin, isNull, false, upperTypeBound.first, t)
         else
             new MObjectValue(origin, isNull, upperTypeBound, t)

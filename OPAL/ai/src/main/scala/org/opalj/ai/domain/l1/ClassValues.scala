@@ -31,7 +31,6 @@ package ai
 package domain
 package l1
 
-import org.opalj.util.No
 import org.opalj.br.Type
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
@@ -45,6 +44,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.ObjectType
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
+import scala.reflect.ClassTag
 
 /**
  * Enables the tracking of concrete `Class` values and can, e.g., be used to resolve
@@ -68,6 +68,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
     domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type DomainClassValue <: ClassValue with DomainObjectValue
+    val DomainClassValue: ClassTag[DomainClassValue]
 
     protected class ClassValue(origin: ValueOrigin, val value: Type, t: Timestamp)
             extends SObjectValue(origin, No, true, ObjectType.Class, t) {

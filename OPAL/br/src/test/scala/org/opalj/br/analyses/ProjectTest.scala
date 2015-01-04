@@ -159,7 +159,7 @@ class ProjectTest
             project
         ) should be('Defined)
         // let's make sure the class is a super class
-        project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(org.opalj.util.Yes)
+        project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(Yes)
 
         // let's test the resolving 
         resolveMethodReference(

@@ -30,8 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.util.{ Yes, No, Unknown }
-
 /**
  * Provides a default implementation for the instructions related to synchronization.
  *

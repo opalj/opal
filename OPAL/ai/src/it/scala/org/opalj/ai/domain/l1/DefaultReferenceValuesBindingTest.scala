@@ -41,7 +41,6 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport
-import org.opalj.util.{ No, Unknown }
 import org.opalj.ai.domain.ProjectBasedClassHierarchy
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.ValuesCoordinatingDomain

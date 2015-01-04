@@ -34,6 +34,7 @@ import java.io.File
 import scala.io.Source
 import scala.xml.Node
 
+import org.opalj.io.process
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 

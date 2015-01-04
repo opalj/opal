@@ -45,12 +45,12 @@ trait DefaultLongSetValues
         with LongSetValues {
     domain: IntegerRangeValuesFactory with Configuration with VMLevelExceptionsFactory ⇒
 
-    class LongValue extends super.ALongValue {
+    class ALongValue() extends super.ALongValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
             // we are not joining the "same" value; the join stabilization trait
             // takes care of handling potential aliases
-            MetaInformationUpdate(LongValue())
+            MetaInformationUpdate(new ALongValue())
         }
 
         override def abstractsOver(other: DomainValue): Boolean =
@@ -68,32 +68,29 @@ trait DefaultLongSetValues
         override def toString: String = "ALongValue"
     }
 
-    def LongValue() = new LongValue()
-
     class LongSet(val values: SortedSet[Long]) extends super.LongSet {
 
-        require(values.size > 0)
+        assert(values.size > 0)
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             val result = other match {
-                case that: LongValue ⇒ StructuralUpdate(LongValue())
+                case that: ALongValue ⇒ StructuralUpdate(LongValue(pc))
                 case LongSet(thatValues) ⇒
-                    val newValues = this.values ++ thatValues
-
-                    if (newValues.size == 1)
-                        // This is a "point-range" (a concrete value), hence there
+                    val thisValues = this.values
+                    val newValues = thisValues ++ thatValues
+                    val newValuesSize = newValues.size
+                    if (newValuesSize == 1) {
+                        // This is a "singleton set" (a concrete value), hence there
                         // will be NO further constraints
                         NoUpdate
-
-                    else if (newValues.size > maxCardinalityOfLongSets)
-                        StructuralUpdate(LongValue())
-
-                    else if (newValues.size == this.values.size)
+                    } else if (newValuesSize > maxCardinalityOfLongSets) {
+                        StructuralUpdate(LongValue(pc))
+                    } else if (newValuesSize == thisValues.size) {
                         // This is NOT a "NoUpdate" since we have two values that may
-                        // have the same value, but which can still be two different
-                        // runtime values (they were not created at the same time!
-                        MetaInformationUpdate(LongSet(this.values))
-                    else
+                        // have the same values, but which can still be two different
+                        // runtime values (they were not created at the same time!)
+                        MetaInformationUpdate(LongSet(thisValues))
+                    } else
                         StructuralUpdate(LongSet(newValues))
             }
             result
@@ -120,7 +117,6 @@ trait DefaultLongSetValues
         override def hashCode = this.values.hashCode * 13
 
         override def equals(other: Any): Boolean = {
-            val thisValue = this
             other match {
                 case that: LongSet ⇒
                     (this eq that) || (this.values == that.values)
@@ -129,13 +125,16 @@ trait DefaultLongSetValues
             }
         }
 
-        override def toString: String = "LongSet("+values.mkString(",")+")"
+        override def toString: String = values.mkString("LongSet(", ",", ")")
     }
 
-    override def LongSet(values: SortedSet[Long]): LongSet = new LongSet(values)
+    override def LongValue(origin: ValueOrigin): DomainValue = new ALongValue()
 
-    override def LongValue(pc: PC): DomainValue = LongValue()
-    override def LongValue(pc: PC, value: Long) = LongSet(value)
+    override def LongSet(values: SortedSet[Long]): LongSet =
+        new LongSet(values)
+
+    override def LongValue(origin: ValueOrigin, value: Long) =
+        new LongSet(SortedSet(value))
 
 }
 

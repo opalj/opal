@@ -42,8 +42,6 @@ import org.opalj.bi.TestSupport.locateTestResources
 import br._
 import br.reader.Java8Framework.ClassFile
 
-import DependencyType._
-
 /**
  * Tests that the dependency extractor extracts the types as desired.
  *

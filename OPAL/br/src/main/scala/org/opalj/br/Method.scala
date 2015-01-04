@@ -200,7 +200,6 @@ object Method {
 
     def isObjectSerializationRelated(method: Method): Boolean = {
         import MethodDescriptor.JustReturnsObject
-        import MethodDescriptor.JustTakesObject
         import MethodDescriptor.NoArgsAndReturnVoid
 
         (method.name == "readObjectNoData" && method.descriptor == NoArgsAndReturnVoid) ||

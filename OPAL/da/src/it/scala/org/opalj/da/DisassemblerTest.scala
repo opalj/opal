@@ -47,7 +47,7 @@ class DisassemblerTest extends FlatSpec with Matchers {
     behavior of "the Disassembler"
 
     //val files = new java.io.File("/users/eichberg/Applications/Scala IDE")
-    val files = org.opalj.util.JRELibraryFolder
+    val files = org.opalj.bytecode.JRELibraryFolder
 
     it should (s"be able to process every class of $files") in {
 
@@ -106,7 +106,7 @@ class DisassemblerTest extends FlatSpec with Matchers {
             }
             writer.flush()
             val file =
-                org.opalj.util.writeAndOpen(
+                org.opalj.io.writeAndOpen(
                     new String(out.toByteArray()),
                     "bytecode disassembler - exceptions", ".txt"
                 )

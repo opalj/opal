@@ -29,10 +29,8 @@
 package org.opalj
 package ai
 
-import scala.collection.immutable.SortedSet
-
 /**
- * Defines the factory method to create `IntegerRange` values.
+ * Defines a factory method to create `IntegerRange` values.
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  * @author David Becker
@@ -42,7 +40,8 @@ trait IntegerRangeValuesFactory extends IntegerValuesFactory { domain ⇒
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or implicitly)
      * by the instruction with the specified program counter and represents
-     * an integer value runtime value which is known to be in the range `[lb,ub]`.
+     * an integer value runtime value which is known to be in the range
+     * `[lowerBound,upperBound]`.
      */
     def IntegerRange(origin: ValueOrigin, lowerBound: Int, upperBound: Int): DomainValue
 

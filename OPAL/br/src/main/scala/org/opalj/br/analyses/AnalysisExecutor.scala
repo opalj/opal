@@ -30,12 +30,12 @@ package org.opalj
 package br
 package analyses
 
+import java.net.URL
+import java.io.File
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
-import java.net.URL
-import java.io.File
-import org.opalj.util.OpeningFileFailedException
+import org.opalj.io.OpeningFileFailedException
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -254,7 +254,7 @@ trait AnalysisExecutor {
             pout.flush
             val message = new String(out.toByteArray())
             try {
-                util.writeAndOpen(message, "Exceptions", ".txt")
+                io.writeAndOpen(message, "Exceptions", ".txt")
             } catch {
                 case OpeningFileFailedException(file, _) ⇒
                     Console.err.println("Details can be found in: "+file.toString)

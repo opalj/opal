@@ -67,7 +67,7 @@ class LoadClassFilesInParallelTest
 
     behavior of "OPAL"
 
-    val jreLibFolder: File = org.opalj.util.JRELibraryFolder
+    val jreLibFolder: File = org.opalj.bytecode.JRELibraryFolder
     val biClassfilesFolder: File = org.opalj.bi.TestSupport.locateTestResources("classfiles", "bi")
 
     for {

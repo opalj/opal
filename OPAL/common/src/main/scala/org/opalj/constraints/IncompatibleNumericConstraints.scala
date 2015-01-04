@@ -30,7 +30,10 @@ package org.opalj
 package constraints
 
 /**
- * Exception that is if two constraints should be combined that are incompatible.
+ * Raised if two constraints should be combined that are incompatible. E.g.,
+ * `a > b` and `a < b` are incompatible.
+ *
+ * @author Michael Eichberg
  */
 case class IncompatibleNumericConstraints(
     message: String,

@@ -30,8 +30,8 @@
 package org.opalj
 package br
 
-import org.opalj.util.JRELibraryFolder
-import org.opalj.util.RTJar
+import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.bytecode.RTJar
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache

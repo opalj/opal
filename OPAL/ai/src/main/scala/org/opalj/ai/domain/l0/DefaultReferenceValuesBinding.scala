@@ -87,7 +87,7 @@ trait DefaultReferenceValuesBinding
         origin: ValueOrigin,
         upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
 
-        if (upperTypeBound.consistsOfOneElement)
+        if (upperTypeBound.hasOneElement)
             ObjectValue(origin, upperTypeBound.first)
         else
             new MObjectValue(upperTypeBound)

@@ -12,7 +12,10 @@ licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licens
 
 scalaVersion in ThisBuild := "2.11.4"
 
-scalacOptions in ThisBuild ++= Seq("-deprecation", "-feature", "-unchecked", "-Xlint", "-Xfuture", "-Xfatal-warnings", "-Ywarn-numeric-widen", "-Ywarn-unused")
+scalacOptions in ThisBuild ++= Seq(
+	"-deprecation", "-feature", "-unchecked", 
+	"-Xlint", "-Xfuture", "-Xfatal-warnings", 
+	"-Ywarn-numeric-widen", "-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-nullary-unit", "-Ywarn-nullary-override", "-Ywarn-dead-code" )
 
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
 

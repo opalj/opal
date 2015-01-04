@@ -33,6 +33,11 @@ digraph OPALDomains {
 		IdentityBasedCorrelationChangeDetection -> CoreDomainFunctionality;
 		IdentityBasedCorrelationChangeDetection [style=filled,fillcolor=crimson,shape=rectangle];
 
+
+		CorrelationalDomainSupport -> IdentityBasedCorrelationChangeDetection;
+		CorrelationalDomainSupport -> JoinStabilization;
+		CorrelationalDomainSupport [style=filled,fillcolor=crimson,shape=rectangle];
+
 		Domain -> IntegerValuesDomain;
 		Domain -> LongValuesDomain;
 		Domain -> FloatValuesDomain;
