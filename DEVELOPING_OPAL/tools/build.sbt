@@ -15,4 +15,5 @@ javaOptions in run :=
 		"-XX:+UseParallelGC",
 		"-XX:+AggressiveOpts",
 		"-Xnoclassgc",
-		"-Dorg.opalj.threads.CPUBoundTasks=8")
+		"-Dorg.opalj.threads.CPUBoundTasks=8",
+		"-Dorg.opalj.threads.ThreadPoolSize=48")

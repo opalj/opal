@@ -29,9 +29,13 @@
 package org.opalj
 package av
 
-/**
- * Used to report errors in the specification.
- *
- * @author Michael Eichberg
- */
-case class SpecificationError(description: String) extends Exception(description)
+import scala.collection.{ Set ⇒ ASet }
+
+trait DependencyChecker {
+
+    def violations(): ASet[SpecificationViolation]
+
+    def targetEnsembles: Seq[Symbol]
+
+    def sourceEnsembles: Seq[Symbol]
+}
