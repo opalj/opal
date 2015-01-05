@@ -29,6 +29,8 @@
 package org.opalj
 package br
 
+import org.opalj.bytecode.BytecodeProcessingFailedException
+
 /**
  * Represents constant values; i.e., values pushed onto the stack by the ldc(2)(_w)
  * instructions or type information required by the instructions to create arrays.

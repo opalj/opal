@@ -33,23 +33,23 @@ package jdkbug
 import scala.language.existentials
 
 import java.net.URL
+
+import org.opalj.io.process
 import org.opalj.graphs._
-import br._
-import org.opalj.br.instructions._
+import org.opalj.br._
 import org.opalj.br.analyses.{ Project, OneStepAnalysis, AnalysisExecutor, ReportableAnalysisResult }
 import project.{ AIProject, OptionalReport }
-import domain._
-import domain.l0._
-import domain.l1._
-import domain.tracing._
-import debug.XHTML._
+import org.opalj.ai.domain.l0.TypeLevelLongValuesShiftOperators
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
 import org.opalj.ai.domain.l1.DefaultStringValuesBinding
 import org.opalj.ai.BaseAI
+import org.opalj.ai.Domain
+import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.project.OptionalReport
 import org.opalj.ai.domain.DefaultDomainValueBinding
 import org.opalj.ai.domain.DomainId
+import org.opalj.ai.domain.DomainValues
 import org.opalj.ai.project.AIProject
 import org.opalj.ai.domain.l0.TypeLevelInvokeInstructions
 import org.opalj.ai.domain.TheCode
@@ -60,8 +60,6 @@ import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.IgnoreSynchronization
 import org.opalj.ai.domain.l0.DefaultTypeLevelDoubleValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
-import org.opalj.ai.Domain
-import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain.l0.TypeLevelReferenceValues
 import org.opalj.ai.domain.l0.TypeLevelPrimitiveValuesConversions
 import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions

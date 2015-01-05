@@ -281,8 +281,6 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers /*with ParallelTestEx
 
     it should ("convert to the correct target type") in {
         val domain = createDomain()
-        import domain._
-
         val result = domain.toDomainValue(1, new Integer(42))
         result.computationalType should be(ComputationalTypeReference)
     }

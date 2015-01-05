@@ -30,7 +30,9 @@ package org.opalj
 package br
 package instructions
 
-import language.existentials
+import scala.language.existentials
+
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * Push item from runtime constant pool.

@@ -30,17 +30,6 @@ package org.opalj
 package ai
 package dataflow
 
-import scala.collection.{ Map, Set }
-
-import bi.AccessFlagsMatcher
-
-import br._
-import br.instructions._
-import br.analyses._
-
-import domain._
-import domain.l0._
-
 /**
  * Implements the infrastructure for solving a data-flow problem.
  *

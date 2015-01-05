@@ -29,6 +29,8 @@
 package org.opalj
 package bi
 
+import org.opalj.bytecode.BytecodeProcessingFailedException
+
 /**
  * Enables iterating over a class( file member)'s access flags. I.e., given
  * the access flags of a class file, a field or a method, it is then possible

@@ -34,11 +34,9 @@ package l1
 import scala.collection.SortedSet
 import org.junit.runner.RunWith
 import org.scalatest.ParallelTestExecution
-import org.scalatest.Assertions._
 import org.scalatest.Matchers
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
-import org.opalj.util.{ No, Unknown }
 import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UIDSet
 
@@ -49,8 +47,6 @@ import org.opalj.collection.immutable.UIDSet
  */
 @RunWith(classOf[JUnitRunner])
 class StringValuesTest extends FlatSpec with Matchers with ParallelTestExecution {
-
-    import PlainClassesTest._
 
     object AnalysisDomain
         extends CorrelationalDomain

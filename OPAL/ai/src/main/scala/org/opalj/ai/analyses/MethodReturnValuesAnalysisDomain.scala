@@ -30,20 +30,14 @@ package org.opalj
 package ai
 package analyses
 
-import java.net.URL
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.analyses.{ Analysis, OneStepAnalysis, AnalysisExecutor, BasicReport, SomeProject }
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.{ Type, ReferenceType }
-import org.opalj.ai.Domain
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.Method
+import org.opalj.br.Type
 import org.opalj.ai.domain._
+import org.opalj.ai.domain.RecordReturnedValue
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.IsAReferenceValue
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.NoUpdate
-import org.opalj.ai.SomeUpdate
-import org.opalj.br.analyses.Project
-import org.opalj.ai.project.CallGraphCache
+import org.opalj.ai.analyses.cg.CallGraphCache
 import org.opalj.br.MethodSignature
 
 /**
@@ -73,7 +67,7 @@ class BaseMethodReturnValuesAnalysisDomain(
         with l0.DefaultTypeLevelDoubleValues
         //with l0.DefaultReferenceValuesBinding
         with l1.DefaultReferenceValuesBinding
-        with l0.RefinedTypeLevelFieldAccessInstructions
+        with la.RefinedTypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
@@ -104,7 +98,7 @@ class BaseMethodReturnValuesAnalysisDomain(
             }
         newValue match {
             case value @ IsAReferenceValue(utb) if value.isNull.isUnknown &&
-                (utb.consistsOfOneElement) &&
+                (utb.hasOneElement) &&
                 (utb.first eq originalReturnType) &&
                 !value.isPrecise ⇒
                 // the return type will not be more precise than the original type
@@ -123,4 +117,4 @@ class FPMethodReturnValuesAnalysisDomain(
     ai: InterruptableAI[_],
     method: Method)
         extends BaseMethodReturnValuesAnalysisDomain(project, fieldValueInformation, ai, method)
-        with l0.RefinedTypeLevelInvokeInstructions
+        with la.RefinedTypeLevelInvokeInstructions

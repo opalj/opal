@@ -29,8 +29,6 @@
 package org.opalj
 package ai
 
-import org.opalj.util.Answer
-
 /**
  * Defines the public interface between the abstract interpreter and the domain
  * that implements the functionality related to the handling of `int`eger values.

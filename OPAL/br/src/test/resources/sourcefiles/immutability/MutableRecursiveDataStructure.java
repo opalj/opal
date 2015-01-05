@@ -29,14 +29,14 @@
 package immutability;
 
 import immutability.helperclasses.MutableClass;
-import immutability.annotations.Mutable;
+import immutability.annotations.ConditionallyImmutable;
 
 /**
  * A recursive data structure that is mutable because the referenced fields are mutable.
  * 
  * @author Andre Pacak
  */
-@Mutable("every field is mutable itself and visible")
+@ConditionallyImmutable("the referenced objects are mutable")
 public class MutableRecursiveDataStructure {
 
     public final MutableClass object;

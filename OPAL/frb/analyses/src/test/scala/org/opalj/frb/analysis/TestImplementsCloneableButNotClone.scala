@@ -30,7 +30,6 @@ package org.opalj
 package frb
 package analysis
 
-import AnalysisTest._
 import analyses._
 import br._
 import br.analyses._

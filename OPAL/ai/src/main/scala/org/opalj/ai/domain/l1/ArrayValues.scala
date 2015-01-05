@@ -36,7 +36,7 @@ package domain
 package l1
 
 import scala.collection.SortedSet
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+
 import org.opalj.br._
 
 /**

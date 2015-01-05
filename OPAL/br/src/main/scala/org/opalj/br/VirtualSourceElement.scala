@@ -29,11 +29,14 @@
 package org.opalj
 package br
 
+import org.opalj.br.analyses.SomeProject
+
 /**
  * A `VirtualSourceElement` is the representation of some source element that is
  * always detached from the concrete source element that represents the implementation.
  *
  * @author Michael Eichberg
+ * @author Marco Torsello
  */
 sealed trait VirtualSourceElement
         extends SourceElement
@@ -48,7 +51,19 @@ sealed trait VirtualSourceElement
      */
     override def compare(that: VirtualSourceElement): Int
 
+    /**
+     * Returns the class type of this `VirtualSourceElement`. If this `VirtualSourceElement`
+     * is a [[VirtualClass]] the returned type is the declared class else it is the
+     * declaring class.
+     */
+    def classType: ReferenceType
+
     def toJava: String
+
+    /**
+     * Returns the best line number information available.
+     */
+    def getLineNumber(project: SomeProject): Option[Int]
 
 }
 
@@ -60,9 +75,13 @@ sealed trait VirtualSourceElement
  */
 final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement {
 
-    override def isClass = true
+    override def isClass: Boolean = true
+
+    override def classType: ObjectType = thisType
 
     override def toJava: String = thisType.toJava
+
+    def getLineNumber(project: SomeProject): Option[Int] = Some(1)
 
     override def compare(that: VirtualSourceElement): Int = {
         //x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
@@ -72,7 +91,7 @@ final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement
         }
     }
 
-    override def hashCode = thisType.id
+    override def hashCode: Int = thisType.id
 
     /**
      * Two objects of type `VirtualClass` are considered equal if they represent
@@ -101,10 +120,14 @@ final case class VirtualField(
         name: String,
         fieldType: FieldType) extends VirtualClassMember {
 
-    override def isField = true
+    override def isField: Boolean = true
+
+    override def classType: ObjectType = declaringClassType
 
     override def toJava: String =
         declaringClassType.toJava+"{ "+fieldType.toJava+" "+name+"; }"
+
+    def getLineNumber(project: SomeProject): Option[Int] = None
 
     override def compare(that: VirtualSourceElement): Int = {
         // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
@@ -128,7 +151,7 @@ final case class VirtualField(
         }
     }
 
-    override def hashCode =
+    override def hashCode: Int =
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + fieldType.id
 
     override def equals(other: Any): Boolean = {
@@ -152,10 +175,22 @@ sealed class VirtualMethod(
         val name: String,
         val descriptor: MethodDescriptor) extends VirtualClassMember {
 
-    override def isMethod = true
+    override def isMethod: Boolean = true
+
+    override def classType: ReferenceType = declaringClassType
 
     override def toJava: String =
         declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
+
+    def getLineNumber(project: SomeProject): Option[Int] = {
+        if (declaringClassType.isArrayType)
+            return None;
+
+        project.classFile(declaringClassType.asObjectType).flatMap(cf ⇒
+            cf.findMethod(name, descriptor).flatMap(m ⇒
+                m.body.flatMap(b ⇒
+                    b.firstLineNumber)))
+    }
 
     override def compare(that: VirtualSourceElement): Int = {
         // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
@@ -177,7 +212,7 @@ sealed class VirtualMethod(
         }
     }
 
-    override def hashCode =
+    override def hashCode: Int =
         (((declaringClassType.id * 41) + name.hashCode()) * 41) + descriptor.hashCode()
 
     override def equals(other: Any): Boolean = {
@@ -201,8 +236,7 @@ object VirtualMethod {
         Some((
             virtualMethod.declaringClassType,
             virtualMethod.name,
-            virtualMethod.descriptor
-        ))
+            virtualMethod.descriptor))
     }
 }
 
@@ -231,7 +265,6 @@ object VirtualForwardingMethod {
             virtualMethod.declaringClassType,
             virtualMethod.name,
             virtualMethod.descriptor,
-            virtualMethod.target
-        ))
+            virtualMethod.target))
     }
 }

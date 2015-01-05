@@ -38,10 +38,7 @@ import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
 import scala.annotation.tailrec
 import scala.collection.SortedSet
-import org.opalj.util.Answer
-import org.opalj.util.No
-import org.opalj.util.Unknown
-import org.opalj.util.Yes
+
 import org.opalj.collection.immutable.IdentityPair
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet0
@@ -192,7 +189,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             var overallUTB = values.head.upperTypeBound
 
             def currentUTBisUTBForArrays: Boolean =
-                overallUTB.consistsOfOneElement && overallUTB.first.isArrayType
+                overallUTB.hasOneElement && overallUTB.first.isArrayType
 
             def asUTBForArrays: ArrayType =
                 overallUTB.first.asArrayType
@@ -429,7 +426,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         def doRefineUpperTypeBound(supertypes: UIDSet[ReferenceType]): DomainSingleOriginReferenceValue = {
             assert(supertypes.nonEmpty)
 
-            if (supertypes.consistsOfOneElement) {
+            if (supertypes.hasOneElement) {
                 doRefineUpperTypeBound(supertypes.first)
             } else {
                 val newSupertypes = supertypes.asInstanceOf[UIDSet[ObjectType]]
@@ -644,7 +641,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             val newIsNull = this.isNull & that.isNull
             val newIsPrecise =
                 this.isPrecise && that.isPrecise &&
-                    thatUTB.consistsOfOneElement &&
+                    thatUTB.hasOneElement &&
                     (thisUTB eq thatUTB.first)
             val newUTB = classHierarchy.joinReferenceType(thisUTB, thatUTB)
             ReferenceValue(origin, newIsNull, newIsPrecise, newUTB, t)
@@ -690,7 +687,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 (this.isNull.isUnknown || that.isNull.isNo) &&
                     (!this.isPrecise || that.isPrecise) && {
                         val thatUTB = that.upperTypeBound
-                        thatUTB.consistsOfOneElement &&
+                        thatUTB.hasOneElement &&
                             thatUTB.first.isArrayType &&
                             isSubtypeOf(thatUTB.first.asArrayType, this.theUpperTypeBound).isYes
                     }
@@ -1256,7 +1253,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     !refinedValue.isPrecise /*if the value isPrecise then there is nothing (more) to do*/ &&
                     thisUpperTypeBound != refinedValue.upperTypeBound &&
                     classHierarchy.isSubtypeOf(thisUpperTypeBound, refinedValue.upperTypeBound).isYes) {
-                    if (thisUpperTypeBound.consistsOfOneElement)
+                    if (thisUpperTypeBound.hasOneElement)
                         refinedValue = refinedValue.doRefineUpperTypeBound(thisUpperTypeBound.first()).asInstanceOf[DomainSingleOriginReferenceValue]
                     else
                         refinedValue =
@@ -1415,7 +1412,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 refineToValue(filteredValues.head, this.isNull, UIDSet(supertype), operands, locals)
                 //                val valueToRefine = filteredValues.head
                 //                val valueToRefineUTB = valueToRefine.upperTypeBound
-                //                if ((valueToRefineUTB.consistsOfOneElement &&
+                //                if ((valueToRefineUTB.hasOneElement &&
                 //                    (valueToRefineUTB.first eq supertype)) ||
                 //                    classHierarchy.isSubtypeOf(valueToRefineUTB.first, supertype).isYes)
                 //                    // the encapsulated values does not need to be refined; it 
@@ -1617,7 +1614,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (isNull.isYes)
                 return justThrows(NullPointerException(pc));
 
-            assert(upperTypeBound.consistsOfOneElement,
+            assert(upperTypeBound.hasOneElement,
                 "no array type: "+this.upperTypeBound)
             assert(upperTypeBound.first.isArrayType, s"$upperTypeBound")
 
@@ -1642,7 +1639,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (isNull.isYes)
                 return justThrows(NullPointerException(pc));
 
-            assert(upperTypeBound.consistsOfOneElement)
+            assert(upperTypeBound.hasOneElement)
             assert(upperTypeBound.first.isArrayType, s"$upperTypeBound")
 
             if (values.find(_.isInstanceOf[ObjectValue]).nonEmpty) {
@@ -1666,7 +1663,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (isNull.isYes)
                 return throws(NullPointerException(pc));
 
-            assert(upperTypeBound.consistsOfOneElement)
+            assert(upperTypeBound.hasOneElement)
             assert(upperTypeBound.first.isArrayType, s"$upperTypeBound (values=$values)")
 
             if (values.find(_.isInstanceOf[ObjectValue]).nonEmpty) {

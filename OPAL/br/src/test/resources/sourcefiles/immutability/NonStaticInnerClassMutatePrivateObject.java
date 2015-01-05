@@ -29,7 +29,7 @@
 package immutability;
 
 import immutability.helperclasses.MutableClass;
-import immutability.annotations.Mutable;
+import immutability.annotations.ConditionallyImmutable;
 
 /**
  * A mutable class which contains a private final mutable object and an inner class that
@@ -37,7 +37,7 @@ import immutability.annotations.Mutable;
  * 
  * @author Andre Pacak
  */
-@Mutable("the inner class mutates a field of the enclosing class")
+@ConditionallyImmutable("the inner class mutates a field of the enclosing class")
 public class NonStaticInnerClassMutatePrivateObject {
 
     private final MutableClass object;

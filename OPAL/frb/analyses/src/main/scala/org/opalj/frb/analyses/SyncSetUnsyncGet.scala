@@ -32,7 +32,6 @@ package analyses
 
 import br._
 import br.analyses._
-import br.instructions._
 
 /**
  * This analysis reports setter/getter pairs where the set method is synchronized and the

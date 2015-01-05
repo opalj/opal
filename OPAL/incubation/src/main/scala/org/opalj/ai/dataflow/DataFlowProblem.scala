@@ -35,11 +35,7 @@ import scala.collection.{ Map, Set }
 import bi.AccessFlagsMatcher
 
 import br._
-import br.instructions._
 import br.analyses._
-
-import domain._
-import domain.l0._
 
 /**
  * Characterizes a data-flow problem. The characterization consists of the specification

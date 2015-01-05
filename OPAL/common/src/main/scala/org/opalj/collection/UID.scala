@@ -30,15 +30,16 @@ package org.opalj
 package collection
 
 /**
- * Supertrait of all data structures that have – by construction - unique ids. I.e., two
- * data structures that are not ''equal'' have to have two different ids.
+ * Implemented by objects that have – by construction - unique ids in a well-defined,
+ * close scope. I.e., two data structures that are not ''equal'' have to have two
+ * different ids.
  *
  * @author Michael Eichberg
  */
 trait UID {
 
     /**
-     * This data structure's unique id.
+     * This object's unique id.
      */
     def id: Int
 }
@@ -54,10 +55,8 @@ object UID {
      * position – sets the value using the value returned by `orElse` and
      * returns that value.
      */
-    @inline final def getOrElseUpdate[T <: AnyRef](
-        array: Array[T],
-        uid: UID,
-        orElse: ⇒ T): T = {
+    @inline
+    final def getOrElseUpdate[T <: AnyRef](array: Array[T], uid: UID, orElse: ⇒ T): T = {
         val id = uid.id
         val t = array(id)
         if (t eq null) {

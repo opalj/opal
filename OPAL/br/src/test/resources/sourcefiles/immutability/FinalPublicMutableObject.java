@@ -29,14 +29,14 @@
 package immutability;
 
 import immutability.helperclasses.MutableClass;
-import immutability.annotations.Mutable;
+import immutability.annotations.ConditionallyImmutable;;
 
 /**
- * A mutable class with a final field which references a mutable object.
+ * A conditionally immutable class with a final field which references a mutable object.
  *
  * @author Andre Pacak
  */
-@Mutable("the object referred to by the public, final field is mutable")
+@ConditionallyImmutable("the object referred to by the public, final field is mutable")
 public class FinalPublicMutableObject {
 
     public final MutableClass object = new MutableClass();

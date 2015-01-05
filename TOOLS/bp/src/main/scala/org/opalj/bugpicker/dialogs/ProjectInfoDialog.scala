@@ -52,7 +52,7 @@ object ProjectInfoDialog {
     def toUL(files: Seq[File]): String =
         files.map(_.getAbsolutePath).mkString("<ul><li>", "</li><li>", "</li></ul>")
 
-    def show(owner: Stage, project: Project[URL], sources: Seq[File]) {
+    def show(owner: Stage, project: Project[URL], sources: Seq[File]): Unit = {
         if (project == null) {
             DialogStage.showMessage("Error", "You need to load a project before you can get information about it.", owner)
             return

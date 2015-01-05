@@ -31,14 +31,12 @@ package ai
 package domain
 package li
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
  * Domain to track integer values at a configurable level of precision.
  *
- * This domain requires support for the concrete evaluation.
+ * '''This domain requires support for performing concrete interpretations.'''
  *
  * @author Michael Eichberg
  * @author David Becker
@@ -107,7 +105,7 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
         )
 
     //
-    // QUESTION'S ABOUT VALUES
+    // QUESTIONS ABOUT VALUES
     //
 
     @inline final override def intValue[T](
@@ -264,44 +262,40 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
                 intValue(value1) { v1 ⇒
                     ComputedValue(IntegerValue(pc, v1 / v2))
                 } {
-                    ComputedValue(IntegerValue(pc))
+                    ComputedValue(IntegerValue(origin = pc))
                 }
             }
         } {
             if (throwArithmeticExceptions)
                 ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
             else
-                ComputedValue(IntegerValue(pc))
+                ComputedValue(IntegerValue(origin = pc))
         }
     }
 
     override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (_, IntegerValue(0)) ⇒ value2
-            case (_, IntegerValue(1)) ⇒ value1
-            case (IntegerValue(0), _) ⇒ value1
-            case (IntegerValue(1), _) ⇒ value2
+            case (_, IntegerValue(0))               ⇒ value2
+            case (_, IntegerValue(1))               ⇒ value1
+            case (IntegerValue(0), _)               ⇒ value1
+            case (IntegerValue(1), _)               ⇒ value2
 
-            case (IntegerValue(l), IntegerValue(r)) ⇒
-                IntegerValue(pc, l * r)
+            case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l * r)
 
-            case _ ⇒
-                IntegerValue(origin = pc)
+            case _                                  ⇒ IntegerValue(origin = pc)
         }
     }
 
     override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (_, IntegerValue(-1)) ⇒ value2
-            case (_, IntegerValue(0))  ⇒ value1
-            case (IntegerValue(-1), _) ⇒ value1
-            case (IntegerValue(0), _)  ⇒ value2
+            case (_, IntegerValue(-1))              ⇒ value2
+            case (_, IntegerValue(0))               ⇒ value1
+            case (IntegerValue(-1), _)              ⇒ value1
+            case (IntegerValue(0), _)               ⇒ value2
 
-            case (IntegerValue(l), IntegerValue(r)) ⇒
-                IntegerValue(pc, l | r)
+            case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l | r)
 
-            case _ ⇒
-                IntegerValue(origin = pc)
+            case _                                  ⇒ IntegerValue(origin = pc)
         }
     }
 

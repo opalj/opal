@@ -28,14 +28,14 @@
  */
 package immutability;
 
-import immutability.annotations.Mutable;
+import immutability.annotations.ConditionallyImmutable;;
 
 /**
- * A mutable class which references an array which is set via the constructor.
+ * A conditionally immutable class which references an array which is set via the constructor.
  * 
  * @author Andre Pacak
  */
-@Mutable("array is visible outside of class because the constructor does not create a clone of the passed array")
+@ConditionallyImmutable("the reference to the array is just an alias")
 public class ArrayPassedViaConstructor {
 
     private final int[] array;
