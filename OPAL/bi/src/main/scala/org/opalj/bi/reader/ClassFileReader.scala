@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -36,6 +36,7 @@ import java.util.zip.{ ZipFile, ZipEntry }
 import java.net.URL
 import java.util.zip.ZipInputStream
 
+import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.io.process
 
@@ -256,7 +257,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         )
 
         // Perform transformations that are specific to this class file.
-        // (Used, e.g., to finally resolve the invokedynamic instructions.) 
+        // (Used, e.g., to finally resolve the invokedynamic instructions.)
         classFile = applyDeferredActions(cp, classFile)
 
         // Perform general transformations on class files.
@@ -384,7 +385,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         exceptionHandler: (Exception) ⇒ Unit): Unit = {
 
         import scala.collection.JavaConversions._
-        for { jarEntry ← jarFile.entries.toIterable.par } {
+        val parEntries = jarFile.entries.toList.par
+        parEntries.tasksupport = OPALExecutionContextTaskSupport
+        parEntries.foreach { jarEntry ⇒
             if (!jarEntry.isDirectory && jarEntry.getSize() > 0) {
                 val jarEntryName = jarEntry.getName
                 if (jarEntryName.endsWith(".class")) {
@@ -484,10 +487,12 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         } else /* if(file.isDirectory()) */ {
             val files = file.listFiles()
             if (files != null) {
-                (
-                    for (innerFile ← files.par)
+                {
+                    val parInnerFiles = files.par
+                    parInnerFiles.tasksupport = OPALExecutionContextTaskSupport
+                    for (innerFile ← parInnerFiles)
                         yield ClassFiles(innerFile, exceptionHandler)
-                ).flatten.seq
+                }.flatten.seq
             } else {
                 Nil
             }
