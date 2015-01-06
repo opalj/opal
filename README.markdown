@@ -20,7 +20,7 @@ OPAL consists of several projects which are found in the folder OPAL:
 
 * **Architecture Valiation**(OPAL/av): A small framework to check a project's implemented architecture against a specified one.
 
-* **Demos**(OPAL/demos): Contains working code samples that demonstrate how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demos" (`project Demos
+* **Demos**(OPAL/demos): Contains working code samples that demonstrate how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demos" (`project Demos`). After that you can `run` several small demo analyses.
 
 * **FindREALBugs**: (This project is in its very early stages!) FindBugs reloaded. For further information go to: [FindREALBugs](https://bitbucket.org/delors/opal/wiki/FindREALBugs)
 
