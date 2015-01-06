@@ -89,7 +89,7 @@ object UselessComputationsMinimal
         //        }).flatten.seq
 
         val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
-        theProject.parForeachMethodWithBody { m ⇒
+        theProject.parForeachMethodWithBody(isInterrupted) { m ⇒
             val (_ /*source*/ , classFile, method) = m
             val result = BaseAI(classFile, method, new AnalysisDomain(theProject, method))
             import result.domain.ConcreteIntegerValue

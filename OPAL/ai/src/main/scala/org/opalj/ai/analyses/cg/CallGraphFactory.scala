@@ -93,7 +93,9 @@ object CallGraphFactory {
             // TODO Use a Log...
             println(
                 "[warn] missing supertype information for: "+
-                    theProject.classHierarchy.rootTypes.filterNot(_ eq ObjectType.Object).map(_.toJava).mkString(", ")
+                    theProject.classHierarchy.rootTypes.
+                    filterNot(_ eq ObjectType.Object).
+                    map(_.toJava).mkString(", ")
             )
 
         import scala.collection.{ Map, Set }
@@ -142,6 +144,8 @@ object CallGraphFactory {
             if (methodSubmitted.contains(method))
                 return ;
 
+            methodSubmitted += method
+
             var minimumSize = 4
             // the minimum length of a method that may call another method is 4
             // - call to a static method without args (3 bytes)
@@ -161,7 +165,6 @@ object CallGraphFactory {
             if (instructions.size < minimumSize)
                 return ;
 
-            methodSubmitted += method
             futuresCount += 1
             completionService.submit(doAnalyzeMethod(method))
         }

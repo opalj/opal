@@ -144,7 +144,9 @@ class Project[Source] private (
      * I.e., each thread is not assigned a fixed batch of methods. Additionally, the
      * methods are analyzed ordered by their length (longest first).
      */
-    def parForeachMethodWithBody[T](f: Function[(Source, ClassFile, Method), T]): Unit = {
+    def parForeachMethodWithBody[T](
+        isInterrupted: () ⇒ Boolean)(
+            f: Function[(Source, ClassFile, Method), T]): Unit = {
         val concreteMethodsCount = methodsWithClassFilesAndSource.length
         val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, concreteMethodsCount)
         if (concreteMethodsCount == 0)
@@ -181,7 +183,8 @@ class Project[Source] private (
         while (i < parallelizationLevel) {
             val future = Future[Unit] {
                 var mi: Int = -1
-                while ({ mi = nextMethod.getAndIncrement; mi } < concreteMethodsCount) {
+                while ({ mi = nextMethod.getAndIncrement; mi } < concreteMethodsCount &&
+                    !isInterrupted()) {
                     f(methodsWithClassFilesAndSource(mi))
                 }
             }

@@ -30,9 +30,15 @@ package org.opalj
 package ai
 package analyses
 
+import java.util.concurrent.ConcurrentHashMap
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable.AnyRefMap
+
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ClassFile
+import org.opalj.br.Field
 
 /**
  * This analysis performs a simple abstract interpretation of all methods of a class
@@ -83,32 +89,38 @@ object FieldValuesAnalysis {
     def doAnalyze(
         theProject: SomeProject,
         createDomain: (SomeProject, ClassFile) ⇒ BaseFieldValuesAnalysisDomain,
-        isInterrupted: () ⇒ Boolean) = {
+        isInterrupted: () ⇒ Boolean): FieldValueInformation = {
         import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-        val refinedFieldTypes = {
-            val parClassFiles = theProject.classFiles.par
-            parClassFiles.tasksupport = OPALExecutionContextTaskSupport
-            for {
-                classFile ← parClassFiles
-                if !isInterrupted()
-                // this analysis does not support parallelization at a more
-                // fined-grained level, because we reuse the same domain instance
-                // to perform an abstract interpretation of all methods of the
-                // same class file
-                domain = createDomain(theProject, classFile)
-                if domain.hasCandidateFields
-            } yield {
-                classFile.methods.foreach { method ⇒
-                    if (method.body.isDefined) {
-                        domain.setMethodContext(method)
-                        BaseAI(classFile, method, domain)
+        val results = new ConcurrentHashMap[Field, BaseFieldValuesAnalysisDomain#DomainValue]
+
+        val parClassFiles = theProject.classFiles.par
+        parClassFiles.tasksupport = OPALExecutionContextTaskSupport
+        parClassFiles.foreach { classFile ⇒
+            // this analysis does not support parallelization at a more
+            // fined-grained level, because we reuse the same domain instance
+            // to perform an abstract interpretation of all methods of the
+            // same class file
+            if (!isInterrupted()) {
+                val domain = createDomain(theProject, classFile)
+                if (domain.hasCandidateFields) {
+
+                    classFile.methods.foreach { method ⇒
+                        if (method.body.isDefined) {
+                            domain.setMethodContext(method)
+                            BaseAI(classFile, method, domain)
+                        }
+                    }
+
+                    val fieldsWithRefinedValues = domain.fieldsWithRefinedValues
+                    if (fieldsWithRefinedValues.nonEmpty) {
+                        results.putAll(fieldsWithRefinedValues.toMap.asJava)
                     }
                 }
-                domain.fieldsWithRefinedValues
             }
         }
-        refinedFieldTypes.flatten.seq.toMap
+
+        AnyRefMap.empty[Field, BaseFieldValuesAnalysisDomain#DomainValue] ++ results.asScala
     }
 
 }
