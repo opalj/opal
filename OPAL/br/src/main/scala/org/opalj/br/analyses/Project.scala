@@ -144,35 +144,17 @@ class Project[Source] private (
      * I.e., each thread is not assigned a fixed batch of methods. Additionally, the
      * methods are analyzed ordered by their length (longest first).
      */
-    def parForeachMethodWithBody[T](f: Function[(Source, ClassFile, Method), T]): Unit = {
+    def parForeachMethodWithBody[T](
+        isInterrupted: () ⇒ Boolean)(
+            f: Function[(Source, ClassFile, Method), T]): Unit = {
         val concreteMethodsCount = methodsWithClassFilesAndSource.length
-        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, concreteMethodsCount)
         if (concreteMethodsCount == 0)
             return ;
+        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, concreteMethodsCount)
         if (parallelizationLevel == 1) {
             methodsWithClassFilesAndSource.foreach(f)
             return ;
         }
-
-        // [OLD - USING THREADS]
-        //        val nextMethod = new java.util.concurrent.atomic.AtomicInteger(0)
-        //        val threads = new Array[Thread](parallelizationLevel)
-        //        // Start parallel execution
-        //            var i = 0
-        //            while (i < parallelizationLevel) {
-        //                val thread = new Thread(new Runnable {
-        //                    def run(): Unit = {
-        //                        var mi: Int = -1
-        //                        while ({ mi = nextMethod.getAndIncrement; mi } < concreteMethodsCount) {
-        //                            f(methodsWithClassFilesAndSource(mi))
-        //                        }
-        //                    }
-        //                })
-        //                thread.start()
-        //                threads(i) = thread
-        //                i += 1
-        //            }
-        //        threads.foreach { _.join }
 
         val nextMethod = new java.util.concurrent.atomic.AtomicInteger(0)
         val futures = new Array[Future[Unit]](parallelizationLevel)
@@ -181,7 +163,8 @@ class Project[Source] private (
         while (i < parallelizationLevel) {
             val future = Future[Unit] {
                 var mi: Int = -1
-                while ({ mi = nextMethod.getAndIncrement; mi } < concreteMethodsCount) {
+                while ({ mi = nextMethod.getAndIncrement; mi } < concreteMethodsCount &&
+                    !isInterrupted()) {
                     f(methodsWithClassFilesAndSource(mi))
                 }
             }

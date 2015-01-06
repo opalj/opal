@@ -46,6 +46,9 @@ import java.util.concurrent.ThreadPoolExecutor
  */
 package object concurrent {
 
+    //
+    // STEP 1
+    //
     /**
      * The number of threads that should be used by parallelized computations that are
      * CPU bound (which do not use IO). This number is always larger than 0. This
@@ -53,9 +56,9 @@ package object concurrent {
      * ones).
      */
     final val NumberOfThreadsForCPUBoundTasks: Int = {
-        val threadsCPUBoundTasks = System.getProperty("org.opalj.threads.CPUBoundTasks")
-        if (threadsCPUBoundTasks ne null) {
-            val t = Integer.parseInt(threadsCPUBoundTasks)
+        val maxCPUBoundTasks = System.getProperty("org.opalj.threads.CPUBoundTasks")
+        if (maxCPUBoundTasks ne null) {
+            val t = Integer.parseInt(maxCPUBoundTasks)
             if (t <= 0)
                 throw new IllegalArgumentException(
                     s"org.opalj.threads.CPUBoundTasks must be larger than 0 (current: $t)"
@@ -66,74 +69,72 @@ package object concurrent {
             Runtime.getRuntime.availableProcessors()
         }
     }
-    println(s"[info] using $NumberOfThreadsForCPUBoundTasks threads for CPU bound tasks "+
+    println(s"[info] using $NumberOfThreadsForCPUBoundTasks thread(s) for CPU bound tasks "+
         "(can be changed by setting the system property org.opalj.threads.CPUBoundTasks; "+
         "the number should be equal to the number of physical – not hyperthreaded – cores)")
 
+    //
+    // STEP 2
+    //
     /**
-     * The size of the thread pool used by OPAL. The size should be at least as large
-     * as the number of physical cores and is ideally between 1 and 3 times larger
-     * than the number of (hyperthreaded) cores. This enables the efficient execution of
-     * IO bound tasks.
+     * The size of the thread pool used by OPAL for IO bound tasks. The size should be
+     * at least as large as the number of physical cores and is ideally between 1 and 3
+     * times larger than the number of (hyperthreaded) cores. This enables the efficient
+     * execution of IO bound tasks.
      */
-    final lazy val ThreadPoolSize: Int = {
-        val threadPoolSize = System.getProperty("org.opalj.threads.ThreadPoolSize")
-        if (threadPoolSize ne null) {
-            val s = Integer.parseInt(threadPoolSize)
-            if (s <= NumberOfThreadsForCPUBoundTasks)
+    final val NumberOfThreadsForIOBoundTasks: Int = {
+        val maxIOBoundTasks = System.getProperty("org.opalj.threads.IOBoundTasks")
+        if (maxIOBoundTasks ne null) {
+            val s = Integer.parseInt(maxIOBoundTasks)
+            if (s < NumberOfThreadsForCPUBoundTasks)
                 throw new IllegalArgumentException(
-                    s"org.opalj.threads.ThreadPoolSize must be larger than $NumberOfThreadsForCPUBoundTasks (current: $s)"
+                    s"org.opalj.threads.IOBoundTasks===$s must be larger than org.opalj.threads.CPUBoundTasks===$NumberOfThreadsForCPUBoundTasks"
                 )
             s
         } else {
-            println("[info] the property org.opalj.threads.ThreadPoolSize is unspecified")
+            println("[info] the property org.opalj.threads.IOBoundTasks is unspecified")
             Runtime.getRuntime.availableProcessors() * 2
         }
     }
-    println(s"[info] using at most $ThreadPoolSize threads "+
-        "(can be changed by setting the system property org.opalj.threads.ThreadPoolSize; "+
-        "the number should be betweeen 1 and 3 times the number of (hyperthreaded) cores)")
+    println(s"[info] using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks "+
+        "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; "+
+        "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)")
 
-    @volatile private[this] var theThreadPool: ExecutorService = null
+    //
+    // STEP 3
+    //
+    /**
+     * Returns the singleton instance of the global Thread Pool used throughout OPAL.
+     */
+    final val ThreadPool: ExecutorService = {
+        val group = new ThreadGroup(s"org.opalj.ThreadPool ${System.nanoTime()}")
+        val tp =
+            new ThreadPoolExecutor(
+                NumberOfThreadsForIOBoundTasks, NumberOfThreadsForIOBoundTasks,
+                0L, TimeUnit.SECONDS, // this is a fixed size pool
+                new LinkedBlockingQueue[Runnable](),
+                new ThreadFactory {
 
-    def ThreadPool: ExecutorService = {
-        if (theThreadPool ne null)
-            return theThreadPool;
+                    val nextID = new java.util.concurrent.atomic.AtomicLong(0l)
 
-        // we only support Java 7 and newer; hence, the double checked locking idiom works
-        this.synchronized {
-            val theTP = theThreadPool
-            if (theTP eq null) {
-                val group = new ThreadGroup(s"org.opalj.ThreadPool ${System.nanoTime()}")
-                val tp =
-                    new ThreadPoolExecutor(
-                        ThreadPoolSize, ThreadPoolSize,
-                        60L, TimeUnit.SECONDS,
-                        new LinkedBlockingQueue[Runnable](),
-                        new ThreadFactory {
-
-                            val nextID = new java.util.concurrent.atomic.AtomicInteger(0)
-
-                            def newThread(r: Runnable): Thread = {
-                                val id = s"${nextID.incrementAndGet()}"
-                                val name = s"org.opalj.ThreadPool-Thread $id"
-                                val t = new Thread(group, r, name)
-                                // we are using demon threads to make sure that these
-                                // threads never prevent the JVM from regular termination
-                                t.setDaemon(true)
-                                t
-                            }
-                        }
-                    )
-                tp.prestartAllCoreThreads()
-                theThreadPool = tp
-                tp
-            } else {
-                theTP
-            }
-        }
+                    def newThread(r: Runnable): Thread = {
+                        val id = s"${nextID.incrementAndGet()}"
+                        val name = s"org.opalj.ThreadPool-Thread $id"
+                        val t = new Thread(group, r, name)
+                        // we are using demon threads to make sure that these
+                        // threads never prevent the JVM from regular termination
+                        t.setDaemon(true)
+                        t
+                    }
+                }
+            )
+        tp.prestartAllCoreThreads()
+        tp
     }
 
+    //
+    // STEP 4
+    //
     /**
      * The ExecutionContext used by OPAL.
      *
@@ -141,9 +142,14 @@ package object concurrent {
      * if it used by some program, the program – at its very end – must call this
      * package's [[shutdown()]] method. Otherwise, the program may not terminate.
      */
-    implicit lazy val OPALExecutionContext: ExecutionContext =
+    implicit final val OPALExecutionContext: ExecutionContext =
         ExecutionContext.fromExecutorService(ThreadPool)
 
-    lazy val OPALExecutionContextTaskSupport: ExecutionContextTaskSupport =
-        new ExecutionContextTaskSupport(OPALExecutionContext)
+    //
+    // STEP 5
+    //
+    final val OPALExecutionContextTaskSupport: ExecutionContextTaskSupport =
+        new ExecutionContextTaskSupport(OPALExecutionContext) {
+            override def parallelismLevel: Int = NumberOfThreadsForCPUBoundTasks
+        }
 }

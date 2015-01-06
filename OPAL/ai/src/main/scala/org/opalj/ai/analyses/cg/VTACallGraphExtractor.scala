@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -179,7 +179,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             name: String,
             descriptor: MethodDescriptor,
             operands: domain.Operands): Unit = {
-            // MODIFIED CHA - we used the type information that is readily available        
+            // MODIFIED CHA - we used the type information that is readily available
             val receiver =
                 domain.typeOfValue(
                     operands(descriptor.parametersCount)
@@ -188,15 +188,15 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
 
             // Possible Cases:
             //  - the value is precise and has a single type => non-virtual call
-            //  - the value is not precise but has an upper type bound that is a subtype 
+            //  - the value is not precise but has an upper type bound that is a subtype
             //    of the declaringClassType
             //
             //  - the value is null => call to the constructor of NullPointerException
             //  - the value maybe null => additional call to the constructor of NullPointerException
             //
-            //  - the value is not precise and the upper type bound is a supertype 
+            //  - the value is not precise and the upper type bound is a supertype
             //    of the declaringClassType => the type hierarchy information is not complete;
-            //    the central factory method already "handles" this issue - hence, we don't care 
+            //    the central factory method already "handles" this issue - hence, we don't care
 
             // Note that explicitly supporting "MultipleReferencesValues", e.g.,
             // to create a very precise call graph in cases such as:
@@ -240,8 +240,8 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                         operands)
                 }
             } else {
-                // Recall that the types defining the upper type bound are not in an 
-                // inheritance relationship; however, they still may define 
+                // Recall that the types defining the upper type bound are not in an
+                // inheritance relationship; however, they still may define
                 // the respective method.
 
                 val potentialRuntimeTypes =
@@ -278,11 +278,11 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
     def extract(
         project: SomeProject,
         classFile: ClassFile,
-        method: Method): LocalCallGraphInformation = {
+        method: Method): CallGraphExtractor.LocalCallGraphInformation = {
 
         // The following optimization (using the plain CHA algorithm for all methods
         // that do not virtual method calls) may lead to some additional edges (if
-        // the underlying code contains dead code), but the improvement is worth the 
+        // the underlying code contains dead code), but the improvement is worth the
         // very few additional edges due to statically identifiable dead code!
         val hasVirtualMethodCalls =
             method.body.get.instructions.exists { i ⇒
@@ -292,7 +292,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             return chaCallGraphExctractor.extract(project, classFile, method)
 
         // There are virtual calls, hence, we now do the call graph extraction using
-        // variable type analysis    
+        // variable type analysis
 
         val result = BaseAI(classFile, method, Domain(classFile, method))
         val context = AnalysisContext(result.domain)
@@ -328,7 +328,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                 case INVOKESPECIAL.opcode ⇒
                     val INVOKESPECIAL(declaringClass, name, descriptor) = instruction
                     val operands = result.operandsArray(pc)
-                    // for invokespecial the dynamic type is not "relevant" (even for Java 8) 
+                    // for invokespecial the dynamic type is not "relevant" (even for Java 8)
                     if (operands != null) {
                         context.nonVirtualCall(
                             pc, declaringClass, name, descriptor,

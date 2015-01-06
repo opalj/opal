@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -169,7 +169,10 @@ class CHACallGraphExtractor(
         }
     }
 
-    def extract(project: SomeProject, classFile: ClassFile, method: Method): LocalCallGraphInformation = {
+    def extract(
+        project: SomeProject,
+        classFile: ClassFile,
+        method: Method): CallGraphExtractor.LocalCallGraphInformation = {
         val context = new AnalysisContext(project, classFile, method)
 
         method.body.get.foreach { (pc, instruction) ⇒
@@ -191,7 +194,7 @@ class CHACallGraphExtractor(
 
                 case INVOKESPECIAL.opcode ⇒
                     val INVOKESPECIAL(declaringClass, name, descriptor) = instruction
-                    // for invokespecial the dynamic type is not "relevant" (even for Java 8) 
+                    // for invokespecial the dynamic type is not "relevant" (even for Java 8)
                     context.nonVirtualCall(
                         pc, declaringClass, name, descriptor,
                         receiverIsNull = No /*the receiver is "this" object*/
