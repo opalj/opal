@@ -37,6 +37,7 @@ import scala.collection.parallel.ExecutionContextTaskSupport
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.SynchronousQueue
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when doing
@@ -56,9 +57,9 @@ package object concurrent {
      * ones).
      */
     final val NumberOfThreadsForCPUBoundTasks: Int = {
-        val threadsCPUBoundTasks = System.getProperty("org.opalj.threads.CPUBoundTasks")
-        if (threadsCPUBoundTasks ne null) {
-            val t = Integer.parseInt(threadsCPUBoundTasks)
+        val maxCPUBoundTasks = System.getProperty("org.opalj.threads.CPUBoundTasks")
+        if (maxCPUBoundTasks ne null) {
+            val t = Integer.parseInt(maxCPUBoundTasks)
             if (t <= 0)
                 throw new IllegalArgumentException(
                     s"org.opalj.threads.CPUBoundTasks must be larger than 0 (current: $t)"
@@ -69,7 +70,7 @@ package object concurrent {
             Runtime.getRuntime.availableProcessors()
         }
     }
-    println(s"[info] using $NumberOfThreadsForCPUBoundTasks threads for CPU bound tasks "+
+    println(s"[info] using $NumberOfThreadsForCPUBoundTasks thread(s) for CPU bound tasks "+
         "(can be changed by setting the system property org.opalj.threads.CPUBoundTasks; "+
         "the number should be equal to the number of physical – not hyperthreaded – cores)")
 
@@ -77,28 +78,28 @@ package object concurrent {
     // STEP 2
     //
     /**
-     * The size of the thread pool used by OPAL. The size should be at least as large
-     * as the number of physical cores and is ideally between 1 and 3 times larger
-     * than the number of (hyperthreaded) cores. This enables the efficient execution of
-     * IO bound tasks.
+     * The size of the thread pool used by OPAL for IO bound tasks. The size should be
+     * at least as large as the number of physical cores and is ideally between 1 and 3
+     * times larger than the number of (hyperthreaded) cores. This enables the efficient
+     * execution of IO bound tasks.
      */
-    final val ThreadPoolSize: Int = {
-        val threadPoolSize = System.getProperty("org.opalj.threads.ThreadPoolSize")
-        if (threadPoolSize ne null) {
-            val s = Integer.parseInt(threadPoolSize)
-            if (s <= NumberOfThreadsForCPUBoundTasks)
+    final val NumberOfThreadsForIOBoundTasks: Int = {
+        val maxIOBoundTasks = System.getProperty("org.opalj.threads.IOBoundTasks")
+        if (maxIOBoundTasks ne null) {
+            val s = Integer.parseInt(maxIOBoundTasks)
+            if (s < NumberOfThreadsForCPUBoundTasks)
                 throw new IllegalArgumentException(
-                    s"org.opalj.threads.ThreadPoolSize must be larger than $NumberOfThreadsForCPUBoundTasks (current: $s)"
+                    s"org.opalj.threads.IOBoundTasks===$s must be larger than org.opalj.threads.CPUBoundTasks===$NumberOfThreadsForCPUBoundTasks"
                 )
             s
         } else {
-            println("[info] the property org.opalj.threads.ThreadPoolSize is unspecified")
+            println("[info] the property org.opalj.threads.IOBoundTasks is unspecified")
             Runtime.getRuntime.availableProcessors() * 2
         }
     }
-    println(s"[info] using at most $ThreadPoolSize threads "+
-        "(can be changed by setting the system property org.opalj.threads.ThreadPoolSize; "+
-        "the number should be betweeen 1 and 3 times the number of (hyperthreaded) cores)")
+    println(s"[info] using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks "+
+        "(can be changed by setting the system property org.opalj.threads.NumberOfThreadsForIOBoundTasks; "+
+        "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)")
 
     //
     // STEP 3
@@ -110,12 +111,12 @@ package object concurrent {
         val group = new ThreadGroup(s"org.opalj.ThreadPool ${System.nanoTime()}")
         val tp =
             new ThreadPoolExecutor(
-                ThreadPoolSize, ThreadPoolSize,
-                60L, TimeUnit.SECONDS,
-                new LinkedBlockingQueue[Runnable](),
+                NumberOfThreadsForCPUBoundTasks, Int.MaxValue,
+                15L, TimeUnit.SECONDS,
+                new SynchronousQueue[Runnable](),
                 new ThreadFactory {
 
-                    val nextID = new java.util.concurrent.atomic.AtomicInteger(0)
+                    val nextID = new java.util.concurrent.atomic.AtomicLong(0l)
 
                     def newThread(r: Runnable): Thread = {
                         val id = s"${nextID.incrementAndGet()}"
@@ -149,5 +150,7 @@ package object concurrent {
     // STEP 5
     //
     final val OPALExecutionContextTaskSupport: ExecutionContextTaskSupport =
-        new ExecutionContextTaskSupport(OPALExecutionContext)
+        new ExecutionContextTaskSupport(OPALExecutionContext) {
+            override def parallelismLevel: Int = NumberOfThreadsForIOBoundTasks
+        }
 }

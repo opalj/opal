@@ -31,7 +31,12 @@ package bi
 package reader
 
 import java.io.File
-import java.io.{ FileInputStream, InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
+import java.io.FileInputStream
+import java.io.InputStream
+import java.io.DataInputStream
+import java.io.BufferedInputStream
+import java.io.ByteArrayInputStream
+import java.io.IOException
 import java.util.zip.{ ZipFile, ZipEntry }
 import java.net.URL
 import java.util.zip.ZipInputStream
@@ -386,7 +391,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
         import scala.collection.JavaConversions._
         val parEntries = jarFile.entries.toList.par
-        parEntries.tasksupport = OPALExecutionContextTaskSupport
+        parEntries.tasksupport = org.opalj.concurrent.OPALExecutionContextTaskSupport
         parEntries.foreach { jarEntry ⇒
             if (!jarEntry.isDirectory && jarEntry.getSize() > 0) {
                 val jarEntryName = jarEntry.getName
@@ -455,47 +460,79 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFiles(
         file: File,
         exceptionHandler: (Exception) ⇒ Unit = ClassFileReader.defaultExceptionHandler): Seq[(ClassFile, URL)] = {
+
+        def processJar(file: File): Seq[(ClassFile, URL)] = {
+            try {
+                process(new ZipFile(file)) { zf ⇒ ClassFiles(zf, exceptionHandler) }
+            } catch {
+                case e: Exception ⇒
+                    exceptionHandler(new IOException("cannot process: "+file, e))
+                    Nil
+            }
+        }
+
+        def processClassFile(file: File): Seq[(ClassFile, URL)] = {
+            try {
+                process(new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) { in ⇒
+                    ClassFile(in).map(classFile ⇒ (classFile, file.toURI().toURL()))
+                }
+            } catch {
+                case e: Exception ⇒
+                    exceptionHandler(new IOException("cannot process "+file, e))
+                    Nil
+            }
+        }
+
         if (!file.exists()) {
             Nil
         } else if (file.isFile()) {
             val filename = file.getName
-            if (file.length() == 0) {
-                Nil
-            } else if (filename.endsWith(".jar")) {
-                try {
-                    process(new ZipFile(file)) { zf ⇒
-                        ClassFiles(zf, exceptionHandler)
+            if (file.length() == 0) Nil
+            else if (filename.endsWith(".jar")) processJar(file)
+            else if (filename.endsWith(".class")) processClassFile(file)
+            else Nil
+        } else if (file.isDirectory()) {
+            var jarFiles = List.empty[File]
+            var classFiles = List.empty[File]
+            def collectFiles(files: Array[File]): Unit = {
+                if (files eq null)
+                    return ;
+                files.foreach { file ⇒
+                    val filename = file.getName
+                    if (file.isFile()) {
+                        if (file.length() == 0) Nil
+                        else if (filename.endsWith(".jar")) jarFiles ::= file
+                        else if (filename.endsWith(".class")) classFiles ::= file
+                    } else if (file.isDirectory()) {
+                        collectFiles(file.listFiles())
+                    } else {
+                        throw new UnknownError(s"$file is neither a file nor a directory")
                     }
-                } catch {
-                    case e: Exception ⇒
-                        exceptionHandler(new java.io.IOException("cannot process: "+file, e))
-                        Nil
                 }
-            } else if (filename.endsWith(".class")) {
-                try {
-                    process(new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) { in ⇒
-                        ClassFile(in).map(classFile ⇒ (classFile, file.toURI().toURL()))
-                    }
-                } catch {
-                    case e: Exception ⇒
-                        exceptionHandler(new java.lang.Exception("cannot process "+filename, e))
-                        Nil
-                }
-            } else {
-                Nil
             }
-        } else /* if(file.isDirectory()) */ {
-            val files = file.listFiles()
-            if (files != null) {
-                {
-                    val parInnerFiles = files.par
-                    parInnerFiles.tasksupport = OPALExecutionContextTaskSupport
-                    for (innerFile ← parInnerFiles)
-                        yield ClassFiles(innerFile, exceptionHandler)
-                }.flatten.seq
-            } else {
-                Nil
+            // 1. get the list of all files in the directory as well as all subdirectories
+            collectFiles(file.listFiles())
+
+            // 2. load - in parallel - all ".class" files
+            var allClassFiles = List.empty[(ClassFile, URL)]
+            if (classFiles.nonEmpty) {
+                val parClassFiles = classFiles.par
+                parClassFiles.tasksupport = OPALExecutionContextTaskSupport
+                allClassFiles ++=
+                    (for (classFile ← parClassFiles)
+                        yield ClassFiles(classFile, exceptionHandler)).flatten
             }
+
+            // 3. load - one after the other - all ".jar" files (processing jar files
+            //    is already parallelized.)
+            jarFiles.foreach { jarFile ⇒
+                allClassFiles ++= ClassFiles(jarFile, exceptionHandler)
+            }
+
+            // 4. return all loaded class files
+            allClassFiles
+        } else {
+            throw new UnknownError(s"$file is neither a file nor a directory")
         }
     }
 
@@ -503,7 +540,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         files: Traversable[File],
         exceptionHandler: (Exception) ⇒ Unit = ClassFileReader.defaultExceptionHandler): Seq[(ClassFile, URL)] = {
 
-        files.map(ClassFiles(_, exceptionHandler)).flatten.toSeq
+        files.map(file ⇒ ClassFiles(file, exceptionHandler)).flatten.toSeq
     }
 }
 /**
