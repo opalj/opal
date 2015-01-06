@@ -156,26 +156,6 @@ class Project[Source] private (
             return ;
         }
 
-        // [OLD - USING THREADS]
-        //        val nextMethod = new java.util.concurrent.atomic.AtomicInteger(0)
-        //        val threads = new Array[Thread](parallelizationLevel)
-        //        // Start parallel execution
-        //            var i = 0
-        //            while (i < parallelizationLevel) {
-        //                val thread = new Thread(new Runnable {
-        //                    def run(): Unit = {
-        //                        var mi: Int = -1
-        //                        while ({ mi = nextMethod.getAndIncrement; mi } < concreteMethodsCount) {
-        //                            f(methodsWithClassFilesAndSource(mi))
-        //                        }
-        //                    }
-        //                })
-        //                thread.start()
-        //                threads(i) = thread
-        //                i += 1
-        //            }
-        //        threads.foreach { _.join }
-
         val nextMethod = new java.util.concurrent.atomic.AtomicInteger(0)
         val futures = new Array[Future[Unit]](parallelizationLevel)
         // Start parallel execution
