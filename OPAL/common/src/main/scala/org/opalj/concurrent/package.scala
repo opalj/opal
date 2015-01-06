@@ -37,8 +37,6 @@ import scala.collection.parallel.ExecutionContextTaskSupport
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.SynchronousQueue
-import java.util.concurrent.ArrayBlockingQueue
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when doing
@@ -99,7 +97,7 @@ package object concurrent {
         }
     }
     println(s"[info] using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks "+
-        "(can be changed by setting the system property org.opalj.threads.NumberOfThreadsForIOBoundTasks; "+
+        "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; "+
         "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)")
 
     //
@@ -112,9 +110,9 @@ package object concurrent {
         val group = new ThreadGroup(s"org.opalj.ThreadPool ${System.nanoTime()}")
         val tp =
             new ThreadPoolExecutor(
-                NumberOfThreadsForCPUBoundTasks, NumberOfThreadsForIOBoundTasks,
-                15L, TimeUnit.SECONDS,
-                new ArrayBlockingQueue[Runnable](NumberOfThreadsForIOBoundTasks),
+                NumberOfThreadsForIOBoundTasks, NumberOfThreadsForIOBoundTasks,
+                0L, TimeUnit.SECONDS, // this is a fixed size pool
+                new LinkedBlockingQueue[Runnable](),
                 new ThreadFactory {
 
                     val nextID = new java.util.concurrent.atomic.AtomicLong(0l)
@@ -128,11 +126,7 @@ package object concurrent {
                         t.setDaemon(true)
                         t
                     }
-                },
-                // This policy is set as a fallback to make sure that we will have
-                // some progress; setting this policy is primarily required to run
-                // the test suits
-                new ThreadPoolExecutor.CallerRunsPolicy()
+                }
             )
         tp.prestartAllCoreThreads()
         tp
@@ -156,6 +150,6 @@ package object concurrent {
     //
     final val OPALExecutionContextTaskSupport: ExecutionContextTaskSupport =
         new ExecutionContextTaskSupport(OPALExecutionContext) {
-            override def parallelismLevel: Int = NumberOfThreadsForIOBoundTasks
+            override def parallelismLevel: Int = NumberOfThreadsForCPUBoundTasks
         }
 }
