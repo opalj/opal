@@ -90,7 +90,6 @@ object FieldValuesAnalysis {
         theProject: SomeProject,
         createDomain: (SomeProject, ClassFile) ⇒ BaseFieldValuesAnalysisDomain,
         isInterrupted: () ⇒ Boolean): FieldValueInformation = {
-        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
         val results = new ConcurrentHashMap[Field, BaseFieldValuesAnalysisDomain#DomainValue]
 
