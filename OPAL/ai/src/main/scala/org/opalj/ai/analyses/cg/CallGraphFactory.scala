@@ -85,18 +85,8 @@ object CallGraphFactory {
         theProject: SomeProject,
         entryPoints: List[Method],
         configuration: CallGraphAlgorithmConfiguration): ComputedCallGraph = {
-
         if (entryPoints.isEmpty)
-            throw new IllegalArgumentException("the call graph has no entry points")
-
-        if (theProject.classHierarchy.rootTypes.tail.nonEmpty)
-            // TODO Use a Log...
-            println(
-                "[warn] missing supertype information for: "+
-                    theProject.classHierarchy.rootTypes.
-                    filterNot(_ eq ObjectType.Object).
-                    map(_.toJava).mkString(", ")
-            )
+            return ComputedCallGraph.empty(theProject)
 
         import scala.collection.{ Map, Set }
         type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException])
