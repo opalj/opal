@@ -18,4 +18,4 @@ javaOptions in run :=
 		"-XX:+AggressiveOpts",
 		"-Xnoclassgc",
 		"-Dorg.opalj.threads.CPUBoundTasks=8"/*<= should be equivalent to the number of physical cores!*/,
-		"-Dorg.opalj.threads.ThreadPoolSize=64") 
+		"-Dorg.opalj.threads.IOBoundTasks=24") 

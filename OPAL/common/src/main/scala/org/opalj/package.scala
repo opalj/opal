@@ -84,10 +84,10 @@ package object opalj {
     private[this] final val checkAssert: Boolean = {
         try {
             scala.Predef.assert(false)
-            println("[info - OPALJ Common] Production Build - Assertions are disabled")
+            println("[info - Common] Production Build - Assertions are disabled")
         } catch {
             case ae: AssertionError ⇒
-                println("[info - OPALJ Common] Development Build - Assertions are enabled")
+                println("[info - Common] Development Build - Assertions are enabled")
         }
         true
     }

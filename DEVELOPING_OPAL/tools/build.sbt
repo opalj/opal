@@ -16,4 +16,4 @@ javaOptions in run :=
 		"-XX:+AggressiveOpts",
 		"-Xnoclassgc",
 		"-Dorg.opalj.threads.CPUBoundTasks=8",
-		"-Dorg.opalj.threads.ThreadPoolSize=48")
+		"-Dorg.opalj.threads.IOBoundTasks=24")
