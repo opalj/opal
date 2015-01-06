@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.SynchronousQueue
+import java.util.concurrent.ArrayBlockingQueue
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when doing
@@ -111,9 +112,9 @@ package object concurrent {
         val group = new ThreadGroup(s"org.opalj.ThreadPool ${System.nanoTime()}")
         val tp =
             new ThreadPoolExecutor(
-                NumberOfThreadsForCPUBoundTasks, Int.MaxValue,
+                NumberOfThreadsForCPUBoundTasks, NumberOfThreadsForIOBoundTasks,
                 15L, TimeUnit.SECONDS,
-                new SynchronousQueue[Runnable](),
+                new ArrayBlockingQueue[Runnable](NumberOfThreadsForIOBoundTasks),
                 new ThreadFactory {
 
                     val nextID = new java.util.concurrent.atomic.AtomicLong(0l)
@@ -127,7 +128,11 @@ package object concurrent {
                         t.setDaemon(true)
                         t
                     }
-                }
+                },
+                // This policy is set as a fallback to make sure that we will have
+                // some progress; setting this policy is primarily required to run
+                // the test suits
+                new ThreadPoolExecutor.CallerRunsPolicy()
             )
         tp.prestartAllCoreThreads()
         tp
