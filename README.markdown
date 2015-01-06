@@ -51,7 +51,7 @@ To get the call graph of some class call run and specify (a) a jar file and (b) 
 To get started go to the webpage of the project [The OPAL Project](www.opal-project.de) and go to Articles and Tutorials. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks.
 
 # Contributing to OPAL #
-Everybody is welcome to contribute to OPAL and to submit pull requests. However, pull request is only taken into consideration if:
+Everybody is welcome to contribute to OPAL and to submit pull requests. However, a pull request is only taken into consideration if:
 
 * ___the pull request consists of only **one commit** and this commit implements a single feature___
 
@@ -60,13 +60,15 @@ Additionally, the pull request has to meet the following conditions:
 * the copyright information (BSD License) was added to the file
 * author information was added where appropriate
 * all existing unit and integration tests succeed
-* the code is formatted using the same settings and style as the rest of the code (use the "Scalariform settings" as a basis.)
+* the code is formatted using the same settings and style as the rest of the code (use the "Scalariform settings" as a basis)
 * the code is reasonably documented
 * the code conventions w.r.t. naming and formatting are followed (Note, that some formatting conventions used by OPAL are not enforced by scalariform. In particular, a line should not have more than 90 chars (unless Scalariform always reformats the code such that the line has more than 90 chars which is, e.g., often the case for type declarations))
 * sufficient tests are included (use Scalatest for the development and use scoverage for checking the coverage; the tests should check all features and should have a coverage that is close to 100%)
 
-A recommended read (to spend up the process of getting your Pull Request pulled):
+A recommended read (to spead up the process of getting your Pull Request pulled):
  [The Twitter Scala Style Guide](http://twitter.github.io/effectivescala/)
+
+* Our Jenkins can be found [here](http://opal.st.informatik.tu-darmstadt.de:8080)
 
 # Further Information #
 
