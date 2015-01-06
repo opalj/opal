@@ -18,7 +18,7 @@ fork in run := true
 javaOptions in run := Seq(
 	"-Xmx2G", "-Xms1024m", "-Xnoclassgc",
 	"-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC", "-XX:+AggressiveOpts", 
-	"-Dorg.opalj.threads.CPUBoundTasks=8", "-Dorg.opalj.threads.IOBoundTasks=48")
+	"-Dorg.opalj.threads.CPUBoundTasks=8", "-Dorg.opalj.threads.IOBoundTasks=24")
 
 
 

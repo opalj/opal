@@ -148,9 +148,9 @@ class Project[Source] private (
         isInterrupted: () ⇒ Boolean)(
             f: Function[(Source, ClassFile, Method), T]): Unit = {
         val concreteMethodsCount = methodsWithClassFilesAndSource.length
-        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, concreteMethodsCount)
         if (concreteMethodsCount == 0)
             return ;
+        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, concreteMethodsCount)
         if (parallelizationLevel == 1) {
             methodsWithClassFilesAndSource.foreach(f)
             return ;

@@ -56,22 +56,21 @@ object CallGraphFactory {
      *  - every private method related to Serialization, if the respective
      *    declaring class is a subtype of java.io.Serializable.
      */
-    def defaultEntryPointsForLibraries(project: SomeProject): List[Method] = {
+    def defaultEntryPointsForLibraries(project: SomeProject): Iterable[Method] = {
         val classHierarchy = project.classHierarchy
-        for {
-            classFile ← project.projectClassFiles
-            method ← classFile.methods
-            if method.body.isDefined
-            if !method.isPrivate ||
+        val methods = new java.util.concurrent.ConcurrentLinkedQueue[Method]
+        project.parForeachMethodWithBody(() ⇒ false) { m ⇒
+            val (_, classFile, method) = m
+            if (!method.isPrivate ||
                 ( // the method is private, but...
                     Method.isObjectSerializationRelated(method) &&
                     classHierarchy.isSubtypeOf(
                         classFile.thisType,
-                        ObjectType.Serializable).isYesOrUnknown
-                )
-        } yield {
-            method
+                        ObjectType.Serializable).isYesOrUnknown))
+                methods.add(method)
         }
+        import scala.collection.JavaConverters._
+        methods.asScala
     }
 
     /**
@@ -83,7 +82,7 @@ object CallGraphFactory {
      */
     def create(
         theProject: SomeProject,
-        entryPoints: List[Method],
+        entryPoints: Iterable[Method],
         configuration: CallGraphAlgorithmConfiguration): ComputedCallGraph = {
         if (entryPoints.isEmpty)
             return ComputedCallGraph.empty(theProject)

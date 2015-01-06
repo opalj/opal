@@ -40,10 +40,12 @@ import java.io.IOException
 import java.util.zip.{ ZipFile, ZipEntry }
 import java.net.URL
 import java.util.zip.ZipInputStream
-
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.io.process
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.concurrent.Future
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -396,25 +398,38 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         // sized thread pool) we may run out of threads... to process anything)
         val innerJarEntries = new java.util.concurrent.ConcurrentLinkedQueue[ZipEntry]
 
-        val parEntries = jarFile.entries.toList.par
-        parEntries.tasksupport = org.opalj.concurrent.OPALExecutionContextTaskSupport
-        parEntries.foreach { jarEntry ⇒
-            if (!jarEntry.isDirectory && jarEntry.getSize() > 0) {
-                val jarEntryName = jarEntry.getName
-                if (jarEntryName.endsWith(".class")) {
-                    try {
-                        val url = new URL(jarFileURL + jarEntry.getName())
-                        val classFiles = ClassFile(jarFile, jarEntry)
-                        classFiles foreach (classFile ⇒ classFileHandler(classFile, url))
-                    } catch {
-                        case e: Exception ⇒
-                            exceptionHandler(new java.io.IOException("cannot process: "+jarEntryName, e))
+        val jarEntries = jarFile.entries.toArray
+        val nextEntryIndex = new java.util.concurrent.atomic.AtomicInteger(jarEntries.length - 1)
+        val parallelismLevel = org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
+        val futures: Array[Future[Unit]] = new Array(parallelismLevel)
+        val futureIndexes = (0 until parallelismLevel)
+        futureIndexes.foreach { fi ⇒
+            futures(fi) = Future[Unit] {
+                var index = -1
+                while ({ index = nextEntryIndex.getAndDecrement; index } >= 0) {
+                    val jarEntry = jarEntries(index)
+                    if (!jarEntry.isDirectory && jarEntry.getSize() > 0) {
+                        val jarEntryName = jarEntry.getName
+                        if (jarEntryName.endsWith(".class")) {
+                            try {
+                                val url = new URL(jarFileURL + jarEntry.getName())
+                                val classFiles = ClassFile(jarFile, jarEntry)
+                                classFiles foreach (classFile ⇒ classFileHandler(classFile, url))
+                            } catch {
+                                case e: Exception ⇒
+                                    exceptionHandler(
+                                        new IOException("cannot process: "+jarEntryName, e)
+                                    )
+                            }
+                        } else if (jarEntryName.endsWith(".jar")) {
+                            innerJarEntries.add(jarEntry)
+                        }
                     }
-                } else if (jarEntryName.endsWith(".jar")) {
-                    innerJarEntries.add(jarEntry)
                 }
-            }
+            }(org.opalj.concurrent.OPALExecutionContext)
         }
+        futureIndexes.foreach { fi ⇒ Await.ready(futures(fi), Duration.Inf) }
+
         for (jarEntry ← innerJarEntries.iterator()) {
             try {
                 val nextJarFileURL = jarFileURL+"jar:"+jarEntry.getName()+"!/"
