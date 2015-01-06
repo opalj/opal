@@ -21,7 +21,52 @@ OPAL consists of several projects which are found in the folder OPAL:
 * **Architecture Valiation**(OPAL/av): A small framework to check a project's implemented architecture against a specified one.
 
 * **Demos**(OPAL/demos): Contains working code samples that demonstrate how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demos" (`project Demos
+
 * **FindREALBugs**: (This project is in its very early stages!) FindBugs reloaded. For further information go to: [FindREALBugs](https://bitbucket.org/delors/opal/wiki/FindREALBugs)
+
+# Building OPAL #
+
+The following applies to the "Master" branch.
+
+OPAL uses SBT as its build tool and working with OPAL is particularly easy using the SBT console.
+Make sure that you have Java 7 or 8, Scala 2.11.4 and SBT 0.13.7 installed and running. Download a recent snapshot of OPAL or clone the repository.
+Go to OPAL's root folder. 
+
+* Call ` sbt clean copyResources test:compile it:compile unidoc`. This compiles all projects (including tests) and generates the project-wide ScalaDoc documentation.
+* [Optional - but highly recommended] Edit your `.sbtconfig` file and specify the two system properties (`JAVA_OPTS`): `-Dorg.opalj.threads.CPUBoundTasks=8
+-Dorg.opalj.threads.IOBoundTasks=48` - set the values to appropriate values for your machine (CPUBoundTasks === "Number of real CPUs (Cores)", IOBoundTasks === Number of (hyperthreaded) cores * 2 or *3 
+* Call `sbt test` to run the unit tests and to test that everything works as expected. Please note, that some tests generate some additional (colored) output. However, as long as all tests succeed without an error, everything is OK. *If `sbt test` fails it may be due to insufficient memory. In this case it is necessary to edit your `.sbtconfig` file and to specify that you want to use more memory (`-Xmx3072M`).*
+* Call `sbt it:test` to run the integration test suite. Executing this test suite will take several minutes (your .sbtconfig file needs to be changed accordingly).
+* If you want to contribute to OPAL and want to develop your analyses using Eclipse, call `sbt eclipse` to create the project structure. Afterwards, you can directly import the projects into Eclipse.
+
+You are ready to go.
+
+# Example Usage #
+
+Start the sbt console. (In OPAL's root folder call `sbt` on the command line.)
+Change the project to OPAL-DeveloperTools using the command `project OPAL-DeveloperTools`.
+To get the call graph of some class call run and specify (a) a jar file and (b) the name of some class. E.g., use the following command (`run ExtVTA /Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home/jre/lib java/util/ArrayList`) and then select `CallGraphVisualization`. Afterwards the call graph related to that class is calculated and opened. (Graphviz needs to be installed first, since the visualization of the call graph is done using it.)
+
+# Using OPAL #
+To get started go to the webpage of the project [The OPAL Project](www.opal-project.de) and go to Articles and Tutorials. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks.
+
+# Contributing to OPAL #
+Everybody is welcome to contribute to OPAL and to submit pull requests. However, pull request is only taken into consideration if:
+
+* ___the pull request consists of only **one commit** and this commit implements a single feature___
+
+Additionally, the pull request has to meet the following conditions:
+
+* the copyright information (BSD License) was added to the file
+* author information was added where appropriate
+* all existing unit and integration tests succeed
+* the code is formatted using the same settings and style as the rest of the code (use the "Scalariform settings" as a basis.)
+* the code is reasonably documented
+* the code conventions w.r.t. naming and formatting are followed (Note, that some formatting conventions used by OPAL are not enforced by scalariform. In particular, a line should not have more than 90 chars (unless Scalariform always reformats the code such that the line has more than 90 chars which is, e.g., often the case for type declarations))
+* sufficient tests are included (use Scalatest for the development and use scoverage for checking the coverage; the tests should check all features and should have a coverage that is close to 100%)
+
+A recommended read (to spend up the process of getting your Pull Request pulled):
+ [The Twitter Scala Style Guide](http://twitter.github.io/effectivescala/)
 
 # Further Information #
 
