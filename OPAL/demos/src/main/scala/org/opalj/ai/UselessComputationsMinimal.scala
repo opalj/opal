@@ -74,20 +74,6 @@ object UselessComputationsMinimal
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean) = {
 
-        //        val results = (for {
-        //            classFile ← theProject.classFiles.par
-        //            method @ MethodWithBody(body) ← classFile.methods
-        //            result = BaseAI(classFile, method, new AnalysisDomain(theProject, method))
-        //        } yield {
-        //            import result.domain.ConcreteIntegerValue
-        //            collectWithOperandsAndIndex(result.domain)(body, result.operandsArray) {
-        //                case (
-        //                    pc, _: IFICMPInstruction, Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
-        //                    ) ⇒
-        //                    s"${classFile.thisType.toJava}{ ${method.toJava}{ /*pc=$pc:*/ comparison of constant values: $a and $b } }"
-        //            }
-        //        }).flatten.seq
-
         val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
         theProject.parForeachMethodWithBody(isInterrupted) { m ⇒
             val (_ /*source*/ , classFile, method) = m
