@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -107,15 +107,15 @@ class UnusedPrivateFields[Source] extends FindRealBugsAnalysis[Source] {
         parameters: Seq[String] = List.empty,
         isInterrupted: () ⇒ Boolean): Iterable[FieldBasedReport[Source]] = {
 
-        // TODO: Currently doesn't detect cases where Serializable is implemented 
-        //indirectly, e.g. through java.io.File which implements Serializable but is 
-        //typically not analyzed by OPAL. Thus, in general, if some super types are 
-        //unknown, this analysis should generate reports with lower severity, or perhaps 
+        // TODO: Currently doesn't detect cases where Serializable is implemented
+        //indirectly, e.g. through java.io.File which implements Serializable but is
+        //typically not analyzed by OPAL. Thus, in general, if some super types are
+        //unknown, this analysis should generate reports with lower severity, or perhaps
         //none at all, about serialVersionUID.
         val serializables = project.classHierarchy.allSubtypes(ObjectType.Serializable,
             false)
 
-        /**
+        /*
          * Check whether a field is the special `serialVersionUID` field of a
          * `Serializable` class. It is always used internally by the JVM, and should not
          * be reported by this analysis.
@@ -135,9 +135,8 @@ class UnusedPrivateFields[Source] extends FindRealBugsAnalysis[Source] {
         var reports: List[FieldBasedReport[Source]] = List.empty
 
         for {
-            classFile ← project.classFiles
-            if !classFile.isInterfaceDeclaration &&
-                !project.isLibraryType(classFile)
+            classFile ← project.allProjectClassFiles
+            if !classFile.isInterfaceDeclaration
         } {
             val declaringClass = classFile.thisType
             val privateFields = scala.collection.mutable.Map[String, Field]()

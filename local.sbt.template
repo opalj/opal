@@ -1,0 +1,10 @@
+//
+// Optional configuration settings specific to each developers machine.
+//
+// Copy this file to "local.sbt" and change all settings as appropriate.
+//
+
+javaOptions in ThisBuild ++= Seq(
+	"-Dorg.opalj.threads.CPUBoundTasks=4", // Number of physical (not hyperthreaded) cores/CPUs
+	"-Dorg.opalj.threads.IOBoundTasks=12" // Number of (hyperthreaded) cores * 1,5
+)

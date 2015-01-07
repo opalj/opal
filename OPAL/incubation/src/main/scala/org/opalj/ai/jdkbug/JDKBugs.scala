@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -119,7 +119,7 @@ object JDKTaintAnalysis
     def entryPoints(project: Project[URL]): Iterable[(ClassFile, Method)] = {
         import ObjectType._
         for {
-            classFile ← project.classFiles
+            classFile ← project.allProjectClassFiles
             if !definedInRestrictedPackage(classFile.thisType.packageName)
             method ← classFile.methods
             if method.body.isDefined
@@ -389,7 +389,7 @@ trait TaintAnalysisDomain[Source]
         //    if (relevantOperands.isEmpty)
         //      return doTypeLevelInvoke;
         //
-        //    // If we reach this point, we have an invocation of a relevant method 
+        //    // If we reach this point, we have an invocation of a relevant method
         //    // with a relevant parameter that is not our final sink...
         //
         //    val method: Method =
@@ -409,7 +409,7 @@ trait TaintAnalysisDomain[Source]
         //
         //    // filters cachedInterfaceCalls to see if there has already been a call to the
         //    // same implementing class with the same parameters
-        //    // if that is the case the analysis stops  
+        //    // if that is the case the analysis stops
         //    if (TaintAnalysisDomain.cachedInterfaceCalls.contains(cachedInterfaceCall)) {
         //      return doTypeLevelInvoke
         //    }
@@ -473,7 +473,7 @@ trait TaintAnalysisDomain[Source]
         if (relevantOperands.isEmpty)
             return doTypeLevelInvoke;
 
-        // If we reach this point, we have an invocation of a relevant method 
+        // If we reach this point, we have an invocation of a relevant method
         // with a relevant parameter that is not our final sink...
 
         val method: Method =
@@ -511,7 +511,7 @@ trait TaintAnalysisDomain[Source]
         if (relevantOperands.isEmpty)
             return doTypeLevelInvoke;
 
-        // If we reach this point, we have an invocation of a relevant method 
+        // If we reach this point, we have an invocation of a relevant method
         // with a relevant parameter that is not our final sink...
         val method: Method =
             classHierarchy.resolveMethodReference(
@@ -545,14 +545,14 @@ trait TaintAnalysisDomain[Source]
             if (relevantOperands.isEmpty)
                 return doTypeLevelInvoke;
 
-        // If we reach this point, we have an invocation of a relevant method 
+        // If we reach this point, we have an invocation of a relevant method
         // with a relevant parameter...
         if (checkForSink(declaringClass, methodDescriptor, methodName)) {
             registerSink(pc, operands)
             return doTypeLevelInvoke;
         }
 
-        // If we reach this point, we have an invocation of a relevant method 
+        // If we reach this point, we have an invocation of a relevant method
         // with a relevant parameter that is not our final sink...
         val method: Method =
             classHierarchy.resolveMethodReference(
@@ -758,7 +758,7 @@ trait TaintAnalysisDomain[Source]
             if (isRecursiveCall(classFile, method, parameters)) {
                 false
             } else {
-                // If we reach this point, we have an invocation of a relevant method 
+                // If we reach this point, we have an invocation of a relevant method
                 // with a relevant parameter that is not our final sink and which is
                 // not native and which is not a recursive call
 
@@ -823,7 +823,7 @@ class RootTaintAnalysisDomain[Source](
 
         var nextIndex = if (id.method.isStatic) 1 else 2
         val relevantParameters =
-            //compute correct index (double, long take two slots) 
+            //compute correct index (double, long take two slots)
             methodDescriptor.parameterTypes.zipWithIndex.map { param_idx ⇒
                 val (parameterType, _ /*index*/ ) = param_idx;
                 val currentIndex = nextIndex
@@ -881,7 +881,7 @@ class CalledTaintAnalysisDomain[Source](
         parameters: DomainValues): Boolean = {
         (this.declaringClass == declaringClass &&
             this.methodName == methodName &&
-            this.methodDescriptor == methodDescriptor // && // TODO check that the analysis would be made under the same assumption (same parameters!)    
+            this.methodDescriptor == methodDescriptor // && // TODO check that the analysis would be made under the same assumption (same parameters!)
         ) || (
                 declaringClass.isObjectType &&
                 previousTaintAnalysisDomain.isRecursiveCall(

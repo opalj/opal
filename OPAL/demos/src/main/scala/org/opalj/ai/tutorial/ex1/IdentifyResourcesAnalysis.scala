@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -77,23 +77,25 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
             // Step 1
             // Find all methods that create "java.io.File(<String>)" objects.
             val callSites = time {
-                (for {
-                    cf ← theProject.classFiles.par
-                    m @ MethodWithBody(body) ← cf.methods
-                } yield {
-                    val pcs = for {
-                        pc ← body.collectWithIndex {
-                            case (
-                                pc,
-                                INVOKESPECIAL(
-                                    ObjectType("java/io/File"),
-                                    "<init>",
-                                    SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
-                                ) ⇒ pc
-                        }
-                    } yield pc
-                    (cf, m, pcs)
-                }).filter(_._3.size > 0)
+                (
+                    for {
+                        cf ← theProject.allClassFiles.par
+                        m @ MethodWithBody(body) ← cf.methods
+                    } yield {
+                        val pcs = for {
+                            pc ← body.collectWithIndex {
+                                case (
+                                    pc,
+                                    INVOKESPECIAL(
+                                        ObjectType("java/io/File"),
+                                        "<init>",
+                                        SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
+                                    ) ⇒ pc
+                            }
+                        } yield pc
+                        (cf, m, pcs)
+                    }
+                ).filter(_._3.size > 0)
             } { t ⇒ println(f"Finding candidates took: ${ns2sec(t)}%2.2f seconds.") }
 
             // Step 2
