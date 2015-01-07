@@ -26,12 +26,20 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.av.testclasses
+package mathematics
 
 /**
  * @author Samuel Beracasa
  */
-class Example {
-    val math = new Mathematics()
-    math.operation1
+trait Operations {
+    def +(other: Number): Any
+    def -(other: Number): Any
+    def *(other: Number): Any
+    def /(other: Number): Any
+    def +(other: Rational): Rational
+    def -(other: Rational): Rational
+    def *(other: Rational): Rational
+    def /(other: Rational): Rational
+
+    def toString(): String
 }

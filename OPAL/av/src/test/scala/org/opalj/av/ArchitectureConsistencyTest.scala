@@ -30,7 +30,8 @@ package org.opalj.av
 
 import org.junit.runner.RunWith
 
-import org.opalj.av.Specification._
+import org.opalj.bi.TestSupport.locateTestResources
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 import org.scalatest._
 import org.scalatest.junit.JUnitRunner
@@ -44,9 +45,9 @@ import org.scalatest.junit.JUnitRunner
  * @author Marco Torsello
  */
 @RunWith(classOf[JUnitRunner])
-class ArchitectureConsistencyMathTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
-    val project = (SourceDirectory("OPAL/av/target/scala-2.11/test-classes"))
+    val project = ClassFiles(locateTestResources("classfiles/mathematics.jar", "av"))
 
     behavior of "the Architecture Validation Library on the Mathematics test classes"
 
@@ -57,23 +58,23 @@ class ArchitectureConsistencyMathTest extends FlatSpec with Matchers with Before
         val specification =
             new Specification(project) {
                 ensemble('Operations) {
-                    "org.opalj.av.testclasses.Operations*"
+                    "mathematics.Operations*"
                 }
 
                 ensemble('Number) {
-                    "org.opalj.av.testclasses.Number*"
+                    "mathematics.Number*"
                 }
 
                 ensemble('Rational) {
-                    "org.opalj.av.testclasses.Rational*"
+                    "mathematics.Rational*"
                 }
 
                 ensemble('Mathematics) {
-                    "org.opalj.av.testclasses.Mathematics*"
+                    "mathematics.Mathematics*"
                 }
 
                 ensemble('Example) {
-                    "org.opalj.av.testclasses.Example*"
+                    "mathematics.Example*"
                 }
 
                 'Example is_only_allowed_to_use 'Mathematics
@@ -88,23 +89,23 @@ class ArchitectureConsistencyMathTest extends FlatSpec with Matchers with Before
         val specification =
             new Specification(project) {
                 ensemble('Operations) {
-                    "org.opalj.av.testclasses.Operations*"
+                    "mathematics.Operations*"
                 }
 
                 ensemble('Number) {
-                    "org.opalj.av.testclasses.Number*"
+                    "mathematics.Number*"
                 }
 
                 ensemble('Rational) {
-                    "org.opalj.av.testclasses.Rational*"
+                    "mathematics.Rational*"
                 }
 
                 ensemble('Mathematics) {
-                    "org.opalj.av.testclasses.Mathematics*"
+                    "mathematics.Mathematics*"
                 }
 
                 ensemble('Example) {
-                    "org.opalj.av.testclasses.Example*"
+                    "mathematics.Example*"
                 }
 
                 'Mathematics is_only_allowed_to_use 'Rational
@@ -122,23 +123,23 @@ class ArchitectureConsistencyMathTest extends FlatSpec with Matchers with Before
         val specification =
             new Specification(project) {
                 ensemble('Operations) {
-                    "org.opalj.av.testclasses.Operations*"
+                    "mathematics.Operations*"
                 }
 
                 ensemble('Number) {
-                    "org.opalj.av.testclasses.Number*"
+                    "mathematics.Number*"
                 }
 
                 ensemble('Rational) {
-                    "org.opalj.av.testclasses.Rational*"
+                    "mathematics.Rational*"
                 }
 
                 ensemble('Mathematics) {
-                    "org.opalj.av.testclasses.Mathematics*"
+                    "mathematics.Mathematics*"
                 }
 
                 ensemble('Example) {
-                    "org.opalj.av.testclasses.Example*"
+                    "mathematics.Example*"
                 }
 
                 'Example is_not_allowed_to_use 'Rational
@@ -153,23 +154,23 @@ class ArchitectureConsistencyMathTest extends FlatSpec with Matchers with Before
         val specification =
             new Specification(project) {
                 ensemble('Operations) {
-                    "org.opalj.av.testclasses.Operations*"
+                    "mathematics.Operations*"
                 }
 
                 ensemble('Number) {
-                    "org.opalj.av.testclasses.Number*"
+                    "mathematics.Number*"
                 }
 
                 ensemble('Rational) {
-                    "org.opalj.av.testclasses.Rational*"
+                    "mathematics.Rational*"
                 }
 
                 ensemble('Mathematics) {
-                    "org.opalj.av.testclasses.Mathematics*"
+                    "mathematics.Mathematics*"
                 }
 
                 ensemble('Example) {
-                    "org.opalj.av.testclasses.Example*"
+                    "mathematics.Example*"
                 }
 
                 'Mathematics is_not_allowed_to_use 'Number
@@ -187,23 +188,23 @@ class ArchitectureConsistencyMathTest extends FlatSpec with Matchers with Before
         val specification =
             new Specification(project) {
                 ensemble('Operations) {
-                    "org.opalj.av.testclasses.Operations*"
+                    "mathematics.Operations*"
                 }
 
                 ensemble('Number) {
-                    "org.opalj.av.testclasses.Number*"
+                    "mathematics.Number*"
                 }
 
                 ensemble('Rational) {
-                    "org.opalj.av.testclasses.Rational*"
+                    "mathematics.Rational*"
                 }
 
                 ensemble('Mathematics) {
-                    "org.opalj.av.testclasses.Mathematics*"
+                    "mathematics.Mathematics*"
                 }
 
                 ensemble('Example) {
-                    "org.opalj.av.testclasses.Example*"
+                    "mathematics.Example*"
                 }
 
                 'Mathematics is_only_to_be_used_by 'Example
@@ -218,23 +219,23 @@ class ArchitectureConsistencyMathTest extends FlatSpec with Matchers with Before
         val specification =
             new Specification(project) {
                 ensemble('Operations) {
-                    "org.opalj.av.testclasses.Operations*"
+                    "mathematics.Operations*"
                 }
 
                 ensemble('Number) {
-                    "org.opalj.av.testclasses.Number*"
+                    "mathematics.Number*"
                 }
 
                 ensemble('Rational) {
-                    "org.opalj.av.testclasses.Rational*"
+                    "mathematics.Rational*"
                 }
 
                 ensemble('Mathematics) {
-                    "org.opalj.av.testclasses.Mathematics*"
+                    "mathematics.Mathematics*"
                 }
 
                 ensemble('Example) {
-                    "org.opalj.av.testclasses.Example*"
+                    "mathematics.Example*"
                 }
 
                 'Rational is_only_to_be_used_by 'Mathematics
@@ -252,23 +253,23 @@ class ArchitectureConsistencyMathTest extends FlatSpec with Matchers with Before
         val specification =
             new Specification(project) {
                 ensemble('Operations) {
-                    "org.opalj.av.testclasses.Operations*"
+                    "mathematics.Operations*"
                 }
 
                 ensemble('Number) {
-                    "org.opalj.av.testclasses.Number*"
+                    "mathematics.Number*"
                 }
 
                 ensemble('Rational) {
-                    "org.opalj.av.testclasses.Rational*"
+                    "mathematics.Rational*"
                 }
 
                 ensemble('Mathematics) {
-                    "org.opalj.av.testclasses.Mathematics*"
+                    "mathematics.Mathematics*"
                 }
 
                 ensemble('Example) {
-                    "org.opalj.av.testclasses.Example*"
+                    "mathematics.Example*"
                 }
 
                 'Mathematics allows_incoming_dependencies_from 'Example
@@ -283,23 +284,23 @@ class ArchitectureConsistencyMathTest extends FlatSpec with Matchers with Before
         val specification =
             new Specification(project) {
                 ensemble('Operations) {
-                    "org.opalj.av.testclasses.Operations*"
+                    "mathematics.Operations*"
                 }
 
                 ensemble('Number) {
-                    "org.opalj.av.testclasses.Number*"
+                    "mathematics.Number*"
                 }
 
                 ensemble('Rational) {
-                    "org.opalj.av.testclasses.Rational*"
+                    "mathematics.Rational*"
                 }
 
                 ensemble('Mathematics) {
-                    "org.opalj.av.testclasses.Mathematics*"
+                    "mathematics.Mathematics*"
                 }
 
                 ensemble('Example) {
-                    "org.opalj.av.testclasses.Example*"
+                    "mathematics.Example*"
                 }
 
                 'Number allows_incoming_dependencies_from 'Rational

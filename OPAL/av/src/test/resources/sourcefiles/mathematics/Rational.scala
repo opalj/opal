@@ -26,20 +26,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.av.testclasses
+package mathematics
 
 /**
  * @author Samuel Beracasa
  */
-class Mathematics {
-    val num1 = new Number(1)
-    val num2 = new Number(2)
-    val num4 = new Number(4)
-    val num8 = new Number(8)
+class Rational(val numer: Number, val denom: Number) extends Operations {
 
-    val rat1 = new Rational(num1, num2)
-    val rat2 = new Rational(num4, num1)
-    val rat3 = new Rational(num1, num8)
+    //Rational operator Number = Rational
+    def +(other: Number) =
+        new Rational(((other / this.denom) + this.numer), this.denom)
+    def -(other: Number) =
+        new Rational((other / this.denom) - this.numer, this.denom)
+    def *(other: Number) =
+        new Rational(other * this.numer, this.denom)
+    def /(other: Number) =
+        new Rational(this.numer, this.denom / other)
 
-    def operation1() = { println(num1 + num4 * rat2 - num2 / rat3 * num8) }
+    //Rational operator Rational = Rational
+    def +(other: Rational) =
+        new Rational((this.numer / other.denom) + (other.numer / this.denom), other.denom * this.denom)
+    def -(other: Rational) =
+        new Rational((this.numer / other.denom) - (other.numer / this.denom), other.denom * this.denom)
+    def *(other: Rational) =
+        new Rational((this.numer * other.numer), (other.denom / this.denom))
+    def /(other: Rational) =
+        new Rational((this.numer * other.denom), (other.numer * this.denom))
+
+    //Print
+    override def toString() = numer.toString+"/"+denom.toString
 }
