@@ -64,7 +64,7 @@ import org.opalj.de._
  */
 class Specification(
         val project: Project[URL],
-        private[this] val useAnsiColors: Boolean) {
+        private[this] val useAnsiColors: Boolean = false) {
 
     private[this] def ifUseAnsiColors(ansiEscapeSequence: String): String =
         if (useAnsiColors) ansiEscapeSequence else ""
