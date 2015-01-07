@@ -115,7 +115,7 @@ class UnusedPrivateFields[Source] extends FindRealBugsAnalysis[Source] {
         val serializables = project.classHierarchy.allSubtypes(ObjectType.Serializable,
             false)
 
-        /**
+        /*
          * Check whether a field is the special `serialVersionUID` field of a
          * `Serializable` class. It is always used internally by the JVM, and should not
          * be reported by this analysis.

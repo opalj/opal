@@ -428,7 +428,7 @@ class UselessIncrementInReturn[Source] extends FindRealBugsAnalysis[Source] {
             val result = BaseAI(classFile, method, domain)
             val code = body.associateWithIndex
 
-            /**
+            /*
              * Check whether the result of the IINC instruction (given as PC) is used
              * as operands to any other instructions.
              */

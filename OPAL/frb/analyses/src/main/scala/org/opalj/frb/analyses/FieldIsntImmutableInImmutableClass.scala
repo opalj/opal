@@ -102,29 +102,29 @@ class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[So
 
         val immutableAnnotationTypes = collectAnnotationTypes(project, "Immutable")
 
-        /**
+        /*
          * All class files previously encountered and classified and immutable.
          */
         val collectedImmutables = scala.collection.mutable.HashSet.empty[ClassFile]
 
-        /**
+        /*
          * All class files previously encountered and classified as mutable. Also contains
          * class files where a definitive decision could not be made.
          */
         val collectedMutables = scala.collection.mutable.HashSet.empty[ClassFile]
 
-        /**
+        /*
          * Objects whose class file could not be fetched for some reason.
          */
         val unknownClassFiles = scala.collection.mutable.Set.empty[ObjectType]
 
-        /**
+        /*
          * ClassFiles of fields that were already seen in the current cycle of
          * classIsImmutable. Needed to prevent crashes while checking cyclic composition.
          */
         val alreadySeenThisCycle = scala.collection.mutable.Set.empty[ClassFile]
 
-        /**
+        /*
          * ClassFiles of immutable classes that have fields with cyclic composition.
          */
         val immutableClassesInACycle = scala.collection.mutable.Set.empty[ClassFile]
