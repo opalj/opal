@@ -18,18 +18,28 @@ scalacOptions in ThisBuild ++= Seq(
 	"-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
 	"-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code" )
 
+parallelExecution in ThisBuild := false // the tests/analysis are already parallelized
+
+parallelExecution in Global := false // the tests/analysis are already parallelized
+
+javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
+
+testOptions in ThisBuild <<=
+  baseDirectory map {
+	bd => Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/shippable/testresults"))
+  }
+
+testOptions in ThisBuild += Tests.Argument("-o")
+
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis Library")
 
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 
-javaOptions in ThisBuild ++= Seq(
-	  "-Xmx3G", "-Xms1024m",
-		"-Xnoclassgc",
-		"-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC","-XX:+AggressiveOpts")
-
-parallelExecution in ThisBuild := false
-
-parallelExecution in Global := false
+scalacOptions in (ScalaUnidoc, unidoc) ++= Seq(
+	"-deprecation", "-feature", "-unchecked", 
+	"-Xlint", "-Xfuture", "-Xfatal-warnings", 
+	"-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
+	"-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-dead-code" )
 
 // Required to get relative links in the generated source code documentation.
 scalacOptions in (ScalaUnidoc, unidoc) <<=
@@ -42,14 +52,10 @@ scalacOptions in (ScalaUnidoc, unidoc) ++=
 	"https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?at=master"
   )
 
-javacOptions in ThisBuild ++= Seq("-encoding", "utf8")
-
-testOptions in ThisBuild <<=
-  baseDirectory map {
-	bd => Seq(Tests.Argument("-u",  bd.getAbsolutePath + "/shippable/testresults"))
-  }
-
-testOptions in ThisBuild += Tests.Argument("-o")
+javaOptions in ThisBuild ++= Seq(
+	  "-Xmx3G", "-Xms1024m",
+		"-Xnoclassgc",
+		"-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC","-XX:+AggressiveOpts")
 
 EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
 
