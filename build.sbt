@@ -22,6 +22,11 @@ scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("OPAL - OPen Analysis 
 
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 
+javaOptions in ThisBuild ++= Seq(
+	  "-Xmx3G", "-Xms1024m",
+		"-Xnoclassgc",
+		"-XX:NewRatio=1", "-XX:SurvivorRatio=8", "-XX:+UseParallelGC","-XX:+AggressiveOpts")
+
 parallelExecution in ThisBuild := false
 
 parallelExecution in Global := false
