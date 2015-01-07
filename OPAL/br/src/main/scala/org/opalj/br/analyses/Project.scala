@@ -499,6 +499,7 @@ object Project {
 
     private[this] def cache = new reader.BytecodeInstructionsCache
     lazy val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
+    lazy val Java8LibraryClassFileReader = new reader.Java8LibraryFrameworkWithCaching(cache)
 
     /**
      * Given a reference to a class file, jar file or a folder containing jar and class
