@@ -141,9 +141,7 @@ package object concurrent {
     /**
      * The ExecutionContext used by OPAL.
      *
-     * This `ExecutionContext` is not intended to be shutdown explicitly. However,
-     * if it used by some program, the program – at its very end – must call this
-     * package's [[shutdown()]] method. Otherwise, the program may not terminate.
+     * This `ExecutionContext` must not be shutdown.
      */
     implicit final val OPALExecutionContext: ExecutionContext =
         ExecutionContext.fromExecutorService(ThreadPool)
