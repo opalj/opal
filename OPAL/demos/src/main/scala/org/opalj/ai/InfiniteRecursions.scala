@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -77,9 +77,8 @@ object InfiniteRecursions extends AnalysisExecutor with OneStepAnalysis[URL, Bas
         val result =
             // for every method that calls itself ...
             for {
-                classFile ← project.classFiles.par
+                classFile ← project.allClassFiles.par
                 method @ MethodWithBody(body) ← classFile.methods
-                name = method.name
                 descriptor = method.descriptor
                 if descriptor.parameterTypes.forall { t ⇒
                     // we don't have (as of Jan 1st 2015) a domain that enables a meaningful
@@ -87,6 +86,7 @@ object InfiniteRecursions extends AnalysisExecutor with OneStepAnalysis[URL, Bas
                     t.isReferenceType || t.isLongType || t.isIntegerType
                 }
                 classType = classFile.thisType
+                name = method.name
                 pcs = body.collectWithIndex {
                     case (pc, INVOKEVIRTUAL(`classType`, `name`, `descriptor`))   ⇒ pc
                     case (pc, INVOKESTATIC(`classType`, `name`, `descriptor`))    ⇒ pc
@@ -165,7 +165,7 @@ object InfiniteRecursions extends AnalysisExecutor with OneStepAnalysis[URL, Bas
                         // i.e., if we can track back the operands to parameters
                         // concrete (fixed) values or values that are always created
                         // in the same manner; the idea is to reduce false positives
-                        // due to non-infinite recursions due to side effects 
+                        // due to non-infinite recursions due to side effects
                         if (callOperands.forall {
                             case domain.DomainSingleOriginReferenceValue(v) ⇒
                                 if (v.origin < 0 /* === the value is a parameter*/ ||

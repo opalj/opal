@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -87,7 +87,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
 
             println("Identify native methods with integer parameters")
             val calledNativeMethods: scala.collection.parallel.ParIterable[Method] =
-                (theProject.classFiles.par.map { classFile ⇒
+                (theProject.allClassFiles.par.map { classFile ⇒
                     classFile.methods.filter { m ⇒
                         m.isNative &&
                             m.descriptor.parameterTypes.exists(_.isIntegerType) &&
@@ -112,7 +112,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
             for {
                 nativeMethod ← calledNativeMethods //<= ParIterable
                 // - The last argument to the method is the top-most stack value.
-                // - For this analysis, we don't care whether we call a native instance 
+                // - For this analysis, we don't care whether we call a native instance
                 //   or native static method
                 parametersCount = nativeMethod.parameterTypes.size
                 parameterIndexes = nativeMethod.parameterTypes.zipWithIndex.collect {
@@ -157,7 +157,7 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
             )
 
             /* For Java 8, this analysis will, e.g., report the following:
-             * 
+             *
              * 430    public int More ...deflate(byte[] b, int off, int len, int flush) {
              * 431        if (b == null) {
              * 432            throw new NullPointerException();
@@ -178,11 +178,11 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
              * 447            throw new IllegalArgumentException();
              * 448        }
              * 449    }
-             * 
+             *
              * The method java.util.zip.Deflater{ int deflate(byte[],int,int,int) } calls in line 442 the native method java.util.zip.Deflater{ int deflateBytes(long,byte[],int,int,int) } and passes in as the 5. parameter a bounded value: [0,3].
              * The method java.util.zip.Deflater{ int deflate(byte[],int,int,int) } calls in line 442 the native method java.util.zip.Deflater{ int deflateBytes(long,byte[],int,int,int) } and passes in as the 4. parameter a bounded value: [0,2147483647].
              * The method java.util.zip.Deflater{ int deflate(byte[],int,int,int) } calls in line 442 the native method java.util.zip.Deflater{ int deflateBytes(long,byte[],int,int,int) } and passes in as the 3. parameter a bounded value: [0,2147483647].
-             * 
+             *
              */
         }
     }
