@@ -317,10 +317,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         val identifiedIssues = time {
             val stepIds = new java.util.concurrent.atomic.AtomicInteger(PRE_ANALYSES_COUNT)
 
-            for {
-                classFile ← theProject.projectClassFiles.par
-                if !progressManagement.isInterrupted()
-            } {
+            theProject.parForeachProjectClassFile(() ⇒ progressManagement.isInterrupted()) { classFile ⇒
                 val stepId = stepIds.incrementAndGet()
                 try {
                     progressManagement.start(stepId, classFile.thisType.toJava)
@@ -341,6 +338,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                 } finally {
                     progressManagement.end(stepId)
                 }
+
             }
             scala.collection.JavaConversions.collectionAsScalaIterable(results)
         } { t ⇒ analysisTime = t }

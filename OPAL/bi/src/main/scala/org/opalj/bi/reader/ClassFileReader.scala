@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,13 +31,21 @@ package bi
 package reader
 
 import java.io.File
-import java.io.{ FileInputStream, InputStream, DataInputStream, BufferedInputStream, ByteArrayInputStream }
+import java.io.FileInputStream
+import java.io.InputStream
+import java.io.DataInputStream
+import java.io.BufferedInputStream
+import java.io.ByteArrayInputStream
+import java.io.IOException
 import java.util.zip.{ ZipFile, ZipEntry }
 import java.net.URL
 import java.util.zip.ZipInputStream
-
+import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.io.process
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.concurrent.Future
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -256,7 +264,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         )
 
         // Perform transformations that are specific to this class file.
-        // (Used, e.g., to finally resolve the invokedynamic instructions.) 
+        // (Used, e.g., to finally resolve the invokedynamic instructions.)
         classFile = applyDeferredActions(cp, classFile)
 
         // Perform general transformations on class files.
@@ -384,30 +392,54 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         exceptionHandler: (Exception) ⇒ Unit): Unit = {
 
         import scala.collection.JavaConversions._
-        for { jarEntry ← jarFile.entries.toIterable.par } {
-            if (!jarEntry.isDirectory && jarEntry.getSize() > 0) {
-                val jarEntryName = jarEntry.getName
-                if (jarEntryName.endsWith(".class")) {
-                    try {
-                        val url = new URL(jarFileURL + jarEntry.getName())
-                        val classFiles = ClassFile(jarFile, jarEntry)
-                        classFiles foreach (classFile ⇒ classFileHandler(classFile, url))
-                    } catch {
-                        case e: Exception ⇒
-                            exceptionHandler(new java.io.IOException("cannot process: "+jarEntryName, e))
-                    }
-                } else if (jarEntryName.endsWith(".jar")) {
-                    try {
-                        val nextJarFileURL = jarFileURL+"jar:"+jarEntry.getName()+"!/"
-                        val jarData = new Array[Byte](jarEntry.getSize().toInt)
-                        val din = new DataInputStream(jarFile.getInputStream(jarEntry))
-                        din.readFully(jarData)
-                        din.close()
-                        ClassFiles(nextJarFileURL, jarData, classFileHandler, exceptionHandler)
-                    } catch {
-                        case e: Exception ⇒ exceptionHandler(e)
+
+        // first let's collect all inner Jar Entries, then do the processing
+        // otherwise (if the OPALExecutionContextTaskSupport uses a fixed
+        // sized thread pool) we may run out of threads... to process anything)
+        val innerJarEntries = new java.util.concurrent.ConcurrentLinkedQueue[ZipEntry]
+
+        val jarEntries = jarFile.entries.toArray
+        val nextEntryIndex = new java.util.concurrent.atomic.AtomicInteger(jarEntries.length - 1)
+        val parallelismLevel = org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
+        val futures: Array[Future[Unit]] = new Array(parallelismLevel)
+        val futureIndexes = (0 until parallelismLevel)
+        futureIndexes.foreach { fi ⇒
+            futures(fi) = Future[Unit] {
+                var index = -1
+                while ({ index = nextEntryIndex.getAndDecrement; index } >= 0) {
+                    val jarEntry = jarEntries(index)
+                    if (!jarEntry.isDirectory && jarEntry.getSize() > 0) {
+                        val jarEntryName = jarEntry.getName
+                        if (jarEntryName.endsWith(".class")) {
+                            try {
+                                val url = new URL(jarFileURL + jarEntry.getName())
+                                val classFiles = ClassFile(jarFile, jarEntry)
+                                classFiles foreach (classFile ⇒ classFileHandler(classFile, url))
+                            } catch {
+                                case e: Exception ⇒
+                                    exceptionHandler(
+                                        new IOException("cannot process: "+jarEntryName, e)
+                                    )
+                            }
+                        } else if (jarEntryName.endsWith(".jar")) {
+                            innerJarEntries.add(jarEntry)
+                        }
                     }
                 }
+            }(org.opalj.concurrent.OPALExecutionContext)
+        }
+        futureIndexes.foreach { fi ⇒ Await.ready(futures(fi), Duration.Inf) }
+
+        for (jarEntry ← innerJarEntries.iterator()) {
+            try {
+                val nextJarFileURL = jarFileURL+"jar:"+jarEntry.getName()+"!/"
+                val jarData = new Array[Byte](jarEntry.getSize().toInt)
+                val din = new DataInputStream(jarFile.getInputStream(jarEntry))
+                din.readFully(jarData)
+                din.close()
+                ClassFiles(nextJarFileURL, jarData, classFileHandler, exceptionHandler)
+            } catch {
+                case e: Exception ⇒ exceptionHandler(e)
             }
         }
     }
@@ -452,45 +484,82 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFiles(
         file: File,
         exceptionHandler: (Exception) ⇒ Unit = ClassFileReader.defaultExceptionHandler): Seq[(ClassFile, URL)] = {
+
+        def processJar(file: File): Seq[(ClassFile, URL)] = {
+            try {
+                process(new ZipFile(file)) { zf ⇒ ClassFiles(zf, exceptionHandler) }
+            } catch {
+                case e: Exception ⇒
+                    exceptionHandler(new IOException("cannot process: "+file, e))
+                    Nil
+            }
+        }
+
+        def processClassFile(file: File): Seq[(ClassFile, URL)] = {
+            try {
+                process(new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) { in ⇒
+                    ClassFile(in).map(classFile ⇒ (classFile, file.toURI().toURL()))
+                }
+            } catch {
+                case e: Exception ⇒
+                    exceptionHandler(new IOException("cannot process "+file, e))
+                    Nil
+            }
+        }
+
         if (!file.exists()) {
             Nil
         } else if (file.isFile()) {
             val filename = file.getName
-            if (file.length() == 0) {
-                Nil
-            } else if (filename.endsWith(".jar")) {
-                try {
-                    process(new ZipFile(file)) { zf ⇒
-                        ClassFiles(zf, exceptionHandler)
+            if (file.length() == 0) Nil
+            else if (filename.endsWith(".jar")) processJar(file)
+            else if (filename.endsWith(".class")) processClassFile(file)
+            else Nil
+        } else if (file.isDirectory()) {
+            var jarFiles = List.empty[File]
+            var classFiles = List.empty[File]
+            def collectFiles(files: Array[File]): Unit = {
+                if (files eq null)
+                    return ;
+                files.foreach { file ⇒
+                    val filename = file.getName
+                    if (file.isFile()) {
+                        if (file.length() == 0) Nil
+                        else if (filename.endsWith(".jar")) jarFiles ::= file
+                        else if (filename.endsWith(".class")) classFiles ::= file
+                    } else if (file.isDirectory()) {
+                        collectFiles(file.listFiles())
+                    } else {
+                        throw new UnknownError(s"$file is neither a file nor a directory")
                     }
-                } catch {
-                    case e: Exception ⇒
-                        exceptionHandler(new java.io.IOException("cannot process: "+file, e))
-                        Nil
                 }
-            } else if (filename.endsWith(".class")) {
-                try {
-                    process(new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) { in ⇒
-                        ClassFile(in).map(classFile ⇒ (classFile, file.toURI().toURL()))
-                    }
-                } catch {
-                    case e: Exception ⇒
-                        exceptionHandler(new java.lang.Exception("cannot process "+filename, e))
-                        Nil
+            }
+            // 1. get the list of all files in the directory as well as all subdirectories
+            collectFiles(file.listFiles())
+
+            // 2. get all class files
+            var allClassFiles = List.empty[(ClassFile, URL)]
+
+            // 2.1 load - in parallel - all ".class" files
+            if (classFiles.nonEmpty) {
+                import scala.collection.JavaConverters._
+                val theClassFiles = new java.util.concurrent.ConcurrentLinkedQueue[(ClassFile, URL)]
+                val parClassFiles = classFiles.par
+                parClassFiles.tasksupport = OPALExecutionContextTaskSupport
+                parClassFiles.foreach { classFile ⇒
+                    theClassFiles.addAll(processClassFile(classFile).asJava)
                 }
-            } else {
-                Nil
+                allClassFiles ++= theClassFiles.asScala
             }
-        } else /* if(file.isDirectory()) */ {
-            val files = file.listFiles()
-            if (files != null) {
-                (
-                    for (innerFile ← files.par)
-                        yield ClassFiles(innerFile, exceptionHandler)
-                ).flatten.seq
-            } else {
-                Nil
-            }
+
+            // 2.2 load - one after the other - all ".jar" files (processing jar files
+            //    is already parallelized.)
+            jarFiles.foreach { jarFile ⇒ allClassFiles ++= processJar(jarFile) }
+
+            // 3. return all loaded class files
+            allClassFiles
+        } else {
+            throw new UnknownError(s"$file is neither a file nor a directory")
         }
     }
 
@@ -498,7 +567,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         files: Traversable[File],
         exceptionHandler: (Exception) ⇒ Unit = ClassFileReader.defaultExceptionHandler): Seq[(ClassFile, URL)] = {
 
-        files.map(ClassFiles(_, exceptionHandler)).flatten.toSeq
+        files.map(file ⇒ ClassFiles(file, exceptionHandler)).flatten.toSeq
     }
 }
 /**

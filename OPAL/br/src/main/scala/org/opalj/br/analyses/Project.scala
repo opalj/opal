@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -46,6 +46,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+import org.opalj.concurrent.OPALExecutionContext
+import org.opalj.concurrent.parForeachArrayElement
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -75,8 +77,8 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
  * @author Michael Eichberg
  */
 class Project[Source] private (
-        val projectClassFiles: List[ClassFile],
-        val libraryClassFiles: List[ClassFile],
+        private[this] val projectClassFiles: Array[ClassFile],
+        private[this] val libraryClassFiles: Array[ClassFile],
         private[this] val methods: Array[Method], // the concrete methods, sorted by size in descending order
         private[this] val projectTypes: Set[ObjectType],
         private[this] val fieldToClassFile: AnyRefMap[Field, ClassFile],
@@ -106,17 +108,47 @@ class Project[Source] private (
             otherProject.libraryClassFilesWithSources)
     }
 
-    val classFilesCount: Int =
-        projectClassFilesCount + libraryClassFilesCount
+    val classFilesCount: Int = projectClassFilesCount + libraryClassFilesCount
 
-    val methodsCount: Int =
-        projectMethodsCount + libraryMethodsCount
+    val methodsCount: Int = projectMethodsCount + libraryMethodsCount
 
-    val fieldsCount: Int =
-        projectFieldsCount + libraryFieldsCount
+    val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
 
-    val classFiles: Iterable[ClassFile] =
-        projectClassFiles.toIterable ++ libraryClassFiles.toIterable
+    val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles
+
+    private[this] def doParForeachClassFile[T](
+        classFiles: Array[ClassFile], isInterrupted: () ⇒ Boolean)(
+            f: ClassFile ⇒ T): Unit = {
+        val classFilesCount = classFiles.length
+        if (classFilesCount == 0)
+            return ;
+
+        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, classFilesCount)
+        parForeachArrayElement(classFiles, parallelizationLevel, isInterrupted)(f)
+    }
+
+    def parForeachProjectClassFile[T](
+        isInterrupted: () ⇒ Boolean)(
+            f: ClassFile ⇒ T): Unit = {
+        doParForeachClassFile(this.projectClassFiles, isInterrupted)(f)
+    }
+
+    val allLibraryClassFiles: Iterable[ClassFile] = libraryClassFiles
+
+    def parForeachLibraryClassFile[T](
+        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted())(
+            f: ClassFile ⇒ T): Unit = {
+        doParForeachClassFile(this.libraryClassFiles, isInterrupted)(f)
+    }
+
+    val allClassFiles: Iterable[ClassFile] = allProjectClassFiles ++ allLibraryClassFiles
+
+    def parForeachClassFile[T](
+        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted())(
+            f: ClassFile ⇒ T): Unit = {
+        parForeachProjectClassFile(isInterrupted)(f)
+        parForeachLibraryClassFile(isInterrupted)(f)
+    }
 
     /**
      * Returns the list of all packages that contain at least one class.
@@ -129,7 +161,8 @@ class Project[Source] private (
      */
     def packages: Set[String] = {
         var packages = Set.empty[String]
-        classFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
+        projectClassFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
+        libraryClassFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
         packages
     }
 
@@ -143,37 +176,16 @@ class Project[Source] private (
      * I.e., each thread is not assigned a fixed batch of methods. Additionally, the
      * methods are analyzed ordered by their length (longest first).
      */
-    def parForeachMethodWithBody[T](f: Function[(Source, ClassFile, Method), T]): Unit = {
-        val concreteMethodsCount = methodsWithClassFilesAndSource.length
-        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, concreteMethodsCount)
-        if (concreteMethodsCount == 0)
+    def parForeachMethodWithBody[T](
+        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted())(
+            f: Function[(Source, ClassFile, Method), T]): Unit = {
+        val methods = this.methodsWithClassFilesAndSource
+        val methodCount = methods.length
+        if (methodCount == 0)
             return ;
-        if (parallelizationLevel == 1) {
-            methodsWithClassFilesAndSource.foreach(f)
-            return ;
-        }
 
-        val nextMethod = new java.util.concurrent.atomic.AtomicInteger(0)
-        val threads = new Array[Thread](parallelizationLevel)
-
-        { // Start parallel execution
-            var i = 0
-            while (i < parallelizationLevel) {
-                val thread = new Thread(new Runnable {
-                    def run(): Unit = {
-                        var mi: Int = -1
-                        while ({ mi = nextMethod.getAndIncrement; mi } < concreteMethodsCount) {
-                            f(methodsWithClassFilesAndSource(mi))
-                        }
-                    }
-                })
-                thread.start()
-                threads(i) = thread
-                i += 1
-            }
-        }
-
-        threads.foreach { _.join }
+        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, methodCount)
+        parForeachArrayElement(methods, parallelizationLevel, isInterrupted)(f)
     }
 
     /**
@@ -230,13 +242,13 @@ class Project[Source] private (
      */
     def packagesCount = packages.size
 
-    def groupedClassFilesWithCode(groupsCount: Int): Array[Buffer[ClassFile]] = {
+    def groupedClassFilesWithMethodsWithBody(groupsCount: Int): Array[Buffer[ClassFile]] = {
         var nextGroupId = 0
         val groups = Array.fill[Buffer[ClassFile]](groupsCount) {
             new ArrayBuffer[ClassFile](methodsCount / groupsCount)
         }
         for {
-            classFile ← classFiles
+            classFile ← projectClassFiles
             if classFile.methods.exists(_.body.isDefined)
         } {
             // we distribute the classfiles among the different bins
@@ -323,7 +335,7 @@ class Project[Source] private (
      */
     def toJavaMap(): java.util.HashMap[ObjectType, ClassFile] = {
         val map = new java.util.HashMap[ObjectType, ClassFile]
-        for (classFile ← classFiles) map.put(classFile.thisType, classFile)
+        for (classFile ← allClassFiles) map.put(classFile.thisType, classFile)
         map
     }
 
@@ -340,7 +352,9 @@ class Project[Source] private (
             ("ProjectFields" -> projectFieldsCount),
             ("LibraryMethods" -> libraryMethodsCount),
             ("LibraryFields" -> libraryFieldsCount),
-            ("ProjectInstructions" -> classFiles.foldLeft(0)(_ + _.methods.filter(_.body.isDefined).foldLeft(0)(_ + _.body.get.instructions.count(_ != null))))
+            ("ProjectInstructions" ->
+                projectClassFiles.foldLeft(0)(_ + _.methods.filter(_.body.isDefined).
+                    foldLeft(0)(_ + _.body.get.instructions.count(_ != null))))
         )
 
     /**
@@ -485,6 +499,7 @@ object Project {
 
     private[this] def cache = new reader.BytecodeInstructionsCache
     lazy val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
+    lazy val Java8LibraryClassFileReader = new reader.Java8LibraryFrameworkWithCaching(cache)
 
     /**
      * Given a reference to a class file, jar file or a folder containing jar and class
@@ -650,8 +665,8 @@ object Project {
             }.map(e ⇒ (sources(e._2.thisType), e._2, e._1)).toArray
 
         new Project(
-            projectClassFiles,
-            libraryClassFiles,
+            projectClassFiles.toArray,
+            libraryClassFiles.toArray,
             methodsSortedBySize,
             projectTypes,
             fieldToClassFile,

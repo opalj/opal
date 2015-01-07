@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -100,7 +100,7 @@ object IfNullParameterAnalysis
         isInterrupted: () ⇒ Boolean) = {
         import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
-        // Explicitly specifies that all reference values are not null. 
+        // Explicitly specifies that all reference values are not null.
         def setToNonNull(
             domain: DefaultDomain[URL])(
                 defaultLocals: domain.Locals): domain.Locals = {
@@ -121,7 +121,7 @@ object IfNullParameterAnalysis
 
         val methodsWithDifferentExceptions = time {
             for {
-                classFile ← theProject.classFiles.par
+                classFile ← theProject.allProjectClassFiles.par
                 method ← classFile.methods
                 if method.body.isDefined
                 if method.descriptor.parameterTypes.exists { _.isReferenceType }
@@ -144,9 +144,9 @@ object IfNullParameterAnalysis
                 ai.perform(method.body.get, domain2)(
                     ai.initialOperands(classFile, method, domain2), nonNullLocals)
 
-                // Let's calculate the diff. The basic idea is to iterate over 
-                // all thrown exceptions and to throw away those that are 
-                // thrown in both cases, the remaining ones constitute 
+                // Let's calculate the diff. The basic idea is to iterate over
+                // all thrown exceptions and to throw away those that are
+                // thrown in both cases, the remaining ones constitute
                 // the difference.
                 var result = Map.empty[PC, Set[_ <: AnyRef]]
                 var d2ThrownExceptions = domain2.allThrownExceptions

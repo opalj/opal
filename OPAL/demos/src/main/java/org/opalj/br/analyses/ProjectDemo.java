@@ -68,7 +68,7 @@ public class ProjectDemo {
 
         // Do something with it...
         System.out.println("The project contains:");
-        for (ClassFile classFile : JavaConversions.asJavaIterable(project.classFiles())) {
+        for (ClassFile classFile : JavaConversions.asJavaIterable(project.allClassFiles())) {
             System.out.println(" - " + classFile.thisType().toJava());
 
             Iterable<Method> methods = JavaConversions

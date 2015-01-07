@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,20 +31,26 @@ package ai
 package analyses
 
 import java.net.URL
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable.AnyRefMap
+
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.concurrent.OPALExecutionContextTaskSupport
+import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.{ Analysis, OneStepAnalysis, AnalysisExecutor, BasicReport, SomeProject }
 import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.{ ReferenceType }
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.Project
 import org.opalj.ai.Domain
 import org.opalj.ai.domain._
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.IsAReferenceValue
-import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.SomeUpdate
-import org.opalj.br.analyses.Project
-import java.util.concurrent.atomic.AtomicInteger
-import org.opalj.br.ObjectType
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
@@ -64,38 +70,34 @@ object MethodReturnValuesAnalysis {
         isInterrupted: () ⇒ Boolean,
         createDomain: (InterruptableAI[Domain], Method) ⇒ Domain with RecordReturnedValue): MethodReturnValueInformation = {
 
+        val results = new ConcurrentHashMap[Method, Option[Domain#DomainValue]]
         val candidates = new AtomicInteger(0)
 
-        val methodsWithRefinedReturnValues =
-            for {
-                classFile ← theProject.classFiles.par
-                if !isInterrupted()
-                method ← classFile.methods
-                originalReturnType = method.returnType
-                if method.body.isDefined
-                if originalReturnType.isObjectType
+        theProject.parForeachMethodWithBody(isInterrupted) { m ⇒
+            val (_ /*Source*/ , classFile, method) = m
+            val originalReturnType = method.returnType
 
+            if (originalReturnType.isObjectType &&
                 // ALTERNATIVE TEST: if we are only interested in type refinements but not
                 // in refinements to "null" values then we can also use the following
                 // check:
                 // if theProject.classHierarchy.hasSubtypes(originalReturnType.asObjectType).isYesOrUnknown
 
                 // We may still miss some refinements to "Null" but we don't care...
-                if theProject.classFile(originalReturnType.asObjectType).map(!_.isFinal).getOrElse(true)
-                if { candidates.incrementAndGet(); true }
+                theProject.classFile(originalReturnType.asObjectType).map(!_.isFinal).getOrElse(true)) {
 
-                ai = new InterruptableAI[Domain]
-                domain = createDomain(ai, method)
-                result = ai(classFile, method, domain)
-                if !ai.isInterrupted
-                returnedValue = domain.returnedValue
-            } yield {
-                (method, domain.returnedValue)
+                candidates.incrementAndGet()
+                val ai = new InterruptableAI[Domain]
+                val domain = createDomain(ai, method)
+                ai(classFile, method, domain)
+                if (!ai.isInterrupted) {
+                    results.put(method, domain.returnedValue)
+                }
             }
+        }
 
-        println(s"[info] refined the return type of ${methodsWithRefinedReturnValues.size} methods out of ${candidates.get} methods")
-
-        methodsWithRefinedReturnValues.seq.toMap
+        println(s"[info] refined the return type of ${results.size} methods out of ${candidates.get} methods")
+        AnyRefMap.empty[Method, Option[Domain#DomainValue]] ++ results.asScala
     }
 
 }
