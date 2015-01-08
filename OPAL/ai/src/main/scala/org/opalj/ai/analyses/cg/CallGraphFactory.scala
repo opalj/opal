@@ -35,6 +35,7 @@ import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
 
+import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
 /**
@@ -126,7 +127,7 @@ object CallGraphFactory {
             }
         val completionService =
             new ExecutorCompletionService[MethodAnalysisResult](
-                org.opalj.concurrent.ThreadPool
+                ThreadPoolN(Math.max(NumberOfThreadsForCPUBoundTasks - 1, 1))
             )
 
         @inline def submitMethod(method: Method): Unit = {
