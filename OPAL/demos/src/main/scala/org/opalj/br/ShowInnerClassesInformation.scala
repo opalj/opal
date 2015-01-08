@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -54,19 +54,21 @@ object ShowInnerClassesInformation extends AnalysisExecutor {
             isInterrupted: () ⇒ Boolean): BasicReport = {
 
             val messages =
-                for {
-                    classFile ← project.classFiles
-                    if classFile.innerClasses.isDefined
-                } yield {
-                    val header =
-                        classFile.fqn+"(ver:"+classFile.majorVersion+")"+":\n\t"+(
-                            if (classFile.enclosingMethod.isDefined)
-                                classFile.enclosingMethod.get.toString
-                            else
-                                "<no enclosing method defined>"
-                        )+"\n\t"
-                    classFile.innerClasses.get.mkString(header, "\n\t", "\n")
-                }
+                (
+                    for {
+                        classFile ← project.allClassFiles.par
+                        if classFile.innerClasses.isDefined
+                    } yield {
+                        val header =
+                            classFile.fqn+"(ver:"+classFile.majorVersion+")"+":\n\t"+(
+                                if (classFile.enclosingMethod.isDefined)
+                                    classFile.enclosingMethod.get.toString
+                                else
+                                    "<no enclosing method defined>"
+                            )+"\n\t"
+                        classFile.innerClasses.get.mkString(header, "\n\t", "\n")
+                    }
+                ).seq
 
             BasicReport(messages.mkString("\n"))
         }

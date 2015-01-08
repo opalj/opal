@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -72,11 +72,10 @@ class LongBitsToDoubleInvokedOnInt[Source] extends FindRealBugsAnalysis[Source] 
         isInterrupted: () ⇒ Boolean): Iterable[LineAndColumnBasedReport[Source]] = {
 
         // In all method bodies, look for occurrences of (I2L, INVOKESTATIC) instruction
-        // sequences, where the INVOKESTATIC is a call to 
+        // sequences, where the INVOKESTATIC is a call to
         // java.lang.Double.longBitsToDouble().
         for {
-            classFile ← project.classFiles
-            if !project.isLibraryType(classFile)
+            classFile ← project.allProjectClassFiles
             method @ MethodWithBody(body) ← classFile.methods
             pc ← body.matchPair {
                 case (

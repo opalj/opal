@@ -59,7 +59,7 @@ object CallGraphFactory {
     def defaultEntryPointsForLibraries(project: SomeProject): Iterable[Method] = {
         val classHierarchy = project.classHierarchy
         val methods = new java.util.concurrent.ConcurrentLinkedQueue[Method]
-        project.parForeachMethodWithBody(() ⇒ false) { m ⇒
+        project.parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { m ⇒
             val (_, classFile, method) = m
             if (!method.isPrivate ||
                 ( // the method is private, but...

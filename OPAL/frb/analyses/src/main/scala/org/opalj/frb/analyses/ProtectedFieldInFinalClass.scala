@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -56,9 +56,10 @@ class ProtectedFieldInFinalClass[Source] extends FindRealBugsAnalysis[Source] {
         isInterrupted: () ⇒ Boolean): Iterable[FieldBasedReport[Source]] = {
         // For all protected fields from final classes...
         for {
-            classFile ← project.classFiles if classFile.isFinal
-            if !project.isLibraryType(classFile)
-            field ← classFile.fields if field.isProtected
+            classFile ← project.allProjectClassFiles
+            if classFile.isFinal
+            field ← classFile.fields
+            if field.isProtected
         } yield {
             FieldBasedReport(
                 project.source(classFile.thisType),
