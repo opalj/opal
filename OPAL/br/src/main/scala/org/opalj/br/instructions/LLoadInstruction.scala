@@ -31,16 +31,15 @@ package br
 package instructions
 
 /**
- * Load double from local variable with index 2.
+ * Load long from local variable.
  *
  * @author Michael Eichberg
  */
-case object DLOAD_2 extends DLoadInstruction with ImplicitLocalVariableIndex {
+trait LLoadInstruction extends LoadLocalVariableInstruction {
 
-    final val lvIndex = 2
+    final def computationalType: ComputationalType = ComputationalTypeLong
 
-    final val opcode = 40
-
-    final val mnemonic = "dload_2"
+}
+object LLoadInstruction {
 
 }

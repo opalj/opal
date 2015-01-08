@@ -31,16 +31,18 @@ package br
 package instructions
 
 /**
- * Load double from local variable with index 2.
+ * Store long into local variable.
  *
  * @author Michael Eichberg
  */
-case object DLOAD_2 extends DLoadInstruction with ImplicitLocalVariableIndex {
+trait LStoreInstruction extends StoreLocalVariableInstruction {
 
-    final val lvIndex = 2
-
-    final val opcode = 40
-
-    final val mnemonic = "dload_2"
+    def computationalType: ComputationalType = ComputationalTypeLong
 
 }
+
+object LStoreInstruction {
+
+    def unapply(lstore: LStoreInstruction): Some[Int] = Some(lstore.lvIndex)
+}
+

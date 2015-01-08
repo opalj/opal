@@ -30,17 +30,14 @@ package org.opalj
 package br
 package instructions
 
-/**
- * Load double from local variable with index 2.
- *
- * @author Michael Eichberg
- */
-case object DLOAD_2 extends DLoadInstruction with ImplicitLocalVariableIndex {
+trait IStoreInstruction extends StoreLocalVariableInstruction {
 
-    final val lvIndex = 2
+    final def computationalType: ComputationalType = ComputationalTypeInt
 
-    final val opcode = 40
+}
 
-    final val mnemonic = "dload_2"
+object IStoreInstruction {
+
+    def unapply(istore: IStoreInstruction): Some[Int] = Some(istore.lvIndex)
 
 }
