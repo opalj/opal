@@ -30,20 +30,19 @@ package org.opalj
 package av
 
 import scala.language.implicitConversions
-
 import java.net.URL
-
 import scala.util.matching.Regex
 import scala.collection.{ Map ⇒ AMap, Set ⇒ ASet }
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
 import scala.Console.{ GREEN, RED, BLUE, RESET }
-
 import org.opalj.util.PerformanceEvaluation.{ ns2sec, time, run }
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.{ ClassHierarchy, Project }
 import org.opalj.de._
+import org.opalj.io.processSource
 
 /**
  * A specification of a project's architectural constraints.
@@ -87,8 +86,7 @@ class Specification(
                     (if (useAnsiColors) RESET else ""))
                 project
             },
-            useAnsiColors
-        )
+            useAnsiColors)
     }
 
     @volatile
@@ -222,8 +220,7 @@ class Specification(
                 (incomingElement, dependencyType) ← incomingDependencies(targetEnsembleElement)
                 if !(
                     sourceEnsembleElements.contains(incomingElement) ||
-                    targetEnsembleElements.contains(incomingElement)
-                )
+                    targetEnsembleElements.contains(incomingElement))
             } yield {
                 SpecificationViolation(
                     project,
@@ -253,8 +250,7 @@ class Specification(
             val unknownEnsembles = targetEnsembles.filterNot(ensembles.contains(_))
             if (unknownEnsembles.nonEmpty)
                 throw SpecificationError(
-                    unknownEnsembles.mkString("unknown ensemble(s): ", ",", "")
-                )
+                    unknownEnsembles.mkString("unknown ensemble(s): ", ",", ""))
 
             val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
             val allAllowedLocalTargetSourceElements =
@@ -314,8 +310,7 @@ class Specification(
             val unknownEnsembles = targetEnsembles.filterNot(ensembles.contains(_))
             if (unknownEnsembles.nonEmpty)
                 throw SpecificationError(
-                    unknownEnsembles.mkString("unknown ensemble(s): ", ",", "")
-                )
+                    unknownEnsembles.mkString("unknown ensemble(s): ", ",", ""))
 
             val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
             val notAllowedTargetSourceElements =
@@ -450,8 +445,7 @@ class Specification(
                     theIncomingDependencies.update(
                         target,
                         theIncomingDependencies.getOrElse(target, Set.empty) +
-                            ((source, dType))
-                    )
+                            ((source, dType)))
                 }
             }
         } { executionTime ⇒
@@ -541,6 +535,62 @@ object Specification {
             throw SpecificationError("the specified jar file is a directory: "+jarName)
 
         Project.Java8ClassFileReader.ClassFiles(file)
+    }
+
+    def LibraryJAR(jarName: String): Seq[(ClassFile, URL)] = {
+        val file = new java.io.File(jarName)
+        if (!file.exists)
+            throw SpecificationError("the specified directory does not exist: "+jarName)
+        if (!file.canRead)
+            throw SpecificationError("cannot read the specified JAR: "+jarName)
+        if (file.isDirectory)
+            throw SpecificationError("the specified jar file is a directory: "+jarName)
+
+        Project.Java8LibraryClassFileReader.ClassFiles(file)
+    }
+
+    def SourceJARs(jarNames: Iterable[String]): Seq[(ClassFile, URL)] = {
+        jarNames.map(SourceJAR(_)).toSeq.flatten
+    }
+
+    def LibraryJARs(jarNames: Iterable[String]): Seq[(ClassFile, URL)] = {
+        jarNames.map(LibraryJAR(_)).toSeq.flatten
+    }
+
+    /**
+     * Returns a list of paths contained inside the given classpath file.
+     * A classpath file should contain paths as text seperated by a path-separator character.
+     * On UNIX systems, this character is <code>':'</code>; on Microsoft Windows systems it
+     * is <code>';'</code>.
+     *
+     * ===Example===
+     * /path/to/jar/library.jar:/path/to/library/example.jar:/path/to/library/example2.jar
+     *
+     * Classpath files should be used to prevent absolute paths in tests.
+     */
+    def ClassPath(fileName: String): List[String] = {
+        processSource(scala.io.Source.fromFile(new java.io.File(fileName))) { s ⇒
+            s.getLines().map(_.split(java.io.File.pathSeparatorChar)).flatten.toList
+        }
+    }
+
+    /**
+     * Returns the path to the given JAR from the given list of paths.
+     */
+    def PathToJAR(paths: Iterable[String], jarName: String): String = {
+        paths.foreach { p ⇒
+            if (p.endsWith(jarName)) return p
+        }
+        throw new SpecificationError("cannot find a path to the specified JAR: "+jarName+".")
+    }
+
+    /**
+     * Returns a list of paths to the given JARs from the given list of paths.
+     */
+    def PathToJARs(paths: Iterable[String], jarNames: Iterable[String]): List[String] = {
+        val jarPaths = new ListBuffer[String]()
+        jarNames.foreach { j ⇒ jarPaths += PathToJAR(paths, j) }
+        jarPaths.toList
     }
 }
 

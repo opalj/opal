@@ -75,6 +75,7 @@ import org.opalj.concurrent.parForeachArrayElement
  *      location of a resource (e.g., a source or class file.)
  *
  * @author Michael Eichberg
+ * @author Marco Torsello
  */
 class Project[Source] private (
         private[this] val projectClassFiles: Array[ClassFile],
@@ -162,6 +163,36 @@ class Project[Source] private (
     def packages: Set[String] = {
         var packages = Set.empty[String]
         projectClassFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
+        libraryClassFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
+        packages
+    }
+
+    /**
+     * Returns the list of all project packages that contain at least one class.
+     *
+     * For example, in case of the JDK the package `java` does not directly contain
+     * any class – only its subclasses. This package is, hence, not returned by this
+     * function, but the package `java.lang` is.
+     *
+     * @note This method's result is not cached.
+     */
+    def projectPackages: Set[String] = {
+        var packages = Set.empty[String]
+        projectClassFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
+        packages
+    }
+
+    /**
+     * Returns the list of all library packages that contain at least one class.
+     *
+     * For example, in case of the JDK the package `java` does not directly contain
+     * any class – only its subclasses. This package is, hence, not returned by this
+     * function, but the package `java.lang` is.
+     *
+     * @note This method's result is not cached.
+     */
+    def libraryPackages: Set[String] = {
+        var packages = Set.empty[String]
         libraryClassFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
         packages
     }
