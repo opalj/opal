@@ -39,6 +39,11 @@ import org.opalj.br.analyses.FieldAccessInformationKey
 /**
  * Basic field access information.
  *
+ * ==Example Usage==
+ * {{{
+ * run -cp=/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home/jre/lib/ -field="java.util.HashMap entrySet"
+ * }}}
+ *
  * @author Michael Eichberg
  */
 object FieldAccessInformationAnalysis
@@ -49,22 +54,46 @@ object FieldAccessInformationAnalysis
 
     override def description: String = "Provides information about field accesses."
 
+    override def analysisSpecificParametersDescription: String =
+        "[-field=<The field for which we want read/write access information (e.g., \"java.util.HashMap entrySet\">]"
+
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
+        parameters.isEmpty ||
+            (parameters.size == 1 && parameters.head.startsWith("-field="))
+
     def doAnalyze(
         project: Project[URL],
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean) = {
 
-        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
+        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec, memory, asMB }
         var executionTimeInSecs = 0d
+        var memoryUsageInMB = ""
 
-        val accessInformation = time {
-            project.get(FieldAccessInformationKey)
-        } { executionTime ⇒ executionTimeInSecs = ns2sec(executionTime) }
+        val accessInformation = memory {
+            time {
+                project.get(FieldAccessInformationKey)
+            } { executionTime ⇒ executionTimeInSecs = ns2sec(executionTime) }
+        } { memoryUsage ⇒ memoryUsageInMB = asMB(memoryUsage) }
 
-        BasicReport(
-            accessInformation.statistics.mkString(
-                s"determing field access information took ${executionTimeInSecs} secs.:\n", "\n", "\n"
+        if (parameters.nonEmpty) {
+            val Array(declaringClassName, fieldName) =
+                parameters.head.substring(7).replace('.', '/').split(' ')
+            val declaringClassType = ObjectType(declaringClassName)
+            val writes = accessInformation.writeAccesses(declaringClassType, fieldName)
+            val reads = accessInformation.readAccesses(declaringClassType, fieldName)
+            BasicReport(
+                declaringClassName+" "+fieldName+"\n"+
+                    writes.mkString("writes:\n\t ", "\n\t ", "\n\n") +
+                    reads.mkString("reads:\n\t ", "\n\t ", "\n")
             )
-        )
+
+        } else {
+            BasicReport(
+                accessInformation.statistics.mkString(
+                    s"determing field access information took $executionTimeInSecs secs. and required $memoryUsageInMB:\n", "\n", "\n"
+                )
+            )
+        }
     }
 }
