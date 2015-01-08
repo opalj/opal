@@ -28,26 +28,34 @@
  */
 package org.opalj
 package br
-package instructions
+package analyses
 
 /**
- * Common superclass of all field read instructions.
+ * The ''key'' object to get global field access information.
+ *
+ * @example
+ *      To get the index use the [[Project]]'s `get` method and pass in
+ *      `this` object.
  *
  * @author Michael Eichberg
  */
-abstract class FieldReadAccess extends FieldAccess {
+object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInformation] {
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    /**
+     * The [[FieldAccessInformationAnalysis]] has no special prerequisites.
+     *
+     * @return `Nil`.
+     */
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
+    /**
+     * Computes the field access information.
+     */
+    override protected def compute(project: SomeProject): FieldAccessInformation = {
+
+        FieldAccessInformationAnalysis.doAnalyze(
+            project, () ⇒ Thread.currentThread().isInterrupted()
+        )
+    }
 }
 
-/**
- * Defines an extractor to facilitate pattern matching on field read access instructions.
- *
- * @author Michael Eichberg
- */
-object FieldReadAccess {
-
-    def unapply(fa: FieldReadAccess): Option[(ObjectType, String, FieldType)] =
-        FieldAccess.unapply(fa)
-}

@@ -28,26 +28,43 @@
  */
 package org.opalj
 package br
-package instructions
+
+import java.net.URL
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.FieldAccessInformationKey
 
 /**
- * Common superclass of all field read instructions.
+ * Basic field access information.
  *
  * @author Michael Eichberg
  */
-abstract class FieldReadAccess extends FieldAccess {
+object FieldAccessInformationAnalysis
+        extends OneStepAnalysis[URL, BasicReport]
+        with AnalysisExecutor {
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    val analysis = this
 
-}
+    override def description: String = "Provides information about field accesses."
 
-/**
- * Defines an extractor to facilitate pattern matching on field read access instructions.
- *
- * @author Michael Eichberg
- */
-object FieldReadAccess {
+    def doAnalyze(
+        project: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
 
-    def unapply(fa: FieldReadAccess): Option[(ObjectType, String, FieldType)] =
-        FieldAccess.unapply(fa)
+        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
+        var executionTimeInSecs = 0d
+
+        val accessInformation = time {
+            project.get(FieldAccessInformationKey)
+        } { executionTime ⇒ executionTimeInSecs = ns2sec(executionTime) }
+
+        BasicReport(
+            accessInformation.statistics.mkString(
+                s"determing field access information took ${executionTimeInSecs} secs.:\n", "\n", "\n"
+            )
+        )
+    }
 }
