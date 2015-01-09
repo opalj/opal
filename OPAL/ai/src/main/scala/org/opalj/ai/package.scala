@@ -65,7 +65,7 @@ package object ai {
     private[this] final val checkAssert: Boolean = {
         try {
             scala.Predef.assert(false) // <= test whether assertions are turned on or off...
-            println("[info - Abstract Interpretation Framework]] Production Build - Assertions are disabled")
+            println("[info - Abstract Interpretation Framework] Production Build - Assertions are disabled")
         } catch {
             case ae: AssertionError ⇒
                 println("[info - Abstract Interpretation Framework] Development Build - Assertions are enabled.")
