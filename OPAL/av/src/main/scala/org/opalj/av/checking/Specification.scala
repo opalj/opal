@@ -143,13 +143,10 @@ class Specification(
         ensembleSymbol: Symbol)(
             sourceElementMatcher: SourceElementsMatcher): Unit = {
         if (ensembles.contains(ensembleSymbol))
-            throw new SpecificationError("The ensemble is already defined: "+ensembleSymbol)
+            throw SpecificationError("the ensemble is already defined: "+ensembleSymbol)
 
         theEnsembles += (
-            (
-                ensembleSymbol,
-                (sourceElementMatcher, Set[VirtualSourceElement]())
-            )
+            (ensembleSymbol, (sourceElementMatcher, Set.empty[VirtualSourceElement]))
         )
     }
 
@@ -195,12 +192,10 @@ class Specification(
         else if (matcher.indexOf('*') == -1)
             new ClassMatcher(matcher.replace('.', '/'))
         else
-            throw new SpecificationError("unsupported pattern: "+matcher);
+            throw SpecificationError("unsupported matcher pattern: "+matcher);
     }
 
-    def classes(matcher: Regex): SourceElementsMatcher = {
-        new RegexClassMatcher(matcher)
-    }
+    def classes(matcher: Regex): SourceElementsMatcher = new RegexClassMatcher(matcher)
 
     /**
      * Returns the class files stored at the given location.
@@ -494,8 +489,8 @@ class Specification(
 
             unmatchedSourceElements = allSourceElements -- matchedSourceElements
 
-            Console.println("   => Matched source elements: "+matchedSourceElements.size)
-            Console.println("   => Other source elements: "+unmatchedSourceElements.size)
+            println("   => Matched source elements: "+matchedSourceElements.size)
+            println("   => Other source elements: "+unmatchedSourceElements.size)
         } { executionTime ⇒
             println(ifUseAnsiColors(GREEN)+
                 "3. Determing the extension of the ensembles finished in "+
@@ -507,7 +502,7 @@ class Specification(
         time {
             val result =
                 for (dependencyChecker ← dependencyCheckers.par) yield {
-                    Console.println("   Checking: "+dependencyChecker)
+                    println("   Checking: "+dependencyChecker)
                     for (violation ← dependencyChecker.violations) yield {
                         //println(violation)
                         violation

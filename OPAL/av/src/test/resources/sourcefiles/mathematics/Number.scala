@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,32 +22,32 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package instructions
+package mathematics
 
 /**
- * Common superclass of all field read instructions.
- *
- * @author Michael Eichberg
+ * @author Samuel Beracasa
  */
-abstract class FieldReadAccess extends FieldAccess {
+class Number(var value: Int) extends Operations {
+    //Number operator Number
+    def +(other: Number): Number = new Number(this.value + other.value)
+    def -(other: Number): Number = new Number(this.value - other.value)
+    def *(other: Number): Number = new Number(this.value * other.value)
+    def /(other: Number): Number = new Number(this.value / other.value)
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    //Number operator Rational
+    def +(other: Rational): Rational =
+        new Rational(((this / other.denom) + other.numer), other.denom)
+    def -(other: Rational): Rational =
+        new Rational((this / other.denom) - other.numer, other.denom)
+    def *(other: Rational): Rational =
+        new Rational(this * other.numer, other.denom)
+    def /(other: Rational): Rational =
+        new Rational(other.numer, other.denom / this)
 
-}
-
-/**
- * Defines an extractor to facilitate pattern matching on field read access instructions.
- *
- * @author Michael Eichberg
- */
-object FieldReadAccess {
-
-    def unapply(fa: FieldReadAccess): Option[(ObjectType, String, FieldType)] =
-        FieldAccess.unapply(fa)
+    //Print
+    override def toString() = ""+this.value
 }

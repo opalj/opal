@@ -106,14 +106,11 @@ package object concurrent {
     //
     // STEP 3
     //
-    /**
-     * Returns the singleton instance of the global Thread Pool used throughout OPAL.
-     */
-    final val ThreadPool: ExecutorService = {
+    def ThreadPoolN(n: Int): ExecutorService = {
         val group = new ThreadGroup(s"org.opalj.ThreadPool ${System.nanoTime()}")
         val tp =
             new ThreadPoolExecutor(
-                NumberOfThreadsForIOBoundTasks, NumberOfThreadsForIOBoundTasks,
+                n, n,
                 0L, TimeUnit.SECONDS, // this is a fixed size pool
                 new LinkedBlockingQueue[Runnable](),
                 new ThreadFactory {
@@ -134,6 +131,11 @@ package object concurrent {
         tp.prestartAllCoreThreads()
         tp
     }
+
+    /**
+     * Returns the singleton instance of the global Thread Pool used throughout OPAL.
+     */
+    final val ThreadPool: ExecutorService = ThreadPoolN(NumberOfThreadsForIOBoundTasks)
 
     //
     // STEP 4
