@@ -55,7 +55,7 @@ object FieldAccessInformationAnalysis
     override def description: String = "Provides information about field accesses."
 
     override def analysisSpecificParametersDescription: String =
-        "[-field=<The field for which we want read/write access information (e.g., \"java.util.HashMap entrySet\">]"
+        "[-field=\"<The field for which we want read/write access information (e.g., -field=\"java.util.HashMap entrySet\">\"]"
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
         parameters.isEmpty ||
@@ -82,10 +82,22 @@ object FieldAccessInformationAnalysis
             val declaringClassType = ObjectType(declaringClassName)
             val writes = accessInformation.writeAccesses(declaringClassType, fieldName)
             val reads = accessInformation.readAccesses(declaringClassType, fieldName)
+
+            def accessInformationToString(data: Seq[(Method, PCs)]): String = {
+                (
+                    data.map { e ⇒
+                        val (method, pcs) = e
+                        project.classFile(method).thisType.toJava+" { "+
+                            method.toJava() + pcs.mkString("{ pcs: ", ", ", " }")+
+                            " }"
+                    }
+                ).mkString("\t ", "\n\t ", "\n")
+            }
+
             BasicReport(
                 declaringClassName+" "+fieldName+"\n"+
-                    writes.mkString("writes:\n\t ", "\n\t ", "\n\n") +
-                    reads.mkString("reads:\n\t ", "\n\t ", "\n")
+                    "writes:\n"+accessInformationToString(writes)+
+                    "reads:\n"+accessInformationToString(reads)
             )
 
         } else {
