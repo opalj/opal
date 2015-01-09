@@ -39,39 +39,43 @@ import org.opalj.br.analyses.ClassHierarchy
  *
  * @author Michael Eichberg
  */
-object PrivateMethodsWithObjectTypeParameterCounter extends AnalysisExecutor {
+object PrivateMethodsWithObjectTypeParameterCounter extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    val analysis = this
 
-        override def description: String = "Counts the number of private methods with at least one parameter that is an object type."
+    override def description: String =
+        "Counts the number of package private and private methods with a body with at least one parameter that is an object type."
 
-        def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            val methods =
-                (
-                    for {
-                        classFile ← project.allClassFiles.par
-                        method ← classFile.methods
-                        if method.isPrivate
-                        if method.descriptor.parameterTypes.exists { pt ⇒
-                            pt.isObjectType && {
-                                val objectType = pt.asObjectType
-                                project.classHierarchy.hasSubtypes(objectType).isYes && (
-                                    project.classFile(objectType) match {
-                                        case Some(cf) ⇒ !cf.isFinal
-                                        case _        ⇒ false
-                                    }
-                                )
-                            }
-                        }
-                    } yield classFile.thisType.toJava+"{ "+method.toJava+" }"
-                ).seq
+    def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean) = {
+        val overallPotential = new java.util.concurrent.atomic.AtomicInteger(0)
+        val methods = (
+            for {
+                classFile ← project.allClassFiles.par
+                method ← classFile.methods
+                if method.isPrivate //|| method.isPackagePrivate
+                if method.name != "readObject" && method.name != "writeObject"
+                potential = (method.descriptor.parameterTypes.collect {
+                    case ot: ObjectType ⇒
+                        project.classHierarchy.allSubtypes(ot, false).size
+                    case _ ⇒
+                        0
+                }).sum
+                if potential >= 5
+            } yield {
+                overallPotential.addAndGet(potential)
+                classFile.thisType.toJava+
+                    "{ "+
+                    (if (method.isPrivate) "private " else "") + method.toJava+
+                    " /* Potential: "+potential+" */ "+
+                    "}"
+            }
+        ).seq
 
-            BasicReport(
-                methods.mkString(methods.size+" methods found:\n\t", "\n\t", "\n")
-            )
-        }
+        BasicReport(
+            methods.mkString(
+                "Methods:\n\t",
+                "\n\t",
+                s"\n\t${methods.size} methods found with an overall refinement potential of ${overallPotential.get}.\n")
+        )
     }
 }
