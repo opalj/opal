@@ -40,7 +40,6 @@ import br.analyses._
 import domain._
 import domain.l0
 import domain.l1
-
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.TheClassFile
@@ -50,8 +49,8 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
-
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
+import scala.collection.mutable.HashMap
 
 /**
  * The `VTACallGraphExtractor` extracts call edges using the type information at hand.
@@ -269,45 +268,59 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
 
             val receivers = receiver.referenceValues
             if (receivers.tail.nonEmpty) {
+                // the reference value is a "MultipleReferenceValue"
+
                 // The following numbers are created using ExtVTA for JDK 1.8.0_25
                 // and refer to a call graph created without explicit support for
-                // multiple reference values!
-                // Creating the call graph took: ~28 (Mac Pro (Late 2013); 3 GHz 8-Core Intel Xeon E5)
-                // Number of call sites: 911.253
-                // Number of call edges: 6.925.997 / called-by edges: 6.925.997
-
-                //                if (receiver.referenceValues.forall(rv ⇒
-                //                    rv.upperTypeBound != upperTypeBound &&
-                //                        classHierarchy.isSubtypeOf(rv.upperTypeBound, upperTypeBound).isYes)) {
-                //                    // THERE IS POTENTIAL FOR A MORE PRECISE CALL GRAPH SIMPLY
-                //                    // BECAUSE OF THE TYPE INFORMATION!
+                // multiple reference values:
+                //     Creating the call graph took: ~28sec (Mac Pro; 3 GHz 8-Core Intel Xeon E5)
+                //     Number of call sites: 911.253
+                //     Number of call edges: 6.925.997 / called-by edges: 6.925.997
                 //
-                //                    println("Type Based Refinement: "+receiver)
-                //                    println("----")
-                //                } else
-                val receiverIsPrecise = receiver.isPrecise
-                if (!receiverIsPrecise && receivers.forall { _.isPrecise }) {
-                    // In this case the information as a whole does not allow the derivation
-                    // of a precise type; however, all values are actually precise!
+                // With explicit support, we get the following numbers:
+                //     Number of call sites: 911.253
+                //     Number of call edges: 6.923.015 / called-by edges: 6.923.015
 
-                    // Statistics update (when we (just) support the isPrecise property)
-                    // Number of call edges: 6.925.366
-
-                    var allUpperTypeBounds = Set.empty[UpperTypeBound]
-                    receivers.foreach { rv ⇒
-                        val utb = rv.upperTypeBound
-                        // the utb of "null" values is empty; but this case is already handled
-                        if (utb.nonEmpty)
-                            allUpperTypeBounds += utb
-                    }
-                    allUpperTypeBounds.foreach { utb ⇒
-                        // println(s"$receiverUpperTypeBound replaced with $utb")
-                        handleVirtualNonNullCall(utb, receiverIsPrecise = true)
+                val receiversAreMorePrecise =
+                    !receiver.isPrecise &&
+                        // the receiver as a whole is not precise...
+                        receivers.forall { aReceiver ⇒
+                            val anUpperTypeBound = aReceiver.upperTypeBound
+                            aReceiver.isPrecise || {
+                                anUpperTypeBound != receiverUpperTypeBound &&
+                                    classHierarchy.isSubtypeOf(anUpperTypeBound, receiverUpperTypeBound).isYes
+                            }
+                        }
+                if (receiversAreMorePrecise) {
+                    // THERE IS POTENTIAL FOR A MORE PRECISE CALL GRAPH SIMPLY
+                    // BECAUSE OF THE TYPE INFORMATION!
+                    val uniqueReceivers =
+                        receivers.foldLeft(Map.empty[UpperTypeBound, Boolean]) { (results, rv) ⇒
+                            val utb = rv.upperTypeBound
+                            if (utb.nonEmpty)
+                                results.get(utb) match {
+                                    case Some(isPrecise) ⇒
+                                        if (isPrecise && !rv.isPrecise) {
+                                            results.updated(utb, false)
+                                        } else {
+                                            results
+                                        }
+                                    case None ⇒
+                                        results + ((utb, rv.isPrecise))
+                                }
+                            else
+                                // empty upper type bounds (those of null values) are
+                                // already handled
+                                results
+                        }
+                    uniqueReceivers.foreach { rv ⇒
+                        val (utb, isPrecise) = rv
+                        handleVirtualNonNullCall(utb, isPrecise)
                     }
                 } else {
                     // we did not get anything from analyzing the "MultipleReferenceValue"
                     // let's continue with the default handling
-                    handleVirtualNonNullCall(receiverUpperTypeBound, receiverIsPrecise)
+                    handleVirtualNonNullCall(receiverUpperTypeBound, receiver.isPrecise)
                 }
             } else {
                 // the value is not a "MultipleReferenceValue"
