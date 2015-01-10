@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -32,6 +32,7 @@ package debug
 
 import java.io.File
 import java.net.URL
+import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.util.control.ControlThrowable
 
@@ -88,6 +89,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
         project: Project[Source],
         parameters: Seq[String] = List.empty,
         initProgressManagement: (Int) ⇒ ProgressManagement) = {
+
         val verbose = parameters.size > 0 &&
             (parameters(0) == "-verbose=true" ||
                 (parameters.size == 2 && parameters.tail.head == "-verbose=true"))
@@ -138,71 +140,65 @@ object InterpretMethodsAnalysis {
             domainClass.getConstructor(
                 classOf[Project[java.net.URL]], classOf[ClassFile], classOf[Method])
 
-        def analyzeClassFile(
+        def analyzeMethod(
             source: String,
-            classFile: ClassFile): Seq[(String, ClassFile, Method, Throwable)] = {
+            classFile: ClassFile,
+            method: Method): Option[(String, ClassFile, Method, Throwable)] = {
 
-            val collectedExceptions =
-                for (method @ MethodWithBody(body) ← classFile.methods) yield {
-                    try {
-                        if (beVerbose)
-                            println(classFile.thisType.toJava+"{ "+method.toJava + YELLOW+"[started]"+RESET+" }")
-                        time('AI) {
-                            val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor)
-                            val result =
-                                ai.apply(
-                                    classFile,
-                                    method,
-                                    domainConstructor.newInstance(project, classFile, method)
-                                )
-                            if (result.wasAborted) {
-                                if (beVerbose)
-                                    println(
-                                        classFile.thisType.toJava+"{ "+method.toJava +
-                                            RED+"[aborted after evaluating "+
-                                            ai.currentEvaluationCount+
-                                            " instructions (size of instructions array="+
-                                            body.instructions.size+
-                                            "; max="+ai.maxEvaluationCount+")]"+
-                                            RESET+" }")
-
-                                throw new InterruptedException(
-                                    "evaluation bound (max="+ai.maxEvaluationCount+
-                                        ") exceeded")
-                            }
-                        }
+            val body = method.body.get
+            try {
+                if (beVerbose)
+                    println(classFile.thisType.toJava+"{ "+method.toJava + YELLOW+"[started]"+RESET+" }")
+                time('AI) {
+                    val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor)
+                    val result =
+                        ai.apply(
+                            classFile,
+                            method,
+                            domainConstructor.newInstance(project, classFile, method)
+                        )
+                    if (result.wasAborted) {
                         if (beVerbose)
                             println(
-                                classFile.thisType.toJava+
-                                    "{ "+method.toJava + GREEN+"[finished]"+RESET+" }")
-                        methodsCount.incrementAndGet()
-                        None
-                    } catch {
-                        case ct: ControlThrowable ⇒ throw ct
-                        case t: Throwable ⇒
-                            // basically, we want to catch everything!
-                            Some((
-                                project.source(classFile.thisType).get.toString,
-                                classFile,
-                                method,
-                                t))
+                                classFile.thisType.toJava+"{ "+method.toJava +
+                                    RED+"[aborted after evaluating "+
+                                    ai.currentEvaluationCount+
+                                    " instructions (size of instructions array="+
+                                    body.instructions.size+
+                                    "; max="+ai.maxEvaluationCount+")]"+
+                                    RESET+" }")
+
+                        throw new InterruptedException(
+                            "evaluation bound (max="+ai.maxEvaluationCount+
+                                ") exceeded")
                     }
                 }
-
-            collectedExceptions.filter(_.isDefined).map(_.get)
+                if (beVerbose)
+                    println(
+                        classFile.thisType.toJava+
+                            "{ "+method.toJava + GREEN+"[finished]"+RESET+" }")
+                methodsCount.incrementAndGet()
+                None
+            } catch {
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable ⇒
+                    // basically, we want to catch everything!
+                    Some((
+                        project.source(classFile.thisType).get.toString,
+                        classFile,
+                        method,
+                        t))
+            }
         }
 
         val collectedExceptions = time('OVERALL) {
-            val result = (
-                for { (classFile, source) ← project.classFilesWithSources.par } yield {
-
-                    if (beVerbose) println(BOLD + source.toString + RESET)
-
-                    analyzeClassFile(source.toString, classFile)
-                }
-            ).flatten.seq.toSeq
-            result.size //for the evaluation
-            result
+            val results = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
+            project.parForeachMethodWithBody() { m ⇒
+                val (source, classFile, method) = m
+                analyzeMethod(source.toString, classFile, method).map(results.add(_))
+            }
+            import scala.collection.JavaConverters._
+            results.asScala
         }
 
         if (collectedExceptions.nonEmpty) {
