@@ -1888,25 +1888,28 @@ trait AI[D <: Domain] {
                     case 192 /*checkcast*/ ⇒
                         val objectref = operands.head
                         val supertype = instruction.asInstanceOf[CHECKCAST].referenceType
-                        if (theDomain.refIsNull(pc, objectref).isYes)
+                        val isNull = theDomain.refIsNull(pc, objectref)
+                        if (isNull.isYes)
                             // if objectref is null => UNCHANGED (see spec. for details)
                             fallThrough()
                         else {
                             import ObjectType.ClassCastException
                             theDomain.isValueSubtypeOf(objectref, supertype) match {
                                 case Yes ⇒
-                                    // if objectref is a subtype => UNCHANGED
+                                    // if objectref is a subtype (or if null == Unknown) => UNCHANGED
                                     fallThrough()
+
                                 case No ⇒
-                                    val ex =
-                                        theDomain.InitializedObjectValue(
-                                            pc, ClassCastException)
-                                    handleException(ex)
+                                    if (theDomain.throwClassCastException)
+                                        handleException(theDomain.VMClassCastException(pc))
+
+                                    if (isNull.isUnknown)
+                                        fallThrough()
+
                                 case Unknown ⇒
-                                    val ex =
-                                        theDomain.InitializedObjectValue(
-                                            pc, ClassCastException)
-                                    handleException(ex)
+                                    if (theDomain.throwClassCastException)
+                                        handleException(theDomain.VMClassCastException(pc))
+
                                     val (newOperands, newLocals) =
                                         theDomain.refEstablishUpperBound(
                                             pc,
