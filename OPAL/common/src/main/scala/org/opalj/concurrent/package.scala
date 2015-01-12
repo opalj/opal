@@ -111,7 +111,7 @@ package object concurrent {
         val tp =
             new ThreadPoolExecutor(
                 n, n,
-                0L, TimeUnit.SECONDS, // this is a fixed size pool
+                60L, TimeUnit.SECONDS, // this is a fixed size pool
                 new LinkedBlockingQueue[Runnable](),
                 new ThreadFactory {
 
@@ -119,7 +119,7 @@ package object concurrent {
 
                     def newThread(r: Runnable): Thread = {
                         val id = s"${nextID.incrementAndGet()}"
-                        val name = s"org.opalj.ThreadPool-Thread $id"
+                        val name = s"org.opalj.ThreadPool[N=$n]-Thread $id"
                         val t = new Thread(group, r, name)
                         // we are using demon threads to make sure that these
                         // threads never prevent the JVM from regular termination
@@ -128,6 +128,7 @@ package object concurrent {
                     }
                 }
             )
+        tp.allowCoreThreadTimeOut(true)
         tp.prestartAllCoreThreads()
         tp
     }
