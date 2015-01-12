@@ -513,7 +513,7 @@ class Specification(
 }
 object Specification {
 
-    def SourceDirectory(directoryName: String): Seq[(ClassFile, URL)] = {
+    def ProjectDirectory(directoryName: String): Seq[(ClassFile, URL)] = {
         val file = new java.io.File(directoryName)
         if (!file.exists)
             throw SpecificationError("the specified directory does not exist: "+directoryName)
@@ -525,7 +525,7 @@ object Specification {
         Project.Java8ClassFileReader.ClassFiles(file)
     }
 
-    def SourceJAR(jarName: String): Seq[(ClassFile, URL)] = {
+    def ProjectJAR(jarName: String): Seq[(ClassFile, URL)] = {
         val file = new java.io.File(jarName)
         if (!file.exists)
             throw SpecificationError("the specified directory does not exist: "+jarName)
@@ -537,6 +537,19 @@ object Specification {
         Project.Java8ClassFileReader.ClassFiles(file)
     }
 
+    /**
+     * Load all jar files.
+     */
+    def ProjectJARs(jarNames: Seq[String]): Seq[(ClassFile, URL)] = {
+        jarNames.map(ProjectJAR(_)).flatten
+    }
+
+    /**
+     * Loads all class files of the specified jar file using the library class file reader.
+     * (I.e., the all method implementations are skipped.)
+     *
+     * @param jarName The name of a jar file.
+     */
     def LibraryJAR(jarName: String): Seq[(ClassFile, URL)] = {
         val file = new java.io.File(jarName)
         if (!file.exists)
@@ -549,12 +562,11 @@ object Specification {
         Project.Java8LibraryClassFileReader.ClassFiles(file)
     }
 
-    def SourceJARs(jarNames: Iterable[String]): Seq[(ClassFile, URL)] = {
-        jarNames.map(SourceJAR(_)).toSeq.flatten
-    }
-
-    def LibraryJARs(jarNames: Iterable[String]): Seq[(ClassFile, URL)] = {
-        jarNames.map(LibraryJAR(_)).toSeq.flatten
+    /**
+     * Load all jar files using the library class loader.
+     */
+    def LibraryJARs(jarNames: Seq[String]): Seq[(ClassFile, URL)] = {
+        jarNames.map(LibraryJAR(_)).flatten
     }
 
     /**
@@ -578,8 +590,11 @@ object Specification {
      * Returns the path to the given JAR from the given list of paths.
      */
     def PathToJAR(paths: Iterable[String], jarName: String): String = {
-        paths.foreach { p ⇒ if (p.endsWith(jarName)) return p }
-        throw new SpecificationError("cannot find a path to the specified JAR: "+jarName+".")
+        paths.collectFirst {
+            case p if (p.endsWith(jarName)) ⇒ p
+        }.getOrElse {
+            throw SpecificationError(s"cannot find a path to the specified JAR: $jarName.")
+        }
     }
 
     /**
