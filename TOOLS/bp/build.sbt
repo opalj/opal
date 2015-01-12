@@ -13,6 +13,8 @@ scalacOptions in ThisBuild ++= Seq(
 
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - BugPicker")
 
+fork in run := true
+
 libraryDependencies += "org.scalafx"  %% "scalafx"   % "1.0.0-R8"
 
 jfxSettings
