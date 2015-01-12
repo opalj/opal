@@ -35,6 +35,7 @@ import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
 
+import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
 /**
@@ -59,7 +60,7 @@ object CallGraphFactory {
     def defaultEntryPointsForLibraries(project: SomeProject): Iterable[Method] = {
         val classHierarchy = project.classHierarchy
         val methods = new java.util.concurrent.ConcurrentLinkedQueue[Method]
-        project.parForeachMethodWithBody(() ⇒ false) { m ⇒
+        project.parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { m ⇒
             val (_, classFile, method) = m
             if (!method.isPrivate ||
                 ( // the method is private, but...
@@ -126,7 +127,7 @@ object CallGraphFactory {
             }
         val completionService =
             new ExecutorCompletionService[MethodAnalysisResult](
-                org.opalj.concurrent.ThreadPool
+                ThreadPoolN(Math.max(NumberOfThreadsForCPUBoundTasks - 1, 1))
             )
 
         @inline def submitMethod(method: Method): Unit = {

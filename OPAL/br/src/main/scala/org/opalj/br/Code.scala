@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -99,8 +99,8 @@ final class Code private (
      */
     def joinInstructions: BitSet = {
         val instructions = this.instructions
-        val instructionsCount = instructions.length
-        val joinInstructions = new scala.collection.mutable.BitSet(instructionsCount)
+        val instructionsLength = instructions.length
+        val joinInstructions = new scala.collection.mutable.BitSet(instructionsLength)
         exceptionHandlers.foreach { eh ⇒
             // [REFINE] For non-finally handlers, test if multiple paths
             // can lead to the respective exception
@@ -109,10 +109,10 @@ final class Code private (
         // The algorithm determines for each instruction the successor instruction
         // that is reached and then marks it. If an instruction was already reached in the
         // past, it will then mark the instruction as a "join" instruction.
-        val isReached = new scala.collection.mutable.BitSet(instructionsCount)
+        val isReached = new scala.collection.mutable.BitSet(instructionsLength)
         isReached += 0 // the first instruction is always reached!
         var pc = 0
-        while (pc < instructionsCount) {
+        while (pc < instructionsLength) {
             val instruction = instructions(pc)
             val nextPC = pcOfNextInstruction(pc)
             @inline def runtimeSuccessor(pc: PC): Unit = {
@@ -160,8 +160,14 @@ final class Code private (
      * Iterates over all instructions and calls the given function `f`
      * for every instruction.
      */
-    def foreach(f: (PC, Instruction) ⇒ Unit): Unit = {
-        foreachNonNullValueOf(instructions)(f)
+    @inline final def foreach(f: (PC, Instruction) ⇒ Unit): Unit = {
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            f(pc, instruction)
+            pc = pcOfNextInstruction(pc)
+        }
     }
 
     /**
@@ -209,7 +215,7 @@ final class Code private (
      */
     @inline final def pcOfNextInstruction(currentPC: PC): PC = {
         instructions(currentPC).indexOfNextInstruction(currentPC, this)
-        // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!        
+        // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!
         //    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
         //        val max_pc = instructions.size
         //        var nextPC = currentPC + 1
@@ -504,7 +510,7 @@ final class Code private (
             elementsInQueue += 1
         }
 
-        // 
+        //
         // SLIDING OVER THE CODE
         //
         var result: List[B] = List.empty
@@ -555,7 +561,7 @@ final class Code private (
             elementsInQueue += 1
         }
 
-        // 
+        //
         // SLIDING OVER THE CODE
         //
         var result: List[(PC, B)] = List.empty

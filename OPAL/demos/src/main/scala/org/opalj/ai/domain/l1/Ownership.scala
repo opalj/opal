@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -94,7 +94,7 @@ object OwnershipAnalysis
         val Private___Not_Static = (AccessFlagsMatcher.NOT_STATIC && ACC_PRIVATE)
 
         val classes = for {
-            classFile ← theProject.classFiles.par
+            classFile ← theProject.allProjectClassFiles.par
             classType = classFile.thisType
             arrayFields = classFile.fields.collect {
                 case f @ Field(Private___Not_Static(), name, ArrayType(_)) ⇒ name
@@ -122,9 +122,9 @@ object OwnershipAnalysis
                                         return true;
 
                                     method.body.get.instructions(pc) match {
-                                        // we don't want to give back a reference to the 
+                                        // we don't want to give back a reference to the
                                         // array of this value or another value
-                                        // that has the same type as this value! 
+                                        // that has the same type as this value!
                                         case GETFIELD(`classType`, name, _) ⇒
                                             !arrayFields.contains(name)
                                         case AALOAD ⇒
@@ -140,7 +140,7 @@ object OwnershipAnalysis
                                         case invoke: MethodInvocationInstruction ⇒
                                             // here we need to call this analysis
                                             // again... we may call a private method that
-                                            // returns the array... 
+                                            // returns the array...
                                             true
                                     }
                                 }

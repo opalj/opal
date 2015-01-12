@@ -37,6 +37,9 @@ import scala.collection.parallel.ExecutionContextTaskSupport
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
+import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when doing
@@ -103,14 +106,11 @@ package object concurrent {
     //
     // STEP 3
     //
-    /**
-     * Returns the singleton instance of the global Thread Pool used throughout OPAL.
-     */
-    final val ThreadPool: ExecutorService = {
+    def ThreadPoolN(n: Int): ExecutorService = {
         val group = new ThreadGroup(s"org.opalj.ThreadPool ${System.nanoTime()}")
         val tp =
             new ThreadPoolExecutor(
-                NumberOfThreadsForIOBoundTasks, NumberOfThreadsForIOBoundTasks,
+                n, n,
                 0L, TimeUnit.SECONDS, // this is a fixed size pool
                 new LinkedBlockingQueue[Runnable](),
                 new ThreadFactory {
@@ -132,15 +132,18 @@ package object concurrent {
         tp
     }
 
+    /**
+     * Returns the singleton instance of the global Thread Pool used throughout OPAL.
+     */
+    final val ThreadPool: ExecutorService = ThreadPoolN(NumberOfThreadsForIOBoundTasks)
+
     //
     // STEP 4
     //
     /**
      * The ExecutionContext used by OPAL.
      *
-     * This `ExecutionContext` is not intended to be shutdown explicitly. However,
-     * if it used by some program, the program – at its very end – must call this
-     * package's [[shutdown()]] method. Otherwise, the program may not terminate.
+     * This `ExecutionContext` must not be shutdown.
      */
     implicit final val OPALExecutionContext: ExecutionContext =
         ExecutionContext.fromExecutorService(ThreadPool)
@@ -152,4 +155,61 @@ package object concurrent {
         new ExecutionContextTaskSupport(OPALExecutionContext) {
             override def parallelismLevel: Int = NumberOfThreadsForCPUBoundTasks
         }
+
+    //
+    // GENERAL HELPER METHODS
+    //
+
+    /**
+     * Execute the given function `f` in parallel for each element of the given array.
+     * After processing an element it is checked whether the computation should be
+     * aborted.
+     *
+     * In general – but also at most – `parallelizationLevel` many threads will be used
+     * to process the elements. The core idea is that each thread processes an element
+     * and after that grabs the next element from the array. Hence, this handles
+     * situations gracefully where the effort necessary to analyze a specific element
+     * varies widely.
+     *
+     * @note The OPALExecutionContext is used for getting the necessary threads.
+     */
+    def parForeachArrayElement[T, U](
+        data: Array[T],
+        parallelizationLevel: Int = NumberOfThreadsForCPUBoundTasks,
+        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted())(
+            f: Function[T, U]): Unit = {
+
+        if (parallelizationLevel == 1) {
+            data.foreach(f)
+            return ;
+        }
+
+        val max = data.length
+        val index = new java.util.concurrent.atomic.AtomicInteger(0)
+        val futures = new Array[Future[Unit]](parallelizationLevel)
+
+        // Start parallel execution
+        {
+            var t = 0
+            while (t < parallelizationLevel) {
+                futures(t) =
+                    Future[Unit] {
+                        var i: Int = -1
+                        while ({ i = index.getAndIncrement; i } < max && !isInterrupted()) {
+                            f(data(i))
+                        }
+                    }
+                t += 1
+            }
+        }
+        // Await completion
+        {
+            var t = 0
+            while (t < parallelizationLevel) {
+                Await.ready(futures(t), Duration.Inf)
+                t += 1
+            }
+        }
+    }
 }
+

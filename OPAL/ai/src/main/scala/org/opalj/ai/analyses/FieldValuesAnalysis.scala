@@ -93,9 +93,7 @@ object FieldValuesAnalysis {
 
         val results = new ConcurrentHashMap[Field, BaseFieldValuesAnalysisDomain#DomainValue]
 
-        val parClassFiles = theProject.classFiles.par
-        parClassFiles.tasksupport = OPALExecutionContextTaskSupport
-        parClassFiles.foreach { classFile ⇒
+        theProject.parForeachProjectClassFile(isInterrupted) { classFile ⇒
             // this analysis does not support parallelization at a more
             // fined-grained level, because we reuse the same domain instance
             // to perform an abstract interpretation of all methods of the

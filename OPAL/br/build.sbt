@@ -7,11 +7,7 @@ version := "0.8.0-SNAPSHOT"
 // standard compiler settings!
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Representation") 
 
-//scalacOptions in Compile := Seq("-deprecation", "-feature", "-unchecked", "-Xlint", "-Xdisable-assertions")
-//scalacOptions in Compile += "-Xdisable-assertions"
-
 libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.1"
 
-parallelExecution in IntegrationTest := false
-
-logBuffered in IntegrationTest := false
+//scalacOptions in Compile := Seq("-deprecation", "-feature", "-unchecked", "-Xlint", "-Xdisable-assertions")
+//scalacOptions in Compile += "-Xdisable-assertions"
