@@ -66,7 +66,7 @@ class ClasspathFileTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     it should "return the expected list of paths to the given JARs" in {
         val listOfJARs = List[String]("scalatest_2.11-2.1.7.jar", "scala-library-2.11.0.jar", "scala-xml_2.11-1.0.1.jar")
-        val listOfPaths: List[String] = PathToJARs(validClassPath, listOfJARs)
+        val listOfPaths: Iterable[String] = PathToJARs(validClassPath, listOfJARs)
 
         val expectedListOfPaths = List[String](
             "/Users/Testuser/.m2/repository/org/scalatest/scalatest_2.11/2.1.7/scalatest_2.11-2.1.7.jar",
@@ -74,7 +74,7 @@ class ClasspathFileTest extends FlatSpec with Matchers with BeforeAndAfterAll {
             "/Users/Testuser/.m2/repository/org/scala-lang/modules/scala-xml_2.11/1.0.1/scala-xml_2.11-1.0.1.jar"
         )
 
-        listOfPaths should equal(expectedListOfPaths)
+        listOfPaths.toList should equal(expectedListOfPaths)
     }
 
     it should "throw a specification error if the path to one of the given JARs couldn't be found" in {

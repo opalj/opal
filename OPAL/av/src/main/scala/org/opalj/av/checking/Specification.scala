@@ -568,9 +568,9 @@ object Specification {
      *
      * Classpath files should be used to prevent absolute paths in tests.
      */
-    def ClassPath(fileName: String): List[String] = {
+    def ClassPath(fileName: String): Iterable[String] = {
         processSource(scala.io.Source.fromFile(new java.io.File(fileName))) { s ⇒
-            s.getLines().map(_.split(java.io.File.pathSeparatorChar)).flatten.toList
+            s.getLines().map(_.split(java.io.File.pathSeparatorChar)).flatten.toSet
         }
     }
 
@@ -578,19 +578,15 @@ object Specification {
      * Returns the path to the given JAR from the given list of paths.
      */
     def PathToJAR(paths: Iterable[String], jarName: String): String = {
-        paths.foreach { p ⇒
-            if (p.endsWith(jarName)) return p
-        }
+        paths.foreach { p ⇒ if (p.endsWith(jarName)) return p }
         throw new SpecificationError("cannot find a path to the specified JAR: "+jarName+".")
     }
 
     /**
      * Returns a list of paths to the given JARs from the given list of paths.
      */
-    def PathToJARs(paths: Iterable[String], jarNames: Iterable[String]): List[String] = {
-        val jarPaths = new ListBuffer[String]()
-        jarNames.foreach { j ⇒ jarPaths += PathToJAR(paths, j) }
-        jarPaths.toList
+    def PathToJARs(paths: Iterable[String], jarNames: Iterable[String]): Iterable[String] = {
+        jarNames.foldLeft(Set.empty[String])((c, n) ⇒ c + PathToJAR(paths, n))
     }
 }
 
