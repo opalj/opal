@@ -202,8 +202,10 @@ object InterpretMethodsAnalysis {
         }
 
         if (collectedExceptions.nonEmpty) {
-            val body =
-                for ((exResource, exInstances) ← collectedExceptions.groupBy(e ⇒ e._1)) yield {
+            val header = <p>Generated { new java.util.Date() }</p>
+
+            val body = Seq(header) ++
+                (for ((exResource, exInstances) ← collectedExceptions.groupBy(e ⇒ e._1)) yield {
                     val exDetails =
                         exInstances.map { ex ⇒
                             val (_, classFile, method, throwable) = ex
@@ -220,12 +222,12 @@ object InterpretMethodsAnalysis {
                         <p>Number of thrown exceptions: { exInstances.size }</p>
                         { exDetails }
                     </section>
-                }
+                })
 
             val node =
                 XHTML.createXHTML(
                     Some("Exceptions Thrown During Interpretation"),
-                    scala.xml.NodeSeq.fromSeq(body.toSeq))
+                    scala.xml.NodeSeq.fromSeq(body))
             val file =
                 org.opalj.io.writeAndOpen(
                     node,
