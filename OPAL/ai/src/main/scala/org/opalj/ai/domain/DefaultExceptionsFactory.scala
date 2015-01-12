@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -33,33 +33,36 @@ package domain
 import org.opalj.br.ObjectType
 
 /**
- * Default implementation of the [[VMLevelExceptionsFactory]] trait that relies
+ * Default implementation of the [[ExceptionsFactory]] trait that relies
  * on the [[ReferenceValuesFactory]].
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait DefaultVMLevelExceptionsFactory extends VMLevelExceptionsFactory {
+trait DefaultExceptionsFactory extends ExceptionsFactory {
     this: ValuesDomain with ReferenceValuesFactory ⇒
 
-    final override def Throwable(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.Throwable)
+    final override def Throwable(origin: ValueOrigin): ExceptionValue =
+        InitializedObjectValue(origin, ObjectType.Throwable)
 
-    final override def ClassCastException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.ClassCastException)
+    final override def ClassCastException(origin: ValueOrigin): ExceptionValue =
+        InitializedObjectValue(origin, ObjectType.ClassCastException)
 
-    final override def NullPointerException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.NullPointerException)
+    final override def ClassNotFoundException(origin: ValueOrigin): ExceptionValue =
+        InitializedObjectValue(origin, ObjectType.ClassNotFoundException)
 
-    final override def NegativeArraySizeException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.NegativeArraySizeException)
+    final override def NullPointerException(origin: ValueOrigin): ExceptionValue =
+        InitializedObjectValue(origin, ObjectType.NullPointerException)
 
-    final override def ArrayIndexOutOfBoundsException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.ArrayIndexOutOfBoundsException)
+    final override def NegativeArraySizeException(origin: ValueOrigin): ExceptionValue =
+        InitializedObjectValue(origin, ObjectType.NegativeArraySizeException)
 
-    final override def ArrayStoreException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.ArrayStoreException)
+    final override def ArrayIndexOutOfBoundsException(origin: ValueOrigin): ExceptionValue =
+        InitializedObjectValue(origin, ObjectType.ArrayIndexOutOfBoundsException)
 
-    final override def ArithmeticException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.ArithmeticException)
+    final override def ArrayStoreException(origin: ValueOrigin): ExceptionValue =
+        InitializedObjectValue(origin, ObjectType.ArrayStoreException)
+
+    final override def ArithmeticException(origin: ValueOrigin): ExceptionValue =
+        InitializedObjectValue(origin, ObjectType.ArithmeticException)
 
 }

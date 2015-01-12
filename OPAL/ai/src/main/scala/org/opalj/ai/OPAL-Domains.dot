@@ -19,7 +19,7 @@ digraph OPALDomains {
 		LongValuesDomain -> LongValuesFactory -> ValuesDomain;
 		FloatValuesDomain -> FloatValuesFactory -> ValuesDomain;
 		DoubleValuesDomain -> DoubleValuesFactory -> ValuesDomain;
-		ReferenceValuesDomain -> ReferenceValuesFactory -> VMLevelExceptionsFactory -> ValuesDomain;
+		ReferenceValuesDomain -> ReferenceValuesFactory -> ExceptionsFactory -> ValuesDomain;
 
 		PrimitiveValuesFactory -> IntegerValuesFactory [style=dotted,arrowhead=onormal];
 		PrimitiveValuesFactory -> LongValuesFactory [style=dotted,arrowhead=onormal];
@@ -69,7 +69,7 @@ digraph OPALDomains {
 		}
 		{rank=same;
 			ReferenceValuesFactory;
-			VMLevelExceptionsFactory;
+			ExceptionsFactory;
 			PrimitiveValuesFactory;
 			IntegerValuesFactory;
 			LongValuesFactory;
@@ -95,6 +95,9 @@ digraph OPALDomains {
 		Origin -> ValuesDomain [style=dashed,arrowhead=vee];
 		ProjectBasedClassHierarchy -> ClassHierarchy;
 		ProjectBasedClassHierarchy -> TheProject [style=dashed,arrowhead=vee];
+		TheAI;
+		TheCodeStructure;
+		TheMemoryLayout;
 		TheProject;
 		TheClassFile;
 		TheMethod -> TheCode ;
@@ -105,6 +108,9 @@ digraph OPALDomains {
 		TheClassFile;
 		Origin;
 		ClassHierarchy;
+		TheAI;
+		TheCodeStructure;
+		TheMemoryLayout;
 		TheProject;
 		ConcreteIntegerValues;
 		ConcreteLongValues;

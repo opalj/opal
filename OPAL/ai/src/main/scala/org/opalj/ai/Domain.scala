@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -41,7 +41,7 @@ import org.opalj.br.ConstantString
  * of the abstract interpretation framework towards the needs of a specific analysis.
  *
  * A domain encodes the semantics of computations (e.g., the addition of two values)
- * with respect to a domain's values (e.g., the representation of integer values).
+ * with respect to the domain's values (e.g., the representation of integer values).
  * Customizing a domain is the fundamental mechanism of adapting the AI framework
  * to one's needs.
  *
@@ -54,14 +54,15 @@ import org.opalj.br.ConstantString
  * domain to perform the actual computations of an instruction's result. E.g., to
  * calculate the result of adding two integer values, or to perform the comparison
  * of two object instances, or to get the result of converting a `long` value to an
- * `int` value the framework always consults the domain.
+ * `int` value, the framework always consults the domain.
  *
  * Handling of instructions that manipulate the stack (e.g. `dup`), that move values
  * between the stack and the locals (e.g., `Xload_Y`) or that determine the control
  * flow is, however, completely embedded into OPAL-AI.
  *
- * OPAL uses the following three methods to inform a domain about the progress of the
+ * OPAL uses the following methods to inform a domain about the progress of the
  * abstract interpretation:
+ *  - [[org.opalj.ai.CoreDomainFunctionality.afterEvaluation]]
  *  - [[org.opalj.ai.CoreDomainFunctionality.flow]]
  *  - [[org.opalj.ai.CoreDomainFunctionality.evaluationCompleted]]
  *  - [[org.opalj.ai.CoreDomainFunctionality.abstractInterpretationEnded]]
@@ -106,7 +107,8 @@ trait Domain
         with MonitorInstructionsDomain
         with ReturnInstructionsDomain
         with PrimitiveValuesConversionsDomain
-        with TypedValuesFactory {
+        with TypedValuesFactory
+        with Configuration {
 
     // -----------------------------------------------------------------------------------
     //
