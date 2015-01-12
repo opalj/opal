@@ -160,12 +160,7 @@ class Project[Source] private (
      *
      * @note This method's result is not cached.
      */
-    def packages: Set[String] = {
-        var packages = Set.empty[String]
-        projectClassFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
-        libraryClassFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
-        packages
-    }
+    def packages: Set[String] = projectPackages ++ libraryPackages
 
     /**
      * Returns the list of all project packages that contain at least one class.
@@ -177,9 +172,7 @@ class Project[Source] private (
      * @note This method's result is not cached.
      */
     def projectPackages: Set[String] = {
-        var packages = Set.empty[String]
-        projectClassFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
-        packages
+        projectClassFiles.foldLeft(Set.empty[String])(_ + _.thisType.packageName)
     }
 
     /**
@@ -192,9 +185,7 @@ class Project[Source] private (
      * @note This method's result is not cached.
      */
     def libraryPackages: Set[String] = {
-        var packages = Set.empty[String]
-        libraryClassFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
-        packages
+        libraryClassFiles.foldLeft(Set.empty[String])(_ + _.thisType.packageName)
     }
 
     def methodsWithBody: Iterable[Method] = methods
