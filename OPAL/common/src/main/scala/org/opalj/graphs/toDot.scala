@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -36,7 +36,8 @@ package graphs
  */
 object toDot {
 
-    def apply(nodes: Set[Node], dir: String = "forward"): String = generateDot(nodes, dir)
+    def apply(nodes: Set[Node], dir: String = "forward", ranksep: String = "1.0"): String =
+        generateDot(nodes, dir, ranksep)
 
     /**
      * Generates a string that describes a (multi-)graph using the ".dot" file format
@@ -47,11 +48,12 @@ object toDot {
      */
     def generateDot(
         nodes: Set[Node],
-        dir: String = "forward"): String = {
+        dir: String = "forward",
+        ranksep: String = "1.0"): String = {
         var nodesToProcess = nodes
         var processedNodes = Set.empty[Node]
 
-        var s = "digraph G {\n\tdir="+dir+"\n"
+        var s = s"digraph G {\n\tdir=$dir;\n\tranksep=$ranksep;\n"
 
         while (nodesToProcess.nonEmpty) {
             val nextNode = nodesToProcess.head
@@ -63,7 +65,7 @@ object toDot {
                 val label = nextNode.toHRR.get.replace("\"", "\\\"")
                 s +=
                     "\t"+nextNode.uniqueId+
-                    "[label=\""+label+"\""+
+                    "[label=\""+label+"\",shape=box"+
                     nextNode.backgroundColor.map {
                         color ⇒ ",style=filled,fillcolor=\""+color+"\""
                     }.getOrElse("")+
