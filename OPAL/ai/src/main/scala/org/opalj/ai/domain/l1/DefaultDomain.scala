@@ -81,3 +81,11 @@ class DefaultDomain[Source](
             project,
             classFile,
             method)
+
+class DefaultDomainWithCFG[Source](
+    project: Project[Source],
+    classFile: ClassFile,
+    method: Method)
+        extends DefaultDomain[Source](project, classFile, method)
+        with RecordCFG
+
