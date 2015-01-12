@@ -118,6 +118,39 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
 
     //
     // W.r.t Reference Values
+
+    /**
+     * Called by the framework when the top-most operand stack value has to be null, but
+     * a previous `isNull` check returned [[Unknown]].
+     * E.g., after a [[org.opalj.br.instructions.CHECKCAST]] that fails unless the
+     * value is "null".
+     *
+     * '''This method can be ignored'''; it is e.g., used by
+     * instructions.
+     *
+     * A domain that is able to identify aliases can use this information to propagate
+     * the information to the other aliases.
+     */
+    def refSetIsNull(pc: PC, operands: Operands, locals: Locals): (Operands, Locals) =
+        (operands, locals)
+
+    /**
+     * Called by the abstract interpreter when '''the type bound of the top most stack
+     * value needs to be refined'''. This method is only called by the abstract
+     * interpreter iff an immediately preceding subtype query (typeOf(value) <: bound)
+     * returned `Unknown`. '''This method must not be ignored – w.r.t. refining the top-most
+     * stack value'''; it is e.g., used by [[org.opalj.br.instructions.CHECKCAST]]
+     * instructions.
+     *
+     * A domain that is able to identify aliases can use this information to propagate
+     * the information to the other aliases.
+     */
+    /*abstract*/ def refSetUpperBound(
+        pc: PC,
+        bound: ReferenceType,
+        operands: Operands,
+        locals: Locals): (Operands, Locals)
+
     /**
      * Called by the framework when the value is known to be `null`/has to be `null`.
      * E.g., after a comparison with `null` (IFNULL/IFNONNULL) OPAL-AI knows that the
@@ -167,23 +200,6 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
         operands: Operands,
         locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def RefAreNotEqual = refEstablishAreNotEqual _
-
-    /**
-     * Called by the abstract interpreter when '''the type bound of the top most stack
-     * value needs to be refined'''. This method is only called by the abstract
-     * interpreter iff an immediately preceding subtype query (typeOf(value) <: bound)
-     * returned `Unknown`. '''This method must not be ignored – w.r.t. refining the top-most
-     * stack value'''; it is e.g., used by [[org.opalj.br.instructions.CHECKCAST]]
-     * instructions.
-     *
-     * A domain that is able to identify aliases can use this information to propagate
-     * the information to the other aliases.
-     */
-    /*abstract*/ def refEstablishUpperBound(
-        pc: PC,
-        bound: ReferenceType,
-        operands: Operands,
-        locals: Locals): (Operands, Locals)
 
     // -----------------------------------------------------------------------------------
     //

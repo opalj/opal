@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -74,6 +74,8 @@ import org.opalj.ai.AIResult
 import org.opalj.ai.domain.ConcreteIntegerValues
 import org.opalj.ai.domain.ConcreteLongValues
 import org.opalj.ai.domain.l1.ReferenceValues
+import org.opalj.br.instructions.IFNONNULL
+import org.opalj.br.instructions.IFNULL
 
 /**
  * @author Michael Eichberg
@@ -98,7 +100,7 @@ object UselessComputationsAnalysis {
 
             collectPCWithOperands(domain)(body, operandsArray) {
 
-                // HANDLING INT VALUES 
+                // HANDLING INT VALUES
                 //
                 case (
                     pc,
@@ -138,7 +140,7 @@ object UselessComputationsAnalysis {
                             defaultRelevance
                     (pc, s"constant computation (inc): ${v} + $increment", relevance)
 
-                // HANDLING LONG VALUES 
+                // HANDLING LONG VALUES
                 //
                 case (
                     pc,
@@ -176,6 +178,17 @@ object UselessComputationsAnalysis {
                     (
                         pc,
                         s"useless type test: ${rv.upperTypeBound.map(_.toJava).mkString("", " with ", "")} instanceof ${referenceType.toJava}",
+                        defaultRelevance
+                    )
+
+                case (
+                    pc,
+                    (IFNONNULL(_) | IFNULL(_)),
+                    Seq(rv: domain.ReferenceValue, _*)
+                    ) if rv.isNull.isYesOrNo ⇒
+                    (
+                        pc,
+                        s"useless null check: if($rv != null)",
                         defaultRelevance
                     )
 

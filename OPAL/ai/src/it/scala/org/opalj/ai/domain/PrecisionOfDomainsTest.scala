@@ -93,7 +93,9 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with DefaultHandlingOfMethodResults
                 with IgnoreSynchronization
                 with l1.DefaultReferenceValuesBinding
+                with l1.NullPropertyRefinement
                 with l1.DefaultIntegerRangeValues
+                with l1.MaxArrayLengthRefinement
                 with l1.DefaultLongValues
                 with l1.LongValuesShiftOperators
                 with l0.DefaultTypeLevelFloatValues

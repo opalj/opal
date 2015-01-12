@@ -39,7 +39,7 @@ import scala.collection.immutable.SortedSet
  * @author Michael Eichberg
  */
 trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetValues {
-    domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
+    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     class AnIntegerValue extends super.AnIntegerValue {
 

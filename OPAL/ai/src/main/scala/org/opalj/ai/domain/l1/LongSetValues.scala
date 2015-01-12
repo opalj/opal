@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -48,7 +48,7 @@ import org.opalj.br._
  * @author David Becker
  */
 trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
-    domain: IntegerRangeValuesFactory with CorrelationalDomain with Configuration with VMLevelExceptionsFactory ⇒
+    domain: IntegerRangeValuesFactory with CorrelationalDomain with Configuration with ExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -283,25 +283,26 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         pc: PC,
         exception: Boolean,
         results: SortedSet[Long]): LongValueOrArithmeticException = {
-        if (results.size > 0) {
+
+        val hasResults = results.nonEmpty
+        assert(exception || hasResults)
+
+        if (hasResults) {
             if (results.size <= maxCardinalityOfLongSets) {
                 if (exception)
-                    ComputedValueOrException(LongSet(results), ArithmeticException(pc))
+                    ComputedValueOrException(LongSet(results), VMArithmeticException(pc))
                 else
                     ComputedValue(LongSet(results))
             } else {
                 if (exception)
                     ComputedValueOrException(
                         LongValue(origin = pc),
-                        ArithmeticException(pc))
+                        VMArithmeticException(pc))
                 else
                     ComputedValue(LongValue(origin = pc))
             }
         } else {
-            if (exception)
-                ThrowsException(ArithmeticException(pc))
-            else
-                throw new DomainException("no result and no exception")
+            ThrowsException(VMArithmeticException(pc))
         }
     }
 
@@ -324,11 +325,11 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
             case (_, LongSet(rightValues)) ⇒
                 if (rightValues contains (0)) {
                     if (rightValues.size == 1)
-                        ThrowsException(ArithmeticException(pc))
+                        ThrowsException(VMArithmeticException(pc))
                     else
                         ComputedValueOrException(
                             LongValue(origin = pc),
-                            ArithmeticException(pc))
+                            VMArithmeticException(pc))
                 } else
                     ComputedValue(LongValue(origin = pc))
 
@@ -336,7 +337,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(
                         LongValue(origin = pc),
-                        ArithmeticException(pc))
+                        VMArithmeticException(pc))
                 else
                     ComputedValue(LongValue(origin = pc))
         }
@@ -362,11 +363,11 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
             case (_, LongSet(rightValues)) ⇒
                 if (rightValues contains (0)) {
                     if (rightValues.size == 1)
-                        ThrowsException(ArithmeticException(pc))
+                        ThrowsException(VMArithmeticException(pc))
                     else
                         ComputedValueOrException(
                             LongValue(origin = pc),
-                            ArithmeticException(pc))
+                            VMArithmeticException(pc))
                 } else
                     ComputedValue(LongValue(origin = pc))
 
@@ -374,7 +375,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(
                         LongValue(origin = pc),
-                        ArithmeticException(pc))
+                        VMArithmeticException(pc))
                 else
                     ComputedValue(LongValue(origin = pc))
         }
