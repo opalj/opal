@@ -28,51 +28,34 @@
  */
 package org.opalj
 package br
-
-import java.net.URL
-
-import instructions._
-import analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+package analyses
 
 /**
- * Counts the number of static and virtual method calls.
+ * The ''key'' object to get global field access information.
+ *
+ * @example
+ *      To get the index use the [[Project]]'s `get` method and pass in
+ *      `this` object.
  *
  * @author Michael Eichberg
  */
-object VirtualAndStaticMethodCalls extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
+object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInformation] {
 
-    val analysis = this
+    /**
+     * The [[FieldAccessInformationAnalysis]] has no special prerequisites.
+     *
+     * @return `Nil`.
+     */
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
-    override def description: String =
-        "Counts the number of static and virtual method calls."
+    /**
+     * Computes the field access information.
+     */
+    override protected def compute(project: SomeProject): FieldAccessInformation = {
 
-    def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String] = List.empty,
-        isInterrupted: () ⇒ Boolean) = {
-
-        import util.PerformanceEvaluation.{ time, ns2sec }
-        var staticCalls = 0
-        var virtualCalls = 0
-        var executionTimeInSecs = 0d
-        time {
-            for {
-                classFile ← project.allClassFiles
-                MethodWithBody(code) ← classFile.methods
-                invokeInstruction @ MethodInvocationInstruction(_, _, _) ← code.instructions
-            } {
-                if (invokeInstruction.isVirtualMethodCall)
-                    virtualCalls += 1
-                else
-                    staticCalls += 1
-            }
-        } { executionTime ⇒ executionTimeInSecs = ns2sec(executionTime) }
-
-        BasicReport(
-            "Total time: "+executionTimeInSecs+"\n"+
-                "Number of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
-                "Number of invokeinterface/invokevirtual instructions: "+virtualCalls
+        FieldAccessInformationAnalysis.doAnalyze(
+            project, () ⇒ Thread.currentThread().isInterrupted()
         )
-
     }
 }
+
