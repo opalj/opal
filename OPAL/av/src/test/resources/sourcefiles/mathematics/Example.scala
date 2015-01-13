@@ -26,30 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
+package mathematics
 
 /**
- * Defines factory methods for those exceptions that are (also) created by the JVM
- * when the execution of a specific bytecode instruction fails
- * (e.g., `idiv`, `checkcast`,...).
- *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Samuel Beracasa
  */
-trait VMLevelExceptionsFactory extends ValuesDomain { domain ⇒
-
-    def Throwable(origin: ValueOrigin): ExceptionValue
-
-    def ClassCastException(origin: ValueOrigin): ExceptionValue
-
-    def NullPointerException(origin: ValueOrigin): ExceptionValue
-
-    def NegativeArraySizeException(origin: ValueOrigin): ExceptionValue
-
-    def ArrayIndexOutOfBoundsException(origin: ValueOrigin): ExceptionValue
-
-    def ArrayStoreException(origin: ValueOrigin): ExceptionValue
-
-    def ArithmeticException(origin: ValueOrigin): ExceptionValue
-
+class Example {
+    val math = new Mathematics()
+    math.operation1
 }

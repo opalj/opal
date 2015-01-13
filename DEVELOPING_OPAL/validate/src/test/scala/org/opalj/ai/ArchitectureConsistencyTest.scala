@@ -53,7 +53,7 @@ class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndA
     it should "be consistent with the specified architecture" in {
         val expected =
             new Specification(
-                Specification.SourceDirectory("OPAL/ai/target/scala-2.11/classes"),
+                Specification.ProjectDirectory("OPAL/ai/target/scala-2.11/classes"),
                 useAnsiColors = true
             ) {
 

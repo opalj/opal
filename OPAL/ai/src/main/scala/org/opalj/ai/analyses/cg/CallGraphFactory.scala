@@ -35,6 +35,7 @@ import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
 
+import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
 /**
@@ -56,22 +57,21 @@ object CallGraphFactory {
      *  - every private method related to Serialization, if the respective
      *    declaring class is a subtype of java.io.Serializable.
      */
-    def defaultEntryPointsForLibraries(project: SomeProject): List[Method] = {
+    def defaultEntryPointsForLibraries(project: SomeProject): Iterable[Method] = {
         val classHierarchy = project.classHierarchy
-        for {
-            classFile ← project.projectClassFiles
-            method ← classFile.methods
-            if method.body.isDefined
-            if !method.isPrivate ||
+        val methods = new java.util.concurrent.ConcurrentLinkedQueue[Method]
+        project.parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { m ⇒
+            val (_, classFile, method) = m
+            if (!method.isPrivate ||
                 ( // the method is private, but...
                     Method.isObjectSerializationRelated(method) &&
                     classHierarchy.isSubtypeOf(
                         classFile.thisType,
-                        ObjectType.Serializable).isYesOrUnknown
-                )
-        } yield {
-            method
+                        ObjectType.Serializable).isYesOrUnknown))
+                methods.add(method)
         }
+        import scala.collection.JavaConverters._
+        methods.asScala
     }
 
     /**
@@ -83,18 +83,10 @@ object CallGraphFactory {
      */
     def create(
         theProject: SomeProject,
-        entryPoints: List[Method],
+        entryPoints: Iterable[Method],
         configuration: CallGraphAlgorithmConfiguration): ComputedCallGraph = {
-
         if (entryPoints.isEmpty)
-            throw new IllegalArgumentException("the call graph has no entry points")
-
-        if (theProject.classHierarchy.rootTypes.tail.nonEmpty)
-            // TODO Use a Log...
-            println(
-                "[warn] missing supertype information for: "+
-                    theProject.classHierarchy.rootTypes.filterNot(_ eq ObjectType.Object).map(_.toJava).mkString(", ")
-            )
+            return ComputedCallGraph.empty(theProject)
 
         import scala.collection.{ Map, Set }
         type MethodAnalysisResult = (( /*Caller*/ Method, Map[PC, /*Callees*/ Set[Method]]), List[UnresolvedMethodCall], Option[CallGraphConstructionException])
@@ -135,12 +127,14 @@ object CallGraphFactory {
             }
         val completionService =
             new ExecutorCompletionService[MethodAnalysisResult](
-                org.opalj.concurrent.ThreadPool
+                ThreadPoolN(Math.max(NumberOfThreadsForCPUBoundTasks - 1, 1))
             )
 
         @inline def submitMethod(method: Method): Unit = {
             if (methodSubmitted.contains(method))
                 return ;
+
+            methodSubmitted += method
 
             var minimumSize = 4
             // the minimum length of a method that may call another method is 4
@@ -161,7 +155,6 @@ object CallGraphFactory {
             if (instructions.size < minimumSize)
                 return ;
 
-            methodSubmitted += method
             futuresCount += 1
             completionService.submit(doAnalyzeMethod(method))
         }
