@@ -47,10 +47,7 @@ import reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ProjectTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class ProjectTest extends FlatSpec with Matchers /*with ParallelTestExecution*/ {
 
     import ProjectTest._
     //
@@ -110,7 +107,7 @@ class ProjectTest
         overallProject.isLibraryType(ObjectType("code/Quicksort")) should be(false)
     }
 
-    behavior of "A Project's lookupMethodDeclaration method"
+    behavior of "A Project's resolveMethodReference method"
 
     import project.classHierarchy.resolveMethodReference
 
@@ -335,6 +332,6 @@ private object ProjectTest {
     val AbstractB = ObjectType("methods/b/AbstractB")
     val DeprecatedByAnnotation = ObjectType("attributes/DeprecatedByAnnotation")
 
-    val opal = locateTestResources("classfiles/OPAL 0.3.jar", "bi")
+    val opal = locateTestResources("classfiles/OPAL-0.3.jar", "bi")
     val opalProject = Project(ClassFiles(opal))
 }
