@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -86,11 +86,9 @@ trait PerformInvocations extends MethodCallsDomain {
             method: Method,
             operands: callingDomain.Operands): MethodCallResult = {
 
+            val noOperands = List.empty[domain.DomainValue]
             val parameters = mapOperandsToParameters(operands, method, domain)
-
-            val aiResult =
-                ai.perform(method.body.get, domain)(
-                    List.empty[domain.DomainValue], parameters)
+            val aiResult = ai.perform(method.body.get, domain)(noOperands, parameters)
 
             transformResult(pc, method, operands, parameters, aiResult)
         }
@@ -109,22 +107,17 @@ trait PerformInvocations extends MethodCallsDomain {
             result: AIResult { val domain: InvokeExecutionHandler.this.domain.type }): MethodCallResult = {
 
             val domain = result.domain
-            val thrownExceptions =
-                domain.thrownExceptions(callingDomain, callerPC)
+            val thrownExceptions = domain.thrownExceptions(callingDomain, callerPC)
             if (!domain.returnedNormally) {
                 // The method must have returned with an exception or not at all...
                 if (thrownExceptions.nonEmpty)
-                    ThrowsException(
-                        thrownExceptions
-                    )
+                    ThrowsException(thrownExceptions)
                 else
                     ComputationFailed
             } else {
                 if (calledMethod.descriptor.returnType eq VoidType) {
                     if (thrownExceptions.nonEmpty) {
-                        ComputationWithSideEffectOrException(
-                            thrownExceptions
-                        )
+                        ComputationWithSideEffectOrException(thrownExceptions)
                     } else {
                         ComputationWithSideEffectOnly
                     }
@@ -133,13 +126,9 @@ trait PerformInvocations extends MethodCallsDomain {
                         domain.returnedValueRemapped(
                             callingDomain, callerPC)(originalOperands, passedParameters)
                     if (thrownExceptions.nonEmpty) {
-                        ComputedValueOrException(
-                            returnedValue.get,
-                            thrownExceptions)
+                        ComputedValueOrException(returnedValue.get, thrownExceptions)
                     } else {
-                        ComputedValue(
-                            returnedValue.get
-                        )
+                        ComputedValue(returnedValue.get)
                     }
                 }
             }
@@ -272,6 +261,7 @@ trait PerformInvocations extends MethodCallsDomain {
         name: String,
         methodDescriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
+
         super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
     }
 

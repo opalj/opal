@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,12 +22,14 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 package ai
+
+import org.opalj.br.instructions.Instruction
 
 /**
  * Defines the core functionality that is shared across all [[Domain]]s that implement
@@ -70,6 +72,33 @@ trait CoreDomainFunctionality extends ValuesDomain {
             locals.transform(l ⇒ if (l eq oldValue) newValue else l)
         )
     }
+
+    /**
+     * This methods is called by OPAL after the evaluation of the instruction with
+     * the given `pc` with respect to `targetPC`, but before the values are propagated
+     * (joined) and before it is checked whether the interpretation needs to be continued.
+     * I.e., if the operands (`newOperands`) or locals (`newLocals`) are further refined
+     * then the refined operands and locals are joined (if necessary).
+     *
+     * @note During the evaluation of the instruction it is possible that this method
+     *      is called multiple times with different `targetPC`s. The latter is not only
+     *      true for control flow instructions, but also for standard instructions
+     *      that may raise an exception.
+     *
+     * This method can and is intended to be overridden to further refine the operand
+     * stack/the locals. However, this method should always be overridden using
+     * `abstract override` and the implementation should always forward the (possibly
+     * refined) operands and locals to the `super` method (`stackable traits`).
+     */
+    def afterEvaluation(
+        pc: PC,
+        instruction: Instruction,
+        oldOperands: Operands,
+        oldLocals: Locals,
+        targetPC: PC,
+        isExceptionalControlFlow: Boolean,
+        newOperands: Operands,
+        newLocals: Locals): (Operands, Locals) = (newOperands, newLocals)
 
     /**
      * Joins the given operand stacks and local variables.
@@ -150,7 +179,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
             }
 
         var localsUpdated: UpdateType = NoUpdateType
-        var localsUpdateIsRelevant: Boolean = false // if we just have "illegal value updates" 
+        var localsUpdateIsRelevant: Boolean = false // if we just have "illegal value updates"
         val newLocals: Locals =
             if (thisLocals eq otherLocals) {
                 thisLocals

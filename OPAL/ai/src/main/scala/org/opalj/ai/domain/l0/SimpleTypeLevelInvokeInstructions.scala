@@ -59,11 +59,11 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
         operands: Operands): MethodCallResult =
         refIsNull(pc, operands.last) match {
             case Yes ⇒
-                justThrows(NullPointerException(pc))
+                justThrows(VMNullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnMethodCall ⇒
                 val returnType = methodDescriptor.returnType
                 if (returnType.isVoidType)
-                    ComputationWithSideEffectOrException(Set(NullPointerException(pc)))
+                    ComputationWithSideEffectOrException(Set(VMNullPointerException(pc)))
                 else
                     ComputedValueOrException(
                         TypedValue(pc, returnType),
