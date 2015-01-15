@@ -151,10 +151,10 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
+
+        val PRE_ANALYSES_COUNT = 2 // the FieldValues analysis + the MethodReturnValues analysis
         val progressManagement =
-            initProgressManagement(
-                1 /*the FieldValues analysis*/ + 1 /*the MethodReturnValues analysis*/ +
-                    classFilesCount)
+            initProgressManagement(PRE_ANALYSES_COUNT + classFilesCount)
 
         //
         //
@@ -169,7 +169,6 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         theProject.get(MethodReturnValuesKey)
         progressManagement.end(2)
 
-        val PRE_ANALYSES_COUNT = 2
         //
         //
         // MAIN ANALYSIS
@@ -315,7 +314,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
         var analysisTime: Long = 0l
         val identifiedIssues = time {
-            val stepIds = new java.util.concurrent.atomic.AtomicInteger(PRE_ANALYSES_COUNT)
+            val stepIds = new java.util.concurrent.atomic.AtomicInteger(PRE_ANALYSES_COUNT + 1)
 
             theProject.parForeachProjectClassFile(() ⇒ progressManagement.isInterrupted()) { classFile ⇒
                 val stepId = stepIds.incrementAndGet()
