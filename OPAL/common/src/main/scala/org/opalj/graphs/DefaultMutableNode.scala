@@ -31,58 +31,34 @@ package graphs
 
 import scala.collection.Map
 
-/**
- * Represents a node of some graph.
- *
- * Two nodes are considered equal if they have the same unique id.
- *
- * @see [[org.opalj.br.analyses.ClassHierarchy]]'s `toGraph` method for
- *      an example usage.
- *
- * @author Michael Eichberg
- */
-trait BaseNode {
+class DefaultMutableNode[I](
+    theIdentifier: I,
+    identifierToString: I ⇒ String,
+    theVisualProperties: Map[String, String],
+    theChildren: List[DefaultMutableNode[I]])
+        extends MutableNodeLike[I, DefaultMutableNode[I]](theIdentifier, identifierToString, theVisualProperties, theChildren)
+        with MutableNode[I, DefaultMutableNode[I]] {
 
-    /**
-     * Returns a humane readable representation (HRR) of this node.
-     */
-    def toHRR: Option[String]
+    def this(identifier: I) {
+        this(identifier, id ⇒ id.toString, Map("shape" -> "box"), List.empty)
+    }
 
-    def visualProperties: Map[String, String] = Map.empty[String, String]
+    def this(
+        identifier: I,
+        identifierToString: I ⇒ String) {
+        this(identifier, identifierToString, Map("shape" -> "box"), List.empty)
+    }
 
-    /**
-     * An identifier that uniquely identifies this node in the graph to which this
-     * node belongs. By default two nodes are considered equal if they have the same
-     * unique id.
-     */
-    def uniqueId: Int
-
-    /**
-     * Returns `true` if this node has successor nodes.
-     */
-    def hasSuccessors: Boolean
-
-    /**
-     * Applies the given function for each successor node.
-     */
-    def foreachSuccessor(f: BaseNode ⇒ Unit): Unit
-
-    /**
-     * The hash code of this node. By default the hash code is the unique id.
-     */
-    override def hashCode: Int = uniqueId
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case otherNode: BaseNode ⇒ otherNode.uniqueId == this.uniqueId
-            case _                   ⇒ false
-        }
+    def this(
+        identifier: I,
+        identifierToString: I ⇒ String = (_: Any).toString,
+        fillcolor: Option[String]) {
+        this(
+            identifier,
+            identifierToString,
+            fillcolor.map(c ⇒ Map("shape" -> "box", "style" -> "filled", "fillcolor" -> c)).
+                getOrElse(Map.empty[String, String]),
+            List.empty)
     }
 }
 
-/**
- *
- */
-trait Node[N <: BaseNode] extends BaseNode
-
-trait BasicNode extends Node[BasicNode]

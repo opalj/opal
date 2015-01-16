@@ -45,14 +45,12 @@ import org.opalj.ai.analyses.cg.BasicVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.DefaultVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.ExtVTACallGraphAlgorithmConfiguration
-import org.opalj.graphs.Node
-import org.opalj.graphs.SimpleNode
+import org.opalj.graphs.DefaultMutableNode
 import org.opalj.util.PerformanceEvaluation.asMB
 import org.opalj.util.PerformanceEvaluation.memory
 import org.opalj.util.PerformanceEvaluation.ns2sec
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.io.writeAndOpen
-import org.opalj.graphs.BasicNode
 
 /**
  * Visualizes call graphs using Graphviz.
@@ -212,16 +210,15 @@ object CallGraphVisualization {
         //
         // Let's create the visualization
         //
-        import org.opalj.graphs.{ MutableNode, SimpleNode }
-        val nodes: Set[MutableNode[Method]] = {
+        val nodes: Set[DefaultMutableNode[Method]] = {
 
-            val nodesForMethods = scala.collection.mutable.AnyRefMap.empty[Method, SimpleNode[Method]]
+            val nodesForMethods = scala.collection.mutable.AnyRefMap.empty[Method, DefaultMutableNode[Method]]
 
-            def createNode(caller: Method): SimpleNode[Method] = {
+            def createNode(caller: Method): DefaultMutableNode[Method] = {
                 if (nodesForMethods.contains(caller))
                     return nodesForMethods(caller)
 
-                val node = new SimpleNode(
+                val node = new DefaultMutableNode(
                     caller,
                     (m: Method) ⇒ project.classFile(m).thisType.toJava+" { "+m.toJava+" } ",
                     {
@@ -251,7 +248,7 @@ object CallGraphVisualization {
                 if (project.classFile(method).thisType.fqn.startsWith(fqnFilter))
                     createNode(method)
             }
-            nodesForMethods.values.toSet[MutableNode[Method]] // it is a set already...
+            nodesForMethods.values.toSet[DefaultMutableNode[Method]] // it is a set already...
         }
         // The unresolved methods________________________________________________________:
         if (unresolvedMethodCalls.size > 0) {

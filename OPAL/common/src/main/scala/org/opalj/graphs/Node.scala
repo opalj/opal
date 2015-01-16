@@ -32,38 +32,51 @@ package graphs
 import scala.collection.Map
 
 /**
- * Represents a mutable node of a directed graph. This class basically serves as a small
- * adapter class for some arbitrary node.
+ * Represents a node of some graph.
  *
- * @see The demo project for example usages.
+ * Two nodes are considered equal if they have the same unique id.
  *
- * @tparam I The type of the object that is associated with this node/the type of
- *      the object for which this node object is created.
- * @tparam N The type of the node of the child nodes that can be added or removed.
+ * @see [[org.opalj.br.analyses.ClassHierarchy]]'s `toGraph` method for
+ *      an example usage.
  *
  * @author Michael Eichberg
  */
-trait MutableNode[I, N <: Node] extends Node {
+trait Node {
 
-    def identifier: I
+    /**
+     * Returns a humane readable representation (HRR) of this node.
+     */
+    def toHRR: Option[String]
 
-    def updateIdentifier(newIdentifier: I): Unit
+    def visualProperties: Map[String, String] = Map.empty[String, String]
 
-    def identifierToString: I ⇒ String
+    /**
+     * An identifier that uniquely identifies this node in the graph to which this
+     * node belongs. By default two nodes are considered equal if they have the same
+     * unique id.
+     */
+    def uniqueId: Int
 
-    def mergeVisualProperties(other: Map[String, String]): Unit
+    /**
+     * Returns `true` if this node has successor nodes.
+     */
+    def hasSuccessors: Boolean
 
-    def children: List[N]
+    /**
+     * Applies the given function for each successor node.
+     */
+    def foreachSuccessor(f: Node ⇒ Unit): Unit
 
-    def addChild(node: N): Unit
+    /**
+     * The hash code of this node. By default the hash code is the unique id.
+     */
+    override def hashCode: Int = uniqueId
 
-    def hasOneChild: Boolean
-
-    def firstChild: N
-
-    def removeLastAddedChild(): Unit
-
-    def removeChild(node: N): Unit
-
+    override def equals(other: Any): Boolean = {
+        other match {
+            case otherNode: Node ⇒ otherNode.uniqueId == this.uniqueId
+            case _               ⇒ false
+        }
+    }
 }
 

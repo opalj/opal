@@ -52,12 +52,12 @@ import scala.collection.Map
  *      but a different identity.
  * @author Michael Eichberg
  */
-class SimpleNodeLike[I, N <: BaseNode](
+class MutableNodeLike[I, N <: Node](
     private[this] var theIdentifier: I,
     val identifierToString: I ⇒ String,
     private[this] var theVisualProperties: Map[String, String],
     private[this] var theChildren: List[N])
-        extends MutableNodeLike[I, N] {
+        extends MutableNode[I, N] {
 
     def identifier: I = this.synchronized(theIdentifier)
 
@@ -92,48 +92,15 @@ class SimpleNodeLike[I, N <: BaseNode](
         this.synchronized(theChildren = theChildren.tail)
     }
 
-    def removeChild(node: BaseNode): Unit = {
+    def removeChild(node: N): Unit = {
         this.synchronized(theChildren = theChildren.filterNot(_ == node))
     }
 
-    override def foreachSuccessor(f: BaseNode ⇒ Unit): Unit = {
+    override def foreachSuccessor(f: Node ⇒ Unit): Unit = {
         this.synchronized(children.foreach(f))
     }
 
     override def hasSuccessors: Boolean = this.synchronized(children.nonEmpty)
 
-}
-
-trait MutableNode[I] extends MutableNodeLike[I, MutableNode[I]]
-
-class SimpleNode[I](
-    theIdentifier: I,
-    identifierToString: I ⇒ String,
-    theVisualProperties: Map[String, String],
-    theChildren: List[MutableNode[I]])
-        extends SimpleNodeLike[I, MutableNode[I]](theIdentifier, identifierToString, theVisualProperties, theChildren)
-        with MutableNode[I] {
-
-    def this(identifier: I) {
-        this(identifier, id ⇒ id.toString, Map("shape" -> "box"), List.empty)
-    }
-
-    def this(
-        identifier: I,
-        identifierToString: I ⇒ String) {
-        this(identifier, identifierToString, Map("shape" -> "box"), List.empty)
-    }
-
-    def this(
-        identifier: I,
-        identifierToString: I ⇒ String = (_: Any).toString,
-        fillcolor: Option[String]) {
-        this(
-            identifier,
-            identifierToString,
-            fillcolor.map(c ⇒ Map("shape" -> "box", "style" -> "filled", "fillcolor" -> c)).
-                getOrElse(Map.empty[String, String]),
-            List.empty)
-    }
 }
 

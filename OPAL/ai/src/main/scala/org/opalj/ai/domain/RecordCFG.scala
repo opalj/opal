@@ -32,7 +32,7 @@ package domain
 
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.graphs.Node
-import org.opalj.graphs.SimpleNode
+import org.opalj.graphs.DefaultMutableNode
 import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.instructions.ATHROW
 import org.opalj.br.PC
@@ -139,9 +139,9 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
             tracer)
     }
 
-    def cfgAsGraph(): MutableNode[List[PC]] = {
+    def cfgAsGraph(): DefaultMutableNode[List[PC]] = {
         val code = this.code
-        val nodes = new Array[SimpleNode[List[PC]]](code.instructions.size)
+        val nodes = new Array[DefaultMutableNode[List[PC]]](code.instructions.size)
         val nodePredecessorsCount = new Array[Int](code.instructions.size)
         // 1. create nodes
         for (pc ← code.programCounters) {
@@ -176,7 +176,11 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
                     pcs.map(pcToString(_)).mkString("", "\\l\\l", "\\l")
                 }
 
-                new SimpleNode(List(pc), pcsToString, visualProperties, List.empty[SimpleNode[List[PC]]])
+                new DefaultMutableNode(
+                    List(pc),
+                    pcsToString,
+                    visualProperties,
+                    List.empty[DefaultMutableNode[List[PC]]])
             }
         }
         // 2. create edges
@@ -186,6 +190,8 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
         }
 
         // 3. fold nodes
+        // Nodes that have only one successor and where the successor has only one
+        // predecessors are merged into one node
         for (pc ← code.programCounters) {
             val currentNode = nodes(pc)
             if (currentNode.hasOneChild) {

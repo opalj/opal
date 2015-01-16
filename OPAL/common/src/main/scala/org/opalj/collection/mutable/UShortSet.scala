@@ -31,8 +31,7 @@ package collection
 package mutable
 
 import org.opalj.UShort.{ MinValue, MaxValue }
-import org.opalj.graphs.SimpleNode
-import org.opalj.graphs.MutableNode
+import org.opalj.graphs.DefaultMutableNode
 
 /**
  * A memory-efficient, mutable, sorted set of unsigned short values that
@@ -62,7 +61,7 @@ trait UShortSet extends collection.UShortSet {
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int
-    private[mutable] def asGraph: MutableNode[Int]
+    private[mutable] def asGraph: DefaultMutableNode[Int]
 }
 
 /**
@@ -176,8 +175,8 @@ private class UShortSet2(private var value: Int) extends UShortSet {
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
-    private[mutable] def asGraph: MutableNode[Int] =
-        new SimpleNode[Int](System.identityHashCode(this), { i ⇒ this.toString })
+    private[mutable] def asGraph: DefaultMutableNode[Int] =
+        new DefaultMutableNode[Int](System.identityHashCode(this), { i ⇒ this.toString })
 }
 
 private object UShortSet2 {
@@ -341,8 +340,8 @@ private class UShortSet4(private var value: Long) extends UShortSet {
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
-    private[mutable] def asGraph: MutableNode[Int] =
-        new SimpleNode[Int](System.identityHashCode(this), { i ⇒ this.toString })
+    private[mutable] def asGraph: DefaultMutableNode[Int] =
+        new DefaultMutableNode[Int](System.identityHashCode(this), { i ⇒ this.toString })
 }
 
 private object UShortSet4 {
@@ -451,8 +450,8 @@ private class UShortSetNode(
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = set1.nodeCount + set2.nodeCount
-    private[mutable] def asGraph: MutableNode[Int] =
-        new SimpleNode[Int](
+    private[mutable] def asGraph: DefaultMutableNode[Int] =
+        new DefaultMutableNode[Int](
             System.identityHashCode(this),
             { i: Int ⇒ "UShortSetNode" },
             Map.empty,
@@ -474,8 +473,10 @@ private object EmptyUShortSet extends UShortSet {
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
-    private[mutable] def asGraph: MutableNode[Int] =
-        new SimpleNode[Int](System.identityHashCode(this), { i: Int ⇒ "EmptyUShortSet" })
+    private[mutable] def asGraph: DefaultMutableNode[Int] =
+        new DefaultMutableNode[Int](
+            System.identityHashCode(this),
+            { i: Int ⇒ "EmptyUShortSet" })
 }
 /**
  * Factory to create sets of unsigned short values.

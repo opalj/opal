@@ -38,8 +38,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType.Object
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.graphs.BasicNode
-import org.opalj.graphs.BaseNode
+import org.opalj.graphs.Node
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -1172,17 +1171,17 @@ class ClassHierarchy private (
      * into a dot representation [[http://www.graphviz.org Graphviz]]). This
      * graph can be a multi-graph if the class hierarchy contains holes.
      */
-    def toGraph(): BasicNode = new BasicNode {
+    def toGraph(): Node = new Node {
 
         import scala.collection.mutable.HashMap
 
-        private val nodes: Map[ObjectType, BasicNode] = {
-            val nodes = HashMap.empty[ObjectType, BasicNode]
+        private val nodes: Map[ObjectType, Node] = {
+            val nodes = HashMap.empty[ObjectType, Node]
 
             foreachNonNullValueOf(knownTypesMap) { (id, aType) ⇒
-                val entry: (ObjectType, BasicNode) = (
+                val entry: (ObjectType, Node) = (
                     aType,
-                    new BasicNode {
+                    new Node {
                         private val directSubtypes = directSubtypesOf(aType)
                         def uniqueId = aType.id
                         def toHRR: Option[String] = Some(aType.toJava)
@@ -1194,7 +1193,7 @@ class ClassHierarchy private (
                                     Map.empty[String, String]
                             )
                         }
-                        def foreachSuccessor(f: BaseNode ⇒ Unit): Unit = {
+                        def foreachSuccessor(f: Node ⇒ Unit): Unit = {
                             directSubtypes foreach { subtype ⇒
                                 f(nodes(subtype))
                             }
@@ -1210,7 +1209,7 @@ class ClassHierarchy private (
         // a virtual root node
         def uniqueId = -1
         def toHRR = None
-        def foreachSuccessor(f: BaseNode ⇒ Unit): Unit = {
+        def foreachSuccessor(f: Node ⇒ Unit): Unit = {
             /*
              * We may not see the class files of all classes that are referred
              * to in the class files that we did see. Hence, we have to be able

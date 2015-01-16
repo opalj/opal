@@ -37,7 +37,7 @@ package graphs
 object toDot {
 
     def apply(
-        nodes: Set[_ <: BaseNode],
+        nodes: Set[_ <: Node],
         dir: String = "forward",
         ranksep: String = "1.0"): String =
         generateDot(nodes, dir, ranksep)
@@ -50,11 +50,11 @@ object toDot {
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def generateDot(
-        nodes: Set[_ <: BaseNode],
+        nodes: Set[_ <: Node],
         dir: String = "forward",
         ranksep: String = "1.0"): String = {
-        var nodesToProcess = Set.empty[BaseNode] ++ nodes
-        var processedNodes = Set.empty[BaseNode]
+        var nodesToProcess = Set.empty[Node] ++ nodes
+        var processedNodes = Set.empty[Node]
 
         var s = s"digraph G {\n\tdir=$dir;\n\tranksep=$ranksep;\n"
 
@@ -75,7 +75,7 @@ object toDot {
                     mkString("[", ",", "];\n")
             }
 
-            val f: (BaseNode ⇒ Unit) = sn ⇒ {
+            val f: (Node ⇒ Unit) = sn ⇒ {
                 if (nextNode.toHRR.isDefined)
                     s += "\t"+nextNode.uniqueId+" -> "+sn.uniqueId+" [dir="+dir+"];\n"
 

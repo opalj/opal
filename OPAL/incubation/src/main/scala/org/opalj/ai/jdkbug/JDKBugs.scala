@@ -66,8 +66,8 @@ class CallerNode(
     theIdentifier: String,
     identifierToString: String ⇒ String,
     theVisualProperties: Map[String, String],
-    theChildren: List[BaseNode])
-        extends SimpleNodeLike[String, BaseNode](
+    theChildren: List[Node])
+        extends MutableNodeLike[String, Node](
             theIdentifier, identifierToString,
             theVisualProperties,
             theChildren) {
@@ -82,7 +82,7 @@ class ContextNode(
     identifierToString: ((RelevantParameters, String)) ⇒ String,
     theVisualProperties: Map[String, String],
     theChildren: List[CallerNode])
-        extends SimpleNodeLike[(RelevantParameters, String), CallerNode](
+        extends MutableNodeLike[(RelevantParameters, String), CallerNode](
             theIdentifier, identifierToString,
             theVisualProperties,
             theChildren) {
