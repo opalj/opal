@@ -37,6 +37,9 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.ai.analyses.MutabilityRating._
 import org.opalj.br.ClassFile
+import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.LoadLocalVariableInstruction
+import org.opalj.br.instructions.PUTFIELD
 
 /**
  * This analysis determines which classes in a project are immutable,
@@ -74,6 +77,41 @@ object ImmutabilityAnalysis {
         rating
     }
 
+    private def methodBasedRating(
+        classFile: ClassFile,
+        superclassTypeRating: MutabilityRating): MutabilityRating = {
+
+        assert(!(classFile.thisType eq ObjectType.Object))
+        assert(!classFile.isInterfaceDeclaration)
+        assert(superclassTypeRating.id > Mutable.id)
+
+        val definesSetterMethod =
+            classFile.methods.filter { method ⇒
+                !method.isConstructor && method.body.nonEmpty
+            } exists { method ⇒
+                val instr = method.body.get.instructions
+                if (instr.size > 2)
+                    (instr(0), instr(1), instr(2)) match {
+                        case (ALOAD_0,
+                            LoadLocalVariableInstruction(_, 1),
+                            PUTFIELD(objectType, _, _)) ⇒ true
+                        case _ ⇒ false
+                    }
+                else
+                    false
+            }
+
+        val definesNativeNonStaticMethod =
+            classFile.methods.exists {
+                method ⇒
+                    method.isNative && !method.isStatic
+            }
+
+        if (definesSetterMethod || definesNativeNonStaticMethod)
+            Mutable
+        else
+            Unknown
+    }
     /**
      * Rates the mutability of all class files of the project.
      *
@@ -101,14 +139,22 @@ object ImmutabilityAnalysis {
                     foreachDirectSubclass(classType, project) { subclass ⇒
                         traverse(subclass, superclassTypeRating)
                     }
-                case r @ (Mutable | Unknown) ⇒
+                case r @ Unknown ⇒
+                    methodBasedRating(classFile, superclassTypeRating) match {
+                        case r @ (Mutable | Unknown) ⇒
+                            classification(classType) = r
+                            classHierarchy.foreachSubtype(classType) { subclassType ⇒
+                                classification(subclassType) = r
+                            }
+                        case _ ⇒ ()
+                    }
+                case r @ Mutable ⇒
                     classification(classType) = r
                     classHierarchy.foreachSubtype(classType) { subclassType ⇒
                         classification(subclassType) = r
                     }
             }
         }
-
         // 1. Do the basic classification
         // "java.lang.Object" is at the root of the class hierarchy and we can only 
         // assess classes for which all super class type information exists.
