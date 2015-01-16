@@ -31,8 +31,7 @@ package br
 package instructions
 
 /**
- * Super class of all bytecode instructions that always jump to a specific
- * target instruction.
+ * Super class of the Goto instructions.
  *
  * @author Michael Eichberg
  */
@@ -40,7 +39,21 @@ abstract class GotoInstruction extends UnconditionalBranchInstruction {
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
-        this == code.instructions(otherPC)
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || (this == other)
+		}
 
 }
+
+object GotoInstruction {
+
+    def unapply(instruction: Instruction): Option[Int] = {
+        instruction.opcode match {
+            case GOTO.opcode | GOTO_W.opcode ⇒
+                Some(instruction.asInstanceOf[GotoInstruction].branchoffset)
+            case _ ⇒ None
+        }
+    }
+}
+
