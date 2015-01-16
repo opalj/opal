@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,6 +31,12 @@ package ai
 package domain
 
 import org.opalj.collection.mutable.UShortSet
+import org.opalj.graphs.Node
+import org.opalj.graphs.DefaultMutableNode
+import org.opalj.br.instructions.ReturnInstruction
+import org.opalj.br.instructions.ATHROW
+import org.opalj.br.PC
+import org.opalj.graphs.MutableNode
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -131,6 +137,79 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
             worklist,
             operandsArray, localsArray,
             tracer)
+    }
+
+    def cfgAsGraph(): DefaultMutableNode[List[PC]] = {
+        val code = this.code
+        val nodes = new Array[DefaultMutableNode[List[PC]]](code.instructions.size)
+        val nodePredecessorsCount = new Array[Int](code.instructions.size)
+        // 1. create nodes
+        for (pc ← code.programCounters) {
+            nodes(pc) = {
+                var visualProperties = Map("shape" -> "box", "labelloc" -> "l")
+
+                if (domain.code.instructions(pc).isInstanceOf[ReturnInstruction]) {
+                    visualProperties += "fillcolor" -> "green"
+                    visualProperties += "style" -> "filled"
+                } else if (domain.code.instructions(pc).isInstanceOf[ATHROW.type]) {
+                    visualProperties += "fillcolor" -> "yellow"
+                    visualProperties += "style" -> "filled"
+                } else if (allSuccessorsOf(pc).isEmpty) {
+                    visualProperties += "fillcolor" -> "red"
+                    visualProperties += "style" -> "filled"
+                    visualProperties += "shape" -> "octagon"
+                }
+
+                if (code.exceptionHandlersFor(pc).nonEmpty) {
+                    visualProperties += "color" -> "orange"
+                }
+
+                if (code.exceptionHandlers.exists { eh ⇒ eh.handlerPC == pc }) {
+                    visualProperties += "peripheries" -> "2"
+                }
+
+                def pcsToString(pcs: List[PC]): String = {
+                    def pcToString(pc: PC): String = {
+                        val ln = code.lineNumber(pc).map(ln ⇒ s"[line=$ln]").getOrElse("")
+                        pc + ln+":"+domain.code.instructions(pc).toString(pc)
+                    }
+                    pcs.map(pcToString(_)).mkString("", "\\l\\l", "\\l")
+                }
+
+                new DefaultMutableNode(
+                    List(pc),
+                    pcsToString,
+                    visualProperties,
+                    List.empty[DefaultMutableNode[List[PC]]])
+            }
+        }
+        // 2. create edges
+        for (pc ← code.programCounters; succPC ← allSuccessorsOf(pc)) {
+            nodes(pc).addChild(nodes(succPC))
+            nodePredecessorsCount(succPC) += 1
+        }
+
+        // 3. fold nodes
+        // Nodes that have only one successor and where the successor has only one
+        // predecessors are merged into one node
+        for (pc ← code.programCounters) {
+            val currentNode = nodes(pc)
+            if (currentNode.hasOneChild) {
+                val successorNode = currentNode.firstChild
+                val successorNodePC = successorNode.identifier.head
+                if (nodePredecessorsCount(successorNodePC) == 1) {
+                    currentNode.updateIdentifier(
+                        currentNode.identifier ++ currentNode.firstChild.identifier
+                    )
+                    currentNode.mergeVisualProperties(successorNode.visualProperties)
+                    currentNode.removeLastAddedChild() // the only child...
+                    currentNode.addChildren(successorNode.children)
+                    nodes(successorNodePC) = currentNode
+                }
+            }
+        }
+
+        nodes(0)
     }
 }
 

@@ -35,6 +35,8 @@ import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.ai.common.XHTML
 import org.opalj.ai.common.XHTML.dump
 import org.opalj.io.writeAndOpen
+import org.opalj.ai.domain.RecordCFG
+import org.opalj.graphs.toDot
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -193,6 +195,11 @@ object InterpretMethod {
                     println("Finished abstract interpretation.")
                     result
                 }
+            if (result.domain.isInstanceOf[RecordCFG]) {
+                val graph = result.domain.asInstanceOf[RecordCFG]
+                val dotGraph = toDot(Set(graph.cfgAsGraph()), ranksep = "0.3").toString
+                writeAndOpen(dotGraph, "RuntimeCFG", ".dot")
+            }
             writeAndOpen(dump(
                 Some(classFile),
                 Some(method),
