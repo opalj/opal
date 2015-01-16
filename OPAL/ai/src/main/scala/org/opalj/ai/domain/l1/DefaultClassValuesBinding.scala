@@ -33,11 +33,6 @@ package l1
 
 import scala.reflect.ClassTag
 
-import org.opalj.ai.CorrelationalDomain
-import org.opalj.ai.IntegerValuesDomain
-import org.opalj.ai.TypedValuesFactory
-import org.opalj.ai.domain.ClassHierarchy
-import org.opalj.ai.domain.Configuration
 import org.opalj.br.Type
 
 /**

@@ -31,9 +31,7 @@ package ai
 package jdkbug
 
 import scala.language.existentials
-
 import java.net.URL
-
 import org.opalj.io.process
 import org.opalj.graphs._
 import org.opalj.br._
@@ -63,6 +61,36 @@ import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
 import org.opalj.ai.domain.l0.TypeLevelReferenceValues
 import org.opalj.ai.domain.l0.TypeLevelPrimitiveValuesConversions
 import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
+
+class CallerNode(
+    theIdentifier: String,
+    identifierToString: String ⇒ String,
+    theVisualProperties: Map[String, String],
+    theChildren: List[Node])
+        extends MutableNodeLike[String, Node](
+            theIdentifier, identifierToString,
+            theVisualProperties,
+            theChildren) {
+
+    def this(identifier: String) {
+        this(identifier, id ⇒ id, Map("shape" -> "box"), List.empty)
+    }
+}
+
+class ContextNode(
+    theIdentifier: (RelevantParameters, String),
+    identifierToString: ((RelevantParameters, String)) ⇒ String,
+    theVisualProperties: Map[String, String],
+    theChildren: List[CallerNode])
+        extends MutableNodeLike[(RelevantParameters, String), CallerNode](
+            theIdentifier, identifierToString,
+            theVisualProperties,
+            theChildren) {
+
+    def this(identifier: (RelevantParameters, String)) {
+        this(identifier, id ⇒ id.toString, Map("shape" -> "box"), List.empty)
+    }
+}
 
 /**
  * Searches for occurrences of the Class.forName bug in the JDK
@@ -229,13 +257,13 @@ trait TaintAnalysisDomain[Source]
      * the analysis of this domain's method returns a relevant result.
      * This is determined when the `postAnalysis` method is called.
      */
-    protected val callerNode: SimpleNode[_]
+    protected val callerNode: CallerNode
 
     /**
      * Represents the node in the analysis graph that models the entry point
      * to this method.
      */
-    protected val contextNode: SimpleNode[(RelevantParameters, String)]
+    protected val contextNode: ContextNode
 
     /**
      * Stores the program counters of those invoke instructions that return either
@@ -243,7 +271,7 @@ trait TaintAnalysisDomain[Source]
      * and which were originally passed a relevant value (in particular a relevant
      * parameter).
      */
-    protected var relevantValuesOrigins: List[(PC, SimpleNode[String])] = List.empty
+    protected var relevantValuesOrigins: List[(PC, CallerNode)] = List.empty
 
     /**
      * Stores the values that are returned by this method. When the analysis
@@ -355,7 +383,7 @@ trait TaintAnalysisDomain[Source]
     override def areturn(pc: Int, value: DomainValue): Unit = {
         // in case a relevant parameter is returned by the method
         if (origin(value).exists(orig ⇒ contextNode.identifier._1.union(taintedPCs).contains(orig))) {
-            relevantValuesOrigins = (-1, new SimpleNode("return of a relevant Parameter")) :: relevantValuesOrigins
+            relevantValuesOrigins = (-1, new CallerNode("return of a relevant Parameter")) :: relevantValuesOrigins
         }
         returnedValues = (pc, value) :: returnedValues
     }
@@ -462,7 +490,7 @@ trait TaintAnalysisDomain[Source]
         // check if we have a call to Class.newInstance...
         if (methodName == "newInstance") {
             if (isRelevantCall(methodDescriptor, operands)) {
-                relevantValuesOrigins = (pc, new SimpleNode("newInstance")) :: relevantValuesOrigins
+                relevantValuesOrigins = (pc, new CallerNode("newInstance")) :: relevantValuesOrigins
             }
         }
 
@@ -708,7 +736,7 @@ trait TaintAnalysisDomain[Source]
      * and relevantValuesOrigins
      */
     def registerSink(pc: PC, operands: List[DomainValue]) = {
-        val sinkNode = new SimpleNode(pc+": Class.forName("+operands.head+")")
+        val sinkNode: CallerNode = new CallerNode(pc+": Class.forName("+operands.head+")")
         contextNode.addChild(sinkNode)
         callToClassForNameFound = true;
         taintedPCs = pc :: taintedPCs
@@ -728,7 +756,7 @@ trait TaintAnalysisDomain[Source]
         val classFile = project.classFile(method)
 
         if (!method.isNative && !definedInRestrictedPackage(classFile.thisType.packageName) && method.body.nonEmpty) {
-            val callerNode = new SimpleNode(pc+": method invocation; method id: "+method)
+            val callerNode: CallerNode = new CallerNode(pc+": method invocation; method id: "+method)
 
             // compute the new pc of relevant parameters that the analysis
             // wants to keep track of
@@ -772,7 +800,7 @@ trait TaintAnalysisDomain[Source]
                         callToClassForNameFound = true;
                     }
                     // set return nodes
-                    val returnNode = new SimpleNode(pc+": returned value from : "+aiResult.domain.contextIdentifier)
+                    val returnNode: CallerNode = new CallerNode(pc+": returned value from : "+aiResult.domain.contextIdentifier)
                     contextNode.addChild(returnNode)
                     taintedPCs = pc :: taintedPCs
                     contextNode.addChild(callerNode)
@@ -815,9 +843,10 @@ class RootTaintAnalysisDomain[Source](
     val id: CallStackEntry,
     val checkForFields: Boolean)
         extends TaintAnalysisDomain[Source] {
-    val callerNode = new SimpleNode("Some user of the API")
 
-    val contextNode: SimpleNode[(RelevantParameters, String)] = {
+    val callerNode: CallerNode = new CallerNode("Some user of the API")
+
+    val contextNode: ContextNode = {
 
         taintedFields = taintedGloableFields
 
@@ -834,7 +863,7 @@ class RootTaintAnalysisDomain[Source](
                 // map on correct index
             }.map(param_idx ⇒ -(param_idx._2))
 
-        new SimpleNode((relevantParameters, contextIdentifier))
+        new ContextNode((relevantParameters, contextIdentifier))
     }
 
     def isRecursiveCall(
@@ -857,7 +886,7 @@ class RootTaintAnalysisDomain[Source](
 class CalledTaintAnalysisDomain[Source](
     val previousTaintAnalysisDomain: TaintAnalysisDomain[Source],
     val id: CallStackEntry,
-    val callerNode: SimpleNode[_],
+    val callerNode: CallerNode,
     val relevantParameters: RelevantParameters,
     val checkForFields: Boolean)
 
@@ -866,7 +895,7 @@ class CalledTaintAnalysisDomain[Source](
     taintedFields = previousTaintAnalysisDomain.taintedFields
     //cachedInterfaceCalls = previousTaintAnalysisDomain.cachedInterfaceCalls
 
-    val contextNode = new SimpleNode((relevantParameters, contextIdentifier))
+    val contextNode: ContextNode = new ContextNode((relevantParameters, contextIdentifier))
 
     def project = previousTaintAnalysisDomain.project
 

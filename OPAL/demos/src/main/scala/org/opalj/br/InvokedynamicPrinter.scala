@@ -43,32 +43,38 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  * Prints out the immediately available information about invokedynamic instructions.
  *
  * @author Arne Lottmann
+ * @author Michael Eichberg
  */
-object InvokedynamicPrinter extends AnalysisExecutor {
+object InvokedynamicPrinter extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    val analysis = this
 
-        override def description: String =
-            "Prints information about invokedynamic instructions."
+    override def description: String =
+        "Prints information about invokedynamic instructions."
 
-        def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            val invokedynamics =
-                for {
-                    classFile ← project.allClassFiles.par
-                    MethodWithBody(code) ← classFile.methods
-                    INVOKEDYNAMIC(bootstrap, name, descriptor) ← code.instructions
-                } yield {
-                    bootstrap.toJava+"\nArguments:\t"+
-                        bootstrap.bootstrapArguments.mkString("{", ",", "}")+"\nCalling:\t"+
-                        descriptor.toJava(name)
+    def doAnalyze(
+        project: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
+        import scala.collection.JavaConversions._
+        val invokedynamics = new java.util.concurrent.ConcurrentLinkedQueue[String]
+        project.parForeachMethodWithBody(isInterrupted) { e ⇒
+            val (_, classFile, method) = e
+            invokedynamics.addAll(
+                method.body.get.collectWithIndex {
+                    case (pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) ⇒
+                        classFile.thisType.toJava+" {\n  "+method.toJava()+"{ "+pc+": \n"+
+                            s"    ${bootstrap.toJava}\n"+
+                            bootstrap.bootstrapArguments.mkString("    Arguments: {", ",", "}\n") +
+                            s"    Calling:   ${descriptor.toJava(name)}\n"+
+                            "} }\n"
                 }
-
-            BasicReport(
-                invokedynamics.size+" invokedynamic instructions found.\n"+
-                    invokedynamics.mkString("\n", "\n\n", "\n"))
+            )
         }
+        val result = invokedynamics.toSeq.sorted
+        BasicReport(
+            result.mkString(result.size+" invokedynamic instructions found:\n", "\n", "\n")
+        )
     }
+
 }

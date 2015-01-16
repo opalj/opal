@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -108,7 +108,7 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * @author David Becker
  */
 trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFactory with ConcreteIntegerValues {
-    domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
+    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -366,8 +366,8 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
             // this basically handles the case that both are "AnIntegerValue"
             (operands, locals)
         else
-            // Given that the values are determined to be EQUAL, every subsequent 
-            // constraint applies to both values (independent of 
+            // Given that the values are determined to be EQUAL, every subsequent
+            // constraint applies to both values (independent of
             // the implicit origin).
             value1 match {
                 case IntegerRange(lb1, ub1) ⇒
@@ -396,8 +396,8 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
         value2: DomainValue,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
-        // Given that we cannot represent multiple ranges, our possibilities are 
-        // severely limited w.r.t. representing values that are not equal. 
+        // Given that we cannot represent multiple ranges, our possibilities are
+        // severely limited w.r.t. representing values that are not equal.
         // Only if one range just represents a single value
         // and this value is a boundary value of the other range it is possible
         // to establish "something"
@@ -443,7 +443,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
             case IntegerRange(lb2, ub2) ⇒ (lb2, ub2)
             case _                      ⇒ (Int.MinValue, Int.MaxValue)
         }
-        // establish new bounds 
+        // establish new bounds
         val ub = Math.min(ub2 - 1, ub1)
         val newMemoryLayout @ (operands1, locals1) =
             if (ub != ub1)
@@ -477,7 +477,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
             case IntegerRange(lb2, ub2) ⇒ (lb2, ub2)
             case _                      ⇒ (Int.MinValue, Int.MaxValue)
         }
-        // establish new bounds 
+        // establish new bounds
         val ub = Math.min(ub2, ub1)
         val newMemoryLayout @ (operands1, locals1) =
             if (ub != ub1) {
@@ -617,7 +617,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                     IntegerValue(pc)
 
             if (throwArithmeticExceptions)
-                ComputedValueOrException(value, ArithmeticException(pc))
+                ComputedValueOrException(value, VMArithmeticException(pc))
             else
                 ComputedValue(value)
         }
@@ -637,10 +637,8 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                         }
                     }
                 } else if (dlb == 0 && dub == 0) {
-                    // IMPROVE [IntegerRangeValues] log suspicious div by zero    
-                    ThrowsException(ArithmeticException(pc))
+                    ThrowsException(VMArithmeticException(pc))
                 } else if (dub < 0) {
-                    // IMPROVE [IntegerRangeValues] handling of negative divisors (does not seem to be widely used)
                     ComputedValue(IntegerValue(pc))
                 } else {
                     genericResult()
@@ -692,7 +690,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
         right: DomainValue): IntegerValueOrArithmeticException = {
 
         right match {
-            case IntegerRange(0, 0)   ⇒ ThrowsException(ArithmeticException(pc))
+            case IntegerRange(0, 0)   ⇒ ThrowsException(VMArithmeticException(pc))
             case IntegerRange(1, 1)   ⇒ ComputedValue(IntegerRange(0))
             case IntegerRange(-1, -1) ⇒ ComputedValue(IntegerRange(0))
 
@@ -701,7 +699,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                     if (rightLB > 0 || rightUB < 0 || !throwArithmeticExceptions)
                         ComputedValue(newValue)
                     else
-                        ComputedValueOrException(newValue, ArithmeticException(pc))
+                        ComputedValueOrException(newValue, VMArithmeticException(pc))
 
                 left match {
 
@@ -736,7 +734,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                     else
                         IntegerValue(pc)
                 if (throwArithmeticExceptions)
-                    ComputedValueOrException(newValue, ArithmeticException(pc))
+                    ComputedValueOrException(newValue, VMArithmeticException(pc))
                 else
                     ComputedValue(newValue)
         }
@@ -837,17 +835,17 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                     if (max <= Int.MaxValue)
                         IntegerRange(vlb << minShift, max.toInt)
                     else
-                        // `lb` is "(1 << maxShift) | Int.MinValue", since the smallest 
-                        // value has the most trailing zeros that will be shifted. 
-                        // By using the `or` operation after (1 << maxShift) the sign 
+                        // `lb` is "(1 << maxShift) | Int.MinValue", since the smallest
+                        // value has the most trailing zeros that will be shifted.
+                        // By using the `or` operation after (1 << maxShift) the sign
                         // bit is set to one, since the smallest value is negative.
                         //
-                        // `ub` is "(-1 << minShift) & Int.MaxValue", since the biggest 
-                        // number after a shift always has the pattern 0111..1100..0. 
-                        // The number of trailing zeros must be minShift, the sign 
-                        // bit 0 and bits between sign bit and next zero bit have to 
-                        // be 1. 
-                        // To ensure that the number is always positive the sign bit 
+                        // `ub` is "(-1 << minShift) & Int.MaxValue", since the biggest
+                        // number after a shift always has the pattern 0111..1100..0.
+                        // The number of trailing zeros must be minShift, the sign
+                        // bit 0 and bits between sign bit and next zero bit have to
+                        // be 1.
+                        // To ensure that the number is always positive the sign bit
                         // is set to zero by using "& Int.MaxValue".
                         IntegerRange(
                             (1 << maxShift) | Int.MinValue,
@@ -884,7 +882,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                 IntegerRange(-1, 0)
 
             case (IntegerRange(vlb, vub), IntegerRange(slb, sub)) ⇒
-                // We have one "arbitrary" range of numbers to shift and one range that 
+                // We have one "arbitrary" range of numbers to shift and one range that
                 // should be between 0 and 31. Every number above 31 or any negative number does not make sense, since
                 // only the five least significant bits are used for shifting.
                 val maxShift = if (sub >= 0 && sub <= 31) sub else 31
@@ -923,7 +921,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                     IntegerRange(result)
                 } else {
                     // Recall: the shift value is at most "31" (a corresponding)
-                    // bit mask is always implicitly applied to the shift value. 
+                    // bit mask is always implicitly applied to the shift value.
 
                     // IMPROVE [IntegerRangeValues] log suspicious shift value
                     val maxShift = if (sub > 31 || sub < 0) 31 else sub
@@ -975,20 +973,20 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
 
                     // Calculate the upper bound
                     // Idea: 1. Get the leading bit sequence of the larger value.
-                    //       (leading means: all bits up until the highest-order 
+                    //       (leading means: all bits up until the highest-order
                     //        bit of the lower value)
                     //       2. Set all subsequent bits to "1"
                     // Example:
-                    // ub1 = 0101 0000 
-                    // ub2 = 0000 1010 
-                    // ub^ = 0101 1111 
+                    // ub1 = 0101 0000
+                    // ub2 = 0000 1010
+                    // ub^ = 0101 1111
                     val ub = Math.max(vub, sub) | (-1 >>> smallerUBLZ)
 
                     val lb =
                         // Calculate the lower bound _if the ranges are not overlapping_
                         // Idea: 1. Get the leading bit sequence of the lower bound of the
                         //       range with the larger values.
-                        //       (leading means: all bits up until the highest-order 
+                        //       (leading means: all bits up until the highest-order
                         //        bit of the upper bound of the range of smaller values)
                         //       2. Set all subsequent bits to "0"
                         // Example:
@@ -998,7 +996,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                         // lb2 = 0000 0001 (lb1 = 1(dez))
                         // lb^ = 0100 1000 (lb  = 72(dez))
                         if (vub < slb || sub < vlb) {
-                            // the ranges are non-overlapping                                    
+                            // the ranges are non-overlapping
                             val largerLB = Math.max(vlb, slb)
                             largerLB & (-1 << (32 - smallerUBLZ))
                         } else {
@@ -1045,7 +1043,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                     val lb = (vlb >> subBits) << subBits
 
                     // The max value is calculated by setting subBits to one,
-                    // since this change can result into the max number. The 
+                    // since this change can result into the max number. The
                     // or operation leading preserves the leading bits, since
                     // those bits do not change.
                     val ub = vub | ((1 << subBits) - 1)
@@ -1103,13 +1101,13 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                     val slbBits = 32 - Integer.numberOfLeadingZeros(~slb)
                     val subBits = 32 - Integer.numberOfLeadingZeros(sub)
 
-                    // The min value can be calculated by either using the min neg 
+                    // The min value can be calculated by either using the min neg
                     // value of range s and max pos value of range v or vice versa.
                     val lbCand1 = -1 << (if (slbBits > vubBits) slbBits else vubBits)
                     val lbCand2 = -1 << (if (subBits > vlbBits) subBits else vlbBits)
                     val lb = Math.min(lbCand1, lbCand2)
 
-                    // The max value can be calculated by either using the min neg 
+                    // The max value can be calculated by either using the min neg
                     // value of range s and v or the max value of range s and v.
                     val ubCand1 = (1 << (if (slbBits > vlbBits) slbBits else vlbBits)) - 1
                     val ubCand2 = (1 << (if (subBits > vubBits) subBits else vubBits)) - 1

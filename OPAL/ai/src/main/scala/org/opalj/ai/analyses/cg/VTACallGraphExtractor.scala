@@ -40,7 +40,6 @@ import br.analyses._
 import domain._
 import domain.l0
 import domain.l1
-
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.TheClassFile
@@ -50,15 +49,13 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
-
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
+import scala.collection.mutable.HashMap
 
 /**
- * Domain object which is used to calculate the call graph.
- *
- * ==Thread Safety==
- * This domain is not thread-safe. Hence, it can only be used by one abstract interpreter
- * at a time.
+ * The `VTACallGraphExtractor` extracts call edges using the type information at hand.
+ * I.e., it does not use the specified declaring class type, but instead uses the
+ * type information about the receiver value that are available.
  *
  * @author Michael Eichberg
  */
@@ -67,8 +64,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
     Domain: (ClassFile, Method) ⇒ TheDomain)
         extends CallGraphExtractor {
 
-    protected[this] class AnalysisContext(
-        val domain: TheDomain)
+    protected[this] class AnalysisContext(val domain: TheDomain)
             extends super.AnalysisContext {
 
         val project = domain.project
@@ -103,12 +99,15 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             }
         }
 
+        /**
+         * @note The receiver is either not null or it is unknown whether the receiver
+         *      is null. However, appropriate edges are already added to the call graph.
+         */
         def doNonVirtualCall(
             pc: PC,
             declaringClassType: ObjectType,
             name: String,
             descriptor: MethodDescriptor,
-            receiverIsNull: Answer,
             operands: domain.Operands): Unit = {
 
             def handleUnresolvedMethodCall(): Unit = {
@@ -152,7 +151,8 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             doNonVirtualCall(
                 pc,
                 declaringClassType, name, descriptor,
-                receiverIsNull, operands)
+                //receiverIsNull,
+                operands)
         }
 
         def doVirtualCall(
@@ -160,8 +160,7 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             declaringClassType: ObjectType,
             name: String,
             descriptor: MethodDescriptor,
-            receiverIsNull: Answer,
-            operands: domain.Operands) = {
+            operands: domain.Operands): Unit = {
 
             val callees: Set[Method] = this.callees(declaringClassType, name, descriptor)
             if (callees.isEmpty) {
@@ -198,21 +197,6 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
             //    of the declaringClassType => the type hierarchy information is not complete;
             //    the central factory method already "handles" this issue - hence, we don't care
 
-            // Note that explicitly supporting "MultipleReferencesValues", e.g.,
-            // to create a very precise call graph in cases such as:
-            //     Object o = null;
-            //     if(whatever)
-            //       o = new Object();
-            //     else
-            //       o = new Vector();
-            //     o.toString //<----- the relevant call
-            // is probably not worth the effort. A simple study of the JDK has
-            // shown that in the very vast majority of cases the upper type bound
-            // of the value as such is also the upper type bound of a specific value.
-            // Hence, the explicit support would not increase the precision.
-            // '''This situation might change if the analysis (as a whole) is getting more
-            // precise.'''
-
             if (receiverIsNull.isYes) {
                 addCallToNullPointerExceptionConstructor(classFile.thisType, method, pc)
                 return ;
@@ -223,48 +207,124 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                 // ... and continue!
             }
 
-            val upperTypeBound = receiver.upperTypeBound
-            if (upperTypeBound.hasOneElement) {
-                val theType = upperTypeBound.first
-                if (theType.isArrayType)
-                    doNonVirtualCall(
-                        pc, ObjectType.Object, name, descriptor, receiverIsNull,
-                        operands)
-                else if (receiver.isPrecise)
-                    doNonVirtualCall(
-                        pc, theType.asObjectType, name, descriptor, receiverIsNull,
-                        operands.asInstanceOf[domain.Operands])
-                else {
-                    doVirtualCall(
-                        pc, theType.asObjectType, name, descriptor, receiverIsNull,
-                        operands)
+            @inline def handleVirtualNonNullCall(
+                upperTypeBound: UpperTypeBound,
+                receiverIsPrecise: Boolean): Unit = {
+
+                assert(upperTypeBound.nonEmpty)
+
+                if (upperTypeBound.hasOneElement) {
+                    val theType = upperTypeBound.first
+                    if (theType.isArrayType)
+                        doNonVirtualCall(
+                            pc, ObjectType.Object, name, descriptor,
+                            //receiverIsNull,
+                            operands)
+                    else if (receiverIsPrecise)
+                        doNonVirtualCall(
+                            pc, theType.asObjectType, name, descriptor,
+                            //receiverIsNull,
+                            operands.asInstanceOf[domain.Operands])
+                    else {
+                        doVirtualCall(
+                            pc, theType.asObjectType, name, descriptor,
+                            //receiverIsNull,
+                            operands)
+                    }
+                } else {
+                    // Recall that the types defining the upper type bound are not in an
+                    // inheritance relationship; however, they still may define
+                    // the respective method.
+
+                    val potentialRuntimeTypes =
+                        classHierarchy.directSubtypesOf(upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
+
+                    val allCallees =
+                        if (potentialRuntimeTypes.nonEmpty) {
+                            val potentialRuntimeType = potentialRuntimeTypes.head.asObjectType
+                            val callees = this.callees(potentialRuntimeType, name, descriptor)
+                            potentialRuntimeTypes.tail.foldLeft(callees) { (r, nextUpperTypeBound) ⇒
+                                r ++ this.callees(nextUpperTypeBound.asObjectType, name, descriptor)
+                            }
+                        } else {
+                            Set.empty[Method]
+                        }
+
+                    if (allCallees.isEmpty) {
+                        // Fallback to ensure that the call graph does not miss an
+                        // edge; it may be the case that the (unknown) subtypes actually
+                        // just inherit one of the methods of the (known) supertype.
+                        doVirtualCall(
+                            pc, declaringClassType, name, descriptor,
+                            ///receiverIsNull,
+                            operands)
+                    } else {
+                        addCallEdge(pc, allCallees)
+                    }
+                }
+            }
+
+            val receiverUpperTypeBound = receiver.upperTypeBound
+
+            val receivers = receiver.referenceValues
+            if (receivers.tail.nonEmpty) {
+                // the reference value is a "MultipleReferenceValue"
+
+                // The following numbers are created using ExtVTA for JDK 1.8.0_25
+                // and refer to a call graph created without explicit support for
+                // multiple reference values:
+                //     Creating the call graph took: ~28sec (Mac Pro; 3 GHz 8-Core Intel Xeon E5)
+                //     Number of call sites: 911.253
+                //     Number of call edges: 6.925.997 / called-by edges: 6.925.997
+                //
+                // With explicit support, we get the following numbers:
+                //     Number of call sites: 911.253
+                //     Number of call edges: 6.923.015 / called-by edges: 6.923.015
+
+                val receiversAreMorePrecise =
+                    !receiver.isPrecise &&
+                        // the receiver as a whole is not precise...
+                        receivers.forall { aReceiver ⇒
+                            val anUpperTypeBound = aReceiver.upperTypeBound
+                            aReceiver.isPrecise || {
+                                anUpperTypeBound != receiverUpperTypeBound &&
+                                    classHierarchy.isSubtypeOf(anUpperTypeBound, receiverUpperTypeBound).isYes
+                            }
+                        }
+                if (receiversAreMorePrecise) {
+                    // THERE IS POTENTIAL FOR A MORE PRECISE CALL GRAPH SIMPLY
+                    // BECAUSE OF THE TYPE INFORMATION!
+                    val uniqueReceivers =
+                        receivers.foldLeft(Map.empty[UpperTypeBound, Boolean]) { (results, rv) ⇒
+                            val utb = rv.upperTypeBound
+                            if (utb.nonEmpty)
+                                results.get(utb) match {
+                                    case Some(isPrecise) ⇒
+                                        if (isPrecise && !rv.isPrecise) {
+                                            results.updated(utb, false)
+                                        } else {
+                                            results
+                                        }
+                                    case None ⇒
+                                        results + ((utb, rv.isPrecise))
+                                }
+                            else
+                                // empty upper type bounds (those of null values) are
+                                // already handled
+                                results
+                        }
+                    uniqueReceivers.foreach { rv ⇒
+                        val (utb, isPrecise) = rv
+                        handleVirtualNonNullCall(utb, isPrecise)
+                    }
+                } else {
+                    // we did not get anything from analyzing the "MultipleReferenceValue"
+                    // let's continue with the default handling
+                    handleVirtualNonNullCall(receiverUpperTypeBound, receiver.isPrecise)
                 }
             } else {
-                // Recall that the types defining the upper type bound are not in an
-                // inheritance relationship; however, they still may define
-                // the respective method.
-
-                val potentialRuntimeTypes =
-                    classHierarchy.directSubtypesOf(upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
-
-                val allCallees =
-                    if (potentialRuntimeTypes.nonEmpty) {
-                        val potentialRuntimeType = potentialRuntimeTypes.head.asObjectType
-                        val callees = this.callees(potentialRuntimeType, name, descriptor)
-                        potentialRuntimeTypes.tail.foldLeft(callees) { (r, nextUpperTypeBound) ⇒
-                            r ++ this.callees(nextUpperTypeBound.asObjectType, name, descriptor)
-                        }
-                    } else {
-                        Set.empty[Method]
-                    }
-
-                if (allCallees.isEmpty) {
-                    addUnresolvedMethodCall(
-                        classFile.thisType, method, pc,
-                        declaringClassType, name, descriptor)
-                } else {
-                    addCallEdge(pc, allCallees)
-                }
+                // the value is not a "MultipleReferenceValue"
+                handleVirtualNonNullCall(receiverUpperTypeBound, receiver.isPrecise)
             }
         }
     }
