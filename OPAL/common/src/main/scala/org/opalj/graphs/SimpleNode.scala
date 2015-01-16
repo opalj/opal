@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,12 +22,14 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 package graphs
+
+import scala.collection.Map
 
 /**
  * Represents a mutable node of a directed graph. This class basically serves as a small
@@ -50,34 +52,88 @@ package graphs
  *      but a different identity.
  * @author Michael Eichberg
  */
-final class SimpleNode[I](
-    val identifier: I,
-    val identifierToString: I ⇒ String = (_: Any).toString,
-    override val backgroundColor: Option[String] = None,
-    private[this] var children: List[Node] = List.empty)
-        extends Node {
+class SimpleNodeLike[I, N <: BaseNode](
+    private[this] var theIdentifier: I,
+    val identifierToString: I ⇒ String,
+    private[this] var theVisualProperties: Map[String, String],
+    private[this] var theChildren: List[N])
+        extends MutableNodeLike[I, N] {
+
+    def identifier: I = this.synchronized(theIdentifier)
+
+    override def visualProperties: Map[String, String] = this.synchronized(theVisualProperties)
+
+    def mergeVisualProperties(other: Map[String, String]): Unit = {
+        theVisualProperties ++= other
+    }
+
+    def children: List[N] = this.synchronized(theChildren)
+
+    def updateIdentifier(newIdentifier: I) =
+        this.synchronized(theIdentifier = newIdentifier)
 
     override def toHRR = Some(identifierToString(identifier))
 
     override def uniqueId: Int = identifier.hashCode()
 
-    def addChild(node: Node): Unit = {
-        this.synchronized(children = node :: children)
+    def addChild(node: N): Unit = {
+        this.synchronized(theChildren = node :: children)
     }
+
+    def addChildren(furtherChildren: List[N]): Unit = {
+        this.synchronized(theChildren = theChildren ::: furtherChildren)
+    }
+
+    def hasOneChild: Boolean = this.synchronized(children.nonEmpty && children.tail.isEmpty)
+
+    def firstChild: N = this.synchronized(children.head)
 
     def removeLastAddedChild(): Unit = {
-        this.synchronized(children = children.tail)
+        this.synchronized(theChildren = theChildren.tail)
     }
 
-    def removeChild(node: Node): Unit = {
-        this.synchronized(children = children.filterNot(_ == node))
+    def removeChild(node: BaseNode): Unit = {
+        this.synchronized(theChildren = theChildren.filterNot(_ == node))
     }
 
-    override def foreachSuccessor(f: Node ⇒ Unit): Unit = {
+    override def foreachSuccessor(f: BaseNode ⇒ Unit): Unit = {
         this.synchronized(children.foreach(f))
     }
 
     override def hasSuccessors: Boolean = this.synchronized(children.nonEmpty)
 
+}
+
+trait MutableNode[I] extends MutableNodeLike[I, MutableNode[I]]
+
+class SimpleNode[I](
+    theIdentifier: I,
+    identifierToString: I ⇒ String,
+    theVisualProperties: Map[String, String],
+    theChildren: List[MutableNode[I]])
+        extends SimpleNodeLike[I, MutableNode[I]](theIdentifier, identifierToString, theVisualProperties, theChildren)
+        with MutableNode[I] {
+
+    def this(identifier: I) {
+        this(identifier, id ⇒ id.toString, Map("shape" -> "box"), List.empty)
+    }
+
+    def this(
+        identifier: I,
+        identifierToString: I ⇒ String) {
+        this(identifier, identifierToString, Map("shape" -> "box"), List.empty)
+    }
+
+    def this(
+        identifier: I,
+        identifierToString: I ⇒ String = (_: Any).toString,
+        fillcolor: Option[String]) {
+        this(
+            identifier,
+            identifierToString,
+            fillcolor.map(c ⇒ Map("shape" -> "box", "style" -> "filled", "fillcolor" -> c)).
+                getOrElse(Map.empty[String, String]),
+            List.empty)
+    }
 }
 

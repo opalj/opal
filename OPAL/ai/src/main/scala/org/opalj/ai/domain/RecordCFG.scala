@@ -34,6 +34,9 @@ import org.opalj.collection.mutable.UShortSet
 import org.opalj.graphs.Node
 import org.opalj.graphs.SimpleNode
 import org.opalj.br.instructions.ReturnInstruction
+import org.opalj.br.instructions.ATHROW
+import org.opalj.br.PC
+import org.opalj.graphs.MutableNode
 
 /**
  * Records the abstract interpretation time control-flow graph (CFG).
@@ -136,21 +139,70 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
             tracer)
     }
 
-    def cfgAsGraph(): Node = {
-        val nodes = new Array[SimpleNode[Int]](domain.code.instructions.size)
+    def cfgAsGraph(): MutableNode[List[PC]] = {
+        val code = this.code
+        val nodes = new Array[SimpleNode[List[PC]]](code.instructions.size)
+        val nodePredecessorsCount = new Array[Int](code.instructions.size)
+        // 1. create nodes
         for (pc ← code.programCounters) {
-            nodes(pc) =
-                new SimpleNode(
-                    pc,
-                    (pc: PC) ⇒ pc+":"+domain.code.instructions(pc).toString(pc),
-                    if (domain.code.instructions(pc).isInstanceOf[ReturnInstruction])
-                        Some("red")
-                    else
-                        None)
+            nodes(pc) = {
+                var visualProperties = Map("shape" -> "box", "labelloc" -> "l")
+
+                if (domain.code.instructions(pc).isInstanceOf[ReturnInstruction]) {
+                    visualProperties += "fillcolor" -> "green"
+                    visualProperties += "style" -> "filled"
+                } else if (domain.code.instructions(pc).isInstanceOf[ATHROW.type]) {
+                    visualProperties += "fillcolor" -> "yellow"
+                    visualProperties += "style" -> "filled"
+                } else if (allSuccessorsOf(pc).isEmpty) {
+                    visualProperties += "fillcolor" -> "red"
+                    visualProperties += "style" -> "filled"
+                    visualProperties += "shape" -> "octagon"
+                }
+
+                if (code.exceptionHandlersFor(pc).nonEmpty) {
+                    visualProperties += "color" -> "orange"
+                }
+
+                if (code.exceptionHandlers.exists { eh ⇒ eh.handlerPC == pc }) {
+                    visualProperties += "peripheries" -> "2"
+                }
+
+                def pcsToString(pcs: List[PC]): String = {
+                    def pcToString(pc: PC): String = {
+                        val ln = code.lineNumber(pc).map(ln ⇒ s"[line=$ln]").getOrElse("")
+                        pc + ln+":"+domain.code.instructions(pc).toString(pc)
+                    }
+                    pcs.map(pcToString(_)).mkString("", "\\l\\l", "\\l")
+                }
+
+                new SimpleNode(List(pc), pcsToString, visualProperties, List.empty[SimpleNode[List[PC]]])
+            }
         }
+        // 2. create edges
         for (pc ← code.programCounters; succPC ← allSuccessorsOf(pc)) {
             nodes(pc).addChild(nodes(succPC))
+            nodePredecessorsCount(succPC) += 1
         }
+
+        // 3. fold nodes
+        for (pc ← code.programCounters) {
+            val currentNode = nodes(pc)
+            if (currentNode.hasOneChild) {
+                val successorNode = currentNode.firstChild
+                val successorNodePC = successorNode.identifier.head
+                if (nodePredecessorsCount(successorNodePC) == 1) {
+                    currentNode.updateIdentifier(
+                        currentNode.identifier ++ currentNode.firstChild.identifier
+                    )
+                    currentNode.mergeVisualProperties(successorNode.visualProperties)
+                    currentNode.removeLastAddedChild() // the only child...
+                    currentNode.addChildren(successorNode.children)
+                    nodes(successorNodePC) = currentNode
+                }
+            }
+        }
+
         nodes(0)
     }
 }

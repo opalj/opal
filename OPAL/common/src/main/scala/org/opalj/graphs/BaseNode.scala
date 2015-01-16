@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,12 +22,14 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 package graphs
+
+import scala.collection.Map
 
 /**
  * Represents a node of some graph.
@@ -39,19 +41,14 @@ package graphs
  *
  * @author Michael Eichberg
  */
-trait Node {
+trait BaseNode {
 
     /**
      * Returns a humane readable representation (HRR) of this node.
      */
     def toHRR: Option[String]
 
-    /**
-     * The name of the background color based on the X11 color scheme.
-     *
-     * See [[http://www.graphviz.org/content/color-names]] for further details.
-     */
-    def backgroundColor: Option[String]
+    def visualProperties: Map[String, String] = Map.empty[String, String]
 
     /**
      * An identifier that uniquely identifies this node in the graph to which this
@@ -68,7 +65,7 @@ trait Node {
     /**
      * Applies the given function for each successor node.
      */
-    def foreachSuccessor(f: Node ⇒ Unit): Unit
+    def foreachSuccessor(f: BaseNode ⇒ Unit): Unit
 
     /**
      * The hash code of this node. By default the hash code is the unique id.
@@ -77,9 +74,15 @@ trait Node {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case otherNode: Node ⇒ otherNode.uniqueId == this.uniqueId
-            case _               ⇒ false
+            case otherNode: BaseNode ⇒ otherNode.uniqueId == this.uniqueId
+            case _                   ⇒ false
         }
     }
 }
 
+/**
+ *
+ */
+trait Node[N <: BaseNode] extends BaseNode
+
+trait BasicNode extends Node[BasicNode]

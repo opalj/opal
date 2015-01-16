@@ -36,7 +36,10 @@ package graphs
  */
 object toDot {
 
-    def apply(nodes: Set[Node], dir: String = "forward", ranksep: String = "1.0"): String =
+    def apply(
+        nodes: Set[_ <: BaseNode],
+        dir: String = "forward",
+        ranksep: String = "1.0"): String =
         generateDot(nodes, dir, ranksep)
 
     /**
@@ -47,11 +50,11 @@ object toDot {
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def generateDot(
-        nodes: Set[Node],
+        nodes: Set[_ <: BaseNode],
         dir: String = "forward",
         ranksep: String = "1.0"): String = {
-        var nodesToProcess = nodes
-        var processedNodes = Set.empty[Node]
+        var nodesToProcess = Set.empty[BaseNode] ++ nodes
+        var processedNodes = Set.empty[BaseNode]
 
         var s = s"digraph G {\n\tdir=$dir;\n\tranksep=$ranksep;\n"
 
@@ -62,17 +65,17 @@ object toDot {
             nodesToProcess = nodesToProcess.tail
 
             if (nextNode.toHRR.isDefined) {
-                val label = nextNode.toHRR.get.replace("\"", "\\\"")
+                var visualProperties = nextNode.visualProperties
+                visualProperties += (
+                    "label" -> nextNode.toHRR.get.replace("\"", "\\\"").replace("\n", "\\l")
+                )
                 s +=
-                    "\t"+nextNode.uniqueId+
-                    "[label=\""+label+"\",shape=box"+
-                    nextNode.backgroundColor.map {
-                        color ⇒ ",style=filled,fillcolor=\""+color+"\""
-                    }.getOrElse("")+
-                    "];\n"
+                    "\t"+nextNode.uniqueId +
+                    visualProperties.map(e ⇒ "\""+e._1+"\"=\""+e._2+"\"").
+                    mkString("[", ",", "];\n")
             }
 
-            val f = (sn: Node) ⇒ {
+            val f: (BaseNode ⇒ Unit) = sn ⇒ {
                 if (nextNode.toHRR.isDefined)
                     s += "\t"+nextNode.uniqueId+" -> "+sn.uniqueId+" [dir="+dir+"];\n"
 

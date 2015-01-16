@@ -33,13 +33,13 @@ package analyses
 import scala.annotation.tailrec
 import scala.collection.{ Map, Set, SeqView }
 import scala.collection.mutable.HashSet
-
 import org.opalj.io.processSource
-import org.opalj.graphs.Node
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType.Object
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.graphs.BasicNode
+import org.opalj.graphs.BaseNode
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -1172,26 +1172,29 @@ class ClassHierarchy private (
      * into a dot representation [[http://www.graphviz.org Graphviz]]). This
      * graph can be a multi-graph if the class hierarchy contains holes.
      */
-    def toGraph(): Node = new Node {
+    def toGraph(): BasicNode = new BasicNode {
 
         import scala.collection.mutable.HashMap
 
-        private val nodes: Map[ObjectType, Node] = {
-            val nodes = HashMap.empty[ObjectType, Node]
+        private val nodes: Map[ObjectType, BasicNode] = {
+            val nodes = HashMap.empty[ObjectType, BasicNode]
 
             foreachNonNullValueOf(knownTypesMap) { (id, aType) ⇒
-                val entry: (ObjectType, Node) = (
+                val entry: (ObjectType, BasicNode) = (
                     aType,
-                    new Node {
+                    new BasicNode {
                         private val directSubtypes = directSubtypesOf(aType)
                         def uniqueId = aType.id
                         def toHRR: Option[String] = Some(aType.toJava)
-                        def backgroundColor: Option[String] =
-                            if (isInterface(aType))
-                                Some("aliceblue")
-                            else
-                                None
-                        def foreachSuccessor(f: Node ⇒ Unit): Unit = {
+                        override val visualProperties: Map[String, String] = {
+                            Map("shape" -> "box") ++ (
+                                if (isInterface(aType))
+                                    Map("fillcolor" -> "aliceblue", "style" -> "filled")
+                                else
+                                    Map.empty[String, String]
+                            )
+                        }
+                        def foreachSuccessor(f: BaseNode ⇒ Unit): Unit = {
                             directSubtypes foreach { subtype ⇒
                                 f(nodes(subtype))
                             }
@@ -1207,8 +1210,7 @@ class ClassHierarchy private (
         // a virtual root node
         def uniqueId = -1
         def toHRR = None
-        def backgroundColor = None
-        def foreachSuccessor(f: Node ⇒ Unit): Unit = {
+        def foreachSuccessor(f: BaseNode ⇒ Unit): Unit = {
             /*
              * We may not see the class files of all classes that are referred
              * to in the class files that we did see. Hence, we have to be able
