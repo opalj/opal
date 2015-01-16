@@ -29,25 +29,23 @@
 package org.opalj
 package av
 
-import scala.collection.{ Set }
-
-import br._
-import br.analyses.SomeProject
+import scala.collection.Set
+import scala.util.matching.Regex
+import org.opalj.br.VirtualSourceElement
+import org.opalj.br.analyses.SomeProject
 
 /**
  * A source element matcher determines a set of source elements that matches a given query.
  *
  * @author Michael Eichberg
  */
-case class RegexClassMatcher(
-    matcher: scala.util.matching.Regex)
-        extends SourceElementsMatcher {
+case class RegexClassMatcher(matcher: Regex) extends SourceElementsMatcher {
 
     def extension(project: SomeProject): Set[VirtualSourceElement] = {
 
         val matchedClassFiles =
             project.allClassFiles filter { classFile ⇒
-                val className = classFile.thisType.fqn.replace('/', '.')
+                val className = classFile.thisType.toJava
                 matcher.findFirstIn(className).isDefined
             }
 
