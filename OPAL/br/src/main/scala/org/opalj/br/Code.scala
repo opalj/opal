@@ -285,12 +285,16 @@ final class Code private (
     def localVariablesAt(pc: PC): Map[Int, LocalVariable] = {
         localVariableTable match {
             case Some(lvt) ⇒
-                (
-                    lvt.collect {
-                        case lv @ LocalVariable(startPC, length, name, fieldType, index) if startPC <= pc && startPC + length > pc ⇒
-                            (index, lv)
-                    }
-                ).toMap
+                (lvt.collect {
+                    case lv @ LocalVariable(
+                        startPC,
+                        length,
+                        name,
+                        fieldType,
+                        index
+                        ) if startPC <= pc && startPC + length > pc ⇒
+                        (index, lv)
+                }).toMap
             case _ ⇒
                 Map.empty
         }
@@ -654,12 +658,19 @@ final class Code private (
         result
     }
 
+    def matchTriple(f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = {
+        matchTriple(Int.MaxValue, f)
+    }
+
     /**
      * Finds a sequence of 3 consecutive instructions for which the given function returns
      * `true`, and returns the `PC` of the first instruction in each found sequence.
      */
-    def matchTriple(f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = {
+    def matchTriple(
+        matchMaxTriples: Int = Int.MaxValue,
+        f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = {
         val max_pc = instructions.size
+        var matchedTriplesCount = 0
         var pc1 = 0
         var pc2 = pcOfNextInstruction(pc1)
         if (pc2 >= max_pc)
@@ -667,10 +678,12 @@ final class Code private (
         var pc3 = pcOfNextInstruction(pc2)
 
         var result: List[PC] = List.empty
-        while (pc3 < max_pc) {
+        while (pc3 < max_pc && matchedTriplesCount < matchMaxTriples) {
             if (f(instructions(pc1), instructions(pc2), instructions(pc3))) {
                 result = pc1 :: result
             }
+
+            matchedTriplesCount += 1
 
             // Move forward by 1 instruction at a time. Even though (..., 1, 2, 3, _, ...)
             // didn't match, it's possible that (..., _, 1, 2, 3, ...) matches.
