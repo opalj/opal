@@ -27,10 +27,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj.av
+package checking
 
 import org.junit.runner.RunWith
 
-import org.opalj.av.Specification._
+import org.opalj.av.checking.Specification._
 import org.opalj.bi.TestSupport.locateTestResources
 
 import org.scalatest._

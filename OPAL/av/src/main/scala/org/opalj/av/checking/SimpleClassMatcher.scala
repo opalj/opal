@@ -30,13 +30,31 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.{ Set ⇒ ASet }
+import scala.util.matching.Regex
+import org.opalj.br.ClassFile
 
-trait DependencyChecker {
+/**
+ * @author Michael Eichberg
+ */
+case class SimpleClassMatcher(nameMatcher: NameMatcher) extends ClassLevelMatcher {
 
-    def violations(): ASet[SpecificationViolation]
+    def doesMatch(classFile: ClassFile): Boolean = {
+        val classFileName = classFile.thisType.fqn
+        nameMatcher.doesMatch(classFileName)
+    }
 
-    def targetEnsembles: Seq[Symbol]
+}
 
-    def sourceEnsembles: Seq[Symbol]
+object SimpleClassMatcher {
+
+    def apply(className: String, matchPrefix: Boolean = false): SimpleClassMatcher = {
+        require(className.indexOf('*') == -1)
+        require(className.indexOf('.') == -1)
+        SimpleClassMatcher(SimpleNameMatcher(className, matchPrefix))
+    }
+
+    def apply(matcher: Regex): SimpleClassMatcher = {
+        SimpleClassMatcher(RegexNameMatcher(matcher))
+    }
+
 }

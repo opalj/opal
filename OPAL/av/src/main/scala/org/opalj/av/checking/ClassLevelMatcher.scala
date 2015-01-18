@@ -30,13 +30,23 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.{ Set ⇒ ASet }
+import scala.collection.Set
 
-trait DependencyChecker {
+import org.opalj.br.ClassFile
+import org.opalj.br.VirtualSourceElement
+import org.opalj.br.analyses.SomeProject
 
-    def violations(): ASet[SpecificationViolation]
+/**
+ * A class level matcher matches classes and all methods and fields defined by the
+ * respective classes.
+ *
+ * @author Michael Eichberg
+ */
+trait ClassLevelMatcher extends SourceElementsMatcher {
 
-    def targetEnsembles: Seq[Symbol]
+    def doesMatch(classFile: ClassFile): Boolean
 
-    def sourceEnsembles: Seq[Symbol]
+    def extension(project: SomeProject): Set[VirtualSourceElement] =
+        matchCompleteClasses(project.allClassFiles filter { doesMatch(_) })
+
 }

@@ -30,13 +30,33 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.{ Set ⇒ ASet }
+import org.opalj.br._
 
-trait DependencyChecker {
+/**
+ * Matches all classes, fields and methods that are declared in the specified package.
+ *
+ * @param packageName The name of a package in binary notation.
+ *      (I.e., "/" are used to separate a package name's segments; e.g.,
+ *      "java/lang/Object").
+ * @param matchSubpackages If true, all packages that start with the given package
+ *      name are matched otherwise only classes declared in the given package are matched.
+ *
+ * @author Michael Eichberg
+ */
+case class PackageMatcher(nameMatcher: NameMatcher) extends ClassLevelMatcher {
 
-    def violations(): ASet[SpecificationViolation]
-
-    def targetEnsembles: Seq[Symbol]
-
-    def sourceEnsembles: Seq[Symbol]
+    def doesMatch(classFile: ClassFile): Boolean = {
+        val packageName = classFile.thisType.packageName
+        nameMatcher.doesMatch(packageName)
+    }
 }
+
+object PackageMatcher {
+
+    def apply(
+        packageName: String,
+        matchSubpackages: Boolean = false): PackageMatcher = {
+        PackageMatcher(SimpleNameMatcher(packageName, matchSubpackages))
+    }
+}
+

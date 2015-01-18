@@ -28,36 +28,20 @@
  */
 package org.opalj
 package av
-
-import scala.collection.Set
-
-import br._
-import br.analyses.SomeProject
+package checking
 
 /**
  * @author Michael Eichberg
  */
-case class ClassMatcher(
-    className: String,
-    matchPrefix: Boolean = false)
-        extends SourceElementsMatcher {
+case class SimpleNameMatcher(
+    name: String,
+    matchPrefix: Boolean)
+        extends NameMatcher {
 
-    require(className.indexOf('*') == -1)
-    require(className.indexOf('.') == -1)
-
-    def extension(project: SomeProject): Set[VirtualSourceElement] = {
-
-        val matchedClassFiles =
-            project.allClassFiles filter { classFile ⇒
-                {
-                    val otherClassName = classFile.thisType.fqn
-                    otherClassName.startsWith(className) && (
-                        matchPrefix ||
-                        otherClassName.length == className.length)
-                }
-            }
-        matchCompleteClasses(matchedClassFiles)
+    def doesMatch(otherName: String): Boolean = {
+        otherName.startsWith(name) && (
+            matchPrefix || name.length == otherName.length
+        )
     }
-
-    override def toString = "\""+className+"\""
 }
+

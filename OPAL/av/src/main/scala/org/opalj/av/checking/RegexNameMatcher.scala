@@ -28,49 +28,20 @@
  */
 package org.opalj
 package av
+package checking
 
-import scala.collection.{ Set }
-
-import br._
-import br.analyses.SomeProject
+import scala.util.matching.Regex
 
 /**
- * Matches all classes, fields and methods that are declared in the specified package.
- *
- * @param packageName The name of a package in binary notation.
- *      (I.e., "/" are used to separate a package name's segments; e.g.,
- *      "java/lang/Object").
- * @param matchSubpackages If true, all packages that start with the given package
- *      name are matched otherwise only classes declared in the given package are matched.
+ * Matches name of class, fields and methods based on their name. The name is matched
+ * against the binary notation.
  *
  * @author Michael Eichberg
  */
-case class PackageNameBasedMatcher(
-    packageName: String,
-    matchSubpackages: Boolean = false)
-        extends SourceElementsMatcher {
+case class RegexNameMatcher(matcher: Regex) extends NameMatcher {
 
-    require(packageName.length >= 1)
-    require(packageName.indexOf('*') == -1)
-    require(packageName.indexOf('.') == -1)
-
-    def extension(project: SomeProject): Set[VirtualSourceElement] = {
-        val matchedClassFiles =
-            project.allClassFiles filter { classFile ⇒
-                val thisClassPackageName = classFile.thisType.packageName
-                thisClassPackageName.startsWith(packageName) && (
-                    matchSubpackages || thisClassPackageName.length() == packageName.length()
-                )
-            }
-        matchCompleteClasses(matchedClassFiles)
-    }
-
-    override def toString = {
-        var s = "\""+packageName.replace('/', '.')+".*"
-        if (matchSubpackages)
-            s += "*"
-        s += "\""
-        s
+    def doesMatch(otherName: String): Boolean = {
+        matcher.findFirstIn(otherName).isDefined
     }
 }
 
