@@ -27,36 +27,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package instructions
+package av
+package checking
+
+import org.opalj.br._
 
 /**
- * Trait that can be mixed in if the local variable index of a load or store instruction
- * ((a,i,l,...)load/store_X) is not predefined as part of the instruction.
+ * Matches all classes, fields and methods that are declared in the specified package.
+ *
+ * @param packageName The name of a package in binary notation.
+ *      (I.e., "/" are used to separate a package name's segments; e.g.,
+ *      "java/lang/Object").
+ * @param matchSubpackages If true, all packages that start with the given package
+ *      name are matched otherwise only classes declared in the given package are matched.
  *
  * @author Michael Eichberg
  */
-trait ExplicitLocalVariableIndex extends Instruction {
+case class PackageMatcher(nameMatcher: NameMatcher) extends ClassLevelMatcher {
 
-    def lvIndex: Int
-
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        val other = code.instructions(otherPC)
-
-        (this eq other) || (
-            other.opcode == this.opcode &&
-            other.asInstanceOf[ExplicitLocalVariableIndex].lvIndex == this.lvIndex
-        )
+    def doesMatch(classFile: ClassFile): Boolean = {
+        val packageName = classFile.thisType.packageName
+        nameMatcher.doesMatch(packageName)
     }
-
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
-        if (modifiedByWide)
-            currentPC + 3
-        else
-            currentPC + 2
-    }
-
 }
+
+object PackageMatcher {
+
+    def apply(
+        packageName: String,
+        matchSubpackages: Boolean = false): PackageMatcher = {
+        PackageMatcher(SimpleNameMatcher(packageName, matchSubpackages))
+    }
+}
+

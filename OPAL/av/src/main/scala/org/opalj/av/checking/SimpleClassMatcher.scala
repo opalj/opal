@@ -27,36 +27,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package instructions
+package av
+package checking
+
+import scala.util.matching.Regex
+import org.opalj.br.ClassFile
 
 /**
- * Trait that can be mixed in if the local variable index of a load or store instruction
- * ((a,i,l,...)load/store_X) is not predefined as part of the instruction.
- *
  * @author Michael Eichberg
  */
-trait ExplicitLocalVariableIndex extends Instruction {
+case class SimpleClassMatcher(nameMatcher: NameMatcher) extends ClassLevelMatcher {
 
-    def lvIndex: Int
-
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        val other = code.instructions(otherPC)
-
-        (this eq other) || (
-            other.opcode == this.opcode &&
-            other.asInstanceOf[ExplicitLocalVariableIndex].lvIndex == this.lvIndex
-        )
+    def doesMatch(classFile: ClassFile): Boolean = {
+        val classFileName = classFile.thisType.fqn
+        nameMatcher.doesMatch(classFileName)
     }
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
+}
 
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
-        if (modifiedByWide)
-            currentPC + 3
-        else
-            currentPC + 2
+object SimpleClassMatcher {
+
+    def apply(className: String, matchPrefix: Boolean = false): SimpleClassMatcher = {
+        require(className.indexOf('*') == -1)
+        require(className.indexOf('.') == -1)
+        SimpleClassMatcher(SimpleNameMatcher(className, matchPrefix))
+    }
+
+    def apply(matcher: Regex): SimpleClassMatcher = {
+        SimpleClassMatcher(RegexNameMatcher(matcher))
     }
 
 }

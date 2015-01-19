@@ -28,30 +28,20 @@
  */
 package org.opalj
 package av
-
-import scala.collection.{ Set }
-
-import br._
-import br.analyses.SomeProject
+package checking
 
 /**
- * A source element matcher determines a set of source elements that matches a given query.
- *
  * @author Michael Eichberg
  */
-case class RegexClassMatcher(
-    matcher: scala.util.matching.Regex)
-        extends SourceElementsMatcher {
+case class SimpleNameMatcher(
+    name: String,
+    matchPrefix: Boolean)
+        extends NameMatcher {
 
-    def extension(project: SomeProject): Set[VirtualSourceElement] = {
-
-        val matchedClassFiles =
-            project.allClassFiles filter { classFile ⇒
-                val className = classFile.thisType.fqn.replace('/', '.')
-                matcher.findFirstIn(className).isDefined
-            }
-
-        matchCompleteClasses(matchedClassFiles)
+    def doesMatch(otherName: String): Boolean = {
+        otherName.startsWith(name) && (
+            matchPrefix || name.length == otherName.length
+        )
     }
 }
 

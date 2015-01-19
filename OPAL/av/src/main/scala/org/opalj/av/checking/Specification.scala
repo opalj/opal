@@ -28,6 +28,7 @@
  */
 package org.opalj
 package av
+package checking
 
 import scala.language.implicitConversions
 import java.net.URL
@@ -182,18 +183,18 @@ class Specification(
     @throws(classOf[SpecificationError])
     implicit def StringToSourceElementMatcher(matcher: String): SourceElementsMatcher = {
         if (matcher endsWith ".*")
-            new PackageNameBasedMatcher(matcher.substring(0, matcher.length() - 2).replace('.', '/'))
+            PackageMatcher(matcher.substring(0, matcher.length() - 2).replace('.', '/'))
         else if (matcher endsWith ".**")
-            new PackageNameBasedMatcher(matcher.substring(0, matcher.length() - 3).replace('.', '/'), true)
+            PackageMatcher(matcher.substring(0, matcher.length() - 3).replace('.', '/'), true)
         else if (matcher endsWith "*")
-            new ClassMatcher(matcher.substring(0, matcher.length() - 1).replace('.', '/'), true)
+            SimpleClassMatcher(matcher.substring(0, matcher.length() - 1).replace('.', '/'), true)
         else if (matcher.indexOf('*') == -1)
-            new ClassMatcher(matcher.replace('.', '/'))
+            SimpleClassMatcher(matcher.replace('.', '/'))
         else
             throw SpecificationError("unsupported matcher pattern: "+matcher);
     }
 
-    def classes(matcher: Regex): SourceElementsMatcher = new RegexClassMatcher(matcher)
+    def classes(matcher: Regex): SourceElementsMatcher = SimpleClassMatcher(matcher)
 
     /**
      * Returns the class files stored at the given location.

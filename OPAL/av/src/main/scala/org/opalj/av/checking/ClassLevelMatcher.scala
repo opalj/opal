@@ -27,36 +27,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package instructions
+package av
+package checking
+
+import scala.collection.Set
+
+import org.opalj.br.ClassFile
+import org.opalj.br.VirtualSourceElement
+import org.opalj.br.analyses.SomeProject
 
 /**
- * Trait that can be mixed in if the local variable index of a load or store instruction
- * ((a,i,l,...)load/store_X) is not predefined as part of the instruction.
+ * A class level matcher matches classes and all methods and fields defined by the
+ * respective classes.
  *
  * @author Michael Eichberg
  */
-trait ExplicitLocalVariableIndex extends Instruction {
+trait ClassLevelMatcher extends SourceElementsMatcher {
 
-    def lvIndex: Int
+    def doesMatch(classFile: ClassFile): Boolean
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        val other = code.instructions(otherPC)
-
-        (this eq other) || (
-            other.opcode == this.opcode &&
-            other.asInstanceOf[ExplicitLocalVariableIndex].lvIndex == this.lvIndex
-        )
-    }
-
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
-        if (modifiedByWide)
-            currentPC + 3
-        else
-            currentPC + 2
-    }
+    def extension(project: SomeProject): Set[VirtualSourceElement] =
+        matchCompleteClasses(project.allClassFiles filter { doesMatch(_) })
 
 }

@@ -28,6 +28,7 @@
  */
 package org.opalj
 package av
+package checking
 
 import scala.collection.{ Set ⇒ ASet }
 

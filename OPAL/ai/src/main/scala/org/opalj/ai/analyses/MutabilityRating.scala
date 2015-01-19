@@ -71,8 +71,7 @@ package analyses
  * as unknown. (Interfaces are generally ignored as they are always immutable.)
  *
  * ==Native Methods==
- * A class that defines native instance methods (native methods that are not static)
- * is generally considered mutable - except of `java.lang.Object`.
+ * Native methods are ignored.
  *
  * ==Class Instances==
  * The mutability of class instances is determined by analyzing the class instance

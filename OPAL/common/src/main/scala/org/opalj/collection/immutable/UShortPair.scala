@@ -27,36 +27,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package instructions
+package collection
+package immutable
+
+import org.opalj.UShort.{ MinValue, MaxValue }
 
 /**
- * Trait that can be mixed in if the local variable index of a load or store instruction
- * ((a,i,l,...)load/store_X) is not predefined as part of the instruction.
+ * A memory-efficient representation of a pair of UShortValues
  *
  * @author Michael Eichberg
  */
-trait ExplicitLocalVariableIndex extends Instruction {
+class UShortPair private (val pair: Int) extends AnyVal {
 
-    def lvIndex: Int
-
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        val other = code.instructions(otherPC)
-
-        (this eq other) || (
-            other.opcode == this.opcode &&
-            other.asInstanceOf[ExplicitLocalVariableIndex].lvIndex == this.lvIndex
-        )
-    }
-
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
-        if (modifiedByWide)
-            currentPC + 3
-        else
-            currentPC + 2
-    }
+    def _1: UShort = pair & UShort.MaxValue
+    def key: UShort = _1
+    def _2: UShort = pair >>> 16
+    def value: UShort = _2
 
 }
+object UShortPair {
+
+    def apply(a: UShort, b: UShort): UShortPair = {
+        assert(a >= UShort.MinValue && a <= UShort.MaxValue)
+        assert(b >= UShort.MinValue && b <= UShort.MaxValue)
+
+        new UShortPair(a | b << 16)
+    }
+}
+
