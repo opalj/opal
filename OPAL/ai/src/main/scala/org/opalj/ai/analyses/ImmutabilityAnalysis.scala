@@ -31,15 +31,19 @@ package ai
 package analyses
 
 import java.net.URL
+
 import scala.collection.Map
 import scala.collection.concurrent.{ TrieMap ⇒ ConcurrentMap }
+
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.Project
-import org.opalj.ai.analyses.MutabilityRating._
 import org.opalj.br.ClassFile
-import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LoadLocalVariableInstruction
+import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.PUTFIELD
+
+import org.opalj.ai.analyses.MutabilityRating._
 
 /**
  * This analysis determines which classes in a project are immutable,
@@ -67,7 +71,7 @@ object ImmutabilityAnalysis {
             if (field.isFinal) {
                 if (field.fieldType.isReferenceType)
                     rating = ConditionallyImmutable
-                // else 
+                // else
                 //  (field.isBaseType === true) => nothing to do
             } else {
                 return Unknown;
@@ -85,29 +89,28 @@ object ImmutabilityAnalysis {
         assert(!classFile.isInterfaceDeclaration)
         assert(superclassTypeRating.id > Mutable.id)
 
-        val definesSetterMethod =
-            classFile.methods.filter { method ⇒
-                !method.isConstructor && method.body.nonEmpty
-            } exists { method ⇒
-                val instr = method.body.get.instructions
-                if (instr.size > 2)
-                    (instr(0), instr(1), instr(2)) match {
-                        case (ALOAD_0,
-                            LoadLocalVariableInstruction(_, 1),
-                            PUTFIELD(objectType, _, _)) ⇒ true
-                        case _ ⇒ false
+        val definesSimpleSetterMethod = {
+            val concreteMethods =
+                classFile.methods.view.filter { method ⇒
+                    !method.isConstructor && method.body.nonEmpty && !method.isPrivate
+                }
+            concreteMethods exists { method ⇒
+                method.body.get.matchTriple(
+                    1,
+                    { (instr1: Instruction, instr2: Instruction, instr3: Instruction) ⇒
+                        (instr1, instr2, instr3) match {
+                            case (
+                                ALOAD_0,
+                                LoadLocalVariableInstruction(_, 1),
+                                PUTFIELD(objectType, _, _)
+                                ) ⇒ true
+                            case _ ⇒ false
+                        }
                     }
-                else
-                    false
+                ).nonEmpty
             }
-
-        val definesNativeNonStaticMethod =
-            classFile.methods.exists {
-                method ⇒
-                    method.isNative && !method.isStatic
-            }
-
-        if (definesSetterMethod || definesNativeNonStaticMethod)
+        }
+        if (definesSimpleSetterMethod)
             Mutable
         else
             Unknown
@@ -140,29 +143,28 @@ object ImmutabilityAnalysis {
                         traverse(subclass, superclassTypeRating)
                     }
                 case r @ Unknown ⇒
-                    methodBasedRating(classFile, superclassTypeRating) match {
-                        case r @ (Mutable | Unknown) ⇒
-                            classification(classType) = r
-                            classHierarchy.foreachSubtype(classType) { subclassType ⇒
-                                classification(subclassType) = r
-                            }
-                        case _ ⇒ ()
+                    val r = methodBasedRating(classFile, superclassTypeRating)
+                    classification(classType) = r
+                    classHierarchy.foreachSubtype(classType) { subclassType ⇒
+                        classification(subclassType) = r
                     }
+
                 case r @ Mutable ⇒
                     classification(classType) = r
                     classHierarchy.foreachSubtype(classType) { subclassType ⇒
                         classification(subclassType) = r
                     }
+
             }
         }
         // 1. Do the basic classification
-        // "java.lang.Object" is at the root of the class hierarchy and we can only 
+        // "java.lang.Object" is at the root of the class hierarchy and we can only
         // assess classes for which all super class type information exists.
         foreachDirectSubclass(ObjectType.Object, project) { subclass ⇒
             traverse(subclass, Immutable)
         }
 
-        // 2. (Re-)Analyze all class files marked as ConditionallyImmutable to 
+        // 2. (Re-)Analyze all class files marked as ConditionallyImmutable to
         // check if the transitive hull only contains ConditionallyImmutable or Immutable
         // classes. If so, the class can be reranked to Immutable.
 
