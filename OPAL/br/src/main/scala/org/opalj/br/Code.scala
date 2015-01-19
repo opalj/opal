@@ -62,6 +62,8 @@ final class Code private (
     /**
      * Returns a new iterator to iterate over the program counters of the instructions
      * of this `Code` block.
+     *
+     * @see See the method [[foreach]] for an alternative.
      */
     def programCounters: Iterator[PC] =
         new Iterator[PC] {
