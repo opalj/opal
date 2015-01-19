@@ -660,6 +660,9 @@ final class Code private (
         result
     }
 
+    /**
+     * Finds all sequences of three consecutive instructions that are matched by `f`.
+     */
     def matchTriple(f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = {
         matchTriple(Int.MaxValue, f)
     }
@@ -667,6 +670,10 @@ final class Code private (
     /**
      * Finds a sequence of 3 consecutive instructions for which the given function returns
      * `true`, and returns the `PC` of the first instruction in each found sequence.
+     *
+     * @param matchMaxTriples Is the maximum number of triples that is passed to `f`.
+     *      E.g., if `matchMaxTriples` is "1" only the first three instructions are
+     *      passed to `f`.
      */
     def matchTriple(
         matchMaxTriples: Int = Int.MaxValue,
