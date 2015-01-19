@@ -31,17 +31,59 @@ package av
 package checking
 
 import scala.collection.Set
+
+import org.opalj.br.ClassFile
+import org.opalj.br.FieldType
+import org.opalj.br.Field
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.VirtualSourceElement
 
 /**
- * A source element matcher that matches no elements.
- *
+ * @author Marco Torsello
  * @author Michael Eichberg
  */
-case object NoSourceElementsMatcher extends SourceElementsMatcher {
+case class FieldMatcher(
+    classLevelMatcher: Option[ClassLevelMatcher],
+    annotation: Option[String], // needs to be reconsidered...
+    fieldType: Option[FieldType],
+    fieldName: Option[NameMatcher])
+        extends SourceElementsMatcher {
 
-    def extension(project: SomeProject): Set[VirtualSourceElement] = Set.empty
+    def doesClassFileMatch(classFile: ClassFile): Boolean = {
+        classLevelMatcher.isEmpty || classLevelMatcher.get.doesMatch(classFile)
+    }
+
+    def doesFieldMatch(field: Field): Boolean = {
+        (fieldType.isEmpty || (fieldType.get eq field.fieldType)) && (
+            (fieldName.isEmpty || fieldName.get.doesMatch(field.name)))
+    }
+
+    def extension(project: SomeProject): Set[VirtualSourceElement] = {
+        val allMatchedFields = project.allClassFiles collect {
+            case classFile if doesClassFileMatch(classFile) ⇒ {
+                classFile.fields collect {
+                    case field if doesFieldMatch(field) ⇒ field.asVirtualField(classFile)
+                }
+            }
+        }
+        allMatchedFields.flatten.toSet
+    }
 
 }
 
+object FieldMatcher {
+
+    def apply(
+        className: Option[ClassLevelMatcher] = None,
+        annotation: Option[String] = None,
+        fieldType: Option[String] = None, // java.lang.Object
+        fieldName: String,
+        matchPrefix: Boolean = false): FieldMatcher = {
+        this(
+            className,
+            annotation,
+            fieldType.map(ftn ⇒ FieldType(ftn.replace('.', '/'))),
+            Some(SimpleNameMatcher(fieldName, matchPrefix)))
+    }
+
+}

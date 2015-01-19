@@ -27,20 +27,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package instructions
+package av
+package checking
+
+import scala.collection.Set
+
+import org.opalj.br.ClassFile
+import org.opalj.br.VirtualSourceElement
+import org.opalj.br.analyses.SomeProject
 
 /**
- * Push int constant value 4.
+ * A class level matcher matches classes and all methods and fields defined by the
+ * respective classes.
  *
  * @author Michael Eichberg
  */
-case object ICONST_4 extends LoadConstantInstruction[Int] with ImplicitValue {
+trait ClassLevelMatcher extends SourceElementsMatcher {
 
-    final val value = 4
+    def doesMatch(classFile: ClassFile): Boolean
 
-    final val opcode = 7
-
-    final val mnemonic = "iconst_4"
+    def extension(project: SomeProject): Set[VirtualSourceElement] =
+        matchCompleteClasses(project.allClassFiles filter { doesMatch(_) })
 
 }
