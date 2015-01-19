@@ -31,32 +31,22 @@ package br
 package instructions
 
 /**
- * Trait that can be mixed in if the local variable index of a load or store instruction
- * ((a,i,l,...)load/store_X) is not predefined as part of the instruction.
+ * An instruction to create a new one-dimensional array.
  *
  * @author Michael Eichberg
  */
-trait ExplicitLocalVariableIndex extends Instruction {
+abstract class CreateNewOneDimensionalArrayInstruction extends CreateNewArrayInstruction {
 
-    def lvIndex: Int
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        val other = code.instructions(otherPC)
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
-        (this eq other) || (
-            other.opcode == this.opcode &&
-            other.asInstanceOf[ExplicitLocalVariableIndex].lvIndex == this.lvIndex
-        )
-    }
+    final def readsLocal: Boolean = false
 
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
 
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
-        if (modifiedByWide)
-            currentPC + 3
-        else
-            currentPC + 2
-    }
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
 }
