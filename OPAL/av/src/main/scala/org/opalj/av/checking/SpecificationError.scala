@@ -28,6 +28,7 @@
  */
 package org.opalj
 package av
+package checking
 
 /**
  * Used to report errors in the specification.

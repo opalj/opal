@@ -31,16 +31,14 @@ package br
 package instructions
 
 /**
- * Push int constant value 4.
+ * Common superclass of all instructions that perform a conditional jump based on
+ * an explicit comparison with `null`.
  *
  * @author Michael Eichberg
  */
-case object ICONST_4 extends LoadConstantInstruction[Int] with ImplicitValue {
+abstract class IFXNullInstruction extends SimpleConditionalBranchInstruction {
 
-    final val value = 4
-
-    final val opcode = 7
-
-    final val mnemonic = "iconst_4"
+    def operandCount = 1
 
 }
+

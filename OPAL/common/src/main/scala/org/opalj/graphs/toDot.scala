@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -36,7 +36,11 @@ package graphs
  */
 object toDot {
 
-    def apply(nodes: Set[Node], dir: String = "forward"): String = generateDot(nodes, dir)
+    def apply(
+        nodes: Set[_ <: Node],
+        dir: String = "forward",
+        ranksep: String = "1.0"): String =
+        generateDot(nodes, dir, ranksep)
 
     /**
      * Generates a string that describes a (multi-)graph using the ".dot" file format
@@ -46,12 +50,13 @@ object toDot {
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def generateDot(
-        nodes: Set[Node],
-        dir: String = "forward"): String = {
-        var nodesToProcess = nodes
+        nodes: Set[_ <: Node],
+        dir: String = "forward",
+        ranksep: String = "1.0"): String = {
+        var nodesToProcess = Set.empty[Node] ++ nodes
         var processedNodes = Set.empty[Node]
 
-        var s = "digraph G {\n\tdir="+dir+"\n"
+        var s = s"digraph G {\n\tdir=$dir;\n\tranksep=$ranksep;\n"
 
         while (nodesToProcess.nonEmpty) {
             val nextNode = nodesToProcess.head
@@ -60,17 +65,17 @@ object toDot {
             nodesToProcess = nodesToProcess.tail
 
             if (nextNode.toHRR.isDefined) {
-                val label = nextNode.toHRR.get.replace("\"", "\\\"")
+                var visualProperties = nextNode.visualProperties
+                visualProperties += (
+                    "label" -> nextNode.toHRR.get.replace("\"", "\\\"").replace("\n", "\\l")
+                )
                 s +=
-                    "\t"+nextNode.uniqueId+
-                    "[label=\""+label+"\""+
-                    nextNode.backgroundColor.map {
-                        color ⇒ ",style=filled,fillcolor=\""+color+"\""
-                    }.getOrElse("")+
-                    "];\n"
+                    "\t"+nextNode.uniqueId +
+                    visualProperties.map(e ⇒ "\""+e._1+"\"=\""+e._2+"\"").
+                    mkString("[", ",", "];\n")
             }
 
-            val f = (sn: Node) ⇒ {
+            val f: (Node ⇒ Unit) = sn ⇒ {
                 if (nextNode.toHRR.isDefined)
                     s += "\t"+nextNode.uniqueId+" -> "+sn.uniqueId+" [dir="+dir+"];\n"
 

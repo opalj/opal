@@ -31,16 +31,22 @@ package br
 package instructions
 
 /**
- * Push int constant value 4.
+ * An instruction to create a new one-dimensional array.
  *
  * @author Michael Eichberg
  */
-case object ICONST_4 extends LoadConstantInstruction[Int] with ImplicitValue {
+abstract class CreateNewOneDimensionalArrayInstruction extends CreateNewArrayInstruction {
 
-    final val value = 4
+    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
-    final val opcode = 7
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
 
-    final val mnemonic = "iconst_4"
+    final def readsLocal: Boolean = false
+
+    final def indexOfReadLocal: Int = throw new UnsupportedOperationException()
+
+    final def writesLocal: Boolean = false
+
+    final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
 }

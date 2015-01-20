@@ -27,20 +27,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package instructions
+package av
+package checking
+
+import scala.util.matching.Regex
+import org.opalj.br.ClassFile
 
 /**
- * Push int constant value 4.
- *
  * @author Michael Eichberg
  */
-case object ICONST_4 extends LoadConstantInstruction[Int] with ImplicitValue {
+case class SimpleClassMatcher(nameMatcher: NameMatcher) extends ClassLevelMatcher {
 
-    final val value = 4
+    def doesMatch(classFile: ClassFile): Boolean = {
+        val classFileName = classFile.thisType.fqn
+        nameMatcher.doesMatch(classFileName)
+    }
 
-    final val opcode = 7
+}
 
-    final val mnemonic = "iconst_4"
+object SimpleClassMatcher {
+
+    def apply(className: String, matchPrefix: Boolean = false): SimpleClassMatcher = {
+        require(className.indexOf('*') == -1)
+        require(className.indexOf('.') == -1)
+        SimpleClassMatcher(SimpleNameMatcher(className, matchPrefix))
+    }
+
+    def apply(matcher: Regex): SimpleClassMatcher = {
+        SimpleClassMatcher(RegexNameMatcher(matcher))
+    }
 
 }

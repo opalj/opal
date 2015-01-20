@@ -27,50 +27,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package av
+package graphs
 
-import scala.collection.{ Set }
+import scala.collection.Map
 
-import br._
-import br.analyses.SomeProject
+class DefaultMutableNode[I](
+    theIdentifier: I,
+    identifierToString: I ⇒ String,
+    theVisualProperties: Map[String, String],
+    theChildren: List[DefaultMutableNode[I]])
+        extends MutableNodeLike[I, DefaultMutableNode[I]](theIdentifier, identifierToString, theVisualProperties, theChildren)
+        with MutableNode[I, DefaultMutableNode[I]] {
 
-/**
- * Matches all classes, fields and methods that are declared in the specified package.
- *
- * @param packageName The name of a package in binary notation.
- *      (I.e., "/" are used to separate a package name's segments; e.g.,
- *      "java/lang/Object").
- * @param matchSubpackages If true, all packages that start with the given package
- *      name are matched otherwise only classes declared in the given package are matched.
- *
- * @author Michael Eichberg
- */
-case class PackageNameBasedMatcher(
-    packageName: String,
-    matchSubpackages: Boolean = false)
-        extends SourceElementsMatcher {
-
-    require(packageName.length >= 1)
-    require(packageName.indexOf('*') == -1)
-    require(packageName.indexOf('.') == -1)
-
-    def extension(project: SomeProject): Set[VirtualSourceElement] = {
-        val matchedClassFiles =
-            project.allClassFiles filter { classFile ⇒
-                val thisClassPackageName = classFile.thisType.packageName
-                thisClassPackageName.startsWith(packageName) && (
-                    matchSubpackages || thisClassPackageName.length() == packageName.length()
-                )
-            }
-        matchCompleteClasses(matchedClassFiles)
+    def this(identifier: I) {
+        this(identifier, id ⇒ id.toString, Map("shape" -> "box"), List.empty)
     }
 
-    override def toString = {
-        var s = "\""+packageName.replace('/', '.')+".*"
-        if (matchSubpackages)
-            s += "*"
-        s += "\""
-        s
+    def this(
+        identifier: I,
+        identifierToString: I ⇒ String) {
+        this(identifier, identifierToString, Map("shape" -> "box"), List.empty)
+    }
+
+    def this(
+        identifier: I,
+        identifierToString: I ⇒ String = (_: Any).toString,
+        fillcolor: Option[String]) {
+        this(
+            identifier,
+            identifierToString,
+            fillcolor.map(c ⇒ Map("shape" -> "box", "style" -> "filled", "fillcolor" -> c)).
+                getOrElse(Map.empty[String, String]),
+            List.empty)
     }
 }
 

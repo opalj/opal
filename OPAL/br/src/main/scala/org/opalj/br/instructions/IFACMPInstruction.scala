@@ -31,16 +31,13 @@ package br
 package instructions
 
 /**
- * Push int constant value 4.
+ * Common superclass of all instructions that perform a conditional jump based
+ * on the comparison of reference values.
  *
  * @author Michael Eichberg
  */
-case object ICONST_4 extends LoadConstantInstruction[Int] with ImplicitValue {
+abstract class IFACMPInstruction extends SimpleConditionalBranchInstruction {
 
-    final val value = 4
-
-    final val opcode = 7
-
-    final val mnemonic = "iconst_4"
-
+    def operandCount = 2
 }
+

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -61,6 +61,11 @@ trait Instruction {
 
     /**
      * The index of the next instruction in the code array.
+     *
+     * This is primarily a convenience method that delegates to the method
+     * `indexOfNextInstrution(PC,Boolean)`.  However, given that this is also the
+     * standard method called by clients, it is often meaningful to directly implement
+     * this. In particular since most instructions cannot be modified by wide.
      */
     def indexOfNextInstruction(currentPC: PC, code: Code): Int
 
@@ -82,6 +87,37 @@ trait Instruction {
     def nextInstructions(currentPC: PC, code: Code): PCs
 
     /**
+     * Determines if this instructions is isomorphic to the given instruction.
+     *
+     * Two instructions are isomporphic if they access the same operand and register
+     * values and if the instructions have the same bytecode representation, except
+     * of (A) (potential) padding bytes and (B) the branch offset of JSR(_W) instructions.
+     * In first case the branch offest are corrected by the number of padding bytes and
+     * in the second case the absolute addresses are compared (i.e., whether both
+     * instructions call the same subroutine.
+     *
+     *  For example, an `aload_0` instruction is only
+     * isomorphic to another `aload_0` instruction and is not isomorphic to an `aload(0)`
+     * instruction – though the runtime effect is the same. However, a [[LOOKUPSWITCH]]
+     * ([[TABLESWITCH]]) instruction is considered isomorphic to another respective
+     * instruction if the only difference is the number of padding bytes. Furthermore,
+     * two JSR(_W) instructions are isomorphic if and only if the jump to the same
+     * subroutine.
+     *
+     * @note The number of padding bytes is generally calculated by `(otherPC % 4) -
+     *      (thisPC %4)` (=== `"padding other" - "padding this"`)
+     *      and should be added to the branch offsets of this `(XYZ)switch` instruction
+     *      when the branch targets are compared to the other instructions branchoffsets.
+     *      {{{
+     *      // "padding b" - "padding a"
+     *      // === (3 - (bPC % 4)) - (3 - (aPC % 4))
+     *      // === (aPC % 4) - (bPC %4)
+     *      }}}
+     * @note this.isIsomorphic(`thisPC`,`thisPC`) is always `true`
+     */
+    def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean
+
+    /**
      * The number of values that are popped from the operand stack. Here, long and
      * double values are also counted as one value though they use two stack slots. E.g.,
      * [[IADD]] (integer add) and [[LADD]] (long add) both pop two values and push
@@ -89,16 +125,14 @@ trait Instruction {
      *
      * @note In case of some of the [[StackManagementInstruction]] this number is
      *      not fixed. In that case the number depends on the concrete layout of the
-     *      operand stack.
+     *      operand stack. E.g., the [[POP2]] instruction may just pop one
+     *      ''categeory 2'' value (of type `long` or `double`) or two ''category 1''
+     *      values.
      *
      * @param ctg A function that returns the computational type category of
      *          the value on the operand stack with a given index. The top value on
      *          the operand stack has index '0' and may occupy one (for category 1 values)
      *          or two stack slots (for category 2 values.)
-     * @note Several stack management instructions manipulate the stack in a generic
-     *          manner and the precise effect depends on the type. E.g., the [[POP2]]
-     *          instruction may just pop one ''categeory 2'' value
-     *          (of type `long` or `double`) or two ''category 1'' values.
      */
     def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int
 
@@ -110,16 +144,14 @@ trait Instruction {
      *
      * @note In case of some of the [[StackManagementInstruction]] this number is
      *      not fixed. In that case the number depends on the concrete layout of the
-     *      operand stack.
+     *      operand stack. E.g., the [[DUP2]]
+     *      instruction may just duplicate one ''categeory 2'' value (result is 1)
+     *      (of type long or double) or two ''category 1'' values (result is 2).
      *
      * @param ctg A function that returns the computational type category of
      *          the value on the operand stack with a given index. The top value on
      *          the operand stack has index '0' and may occupy one (for category 1 values)
      *          or two stack slots (for category 2 values.)
-     * @note Several stack management instructions manipulate the stack in a generic
-     *          manner and the precise effect depends on the type. E.g., the [[DUP2]]
-     *          instruction may just duplicate one ''categeory 2'' value (result is 1)
-     *          (of type long or double) or two ''category 1'' values (result is 2).
      */
     def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int
 
@@ -149,10 +181,8 @@ trait Instruction {
 
     /**
      * Returns a string representation of this instruction. If this instruction is a
-     * (conditional) jump instruction then the PCs of the target instructions should
-     * be given using absolute PCs. The string representation should be compact
-     * and suitable for output on the console and should represent the instruction
-     * in its entirety.
+     * (conditional) jump instruction then the PCs of the target instructions are
+     * given absolute address.
      *
      * @param currentPC The program counter of this instruction. Used to resolve relative
      *      jump targets.
@@ -169,8 +199,24 @@ object Instruction {
 
     final val ILLEGAL_INDEX = -1
 
-    def unapply(instruction: Instruction): Option[(Int, String, List[ObjectType])] = {
+    /**
+     * Facilitates the matching of [[Instruction]] objects.
+     *
+     * @return Returns the triple `Some((opcode,mnemonic,list of runtime exceptions))`.
+     */
+    def unapply(instruction: Instruction): Some[(Int, String, List[ObjectType])] = {
         Some((instruction.opcode, instruction.mnemonic, instruction.runtimeExceptions))
+    }
+
+    /**
+     * Determines if the instructions with the pcs `aPC` and `bPC` are isomorphic.
+     *
+     * @see [[Instruction.isIsomorphic]] for further details.
+     */
+    def areIsomorphic(aPC: PC, bPC: PC)(implicit code: Code): Boolean = {
+        assert(aPC != bPC)
+
+        code.instructions(aPC).isIsomorphic(aPC, bPC)
     }
 
     private[instructions] def nextInstructionOrExceptionHandlers(

@@ -27,20 +27,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package instructions
+package collection
+package immutable
+
+import org.opalj.UShort.{ MinValue, MaxValue }
 
 /**
- * Push int constant value 4.
+ * A memory-efficient representation of a pair of UShortValues
  *
  * @author Michael Eichberg
  */
-case object ICONST_4 extends LoadConstantInstruction[Int] with ImplicitValue {
+class UShortPair private (val pair: Int) extends AnyVal {
 
-    final val value = 4
-
-    final val opcode = 7
-
-    final val mnemonic = "iconst_4"
+    def _1: UShort = pair & UShort.MaxValue
+    def key: UShort = _1
+    def _2: UShort = pair >>> 16
+    def value: UShort = _2
 
 }
+object UShortPair {
+
+    def apply(a: UShort, b: UShort): UShortPair = {
+        assert(a >= UShort.MinValue && a <= UShort.MaxValue)
+        assert(b >= UShort.MinValue && b <= UShort.MaxValue)
+
+        new UShortPair(a | b << 16)
+    }
+}
+
