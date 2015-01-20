@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -43,23 +43,21 @@ import scala.Console.RESET
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain
-import org.opalj.ai.project.CallGraph
-import org.opalj.ai.project.CHACallGraphAlgorithmConfiguration
-import org.opalj.ai.project.CallGraphFactory
-import org.opalj.ai.project.CallGraphFactory.defaultEntryPointsForLibraries
-import org.opalj.ai.project.ComputedCallGraph
-import org.opalj.ai.project.VTACallGraphAlgorithmConfiguration
-import org.opalj.ai.project.DefaultVTACallGraphDomain
-import org.opalj.ai.project.ExtVTACallGraphDomain
-import org.opalj.ai.project.BasicVTACallGraphDomain
-import org.opalj.ai.project.UnresolvedMethodCall
-import org.opalj.ai.project.CallGraphConstructionException
-import org.opalj.ai.debug.{ CallGraphDifferenceReport, AdditionalCallTargets }
-import org.opalj.ai.project.CallGraphCache
-import org.opalj.ai.project.VTAWithPreAnalysisCallGraphAlgorithmConfiguration
-import org.opalj.ai.project.BasicVTAWithPreAnalysisCallGraphDomain
+import org.opalj.ai.analyses.cg.CallGraph
+import org.opalj.ai.analyses.cg.CHACallGraphAlgorithmConfiguration
+import org.opalj.ai.analyses.cg.CallGraphFactory
+import org.opalj.ai.analyses.cg.CallGraphFactory.defaultEntryPointsForLibraries
+import org.opalj.ai.analyses.cg.ComputedCallGraph
+import org.opalj.ai.analyses.cg.VTACallGraphAlgorithmConfiguration
+import org.opalj.ai.analyses.cg.DefaultVTACallGraphDomain
+import org.opalj.ai.analyses.cg.ExtVTACallGraphDomain
+import org.opalj.ai.analyses.cg.BasicVTACallGraphDomain
+import org.opalj.ai.analyses.cg.UnresolvedMethodCall
+import org.opalj.ai.analyses.cg.CallGraphConstructionException
+import org.opalj.ai.analyses.cg.CallGraphComparison
+import org.opalj.ai.analyses.cg.VTAWithPreAnalysisCallGraphAlgorithmConfiguration
+import org.opalj.ai.analyses.cg.BasicVTAWithPreAnalysisCallGraphDomain
 
 /**
  * Compares the precision of different call graphs.
@@ -104,7 +102,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
 
                 info("comparing the call graphs")
                 val (unexpected, additional) =
-                    org.opalj.ai.debug.CallGraphComparison(project, theCHACG, newCHACG)
+                    CallGraphComparison(project, theCHACG, newCHACG)
                 unexpected should be(empty)
                 additional should be(empty)
             }
@@ -132,23 +130,24 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                 val mutex = new Object
                 var deviations = List.empty[String]
 
-                for {
-                    newClassFile ← newProject.classFiles.par
-                    classFile = project.classFile(newClassFile.thisType).get
-                    newMethodsIterator = newClassFile.methods.iterator
-                    methodsIterator = classFile.methods.iterator
-                } {
+                newProject.parForeachClassFile() { newClassFile ⇒
+                    val classFile = project.classFile(newClassFile.thisType).get
+                    val newMethodsIterator = newClassFile.methods.iterator
+                    val methodsIterator = classFile.methods.iterator
+
                     if (newClassFile.methods.size != classFile.methods.size) {
                         mutex.synchronized {
+                            val newMethods = newClassFile.methods.map(_.toJava()).mkString("\n", ",\n", "\n")
+                            val currentMethods = classFile.methods.map(_.toJava()).mkString("\n", ",\n", "\n")
                             deviations =
                                 s"the classfiles for type ${newClassFile.thisType} contain "+
-                                    s"different methods: ${newClassFile.methods.map(_.toJava()).mkString("\n", ",\n", "\n")} vs. ${classFile.methods.map(_.toJava()).mkString("\n", ",\n", "\n")}" ::
+                                    s"different methods: ${newMethods} vs. ${currentMethods}" ::
                                     deviations
                         }
                     } else {
                         while (newMethodsIterator.hasNext) {
-                            val newMethod = newMethodsIterator.next
-                            val method = methodsIterator.next
+                            val newMethod = newMethodsIterator.next()
+                            val method = methodsIterator.next()
 
                             if (newMethod.toJava != method.toJava) {
                                 fail(s"the methods associated with the class ${classFile.thisType} differ")
@@ -158,18 +157,18 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                             val newMethodCalledBy = newCHACG.calledBy(newMethod)
                             if (methodCalledBy.size != newMethodCalledBy.size) {
                                 val mcb = methodCalledBy
-                                val nmcb =
-                                    mutex.synchronized {
-                                        deviations =
-                                            s"the method ${classFile.thisType.toJava}{ ${method.toJava} } "+
-                                                s"is not called by the same methods: ${methodCalledBy} vs. ${newMethodCalledBy} " ::
-                                                deviations
-                                    }
+                                mutex.synchronized {
+                                    deviations =
+                                        s"the method ${classFile.thisType.toJava}{ ${method.toJava} } "+
+                                            s"is not called by the same methods: $mcb vs. ${newMethodCalledBy} " ::
+                                            deviations
+                                }
                             }
                             CHACG.calls(method).size should be(newCHACG.calls(newMethod).size)
                         }
                     }
                 }
+
                 if (deviations.nonEmpty)
                     fail(deviations.mkString("\n"))
             }
@@ -212,14 +211,14 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
 
                 info("comparing the call graphs")
                 val (unexpected, additional) =
-                    org.opalj.ai.debug.CallGraphComparison(project, theVTACG, newVTACG)
+                    CallGraphComparison(project, theVTACG, newVTACG)
                 unexpected should be(empty)
                 additional should be(empty)
             }
 
             it("the call graph created using CHA should be less precise than the one created using VTA") {
-                val (unexpected, additional) =
-                    org.opalj.ai.debug.CallGraphComparison(project, CHACG, VTACG)
+                val (unexpected, _ /*additional*/ ) =
+                    CallGraphComparison(project, CHACG, VTACG)
                 if (unexpected.nonEmpty)
                     fail("the comparison of the CHA and the default VTA based call graphs failed:\n"+
                         unexpected.mkString("\n")+"\n")
@@ -262,8 +261,8 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         })
 
                 {
-                    val (unexpected, additional) =
-                        org.opalj.ai.debug.CallGraphComparison(project, basicVTACG, basicVTAWithPreAnalysisCG)
+                    val (unexpected, _ /* additional*/ ) =
+                        CallGraphComparison(project, basicVTACG, basicVTAWithPreAnalysisCG)
                     if (unexpected.nonEmpty)
                         fail("the comparison of the basic VTA with the one using pre analyses failed:\n"+
                             unexpected.mkString("\n")+"\n")
@@ -288,8 +287,8 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                         })
 
                 {
-                    val (unexpected, additional) =
-                        org.opalj.ai.debug.CallGraphComparison(project, basicVTACG, defaultVTACG)
+                    val (unexpected, _ /*additional*/ ) =
+                        CallGraphComparison(project, basicVTACG, defaultVTACG)
                     if (unexpected.nonEmpty)
                         fail("the comparison of the basic and the default VTA based call graphs failed:\n"+
                             unexpected.mkString("\n")+"\n")
@@ -316,8 +315,8 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                 info("comparing the variants of the VTA based call graphs")
 
                 {
-                    val (unexpected, additional) =
-                        org.opalj.ai.debug.CallGraphComparison(project, defaultVTACG, extVTACG)
+                    val (unexpected, _ /* additional*/ ) =
+                        CallGraphComparison(project, defaultVTACG, extVTACG)
                     if (unexpected.nonEmpty)
                         fail("the comparison of the default and the ext VTA based call graphs failed:\n"+
                             unexpected.mkString("\n")+"\n")

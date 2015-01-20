@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,9 +31,7 @@ package frb
 package analyses
 
 import AnalysesHelpers._
-import br._
 import br.analyses._
-import br.instructions._
 
 /**
  * This analysis reports `public|protected static` fields (excluding arrays/hash tables)
@@ -68,8 +66,8 @@ class FieldShouldBeFinal[Source] extends FindRealBugsAnalysis[Source] {
         // either `public` or `protected`, that are neither arrays nor hash tables,
         // and aren't `final`.
         for {
-            classFile ← project.classFiles if !classFile.isInterfaceDeclaration
-            if !project.isLibraryType(classFile)
+            classFile ← project.allProjectClassFiles
+            if !classFile.isInterfaceDeclaration
             field ← classFile.fields
             if !field.isFinal &&
                 field.isStatic &&

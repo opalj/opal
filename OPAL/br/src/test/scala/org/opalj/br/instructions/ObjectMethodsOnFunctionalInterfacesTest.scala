@@ -35,7 +35,7 @@ import org.scalatest.Matchers
 import org.scalatest.FunSpec
 
 import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.util.JRELibraryFolder
+import org.opalj.bytecode.JRELibraryFolder
 
 import analyses.{ Project, SomeProject }
 import reader.{ Java8Framework, Java8LibraryFramework }
@@ -56,7 +56,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
         Java8Framework.ClassFiles(testResources),
         Java8LibraryFramework.ClassFiles(rtJar))
 
-    private def testMethod(classFile: ClassFile, name: String) {
+    private def testMethod(classFile: ClassFile, name: String): Unit = {
         for {
             method @ MethodWithBody(body) ← classFile.findMethod(name)
             instruction ← body.instructions if instruction.isInstanceOf[INVOKEVIRTUAL]

@@ -53,7 +53,7 @@ trait SkipUnknown_attributeReader
         cp: Constant_Pool,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream): Null = {
-        val size: Long = in.readInt
+        val size: Long = in.readInt.toLong
         var skipped: Long = 0
         while (skipped < size) {
             val t: Long = in skip (size - skipped) // skip returns a long value...

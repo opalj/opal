@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -39,6 +39,15 @@ import scala.collection.parallel.immutable.ParVector
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
 import scala.collection.SortedMap
+import scala.collection.generic.FilterMonadic
+import scala.reflect.ClassTag
+import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
+import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+import org.opalj.concurrent.OPALExecutionContext
+import org.opalj.concurrent.parForeachArrayElement
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -66,15 +75,18 @@ import scala.collection.SortedMap
  *      location of a resource (e.g., a source or class file.)
  *
  * @author Michael Eichberg
+ * @author Marco Torsello
  */
 class Project[Source] private (
-        val projectClassFiles: List[ClassFile],
-        val libraryClassFiles: List[ClassFile],
+        private[this] val projectClassFiles: Array[ClassFile],
+        private[this] val libraryClassFiles: Array[ClassFile],
+        private[this] val methods: Array[Method], // the concrete methods, sorted by size in descending order
         private[this] val projectTypes: Set[ObjectType],
         private[this] val fieldToClassFile: AnyRefMap[Field, ClassFile],
         private[this] val methodToClassFile: AnyRefMap[Method, ClassFile],
         private[this] val objectTypeToClassFile: OpenHashMap[ObjectType, ClassFile],
         private[this] val sources: OpenHashMap[ObjectType, Source],
+        private[this] val methodsWithClassFilesAndSource: Array[(Source, ClassFile, Method)], // the concrete methods, sorted by size in descending order
         val projectClassFilesCount: Int,
         val projectMethodsCount: Int,
         val projectFieldsCount: Int,
@@ -97,17 +109,47 @@ class Project[Source] private (
             otherProject.libraryClassFilesWithSources)
     }
 
-    val classFilesCount: Int =
-        projectClassFilesCount + libraryClassFilesCount
+    val classFilesCount: Int = projectClassFilesCount + libraryClassFilesCount
 
-    val methodsCount: Int =
-        projectMethodsCount + libraryMethodsCount
+    val methodsCount: Int = projectMethodsCount + libraryMethodsCount
 
-    val fieldsCount: Int =
-        projectFieldsCount + libraryFieldsCount
+    val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
 
-    val classFiles: Iterable[ClassFile] =
-        projectClassFiles.toIterable ++ libraryClassFiles.toIterable
+    val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles
+
+    private[this] def doParForeachClassFile[T](
+        classFiles: Array[ClassFile], isInterrupted: () ⇒ Boolean)(
+            f: ClassFile ⇒ T): Unit = {
+        val classFilesCount = classFiles.length
+        if (classFilesCount == 0)
+            return ;
+
+        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, classFilesCount)
+        parForeachArrayElement(classFiles, parallelizationLevel, isInterrupted)(f)
+    }
+
+    def parForeachProjectClassFile[T](
+        isInterrupted: () ⇒ Boolean)(
+            f: ClassFile ⇒ T): Unit = {
+        doParForeachClassFile(this.projectClassFiles, isInterrupted)(f)
+    }
+
+    val allLibraryClassFiles: Iterable[ClassFile] = libraryClassFiles
+
+    def parForeachLibraryClassFile[T](
+        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted())(
+            f: ClassFile ⇒ T): Unit = {
+        doParForeachClassFile(this.libraryClassFiles, isInterrupted)(f)
+    }
+
+    val allClassFiles: Iterable[ClassFile] = allProjectClassFiles ++ allLibraryClassFiles
+
+    def parForeachClassFile[T](
+        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted())(
+            f: ClassFile ⇒ T): Unit = {
+        parForeachProjectClassFile(isInterrupted)(f)
+        parForeachLibraryClassFile(isInterrupted)(f)
+    }
 
     /**
      * Returns the list of all packages that contain at least one class.
@@ -118,20 +160,55 @@ class Project[Source] private (
      *
      * @note This method's result is not cached.
      */
-    def packages: Set[String] = {
-        var packages = Set.empty[String]
-        classFiles.foreach(cf ⇒ packages += cf.thisType.packageName)
-        packages
+    def packages: Set[String] = projectPackages ++ libraryPackages
+
+    /**
+     * Returns the list of all project packages that contain at least one class.
+     *
+     * For example, in case of the JDK the package `java` does not directly contain
+     * any class – only its subclasses. This package is, hence, not returned by this
+     * function, but the package `java.lang` is.
+     *
+     * @note This method's result is not cached.
+     */
+    def projectPackages: Set[String] = {
+        projectClassFiles.foldLeft(Set.empty[String])(_ + _.thisType.packageName)
     }
 
-    //    def innerClasses(classFile: ClassFile): Traversable[ClassFile] = {
-    //        val innerClasses = classFile.innerClasses
-    //        if (innerClasses.isDefined) {
-    //            innerClasses.get
-    //        } else {
-    //            Traversable.empty
-    //        }
-    //    }
+    /**
+     * Returns the list of all library packages that contain at least one class.
+     *
+     * For example, in case of the JDK the package `java` does not directly contain
+     * any class – only its subclasses. This package is, hence, not returned by this
+     * function, but the package `java.lang` is.
+     *
+     * @note This method's result is not cached.
+     */
+    def libraryPackages: Set[String] = {
+        libraryClassFiles.foldLeft(Set.empty[String])(_ + _.thisType.packageName)
+    }
+
+    def methodsWithBody: Iterable[Method] = methods
+
+    /**
+     * Iterates over all methods with a body in parallel.
+     *
+     * This method maximizes utilization by allowing each thread to pick the next
+     * unanalyzed method as soon as the thread has finished analyzing the previous method.
+     * I.e., each thread is not assigned a fixed batch of methods. Additionally, the
+     * methods are analyzed ordered by their length (longest first).
+     */
+    def parForeachMethodWithBody[T](
+        isInterrupted: () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted())(
+            f: Function[(Source, ClassFile, Method), T]): Unit = {
+        val methods = this.methodsWithClassFilesAndSource
+        val methodCount = methods.length
+        if (methodCount == 0)
+            return ;
+
+        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, methodCount)
+        parForeachArrayElement(methods, parallelizationLevel, isInterrupted)(f)
+    }
 
     /**
      * Determines for all packages of this project that contain at least one class
@@ -187,13 +264,13 @@ class Project[Source] private (
      */
     def packagesCount = packages.size
 
-    def groupedClassFilesWithCode(groupsCount: Int): Array[Buffer[ClassFile]] = {
+    def groupedClassFilesWithMethodsWithBody(groupsCount: Int): Array[Buffer[ClassFile]] = {
         var nextGroupId = 0
         val groups = Array.fill[Buffer[ClassFile]](groupsCount) {
             new ArrayBuffer[ClassFile](methodsCount / groupsCount)
         }
         for {
-            classFile ← classFiles
+            classFile ← projectClassFiles
             if classFile.methods.exists(_.body.isDefined)
         } {
             // we distribute the classfiles among the different bins
@@ -205,22 +282,22 @@ class Project[Source] private (
         groups
     }
 
-    def classFilesWithSources: Iterable[(Source, ClassFile)] = {
-        projectClassFiles.view.map(cf ⇒ (sources(cf.thisType), cf)) ++
-            libraryClassFiles.view.map(cf ⇒ (sources(cf.thisType), cf))
+    def classFilesWithSources: Iterable[(ClassFile, Source)] = {
+        projectClassFiles.view.map(cf ⇒ (cf, sources(cf.thisType))) ++
+            libraryClassFiles.view.map(cf ⇒ (cf, sources(cf.thisType)))
     }
 
     def methods: Iterable[Method] = methodToClassFile.keys
 
     def fields: Iterable[Field] = fieldToClassFile.keys
 
-    private[analyses] def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = {
+    def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = {
         projectClassFiles.view.map { classFile ⇒
             (classFile, sources(classFile.thisType))
         }
     }
 
-    private[analyses] def libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = {
+    def libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = {
         libraryClassFiles.view.map { classFile ⇒
             (classFile, sources(classFile.thisType))
         }
@@ -280,7 +357,7 @@ class Project[Source] private (
      */
     def toJavaMap(): java.util.HashMap[ObjectType, ClassFile] = {
         val map = new java.util.HashMap[ObjectType, ClassFile]
-        for (classFile ← classFiles) map.put(classFile.thisType, classFile)
+        for (classFile ← allClassFiles) map.put(classFile.thisType, classFile)
         map
     }
 
@@ -297,7 +374,9 @@ class Project[Source] private (
             ("ProjectFields" -> projectFieldsCount),
             ("LibraryMethods" -> libraryMethodsCount),
             ("LibraryFields" -> libraryFieldsCount),
-            ("ProjectInstructions" -> classFiles.foldLeft(0)(_ + _.methods.filter(_.body.isDefined).foldLeft(0)(_ + _.body.get.instructions.count(_ != null))))
+            ("ProjectInstructions" ->
+                projectClassFiles.foldLeft(0)(_ + _.methods.filter(_.body.isDefined).
+                    foldLeft(0)(_ + _.body.get.instructions.count(_ != null))))
         )
 
     /**
@@ -347,7 +426,7 @@ class Project[Source] private (
         var pis = List.empty[AnyRef]
         val thisProjectInformation = this.projectInformation
         for (i ← (0 until thisProjectInformation.length())) {
-            var pi = thisProjectInformation.get(i)
+            val pi = thisProjectInformation.get(i)
             if (pi != null) {
                 pis = pi :: pis
             }
@@ -440,21 +519,19 @@ class Project[Source] private (
  */
 object Project {
 
+    private[this] def cache = new reader.BytecodeInstructionsCache
+    lazy val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
+    lazy val Java8LibraryClassFileReader = new reader.Java8LibraryFrameworkWithCaching(cache)
+
     /**
      * Given a reference to a class file, jar file or a folder containing jar and class
      * files, all class files will be loaded and a project will be returned.
      */
     def apply(file: File): Project[URL] = {
-        val cache = new reader.BytecodeInstructionsCache
-        val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
-
         Project.apply[URL](Java8ClassFileReader.ClassFiles(file))
     }
 
     def extend(project: Project[URL], file: File): Project[URL] = {
-        val cache = new reader.BytecodeInstructionsCache
-        val Java8ClassFileReader = new reader.Java8FrameworkWithCaching(cache)
-
         project.extend(Java8ClassFileReader.ClassFiles(file))
     }
 
@@ -512,8 +589,8 @@ object Project {
         handleInconsistentProject: (InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
 
         import scala.collection.mutable.{ Set, Map }
-        import concurrent.{ Future, Await, ExecutionContext }
-        import concurrent.duration.Duration
+        import scala.concurrent.{ Future, Await, ExecutionContext }
+        import scala.concurrent.duration.Duration
         import ExecutionContext.Implicits.global
 
         val classHierarchyFuture: Future[ClassHierarchy] = Future {
@@ -542,7 +619,7 @@ object Project {
         val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile]
         val sources = OpenHashMap.empty[ObjectType, Source]
 
-        def processClassFile(classFile: ClassFile, source: Option[Source]) {
+        def processClassFile(classFile: ClassFile, source: Option[Source]): Unit = {
             projectClassFiles = classFile :: projectClassFiles
             projectClassFilesCount += 1
             val objectType = classFile.thisType
@@ -599,14 +676,26 @@ object Project {
         fieldToClassFile.repack()
         methodToClassFile.repack()
 
+        val methodsSortedBySize =
+            methodToClassFile.keysIterator.filter(_.body.isDefined).toList.sortWith { (m1, m2) ⇒
+                m1.body.get.instructions.size > m2.body.get.instructions.size
+            }.toArray
+
+        val methodsSortedBySizeWithClassFileAndSource =
+            methodToClassFile.filter(_._1.body.isDefined).toList.sortWith { (v1, v2) ⇒
+                v1._1.body.get.instructions.size > v2._1.body.get.instructions.size
+            }.map(e ⇒ (sources(e._2.thisType), e._2, e._1)).toArray
+
         new Project(
-            projectClassFiles,
-            libraryClassFiles,
+            projectClassFiles.toArray,
+            libraryClassFiles.toArray,
+            methodsSortedBySize,
             projectTypes,
             fieldToClassFile,
             methodToClassFile,
             objectTypeToClassFile,
             sources,
+            methodsSortedBySizeWithClassFileAndSource,
             projectClassFilesCount,
             projectMethodsCount,
             projectFieldsCount,

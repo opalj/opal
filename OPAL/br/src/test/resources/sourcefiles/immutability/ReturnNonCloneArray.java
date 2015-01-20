@@ -28,15 +28,15 @@
  */
 package immutability;
 
-import immutability.annotations.Mutable;
+import immutability.annotations.ConditionallyImmutable;
 
 /**
- * A mutable class which contains an array that is returned by a public method but not
- * cloned.
+ * A conditionally immutable class which contains an array that is returned by a public
+ * method and which is not cloned.
  * 
  * @author Andre Pacak
  */
-@Mutable("does not clone the internal array when it is returned by the getArray method")
+@ConditionallyImmutable("the internal array is returned by the getArray method")
 public class ReturnNonCloneArray {
 
     private final int[] array = new int[10];

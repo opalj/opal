@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -37,7 +37,7 @@ import scala.language.reflectiveCalls
 import scala.collection.mutable.HashMap
 import scala.util.Random
 
-import org.opalj.util.writeAndOpen
+import org.opalj.io.writeAndOpen
 import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.Project
 import org.opalj.de.DependencyExtractor
@@ -62,6 +62,11 @@ import org.opalj.br.analyses.Project
 object DependencyAnalysis extends AnalysisExecutor {
 
     val template = this.getClass().getResource("DependencyAnalysis.html.template")
+    if (template eq null)
+        throw new RuntimeException(
+            "the HTML template (DependencyAnalysis.html.template) cannot be found"
+        )
+
     val colors = Set("#E41A1C", "#FFFF33", "#FF7F00", "#999999", "#984EA3", "#377EB8", "#4DAF4A", "#F781BF", "#A65628")
 
     var mainPackage: String = ""
@@ -133,9 +138,6 @@ object DependencyAnalysis extends AnalysisExecutor {
             pm.progress(1, EventType.Start, Some("setup"))
 
             import scala.collection.mutable.{ HashSet, HashMap }
-            // Collect the number of outgoing dependencies per package 
-            // FQPN = FullyQualifiedPackageName
-            val dependenciesPerFQPN = HashMap.empty[String, Int]
 
             val rootPackages = project.rootPackages
 
@@ -166,7 +168,9 @@ object DependencyAnalysis extends AnalysisExecutor {
                     target: VirtualSourceElement,
                     dType: DependencyType): Unit = {
                     if (source.isClass && target.isClass)
-                        addDependency(source.asInstanceOf[VirtualClass].thisType.packageName, target.asInstanceOf[VirtualClass].thisType.packageName)
+                        addDependency(
+                            source.asInstanceOf[VirtualClass].thisType.packageName,
+                            target.asInstanceOf[VirtualClass].thisType.packageName)
                 }
 
                 def getPackageName(pn: String): String = {
@@ -188,7 +192,9 @@ object DependencyAnalysis extends AnalysisExecutor {
                     arrayType: ArrayType,
                     dType: DependencyType): Unit = {
                     if (source.isClass && arrayType.componentType.isObjectType)
-                        addDependency(source.asInstanceOf[VirtualClass].thisType.packageName, arrayType.componentType.asInstanceOf[ObjectType].packageName)
+                        addDependency(
+                            source.asInstanceOf[VirtualClass].thisType.packageName,
+                            arrayType.componentType.asInstanceOf[ObjectType].packageName)
                 }
 
                 def currentDependencyCount(source: String, target: String): Int = {
@@ -204,7 +210,7 @@ object DependencyAnalysis extends AnalysisExecutor {
 
             pm.progress(2, EventType.Start, Some("extracting dependencies"))
             for {
-                classFile ← project.classFiles
+                classFile ← project.allClassFiles
                 packageName = classFile.thisType.packageName
             } {
                 dependencyExtractor.process(classFile)
@@ -215,9 +221,9 @@ object DependencyAnalysis extends AnalysisExecutor {
             pm.progress(3, EventType.Start, Some("creating HTML"))
 
             // get packages and sort them
-            var packages = dependencyProcessor.currentPackages.toSeq.sorted
+            val packages = dependencyProcessor.currentPackages.toSeq.sorted
 
-            var maxCount = dependencyProcessor.currentMaxDependencyCount
+            val maxCount = dependencyProcessor.currentMaxDependencyCount
 
             var data = ("["+packages.foldRight("")(
                 (p1, l1) ⇒ "["+

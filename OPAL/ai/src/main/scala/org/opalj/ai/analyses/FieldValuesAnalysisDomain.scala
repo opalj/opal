@@ -41,11 +41,10 @@ import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.UpperTypeBound
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.domain.l0.RefinedTypeLevelFieldAccessInstructions
-import org.opalj.ai.domain.l0.RefinedTypeLevelInvokeInstructions
-import org.opalj.ai.project.CallGraphCache
+import org.opalj.ai.domain.la.RefinedTypeLevelFieldAccessInstructions
+import org.opalj.ai.domain.la.RefinedTypeLevelInvokeInstructions
+import org.opalj.ai.analyses.cg.CallGraphCache
 import org.opalj.br.MethodSignature
 
 /**
@@ -60,7 +59,8 @@ import org.opalj.br.MethodSignature
  * ==Thread Safety==
  * This domain is not thread-safe. The methods of a class have to be analyzed
  * sequentially. The order in which the methods are analyzed is not relevant. However,
- * before the analysis of a method, the method [[setMethodContext]] has to be called.
+ * before the analysis of a [[org.opalj.br.Method]], the method [[setMethodContext]]
+ * has to be called.
  *
  * @author Michael Eichberg
  */

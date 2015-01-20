@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,7 +32,6 @@ package analyses
 
 import br._
 import br.analyses._
-import br.instructions._
 
 /**
  * This analysis reports classes that have some `equals()` method(s), but not
@@ -74,7 +73,7 @@ class CovariantEquals[Source] extends FindRealBugsAnalysis[Source] {
         isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
 
         for (
-            classFile ← project.classFiles.filter(hasEqualsButNotEqualsObject(_)) if !project.isLibraryType(classFile)
+            classFile ← project.allProjectClassFiles.filter(hasEqualsButNotEqualsObject(_))
         ) yield {
             ClassBasedReport(
                 project.source(classFile.thisType),

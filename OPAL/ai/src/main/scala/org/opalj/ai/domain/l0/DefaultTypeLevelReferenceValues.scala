@@ -33,10 +33,7 @@ package l0
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
-import org.opalj.util.Answer
-import org.opalj.util.No
-import org.opalj.util.Unknown
-import org.opalj.util.Yes
+
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType

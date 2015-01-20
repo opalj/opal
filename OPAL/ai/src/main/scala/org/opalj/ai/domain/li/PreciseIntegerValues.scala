@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,20 +31,18 @@ package ai
 package domain
 package li
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
  * Domain to track integer values at a configurable level of precision.
  *
- * This domain requires support for the concrete evaluation.
+ * '''This domain requires support for performing concrete interpretations.'''
  *
  * @author Michael Eichberg
  * @author David Becker
  */
 trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
-    this: VMLevelExceptionsFactory with Configuration ⇒
+    this: ExceptionsFactory with Configuration ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -107,7 +105,7 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
         )
 
     //
-    // QUESTION'S ABOUT VALUES
+    // QUESTIONS ABOUT VALUES
     //
 
     @inline final override def intValue[T](
@@ -259,49 +257,45 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
         value2: DomainValue): IntegerValueOrArithmeticException = {
         intValue(value2) { v2 ⇒
             if (v2 == 0)
-                ThrowsException(ArithmeticException(pc))
+                ThrowsException(VMArithmeticException(pc))
             else {
                 intValue(value1) { v1 ⇒
                     ComputedValue(IntegerValue(pc, v1 / v2))
                 } {
-                    ComputedValue(IntegerValue(pc))
+                    ComputedValue(IntegerValue(origin = pc))
                 }
             }
         } {
             if (throwArithmeticExceptions)
-                ComputedValueOrException(IntegerValue(pc), ArithmeticException(pc))
+                ComputedValueOrException(IntegerValue(pc), VMArithmeticException(pc))
             else
-                ComputedValue(IntegerValue(pc))
+                ComputedValue(IntegerValue(origin = pc))
         }
     }
 
     override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (_, IntegerValue(0)) ⇒ value2
-            case (_, IntegerValue(1)) ⇒ value1
-            case (IntegerValue(0), _) ⇒ value1
-            case (IntegerValue(1), _) ⇒ value2
+            case (_, IntegerValue(0))               ⇒ value2
+            case (_, IntegerValue(1))               ⇒ value1
+            case (IntegerValue(0), _)               ⇒ value1
+            case (IntegerValue(1), _)               ⇒ value2
 
-            case (IntegerValue(l), IntegerValue(r)) ⇒
-                IntegerValue(pc, l * r)
+            case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l * r)
 
-            case _ ⇒
-                IntegerValue(origin = pc)
+            case _                                  ⇒ IntegerValue(origin = pc)
         }
     }
 
     override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
-            case (_, IntegerValue(-1)) ⇒ value2
-            case (_, IntegerValue(0))  ⇒ value1
-            case (IntegerValue(-1), _) ⇒ value1
-            case (IntegerValue(0), _)  ⇒ value2
+            case (_, IntegerValue(-1))              ⇒ value2
+            case (_, IntegerValue(0))               ⇒ value1
+            case (IntegerValue(-1), _)              ⇒ value1
+            case (IntegerValue(0), _)               ⇒ value2
 
-            case (IntegerValue(l), IntegerValue(r)) ⇒
-                IntegerValue(pc, l | r)
+            case (IntegerValue(l), IntegerValue(r)) ⇒ IntegerValue(pc, l | r)
 
-            case _ ⇒
-                IntegerValue(origin = pc)
+            case _                                  ⇒ IntegerValue(origin = pc)
         }
     }
 
@@ -311,7 +305,7 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
         value2: DomainValue): IntegerValueOrArithmeticException = {
         intValue(value2) { v2 ⇒
             if (v2 == 0)
-                ThrowsException(ArithmeticException(pc))
+                ThrowsException(VMArithmeticException(pc))
             else {
                 intValue(value1) { v1 ⇒
                     ComputedValue(IntegerValue(pc, v1 % v2))
@@ -322,7 +316,7 @@ trait PreciseIntegerValues extends IntegerValuesDomain with ConcreteIntegerValue
         } {
             if (throwArithmeticExceptions)
                 ComputedValueOrException(
-                    IntegerValue(pc), ArithmeticException(pc))
+                    IntegerValue(pc), VMArithmeticException(pc))
             else
                 ComputedValue(IntegerValue(pc))
         }

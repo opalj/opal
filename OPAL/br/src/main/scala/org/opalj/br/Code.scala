@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -62,6 +62,8 @@ final class Code private (
     /**
      * Returns a new iterator to iterate over the program counters of the instructions
      * of this `Code` block.
+     *
+     * @see See the method [[foreach]] for an alternative.
      */
     def programCounters: Iterator[PC] =
         new Iterator[PC] {
@@ -99,8 +101,8 @@ final class Code private (
      */
     def joinInstructions: BitSet = {
         val instructions = this.instructions
-        val instructionsCount = instructions.length
-        val joinInstructions = new scala.collection.mutable.BitSet(instructionsCount)
+        val instructionsLength = instructions.length
+        val joinInstructions = new scala.collection.mutable.BitSet(instructionsLength)
         exceptionHandlers.foreach { eh ⇒
             // [REFINE] For non-finally handlers, test if multiple paths
             // can lead to the respective exception
@@ -109,13 +111,13 @@ final class Code private (
         // The algorithm determines for each instruction the successor instruction
         // that is reached and then marks it. If an instruction was already reached in the
         // past, it will then mark the instruction as a "join" instruction.
-        val isReached = new scala.collection.mutable.BitSet(instructionsCount)
+        val isReached = new scala.collection.mutable.BitSet(instructionsLength)
         isReached += 0 // the first instruction is always reached!
         var pc = 0
-        while (pc < instructionsCount) {
+        while (pc < instructionsLength) {
             val instruction = instructions(pc)
             val nextPC = pcOfNextInstruction(pc)
-            @inline def runtimeSuccessor(pc: PC) {
+            @inline def runtimeSuccessor(pc: PC): Unit = {
                 if (isReached.contains(pc))
                     joinInstructions += pc
                 else
@@ -160,8 +162,14 @@ final class Code private (
      * Iterates over all instructions and calls the given function `f`
      * for every instruction.
      */
-    def foreach(f: (PC, Instruction) ⇒ Unit): Unit = {
-        foreachNonNullValueOf(instructions)(f)
+    @inline final def foreach(f: (PC, Instruction) ⇒ Unit): Unit = {
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            f(pc, instruction)
+            pc = pcOfNextInstruction(pc)
+        }
     }
 
     /**
@@ -209,7 +217,7 @@ final class Code private (
      */
     @inline final def pcOfNextInstruction(currentPC: PC): PC = {
         instructions(currentPC).indexOfNextInstruction(currentPC, this)
-        // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!        
+        // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!
         //    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
         //        val max_pc = instructions.size
         //        var nextPC = currentPC + 1
@@ -279,12 +287,16 @@ final class Code private (
     def localVariablesAt(pc: PC): Map[Int, LocalVariable] = {
         localVariableTable match {
             case Some(lvt) ⇒
-                (
-                    lvt.collect {
-                        case lv @ LocalVariable(startPC, length, name, fieldType, index) if startPC <= pc && startPC + length > pc ⇒
-                            (index, lv)
-                    }
-                ).toMap
+                (lvt.collect {
+                    case lv @ LocalVariable(
+                        startPC,
+                        length,
+                        name,
+                        fieldType,
+                        index
+                        ) if startPC <= pc && startPC + length > pc ⇒
+                        (index, lv)
+                }).toMap
             case _ ⇒
                 Map.empty
         }
@@ -504,7 +516,7 @@ final class Code private (
             elementsInQueue += 1
         }
 
-        // 
+        //
         // SLIDING OVER THE CODE
         //
         var result: List[B] = List.empty
@@ -555,7 +567,7 @@ final class Code private (
             elementsInQueue += 1
         }
 
-        // 
+        //
         // SLIDING OVER THE CODE
         //
         var result: List[(PC, B)] = List.empty
@@ -649,11 +661,25 @@ final class Code private (
     }
 
     /**
-     * Finds a sequence of 3 consecutive instructions for which the given function returns
-     * `true`, and returns the `PC` of the first instruction in each found sequence.
+     * Finds all sequences of three consecutive instructions that are matched by `f`.
      */
     def matchTriple(f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = {
+        matchTriple(Int.MaxValue, f)
+    }
+
+    /**
+     * Finds a sequence of 3 consecutive instructions for which the given function returns
+     * `true`, and returns the `PC` of the first instruction in each found sequence.
+     *
+     * @param matchMaxTriples Is the maximum number of triples that is passed to `f`.
+     *      E.g., if `matchMaxTriples` is "1" only the first three instructions are
+     *      passed to `f`.
+     */
+    def matchTriple(
+        matchMaxTriples: Int = Int.MaxValue,
+        f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = {
         val max_pc = instructions.size
+        var matchedTriplesCount = 0
         var pc1 = 0
         var pc2 = pcOfNextInstruction(pc1)
         if (pc2 >= max_pc)
@@ -661,10 +687,12 @@ final class Code private (
         var pc3 = pcOfNextInstruction(pc2)
 
         var result: List[PC] = List.empty
-        while (pc3 < max_pc) {
+        while (pc3 < max_pc && matchedTriplesCount < matchMaxTriples) {
             if (f(instructions(pc1), instructions(pc2), instructions(pc3))) {
                 result = pc1 :: result
             }
+
+            matchedTriplesCount += 1
 
             // Move forward by 1 instruction at a time. Even though (..., 1, 2, 3, _, ...)
             // didn't match, it's possible that (..., _, 1, 2, 3, ...) matches.

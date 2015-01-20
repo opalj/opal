@@ -30,7 +30,6 @@ package org.opalj
 package frb
 package analysis
 
-import AnalysisTest._
 import analyses._
 import br._
 import br.analyses._
@@ -50,7 +49,7 @@ class TestCovariantCompareTo extends AnalysisTest {
     val project = createProject("CovariantCompareTo.jar")
     val results = new CovariantCompareTo[URL].analyze(project)
 
-    def shouldReport(className: String) {
+    def shouldReport(className: String): Unit = {
         val classType = ObjectType("CovariantCompareTo/"+className)
         results should contain(ClassBasedReport(
             project.source(classType),

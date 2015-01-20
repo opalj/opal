@@ -37,7 +37,7 @@ import org.opalj.br.{ MethodDescriptor, MethodHandle }
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
+trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
 
     /**
      * Factory method to create a `DomainValue` that represents the `null` value and
@@ -53,7 +53,7 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
      *  - Type: '''Null'''
      *  - Null: '''Yes'''
      */
-    def NullValue(vo: ValueOrigin): DomainReferenceValue
+    def NullValue(origin: ValueOrigin): DomainReferenceValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''either a reference
@@ -73,7 +73,9 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    def ReferenceValue(origin: ValueOrigin, referenceType: ReferenceType): DomainReferenceValue
+    def ReferenceValue(
+        origin: ValueOrigin,
+        referenceType: ReferenceType): DomainReferenceValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''an array''
@@ -111,7 +113,9 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
      *  - Type: '''Upper Bound'''
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def NonNullObjectValue(vo: ValueOrigin, objectType: ObjectType): DomainReferenceValue
+    def NonNullObjectValue(
+        origin: ValueOrigin,
+        objectType: ObjectType): DomainReferenceValue
 
     /**
      * Creates a new `DomainValue` that represents ''a new,
@@ -133,7 +137,7 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
      *      `multianewarray` instructions and in both cases an exception may be thrown
      *      (e.g., `NegativeArraySizeException`).
      */
-    def NewObject(vo: ValueOrigin, objectType: ObjectType): DomainReferenceValue
+    def NewObject(origin: ValueOrigin, objectType: ObjectType): DomainReferenceValue
 
     /**
      * Factory method to create a `DomainValue` that represents an '''initialized'''
@@ -159,7 +163,9 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
      *      correctly models the runtime type.)
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def InitializedObjectValue(vo: ValueOrigin, objectType: ObjectType): DomainReferenceValue
+    def InitializedObjectValue(
+        origin: ValueOrigin,
+        objectType: ObjectType): DomainReferenceValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value
@@ -179,7 +185,7 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
      *
      * @param value A non-null string. (The string may be empty, though.)
      */
-    def StringValue(vo: ValueOrigin, value: String): DomainReferenceValue
+    def StringValue(origin: ValueOrigin, value: String): DomainReferenceValue
 
     /**
      * Factory method to create a `DomainValue` that represents a runtime value of
@@ -197,7 +203,7 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
      *  - Type: '''java.lang.Class<t:Type>'''
      *  - Null: '''No'''
      */
-    def ClassValue(vo: ValueOrigin, t: Type): DomainReferenceValue
+    def ClassValue(origin: ValueOrigin, t: Type): DomainReferenceValue
 
     /**
      * Called by the AI framework for each \"load constant method handle\"
@@ -209,8 +215,8 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
      *      Hence, this method needs to be overridden
      *      if resolution of MethodHandle based method calls should be performed.
      */
-    def MethodHandle(pc: PC, handle: MethodHandle): DomainReferenceValue =
-        InitializedObjectValue(pc, ObjectType.MethodHandle)
+    def MethodHandle(origin: ValueOrigin, handle: MethodHandle): DomainReferenceValue =
+        InitializedObjectValue(origin, ObjectType.MethodHandle)
 
     /**
      * Called by the AI framework for each \"load constant method type\"
@@ -222,8 +228,8 @@ trait ReferenceValuesFactory extends VMLevelExceptionsFactory { domain ⇒
      *      Hence, this method needs to be overridden
      *      if resolution of MethodType based method calls should be performed.
      */
-    def MethodType(pc: PC, descriptor: MethodDescriptor): DomainReferenceValue =
-        InitializedObjectValue(pc, ObjectType.MethodType)
+    def MethodType(origin: ValueOrigin, descriptor: MethodDescriptor): DomainReferenceValue =
+        InitializedObjectValue(origin, ObjectType.MethodType)
 
     // -----------------------------------------------------------------------------------
     //

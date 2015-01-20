@@ -130,8 +130,6 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
     it should "always calculate the same result" in {
 
         def corresponds(r1: AIResult, r2: AIResult): Option[String] = {
-            val codeSize = r1.operandsArray.length
-
             r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) ⇒
                 (lOperands == null && rOperands == null) ||
                     (lOperands != null && rOperands != null &&
@@ -187,7 +185,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
             val r3 = a3(classFile, method, new Domain3(body))
             aiCount.incrementAndGet()
 
-            def abort(ai: InstructionCountBoundedAI[_], r: AIResult) {
+            def abort(ai: InstructionCountBoundedAI[_], r: AIResult): Unit = {
                 fail("the abstract interpretation of "+
                     classFile.thisType.toJava+
                     "{ "+method.toJava+" } was aborted after evaluating "+

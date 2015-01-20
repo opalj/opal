@@ -36,11 +36,9 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
-import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.ObjectType
 
 /**
@@ -132,7 +130,7 @@ class DefaultPreciseIntegerValuesTest
     it should ("be able to analyze a method when we pass in concrete values") in {
         val domain = new DefaultPreciseIntegerValuesTest.TestDomain
         val method = ConditionalMath.findMethod("m1").get
-        val result = BaseAI.perform(ConditionalMath, method, domain)(Some(IndexedSeq(domain.IntegerValue(-1, 100))))
+        /*val result =*/ BaseAI.perform(ConditionalMath, method, domain)(Some(IndexedSeq(domain.IntegerValue(-1, 100))))
         domain.allReturnedValues should not be (empty)
         domain.allReturnedValues.head should be((29, domain.IntegerValue(SomePC, 10)))
         // domain.returnedValue(domain, -1).flatMap(domain.intValueOption(_)) should equal(Some(175))

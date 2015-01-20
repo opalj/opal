@@ -29,13 +29,6 @@
 package org.opalj
 package br
 
-import scala.collection.SortedSet
-
-import org.opalj.collection.UID
-import org.opalj.collection.immutable.UIDSet
-
-import org.opalj.br.instructions._
-
 /**
  * The computational type of a value on the operand stack.
  *

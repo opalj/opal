@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,7 +30,9 @@ package org.opalj
 package br
 package instructions
 
-import language.existentials
+import scala.language.existentials
+
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * Push item from runtime constant pool.
@@ -44,11 +46,29 @@ sealed abstract class LDC[@specialized(Int, Float) T] extends LoadConstantInstru
     final def mnemonic: String = "ldc"
 
     final def length: Int = 2
+
+    def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || (
+            this.opcode == other.opcode &&
+            this.value == other.asInstanceOf[LDC[_]].value
+        )
+    }
 }
 
 final case class LoadInt(value: Int) extends LDC[Int]
 
-final case class LoadFloat(value: Float) extends LDC[Float]
+final case class LoadFloat(value: Float) extends LDC[Float] {
+
+    override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        LDC.opcode == other.opcode && other.isInstanceOf[LoadFloat] && {
+            val otherLoadFloat = other.asInstanceOf[LoadFloat]
+            (this.value.isNaN && otherLoadFloat.value.isNaN) ||
+                (this.value == otherLoadFloat.value)
+        }
+    }
+}
 
 final case class LoadClass(value: ReferenceType) extends LDC[ReferenceType]
 

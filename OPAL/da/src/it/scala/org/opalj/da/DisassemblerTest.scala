@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -47,7 +47,7 @@ class DisassemblerTest extends FlatSpec with Matchers {
     behavior of "the Disassembler"
 
     //val files = new java.io.File("/users/eichberg/Applications/Scala IDE")
-    val files = org.opalj.util.JRELibraryFolder
+    val files = org.opalj.bytecode.JRELibraryFolder
 
     it should (s"be able to process every class of $files") in {
 
@@ -66,7 +66,7 @@ class DisassemblerTest extends FlatSpec with Matchers {
         info(s"loaded ${classFiles.size} class files")
 
         val classFilesGroupedByPackage = classFiles.groupBy { e ⇒
-            val (classFile, url) = e
+            val (classFile, _ /*url*/ ) = e
             val fqn = classFile.fqn
             if (fqn.contains('.'))
                 fqn.substring(0, fqn.lastIndexOf('.'))
@@ -81,7 +81,10 @@ class DisassemblerTest extends FlatSpec with Matchers {
         } yield {
             val (packageName, classFiles) = groupedClassFiles
             info("processing package "+packageName)
-            for { (classFile, url) ← classFiles.par } {
+            val parClassFiles = classFiles.par
+            parClassFiles.tasksupport = org.opalj.concurrent.OPALExecutionContextTaskSupport
+            parClassFiles.foreach { e ⇒
+                val (classFile, url) = e
                 try {
                     classFile.toXHTML.toString.length() should be > (0)
                     transformationCounter.incrementAndGet()
@@ -106,7 +109,7 @@ class DisassemblerTest extends FlatSpec with Matchers {
             }
             writer.flush()
             val file =
-                org.opalj.util.writeAndOpen(
+                org.opalj.io.writeAndOpen(
                     new String(out.toByteArray()),
                     "bytecode disassembler - exceptions", ".txt"
                 )

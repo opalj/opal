@@ -64,7 +64,7 @@ class ExtractDependenciesFromClassFilesTest extends FlatSpec with Matchers {
             if (!zipentry.isDirectory && zipentry.getName.endsWith(".class")) {
 
                 it should ("be able to extract dependencies of class file "+zipentry.getName+" in "+zipfile.getName) in {
-                    var classFiles = ClassFile(() ⇒ zipfile.getInputStream(zipentry))
+                    val classFiles = ClassFile(() ⇒ zipfile.getInputStream(zipentry))
                     classFiles foreach (classFile ⇒ dependencyExtractor.process(classFile))
                 }
             }

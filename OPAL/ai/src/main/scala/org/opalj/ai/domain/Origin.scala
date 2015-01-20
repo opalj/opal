@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,23 +30,19 @@ package org.opalj
 package ai
 package domain
 
+import scala.reflect.ClassTag
+
 /**
  * Provides information about the origin of a value.
  *
  * ==Usage==
- * An analysis that requires information about the origin of a value should declare
- * a corresponding self-type dependency. E.g.,
- * {{{
- * class MyAnalysis extends... {this: Origin =>
- *  ...
- * }
- * }}}
- * Additionally, the analysis has to make sure that the analysis used to capture
- * information about values provides the necessary information.
+ * To get origin information this trait needs be implemented by a domain.
+ * I.e., ''just mixing in this trait will not provide origin information about values''.
  *
  * ==Implementation==
  * This trait should be inherited from by all domains that make information about
- * the origin of a value available.
+ * the origin of a value available (see [[org.opalj.ai.domain.l1.ReferenceValues]]
+ * as an example).
  *
  * @author Michael Eichberg
  */
@@ -59,19 +55,23 @@ trait Origin { domain: ValuesDomain ⇒
         }
     }
 
+    trait ValueWithOriginInformation {
+        def origins: Iterable[ValueOrigin]
+    }
+
     /**
      * Should be mixed in by `Value`s that have a single origin.
      */
-    trait SingleOriginValue {
+    trait SingleOriginValue extends ValueWithOriginInformation {
         def origin: ValueOrigin
+        final def origins = Iterable(origin)
     }
 
     /**
      * Should be mixed in by `Value` classes that capture information about all origins
      * of a value.
      */
-    trait MultipleOriginsValue {
-        def origins: Iterable[ValueOrigin]
+    trait MultipleOriginsValue extends ValueWithOriginInformation {
     }
 
     /**
@@ -86,17 +86,30 @@ trait Origin { domain: ValuesDomain ⇒
      */
     def origin(value: DomainValue): Iterable[ValueOrigin] =
         value match {
-            case sov: SingleOriginValue    ⇒ Iterable[ValueOrigin](sov.origin)
-            case mov: MultipleOriginsValue ⇒ mov.origins
-            case _                         ⇒ Iterable.empty
+            case vo: ValueWithOriginInformation ⇒ vo.origins
+            case _                              ⇒ Iterable.empty
         }
 
-    def foreachOrigin(value: DomainValue, f: (ValueOrigin) ⇒ Unit) {
+    def foreachOrigin(value: DomainValue, f: (ValueOrigin) ⇒ Unit): Unit = {
         value match {
             case sov: SingleOriginValue    ⇒ f(sov.origin)
             case mov: MultipleOriginsValue ⇒ mov.origins.foreach(f)
             case _                         ⇒ /* nothing to do */
         }
     }
+
+}
+
+object Origin {
+
+    def unapply(value: Origin#SingleOriginValue): Option[Int] =
+        Some(value.origin)
+
+}
+
+object Origins {
+
+    def unapply(value: Origin#ValueWithOriginInformation): Option[Iterable[ValueOrigin]] =
+        Some(value.origins)
 
 }

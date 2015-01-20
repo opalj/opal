@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -37,7 +37,7 @@ import org.opalj.br.analyses._
 import org.opalj.br.instructions._
 
 import org.opalj.ai._
-import org.opalj.ai.project._
+import org.opalj.ai.analyses.cg._
 import org.opalj.ai.domain._
 import org.opalj.ai.domain.l1._
 
@@ -102,29 +102,29 @@ class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[So
 
         val immutableAnnotationTypes = collectAnnotationTypes(project, "Immutable")
 
-        /**
+        /*
          * All class files previously encountered and classified and immutable.
          */
         val collectedImmutables = scala.collection.mutable.HashSet.empty[ClassFile]
 
-        /**
+        /*
          * All class files previously encountered and classified as mutable. Also contains
          * class files where a definitive decision could not be made.
          */
         val collectedMutables = scala.collection.mutable.HashSet.empty[ClassFile]
 
-        /**
+        /*
          * Objects whose class file could not be fetched for some reason.
          */
         val unknownClassFiles = scala.collection.mutable.Set.empty[ObjectType]
 
-        /**
+        /*
          * ClassFiles of fields that were already seen in the current cycle of
          * classIsImmutable. Needed to prevent crashes while checking cyclic composition.
          */
-        var alreadySeenThisCycle = scala.collection.mutable.Set.empty[ClassFile]
+        val alreadySeenThisCycle = scala.collection.mutable.Set.empty[ClassFile]
 
-        /**
+        /*
          * ClassFiles of immutable classes that have fields with cyclic composition.
          */
         val immutableClassesInACycle = scala.collection.mutable.Set.empty[ClassFile]
@@ -421,22 +421,24 @@ class FieldIsntImmutableInImmutableClass[Source] extends FindRealBugsAnalysis[So
             }
         }
 
-        val analysisOutput = (for {
-            classFile ← project.classFiles
-            if !project.isLibraryType(classFile)
-            if (isAnnotatedWith(classFile, immutableAnnotationTypes))
-            field ← classFile.fields
-            if (!field.isStatic)
-            message = fieldIsMutable(classFile, field)
-            if (message.isDefined)
-        } yield {
-            FieldBasedReport(
-                project.source(classFile.thisType),
-                Severity.Warning,
-                classFile.thisType,
-                field,
-                message.get)
-        }).toSet
+        val analysisOutput =
+            (
+                for {
+                    classFile ← project.allProjectClassFiles
+                    if (isAnnotatedWith(classFile, immutableAnnotationTypes))
+                    field ← classFile.fields
+                    if (!field.isStatic)
+                    message = fieldIsMutable(classFile, field)
+                    if (message.isDefined)
+                } yield {
+                    FieldBasedReport(
+                        project.source(classFile.thisType),
+                        Severity.Warning,
+                        classFile.thisType,
+                        field,
+                        message.get)
+                }
+            ).toSet
 
         val classNotFoundOutput =
             (for (classFile ← unknownClassFiles) yield {

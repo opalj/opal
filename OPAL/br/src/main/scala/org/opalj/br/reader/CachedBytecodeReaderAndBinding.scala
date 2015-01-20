@@ -32,7 +32,8 @@ package reader
 
 import scala.collection.concurrent.TrieMap
 
-import instructions._
+import org.opalj.br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and
@@ -100,7 +101,7 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 191 ⇒ ATHROW
                 case 51  ⇒ BALOAD
                 case 84  ⇒ BASTORE
-                case 16  ⇒ BIPUSH(in.readByte /* value */ ) // internally cached
+                case 16  ⇒ BIPUSH(in.readByte.toInt /* value */ ) // internally cached
                 case 52  ⇒ CALOAD
                 case 85  ⇒ CASTORE
                 case 192 ⇒
@@ -173,7 +174,7 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                     val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
                         cp(in.readUnsignedShort).asFieldref(cp)
                     GETSTATIC(declaringClass, cache.FieldName(name), fieldType)
-                case 167 ⇒ cache.GOTO(in.readShort /* branchoffset */ )
+                case 167 ⇒ cache.GOTO(in.readShort.toInt /* branchoffset */ )
                 case 200 ⇒ GOTO_W(in.readInt /* branchoffset */ )
                 case 145 ⇒ I2B
                 case 146 ⇒ I2C
@@ -193,31 +194,31 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 7   ⇒ ICONST_4
                 case 8   ⇒ ICONST_5
                 case 108 ⇒ IDIV
-                case 165 ⇒ cache.IF_ACMPEQ(in.readShort)
-                case 166 ⇒ cache.IF_ACMPNE(in.readShort)
-                case 159 ⇒ cache.IF_ICMPEQ(in.readShort)
-                case 160 ⇒ cache.IF_ICMPNE(in.readShort)
-                case 161 ⇒ cache.IF_ICMPLT(in.readShort)
-                case 162 ⇒ cache.IF_ICMPGE(in.readShort)
-                case 163 ⇒ cache.IF_ICMPGT(in.readShort)
-                case 164 ⇒ cache.IF_ICMPLE(in.readShort)
-                case 153 ⇒ cache.IFEQ(in.readShort)
-                case 154 ⇒ cache.IFNE(in.readShort)
-                case 155 ⇒ cache.IFLT(in.readShort)
-                case 156 ⇒ cache.IFGE(in.readShort)
-                case 157 ⇒ cache.IFGT(in.readShort)
-                case 158 ⇒ cache.IFLE(in.readShort)
-                case 199 ⇒ cache.IFNONNULL(in.readShort)
-                case 198 ⇒ cache.IFNULL(in.readShort)
+                case 165 ⇒ cache.IF_ACMPEQ(in.readShort.toInt)
+                case 166 ⇒ cache.IF_ACMPNE(in.readShort.toInt)
+                case 159 ⇒ cache.IF_ICMPEQ(in.readShort.toInt)
+                case 160 ⇒ cache.IF_ICMPNE(in.readShort.toInt)
+                case 161 ⇒ cache.IF_ICMPLT(in.readShort.toInt)
+                case 162 ⇒ cache.IF_ICMPGE(in.readShort.toInt)
+                case 163 ⇒ cache.IF_ICMPGT(in.readShort.toInt)
+                case 164 ⇒ cache.IF_ICMPLE(in.readShort.toInt)
+                case 153 ⇒ cache.IFEQ(in.readShort.toInt)
+                case 154 ⇒ cache.IFNE(in.readShort.toInt)
+                case 155 ⇒ cache.IFLT(in.readShort.toInt)
+                case 156 ⇒ cache.IFGE(in.readShort.toInt)
+                case 157 ⇒ cache.IFGT(in.readShort.toInt)
+                case 158 ⇒ cache.IFLE(in.readShort.toInt)
+                case 199 ⇒ cache.IFNONNULL(in.readShort.toInt)
+                case 198 ⇒ cache.IFNULL(in.readShort.toInt)
                 case 132 ⇒
                     if (wide) {
                         wide = false
                         val lvIndex = in.readUnsignedShort
-                        val constValue = in.readShort
+                        val constValue = in.readShort.toInt
                         IINC(lvIndex, constValue)
                     } else {
                         val lvIndex = in.readUnsignedByte
-                        val constValue = in.readByte
+                        val constValue = in.readByte.toInt
                         IINC(lvIndex, constValue)
                     }
                 case 21  ⇒ cache.ILOAD(lvIndex())
@@ -284,7 +285,7 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 100 ⇒ ISUB
                 case 124 ⇒ IUSHR
                 case 130 ⇒ IXOR
-                case 168 ⇒ JSR(in.readShort)
+                case 168 ⇒ JSR(in.readShort.toInt)
                 case 201 ⇒ JSR_W(in.readInt)
                 case 138 ⇒ L2D
                 case 137 ⇒ L2F
@@ -308,7 +309,7 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 105 ⇒ LMUL
                 case 117 ⇒ LNEG
                 case 171 ⇒
-                    in.skip(3 - (index % 4)) // skip padding bytes
+                    in.skip((3 - (index % 4)).toLong) // skip padding bytes
                     val defaultOffset = in.readInt
                     val npairsCount = in.readInt
                     val npairs: IndexedSeq[(Int, Int)] =
@@ -337,7 +338,7 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                         in.readUnsignedByte
                     )
                 case 187 ⇒ cache.NEW(cp(in.readUnsignedShort).asObjectType(cp))
-                case 188 ⇒ NEWARRAY(in.readByte) // is internally cached
+                case 188 ⇒ NEWARRAY(in.readByte.toInt) // is internally cached
                 case 0   ⇒ NOP
                 case 87  ⇒ POP
                 case 88  ⇒ POP2
@@ -361,10 +362,10 @@ trait CachedBytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 177 ⇒ RETURN
                 case 53  ⇒ SALOAD
                 case 86  ⇒ SASTORE
-                case 17  ⇒ cache.SIPUSH(in.readShort /* value */ )
+                case 17  ⇒ cache.SIPUSH(in.readShort.toInt /* value */ )
                 case 95  ⇒ SWAP
                 case 170 ⇒
-                    in.skip(3 - (index % 4)) // skip padding bytes
+                    in.skip((3 - (index % 4)).toLong) // skip padding bytes
                     val defaultOffset = in.readInt
                     val low = in.readInt
                     val high = in.readInt

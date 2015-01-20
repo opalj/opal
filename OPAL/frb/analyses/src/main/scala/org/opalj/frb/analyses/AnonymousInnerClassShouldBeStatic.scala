@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,10 +30,10 @@ package org.opalj
 package frb
 package analyses
 
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import br._
 import br.analyses._
 import br.instructions._
-import util._
 
 /**
  * This analysis reports anonymous inner classes that do not use their reference to the
@@ -73,17 +73,6 @@ class AnonymousInnerClassShouldBeStatic[Source] extends FindRealBugsAnalysis[Sou
      */
     private def lastIndexOfInnerClassEncoding(fqn: String): Int = {
         math.max(fqn.lastIndexOf('$'), fqn.lastIndexOf('+'))
-    }
-
-    /**
-     * A heuristic for determining inner classes by the encoding in the name.
-     * It checks whether the class name contains '$' or '+'.
-     *
-     * @param classFile The class to check.
-     * @return Whether the class is an inner class.
-     */
-    private def isInnerClass(classFile: ClassFile): Boolean = {
-        lastIndexOfInnerClassEncoding(classFile.thisType.fqn) >= 0
     }
 
     /**
@@ -190,7 +179,7 @@ class AnonymousInnerClassShouldBeStatic[Source] extends FindRealBugsAnalysis[Sou
         parameters: Seq[String] = List.empty,
         isInterrupted: () ⇒ Boolean): Iterable[ClassBasedReport[Source]] = {
         for {
-            classFile ← project.classFiles
+            classFile ← project.allClassFiles
             if !project.isLibraryType(classFile)
             if isAnonymousInnerClass(classFile) &&
                 !isWithinAnonymousInnerClass(classFile) &&

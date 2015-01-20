@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,12 +30,10 @@ package org.opalj
 package frb
 package analyses
 
-import org.opalj.util._
-
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
-
 import org.opalj.ai._
 import org.opalj.ai.domain._
 import org.opalj.ai.domain.l0._
@@ -120,8 +118,6 @@ class IincTracingDomain
          * no update is needed since we don't care about `SomeValue`s.
          */
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
-            assert(this.computationalType == value.computationalType)
-
             if (value.isInstanceOf[IincResults]) {
                 // Preserve IINC results only
                 StructuralUpdate(value)
@@ -425,15 +421,14 @@ class UselessIncrementInReturn[Source] extends FindRealBugsAnalysis[Source] {
         var reports: List[LineAndColumnBasedReport[Source]] = List.empty
 
         for {
-            classFile ← project.classFiles
-            if !project.isLibraryType(classFile)
+            classFile ← project.allProjectClassFiles
             method @ MethodWithBody(body) ← classFile.methods
         } {
             val domain = new IincTracingDomain
             val result = BaseAI(classFile, method, domain)
             val code = body.associateWithIndex
 
-            /**
+            /*
              * Check whether the result of the IINC instruction (given as PC) is used
              * as operands to any other instructions.
              */

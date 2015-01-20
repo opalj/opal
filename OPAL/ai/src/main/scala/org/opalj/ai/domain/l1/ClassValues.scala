@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,7 +31,6 @@ package ai
 package domain
 package l1
 
-import org.opalj.util.No
 import org.opalj.br.Type
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
@@ -45,6 +44,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.ObjectType
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
+import scala.reflect.ClassTag
 
 /**
  * Enables the tracking of concrete `Class` values and can, e.g., be used to resolve
@@ -68,6 +68,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
     domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type DomainClassValue <: ClassValue with DomainObjectValue
+    val DomainClassValue: ClassTag[DomainClassValue]
 
     protected class ClassValue(origin: ValueOrigin, val value: Type, t: Timestamp)
             extends SObjectValue(origin, No, true, ObjectType.Class, t) {
@@ -137,9 +138,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             } catch {
                 case iae: IllegalArgumentException ⇒
                     // if "className" is not a valid descriptor
-                    // TODO record issue!
-                    val cnfe = InitializedObjectValue(pc, ObjectType.ClassNotFoundException)
-                    return justThrows(cnfe)
+                    return justThrows(ClassNotFoundException(pc))
             }
 
         if (classValue.isObjectType) {
@@ -149,7 +148,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
                 ComputedValue(ClassValue(pc, classValue))
             } else {
                 ComputedValueOrException(ClassValue(pc, classValue),
-                    Iterable(InitializedObjectValue(pc, ObjectType.ClassNotFoundException)))
+                    Iterable(ClassNotFoundException(pc)))
             }
         } else {
             val elementType = classValue.asArrayType.elementType
@@ -159,7 +158,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
                 ComputedValue(ClassValue(pc, classValue))
             } else {
                 ComputedValueOrException(ClassValue(pc, classValue),
-                    Iterable(InitializedObjectValue(pc, ObjectType.ClassNotFoundException)))
+                    Iterable(ClassNotFoundException(pc)))
             }
         }
     }

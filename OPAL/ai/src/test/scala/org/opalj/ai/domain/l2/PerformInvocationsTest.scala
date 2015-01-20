@@ -40,11 +40,9 @@ import org.scalatest.junit.JUnitRunner
 
 import org.opalj.bi.TestSupport.locateTestResources
 
-import org.opalj.util._
 import org.opalj.br._
-import org.opalj.br.analyses.{ SomeProject, Project }
+import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.domain.l1._
 import org.opalj.ai.domain.l0.RecordMethodCallResults
 
 /**
@@ -63,7 +61,6 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
     it should ("be able to analyze a simple static method that does nothing") in {
         val method = StaticCalls.findMethod("doNothing").get
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
-        import domain._
         val result = BaseAI(StaticCalls, method, domain)
         result.domain.returnedNormally should be(true)
     }
@@ -127,7 +124,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
     it should ("be able to analyze a static method that processes the results of other static methods") in {
         val method = StaticCalls.findMethod("callComplexMult").get
         val domain = new LiInvocationDomain(PerformInvocationsTestFixture.project, method)
-        val result = BaseAI(StaticCalls, method, domain)
+        /*val result =*/ BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions should be(empty)
         domain.returnedValue(domain, -1).flatMap(domain.intValueOption(_)) should equal(Some(110))
@@ -183,7 +180,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
     it should ("be able to analyze a method that analyzes the correlation between values") in {
         val method = StaticCalls.findMethod("callAreEqual").get
         val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
-        val result = BaseAI(StaticCalls, method, domain)
+        /*val result =*/ BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions.size should be(2) // the ArithmeticExceptions due to "%"
 
@@ -196,7 +193,7 @@ class PerformInvocationsTest extends FlatSpec with Matchers with ParallelTestExe
     it should ("be able to identify the situation where a passed value is returned as is") in {
         val method = StaticCalls.findMethod("uselessReferenceTest").get
         val domain = new L1InvocationDomain(PerformInvocationsTestFixture.project, method)
-        val result = BaseAI(StaticCalls, method, domain)
+        /*val result =*/ BaseAI(StaticCalls, method, domain)
         domain.returnedNormally should be(true)
         domain.allThrownExceptions.size should be(0)
 

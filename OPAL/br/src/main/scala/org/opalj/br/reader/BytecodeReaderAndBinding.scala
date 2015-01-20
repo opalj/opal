@@ -30,7 +30,8 @@ package org.opalj
 package br
 package reader
 
-import instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.br.instructions._
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and
@@ -91,7 +92,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 191 ⇒ ATHROW
                 case 51  ⇒ BALOAD
                 case 84  ⇒ BASTORE
-                case 16  ⇒ BIPUSH(in.readByte /* value */ )
+                case 16  ⇒ BIPUSH(in.readByte.toInt /* value */ )
                 case 52  ⇒ CALOAD
                 case 85  ⇒ CASTORE
                 case 192 ⇒
@@ -164,7 +165,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                     val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
                         cp(in.readUnsignedShort).asFieldref(cp)
                     GETSTATIC(declaringClass, name, fieldType)
-                case 167 ⇒ GOTO(in.readShort /* branchoffset */ )
+                case 167 ⇒ GOTO(in.readShort.toInt /* branchoffset */ )
                 case 200 ⇒ GOTO_W(in.readInt /* branchoffset */ )
                 case 145 ⇒ I2B
                 case 146 ⇒ I2C
@@ -184,31 +185,31 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 7   ⇒ ICONST_4
                 case 8   ⇒ ICONST_5
                 case 108 ⇒ IDIV
-                case 165 ⇒ IF_ACMPEQ(in.readShort)
-                case 166 ⇒ IF_ACMPNE(in.readShort)
-                case 159 ⇒ IF_ICMPEQ(in.readShort)
-                case 160 ⇒ IF_ICMPNE(in.readShort)
-                case 161 ⇒ IF_ICMPLT(in.readShort)
-                case 162 ⇒ IF_ICMPGE(in.readShort)
-                case 163 ⇒ IF_ICMPGT(in.readShort)
-                case 164 ⇒ IF_ICMPLE(in.readShort)
-                case 153 ⇒ IFEQ(in.readShort)
-                case 154 ⇒ IFNE(in.readShort)
-                case 155 ⇒ IFLT(in.readShort)
-                case 156 ⇒ IFGE(in.readShort)
-                case 157 ⇒ IFGT(in.readShort)
-                case 158 ⇒ IFLE(in.readShort)
-                case 199 ⇒ IFNONNULL(in.readShort)
-                case 198 ⇒ IFNULL(in.readShort)
+                case 165 ⇒ IF_ACMPEQ(in.readShort.toInt)
+                case 166 ⇒ IF_ACMPNE(in.readShort.toInt)
+                case 159 ⇒ IF_ICMPEQ(in.readShort.toInt)
+                case 160 ⇒ IF_ICMPNE(in.readShort.toInt)
+                case 161 ⇒ IF_ICMPLT(in.readShort.toInt)
+                case 162 ⇒ IF_ICMPGE(in.readShort.toInt)
+                case 163 ⇒ IF_ICMPGT(in.readShort.toInt)
+                case 164 ⇒ IF_ICMPLE(in.readShort.toInt)
+                case 153 ⇒ IFEQ(in.readShort.toInt)
+                case 154 ⇒ IFNE(in.readShort.toInt)
+                case 155 ⇒ IFLT(in.readShort.toInt)
+                case 156 ⇒ IFGE(in.readShort.toInt)
+                case 157 ⇒ IFGT(in.readShort.toInt)
+                case 158 ⇒ IFLE(in.readShort.toInt)
+                case 199 ⇒ IFNONNULL(in.readShort.toInt)
+                case 198 ⇒ IFNULL(in.readShort.toInt)
                 case 132 ⇒
                     if (wide) {
                         wide = false
                         val lvIndex = in.readUnsignedShort
-                        val constValue = in.readShort
+                        val constValue = in.readShort.toInt
                         IINC(lvIndex, constValue)
                     } else {
                         val lvIndex = in.readUnsignedByte
-                        val constValue = in.readByte
+                        val constValue = in.readByte.toInt
                         IINC(lvIndex, constValue)
                     }
                 case 21  ⇒ ILOAD(lvIndex())
@@ -261,7 +262,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 100 ⇒ ISUB
                 case 124 ⇒ IUSHR
                 case 130 ⇒ IXOR
-                case 168 ⇒ JSR(in.readShort)
+                case 168 ⇒ JSR(in.readShort.toInt)
                 case 201 ⇒ JSR_W(in.readInt)
                 case 138 ⇒ L2D
                 case 137 ⇒ L2F
@@ -285,7 +286,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 105 ⇒ LMUL
                 case 117 ⇒ LNEG
                 case 171 ⇒
-                    in.skip(3 - (index % 4)) // skip padding bytes
+                    in.skip((3 - (index % 4)).toLong) // skip padding bytes
                     val defaultOffset = in.readInt
                     val npairsCount = in.readInt
                     val npairs: IndexedSeq[(Int, Int)] =
@@ -316,7 +317,7 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                         in.readUnsignedByte
                     )
                 case 187 ⇒ NEW(cp(in.readUnsignedShort).asObjectType(cp))
-                case 188 ⇒ NEWARRAY(in.readByte)
+                case 188 ⇒ NEWARRAY(in.readByte.toInt)
                 case 0   ⇒ NOP
                 case 87  ⇒ POP
                 case 88  ⇒ POP2
@@ -340,10 +341,10 @@ trait BytecodeReaderAndBinding extends DeferredInvokedynamicResolution {
                 case 177 ⇒ RETURN
                 case 53  ⇒ SALOAD
                 case 86  ⇒ SASTORE
-                case 17  ⇒ SIPUSH(in.readShort /* value */ )
+                case 17  ⇒ SIPUSH(in.readShort.toInt /* value */ )
                 case 95  ⇒ SWAP
                 case 170 ⇒
-                    in.skip(3 - (index % 4)) // skip padding bytes
+                    in.skip((3 - (index % 4)).toLong) // skip padding bytes
                     val defaultOffset = in.readInt
                     val low = in.readInt
                     val high = in.readInt

@@ -29,9 +29,9 @@
 package org.opalj
 package de
 
-import br._
-import br.instructions._
-import br.analyses.SomeProject
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.br._
+import org.opalj.br.instructions._
 
 /**
  * Traverses a [[org.opalj.br.SourceElement]] and identifies all dependencies between the element
@@ -412,7 +412,7 @@ class DependencyExtractor(
          * parameter is set to `true`.
          */
         def processFormalTypeParameters(
-            formalTypeParameters: Option[List[FormalTypeParameter]]) {
+            formalTypeParameters: Option[List[FormalTypeParameter]]): Unit = {
             formalTypeParameters foreach { list ⇒
                 for (ftp ← list) {
                     val classBound = ftp.classBound
@@ -430,7 +430,9 @@ class DependencyExtractor(
          * that its type arguments will be processed by the `processTypeArguments`
          * method.
          */
-        def processSimpleClassTypeSignature(simpleClassTypeSignatures: SimpleClassTypeSignature) {
+        def processSimpleClassTypeSignature(
+            simpleClassTypeSignatures: SimpleClassTypeSignature): Unit = {
+
             processTypeArguments(simpleClassTypeSignatures.typeArguments)
         }
 
@@ -446,7 +448,7 @@ class DependencyExtractor(
          *
          * @param typeArguments The option of a type argument list that should be processed.
          */
-        def processTypeArguments(typeArguments: Option[List[TypeArgument]]) {
+        def processTypeArguments(typeArguments: Option[List[TypeArgument]]): Unit = {
             typeArguments foreach { args ⇒
                 args foreach {
 
@@ -602,7 +604,7 @@ class DependencyExtractor(
      */
     private def process(
         declaringMethod: VirtualMethod,
-        code: Code) {
+        code: Code): Unit = {
 
         def as[TargetType <: Instruction](instruction: Instruction) =
             instruction.asInstanceOf[TargetType]
@@ -791,7 +793,7 @@ class DependencyExtractor(
         declaringMethod: VirtualMethod,
         instruction: INVOKEDYNAMIC): Unit = {
 
-        val INVOKEDYNAMIC(bootstrapMethod, name, methodDescriptor) = instruction
+        val INVOKEDYNAMIC(bootstrapMethod, _ /*name*/ , methodDescriptor) = instruction
 
         // Dependencies related to the invokedynamic instruction's method descriptor.
         // (Most likely simply java/lang/Object for both the parameter and return types.)
@@ -867,7 +869,7 @@ class DependencyExtractor(
     protected[this] def processDependency(
         source: ObjectType,
         target: VirtualSourceElement,
-        dType: DependencyType) {
+        dType: DependencyType): Unit = {
         dependencyProcessor.processDependency(
             dependencyProcessor.asVirtualClass(source),
             target,

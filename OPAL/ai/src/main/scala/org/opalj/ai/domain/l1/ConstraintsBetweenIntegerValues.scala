@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -35,9 +35,8 @@ import java.util.{ IdentityHashMap ⇒ IDMap }
 
 import scala.collection.BitSet
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 import org.opalj.br.instructions.Instruction
+import org.opalj.constraints.NumericConstraints
 
 /**
  * Domain that traces the relationship between integer values.
@@ -48,7 +47,7 @@ trait ConstraintsBetweenIntegerValues
         extends CoreDomainFunctionality
         with IntegerRangeValues // IMRPOVE [ConstraintsBetweenIntegerValues] Define a common trait that specifies that the values support aliasing analyses
         with TheCodeStructure {
-    domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
+    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     type Constraint = NumericConstraints.Value
 
@@ -65,7 +64,7 @@ trait ConstraintsBetweenIntegerValues
 
     abstract override def setCodeStructure(
         theInstructions: Array[Instruction],
-        theJoinInstructions: BitSet) {
+        theJoinInstructions: BitSet): Unit = {
         super.setCodeStructure(theInstructions, theJoinInstructions)
 
         constraints = new Array[ConstraintsStore](theInstructions.size)
@@ -358,7 +357,7 @@ trait ConstraintsBetweenIntegerValues
 
         val result = super.intEstablishAreEqual(pc, value1, value2, operands, locals)
 
-        // we do not need to add a constraint; this situation is handled by the domain 
+        // we do not need to add a constraint; this situation is handled by the domain
 
         updatedValues.clear
         result

@@ -31,16 +31,12 @@ package ai
 package dataflow
 package instance
 
+import org.opalj.io.process
 import org.opalj.bi.AccessFlagsMatcher._
 import org.opalj.br._
-import org.opalj.br.instructions._
 import org.opalj.br.analyses._
-import org.opalj.ai.domain._
-import org.opalj.ai.domain.l0._
-
-import spec._
-
-import solver.NaiveSolver
+import org.opalj.ai.dataflow.spec._
+import org.opalj.ai.dataflow.solver.NaiveSolver
 
 /**
  * Searches for strings that are passed to `Class.forName(_)` calls.

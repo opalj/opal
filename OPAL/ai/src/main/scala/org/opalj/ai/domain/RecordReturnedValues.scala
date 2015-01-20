@@ -30,8 +30,6 @@ package org.opalj
 package ai
 package domain
 
-import language.implicitConversions
-
 /**
  * Generic infrastructure to record the values returned by the method.
  * (Note that the computational type
@@ -83,7 +81,7 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure {
 
     def allReturnedValues: Map[PC, ReturnedValue] = returnedValues
 
-    protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue) {
+    protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit = {
         returnedValues =
             returnedValues.updated(
                 pc,

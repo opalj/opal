@@ -41,8 +41,8 @@ trait UTF8Println {
 
     val out: PrintStream = new PrintStream(System.out, true, "UTF-8")
 
-    def println(s: String) { out.println(s) }
+    def println(s: String): Unit = { out.println(s) }
 
-    def print(s: String) { out.print(s) }
+    def print(s: String): Unit = { out.print(s) }
 
 }

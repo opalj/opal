@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -47,10 +47,7 @@ import reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ProjectTest
-        extends FlatSpec
-        with Matchers
-        with ParallelTestExecution {
+class ProjectTest extends FlatSpec with Matchers /*with ParallelTestExecution*/ {
 
     import ProjectTest._
     //
@@ -110,7 +107,7 @@ class ProjectTest
         overallProject.isLibraryType(ObjectType("code/Quicksort")) should be(false)
     }
 
-    behavior of "A Project's lookupMethodDeclaration method"
+    behavior of "A Project's resolveMethodReference method"
 
     import project.classHierarchy.resolveMethodReference
 
@@ -159,9 +156,9 @@ class ProjectTest
             project
         ) should be('Defined)
         // let's make sure the class is a super class
-        project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(org.opalj.util.Yes)
+        project.classHierarchy.isSubtypeOf(DirectSub, SuperType) should be(Yes)
 
-        // let's test the resolving 
+        // let's test the resolving
         resolveMethodReference(
             DirectSub,
             "staticDefaultVisibilityMethod",
@@ -256,6 +253,42 @@ class ProjectTest
         project.availableProjectInformation should contain(pik.depdencies.head.theResult)
         project.availableProjectInformation should contain(pik.depdencies.tail.head.theResult)
     }
+
+    behavior of "a Project's projectPackages methods"
+
+    it should "return all packages defined in the project" in {
+
+        opalProject.projectPackages should be(Set(
+            "de/tud/cs/st/bat/generic/reader", "de/tud/cs/st/util/graphs",
+            "de/tud/cs/st/util/collection", "de/tud/cs/st/bat/resolved",
+            "de/tud/cs/st/util/perf", "de/tud/cs/st", "de/tud/cs/st/bat/prolog",
+            "de/tud/cs/st/bat/prolog/reader", "de/tud/cs/st/sae/parser", "de/tud/cs/st/sae",
+            "de/tud/cs/st/bat/native", "de/tud/cs/st/util/trees",
+            "de/tud/cs/st/bat/resolved/reader", "de/tud/cs/st/bat", "de/tud/cs/st/util",
+            "de/tud/cs/st/bat/native/reader", "de/tud/cs/st/prolog"
+        ))
+
+    }
+
+    behavior of "a Project's libraryPackages methods"
+
+    it should "return no packages if no libraries are loaded" in {
+        opalProject.libraryPackages should be(empty)
+    }
+
+    it should "return the packages of the loaded libraries" in {
+        project.libraryPackages should not be (empty)
+    }
+
+    behavior of "a Project's packages methods"
+
+    it should "return the same packages as projectPackages if no libraries are loaded" in {
+        opalProject.packages should be(opalProject.projectPackages)
+    }
+
+    it should "return all packages of a project that has libraries" in {
+        project.packages should be(project.projectPackages ++ project.libraryPackages)
+    }
 }
 
 private class TestProjectInformationKey extends ProjectInformationKey[Object] {
@@ -298,4 +331,7 @@ private object ProjectTest {
     val DirectSub = ObjectType("methods/a/DirectSub")
     val AbstractB = ObjectType("methods/b/AbstractB")
     val DeprecatedByAnnotation = ObjectType("attributes/DeprecatedByAnnotation")
+
+    val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
+    val opalProject = Project(ClassFiles(opal))
 }

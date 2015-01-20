@@ -37,12 +37,10 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
-import org.scalatest.time._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
-import org.scalatest.Assertions._
+
 import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -111,6 +109,66 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 v2.abstractsOver(v1) should be(true)
             }
 
+        }
+
+        describe("isMorePreciseThan") {
+
+            it("an ObjectValue should not be more precise than a second value with the same properties") {
+
+                val v1 = ObjectValue(-1, Unknown, false, ObjectType.Object, 1)
+                val v2 = ObjectValue(-1, Unknown, false, ObjectType.Object, 1)
+
+                assert(v1.abstractsOver(v2))
+                assert(v2.abstractsOver(v1))
+                assert(v1.join(-1, v2).isNoUpdate)
+                assert(v2.join(-1, v1).isNoUpdate)
+
+                v1.isMorePreciseThan(v2) should be(false)
+                v2.isMorePreciseThan(v1) should be(false)
+            }
+
+            it("an ObjectValue should not be more precise than a second value with the same properties, but a different timestamp") {
+
+                val v1 = ObjectValue(-1, Unknown, true, ObjectType.Object, 1)
+                val v2 = ObjectValue(-1, Unknown, true, ObjectType.Object, 2)
+
+                assert(v1.abstractsOver(v2))
+                assert(v2.abstractsOver(v1))
+                assert(!v1.join(-1, v2).isStructuralUpdate)
+                assert(!v2.join(-1, v1).isStructuralUpdate)
+
+                v1.isMorePreciseThan(v2) should be(false)
+                v2.isMorePreciseThan(v1) should be(false)
+            }
+
+            it("an ArrayValue should not be more precise than itself") {
+
+                val v1 = ArrayValue(-1, Unknown, true, ArrayType(ArrayType(IntegerType)), 1)
+                v1.isMorePreciseThan(v1) should be(false)
+            }
+
+            it("an ArrayValue should not be more precise than itself (with a different timestamp)") {
+
+                val v1 = ArrayValue(-1, Unknown, true, ArrayType(ArrayType(IntegerType)), 1)
+                val v2 = ArrayValue(-1, Unknown, true, ArrayType(ArrayType(IntegerType)), 2)
+                v1.isMorePreciseThan(v2) should be(false)
+                v2.isMorePreciseThan(v1) should be(false)
+            }
+
+            it("a NullValue should be more precise than an ObjectValue but not vice versa") {
+                val v1 = NullValue(-1, 2)
+                val v2 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/Object"), 1)
+                v1.isMorePreciseThan(v2) should be(true)
+                v2.isMorePreciseThan(v1) should be(false)
+            }
+
+            it("an ObjectValue of type java/lang/String should be more precise than "+
+                "an ObjectValue of type java/lang/Object but not vice versa") {
+                val v1 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/String"), 1)
+                val v2 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/Object"), 2)
+                v1.isMorePreciseThan(v2) should be(true)
+                v2.isMorePreciseThan(v1) should be(false)
+            }
         }
 
         //
@@ -219,7 +277,6 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
             it("should be able to correctly handle the subsequent refinement of the upper type bound of a single value of a multiple reference value") {
                 val Throwable = ObjectType.Throwable
                 val Error = ObjectType.Error
-                val Exception = ObjectType.Exception
                 val RuntimeException = ObjectType.RuntimeException
 
                 val v1 = ObjectValue(111, No, true, Error, 1)
@@ -263,8 +320,6 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
         describe("joining two DomainValues that represent reference values") {
 
-            val refNull = NullValue(111)
-
             val ref1 = ObjectValue(444, No, true, ObjectType.Object)
 
             val ref1Alt = ObjectValue(444, No, true, ObjectType.Object)
@@ -276,10 +331,6 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
             val ref3 = ObjectValue(732, No, true, ObjectType.String)
 
             val ref1MergeRef2 = ref1.join(-1, ref2).value
-
-            val ref2MergeRef3 = ref2.join(-1, ref3).value
-
-            val ref2MergeRef3MegerRefNull = ref2MergeRef3.join(-1, refNull)
 
             val ref1AltMergeRef2Alt = ref1Alt.join(-1, ref2Alt).value
 
@@ -321,6 +372,12 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
                 ref1AltMergeRef2Alt.join(-1, ref1MergeRef2MergeRef3) should be(StructuralUpdate(ref1MergeRef2MergeRef3))
             }
 
+            it("should be able to join two values with the exact same properties") {
+                val v1 = ObjectValue(-1, Unknown, false, ObjectType.Object, 1)
+                val v2 = ObjectValue(-1, Unknown, false, ObjectType.Object, 1)
+                v1.join(-1, v2) should be(NoUpdate)
+            }
+
             it("should be able to join two refined values sets") {
                 val v0 = NullValue(111)
                 val v1 = ObjectValue(444, Unknown, false, ObjectType.Object)
@@ -339,7 +396,7 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
 
                 val joinResult = mv1.join(-1, mv2)
                 joinResult.updateType should be(StructuralUpdateType)
-                val joinedValue @ IsReferenceValue(values) = joinResult.value
+                val joinedValue @ IsReferenceValue(_) = joinResult.value
                 assert(joinedValue.isPrecise === false)
                 joinedValue.upperTypeBound should be(UIDSet(ObjectType.Object))
             }

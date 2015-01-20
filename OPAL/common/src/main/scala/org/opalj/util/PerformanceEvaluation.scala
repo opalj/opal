@@ -29,6 +29,8 @@
 package org.opalj
 package util
 
+import org.opalj.concurrent.Locking
+
 /**
  * Measures the execution time of some code.
  *
@@ -273,12 +275,12 @@ object PerformanceEvaluation {
         time { f } { t ⇒
             times = t :: times
             if (t <= 199999) { // < 2 milliseconds
-                r(t, t, times)
+                r(t.toDouble, t, times)
                 Console.err.println("The time required by the function is too small to get meaningful measurements.")
                 return result
             }
         }
-        var avg: Double = times.head
+        var avg: Double = times.head.toDouble
         do {
             time {
                 result = f

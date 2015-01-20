@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,12 +30,12 @@ package org.opalj
 package br
 package analyses
 
+import java.net.URL
+import java.io.File
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
-import java.net.URL
-import java.io.File
-import org.opalj.util.OpeningFileFailedException
+import org.opalj.io.OpeningFileFailedException
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -98,7 +98,7 @@ trait AnalysisExecutor {
      * Prints out general information how to use this analysis. Printed whenever
      * the set of specified parameters is not valid.
      */
-    protected def printUsage() {
+    protected def printUsage(): Unit = {
         println("Usage: java "+
             this.getClass().getName()+"\n"+
             "[-cp=<Directories or JAR/class files> (If no class path is specified the current folder is used.)]\n"+
@@ -115,7 +115,7 @@ trait AnalysisExecutor {
         val quotedParams = """(-[\w.]+="[\w-_:./\\ ]+")""".r
         val unqoutedParams = """(-[\w.]+=[\w-_:./\\]+)|(-[\w]+(?: |$))""".r
         val input = unparsedArgs.mkString(" ")
-        val args =
+        val args: Array[String] =
             (
                 quotedParams.findAllMatchIn(input).map { p ⇒
                     val paramMatcher = """(-\w+=)"([\w-_:./\\ ]*)"""".r
@@ -125,6 +125,11 @@ trait AnalysisExecutor {
                 unqoutedParams.findAllMatchIn(input).map(_.matched)
             ).toArray
 
+        if (args.contains("-help")) {
+            printUsage()
+            sys.exit(0)
+        }
+
         //
         // 1. check arguments
         //
@@ -133,7 +138,7 @@ trait AnalysisExecutor {
         def verifyFile(filename: String): Option[File] = {
             val file = new File(filename)
 
-            def showError(message: String) {
+            def showError(message: String): Unit = {
                 println(Console.RED+"[error] "+Console.RESET + message)
             }
 
@@ -207,7 +212,7 @@ trait AnalysisExecutor {
         //
         val project: Project[URL] = setupProject(cpFiles, libcpFiles)
 
-        // 
+        //
         // 3. execute analysis
         //
         println("[info] Executing analysis: "+analysis.title+".")
@@ -254,14 +259,14 @@ trait AnalysisExecutor {
             pout.flush
             val message = new String(out.toByteArray())
             try {
-                util.writeAndOpen(message, "Exceptions", ".txt")
+                io.writeAndOpen(message, "Exceptions", ".txt")
             } catch {
                 case OpeningFileFailedException(file, _) ⇒
                     Console.err.println("Details can be found in: "+file.toString)
             }
         }
 
-        var project = Project(classFiles, libraryClassFiles)
+        val project = Project(classFiles, libraryClassFiles)
         print(
             project.statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).toList.sorted.
                 mkString("[info] Project statistics:\n[info]\t", "\n[info]\t", "\n")

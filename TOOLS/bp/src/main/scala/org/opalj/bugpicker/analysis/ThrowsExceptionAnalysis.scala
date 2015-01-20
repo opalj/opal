@@ -45,11 +45,11 @@ import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project,
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.MethodWithBody
-import org.opalj.ai.debug.XHTML
+import org.opalj.ai.common.XHTML
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.br.Code
-import org.opalj.ai.collectWithOperandsAndIndex
+import org.opalj.ai.collectPCWithOperands
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.domain
 import org.opalj.br.instructions.Instruction
@@ -86,29 +86,29 @@ object ThrowsExceptionAnalysis {
 
         val operandsArray = result.operandsArray
         val domain = result.domain
-        val body = result.code
 
         val exceptionIssues: Seq[StandardIssue] =
             for {
-                (pc, instruction) ← body collectWithIndex {
+                (pc, instruction) ← result.code collectWithIndex {
                     case (pc, i: Instruction) if operandsArray(pc) != null && !i.isInstanceOf[ATHROW.type] && domain.regularSuccessorsOf(pc).isEmpty && (domain.exceptionHandlerSuccessorsOf(pc).nonEmpty || domain.allThrownExceptions.get(pc).nonEmpty) ⇒
                         (pc, i)
                 }
             } yield {
                 val operands = operandsArray(pc)
                 val exceptions = {
-                    var allExceptions: scala.collection.immutable.Set[result.domain.SingleOriginReferenceValue] = {
-                        if (result.domain.allThrownExceptions.get(pc).nonEmpty)
-                            scala.collection.immutable.Set.empty ++
-                                result.domain.allThrownExceptions.get(pc).get
+                    var allExceptions: Set[domain.DomainSingleOriginReferenceValue] = {
+                        if (domain.allThrownExceptions.get(pc).nonEmpty)
+                            Set.empty ++ domain.allThrownExceptions.get(pc).get
                         else
-                            scala.collection.immutable.Set.empty
+                            Set.empty
                     }
 
-                    result.domain.exceptionHandlerSuccessorsOf(pc).foreach { handlerPC ⇒
+                    domain.exceptionHandlerSuccessorsOf(pc).foreach { handlerPC ⇒
                         operandsArray(handlerPC).head match {
-                            case sorv: result.domain.SingleOriginReferenceValue ⇒ allExceptions += sorv
-                            case result.domain.MultipleReferenceValues(values)  ⇒ allExceptions ++= values
+                            case domain.DomainSingleOriginReferenceValue(sorv) ⇒
+                                allExceptions += sorv
+                            case domain.DomainMultipleReferenceValues(morv) ⇒
+                                allExceptions ++= morv.values
                         }
                     }
                     allExceptions.map(_.upperTypeBound.first().toJava).mkString(", ")

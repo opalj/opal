@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,9 +31,7 @@ package frb
 package analyses
 
 import AnalysesHelpers._
-import br._
 import br.analyses._
-import br.instructions._
 
 /**
  * This analysis reports `public|protected static final` fields with mutable content,
@@ -69,14 +67,14 @@ class FieldShouldBePackageProtected[Source] extends FindRealBugsAnalysis[Source]
         parameters: Seq[String] = List.empty,
         isInterrupted: () ⇒ Boolean): Iterable[FieldBasedReport[Source]] = {
 
-        val readFieldsFromPackage = getReadFields(project.classFiles)
+        val readFieldsFromPackage = getReadFields(project.allClassFiles)
             .map(entry ⇒ (entry._1._1.thisType.packageName, entry._2))
 
         // In all class declarations (excluding interfaces), search for `static final`
         // fields, either `public` or `protected`, arrays and hash tables only.
         for {
-            classFile ← project.classFiles if (!classFile.isInterfaceDeclaration)
-            if !project.isLibraryType(classFile)
+            classFile ← project.allProjectClassFiles
+            if !classFile.isInterfaceDeclaration
             field ← classFile.fields
             if (field.isFinal &&
                 field.isStatic &&

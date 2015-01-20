@@ -33,8 +33,7 @@ import java.net.URL
 
 import org.scalatest.FunSuite
 
-import br.reader.Java8Framework.ClassFiles
-import DependencyType._
+import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
  * Tests that the dependency extractor does not miss some dependencies and
@@ -77,7 +76,9 @@ class DependencyExtractorJava8Test extends FunSuite {
             }
         }
 
-        def assertImplicitDefaultConstructor(className: String, superClassName: String = "java.lang.Object") {
+        def assertImplicitDefaultConstructor(
+            className: String,
+            superClassName: String = "java.lang.Object"): Unit = {
             // //implicit constructor:
             val constructorName = className+".<init>()"
             assertDependency(constructorName, className, INSTANCE_MEMBER)
@@ -86,7 +87,7 @@ class DependencyExtractorJava8Test extends FunSuite {
             assertImplicitThisLocalVariable(constructorName)
         }
 
-        def assertImplicitThisLocalVariable(methodName: String) {
+        def assertImplicitThisLocalVariable(methodName: String): Unit = {
             // //implicit local variable 'this'
             assertDependency(
                 methodName,

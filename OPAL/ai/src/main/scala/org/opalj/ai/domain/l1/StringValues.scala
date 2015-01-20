@@ -31,8 +31,8 @@ package ai
 package domain
 package l1
 
-import org.opalj.util.No
 import org.opalj.br.ObjectType
+import scala.reflect.ClassTag
 
 /**
  * Enables the tracing of concrete string values and can, e.g., be used to
@@ -44,11 +44,10 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type DomainStringValue <: StringValue with DomainObjectValue
-
-    // todo use the same t for all JVM strings 
+    val DomainStringValue: ClassTag[DomainStringValue]
 
     protected class StringValue(
-        origin: ValueOrigin, // sets the pc value of the superclass
+        origin: ValueOrigin,
         val value: String,
         t: Timestamp)
             extends SObjectValue(origin, No, true, ObjectType.String, t) {
@@ -140,6 +139,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
     // Needs to be implemented (the default implementation is now longer sufficient!)
     override def StringValue(origin: ValueOrigin, value: String): DomainObjectValue
 
-    def StringValue(origin: ValueOrigin, value: String, t: Timestamp): DomainObjectValue
+    // todo use the same t for all constant JVM strings 
+    def StringValue(origin: ValueOrigin, value: String, t: Timestamp): DomainStringValue
 }
 

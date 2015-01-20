@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,24 +31,23 @@ package ai
 package domain
 package l1
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
 import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
 
 /**
- * This domain enables the tracking of an integer value; unknown integer values
- * are represented using "AnIntegerValue".
+ * This domain enables the tracking of an integer value (a constant);
+ * unknown integer values are represented using "AnIntegerValue".
  *
- * Given that it uses one instance to represent arbitrary integer values, constraint
- * propagation is not supported.
+ * Given that it uses one instance to represent arbitrary integer values, '''constraint
+ * propagation is not supported'''.
  *
  * This domain may be appropriate, e.g., if you want to determine if a field/local is
  * always initialized to a specific value.
  *
  * @author Michael Eichberg
+ * @author David Becker
  */
 trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
-    domain: Configuration with VMLevelExceptionsFactory ⇒
+    domain: Configuration with ExceptionsFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -87,25 +86,25 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
 
     // -----------------------------------------------------------------------------------
     //
-    // COMPUTATIONS RELATED TO  INTEGER VALUES
+    // COMPUTATIONS RELATED TO INTEGER VALUES
     //
     // -----------------------------------------------------------------------------------
 
     //
-    // QUESTION'S ABOUT VALUES
+    // QUESTIONS ABOUT VALUES
     //
 
     @inline final override def intValue[T](
         value: DomainValue)(
             f: Int ⇒ T)(orElse: ⇒ T): T =
         value match {
-            case TheIntegerValue(v) ⇒ f(v)
+            case v: TheIntegerValue ⇒ f(v.value)
             case _                  ⇒ orElse
         }
 
     @inline final override def intValueOption(value: DomainValue): Option[Int] =
         value match {
-            case TheIntegerValue(v) ⇒ Some(v)
+            case v: TheIntegerValue ⇒ Some(v.value)
             case _                  ⇒ None
         }
 
@@ -206,10 +205,15 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
     }
 
     override def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 * v2)
-        } {
-            IntegerValue(origin = pc)
+        (value1, value2) match {
+            case (_, TheIntegerValue(0))                  ⇒ value2
+            case (_, TheIntegerValue(1))                  ⇒ value1
+            case (TheIntegerValue(0), _)                  ⇒ value1
+            case (TheIntegerValue(1), _)                  ⇒ value2
+
+            case (TheIntegerValue(l), TheIntegerValue(r)) ⇒ IntegerValue(pc, l * r)
+
+            case _                                        ⇒ IntegerValue(origin = pc)
         }
     }
 
@@ -219,14 +223,19 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         denominator: DomainValue): IntegerValueOrArithmeticException = {
 
         (numerator, denominator) match {
-            case (_, TheIntegerValue(0))                  ⇒ ThrowsException(ArithmeticException(pc))
-            case (TheIntegerValue(n), TheIntegerValue(d)) ⇒ ComputedValue(IntegerValue(pc, n / d))
-            case (_, TheIntegerValue(_ /*<=> not 0*/ ))   ⇒ ComputedValue(IntegerValue(origin = pc))
+            case (_, TheIntegerValue(0)) ⇒
+                ThrowsException(VMArithmeticException(pc))
+            case (TheIntegerValue(n), TheIntegerValue(d)) ⇒
+                ComputedValue(IntegerValue(pc, n / d))
+            case (_, TheIntegerValue(_ /*<=> not 0*/ )) ⇒
+                ComputedValue(IntegerValue(origin = pc))
             case _ ⇒
                 if (throwArithmeticExceptions)
-                    ComputedValueOrException(IntegerValue(origin = pc), ArithmeticException(pc))
+                    ComputedValueOrException(
+                        IntegerValue(origin = pc),
+                        VMArithmeticException(pc))
                 else
-                    ComputedValue(IntegerValue(pc))
+                    ComputedValue(IntegerValue(origin = pc))
         }
     }
 
@@ -236,29 +245,44 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
         right: DomainValue): IntegerValueOrArithmeticException = {
 
         (left, right) match {
-            case (_, TheIntegerValue(0))                  ⇒ ThrowsException(ArithmeticException(pc))
-            case (TheIntegerValue(n), TheIntegerValue(d)) ⇒ ComputedValue(IntegerValue(pc, n % d))
-            case (_, TheIntegerValue(_ /*<=> not 0*/ ))   ⇒ ComputedValue(IntegerValue(origin = pc))
+            case (_, TheIntegerValue(0)) ⇒
+                ThrowsException(VMArithmeticException(pc))
+            case (TheIntegerValue(n), TheIntegerValue(d)) ⇒
+                ComputedValue(IntegerValue(pc, n % d))
+            case (_, TheIntegerValue(_ /*<=> not 0*/ )) ⇒
+                ComputedValue(IntegerValue(origin = pc))
             case _ ⇒
                 if (throwArithmeticExceptions)
-                    ComputedValueOrException(IntegerValue(origin = pc), ArithmeticException(pc))
+                    ComputedValueOrException(
+                        IntegerValue(origin = pc),
+                        VMArithmeticException(pc))
                 else
-                    ComputedValue(IntegerValue(pc))
+                    ComputedValue(IntegerValue(origin = pc))
         }
     }
 
     override def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 & v2)
-        } {
-            IntegerValue(origin = pc)
+        (value1, value2) match {
+            case (_, TheIntegerValue(-1))                 ⇒ value1
+            case (_, TheIntegerValue(0))                  ⇒ value2
+            case (TheIntegerValue(-1), _)                 ⇒ value2
+            case (TheIntegerValue(0), _)                  ⇒ value1
+
+            case (TheIntegerValue(l), TheIntegerValue(r)) ⇒ IntegerValue(pc, l & r)
+
+            case _                                        ⇒ IntegerValue(origin = pc)
         }
 
     override def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
-            IntegerValue(pc, v1 | v2)
-        } {
-            IntegerValue(origin = pc)
+        (value1, value2) match {
+            case (_, TheIntegerValue(-1))                 ⇒ value2
+            case (_, TheIntegerValue(0))                  ⇒ value1
+            case (TheIntegerValue(-1), _)                 ⇒ value1
+            case (TheIntegerValue(0), _)                  ⇒ value2
+
+            case (TheIntegerValue(l), TheIntegerValue(r)) ⇒ IntegerValue(pc, l | r)
+
+            case _                                        ⇒ IntegerValue(origin = pc)
         }
 
     override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
@@ -295,19 +319,19 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
 
     override def i2b(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toByte)
+            case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toByte.toInt)
             case v                  ⇒ v
         }
 
     override def i2c(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toChar)
+            case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toChar.toInt)
             case v                  ⇒ v
         }
 
     override def i2s(pc: PC, value: DomainValue): DomainValue =
         value match {
-            case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toShort)
+            case TheIntegerValue(v) ⇒ IntegerValue(pc, v.toShort.toInt)
             case v                  ⇒ v
         }
 

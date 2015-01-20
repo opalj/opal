@@ -37,8 +37,6 @@ import scala.collection.{ Map, Set }
 import spec._
 
 import br._
-import br.analyses._
-import br.instructions._
 
 object Expected extends ExpectedDataFlowsSpecification {
 

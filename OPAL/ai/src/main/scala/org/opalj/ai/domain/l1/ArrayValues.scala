@@ -36,7 +36,7 @@ package domain
 package l1
 
 import scala.collection.SortedSet
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+
 import org.opalj.br._
 
 /**
@@ -272,7 +272,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
                     s"[warn] tracking very large arrays (${arrayType.toJava}) "+
                     "usually incurrs significant overhead without increasing "+
                     "the precision of the analysis."+Console.RESET)
-            var virtualPC = 65536 + pc * 1024
+            val virtualPC = 65536 + pc * 1024
 
             val array: Array[DomainValue] = new Array[DomainValue](count)
             var i = 0; while (i < count) {

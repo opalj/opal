@@ -77,8 +77,6 @@ class MethodsWithLoopsTest
 
     behavior of "the abstract interpreter when analyzing methods with loops"
 
-    import org.opalj.ai.domain.l0._
-
     //
     // RETURNS
     it should "be able to analyze a method that never terminates" in {
@@ -101,7 +99,8 @@ class MethodsWithLoopsTest
             with IgnoreSynchronization
 
         val method = findMethod("endless")
-        val result = BaseAI(classFile, method, MostBasicDomain)
+        /*val result =*/ BaseAI(classFile, method, MostBasicDomain)
+        // if we reach this point, everything is OK
     }
 
 }

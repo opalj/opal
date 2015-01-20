@@ -36,7 +36,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 import org.opalj.bi.TestSupport.locateTestResources
-import util.{ Answer, Yes, No, Unknown }
+
 import reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable.UIDSet
 
@@ -444,27 +444,27 @@ class ClassHierarchyTest
     behavior of "the ClassHierarchy's methods to resolve method references"
 
     it should "handle the case if an interface has no implementing class" in {
-        val classFile = methodsProject.classFile(superI).get
-        val result = methodsProject.classHierarchy.lookupImplementingMethods(
-            superI,
-            "someMethod",
-            MethodDescriptor.NoArgsAndReturnVoid,
-            methodsProject)
+        val implementingMethods =
+            methodsProject.classHierarchy.lookupImplementingMethods(
+                superI,
+                "someMethod",
+                MethodDescriptor.NoArgsAndReturnVoid,
+                methodsProject)
 
-        result.size should be(0)
+        implementingMethods.size should be(0)
     }
 
     it should "find a method in a super class" in {
         val classType = ObjectType("methods/b/B")
-        val classFile = methodsProject.classFile(classType).get
-        val result = methodsProject.classHierarchy.lookupImplementingMethods(
-            classType,
-            "publicMethod",
-            MethodDescriptor.NoArgsAndReturnVoid,
-            methodsProject)
+        val implementingMethods =
+            methodsProject.classHierarchy.lookupImplementingMethods(
+                classType,
+                "publicMethod",
+                MethodDescriptor.NoArgsAndReturnVoid,
+                methodsProject)
 
-        result.size should be(1)
-        result.head should have(
+        implementingMethods.size should be(1)
+        implementingMethods.head should have(
             'name("publicMethod"),
             'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
         )

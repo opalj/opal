@@ -29,7 +29,7 @@
 package immutability;
 
 import immutability.helperclasses.MutableClass;
-import immutability.annotations.Mutable;
+import immutability.annotations.ConditionallyImmutable;
 
 /**
  * A mutable class which contains a field that references a mutable object which is passed
@@ -37,7 +37,7 @@ import immutability.annotations.Mutable;
  * 
  * @author Andre Pacak
  */
-@Mutable("has a reference to a mutable object that was created externally")
+@ConditionallyImmutable("references a mutable object that was created externally")
 public class ReferenceMutableObjectPassedViaConstructor {
 
     private final MutableClass object;

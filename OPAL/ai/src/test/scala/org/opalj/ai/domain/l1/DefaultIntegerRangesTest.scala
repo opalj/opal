@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -37,7 +37,6 @@ import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.br.{ ObjectType, ArrayType, IntegerType }
 
 /**
@@ -45,38 +44,21 @@ import org.opalj.br.{ ObjectType, ArrayType, IntegerType }
  *
  * @author Michael Eichberg
  * @author Christos Votskos
+ * @author David Becker
  */
 @RunWith(classOf[JUnitRunner])
 class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestExecution {
 
     final val IrrelevantPC = Int.MinValue
-
-    class IntegerRangesTestDomain(
-        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
-            extends CorrelationalDomain
-            with DefaultDomainValueBinding
-            with ThrowAllPotentialExceptionsConfiguration
-            with l0.DefaultTypeLevelLongValues
-            with l0.DefaultTypeLevelFloatValues
-            with l0.DefaultTypeLevelDoubleValues
-            with l0.DefaultReferenceValuesBinding
-            with l0.TypeLevelFieldAccessInstructions
-            with l0.SimpleTypeLevelInvokeInstructions
-            with l1.DefaultIntegerRangeValues // <----- The one we are going to test
-            with l0.TypeLevelPrimitiveValuesConversions
-            with l0.TypeLevelLongValuesShiftOperators
-            with DefaultHandlingOfMethodResults
-            with IgnoreSynchronization
-            with PredefinedClassHierarchy
-            with RecordLastReturnedValues
+    final val SomePC = 100000
 
     describe("central properties of domains that use IntegerRange values") {
 
-        val theDomain = new IntegerRangesTestDomain
+        val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
         import theDomain._
 
         it("the representation of the integer value 0 should be an IntegerRange(0,0) value") {
-            theDomain.IntegerConstant0 should be(IntegerRange(0, 0))
+            IntegerConstant0 should be(IntegerRange(0, 0))
         }
     }
 
@@ -84,7 +66,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         describe("the behavior of join if we exceed the max spread") {
 
-            val theDomain = new IntegerRangesTestDomain(2l)
+            val theDomain = new DefaultIntegerRangesTestDomain(2l)
             import theDomain._
 
             it("(join of two ranges with positive values that exceed the spread); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
@@ -131,10 +113,10 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         }
 
-        val theDomain = new IntegerRangesTestDomain
-        import theDomain._
-
         describe("the behavior of the join operation if we do not exceed the max. spread") {
+
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("(join with itself) val ir = IntegerRange(...); ir join ir => \"NoUpdate\"") {
                 val v = IntegerRange(0, 0)
@@ -173,7 +155,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 assert(result.value ne v1)
             }
 
-            it("(join of a \"point\" range with a non-overlapping range) [0,0] join [1,Int.MaxValue]") {
+            it("(join of a \"point\" range with a non-overlapping range) [0,0] join [1,Int.MaxValue] => [0,Int.MaxValue]") {
                 val v1 = IntegerRange(lb = 0, ub = 0)
                 val v2 = IntegerRange(lb = 1, ub = 2147483647)
                 v1.join(-1, v2) should be(StructuralUpdate(IntegerRange(0, 2147483647)))
@@ -183,6 +165,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
 
         describe("the behavior of the \"summarize\" function") {
+
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("it should be able to handle overlapping values") {
                 val v1 = IntegerRange(-1, 3)
@@ -225,6 +210,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         describe("the behavior of imul") {
 
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
+
             it("[0,3] * [0,2] => [lb*lb=0,ub*ub=6]") {
                 val v1 = IntegerRange(0, 3)
                 val v2 = IntegerRange(0, 2)
@@ -249,7 +237,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 imul(-1, v2, v1) should be(IntegerRange(-2, 6))
             }
 
-            it("[-3,3] * [-3,2] => [lb*ub=-6,lb*lb=9]") {
+            it("[-3,3] * [-3,2] => [ub*lb=-9,lb*lb=9]") {
                 val v1 = IntegerRange(-3, 3)
                 val v2 = IntegerRange(-3, 2)
 
@@ -281,15 +269,71 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 imul(-1, v2, v1) should be(AnIntegerValue())
             }
 
+            it("The result of the multiplying a range r by [1,1] should be r itself; [2,4] * [1,1] => [2,4]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(1, 1)
+                imul(-1, v1, v2) should be theSameInstanceAs (v1)
+                imul(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("A specific (but unknown) value v1 * [1,1] should be v1 itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(1, 1)
+
+                imul(-1, v1, v2) should be theSameInstanceAs (v1)
+                imul(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of multiplying a specific (but unknown) value v1 by a \"point\" range != [1,1] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 2)
+
+                imul(-1, v1, v2) should not be theSameInstanceAs(v1)
+                imul(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of multiplying a specific (but unknown) value v1 by [2,4] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 4)
+
+                imul(-1, v1, v2) should not be theSameInstanceAs(v1)
+                imul(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of multiplying a range by r@[0,0] should be r itself; [2,4] * [0,0] => [0,0]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(0, 0)
+
+                imul(-1, v1, v2) should be theSameInstanceAs (v2)
+                imul(-1, v2, v1) should be theSameInstanceAs (v2)
+            }
+
+            it("A specific (but unknown) value * r@[0,0] should be r itself") {
+                val v1 = AnIntegerValue()
+                val v2 = IntegerRange(0, 0)
+
+                imul(-1, v1, v2) should be theSameInstanceAs (v2)
+                imul(-1, v2, v1) should be theSameInstanceAs (v2)
+            }
         }
 
         describe("the behavior of ior") {
+
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("AnIntegerValue | [8,19] => AnIntegerRange") {
                 val v = AnIntegerValue
                 val s = IntegerRange(8, 19)
 
                 ior(-1, v, s) should be(AnIntegerValue)
+            }
+
+            it("AnIntegerValue | [0,0] => AnIntegerRange") {
+                val v = AnIntegerValue
+                val s = IntegerRange(0, 0)
+
+                ior(-1, v, s) should be theSameInstanceAs (v)
             }
 
             it("[Int.MinValue,Int.MaxValue] | [8,19] => [Int.MinValue, Int.MaxValue]") {
@@ -615,9 +659,103 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                         fail(s"expected [-1,-1]; found $v")
                 }
             }
+
+            it("The result of the or of a range r and [0,0] should be r itself; [2,4] | [0,0] => [2,4]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(0, 0)
+
+                ior(-1, v1, v2) should be theSameInstanceAs (v1)
+                ior(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("A specific (but unknown) value v1 | [0,0] should be v1 itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(0, 0)
+
+                ior(-1, v1, v2) should be theSameInstanceAs (v1)
+                ior(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of the or of a specific (but unknown) value v1 and a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 2)
+
+                ior(-1, v1, v2) should not be theSameInstanceAs(v1)
+                ior(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of the or of a specific (but unknown) value v1 and [2,4] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 4)
+
+                ior(-1, v1, v2) should not be theSameInstanceAs(v1)
+                ior(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of the or of a range and r@[-1,-1] should be r itself; [2,4] | [-1,-1] => [-1,-1]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(-1, -1)
+
+                ior(-1, v1, v2) should be theSameInstanceAs (v2)
+                ior(-1, v2, v1) should be theSameInstanceAs (v2)
+            }
+
+            it("A specific (but unknown) value | r@[-1,-1] should be r itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(-1, -1)
+
+                ior(-1, v1, v2) should be theSameInstanceAs (v2)
+                ior(-1, v2, v1) should be theSameInstanceAs (v2)
+            }
+        }
+
+        describe("the behavior of ineg") {
+
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
+
+            it("-[0,5] => [-5,0]") {
+                val v1 = IntegerRange(0, 5)
+
+                ineg(-1, v1) should be(IntegerRange(-5, 0))
+            }
+
+            it("-[0,0] => [0,0]") {
+                val v1 = IntegerRange(0)
+
+                ineg(-1, v1) should be(IntegerRange(0))
+            }
+
+            it("-[-17,31] => [-31,17]") {
+                val v1 = IntegerRange(-17, 31)
+
+                ineg(-1, v1) should be(IntegerRange(-31, 17))
+            }
+
+            it("-(-[-17,31]) => [-17,31]") {
+                val v1 = IntegerRange(-17, 31)
+
+                ineg(-1, ineg(-1, v1)) should be(IntegerRange(-17, 31))
+            }
+
+            it("-[Int.MinValue,Int.MinValue] => [Int.MinValue,Int.MinValue]") {
+                val v1 = IntegerRange(Int.MinValue)
+
+                ineg(-1, v1) should be(IntegerRange(Int.MinValue))
+            }
+
+            it("-[Int.MinValue,3] => AnIntegerValue") {
+                val v1 = IntegerRange(Int.MinValue, 3)
+
+                ineg(-1, v1) should be(AnIntegerValue)
+            }
+
         }
 
         describe("the behavior of ishr") {
+
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("[-100,-100] >> [4,4] => [-7, -7]") {
                 val v = IntegerRange(-100, -100)
@@ -957,9 +1095,83 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 ishr(-1, v, s) should be theSameInstanceAs v
             }
+
+            it("The result of right-shifting a range r (negative values) by [0,0] should be r itself; [-4,-2] >> [0,0] => [-4,-2]") {
+                val v = IntegerRange(-4, -2)
+                val s = IntegerRange(0, 0)
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("A specific (but unknown) value v1 right-shifted by [0,0] should be v1 itself") {
+                val v = AnIntegerValue
+                val s = IntegerRange(0, 0)
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[0,0] right-shifted by a specific (but unknown) IntegerValue should be r itself") {
+                val v = IntegerRange(0, 0)
+                val s = AnIntegerValue
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[0,0] right-shifted by a \"point\" range should be r itself") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(2, 2)
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[0,0] right-shifted by [2,4] should be r itself") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(2, 4)
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[-1,-1] right-shifted by a specific (but unknown) IntegerValue should be r itself") {
+                val v = IntegerRange(-1, -1)
+                val s = AnIntegerValue
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[-1,-1] right-shifted by a \"point\" range should be r itself") {
+                val v = IntegerRange(-1, -1)
+                val s = IntegerRange(2, 2)
+
+                ishr(-1, v, s) should be theSameInstanceAs v
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[-1,-1] right-shifted by [2,4] should be r itself") {
+                val v = IntegerRange(-1, -1)
+                val s = IntegerRange(2, 4)
+
+                ishr(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("A specific (but unknown) value v1 right-shifted by a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2, 2)
+
+                ishr(-1, v, s) should not be theSameInstanceAs(v)
+            }
+
+            it("A specific (but unknown) value v1 right-shifted by [2,4] should be a specific (but unknown) value different from v1") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2, 4)
+
+                ishr(-1, v, s) should not be theSameInstanceAs(v)
+            }
         }
 
         describe("the behavior of iadd") {
+
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("[0,3] + [0,2] => [0,5]") {
                 val v1 = IntegerRange(0, 3)
@@ -996,7 +1208,6 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             it("[Int.MinValue,3] + [3,2] => [Int.MinValue+3,5]") {
                 val v1 = IntegerRange(Int.MinValue, 3)
                 val v2 = IntegerRange(3, 2)
-
                 iadd(-1, v1, v2) should be(IntegerRange(Int.MinValue + 3, 5))
                 iadd(-1, v2, v1) should be(IntegerRange(Int.MinValue + 3, 5))
             }
@@ -1004,14 +1215,50 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             it("[-3,-1] + [-3,Int.MaxValue] => [-6,Int.MaxValue-1]") {
                 val v1 = IntegerRange(-3, -1)
                 val v2 = IntegerRange(-3, Int.MaxValue)
-
                 iadd(-1, v1, v2) should be(IntegerRange(-6, Int.MaxValue - 1))
                 iadd(-1, v2, v1) should be(IntegerRange(-6, Int.MaxValue - 1))
             }
 
+            it("[Int.MinValue,3] + [-3,2] => AnIntegerValue") {
+                val v1 = IntegerRange(Int.MinValue, 3)
+                val v2 = IntegerRange(-3, 2)
+                iadd(-1, v1, v2) should be(AnIntegerValue)
+                iadd(-1, v2, v1) should be(AnIntegerValue)
+            }
+
+            it("A specific (but unknown) value v1 + [0,0] should be v1 itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(0, 0)
+                iadd(-1, v1, v2) should be theSameInstanceAs (v1)
+                iadd(-1, v1, v2) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of adding [0,0] to a range r should be r itself; [2,4] + [0,0] => [2,4]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(0, 0)
+                iadd(-1, v1, v2) should be theSameInstanceAs (v1)
+                iadd(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of adding a specific (but unknown) value v1 to a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 2)
+                iadd(-1, v1, v2) should not be theSameInstanceAs(v1)
+                iadd(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of adding a specific (but unknown) value v1 to a [2,4] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 4)
+                iadd(-1, v1, v2) should not be theSameInstanceAs(v1)
+                iadd(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
         }
 
         describe("the behavior of isub") {
+
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("[0,3] - [0,2] => [-2,3]") {
                 val v1 = IntegerRange(0, 3)
@@ -1045,7 +1292,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = IntegerRange(0, 0)
                 val v2 = AnIntegerValue()
 
-                isub(-1, v2, v1) should be(AnIntegerValue)
+                isub(-1, v2, v1) should be theSameInstanceAs (v2)
             }
 
             it("[Int.MinValue,3] - [3,2] => AnIntegerValue") {
@@ -1081,29 +1328,61 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 isub(-1, v, v) should be(IntegerRange(0, 0))
             }
+
+            it("A specific (but unknown) value v1 - [0,0] should be v1 itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(0, 0)
+
+                isub(-1, v1, v2) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of subtracting a range r by [0,0] should be r itself; [2,4] - [0,0] => [2,4]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(0, 0)
+
+                isub(-1, v1, v2) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of subtracting a \"point\" range != [0,0] by a specific (but unknown) value v1 should be a specific (but unknown) value different from v1") {
+                val v1 = IntegerRange(2, 2)
+                val v2 = AnIntegerValue
+
+                isub(-1, v1, v2) should not be theSameInstanceAs(v2)
+            }
+
+            it("The result of subtracting [2,4] by a specific (but unknown) value v1 should be a specific (but unknown) value different from v1") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = AnIntegerValue
+
+                isub(-1, v1, v2) should not be theSameInstanceAs(v2)
+            }
+
         }
 
         describe("the behavior of idiv") {
+
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("[1,3] / [2,2] => [0,1]") {
                 val v1 = IntegerRange(1, 3)
                 val v2 = IntegerRange(2, 2)
 
-                idiv(-1, v1, v2) should be(ComputedValue(IntegerRange(0, 1)))
+                idiv(SomePC, v1, v2) should be(ComputedValue(IntegerRange(0, 1)))
             }
 
             it("[1,3] / [1,1] => [1,3]") {
                 val v1 = IntegerRange(1, 3)
                 val v2 = IntegerRange(1, 1)
 
-                idiv(-1, v1, v2) should be(ComputedValue(IntegerRange(1, 3)))
+                idiv(SomePC, v1, v2) should be(ComputedValue(IntegerRange(1, 3)))
             }
 
             it("[1,3] / [0,0] => ThrowsException") {
                 val v1 = IntegerRange(1, 3)
                 val v2 = IntegerRange(0, 0)
 
-                val result = idiv(-1, v1, v2)
+                val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -1115,14 +1394,14 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = IntegerRange(1, 3)
                 val v2 = IntegerRange(-1, -1)
 
-                idiv(-1, v1, v2) should be(ComputedValue(AnIntegerValue()))
+                idiv(SomePC, v1, v2) should be(ComputedValue(AnIntegerValue()))
             }
 
             it("AnIntegerValue / [0,0] => ThrowsException") {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
 
-                val result = idiv(-1, v1, v2)
+                val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -1134,7 +1413,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = AnIntegerValue()
                 val v2 = AnIntegerValue()
 
-                val result = idiv(-1, v1, v2)
+                val result = idiv(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -1146,7 +1425,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = IntegerRange(-1, 200)
                 val v2 = AnIntegerValue
 
-                val result = idiv(-1, v1, v2)
+                val result = idiv(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -1154,28 +1433,31 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
 
-            it("[Int.MinValue,-1] / Int.MaxValue => [1,1]") {
+            it("[Int.MinValue,-1] / Int.MaxValue => [1,0]") {
                 val v1 = IntegerRange(Int.MinValue, -1)
                 val v2 = IntegerRange(Int.MaxValue, Int.MaxValue)
 
-                idiv(-1, v1, v2) should be(ComputedValue(IntegerRange(-1, 0)))
+                idiv(SomePC, v1, v2) should be(ComputedValue(IntegerRange(-1, 0)))
             }
 
-            it("[Int.MinValue,Int.MaxValue] / Int.MaxValue => [1,1]") {
+            it("[Int.MinValue,Int.MaxValue] / Int.MaxValue => [-1,1]") {
                 val v1 = IntegerRange(Int.MinValue, Int.MaxValue)
                 val v2 = IntegerRange(Int.MaxValue, Int.MaxValue)
 
-                idiv(-1, v1, v2) should be(ComputedValue(IntegerRange(-1, 1)))
+                idiv(SomePC, v1, v2) should be(ComputedValue(IntegerRange(-1, 1)))
             }
         }
 
         describe("the behavior of irem") {
 
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
+
             it("AnIntegerValue % AnIntegerValue => AnIntegerValue + Exception") {
                 val v1 = AnIntegerValue()
                 val v2 = AnIntegerValue()
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -1187,7 +1469,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = IntegerRange(0, 3)
                 val v2 = IntegerRange(0, 0)
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -1199,7 +1481,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 0)
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -1211,7 +1493,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(0, 22)
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerRange(-21, 21))
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -1223,7 +1505,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = AnIntegerValue()
                 val v2 = IntegerRange(2, 4)
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerRange(-3, 3))
                 result.throwsException should be(false)
             }
@@ -1232,7 +1514,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = IntegerRange(0, 3)
                 val v2 = IntegerRange(1, 2)
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 val expected = ComputedValue(IntegerRange(0, 1))
                 result should be(expected)
             }
@@ -1241,7 +1523,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = IntegerRange(-10, -3)
                 val v2 = IntegerRange(-2, -1)
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 val expected = ComputedValue(IntegerRange(-1, 0))
                 result should be(expected)
             }
@@ -1250,7 +1532,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = IntegerRange(-10, 3)
                 val v2 = IntegerRange(1, 2)
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 val expected = ComputedValue(IntegerRange(-1, 1))
                 result should be(expected)
             }
@@ -1259,7 +1541,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = IntegerRange(-10, 3)
                 val v2 = IntegerRange(-3, 4)
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerRange(-3, 3))
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -1271,20 +1553,22 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 val v1 = IntegerRange(0, Int.MaxValue)
                 val v2 = IntegerRange(16, 16)
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerRange(0, 15))
             }
 
-            it("(the dividend and the divisor are point values) [2,2] % [16,16] => [0,1]") {
+            it("(the dividend and the divisor are point values) [2,2] % [16,16] => [2,2]") {
                 val v1 = IntegerRange(2, 2)
                 val v2 = IntegerRange(16, 16)
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerRange(2, 2))
             }
         }
 
         describe("the behavior of iand") {
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("[3,3] & [255,255] => [0,0]") {
                 val v = IntegerRange(3, 3)
@@ -1341,9 +1625,67 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 iand(-1, v, s) should be(AnIntegerValue)
             }
+
+            it("[-2,-2] & AnIntegerValue  => AnIntegerValue") {
+                val v1 = IntegerRange(-2, -2)
+                val v2 = AnIntegerValue
+
+                iand(-1, v1, v2) should be(AnIntegerValue)
+            }
+
+            it("The result of the and of a range r and [1,1] should be r itself; [2,4] & [-1,-1] => [2,4]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(-1, -1)
+
+                iand(-1, v1, v2) should be theSameInstanceAs (v1)
+                iand(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("A specific (but unknown) value v1 & [-1,-1] should be v1 itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(-1, -1)
+
+                iand(-1, v1, v2) should be theSameInstanceAs (v1)
+                iand(-1, v2, v1) should be theSameInstanceAs (v1)
+            }
+
+            it("The result of the and of a specific (but unknown) value v1 and a \"point\" != [-1,-1] range should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 2)
+
+                iand(-1, v1, v2) should not be theSameInstanceAs(v1)
+                iand(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of the and of a specific (but unknown) value v1 and [2,4] should be a specific (but unknown) value different from v1") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(2, 4)
+
+                iand(-1, v1, v2) should not be theSameInstanceAs(v1)
+                iand(-1, v2, v1) should not be theSameInstanceAs(v1)
+            }
+
+            it("The result of the and of a range and r@[0,0] should be r itself; [2,4] & [0,0] => [0,0]") {
+                val v1 = IntegerRange(2, 4)
+                val v2 = IntegerRange(0, 0)
+
+                iand(-1, v1, v2) should be theSameInstanceAs (v2)
+                iand(-1, v2, v1) should be theSameInstanceAs (v2)
+            }
+
+            it("A specific (but unknown) value & r@[0,0] should be r itself") {
+                val v1 = AnIntegerValue
+                val v2 = IntegerRange(0, 0)
+
+                iand(-1, v1, v2) should be theSameInstanceAs (v2)
+                iand(-1, v2, v1) should be theSameInstanceAs (v2)
+            }
         }
 
         describe("the behavior of iushr") {
+
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("""(two "point" ranges where both values are larger than zero) [7,7] >>> [2,2] => -1 >>> 2 === 1073741823""") {
                 val v = IntegerRange(7, 7)
@@ -1628,7 +1970,547 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
         }
 
+        describe("the behavior of ixor") {
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
+
+            it("AnIntegerValue ^ [-10,-10] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(-10, -10)
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("[-10,-10] ^ AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(-10, -10)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("[-22,-2] ^ AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(-22, -2)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("AnIntegerValue ^ [-22,-2] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(-22, -2)
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("AnIntegerValue ^ [2,22] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2, 22)
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("[2,22] ^ AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(2, 22)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("[-12,12] ^ AnIntegerValue => AnIntegerValue") {
+                val v = IntegerRange(-12, 12)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("AnIntegerValue ^ [-12,12]  => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(-12, 12)
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("AnIntegerValue ^ AnIntegerValue  => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("[0,0] ^ AnIntegerValue  => AnIntegerValue") {
+                val v = IntegerRange(0, 0)
+                val s = AnIntegerValue
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("AnIntegerValue ^ [0,0] => AnIntegerValue") {
+                val v = AnIntegerValue
+                val s = IntegerRange(0, 0)
+
+                ixor(-1, v, s) should be(AnIntegerValue)
+
+            }
+
+            it("x (AnIntegerValue) ^ x => [0,0]") {
+                val v = AnIntegerValue
+                val s = v
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(0)
+                        ub should ===(0)
+                    case v ⇒
+                        fail(s"expected lb == 0 and ub == 0; found $v")
+                }
+            }
+
+            it("[1,5] ^ [0,3] => [0,7]") {
+                val v = IntegerRange(1, 5)
+                val s = IntegerRange(0, 3)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (0)
+                        ub should be >= (7)
+                    case v ⇒
+                        fail(s"expected lb <= 0 and ub >= 7; found $v")
+                }
+            }
+
+            it("[-1,5] ^ [0,3] => [-4,7]") {
+                val v = IntegerRange(-1, 5)
+                val s = IntegerRange(0, 3)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-4)
+                        ub should be >= (7)
+                    case v ⇒
+                        fail(s"expected lb <= -4 and ub >= 7; found $v")
+                }
+            }
+
+            it("[-10,-5] ^ [0,3] => [-12,-5]") {
+                val v = IntegerRange(-10, -5)
+                val s = IntegerRange(0, 3)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-12)
+                        ub should be >= (-5)
+                    case v ⇒
+                        fail(s"expected lb <= -12 and ub >= -5; found $v")
+                }
+            }
+
+            it("[10,50] ^ [12,31] => [0,63]") {
+                val v = IntegerRange(10, 50)
+                val s = IntegerRange(12, 31)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (0)
+                        ub should be >= (63)
+                    case v ⇒
+                        fail(s"expected lb <= 0 and ub >= 63; found $v")
+                }
+            }
+
+            it("[-10,50] ^ [12,31] => [-32,63]") {
+                val v = IntegerRange(-10, 50)
+                val s = IntegerRange(12, 31)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-32)
+                        ub should be >= (63)
+                    case v ⇒
+                        fail(s"expected lb <= -32 and ub >= 63; found $v")
+                }
+            }
+
+            it("[-5,-1] ^ [-8,-6] => [1,7]") {
+                val v = IntegerRange(-5, -1)
+                val s = IntegerRange(-8, -6)
+
+                ixor(-1, v, s) match {
+                    case IntegerRange(lb, ub) ⇒
+                        lb should be <= (1)
+                        ub should be >= (7)
+                    case v ⇒
+                        fail(s"expected lb <= 1 and ub >= 7; found $v")
+                }
+            }
+
+            it("[-5,-1] ^ [-80,-60] => [56,79]") {
+                val v = IntegerRange(-5, -1)
+                val s = IntegerRange(-80, -60)
+
+                ixor(-1, v, s) match {
+                    case IntegerRange(lb, ub) ⇒
+                        lb should be <= (56)
+                        ub should be >= (79)
+                    case v ⇒
+                        fail(s"expected lb <= 56 and ub >= 79; found $v")
+                }
+            }
+
+            it("[-500,-100] ^ [-120,-100] => [0,511]") {
+                val v = IntegerRange(-500, -100)
+                val s = IntegerRange(-120, -100)
+
+                ixor(-1, v, s) match {
+                    case IntegerRange(lb, ub) ⇒
+                        lb should be <= (0)
+                        ub should be >= (511)
+                    case v ⇒
+                        fail(s"expected lb <= 0 and ub >= 511; found $v")
+                }
+            }
+
+            it("[-1,-1] ^ [-120,-100] => [99,119]") {
+                val v = IntegerRange(-1, -1)
+                val s = IntegerRange(-120, -100)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (99)
+                        ub should be >= (119)
+                    case v ⇒
+                        fail(s"expected lb <= 99 and ub >= 119; found $v")
+                }
+            }
+
+            it("[-5,-1] ^ [9,12] => [-16,-9]") {
+                val v = IntegerRange(-5, -1)
+                val s = IntegerRange(9, 12)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-16)
+                        ub should be >= (-9)
+                    case v ⇒
+                        fail(s"expected lb <= -16 and ub >= -9; found $v")
+                }
+            }
+
+            it("[-50,-30] ^ [0,45] => [-64,-1]") {
+                val v = IntegerRange(-50, -30)
+                val s = IntegerRange(0, 45)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-64)
+                        ub should be >= (-1)
+                    case v ⇒
+                        fail(s"expected lb <= -64 and ub >= -1; found $v")
+                }
+            }
+
+            it("[Int.MinValue,Int.MinValue+100] ^ [0,45] => [-2147483648,-2147483521]") {
+                val v = IntegerRange(Int.MinValue, Int.MinValue + 100)
+                val s = IntegerRange(0, 45)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2147483648)
+                        ub should be >= (-2147483521)
+                    case v ⇒
+                        fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
+                }
+            }
+
+            it("[Int.MinValue,Int.MinValue+100] ^ [40,45] => [-2147483648,-2147483521]") {
+                val v = IntegerRange(Int.MinValue, Int.MinValue + 100)
+                val s = IntegerRange(40, 45)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2147483648)
+                        ub should be >= (-2147483521)
+                    case v ⇒
+                        fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
+                }
+            }
+
+            it("[0,12] ^ [-14,-10] => [-16,-1]") {
+                val v = IntegerRange(0, 12)
+                val s = IntegerRange(-14, -10)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-16)
+                        ub should be >= (-1)
+                    case v ⇒
+                        fail(s"expected lb <= -16 and ub >= -1; found $v")
+                }
+            }
+
+            it("[40,45] ^ [Int.MinValue,Int.MinValue+100] => [-2147483648,-2147483521]") {
+                val v = IntegerRange(40, 45)
+                val s = IntegerRange(Int.MinValue, Int.MinValue + 100)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2147483648)
+                        ub should be >= (-2147483521)
+                    case v ⇒
+                        fail(s"expected lb <= -2147483648 and ub >= -2147483521; found $v")
+                }
+            }
+
+            it(" [0,45] ^ [-50,-30] => [-64,-1]") {
+                val v = IntegerRange(0, 45)
+                val s = IntegerRange(-50, -30)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-64)
+                        ub should be >= (-1)
+                    case v ⇒
+                        fail(s"expected lb <= -64 and ub >= -1; found $v")
+                }
+            }
+
+            it(" [-1,1] ^ [0,12] => [-13,13]") {
+                val v = IntegerRange(-1, 1)
+                val s = IntegerRange(0, 12)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-13)
+                        ub should be >= (13)
+                    case v ⇒
+                        fail(s"expected lb <= -13 and ub >= 13; found $v")
+                }
+            }
+
+            it(" [-1,19] ^ [10,18] => [-19,31]") {
+                val v = IntegerRange(-1, 19)
+                val s = IntegerRange(10, 18)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-19)
+                        ub should be >= (31)
+                    case v ⇒
+                        fail(s"expected lb <= -19 and ub >= 31; found $v")
+                }
+            }
+
+            it(" [-25,19] ^ [10,18] => [-32,31]") {
+                val v = IntegerRange(-25, 19)
+                val s = IntegerRange(10, 18)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-32)
+                        ub should be >= (31)
+                    case v ⇒
+                        fail(s"expected lb <= -32 and ub >= 31; found $v")
+                }
+            }
+
+            it(" [-25,19] ^ [Int.MaxValue-25,Int.MaxValue] => [-2147483648,2147483647]") {
+                val v = IntegerRange(-25, 19)
+                val s = IntegerRange(Int.MaxValue - 25, Int.MaxValue)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2147483648)
+                        ub should be >= (2147483647)
+                    case v ⇒
+                        fail(s"expected lb <= -2147483648 and ub >= 2147483647; found $v")
+                }
+            }
+
+            it("[Int.MaxValue-25,Int.MaxValue] ^ [-25,19] => [-2147483648,2147483647]") {
+                val v = IntegerRange(Int.MaxValue - 25, Int.MaxValue)
+                val s = IntegerRange(-25, 19)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2147483648)
+                        ub should be >= (2147483647)
+                    case v ⇒
+                        fail(s"expected lb <= -2147483648 and ub >= 2147483647; found $v")
+                }
+            }
+
+            it("[10,18] ^ [-25,19] => [-32,31]") {
+                val v = IntegerRange(10, 18)
+                val s = IntegerRange(-25, 19)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-32)
+                        ub should be >= (31)
+                    case v ⇒
+                        fail(s"expected lb <= -32 and ub >= 31; found $v")
+                }
+            }
+
+            it("[-25,19] ^ [-5,-1] => [-24,28]") {
+                val v = IntegerRange(-25, 19)
+                val s = IntegerRange(-5, -1)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-24)
+                        ub should be >= (28)
+                    case v ⇒
+                        fail(s"expected lb <= -32 and ub >= 31; found $v")
+                }
+            }
+
+            it(" [-5,-1] ^ [-25,19] => [-24,28]") {
+                val v = IntegerRange(-5, -1)
+                val s = IntegerRange(-25, 19)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-24)
+                        ub should be >= (28)
+                    case v ⇒
+                        fail(s"expected lb <= -32 and ub >= 31; found $v")
+                }
+            }
+
+            it(" [-1,1] ^ [-1,1] => [-2,1]") {
+                val v = IntegerRange(-1, 1)
+                val s = IntegerRange(-1, 1)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-2)
+                        ub should be >= (1)
+                    case v ⇒
+                        fail(s"expected lb <= -2 and ub >= 1; found $v")
+                }
+            }
+
+            it(" [-15,12] ^ [-1,34] => [-48,46]") {
+                val v = IntegerRange(-15, 12)
+                val s = IntegerRange(-1, 34)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-48)
+                        ub should be >= (46)
+                    case v ⇒
+                        fail(s"expected lb <= -48 and ub >= 46; found $v")
+                }
+            }
+
+            it(" [0,0] ^ [-1,34] => [-1,34]") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(-1, 34)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-1)
+                        ub should be >= (34)
+                    case v ⇒
+                        fail(s"expected lb <= -1 and ub >= 34; found $v")
+                }
+            }
+
+            it(" [-1,0] ^ [-1,34] => [-35,34]") {
+                val v = IntegerRange(-1, 0)
+                val s = IntegerRange(-1, 34)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-35)
+                        ub should be >= (34)
+                    case v ⇒
+                        fail(s"expected lb <= -35 and ub >= 34; found $v")
+                }
+            }
+
+            it(" [0,0] ^ [34,34] => [34,34]") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(34, 34)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(34)
+                        ub should ===(34)
+                    case v ⇒
+                        fail(s"expected lb <= 34 and ub >= 34; found $v")
+                }
+            }
+
+            it(" [Int.MinValue,Int.MaxValue] ^ [Int.MinValue,Int.MaxValue] => [Int.MinValue,Int.MaxValue]") {
+                val v = IntegerRange(Int.MinValue, Int.MaxValue)
+                val s = IntegerRange(Int.MinValue, Int.MaxValue)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should ===(Int.MinValue)
+                        ub should ===(Int.MaxValue)
+                    case v ⇒
+                        fail(s"expected lb <= Int.MinValue (-2147483648) and ub >= Int.MaxValue (2147483647); found $v")
+                }
+            }
+
+            it(" [-8569,-8400] ^ [50000,50500] => [-58880,-57857]") {
+                val v = IntegerRange(Int.MinValue, Int.MaxValue)
+                val s = IntegerRange(Int.MinValue, Int.MaxValue)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-58880)
+                        ub should be >= (-57857)
+                    case v ⇒
+                        fail(s"expected lb <= -58880 and ub >= -57857; found $v")
+                }
+            }
+
+            it(" [8569,12000] ^ [0,60] => [8512,12031]") {
+                val v = IntegerRange(8569, 12000)
+                val s = IntegerRange(0, 60)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (8512)
+                        ub should be >= (12031)
+                    case v ⇒
+                        fail(s"expected lb <= 8512 and ub >= 12031; found $v")
+                }
+            }
+
+            it(" [-1,0] ^ [100,102] => [-103,102]") {
+                val v = IntegerRange(-1, 0)
+                val s = IntegerRange(100, 102)
+
+                ixor(-1, v, s) match {
+                    case (IntegerRange(lb, ub)) ⇒
+                        lb should be <= (-103)
+                        ub should be >= (102)
+                    case v ⇒
+                        fail(s"expected lb <= -103 and ub >= 102; found $v")
+                }
+            }
+
+        }
+
         describe("the behavior of ishl") {
+
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
+
             it("[10,22] << [12,31] => [-2147483648,2013265920]") {
                 val v = IntegerRange(10, 22)
                 val s = IntegerRange(12, 31)
@@ -1759,7 +2641,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
 
-            it("[-1,5] << [Int.MaxValue,Int.MaxValue] => [-2147483648,00]") {
+            it("[-1,5] << [Int.MaxValue,Int.MaxValue] => [-2147483648,0]") {
                 val v = IntegerRange(-1, 5)
                 val s = IntegerRange(Int.MaxValue, Int.MaxValue)
 
@@ -1772,7 +2654,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
 
-            it("[-10,-5] << [Int.MaxValue,Int.MaxValue] => [-2147483648,00]") {
+            it("[-10,-5] << [Int.MaxValue,Int.MaxValue] => [-2147483648,0]") {
                 val v = IntegerRange(-10, 5)
                 val s = IntegerRange(Int.MaxValue, Int.MaxValue)
 
@@ -2006,9 +2888,75 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 ishl(-1, v, s) should be(IntegerRange(4, 16))
             }
 
+            it("The result of left-shifting a range r (positive values) by [0,0] should be r itself; [2,4] << [0,0] => [2,4]") {
+                val v = IntegerRange(2, 4)
+                val s = IntegerRange(0, 0)
+
+                ishl(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("The result of left-shifting a range r (negative values) by [0,0] should be r itself; [-4,-2] << [0,0] => [-4,-2]") {
+                val v = IntegerRange(-4, -2)
+                val s = IntegerRange(0, 0)
+
+                ishl(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("A specific (but unknown) value v1 left-shifted by [0,0] should be v1 itself") {
+                val v = AnIntegerValue
+                val s = IntegerRange(0, 0)
+
+                ishl(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[0,0] left-shifted by a specific (but unknown) IntegerValue should be r itself") {
+                val v = IntegerRange(0, 0)
+                val s = AnIntegerValue
+
+                ishl(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[0,0] left-shifted by a \"point\" range should be r itself") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(2, 2)
+
+                ishl(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[0,0] left-shifted by [2,4] should be r itself") {
+                val v = IntegerRange(0, 0)
+                val s = IntegerRange(2, 4)
+
+                ishl(-1, v, s) should be theSameInstanceAs (v)
+            }
+
+            it("r@[-1,-1] left-shifted by a specific (but unknown) IntegerValue should be [Int.MinValue, -1]") {
+                val v = IntegerRange(-1, -1)
+                val s = AnIntegerValue
+
+                ishl(-1, v, s) should be(IntegerRange(Int.MinValue, -1))
+            }
+
+            it("A specific (but unknown) value v1 left-shifted by a \"point\" range != [0,0] should be a specific (but unknown) value different from v1") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2, 2)
+
+                ishl(-1, v, s) should not be theSameInstanceAs(v)
+            }
+
+            it("A specific (but unknown) value v1 left-shifted by [2,4] should be a specific (but unknown) value different from v1") {
+                val v = AnIntegerValue
+                val s = IntegerRange(2, 4)
+
+                ishl(-1, v, s) should not be theSameInstanceAs(v)
+            }
+
         }
 
         describe("the behavior of the i2b cast operator") {
+
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             it("(byte)AnIntegerValue => [-128,+127]") {
                 val v1 = AnIntegerValue
@@ -2028,6 +2976,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         describe("the behavior of the i2s cast operator") {
 
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
+
             it("(short)AnIntegerValue => [-Short.MinValue,Short.MaxValue]") {
                 val v1 = AnIntegerValue
                 i2s(-1, v1) should be(IntegerRange(Short.MinValue, Short.MaxValue))
@@ -2046,6 +2997,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
 
         describe("the behavior of the relational operators") {
+            val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+            import theDomain._
 
             describe("the behavior of the greater or equal than (>=) operator") {
                 it("[3,3] >= [0,2] => Yes") {
@@ -2285,7 +3238,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         describe("hanlding of complex dependent casts and moduluo operations") {
 
             it("the analysis should be correct in the presence of type casts (\"randomModulo\")") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("randomModulo").get
                 val result = BaseAI(IntegerValues, method, domain)
                 result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
@@ -2296,9 +3249,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         describe("constraint propagation") {
 
             it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax5").get
-                val result = BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
@@ -2307,9 +3260,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should be able to adapt (<=) the bounds of an IntegerRange value in the presences of aliasing") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax6").get
-                val result = BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
@@ -2318,9 +3271,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should be able to adapt (>=) the bounds of an IntegerRange value in the presences of aliasing") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMinM1").get
-                val result = BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
@@ -2329,9 +3282,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should be able to adapt (>) the bounds of an IntegerRange value in the presences of aliasing") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMin0").get
-                val result = BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected two results; found: "+domain.allReturnedValues)
 
@@ -2340,9 +3293,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("someSwitch").get
-                val result = BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 1)
                     fail("expected one result; found: "+domain.allReturnedValues)
 
@@ -2350,9 +3303,9 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should be able to detect contradicting conditions") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("someComparisonThatReturns5").get
-                val result = BaseAI(IntegerValues, method, domain)
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 2)
                     fail("expected one result; found: "+domain.allReturnedValues)
 
@@ -2361,7 +3314,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should be able to track integer values such that it is possible to potentially identify an array index out of bounds exception") {
-                val domain = new IntegerRangesTestDomain(20) // the array has a maximum size of 10
+                val domain = new DefaultIntegerRangesTestDomain(20) // the array has a maximum size of 10
                 val method = IntegerValues.findMethod("array10").get
                 val result = BaseAI(IntegerValues, method, domain)
                 if (domain.allReturnedValues.size != 1)
@@ -2371,13 +3324,13 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 domain.allReturnedValues.head._2 abstractsOver (
                     domain.InitializedArrayValue(2, List(10), ArrayType(IntegerType))) should be(true)
 
-                // get the loop counter at the "icmple instruction" which controls the 
+                // get the loop counter at the "icmple instruction" which controls the
                 // loops that initializes the array
                 result.operandsArray(20).tail.head should be(domain.IntegerRange(0, 11))
             }
 
             it("it should be possible to identify dead code - even for complex conditions") {
-                val domain = new IntegerRangesTestDomain
+                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("deadCode").get
                 val result = BaseAI(IntegerValues, method, domain)
                 result.operandsArray(47) should be(null)
@@ -2394,7 +3347,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("an idempotent operation (+0) should not affect constraint propagation (cfDependentValuesAdd)") {
-                val domain = new IntegerRangesTestDomain(8)
+                val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValuesAdd").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -2404,7 +3357,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("an idempotent operation (-0) should not affect constraint propagation (cfDependentValuesSub)") {
-                val domain = new IntegerRangesTestDomain(8)
+                val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValuesSub").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -2414,7 +3367,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("an idempotent operation (*1) should not affect constraint propagation (cfDependentValuesMult) ") {
-                val domain = new IntegerRangesTestDomain(IntegerRangeValues.MaxCardinalityOfIntegerRanges)
+                val domain = new DefaultIntegerRangesTestDomain(IntegerRangeValues.MaxCardinalityOfIntegerRanges)
                 val method = IntegerValues.findMethod("cfDependentValuesMult").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -2431,7 +3384,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("an idempotent operation (/1) should not affect constraint propagation (cfDependentValuesDiv) ") {
-                val domain = new IntegerRangesTestDomain(IntegerRangeValues.MaxCardinalityOfIntegerRanges)
+                val domain = new DefaultIntegerRangesTestDomain(IntegerRangeValues.MaxCardinalityOfIntegerRanges)
                 val method = IntegerValues.findMethod("cfDependentValuesDiv").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -2441,7 +3394,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("an idempotent operation (& -1) should not affect constraint propagation (cfDependentValuesBitwiseAnd) ") {
-                val domain = new IntegerRangesTestDomain(IntegerRangeValues.MaxCardinalityOfIntegerRanges)
+                val domain = new DefaultIntegerRangesTestDomain(IntegerRangeValues.MaxCardinalityOfIntegerRanges)
                 val method = IntegerValues.findMethod("cfDependentValuesBitwiseAnd").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -2451,7 +3404,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("an idempotent operation (| 0) should not affect constraint propagation (cfDependentValuesBitwiseOr) ") {
-                val domain = new IntegerRangesTestDomain(IntegerRangeValues.MaxCardinalityOfIntegerRanges)
+                val domain = new DefaultIntegerRangesTestDomain(IntegerRangeValues.MaxCardinalityOfIntegerRanges)
                 val method = IntegerValues.findMethod("cfDependentValuesBitwiseOr").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -2463,7 +3416,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v1)") {
-                val domain = new IntegerRangesTestDomain(8)
+                val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues1_v1").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -2477,7 +3430,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v2)") {
-                val domain = new IntegerRangesTestDomain(8)
+                val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues1_v2").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -2491,7 +3444,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues1_v3)") {
-                val domain = new IntegerRangesTestDomain(8)
+                val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues1_v3").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -2505,7 +3458,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues2)") {
-                val domain = new IntegerRangesTestDomain(8)
+                val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues2").get
                 val result = BaseAI(IntegerValues, method, domain)
                 result.operandsArray(38).head should be(domain.AnIntegerValue)
@@ -2513,7 +3466,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues3)") {
-                val domain = new IntegerRangesTestDomain(8)
+                val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues3").get
                 val result = BaseAI(IntegerValues, method, domain)
                 result.operandsArray(45).head should be(domain.AnIntegerValue)
@@ -2521,7 +3474,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues4)") {
-                val domain = new IntegerRangesTestDomain(8)
+                val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues4").get
                 val result = BaseAI(IntegerValues, method, domain)
                 result.operandsArray(46).head should be(domain.IntegerRange(2, 2))
@@ -2532,7 +3485,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues5)") {
-                val domain = new IntegerRangesTestDomain(8)
+                val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues5").get
                 val result = BaseAI(IntegerValues, method, domain)
                 result.operandsArray(47).head should be(domain.IntegerRange(2, 2))
@@ -2541,7 +3494,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should not happen that a constraint (if...) affects a value that was created by the same instruction (pc), but at a different point in time (cfDependentValues6)") {
-                val domain = new IntegerRangesTestDomain(8)
+                val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("cfDependentValues6").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -2562,11 +3515,11 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should not perform useless evaluations") {
-                val domain = new IntegerRangesTestDomain(8)
+                val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("complexLoop").get
                 val result = BaseAI(IntegerValues, method, domain)
                 result.operandsArray(35).head should be(domain.IntegerRange(0, 2))
-                // when we perform a depth-first evaluation we do not want to 
+                // when we perform a depth-first evaluation we do not want to
                 // evaluate the same instruction with the same abstract state
                 // multiple times
                 result.evaluated.head should be(24)
@@ -2575,15 +3528,15 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             }
 
             it("it should handle casts correctly") {
-                val domain = new IntegerRangesTestDomain(8)
+                val domain = new DefaultIntegerRangesTestDomain(8)
                 val method = IntegerValues.findMethod("casts").get
                 val result = BaseAI(IntegerValues, method, domain)
-                // we primarily test that the top-level domain value is updated 
+                // we primarily test that the top-level domain value is updated
                 result.operandsArray(26).head should be(domain.IntegerRange(-128, 126))
             }
 
             it("it should handle cases where we have more complex aliasing") {
-                val domain = new IntegerRangesTestDomain(4)
+                val domain = new DefaultIntegerRangesTestDomain(4)
                 val method = IntegerValues.findMethod("moreComplexAliasing").get
                 val result = BaseAI(IntegerValues, method, domain)
 
@@ -2592,3 +3545,22 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         }
     }
 }
+
+class DefaultIntegerRangesTestDomain(
+    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
+        extends CorrelationalDomain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultReferenceValuesBinding
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l1.DefaultIntegerRangeValues // <----- The one we are going to test
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with PredefinedClassHierarchy
+        with RecordLastReturnedValues

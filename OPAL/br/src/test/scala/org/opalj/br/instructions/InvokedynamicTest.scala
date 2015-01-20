@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -36,7 +36,7 @@ import org.scalatest.Matchers
 import org.scalatest.FunSpec
 
 import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.util.JRELibraryFolder
+import org.opalj.bytecode.JRELibraryFolder
 
 import org.opalj.br.reader.Java8Framework
 import analyses.{ Project, SomeProject }
@@ -54,7 +54,7 @@ class InvokedynamicTest extends FunSpec with Matchers {
 
     val project: SomeProject = Project(testResources)
 
-    private def testMethod(classFile: ClassFile, name: String) {
+    private def testMethod(classFile: ClassFile, name: String): Unit = {
         for {
             method @ MethodWithBody(body) ← classFile.findMethod(name)
             instruction ← body.instructions if instruction.isInstanceOf[INVOKEDYNAMIC]
@@ -132,20 +132,22 @@ class InvokedynamicTest extends FunSpec with Matchers {
             it("should resolve all invokedynamic instructions found there") {
                 val jrePath = JRELibraryFolder
                 val jreProject = Project(jrePath)
-                val failedInstructions = (for {
-                    classFile ← jreProject.classFiles
-                    method @ MethodWithBody(body) ← classFile.methods
-                    instruction ← body.instructions if instruction.isInstanceOf[INVOKEDYNAMIC]
-                    invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
-                } yield {
-                    (invokedynamic.resolveJDK8(jreProject).isDefined,
-                        classFile, method, instruction)
-                }).filter(t ⇒ !t._1)
+                val failedInstructions = (
+                    for {
+                        classFile ← jreProject.allClassFiles.par
+                        method @ MethodWithBody(body) ← classFile.methods
+                        instruction ← body.instructions if instruction.isInstanceOf[INVOKEDYNAMIC]
+                        invokedynamic = instruction.asInstanceOf[INVOKEDYNAMIC]
+                    } yield {
+                        (invokedynamic.resolveJDK8(jreProject).isDefined,
+                            classFile, method, instruction)
+                    }
+                ).filter(t ⇒ !t._1)
                 if (!failedInstructions.isEmpty) {
                     val totalFailures = failedInstructions.size
                     val numberOfFailuresToShow = 5
                     val msg = failedInstructions.take(numberOfFailuresToShow).map({ tuple ⇒
-                        val (_, classFile, method, instruction) = tuple
+                        val (_, _ /* classFile*/ , method, instruction) = tuple
                         instruction+"\n in method "+
                             method.toJava
                     }).mkString(

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,7 +30,9 @@ package org.opalj
 package br
 package instructions
 
-import language.existentials
+import scala.language.existentials
+
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * Push item from runtime constant pool.
@@ -40,16 +42,37 @@ import language.existentials
 sealed abstract class LDC_W[@specialized(Int, Float) T]
         extends LoadConstantInstruction[T] {
 
-    final def opcode: Opcode = 19
+    final def opcode: Opcode = LDC_W.opcode
 
     final def mnemonic: String = "ldc_w"
 
     final def length: Int = 3
+
+    def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || (
+            LDC_W.opcode == other.opcode &&
+            this.value == other.asInstanceOf[LDC_W[_]].value
+        )
+    }
+
 }
 
 final case class LoadInt_W(value: Int) extends LDC_W[Int]
 
-final case class LoadFloat_W(value: Float) extends LDC_W[Float]
+final case class LoadFloat_W(value: Float) extends LDC_W[Float] {
+
+    override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || (
+            LDC_W.opcode == other.opcode && other.isInstanceOf[LoadFloat_W] && {
+                val otherLoadFloat = other.asInstanceOf[LoadFloat_W]
+                (this.value.isNaN && otherLoadFloat.value.isNaN) ||
+                    (this.value == otherLoadFloat.value)
+            }
+        )
+    }
+}
 
 final case class LoadClass_W(value: ReferenceType) extends LDC_W[ReferenceType]
 
@@ -65,6 +88,8 @@ final case class LoadString_W(value: String) extends LDC_W[String]
  * @author Michael Eichberg
  */
 object LDC_W {
+
+    final val opcode = 19
 
     def apply(constantValue: ConstantValue[_]): LDC_W[_] = {
         constantValue.value match {

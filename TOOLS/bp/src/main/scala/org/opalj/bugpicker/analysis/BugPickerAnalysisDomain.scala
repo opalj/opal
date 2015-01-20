@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -37,9 +37,8 @@ import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValueInformation
-import org.opalj.ai.domain.l0.RefinedTypeLevelInvokeInstructions
 import org.opalj.br.MethodSignature
-import org.opalj.ai.project.CallGraphCache
+import org.opalj.ai.analyses.cg.CallGraphCache
 
 /**
  * The domain that is used to identify the issues.
@@ -47,7 +46,7 @@ import org.opalj.ai.project.CallGraphCache
  * @author Michael Eichberg
  */
 class BugPickerAnalysisDomain(
-    override val project: Project[java.net.URL],
+    override val project: Project[URL],
     val fieldValueInformation: FieldValueInformation,
     val methodReturnValueInformation: MethodReturnValueInformation,
     val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
@@ -59,18 +58,19 @@ class BugPickerAnalysisDomain(
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues
         //with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.RefinedTypeLevelFieldAccessInstructions
+        with domain.la.RefinedTypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
-        with domain.l0.RefinedTypeLevelInvokeInstructions
+        with domain.la.RefinedTypeLevelInvokeInstructions
         //with domain.l1.DefaultReferenceValuesBinding
         with domain.l1.DefaultClassValuesBinding
         //with domain.l1.DefaultStringValuesBinding
+        with domain.l1.NullPropertyRefinement
         with domain.l1.DefaultIntegerRangeValues
         with domain.l1.MaxArrayLengthRefinement
         with domain.l1.ConstraintsBetweenIntegerValues
         //with domain.l1.DefaultIntegerSetValues
-        with domain.l1.DefaultLongValues
-        with domain.l1.LongValuesShiftOperators
+        with domain.l1.DefaultLongSetValues
+        with domain.l1.LongSetValuesShiftOperators
         with domain.l1.ConcretePrimitiveValuesConversions
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization
@@ -79,7 +79,7 @@ class BugPickerAnalysisDomain(
         with domain.ProjectBasedClassHierarchy
         // the following two are required to detect instructions that always throw
         // an exception (such as div by zero, a failing checkcast, a method call that
-        // always fails etc.
+        // always fails etc.)
         with domain.RecordCFG
         with domain.l1.RecordAllThrownExceptions
 

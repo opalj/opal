@@ -31,13 +31,14 @@ package br
 package analyses
 
 /**
- * Creates a `dot` (Graphviz) based representation of the class hierarchy.
+ * Creates a `dot` (Graphviz) based representation of the class hierarchy
+ * of the specified jar file(s).
  *
  * @author Michael Eichberg
  */
 object ClassHierarchyVisualizer {
 
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
 
         import graphs.{ Node, toDot }
 
@@ -61,6 +62,6 @@ object ClassHierarchyVisualizer {
             }
 
         val dotGraph = toDot.generateDot(Set(classHierarchy.toGraph), "back")
-        org.opalj.util.writeAndOpen(dotGraph, "ClassHiearachy", ".dot")
+        org.opalj.io.writeAndOpen(dotGraph, "ClassHiearachy", ".dot")
     }
 }

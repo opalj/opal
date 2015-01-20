@@ -39,7 +39,7 @@ import scala.collection.immutable.SortedSet
  * @author Michael Eichberg
  */
 trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetValues {
-    domain: CorrelationalDomainSupport with Configuration with VMLevelExceptionsFactory ⇒
+    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     class AnIntegerValue extends super.AnIntegerValue {
 
@@ -124,7 +124,6 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
         override def hashCode = this.values.hashCode * 13
 
         override def equals(other: Any): Boolean = {
-            val thisValue = this
             other match {
                 case that: IntegerSet ⇒
                     (this eq that) || (this.values == that.values)
@@ -143,13 +142,13 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
         if (value) IntegerValue(pc, 1) else IntegerValue(pc, 0)
 
     override def ByteValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ByteValue(pc: PC, value: Byte) = IntegerSet(value)
+    override def ByteValue(pc: PC, value: Byte) = IntegerSet(value.toInt)
 
     override def ShortValue(pc: PC): DomainValue = AnIntegerValue()
-    override def ShortValue(pc: PC, value: Short) = IntegerSet(value)
+    override def ShortValue(pc: PC, value: Short) = IntegerSet(value.toInt)
 
     override def CharValue(pc: PC): DomainValue = AnIntegerValue()
-    override def CharValue(pc: PC, value: Char) = IntegerSet(value)
+    override def CharValue(pc: PC, value: Char) = IntegerSet(value.toInt)
 
     override def IntegerValue(pc: PC): DomainValue = AnIntegerValue()
     override def IntegerValue(pc: PC, value: Int) = IntegerSet(value)

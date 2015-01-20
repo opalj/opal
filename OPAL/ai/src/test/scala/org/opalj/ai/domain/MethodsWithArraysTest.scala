@@ -39,8 +39,7 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestSupport.locateTestResources
-
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 
 import br._
 import br.reader.Java8Framework.ClassFiles
@@ -81,13 +80,13 @@ class MethodsWithArraysTest
         def id = "MethodsWithArraysTestDomain"
     }
 
-    private def evaluateMethod(name: String, f: TestDomain ⇒ Unit) {
+    private def evaluateMethod(name: String, f: TestDomain ⇒ Unit): Unit = {
         val domain = new TestDomain
 
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
 
-        org.opalj.ai.debug.XHTML.dumpOnFailureDuringValidation(
+        dumpOnFailureDuringValidation(
             Some(classFile),
             Some(method),
             method.body.get,
@@ -118,7 +117,6 @@ class MethodsWithArraysTest
 
     it should "be able to analyze a method that uses the Java feature that arrays are covariant" in {
         evaluateMethod("covariantArrays", domain ⇒ {
-            import domain._
             domain.allReturnedValues.size should be(1)
             domain.isValueSubtypeOf(
                 domain.allReturnedValues(24), ObjectType.Object) should be(Yes)
@@ -127,7 +125,6 @@ class MethodsWithArraysTest
 
     it should "be able to analyze a method that does various (complex) type casts related to arrays" in {
         evaluateMethod("integerArraysFrenzy", domain ⇒ {
-            import domain._
             domain.allReturnedValues.size should be(2)
             domain.isValueSubtypeOf(
                 domain.allReturnedValues(78), ArrayType(IntegerType)) should be(Yes)

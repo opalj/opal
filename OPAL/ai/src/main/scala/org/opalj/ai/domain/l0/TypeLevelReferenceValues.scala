@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -40,10 +40,6 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.UpperTypeBound
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.util.Answer
-import org.opalj.util.No
-import org.opalj.util.Unknown
-import org.opalj.util.Yes
 
 /**
  * Implements the foundations for performing computations related to reference values.
@@ -302,19 +298,19 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         final override def upperTypeBound: UpperTypeBound = UIDSet.empty
 
         // IMPLEMENTATION OF THE ARRAY RELATED METHODS
-        // 
+        //
 
         final override def load(pc: PC, index: DomainValue): ArrayLoadResult =
-            justThrows(NullPointerException(pc))
+            justThrows(VMNullPointerException(pc))
 
         final override def store(
             pc: PC,
             value: DomainValue,
             index: DomainValue): ArrayStoreResult =
-            justThrows(NullPointerException(pc))
+            justThrows(VMNullPointerException(pc))
 
         final override def length(pc: PC): Computation[DomainValue, ExceptionValue] =
-            throws(NullPointerException(pc))
+            throws(VMNullPointerException(pc))
 
         /**
          * Always throws a [[DomainException]] since it is not possible to give a generic
@@ -377,13 +373,13 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
                             Unknown // the index may be too large...
                     )
             if (isIndexValid.isNo)
-                return justThrows(ArrayIndexOutOfBoundsException(pc))
+                return justThrows(VMArrayIndexOutOfBoundsException(pc))
 
             var thrownExceptions: List[ExceptionValue] = Nil
             if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)
-                thrownExceptions = NullPointerException(pc) :: thrownExceptions
+                thrownExceptions = VMNullPointerException(pc) :: thrownExceptions
             if (isIndexValid.isUnknown && throwArrayIndexOutOfBoundsException)
-                thrownExceptions = ArrayIndexOutOfBoundsException(pc) :: thrownExceptions
+                thrownExceptions = VMArrayIndexOutOfBoundsException(pc) :: thrownExceptions
             doLoad(pc, index, thrownExceptions)
         }
 
@@ -415,19 +411,19 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
                             Unknown
                     )
             if (isIndexValid.isNo)
-                return justThrows(ArrayIndexOutOfBoundsException(pc))
+                return justThrows(VMArrayIndexOutOfBoundsException(pc))
 
             val isAssignable = this.isAssignable(value)
             if (isAssignable.isNo)
-                return justThrows(ArrayStoreException(pc))
+                return justThrows(VMArrayStoreException(pc))
 
             var thrownExceptions: List[ExceptionValue] = Nil
             if (isIndexValid.isUnknown && throwArrayIndexOutOfBoundsException)
-                thrownExceptions = ArrayIndexOutOfBoundsException(pc) :: thrownExceptions
+                thrownExceptions = VMArrayIndexOutOfBoundsException(pc) :: thrownExceptions
             if (isAssignable.isUnknown && throwArrayStoreException)
-                thrownExceptions = ArrayStoreException(pc) :: thrownExceptions
+                thrownExceptions = VMArrayStoreException(pc) :: thrownExceptions
             if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)
-                thrownExceptions = NullPointerException(pc) :: thrownExceptions
+                thrownExceptions = VMNullPointerException(pc) :: thrownExceptions
 
             doStore(pc, value, index, thrownExceptions)
         }
@@ -442,7 +438,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
 
         override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
             if (isNull == Unknown && throwNullPointerExceptionOnArrayAccess)
-                ComputedValueOrException(doGetLength(pc), NullPointerException(pc))
+                ComputedValueOrException(doGetLength(pc), VMNullPointerException(pc))
             else
                 ComputedValue(doGetLength(pc))
         }
@@ -515,11 +511,11 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
                     // if they refere to the same object
                     Unknown
             else {
-                // - both values may not be null 
+                // - both values may not be null
                 // - at least one value is not precise
                 if (classHierarchy.isSubtypeOf(v1UTB, v2UTB).isNo &&
                     classHierarchy.isSubtypeOf(v2UTB, v1UTB).isNo &&
-                    // two interfaces that are not in an inheritance relation can 
+                    // two interfaces that are not in an inheritance relation can
                     // still be implemented by the same class and, hence, the references
                     // can still be equal
                     v1UTB.exists(t ⇒ t.isObjectType && !classHierarchy.isInterface(t.asObjectType)) &&
@@ -566,11 +562,11 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         componentType: FieldType): Computation[DomainValue, ExceptionValue] = {
         val validCount = intIsSomeValueInRange(pc, count, 0, Int.MaxValue)
         if (validCount.isNo)
-            return throws(NegativeArraySizeException(pc))
+            return throws(VMNegativeArraySizeException(pc))
 
         val newarray = NewArray(pc, count, ArrayType(componentType))
         if (validCount.isUnknown && throwNegativeArraySizeException)
-            ComputedValueOrException(newarray, NegativeArraySizeException(pc))
+            ComputedValueOrException(newarray, VMNegativeArraySizeException(pc))
         else
             ComputedValue(newarray)
     }
@@ -590,7 +586,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
         counts foreach { (count) ⇒
             val validCount = intIsSomeValueInRange(pc, count, 0, Int.MaxValue)
             if (validCount.isNo)
-                return throws(NegativeArraySizeException(pc))
+                return throws(VMNegativeArraySizeException(pc))
             else if (validCount.isUnknown)
                 validCounts = Unknown
         }
@@ -601,14 +597,14 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             else
                 NewArray(pc, counts, arrayType)
         if (validCounts.isUnknown && throwNegativeArraySizeException)
-            ComputedValueOrException(newarray, NegativeArraySizeException(pc))
+            ComputedValueOrException(newarray, VMNegativeArraySizeException(pc))
         else
             ComputedValue(newarray)
     }
 
     //
     // OPERATIONS ON ARRAYS
-    // 
+    //
 
     /**
      * Loads the value stored in the array at the given index or throws an
@@ -819,18 +815,25 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     //
     // -----------------------------------------------------------------------------------
 
-    // This domain does not support the propagation of constraints, since 
-    // the join operator reuses the current domain value (the same instance) 
+    // This domain does not support the propagation of constraints, since
+    // the join operator reuses the current domain value (the same instance)
     // if its properties are correctly abstracting over the current state. Hence,
     // the same domain value is used to potentially represent different objects at
     // runtime/this domain does not support the identification of aliases.
 
-    def refEstablishUpperBound(
+    def refSetUpperBound(
         pc: PC,
         upperTypeBound: ReferenceType,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {
         (ReferenceValue(pc, upperTypeBound) :: operands.tail, locals)
+    }
+
+    override def refSetIsNull(
+        pc: PC,
+        operands: Operands,
+        locals: Locals): (Operands, Locals) = {
+        (NullValue(pc /*Irrelevant - at least here*/ ) :: operands.tail, locals)
     }
 
 }

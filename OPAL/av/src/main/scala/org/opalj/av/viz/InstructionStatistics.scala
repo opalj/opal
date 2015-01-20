@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -33,7 +33,6 @@ package viz
 import java.net.URL
 
 import br._
-import br.instructions._
 import br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
 
 /**
@@ -57,11 +56,11 @@ object InstructionStatistics extends AnalysisExecutor {
 
             import scala.collection.mutable.{ HashSet, HashMap }
 
-            // Collect the number of instructions per package 
+            // Collect the number of instructions per package
             // FQPN = FullyQualifiedPackageName
             val instructionsPerFQPN = HashMap.empty[String, Int]
             for {
-                classFile ← project.classFiles
+                classFile ← project.allClassFiles
                 packageName = classFile.thisType.packageName
                 MethodWithBody(body) ← classFile.methods
             } {
@@ -105,17 +104,17 @@ object InstructionStatistics extends AnalysisExecutor {
                 rootFQPN: String,
                 spn: String): (String, Int) = {
 
-                // Find all immediate child packages. Note that a child package's name 
+                // Find all immediate child packages. Note that a child package's name
                 // can contain multiple simple package names if the intermediate
                 // packages have only one subpackage.
-                var childPNs = HashSet.empty[String]
+                val childPNs = HashSet.empty[String]
                 for {
                     fqpn ← instructionsPerFQPN.keys
                     if fqpn.length > rootFQPN.length()
                     if fqpn.startsWith(rootFQPN)
                     if fqpn.charAt(rootFQPN.length()) == '/' // javax is not a subpackage of java..
                 } {
-                    var pnsToRemove = HashSet.empty[String]
+                    val pnsToRemove = HashSet.empty[String]
                     var pnNeedToBeAdded = true
                     for (childPN ← childPNs) {
                         if (childPN.startsWith(fqpn)) {

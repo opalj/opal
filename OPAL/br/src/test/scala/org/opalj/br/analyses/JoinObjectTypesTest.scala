@@ -91,7 +91,7 @@ class JoinObjectTypesTest
         param2: ObjectType,
         reflexive: Boolean,
         expected: ObjectType) = {
-        var result = classhierachy.joinObjectTypesUntilSingleUpperBound(param1, param2, reflexive)
+        val result = classhierachy.joinObjectTypesUntilSingleUpperBound(param1, param2, reflexive)
         if (result != expected)
             fail(s"$param1 join $param2 ${if (reflexive) "(reflexive)" else ""}"+
                 s" with joinObjectTypesUntilSingleUpperBound(ObjectType, ObjectType, Boolean) is ${result};"+
@@ -101,7 +101,7 @@ class JoinObjectTypesTest
     def testJoinObjectTypesUntilSingleUpperBound(
         param: UIDSet[ObjectType],
         expected: ObjectType) = {
-        var result = classhierachy.joinObjectTypesUntilSingleUpperBound(param)
+        val result = classhierachy.joinObjectTypesUntilSingleUpperBound(param)
         if (result != expected)
             fail(s"join of ${mkString(param)} "+
                 s" using joinObjectTypesUntilSingleUpperBound(UIDSet[ObjectType]) is ${result};"+
@@ -111,7 +111,7 @@ class JoinObjectTypesTest
 
     describe("the behavior of the method joinObjectTypes(ObjectType,ObjectType) of ClassHierachy") {
         // uncomment to display the test graph:
-        //        util.writeAndOpen((toDot.generateDot(Set(classhierachy.toGraph))), "test", ".dot")
+        //        io.writeAndOpen((toDot.generateDot(Set(classhierachy.toGraph))), "test", ".dot")
 
         describe("the behavior of joins with classes") {
             describe("the behavior of joins with sets containing one class") {

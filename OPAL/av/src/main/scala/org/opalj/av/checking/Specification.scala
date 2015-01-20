@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,34 +22,35 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 package av
+package checking
 
 import scala.language.implicitConversions
-
 import java.net.URL
-
 import scala.util.matching.Regex
 import scala.collection.{ Map ⇒ AMap, Set ⇒ ASet }
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
-
+import scala.Console.{ GREEN, RED, BLUE, RESET }
 import org.opalj.util.PerformanceEvaluation.{ ns2sec, time, run }
-import br._
-import br.reader.Java8Framework.ClassFiles
-import br.analyses.{ ClassHierarchy, Project }
-import de._
+import org.opalj.br._
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.br.analyses.{ ClassHierarchy, Project }
+import org.opalj.de._
+import org.opalj.io.processSource
 
 /**
  * A specification of a project's architectural constraints.
  *
  * ===Usage===
  * First define the ensembles, then the rules and at last specify the
- * class files that should be analyzed. The rules will then be automatically
+ * class files that should be analyzed. The rules will then automatically be
  * evaluated.
  *
  * ===Note===
@@ -58,23 +59,35 @@ import de._
  * ensemble is allowed to depend on a specific ensemble.
  *
  * @author Michael Eichberg
+ * @author Samuel Beracasa
+ * @author Marco Torsello
  */
-class Specification(val project: Project[URL]) {
+class Specification(
+        val project: Project[URL],
+        val useAnsiColors: Boolean) {
 
-    def this(classFiles: Traversable[(ClassFile, URL)]) {
+    private[this] def ifUseAnsiColors(ansiEscapeSequence: String): String =
+        if (useAnsiColors) ansiEscapeSequence else ""
+
+    def this(project: Project[URL]) {
+        this(project, false)
+    }
+
+    def this(
+        classFiles: Traversable[(ClassFile, URL)],
+        useAnsiColors: Boolean = false) {
         this(
             run {
                 Project(projectClassFilesWithSources = classFiles)
             } { (executionTime, project) ⇒
-                Console.println(
-                    Console.GREEN+
-                        "1. Reading "+
-                        project.classFilesCount+" class files took "+
-                        ns2sec(executionTime).toString+" seconds."+
-                        Console.BLACK)
+                println((if (useAnsiColors) GREEN else "")+
+                    "1. Reading "+
+                    project.classFilesCount+" class files took "+
+                    ns2sec(executionTime).toString+" seconds."+
+                    (if (useAnsiColors) RESET else ""))
                 project
-            }
-        )
+            },
+            useAnsiColors)
     }
 
     @volatile
@@ -125,17 +138,33 @@ class Specification(val project: Project[URL]) {
      * @throws SpecificationError If the ensemble is already defined.
      */
     @throws(classOf[SpecificationError])
-    def ensemble(ensembleSymbol: Symbol)(sourceElementMatcher: SourceElementsMatcher) {
+    def ensemble(
+        ensembleSymbol: Symbol)(
+            sourceElementMatcher: SourceElementsMatcher): Unit = {
         if (ensembles.contains(ensembleSymbol))
-            throw new SpecificationError("The ensemble is already defined: "+ensembleSymbol)
+            throw SpecificationError("the ensemble is already defined: "+ensembleSymbol)
 
         theEnsembles += (
-            (
-                ensembleSymbol,
-                (sourceElementMatcher, Set[VirtualSourceElement]())
-            )
+            (ensembleSymbol, (sourceElementMatcher, Set.empty[VirtualSourceElement]))
         )
     }
+
+    /**
+     * Creates a `Symbol` with the given name.
+     *
+     * This method is primarily useful if ensemble names are created programmatically
+     * and the code should communicate that the created name identifies an ensemble.
+     * E.g., instead of
+     * {{{
+     *  for (moduleID <- 1 to 10) Symbol("module"+moduleID)
+     * }}}
+     * it is now possible to write
+     * {{{
+     *  for (moduleID <- 1 to 10) EnsembleID("module"+moduleID)
+     * }}}
+     * which better communicates the intention.
+     */
+    def EnsembleID(ensembleName: String): Symbol = Symbol(ensembleName)
 
     /**
      * Represents an ensemble that contains no source elements. This can be used, e.g.,
@@ -154,20 +183,18 @@ class Specification(val project: Project[URL]) {
     @throws(classOf[SpecificationError])
     implicit def StringToSourceElementMatcher(matcher: String): SourceElementsMatcher = {
         if (matcher endsWith ".*")
-            new PackageNameBasedMatcher(matcher.substring(0, matcher.length() - 2).replace('.', '/'))
+            PackageMatcher(matcher.substring(0, matcher.length() - 2).replace('.', '/'))
         else if (matcher endsWith ".**")
-            new PackageNameBasedMatcher(matcher.substring(0, matcher.length() - 3).replace('.', '/'), true)
+            PackageMatcher(matcher.substring(0, matcher.length() - 3).replace('.', '/'), true)
         else if (matcher endsWith "*")
-            new ClassMatcher(matcher.substring(0, matcher.length() - 1).replace('.', '/'), true)
+            SimpleClassMatcher(matcher.substring(0, matcher.length() - 1).replace('.', '/'), true)
         else if (matcher.indexOf('*') == -1)
-            new ClassMatcher(matcher.replace('.', '/'))
+            SimpleClassMatcher(matcher.replace('.', '/'))
         else
-            throw new SpecificationError("unsupported pattern: "+matcher);
+            throw SpecificationError("unsupported matcher pattern: "+matcher);
     }
 
-    def classes(matcher: Regex): SourceElementsMatcher = {
-        new RegexClassMatcher(matcher)
-    }
+    def classes(matcher: Regex): SourceElementsMatcher = SimpleClassMatcher(matcher)
 
     /**
      * Returns the class files stored at the given location.
@@ -185,15 +212,19 @@ class Specification(val project: Project[URL]) {
         override def targetEnsembles: Seq[Symbol] = Seq(targetEnsemble)
 
         override def violations(): ASet[SpecificationViolation] = {
-            val sourceEnsembleElements = (Set[VirtualSourceElement]() /: sourceEnsembles)(_ ++ ensembles(_)._2)
+            val sourceEnsembleElements =
+                (Set[VirtualSourceElement]() /: sourceEnsembles)(_ ++ ensembles(_)._2)
             val (_, targetEnsembleElements) = ensembles(targetEnsemble)
             for {
                 targetEnsembleElement ← targetEnsembleElements
                 if incomingDependencies.contains(targetEnsembleElement)
                 (incomingElement, dependencyType) ← incomingDependencies(targetEnsembleElement)
-                if !(sourceEnsembleElements.contains(incomingElement) || targetEnsembleElements.contains(incomingElement))
+                if !(
+                    sourceEnsembleElements.contains(incomingElement) ||
+                    targetEnsembleElements.contains(incomingElement))
             } yield {
                 SpecificationViolation(
+                    project,
                     this,
                     incomingElement,
                     targetEnsembleElement,
@@ -206,19 +237,23 @@ class Specification(val project: Project[URL]) {
             targetEnsemble+" is_only_to_be_used_by ("+sourceEnsembles.mkString(",")+")"
     }
 
-    case class LocalOutgoingConstraint(
+    case class LocalOutgoingIsOnlyAllowedToConstraint(
         sourceEnsemble: Symbol,
         targetEnsembles: Seq[Symbol])
             extends DependencyChecker {
 
+        if (targetEnsembles.isEmpty)
+            throw SpecificationError("no target ensembles specified: "+toString())
+
         override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
 
         override def violations(): ASet[SpecificationViolation] = {
-            val unknownEnsembles = targetEnsembles.filterNot(ensembles.contains(_)).mkString(",")
+            val unknownEnsembles = targetEnsembles.filterNot(ensembles.contains(_))
             if (unknownEnsembles.nonEmpty)
-                throw new SpecificationError("Unknown ensemble(s): "+unknownEnsembles);
+                throw SpecificationError(
+                    unknownEnsembles.mkString("unknown ensemble(s): ", ",", ""))
 
-            val sourceEnsembleElements = ensembles(sourceEnsemble)._2
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
             val allAllowedLocalTargetSourceElements =
                 // self references are allowed as well as references to source elements belonging
                 // to a target ensemble
@@ -237,6 +272,7 @@ class Specification(val project: Project[URL]) {
                 dependencyType ← dependencyTypes
             } yield {
                 SpecificationViolation(
+                    project,
                     this,
                     sourceElement,
                     targetElement,
@@ -249,22 +285,92 @@ class Specification(val project: Project[URL]) {
             sourceEnsemble+" is_only_allowed_to_use ("+targetEnsembles.mkString(",")+")"
     }
 
+    /**
+     * Forbids any locals dependency between a specific sourcs ensemble and
+     * several target ensembles.
+     *
+     * ==Example Scenario==
+     * If the ensemble `ex` is not allowed to use `ey` and the source element `x` which
+     * belongs to ensemble `ex` depends on a source element belonging to `ey` then
+     * a [[SpecificationViolation]] is generated.
+     */
+    case class LocalOutgoingNotAllowedConstraint(
+        sourceEnsemble: Symbol,
+        targetEnsembles: Seq[Symbol])
+            extends DependencyChecker {
+
+        if (targetEnsembles.isEmpty)
+            throw SpecificationError("no target ensembles specified: "+toString())
+
+        // WE DO NOT WANT TO CHECK THE VALIDITY OF THE ENSEMBLE IDS NOW TO MAKE IT EASY
+        // TO INTERMIX THE DEFINITION OF ENSEMBLES AND CONSTRAINTS
+
+        override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
+
+        override def violations(): ASet[SpecificationViolation] = {
+            val unknownEnsembles = targetEnsembles.filterNot(ensembles.contains(_))
+            if (unknownEnsembles.nonEmpty)
+                throw SpecificationError(
+                    unknownEnsembles.mkString("unknown ensemble(s): ", ",", ""))
+
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
+            val notAllowedTargetSourceElements =
+                (Set.empty[VirtualSourceElement] /: targetEnsembles)(_ ++ ensembles(_)._2)
+
+            for {
+                sourceElement ← sourceEnsembleElements
+                targets = outgoingDependencies.get(sourceElement)
+                if targets.isDefined
+                (targetElement, dependencyTypes) ← targets.get
+                dependencyType ← dependencyTypes
+                if (notAllowedTargetSourceElements contains targetElement)
+            } yield {
+                SpecificationViolation(
+                    project,
+                    this,
+                    sourceElement,
+                    targetElement,
+                    dependencyType,
+                    "violation of a local outgoing not allowed constraint")
+            }
+        }
+
+        override def toString =
+            targetEnsembles.mkString(s"$sourceEnsemble is_not_allowed_to_use (", ",", ")")
+    }
+
     case class SpecificationFactory(contextEnsembleSymbol: Symbol) {
 
-        def apply(sourceElementsMatcher: SourceElementsMatcher) {
+        def apply(sourceElementsMatcher: SourceElementsMatcher): Unit = {
             ensemble(contextEnsembleSymbol)(sourceElementsMatcher)
         }
 
-        def is_only_to_be_used_by(sourceEnsembleSymbols: Symbol*) {
-            dependencyCheckers = GlobalIncomingConstraint(contextEnsembleSymbol, sourceEnsembleSymbols.toSeq) :: dependencyCheckers
+        def is_only_to_be_used_by(sourceEnsembleSymbols: Symbol*): Unit = {
+            dependencyCheckers =
+                GlobalIncomingConstraint(
+                    contextEnsembleSymbol,
+                    sourceEnsembleSymbols.toSeq) :: dependencyCheckers
         }
 
-        def allows_incoming_dependencies_from(sourceEnsembleSymbols: Symbol*) {
-            dependencyCheckers = GlobalIncomingConstraint(contextEnsembleSymbol, sourceEnsembleSymbols.toSeq) :: dependencyCheckers
+        def allows_incoming_dependencies_from(sourceEnsembleSymbols: Symbol*): Unit = {
+            dependencyCheckers =
+                GlobalIncomingConstraint(
+                    contextEnsembleSymbol,
+                    sourceEnsembleSymbols.toSeq) :: dependencyCheckers
         }
 
-        def is_only_allowed_to_use(targetEnsembles: Symbol*) {
-            dependencyCheckers = LocalOutgoingConstraint(contextEnsembleSymbol, targetEnsembles.toSeq) :: dependencyCheckers
+        def is_only_allowed_to_use(targetEnsembles: Symbol*): Unit = {
+            dependencyCheckers =
+                LocalOutgoingIsOnlyAllowedToConstraint(
+                    contextEnsembleSymbol,
+                    targetEnsembles.toSeq) :: dependencyCheckers
+        }
+
+        def is_not_allowed_to_use(targetEnsembles: Symbol*): Unit = {
+            dependencyCheckers =
+                LocalOutgoingNotAllowedConstraint(
+                    contextEnsembleSymbol,
+                    targetEnsembles.toSeq) :: dependencyCheckers
         }
     }
 
@@ -275,7 +381,7 @@ class Specification(val project: Project[URL]) {
     protected implicit def EnsembleToSourceElementMatcher(
         ensembleSymbol: Symbol): SourceElementsMatcher = {
         if (!ensembles.contains(ensembleSymbol))
-            throw new SpecificationError("The ensemble: "+ensembleSymbol+" is not yet defined.")
+            throw SpecificationError(s"the ensemble: $ensembleSymbol is not yet defined")
 
         ensembles(ensembleSymbol)._1
     }
@@ -284,7 +390,7 @@ class Specification(val project: Project[URL]) {
      * Returns a textual representation of an ensemble.
      */
     def ensembleToString(ensembleSymbol: Symbol): String = {
-        var (sourceElementsMatcher, extension) = ensembles(ensembleSymbol)
+        val (sourceElementsMatcher, extension) = ensembles(ensembleSymbol)
         ensembleSymbol+"{"+
             sourceElementsMatcher+"  "+
             {
@@ -318,11 +424,9 @@ class Specification(val project: Project[URL]) {
         val dependencyStore = time {
             project.get(DependencyStoreWithoutSelfDependenciesKey)
         } { executionTime ⇒
-            Console.println(
-                Console.GREEN+
-                    "2.1. Preprocessing dependencies took "+
-                    ns2sec(executionTime).toString+" seconds."+
-                    Console.BLACK)
+            println(ifUseAnsiColors(GREEN)+
+                "2.1. Preprocessing dependencies took "+
+                ns2sec(executionTime).toString+" seconds."+ifUseAnsiColors(RESET))
         }
         println("Dependencies between source elements: "+dependencyStore.dependencies.size)
         println("Dependencies on primitive types: "+dependencyStore.dependenciesOnBaseTypes.size)
@@ -342,16 +446,13 @@ class Specification(val project: Project[URL]) {
                     theIncomingDependencies.update(
                         target,
                         theIncomingDependencies.getOrElse(target, Set.empty) +
-                            ((source, dType))
-                    )
+                            ((source, dType)))
                 }
             }
         } { executionTime ⇒
-            Console.println(
-                Console.GREEN+
-                    "2.2. Postprocessing dependencies took "+
-                    ns2sec(executionTime).toString+" seconds."+
-                    Console.BLACK)
+            println(ifUseAnsiColors(GREEN)+
+                "2.2. Postprocessing dependencies took "+
+                ns2sec(executionTime).toString+" seconds."+ifUseAnsiColors(RESET))
         }
         println("Number of source elements: "+allSourceElements.size)
         println("Outgoing dependencies: "+theOutgoingDependencies.size)
@@ -367,9 +468,11 @@ class Specification(val project: Project[URL]) {
                     sourceElementMatcher.synchronized {
                         val extension = sourceElementMatcher.extension(project)
                         if (extension.isEmpty && sourceElementMatcher != NoSourceElementsMatcher)
-                            Console.println(Console.RED+"   "+ensembleSymbol+" ("+extension.size+")"+Console.BLACK)
+                            println(ifUseAnsiColors(RED)+
+                                "   "+ensembleSymbol+" ("+extension.size+")"+
+                                ifUseAnsiColors(RESET))
                         else
-                            Console.println("   "+ensembleSymbol+" ("+extension.size+")")
+                            println(s"   $ensembleSymbol (${extension.size})")
 
                         Specification.this.synchronized {
                             matchedSourceElements ++= extension
@@ -381,14 +484,12 @@ class Specification(val project: Project[URL]) {
 
             unmatchedSourceElements = allSourceElements -- matchedSourceElements
 
-            Console.println("   => Matched source elements: "+matchedSourceElements.size)
-            Console.println("   => Other source elements: "+unmatchedSourceElements.size)
+            println("   => Matched source elements: "+matchedSourceElements.size)
+            println("   => Other source elements: "+unmatchedSourceElements.size)
         } { executionTime ⇒
-            Console.println(
-                Console.GREEN+
-                    "3. Determing the extension of the ensembles finished in "+
-                    ns2sec(executionTime).toString+" seconds."+
-                    Console.BLACK)
+            println(ifUseAnsiColors(GREEN)+
+                "3. Determing the extension of the ensembles finished in "+
+                ns2sec(executionTime).toString+" seconds."+ifUseAnsiColors(RESET))
         }
 
         // Check all rules
@@ -396,7 +497,7 @@ class Specification(val project: Project[URL]) {
         time {
             val result =
                 for (dependencyChecker ← dependencyCheckers.par) yield {
-                    Console.println("   Checking: "+dependencyChecker)
+                    println("   Checking: "+dependencyChecker)
                     for (violation ← dependencyChecker.violations) yield {
                         //println(violation)
                         violation
@@ -404,36 +505,104 @@ class Specification(val project: Project[URL]) {
                 }
             Set.empty ++ (result.filter(_.nonEmpty).flatten)
         } { executionTime ⇒
-            Console.println(
-                Console.GREEN+
-                    "4. Checking the specified dependency constraints finished in "+
-                    ns2sec(executionTime).toString+
-                    " seconds."+
-                    Console.BLACK)
+            println(ifUseAnsiColors(GREEN)+
+                "4. Checking the specified dependency constraints finished in "+
+                ns2sec(executionTime).toString+" seconds."+ifUseAnsiColors(RESET))
         }
     }
 
 }
 object Specification {
 
-    def SourceDirectory(directoryName: String): Seq[(ClassFile, URL)] = {
+    def ProjectDirectory(directoryName: String): Seq[(ClassFile, URL)] = {
         val file = new java.io.File(directoryName)
         if (!file.exists)
-            throw new SpecificationError("The specified directory does not exist: "+directoryName+".")
+            throw SpecificationError("the specified directory does not exist: "+directoryName)
         if (!file.canRead)
-            throw new SpecificationError("Cannot read the specified directory: "+directoryName+".")
+            throw SpecificationError("cannot read the specified directory: "+directoryName)
         if (!file.isDirectory)
-            throw new SpecificationError("The specified directory is not a directory: "+directoryName+".")
+            throw SpecificationError("the specified directory is not a directory: "+directoryName)
 
-        ClassFiles(file)
+        Project.Java8ClassFileReader.ClassFiles(file)
+    }
+
+    def ProjectJAR(jarName: String): Seq[(ClassFile, URL)] = {
+        val file = new java.io.File(jarName)
+        if (!file.exists)
+            throw SpecificationError("the specified directory does not exist: "+jarName)
+        if (!file.canRead)
+            throw SpecificationError("cannot read the specified JAR: "+jarName)
+        if (file.isDirectory)
+            throw SpecificationError("the specified jar file is a directory: "+jarName)
+
+        Project.Java8ClassFileReader.ClassFiles(file)
+    }
+
+    /**
+     * Load all jar files.
+     */
+    def ProjectJARs(jarNames: Seq[String]): Seq[(ClassFile, URL)] = {
+        jarNames.map(ProjectJAR(_)).flatten
+    }
+
+    /**
+     * Loads all class files of the specified jar file using the library class file reader.
+     * (I.e., the all method implementations are skipped.)
+     *
+     * @param jarName The name of a jar file.
+     */
+    def LibraryJAR(jarName: String): Seq[(ClassFile, URL)] = {
+        val file = new java.io.File(jarName)
+        if (!file.exists)
+            throw SpecificationError("the specified directory does not exist: "+jarName)
+        if (!file.canRead)
+            throw SpecificationError("cannot read the specified JAR: "+jarName)
+        if (file.isDirectory)
+            throw SpecificationError("the specified jar file is a directory: "+jarName)
+
+        Project.Java8LibraryClassFileReader.ClassFiles(file)
+    }
+
+    /**
+     * Load all jar files using the library class loader.
+     */
+    def LibraryJARs(jarNames: Seq[String]): Seq[(ClassFile, URL)] = {
+        jarNames.map(LibraryJAR(_)).flatten
+    }
+
+    /**
+     * Returns a list of paths contained inside the given classpath file.
+     * A classpath file should contain paths as text seperated by a path-separator character.
+     * On UNIX systems, this character is <code>':'</code>; on Microsoft Windows systems it
+     * is <code>';'</code>.
+     *
+     * ===Example===
+     * /path/to/jar/library.jar:/path/to/library/example.jar:/path/to/library/example2.jar
+     *
+     * Classpath files should be used to prevent absolute paths in tests.
+     */
+    def ClassPath(fileName: String): Iterable[String] = {
+        processSource(scala.io.Source.fromFile(new java.io.File(fileName))) { s ⇒
+            s.getLines().map(_.split(java.io.File.pathSeparatorChar)).flatten.toSet
+        }
+    }
+
+    /**
+     * Returns the path to the given JAR from the given list of paths.
+     */
+    def PathToJAR(paths: Iterable[String], jarName: String): String = {
+        paths.collectFirst {
+            case p if (p.endsWith(jarName)) ⇒ p
+        }.getOrElse {
+            throw SpecificationError(s"cannot find a path to the specified JAR: $jarName.")
+        }
+    }
+
+    /**
+     * Returns a list of paths to the given JARs from the given list of paths.
+     */
+    def PathToJARs(paths: Iterable[String], jarNames: Iterable[String]): Iterable[String] = {
+        jarNames.foldLeft(Set.empty[String])((c, n) ⇒ c + PathToJAR(paths, n))
     }
 }
 
-trait DependencyChecker {
-
-    def violations(): ASet[SpecificationViolation]
-
-    def targetEnsembles: Seq[Symbol]
-
-    def sourceEnsembles: Seq[Symbol]
-}

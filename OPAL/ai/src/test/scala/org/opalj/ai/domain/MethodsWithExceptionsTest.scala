@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -41,8 +41,7 @@ import org.scalatest.ParallelTestExecution
 import org.scalatest.Matchers
 
 import org.opalj.bi.TestSupport.locateTestResources
-
-import org.opalj.util.{ Answer, Yes, No, Unknown }
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 
 import br._
 import br.reader.Java8Framework.ClassFiles
@@ -60,7 +59,6 @@ class MethodsWithExceptionsTest
         with Matchers
         with ParallelTestExecution {
 
-    import debug.XHTML.dumpOnFailureDuringValidation
     import domain.l1
     import MethodsWithExceptionsTest._
     import org.opalj.collection.mutable.UShortSet
@@ -85,7 +83,7 @@ class MethodsWithExceptionsTest
         /* => */ with RecordAllThrownExceptions
         /* => */ with RecordVoidReturns
 
-    private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit) {
+    private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit): Unit = {
         val domain = new DefaultRecordingDomain(name)
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
@@ -136,10 +134,10 @@ class MethodsWithExceptionsTest
             import domain._
             allReturnVoidInstructions should be(UShortSet(38)) // <= void return
             allThrownExceptions should be(Map.empty)
-            // Due to the simplicity of the domain (the exceptions of called methods are 
-            // not yet analyze) we cannot determine that the following exception 
+            // Due to the simplicity of the domain (the exceptions of called methods are
+            // not yet analyze) we cannot determine that the following exception
             // (among others?) may also be thrown:
-            // ("throws", SomeReferenceValue(...,ObjectType("java/lang/RuntimeException"),No)) 
+            // ("throws", SomeReferenceValue(...,ObjectType("java/lang/RuntimeException"),No))
         }
     }
 
@@ -147,11 +145,11 @@ class MethodsWithExceptionsTest
         evaluateMethod("withFinallyAndThrows") { domain ⇒
             import domain._
             allThrownExceptions should be(
-                Map((19, Set(ObjectValue(19, No, true, ObjectType.NullPointerException))),
+                Map((19, Set(ObjectValue(VMLevelValuesOriginOffset - 19, No, true, ObjectType.NullPointerException))),
                     (23, Set(
                         ObjectValue(-1, No, false, ObjectType.Throwable),
-                        ObjectValue(11, No, true, ObjectType.NullPointerException))),
-                    (25, Set(ObjectValue(25, No, true, ObjectType.NullPointerException)))
+                        ObjectValue(VMLevelValuesOriginOffset - 11, No, true, ObjectType.NullPointerException))),
+                    (25, Set(ObjectValue(VMLevelValuesOriginOffset - 25, No, true, ObjectType.NullPointerException)))
                 )
             )
         }

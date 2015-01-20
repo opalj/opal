@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -36,10 +36,9 @@ import org.opalj.ai.ReferenceValuesDomain
 import org.opalj.ai.TypedValuesFactory
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.util.Unknown
-import org.opalj.util.Yes
+
 import org.opalj.br.Method
-import org.opalj.util.Answer
+
 import scala.collection.Set
 
 /**
@@ -54,7 +53,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
         var exceptionTypes: Set[ObjectType] = Set.empty
         var exceptionValues: List[ExceptionValue] = List.empty
 
-        def add(exceptionType: ObjectType) {
+        def add(exceptionType: ObjectType): Unit = {
 
             if (!exceptionTypes.contains(exceptionType)) {
                 exceptionTypes += exceptionType
@@ -124,7 +123,8 @@ trait MethodCallsHandling extends MethodCallsDomain {
                     return justThrows(NullPointerException(pc));
 
                 case Unknown if throwNullPointerExceptionOnMethodCall ⇒
-                    NullPointerException(pc) :: getPotentialExceptions(pc)
+                    VMNullPointerException(pc) :: getPotentialExceptions(pc)
+
                 case /*No or Unknown & DoNotThrowNullPointerException*/ _ ⇒
                     getPotentialExceptions(pc)
             }

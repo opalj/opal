@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -32,13 +32,12 @@ package domain
 package l1
 
 import scala.collection.SortedSet
+import scala.reflect.ClassTag
 
-import org.opalj.util.{ Answer, Yes, No, Unknown }
 import org.opalj.collection.immutable.UIDSet
 
-import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
-
+import org.opalj.br.ObjectType
 import org.opalj.br.UpperTypeBound
 
 /**
@@ -46,20 +45,30 @@ import org.opalj.br.UpperTypeBound
  */
 trait DefaultReferenceValuesBinding
         extends l1.ReferenceValues
-        with DefaultVMLevelExceptionsFactory {
+        with DefaultExceptionsFactory {
     domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     // Let's fix the type hierarchy
 
     type AReferenceValue = ReferenceValue
+    final val AReferenceValue: ClassTag[AReferenceValue] = implicitly
     type DomainReferenceValue = AReferenceValue
+    final val DomainReferenceValue: ClassTag[DomainReferenceValue] = implicitly
 
     type DomainSingleOriginReferenceValue = SingleOriginReferenceValue
+    final val DomainSingleOriginReferenceValue: ClassTag[DomainSingleOriginReferenceValue] = implicitly
+
     type DomainNullValue = NullValue
+    final val DomainNullValue: ClassTag[DomainNullValue] = implicitly
+
     type DomainObjectValue = ObjectValue
+    final val DomainObjectValue: ClassTag[DomainObjectValue] = implicitly
+
     type DomainArrayValue = ArrayValue
+    final val DomainArrayValue: ClassTag[DomainArrayValue] = implicitly
 
     type DomainMultipleReferenceValues = MultipleReferenceValues
+    final val DomainMultipleReferenceValues: ClassTag[DomainMultipleReferenceValues] = implicitly
 
     //
     // FACTORY METHODS
@@ -83,7 +92,7 @@ trait DefaultReferenceValuesBinding
         upperTypeBound: UIDSet[ObjectType],
         t: Timestamp): DomainObjectValue = {
 
-        if (upperTypeBound.consistsOfOneElement)
+        if (upperTypeBound.hasOneElement)
             ObjectValue(origin, isNull, false, upperTypeBound.first, t)
         else
             new MObjectValue(origin, isNull, upperTypeBound, t)

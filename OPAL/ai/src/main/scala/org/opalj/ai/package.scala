@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,21 +22,22 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 
 import scala.language.existentials
-
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
+import scala.annotation.elidable
+import scala.annotation.elidable.ASSERTION
 
 /**
- * Implementation of an abstract interpretation framework – also referred to as OPAL.
+ * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
  *
  * Please note, that OPAL/the abstract interpreter just refers to the classes and traits
  * defined in this package (`ai`). The classes and traits defined in the sub-packages
@@ -61,10 +62,30 @@ import org.opalj.br.instructions.Instruction
  */
 package object ai {
 
-    assert({
-        println("[info - Abstract Interpretation Framework] Assertions are enabled.")
+    private[this] final val checkAssert: Boolean = {
+        try {
+            scala.Predef.assert(false) // <= test whether assertions are turned on or off...
+            println("[info - Abstract Interpretation Framework] Production Build - Assertions are disabled")
+        } catch {
+            case ae: AssertionError ⇒
+                println("[info - Abstract Interpretation Framework] Development Build - Assertions are enabled.")
+        }
         true
-    })
+    }
+
+    // "override" Scala Predef's corresponding assert method
+    @elidable(ASSERTION)
+    def assert(assertion: Boolean): Unit = {
+        if (checkAssert && !assertion)
+            throw new java.lang.AssertionError("assertion failed")
+    }
+
+    // "override" Scala Predef's corresponding assert method
+    @elidable(ASSERTION) @inline
+    final def assert(assertion: Boolean, message: ⇒ Any): Unit = {
+        if (checkAssert && !assertion)
+            throw new java.lang.AssertionError("assertion failed: "+message)
+    }
 
     /**
      * Type alias that can be used if the AI can use all kinds of domains.
@@ -72,6 +93,13 @@ package object ai {
      * @note This type alias serves comprehension purposes only.
      */
     type SomeAI[D <: Domain] = AI[_ >: D]
+
+    type PrimitiveValuesFactory = IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
+    type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
+    type TargetDomain = ValuesDomain with ValuesFactory
+
+    type PC = org.opalj.br.PC
+    type PCs = org.opalj.br.PCs
 
     /**
      * A value of type `ValueOrigin` identifies the origin of a value. In most cases the
@@ -92,10 +120,10 @@ package object ai {
      *  - The value `-4` identifies the parameter `o`. (The parameter `d` is a value of
      * computational-type category 2 and needs two stack/operands values.)
      *
-     * The range of values is: [-257,65535]. Hence, whenever a value of type `ValueOrigin`
-     * is required/is expected it is possible to use a value with type `PC` unless
-     * the program counters identifies the start of a subroutine ([[SUBROUTINE_START]],
-     * [[SUBROUTINE_END]], [[SUBROUTINE]]).
+     * The range of standard value origins is: [-257,65535]. Hence, whenever a value of
+     * type `ValueOrigin` is required/is expected it is possible to use a value with
+     * type `PC` unless the program counters identifies the start of a subroutine
+     * ([[SUBROUTINE_START]], [[SUBROUTINE_END]], [[SUBROUTINE]]).
      *
      * Recall that the maximum size of the method
      * parameters array is 255. If necessary, the first slot is required for the `this`
@@ -106,12 +134,72 @@ package object ai {
      * The value `-257` is used to encode that the origin of the value is out
      * of the scope of the analyzed program ([[ConstantValueOrigin]]). This value is
      * currently only used for the implicit value of `IF_XXX` instructions.
+     *
+     * Values in the range [ [[SpecialValuesOriginOffset]] (`-10000000`) ,
+     * [[VMLevelValuesOriginOffset]] (`-100000`) ] are used to identify values that are
+     * created by the VM.
+     *
+     * @see For further information see [[isVMLevelValue]],
+     *      [[ValueOriginForVMLevelValue]], [[PCOfVMLevelValue]].
      */
     type ValueOrigin = Int
 
-    type PrimitiveValuesFactory = IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
-    type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with VMLevelExceptionsFactory with TypedValuesFactory
-    type TargetDomain = ValuesDomain with ValuesFactory
+    /**
+     * Identifies the upper bound for those origin values that encode origin
+     * information about VM level values.
+     */
+    final val VMLevelValuesOriginOffset /*: ValueOrigin*/ = -100000
+
+    /**
+     * Identifies the upper bound for those origin values that encode special information.
+     */
+    final val SpecialValuesOriginOffset /*: ValueOrigin*/ = -10000000
+
+    /**
+     * Returns `true` if the value with the given origin was (implicitly) created
+     * by the JVM while executing an instruction with the program counter
+     * [[PCOfVMLevelValue]]`(origin)`.
+     *
+     * @see [[ValueOriginForVMLevelValue]] for further information.
+     */
+    final def isVMLevelValue(origin: ValueOrigin): Boolean =
+        origin <= VMLevelValuesOriginOffset && origin > -SpecialValuesOriginOffset
+
+    /**
+     * Creates the origin information for a VM level value (typically an exception) that
+     * was (implicitly) created while evaluating the instruction with given
+     * program counter (`pc`).
+     *
+     * @see [[PCOfVMLevelValue]] for further information.
+     */
+    final def ValueOriginForVMLevelValue(pc: PC): ValueOrigin = {
+        val origin = VMLevelValuesOriginOffset - pc
+        assert(
+            origin <= VMLevelValuesOriginOffset,
+            s"[pc:$pc] origin($origin) > VMLevelValuesOriginOffset($VMLevelValuesOriginOffset)")
+        assert(origin > SpecialValuesOriginOffset)
+        origin
+    }
+
+    /**
+     * Returns the program counter (`pc`) of the instruction that (implicitly) led to the
+     * creation of the VM level value (typically an `Exception`).
+     *
+     * @see [[ValueOriginForVMLevelValue]] for further information.
+     */
+    final def PCOfVMLevelValue(origin: ValueOrigin): PC = {
+        assert(origin <= VMLevelValuesOriginOffset)
+        origin + VMLevelValuesOriginOffset
+    }
+
+    /**
+     * Used to identify that the origin of the value is outside of the program.
+     *
+     * For example, the VM sometimes performs comparisons against predetermined fixed
+     * values (specified in the JVM Spec.). The origin associated with such values is
+     * determined by this value.
+     */
+    final val ConstantValueOrigin /*: ValueOrigin*/ = -257
 
     /**
      * Special value that is added to the ''work list''/''list of evaluated instructions''
@@ -147,15 +235,6 @@ package object ai {
      * subroutine call.
      */
     final val SUBROUTINE = -90000009 // some value smaller than -2^16
-
-    /**
-     * Used to identify that the origin of the value is outside of the program.
-     *
-     * For example, the VM sometimes performs comparisons against predetermined fixed
-     * values (specified in the JVM Spec.). The origin associated with such values is
-     * determined by this value.
-     */
-    final val ConstantValueOrigin: ValueOrigin = -257
 
     type Operands[T >: Null <: ValuesDomain#DomainValue] = List[T]
     type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
@@ -250,7 +329,7 @@ package object ai {
         targetDomain: ValuesDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
 
         import org.opalj.collection.mutable.Locals
-        implicit val domainValueTag = targetDomain.DomainValueTag
+        implicit val domainValue = targetDomain.DomainValue
         val parameters = Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
         var localVariableIndex = 0
         var index = 0
@@ -281,8 +360,8 @@ package object ai {
      * Collects the result of a match of a partial function against an instruction's
      * operands.
      */
-    def collectWithOperandsAndIndex[B](
-        domain: Domain)(
+    def collectPCWithOperands[B](
+        domain: ValuesDomain)(
             code: Code, operandsArray: domain.OperandsArray)(
                 f: PartialFunction[(PC, Instruction, domain.Operands), B]): Seq[B] = {
         val instructions = code.instructions
@@ -301,6 +380,24 @@ package object ai {
             pc = instruction.indexOfNextInstruction(pc, code)
         }
         result.reverse
+    }
+
+    def foreachPCWithOperands[U](
+        domain: ValuesDomain)(
+            code: Code, operandsArray: domain.OperandsArray)(
+                f: Function[(PC, Instruction, domain.Operands), U]): Unit = {
+        val instructions = code.instructions
+        val max_pc = instructions.size
+        var pc = 0
+        while (pc < max_pc) {
+            val instruction = instructions(pc)
+            val operands = operandsArray(pc)
+            if (operands ne null) {
+                val params = (pc, instruction, operands)
+                f(params)
+            }
+            pc = instruction.indexOfNextInstruction(pc, code)
+        }
     }
 
     //    /**
@@ -324,10 +421,10 @@ package object ai {
     //     *      this methods assumes that all values – independent of their computational
     //     *      type category – just use one operand value. E.g. a long div instruction will
     //     *      only pop the two top most operand values – as in case of the integer div
-    //     *      instruction. 
+    //     *      instruction.
     //     */
     //    def usesForComputation[V >: Null <: AnyRef](
     //    instruction : Instruction,
-    //    operands: List[V], 
+    //    operands: List[V],
     //    locals: Locals[V]): List[V]
 }

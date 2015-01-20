@@ -37,14 +37,10 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.concurrent.TimeLimitedTests
-import org.scalatest.time._
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.ParallelTestExecution
 
 import org.opalj.bi.TestSupport.locateTestResources
-
-import org.opalj.util.{ Answer, Yes, No, Unknown }
-
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import br._
 import br.reader.Java8Framework.ClassFiles
 
@@ -56,7 +52,6 @@ import br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecution {
 
-    import debug.XHTML.dumpOnFailureDuringValidation
     import PropertyTracingTest._
 
     class AnalysisDomain(val method: Method)
@@ -100,7 +95,7 @@ class PropertyTracingTest extends FlatSpec with Matchers with ParallelTestExecut
         def isSanitized(): Boolean = hasPropertyOnExit
     }
 
-    private def evaluateMethod(name: String)(f: AnalysisDomain ⇒ Unit) {
+    private def evaluateMethod(name: String)(f: AnalysisDomain ⇒ Unit): Unit = {
         /**
          * In this case we want to make sure that a specific value (given as a
          * parameter to a method) is always sanitized (within the method.) I.e.,

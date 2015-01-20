@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -40,16 +40,17 @@ import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.collection.SortedMap
+import org.opalj.io.process
 import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
+import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.MethodWithBody
-import org.opalj.ai.debug.XHTML
+import org.opalj.ai.common.XHTML
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.br.Code
-import org.opalj.ai.collectWithOperandsAndIndex
+import org.opalj.ai.collectPCWithOperands
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.domain
 import org.opalj.br.instructions.Instruction
@@ -76,7 +77,7 @@ import org.opalj.ai.AIResult
 import org.opalj.ai.domain.ConcreteIntegerValues
 import org.opalj.ai.domain.ConcreteLongValues
 import org.opalj.ai.analyses.MethodReturnValuesKey
-import org.opalj.ai.project.CallGraphCache
+import org.opalj.ai.analyses.cg.CallGraphCache
 import org.opalj.br.MethodSignature
 
 /**
@@ -129,10 +130,10 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
             }.getOrElse(
                 BugPickerAnalysis.defaultMaxEvalTime
             )
-        val maxCardinalityOfIntegerRanges: Int =
+        val maxCardinalityOfIntegerRanges: Long =
             parameters.collectFirst {
                 case BugPickerAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
-                    java.lang.Integer.parseInt(i).toInt
+                    java.lang.Long.parseLong(i)
             }.getOrElse(
                 BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges
             )
@@ -150,10 +151,10 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
+
+        val PRE_ANALYSES_COUNT = 2 // the FieldValues analysis + the MethodReturnValues analysis
         val progressManagement =
-            initProgressManagement(
-                1 /*the FieldValues analysis*/ + 1 /*the MethodReturnValues analysis*/ +
-                    classFilesCount)
+            initProgressManagement(PRE_ANALYSES_COUNT + classFilesCount)
 
         //
         //
@@ -168,7 +169,6 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         theProject.get(MethodReturnValuesKey)
         progressManagement.end(2)
 
-        val PRE_ANALYSES_COUNT = 2
         //
         //
         // MAIN ANALYSIS
@@ -182,11 +182,11 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         val methodReturnValueInformation = theProject.get(MethodReturnValuesKey)
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](theProject)
 
-        def analyzeMethod(classFile: ClassFile, method: Method, body: Code) {
+        def analyzeMethod(classFile: ClassFile, method: Method, body: Code): Unit = {
             val analysisDomain =
                 new BugPickerAnalysisDomain(
                     theProject,
-                    // Map.empty, Map.empty, 
+                    // Map.empty, Map.empty,
                     fieldValueInformation, methodReturnValueInformation,
                     cache,
                     method, maxCardinalityOfIntegerRanges)
@@ -253,7 +253,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                     val code = domain.code
 
                     val methodsWithValueReassignment =
-                        collectWithOperandsAndIndex(domain)(body, operandsArray) {
+                        collectPCWithOperands(domain)(body, operandsArray) {
                             case (
                                 pc,
                                 IStoreInstruction(index),
@@ -314,12 +314,9 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
         var analysisTime: Long = 0l
         val identifiedIssues = time {
-            val stepIds = new java.util.concurrent.atomic.AtomicInteger(PRE_ANALYSES_COUNT)
+            val stepIds = new java.util.concurrent.atomic.AtomicInteger(PRE_ANALYSES_COUNT + 1)
 
-            for {
-                classFile ← theProject.projectClassFiles.par
-                if !progressManagement.isInterrupted()
-            } {
+            theProject.parForeachProjectClassFile(() ⇒ progressManagement.isInterrupted()) { classFile ⇒
                 val stepId = stepIds.incrementAndGet()
                 try {
                     progressManagement.start(stepId, classFile.thisType.toJava)
@@ -340,6 +337,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                 } finally {
                     progressManagement.end(stepId)
                 }
+
             }
             scala.collection.JavaConversions.collectionAsScalaIterable(results)
         } { t ⇒ analysisTime = t }
@@ -376,7 +374,7 @@ object BugPickerAnalysis {
         )
 
     def resultsAsXHTML(results: (Long, Iterable[Issue])): Node = {
-        val (analysisTime, methodsWithDeadCode) = results
+        val (_ /*analysis time*/ , methodsWithDeadCode) = results
         val methodWithDeadCodeCount = methodsWithDeadCode.size
 
         val issuesNode: Iterable[Node] = {

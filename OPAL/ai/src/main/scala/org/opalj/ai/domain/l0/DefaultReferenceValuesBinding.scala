@@ -31,8 +31,12 @@ package ai
 package domain
 package l0
 
+import scala.reflect.ClassTag
+
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.{ ObjectType, ArrayType }
+
+import org.opalj.br.ArrayType
+import org.opalj.br.ObjectType
 
 /**
  * Default implementation for handling reference values.
@@ -41,11 +45,14 @@ import org.opalj.br.{ ObjectType, ArrayType }
  */
 trait DefaultReferenceValuesBinding
         extends DefaultTypeLevelReferenceValues
-        with DefaultVMLevelExceptionsFactory {
+        with DefaultExceptionsFactory {
     domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type AReferenceValue = ReferenceValue
     type DomainReferenceValue = AReferenceValue
+
+    final val DomainReferenceValue: ClassTag[DomainReferenceValue] = implicitly
+
     type DomainNullValue = NullValue
     type DomainObjectValue = ObjectValue
     type DomainArrayValue = ArrayValue
@@ -61,10 +68,7 @@ trait DefaultReferenceValuesBinding
      *
      * This implementation always returns the singleton instance [[TheNullValue]].
      */
-    override def NullValue(origin: ValueOrigin): DomainNullValue = {
-
-        TheNullValue
-    }
+    override def NullValue(origin: ValueOrigin): DomainNullValue = TheNullValue
 
     override def ObjectValue(
         origin: ValueOrigin,
@@ -77,7 +81,7 @@ trait DefaultReferenceValuesBinding
         origin: ValueOrigin,
         upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
 
-        if (upperTypeBound.consistsOfOneElement)
+        if (upperTypeBound.hasOneElement)
             ObjectValue(origin, upperTypeBound.first)
         else
             new MObjectValue(upperTypeBound)

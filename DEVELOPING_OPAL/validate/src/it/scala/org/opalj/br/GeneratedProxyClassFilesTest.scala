@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -53,8 +53,6 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
     describe("the generation of Proxy classes") {
 
         val testProject = Project(locateTestResources("classfiles", "br"))
-        val regularClassFiles = testProject.classFilesCount
-        val methodsCount = testProject.methodsCount
 
         val proxies: Iterable[(ClassFile, java.net.URL)] = testProject.methods.map { m ⇒
             val t = testProject.classFile(m).thisType
@@ -89,7 +87,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
                         m.descriptor,
                         invocationInstruction)
 
-                def verifyMethod(classFile: ClassFile, method: Method) {
+                def verifyMethod(classFile: ClassFile, method: Method): Unit = {
                     val domain = new BaseDomain(testProject, classFile, method)
                     val result = BaseAI(classFile, method, domain)
 
@@ -139,18 +137,20 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
 
         describe("the project should be extendable with the generated proxies") {
             val extendedProject = testProject.extend(proxies, Iterable.empty)
+
             it("should have the right amount of class files") {
                 extendedProject.classFilesCount should be(
                     testProject.classFilesCount + proxies.size)
             }
+
             it("should have the right class files") {
-                testProject.classFiles foreach { cf ⇒
+                testProject.allProjectClassFiles foreach { cf ⇒
                     extendedProject.classFile(cf.thisType) should be('defined)
                     if (testProject.source(cf.thisType).isDefined)
                         extendedProject.source(cf.thisType) should be('defined)
                 }
                 proxies foreach { p ⇒
-                    val (proxy, source) = p
+                    val (proxy, _ /* source*/ ) = p
                     extendedProject.classFile(proxy.thisType) should be('defined)
                     extendedProject.source(proxy.thisType) should be('defined)
                 }

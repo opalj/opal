@@ -31,8 +31,7 @@ package ai
 package domain
 package l0
 
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeLong
+import org.opalj.ai.LongValuesDomain
 
 /**
  * This partial `Domain` performs all computations related to primitive long
