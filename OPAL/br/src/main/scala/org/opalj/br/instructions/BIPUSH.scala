@@ -38,15 +38,21 @@ package instructions
  *
  * @author Michael Eichberg
  */
-class BIPUSH private (
-    val value: Int)
-        extends LoadConstantInstruction[Int] {
+class BIPUSH private (val value: Int) extends LoadConstantInstruction[Int] {
 
     final def opcode: Opcode = BIPUSH.opcode
 
     final def mnemonic: String = "bipush"
 
     final def length: Int = 2
+
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || (
+            BIPUSH.opcode == other.opcode &&
+            this.value == other.asInstanceOf[BIPUSH].value
+        )
+    }
 
     override def equals(other: Any): Boolean = {
         other match {

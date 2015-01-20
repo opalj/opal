@@ -31,32 +31,16 @@ package br
 package instructions
 
 /**
- * Trait that can be mixed in if the local variable index of a load or store instruction
- * ((a,i,l,...)load/store_X) is not predefined as part of the instruction.
+ * Super class of all bytecode instructions that always jump to a specific
+ * target instruction.
  *
  * @author Michael Eichberg
  */
-trait ExplicitLocalVariableIndex extends Instruction {
+abstract class GotoInstruction extends UnconditionalBranchInstruction {
 
-    def lvIndex: Int
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
-        val other = code.instructions(otherPC)
-
-        (this eq other) || (
-            other.opcode == this.opcode &&
-            other.asInstanceOf[ExplicitLocalVariableIndex].lvIndex == this.lvIndex
-        )
-    }
-
-    final def indexOfNextInstruction(currentPC: Int, code: Code): Int =
-        indexOfNextInstruction(currentPC, code.isModifiedByWide(currentPC))
-
-    final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = {
-        if (modifiedByWide)
-            currentPC + 3
-        else
-            currentPC + 2
-    }
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
+        this == code.instructions(otherPC)
 
 }
