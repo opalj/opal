@@ -32,56 +32,33 @@ package core
 package analysis
 
 import java.net.URL
-import scala.xml.Node
-import scala.xml.UnprefixedAttribute
-import scala.xml.Unparsed
-import scala.Console.BLUE
-import scala.Console.RED
-import scala.Console.BOLD
-import scala.Console.GREEN
-import scala.Console.RESET
+
+import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 import scala.collection.SortedMap
-import org.opalj.log.OPALLogger
-import org.opalj.io.process
-import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
-import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
-import org.opalj.br.analyses.ProgressManagement
-import org.opalj.br.{ ClassFile, Method }
-import org.opalj.br.MethodWithBody
-import org.opalj.ai.common.XHTML
-import org.opalj.ai.BaseAI
-import org.opalj.ai.Domain
-import org.opalj.br.Code
-import org.opalj.ai.collectPCWithOperands
+import scala.util.control.ControlThrowable
+import scala.xml.Node
+import scala.xml.Unparsed
+
 import org.opalj.ai.BoundedInterruptableAI
-import org.opalj.ai.domain
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.ConditionalBranchInstruction
-import org.opalj.br.instructions.SimpleConditionalBranchInstruction
-import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import org.opalj.br.AnalysisFailedException
 import org.opalj.ai.InterpretationFailedException
-import org.opalj.br.instructions.ArithmeticInstruction
-import org.opalj.br.instructions.BinaryArithmeticInstruction
-import org.opalj.br.ComputationalTypeInt
-import org.opalj.br.ComputationalTypeLong
-import org.opalj.br.instructions.UnaryArithmeticInstruction
-import org.opalj.br.instructions.LNEG
-import org.opalj.br.instructions.INEG
-import org.opalj.br.instructions.IINC
-import org.opalj.br.instructions.ShiftInstruction
-import org.opalj.br.instructions.INSTANCEOF
-import org.opalj.br.instructions.ISTORE
-import org.opalj.br.instructions.IStoreInstruction
-import org.opalj.br.instructions.LStoreInstruction
 import org.opalj.ai.analyses.FieldValuesKey
-import org.opalj.ai.AIResult
-import org.opalj.ai.domain.ConcreteIntegerValues
-import org.opalj.ai.domain.ConcreteLongValues
 import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.ai.analyses.cg.CallGraphCache
+import org.opalj.ai.collectPCWithOperands
+import org.opalj.br.ClassFile
+import org.opalj.br.Code
+import org.opalj.br.Method
 import org.opalj.br.MethodSignature
-import scala.util.control.ControlThrowable
+import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.Analysis
+import org.opalj.br.analyses.ProgressManagement
+import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.IStoreInstruction
+import org.opalj.br.instructions.LStoreInstruction
+import org.opalj.io.process
+import org.opalj.log.OPALLogger
+import org.opalj.util.PerformanceEvaluation.time
+
 
 /**
  * A static analysis that analyzes the data-flow to identify various issues in the
@@ -287,6 +264,15 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                 results.addAll(
                     scala.collection.JavaConversions.asJavaCollection(
                         UselessComputationsAnalysis.analyze(theProject, classFile, method, result)
+                    )
+                )
+
+                //
+                // FIND UNUSED METHODS
+                //
+                results.addAll(
+                    scala.collection.JavaConversions.asJavaCollection(
+                        UnusedMethodsAnalysis.analyze(theProject, classFile, method, result)
                     )
                 )
 
