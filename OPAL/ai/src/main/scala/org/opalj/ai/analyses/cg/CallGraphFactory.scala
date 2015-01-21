@@ -173,7 +173,12 @@ object CallGraphFactory {
 
             // 2. ENQUE NEXT METHODS
             if (callEdges.nonEmpty) {
-                callEdges.foreach(_._2.foreach { m ⇒ if (!m.isNative) submitMethod(m) })
+                callEdges.foreach(_._2.foreach { m ⇒
+                    if (!m.isNative) {
+                        assert(m.body.isDefined)
+                        submitMethod(m)
+                    }
+                })
             }
 
             // 3. PROCESS RESULTS
