@@ -174,8 +174,12 @@ object CallGraphFactory {
             // 2. ENQUE NEXT METHODS
             if (callEdges.nonEmpty) {
                 callEdges.foreach(_._2.foreach { m ⇒
-                    if (!m.isNative) {
-                        assert(m.body.isDefined)
+                    // A body may not be defined in two cases:
+                    // 1. the method is native
+                    // 2. the method belongs to the library and is loaded using the
+                    //    library class file loader which drops the implementation of
+                    //    methods.
+                    if (m.body.isDefined) {
                         submitMethod(m)
                     }
                 })
