@@ -31,7 +31,8 @@ package ai
 package domain
 
 /**
- * Record the value returned by a method across all return instructions.
+ * Generic infrastructure to record the value returned by the method (calculated
+ * across all return instructions)
  *
  * ==Usage==
  * This domain can be stacked on top of other traits that handle
@@ -42,25 +43,14 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait RecordReturnedValue extends RecordReturnedValuesInfrastructure {
+trait RecordReturnedValueInfrastructure extends RecordReturnedValuesInfrastructure {
     domain: ValuesDomain ⇒
 
-    private[this] var theReturnedValue: DomainValue = null
+    /**
+     *  A method that always throws an exception or returns "void" will never return a value.
+     *
+     */
+    def returnedValue: Option[DomainValue] // = Option(theReturnedValue)
 
-    def returnedValue: Option[DomainValue] = Option(theReturnedValue)
-
-    protected[this] def doRecordReturnedValue(pc: PC, value: DomainValue): Unit = {
-        val oldReturnedValue = theReturnedValue
-        if (oldReturnedValue eq value)
-            return ;
-
-        if (oldReturnedValue == null) {
-            theReturnedValue = value
-        } else {
-            val joinedValue = oldReturnedValue.join(pc, value)
-            if (joinedValue.isSomeUpdate)
-                theReturnedValue = joinedValue.value
-        }
-    }
 }
 
