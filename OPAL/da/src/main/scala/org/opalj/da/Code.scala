@@ -64,10 +64,6 @@ case class Code(instructions: Array[Byte]) {
                 }
                 <th>Instruction</th>
                 {
-                    //                    exceptions.map { _ ⇒
-                    //                        <th class="exceptionHeader">&nbsp;</th>
-                    //                    }
-
                     if (exceptions.nonEmpty)
                         <th colspan={ exceptions.size.toString } class="exceptionHeader">Exceptions</th>
                     else
