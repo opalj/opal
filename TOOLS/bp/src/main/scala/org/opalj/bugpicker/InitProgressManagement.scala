@@ -43,7 +43,7 @@ class InitProgressManagement(
         theProgress: DoubleProperty,
         progressListView: ListView[String],
         progressListItems: scala.collection.mutable.HashMap[String, String],
-        classCount: Double,
+        stepCount: Double,
         progStage: Stage) extends Function1[Int, ProgressManagement] {
 
     override def apply(x: Int): ProgressManagement = new ProgressManagement {
@@ -63,7 +63,7 @@ class InitProgressManagement(
                     override def run(): Unit = {
                         progressListView.items() -= step.toString+": "+progressListItems.get(step.toString).get
                         progressListItems.remove(step.toString)
-                        val prog = step.toDouble / classCount
+                        val prog = step.toDouble / stepCount
                         theProgress.synchronized(if (prog > theProgress()) theProgress() = prog)
                         if (theProgress() == 1)
                             progStage.close
