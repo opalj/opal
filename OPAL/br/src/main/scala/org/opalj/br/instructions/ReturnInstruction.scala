@@ -89,6 +89,33 @@ object ReturnInstruction {
 
 }
 
+object ReturnInstructions {
+
+    def unapply(code: Code): Option[PCs] = {
+        if (code eq null)
+            return None;
+
+        val instructions = code.instructions
+        val max = instructions.length
+        var pc = 0
+        var returnPCs = org.opalj.collection.mutable.UShortSet.empty
+        while (pc < max) {
+            val instruction = instructions(pc)
+            (instruction.opcode: @switch) match {
+                case RETURN.opcode |
+                    IRETURN.opcode |
+                    LRETURN.opcode |
+                    FRETURN.opcode |
+                    DRETURN.opcode |
+                    ARETURN.opcode ⇒ returnPCs = pc +≈: returnPCs
+                case _ ⇒ /*nothing to do*/
+            }
+            pc = instruction.indexOfNextInstruction(pc, code)
+        }
+        Some(returnPCs)
+    }
+}
+
 object MethodCompletionInstruction {
 
     def unapply(i: Instruction): Boolean = {
