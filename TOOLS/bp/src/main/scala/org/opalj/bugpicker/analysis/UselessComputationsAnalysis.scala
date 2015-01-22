@@ -84,7 +84,7 @@ object UselessComputationsAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain with ConcreteIntegerValues with ConcreteLongValues with ReferenceValues }): Seq[Issue] = {
+        result: AIResult { val domain: Domain with ConcreteIntegerValues with ConcreteLongValues with ReferenceValues }): Seq[StandardIssue] = {
 
         val methodsWithUselessComputations = {
 

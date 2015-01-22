@@ -92,7 +92,7 @@ object GuardedAndUnguardedAccessAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions }): List[Issue] = {
+        result: AIResult { val domain: Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions }): List[StandardIssue] = {
 
         val operandsArray = result.operandsArray
         val body = result.code
