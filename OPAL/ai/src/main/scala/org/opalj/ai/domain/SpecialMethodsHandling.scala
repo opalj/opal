@@ -37,7 +37,6 @@ import org.opalj.br.IntegerType
 import org.opalj.ai.Configuration
 import org.opalj.ai.IntegerValuesDomain
 import org.opalj.ai.ReferenceValuesDomain
-import org.opalj.ai.analyses.cg.MethodCallsDomainWithMethodLockup
 import org.opalj.br.ObjectType.Object
 
 /**
