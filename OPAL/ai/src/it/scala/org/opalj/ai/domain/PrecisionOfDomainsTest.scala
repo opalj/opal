@@ -107,6 +107,26 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with TheProject
                 with TheCode
 
+            class L1SetsAndRangesDomain[I](val code: Code, val project: Project[java.net.URL])
+                extends CorrelationalDomain
+                with ThrowAllPotentialExceptionsConfiguration
+                with DefaultHandlingOfMethodResults
+                with IgnoreSynchronization
+                with l1.DefaultReferenceValuesBinding
+                with l1.NullPropertyRefinement
+                with l1.DefaultIntegerRangeValues
+                with l1.MaxArrayLengthRefinement
+                with l1.DefaultLongSetValues
+                with l1.LongValuesShiftOperators
+                with l0.DefaultTypeLevelFloatValues
+                with l0.DefaultTypeLevelDoubleValues
+                with l0.TypeLevelPrimitiveValuesConversions
+                with l0.TypeLevelInvokeInstructions
+                with l0.TypeLevelFieldAccessInstructions
+                with ProjectBasedClassHierarchy
+                with TheProject
+                with TheCode
+
             val ValuesDomain = new TheValuesDomain(project)
 
             def abstractsOver(r1: AIResult, r2: AIResult): Option[String] = {
@@ -151,8 +171,21 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 val r1 = a1(classFile, method, new TypeLevelDomain(body, project))
                 val a2 = BaseAI
                 val r2 = a2(classFile, method, new L1Domain(body, project))
+                val a3 = BaseAI
+                val r3 = a3(classFile, method, new L1SetsAndRangesDomain(body, project))
 
                 abstractsOver(r1, r2).foreach { m ⇒
+                    failed.set(true)
+                    println(
+                        classFile.thisType.toJava+" \""+
+                            method.toJava+"\" /*Instructions "+
+                            method.body.get.instructions.size+"*/\n"+
+                            "\t// the less precise domain did not abstract over the state of the more precise domain\n"+
+                            "\t// "+Console.BOLD + m + Console.RESET+"\n"
+                    )
+                }
+
+                abstractsOver(r2, r3).foreach { m ⇒
                     failed.set(true)
                     println(
                         classFile.thisType.toJava+" \""+
