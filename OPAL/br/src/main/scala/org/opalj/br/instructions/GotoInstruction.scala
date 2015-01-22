@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import scala.annotation.switch
+
 /**
  * Super class of the Goto instructions.
  *
@@ -41,15 +43,15 @@ abstract class GotoInstruction extends UnconditionalBranchInstruction {
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
-        (this eq other) || (this == other)
-		}
+        (this eq other) || this == other
+    }
 
 }
 
 object GotoInstruction {
 
     def unapply(instruction: Instruction): Option[Int] = {
-        instruction.opcode match {
+        (instruction.opcode: @switch) match {
             case GOTO.opcode | GOTO_W.opcode ⇒
                 Some(instruction.asInstanceOf[GotoInstruction].branchoffset)
             case _ ⇒ None
