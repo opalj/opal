@@ -1286,12 +1286,8 @@ object ObjectType {
 
     def unboxValue(wrapperType: Type): Array[Instruction] = {
         val wid = wrapperType.id
-        if (wid >= Boolean.id && wid <= Double.id)
-            unboxInstructions(wid)
-        else
-            throw new UnsupportedOperationException(
-                s"unboxing ${wrapperType.toJava} values is not supported"
-            )
+        assert(wid >= Boolean.id && wid <= Double.id)
+        unboxInstructions(wid)
     }
 
     /**
