@@ -87,7 +87,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelLongValuesShiftOperators
                 with ProjectBasedClassHierarchy
 
-            class L1Domain[I](val code: Code, val project: Project[java.net.URL])
+            class L1RangesDomain[I](val code: Code, val project: Project[java.net.URL])
                 extends CorrelationalDomain
                 with ThrowAllPotentialExceptionsConfiguration
                 with DefaultHandlingOfMethodResults
@@ -107,16 +107,15 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with TheProject
                 with TheCode
 
-            class L1SetsAndRangesDomain[I](val code: Code, val project: Project[java.net.URL])
+            class L1SetsDomain[I](val code: Code, val project: Project[java.net.URL])
                 extends CorrelationalDomain
                 with ThrowAllPotentialExceptionsConfiguration
                 with DefaultHandlingOfMethodResults
                 with IgnoreSynchronization
                 with l1.DefaultReferenceValuesBinding
                 with l1.NullPropertyRefinement
-                with l1.DefaultIntegerRangeValues
-                with l1.MaxArrayLengthRefinement
-                with l1.DefaultLongSetValues
+                with l1.DefaultIntegerSetValues // SET
+                with l1.DefaultLongSetValues // SET
                 with l1.LongValuesShiftOperators
                 with l0.DefaultTypeLevelFloatValues
                 with l0.DefaultTypeLevelDoubleValues
@@ -129,7 +128,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
 
             val ValuesDomain = new TheValuesDomain(project)
 
-            def abstractsOver(r1: AIResult, r2: AIResult): Option[String] = {
+            def checkAbstractsOver(r1: AIResult, r2: AIResult): Option[String] = {
                 var pc = -1
                 r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) ⇒
                     pc += 1
@@ -170,11 +169,11 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 val a1 = BaseAI
                 val r1 = a1(classFile, method, new TypeLevelDomain(body, project))
                 val a2 = BaseAI
-                val r2 = a2(classFile, method, new L1Domain(body, project))
+                val r2_ranges = a2(classFile, method, new L1RangesDomain(body, project))
                 val a3 = BaseAI
-                val r3 = a3(classFile, method, new L1SetsAndRangesDomain(body, project))
+                val r2_sets = a3(classFile, method, new L1SetsDomain(body, project))
 
-                abstractsOver(r1, r2).foreach { m ⇒
+                def handleAbstractsOverFailure(m: String): Unit = {
                     failed.set(true)
                     println(
                         classFile.thisType.toJava+" \""+
@@ -183,20 +182,15 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                             "\t// the less precise domain did not abstract over the state of the more precise domain\n"+
                             "\t// "+Console.BOLD + m + Console.RESET+"\n"
                     )
+
                 }
 
-                abstractsOver(r2, r3).foreach { m ⇒
-                    failed.set(true)
-                    println(
-                        classFile.thisType.toJava+" \""+
-                            method.toJava+"\" /*Instructions "+
-                            method.body.get.instructions.size+"*/\n"+
-                            "\t// the less precise domain did not abstract over the state of the more precise domain\n"+
-                            "\t// "+Console.BOLD + m + Console.RESET+"\n"
-                    )
-                }
-
+                checkAbstractsOver(r1, r2_ranges).foreach(handleAbstractsOverFailure)
                 comparisonCount.incrementAndGet()
+
+                checkAbstractsOver(r1, r2_sets).foreach(handleAbstractsOverFailure)
+                comparisonCount.incrementAndGet()
+
             }
 
             if (comparisonCount.get() < 2)
