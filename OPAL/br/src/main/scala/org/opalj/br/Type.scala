@@ -1204,6 +1204,8 @@ object ObjectType {
     require(String.id == StringId)
 
     final val Class = ObjectType("java/lang/Class")
+    final val System = ObjectType("java/lang/System")
+
     final val Throwable = ObjectType("java/lang/Throwable")
     final val Error = ObjectType("java/lang/Error")
     final val Exception = ObjectType("java/lang/Exception")
