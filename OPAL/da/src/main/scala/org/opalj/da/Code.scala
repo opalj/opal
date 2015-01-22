@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -50,7 +50,7 @@ case class Code(instructions: Array[Byte]) {
             implicit cp: Constant_Pool): Node = {
 
         val instructions = InstructionsToXHTML(methodIndex, this.instructions)
-        val exceptions = ExceptionsLinking(instructions, exceptionTable)
+        val exceptions = ExceptionsToXHTMLTableElements(instructions, exceptionTable)
 
         <table class="method_bytecode">
             <tr>
@@ -64,9 +64,14 @@ case class Code(instructions: Array[Byte]) {
                 }
                 <th>Instruction</th>
                 {
-                    exceptions.map { _ ⇒
-                        <th class="exceptionHeader"> </th>
-                    }
+                    //                    exceptions.map { _ ⇒
+                    //                        <th class="exceptionHeader">&nbsp;</th>
+                    //                    }
+
+                    if (exceptions.nonEmpty)
+                        <th colspan={ exceptions.size.toString } class="exceptionHeader">Exceptions</th>
+                    else
+                        scala.xml.NodeSeq.Empty
                 }
             </tr>
             { // One instruction per row
@@ -542,36 +547,44 @@ case class Code(instructions: Array[Byte]) {
         instructions
     }
 
-    def ExceptionsLinking(
+    def ExceptionsToXHTMLTableElements(
         instructions: Array[Node],
         exceptionTable: IndexedSeq[ExceptionTableEntry])(
-            implicit cp: Constant_Pool): List[Array[Node]] = {
-        var exceptions: List[Array[Node]] = List()
-        var depth = -1;
-        for { exceptionHandler ← exceptionTable } yield {
-            var exceptionName = if (exceptionHandler.catch_type != 0) cp(exceptionHandler.catch_type).toString else "Any"
+            implicit cp: Constant_Pool): Array[Array[Node]] = {
+        val exceptions: Array[Array[Node]] = new Array(exceptionTable.size)
+        for { (exceptionHandler, index) ← exceptionTable.zipWithIndex } yield {
+            val exceptionName =
+                (index + 1).toString()+": "+(
+                    if (exceptionHandler.catch_type != 0)
+                        cp(exceptionHandler.catch_type).toString
+                    else
+                        "Any"
+                )
             var exceptionPCLength = 0
             var exceptionPCStart = -1
-            depth += 1
-            exceptions = exceptions ++ List(new Array[Node](instructions.size))
-            exceptionName = (depth + 1).toString()+": "+exceptionName
+            exceptions(index) = new Array[Node](instructions.size)
 
-            for (i ← exceptionHandler.start_pc to exceptionHandler.end_pc - 1) {
-                if (instructions(i) != null) {
-                    if (exceptionPCLength == 0)
-                        exceptionPCStart = i
-                    exceptionPCLength += 1
-                }
+            for {
+                i ← (exceptionHandler.start_pc to exceptionHandler.end_pc - 1)
+                if (instructions(i) ne null)
+            } {
+                if (exceptionPCLength == 0)
+                    exceptionPCStart = i
+                exceptionPCLength += 1
             }
 
-            for (i ← 0 until exceptionHandler.start_pc) {
-                if (i != exceptionHandler.handler_pc)
-                    exceptions(depth)(i) = <td></td>
+            for {
+                i ← (0 until exceptionHandler.start_pc)
+                if i != exceptionHandler.handler_pc
+            } {
+                exceptions(index)(i) = <td></td>
             }
 
-            for (i ← exceptionHandler.end_pc until instructions.size) {
-                if (i != exceptionHandler.handler_pc)
-                    exceptions(depth)(i) = <td></td>
+            for {
+                i ← (exceptionHandler.end_pc until instructions.size)
+                if i != exceptionHandler.handler_pc
+            } {
+                exceptions(index)(i) = <td></td>
             }
 
             var classes = "exception"
@@ -579,15 +592,16 @@ case class Code(instructions: Array[Byte]) {
             if (exceptionPCStart == exceptionHandler.handler_pc)
                 classes += " handlerOverlap"
             else
-                exceptions(depth)(exceptionHandler.handler_pc) =
+                exceptions(index)(exceptionHandler.handler_pc) =
                     <td class="exception">
                         <div title={ exceptionName } class="exceptionHandler" alt="the start of the exception handler"></div>
                     </td>
-            exceptions(depth)(exceptionPCStart) = <td rowspan={ exceptionPCLength.toString } class="exception">
-                                                      <span data-exceptionNo={ (depth + 1).toString } alt="the ranges in the code 
-																											- array at which the exception handler is active">{ exceptionName }</span>
-                                                      <div class={ classes } title={ exceptionName }> </div>
-                                                  </td>
+
+            exceptions(index)(exceptionPCStart) =
+                <td rowspan={ exceptionPCLength.toString } class="exception">
+                    <span data-exception-index={ (index + 1).toString } alt="the ranges in the code array at which the exception handler is active">{ exceptionName }</span>
+                    <div class={ classes } title={ exceptionName }> </div>
+                </td>
         }
         exceptions
     }
