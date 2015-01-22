@@ -37,6 +37,7 @@ import scala.util.Random
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Tobias Becker
  */
 case class Code(instructions: Array[Byte]) {
 
@@ -49,7 +50,7 @@ case class Code(instructions: Array[Byte]) {
             implicit cp: Constant_Pool): Node = {
 
         val instructions = InstructionsToXHTML(methodIndex, this.instructions)
-        ExceptionsLinking(instructions, exceptionTable)
+        val exceptions = ExceptionsLinking(instructions, exceptionTable)
 
         <table class="method_bytecode">
             <tr>
@@ -62,6 +63,11 @@ case class Code(instructions: Array[Byte]) {
                     }
                 }
                 <th>Instruction</th>
+                {
+                    exceptions.map { _ ⇒
+                        <th class="exceptionHeader"> </th>
+                    }
+                }
             </tr>
             { // One instruction per row
                 for {
@@ -69,7 +75,7 @@ case class Code(instructions: Array[Byte]) {
                     if instructions(pc) != null
                 } yield {
                     createTableRowForInstruction(
-                        methodIndex, instructions(pc), pc, lineNumberTable)
+                        methodIndex, instructions(pc), exceptions.foldRight(List[Node]())((a, b) ⇒ List(a(pc)) ++ b), pc, lineNumberTable)
                 }
             }
         </table>
@@ -78,6 +84,7 @@ case class Code(instructions: Array[Byte]) {
     private[this] def createTableRowForInstruction(
         methodIndex: Int,
         instruction: Node,
+        exceptions: List[Node],
         pc: Int,
         lineNumberTable: Option[Seq[LineNumberTableEntry]]): Node = {
 
@@ -92,6 +99,7 @@ case class Code(instructions: Array[Byte]) {
                 }
             }
             <td> { instruction }</td>
+            { exceptions }
         </tr>
     }
 
@@ -536,21 +544,52 @@ case class Code(instructions: Array[Byte]) {
 
     def ExceptionsLinking(
         instructions: Array[Node],
-        exceptionTable: IndexedSeq[ExceptionTableEntry]): Array[Node] = {
+        exceptionTable: IndexedSeq[ExceptionTableEntry])(
+            implicit cp: Constant_Pool): List[Array[Node]] = {
+        var exceptions: List[Array[Node]] = List()
+        var depth = -1;
         for { exceptionHandler ← exceptionTable } yield {
-            for (i ← exceptionHandler.start_pc until exceptionHandler.end_pc) {
-                if (instructions(i) != null)
-                    instructions(i) = <span> { instructions(i) } <span class="exception" alt="the ranges in the code
-                 array at which the exception handler is active"></span></span>
+            var exceptionName = if (exceptionHandler.catch_type != 0) cp(exceptionHandler.catch_type).toString else "Any"
+            var exceptionPCLength = 0
+            var exceptionPCStart = -1
+            depth += 1
+            exceptions = exceptions ++ List(new Array[Node](instructions.size))
+            exceptionName = (depth + 1).toString()+": "+exceptionName
+
+            for (i ← exceptionHandler.start_pc to exceptionHandler.end_pc - 1) {
+                if (instructions(i) != null) {
+                    if (exceptionPCLength == 0)
+                        exceptionPCStart = i
+                    exceptionPCLength += 1
+                }
             }
 
-            instructions(exceptionHandler.handler_pc) =
-                <span>
-                    { instructions(exceptionHandler.handler_pc) }
-                    <span class="exceptionHandler" alt="the start of the exception handler"></span>
-                </span>
+            for (i ← 0 until exceptionHandler.start_pc) {
+                if (i != exceptionHandler.handler_pc)
+                    exceptions(depth)(i) = <td></td>
+            }
+
+            for (i ← exceptionHandler.end_pc until instructions.size) {
+                if (i != exceptionHandler.handler_pc)
+                    exceptions(depth)(i) = <td></td>
+            }
+
+            var classes = "exception"
+
+            if (exceptionPCStart == exceptionHandler.handler_pc)
+                classes += " handlerOverlap"
+            else
+                exceptions(depth)(exceptionHandler.handler_pc) =
+                    <td class="exception">
+                        <div title={ exceptionName } class="exceptionHandler" alt="the start of the exception handler"></div>
+                    </td>
+            exceptions(depth)(exceptionPCStart) = <td rowspan={ exceptionPCLength.toString } class="exception">
+                                                      <span data-exceptionNo={ (depth + 1).toString } alt="the ranges in the code 
+																											- array at which the exception handler is active">{ exceptionName }</span>
+                                                      <div class={ classes } title={ exceptionName }> </div>
+                                                  </td>
         }
-        instructions
+        exceptions
     }
 }
 object Code {
