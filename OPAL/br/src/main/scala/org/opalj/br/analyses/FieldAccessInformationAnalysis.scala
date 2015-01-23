@@ -113,17 +113,21 @@ object FieldAccessInformationAnalysis {
             readAccesses.foreach { e ⇒
                 val (key @ field, pcs) = e
                 field.synchronized {
-                    allReadAccesses.put(
-                        key, (method, pcs) :: allReadAccesses.getOrDefault(key, Nil)
-                    )
+                    val currentAccesses = allReadAccesses.get(key)
+                    if (currentAccesses == null)
+                        allReadAccesses.put(key, (method, pcs) :: Nil)
+                    else
+                        allReadAccesses.put(key, (method, pcs) :: currentAccesses)
                 }
             }
             writeAccesses.foreach { e ⇒
                 val (key @ field, pcs) = e
                 field.synchronized {
-                    allWriteAccesses.put(
-                        key, (method, pcs) :: allWriteAccesses.getOrDefault(key, Nil)
-                    )
+                    val currentAccesses = allReadAccesses.get(key)
+                    if (currentAccesses == null)
+                        allWriteAccesses.put(key, (method, pcs) :: Nil)
+                    else
+                        allWriteAccesses.put(key, (method, pcs) :: currentAccesses)
                 }
             }
             allUnresolved.add((method, unresolved))

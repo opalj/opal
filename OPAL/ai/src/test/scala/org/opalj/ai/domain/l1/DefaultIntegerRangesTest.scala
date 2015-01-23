@@ -36,8 +36,8 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 import org.scalatest.ParallelTestExecution
-
 import org.opalj.br.{ ObjectType, ArrayType, IntegerType }
+import org.opalj.ai.domain.RecordReturnedValues
 
 /**
  * Tests the IntegerRanges Domain.
@@ -3248,6 +3248,13 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         describe("constraint propagation") {
 
+            it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing and calculated the correct summary value") {
+                val domain = new JoinResultsIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+                val method = IntegerValues.findMethod("aliasingMax5").get
+                /*val result =*/ BaseAI(IntegerValues, method, domain)
+                domain.returnedValue should be(Some(domain.IntegerRange(Int.MinValue, 5)))
+            }
+
             it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing") {
                 val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax5").get
@@ -3564,3 +3571,22 @@ class DefaultIntegerRangesTestDomain(
         with IgnoreSynchronization
         with PredefinedClassHierarchy
         with RecordLastReturnedValues
+
+class JoinResultsIntegerRangesTestDomain(
+    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
+        extends CorrelationalDomain
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with l0.DefaultTypeLevelLongValues
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.DefaultReferenceValuesBinding
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.SimpleTypeLevelInvokeInstructions
+        with l1.DefaultIntegerRangeValues // <----- The one we are going to test
+        with l0.TypeLevelPrimitiveValuesConversions
+        with l0.TypeLevelLongValuesShiftOperators
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with PredefinedClassHierarchy
+        with RecordReturnedValue

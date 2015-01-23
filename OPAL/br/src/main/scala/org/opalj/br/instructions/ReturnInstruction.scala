@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,6 +30,7 @@ package org.opalj
 package br
 package instructions
 
+import scala.annotation.switch
 import org.opalj.collection.mutable.UShortSet
 
 /**
@@ -45,6 +46,9 @@ abstract class ReturnInstruction extends Instruction with ConstantLengthInstruct
     final def length: Int = 1
 
     final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean =
+        this eq code.instructions(otherPC)
 
     final def readsLocal: Boolean = false
 
@@ -70,7 +74,7 @@ object ReturnInstruction {
     val runtimeExceptions = List(ObjectType.IllegalMonitorStateException)
 
     def apply(theType: Type): ReturnInstruction =
-        (theType.id: @scala.annotation.switch) match {
+        (theType.id: @switch) match {
             case VoidType.id    ⇒ RETURN
             case IntegerType.id ⇒ IRETURN
             case ShortType.id   ⇒ IRETURN
@@ -82,5 +86,52 @@ object ReturnInstruction {
             case DoubleType.id  ⇒ DRETURN
             case _              ⇒ ARETURN
         }
+
+}
+
+object ReturnInstructions {
+
+    def unapply(code: Code): Option[PCs] = {
+        if (code eq null)
+            return None;
+
+        val instructions = code.instructions
+        val max = instructions.length
+        var pc = 0
+        var returnPCs = org.opalj.collection.mutable.UShortSet.empty
+        while (pc < max) {
+            val instruction = instructions(pc)
+            (instruction.opcode: @switch) match {
+                case RETURN.opcode |
+                    IRETURN.opcode |
+                    LRETURN.opcode |
+                    FRETURN.opcode |
+                    DRETURN.opcode |
+                    ARETURN.opcode ⇒ returnPCs = pc +≈: returnPCs
+                case _ ⇒ /*nothing to do*/
+            }
+            pc = instruction.indexOfNextInstruction(pc, code)
+        }
+        Some(returnPCs)
+    }
+}
+
+object MethodCompletionInstruction {
+
+    def unapply(i: Instruction): Boolean = {
+        (i.opcode: @switch) match {
+            case ATHROW.opcode |
+                RETURN.opcode |
+                ARETURN.opcode |
+                IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode ⇒ true
+            case _ ⇒ false
+        }
+
+    }
+}
+
+object NoMethodCompletionInstruction {
+
+    def unappy(i: Instruction): Boolean = !MethodCompletionInstruction.unapply(i)
 
 }

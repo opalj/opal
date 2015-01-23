@@ -34,7 +34,7 @@ package l2
 import org.opalj.br._
 
 /**
- * Mix in this trait if methods that are called by `invokeXXX` instructions should
+ * Mix in this trait if methods that are called by `invokeXYZ` instructions should
  * actually be interpreted using a custom domain.
  *
  * @author Michael Eichberg

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -37,6 +37,7 @@ import scala.util.Random
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Tobias Becker
  */
 case class Code(instructions: Array[Byte]) {
 
@@ -49,7 +50,7 @@ case class Code(instructions: Array[Byte]) {
             implicit cp: Constant_Pool): Node = {
 
         val instructions = InstructionsToXHTML(methodIndex, this.instructions)
-        ExceptionsLinking(instructions, exceptionTable)
+        val exceptions = ExceptionsToXHTMLTableElements(instructions, exceptionTable)
 
         <table class="method_bytecode">
             <tr>
@@ -62,6 +63,12 @@ case class Code(instructions: Array[Byte]) {
                     }
                 }
                 <th>Instruction</th>
+                {
+                    if (exceptions.nonEmpty)
+                        <th colspan={ exceptions.size.toString } class="exceptionHeader">Exceptions</th>
+                    else
+                        scala.xml.NodeSeq.Empty
+                }
             </tr>
             { // One instruction per row
                 for {
@@ -69,7 +76,7 @@ case class Code(instructions: Array[Byte]) {
                     if instructions(pc) != null
                 } yield {
                     createTableRowForInstruction(
-                        methodIndex, instructions(pc), pc, lineNumberTable)
+                        methodIndex, instructions(pc), exceptions.foldRight(List[Node]())((a, b) ⇒ List(a(pc)) ++ b), pc, lineNumberTable)
                 }
             }
         </table>
@@ -78,6 +85,7 @@ case class Code(instructions: Array[Byte]) {
     private[this] def createTableRowForInstruction(
         methodIndex: Int,
         instruction: Node,
+        exceptions: List[Node],
         pc: Int,
         lineNumberTable: Option[Seq[LineNumberTableEntry]]): Node = {
 
@@ -92,6 +100,7 @@ case class Code(instructions: Array[Byte]) {
                 }
             }
             <td> { instruction }</td>
+            { exceptions }
         </tr>
     }
 
@@ -534,23 +543,63 @@ case class Code(instructions: Array[Byte]) {
         instructions
     }
 
-    def ExceptionsLinking(
+    def ExceptionsToXHTMLTableElements(
         instructions: Array[Node],
-        exceptionTable: IndexedSeq[ExceptionTableEntry]): Array[Node] = {
-        for { exceptionHandler ← exceptionTable } yield {
-            for (i ← exceptionHandler.start_pc until exceptionHandler.end_pc) {
-                if (instructions(i) != null)
-                    instructions(i) = <span> { instructions(i) } <span class="exception" alt="the ranges in the code
-                 array at which the exception handler is active"></span></span>
+        exceptionTable: IndexedSeq[ExceptionTableEntry])(
+            implicit cp: Constant_Pool): Array[Array[Node]] = {
+        val exceptions: Array[Array[Node]] = new Array(exceptionTable.size)
+        for { (exceptionHandler, index) ← exceptionTable.zipWithIndex } yield {
+            val exceptionName =
+                (index + 1).toString()+": "+(
+                    if (exceptionHandler.catch_type != 0)
+                        cp(exceptionHandler.catch_type).toString
+                    else
+                        "Any"
+                )
+            var exceptionPCLength = 0
+            var exceptionPCStart = -1
+            exceptions(index) = new Array[Node](instructions.size)
+
+            for {
+                i ← (exceptionHandler.start_pc to exceptionHandler.end_pc - 1)
+                if (instructions(i) ne null)
+            } {
+                if (exceptionPCLength == 0)
+                    exceptionPCStart = i
+                exceptionPCLength += 1
             }
 
-            instructions(exceptionHandler.handler_pc) =
-                <span>
-                    { instructions(exceptionHandler.handler_pc) }
-                    <span class="exceptionHandler" alt="the start of the exception handler"></span>
-                </span>
+            for {
+                i ← (0 until exceptionHandler.start_pc)
+                if i != exceptionHandler.handler_pc
+            } {
+                exceptions(index)(i) = <td></td>
+            }
+
+            for {
+                i ← (exceptionHandler.end_pc until instructions.size)
+                if i != exceptionHandler.handler_pc
+            } {
+                exceptions(index)(i) = <td></td>
+            }
+
+            var classes = "exception"
+
+            if (exceptionPCStart == exceptionHandler.handler_pc)
+                classes += " handlerOverlap"
+            else
+                exceptions(index)(exceptionHandler.handler_pc) =
+                    <td class="exception">
+                        <div title={ exceptionName } class="exceptionHandler" alt="the start of the exception handler"></div>
+                    </td>
+
+            exceptions(index)(exceptionPCStart) =
+                <td rowspan={ exceptionPCLength.toString } class="exception">
+                    <span data-exception-index={ (index + 1).toString } alt="the ranges in the code array at which the exception handler is active">{ exceptionName }</span>
+                    <div class={ classes } title={ exceptionName }> </div>
+                </td>
         }
-        instructions
+        exceptions
     }
 }
 object Code {

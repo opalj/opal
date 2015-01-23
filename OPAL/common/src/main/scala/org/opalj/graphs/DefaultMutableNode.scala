@@ -27,31 +27,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package av
+package graphs
 
-import scala.collection.{ Set }
+import scala.collection.Map
 
-import br._
-import br.analyses.SomeProject
+class DefaultMutableNode[I](
+    theIdentifier: I,
+    identifierToString: I ⇒ String,
+    theVisualProperties: Map[String, String],
+    theChildren: List[DefaultMutableNode[I]])
+        extends MutableNodeLike[I, DefaultMutableNode[I]](theIdentifier, identifierToString, theVisualProperties, theChildren)
+        with MutableNode[I, DefaultMutableNode[I]] {
 
-/**
- * A source element matcher determines a set of source elements that matches a given query.
- *
- * @author Michael Eichberg
- */
-case class RegexClassMatcher(
-    matcher: scala.util.matching.Regex)
-        extends SourceElementsMatcher {
+    def this(identifier: I) {
+        this(identifier, id ⇒ id.toString, Map("shape" -> "box"), List.empty)
+    }
 
-    def extension(project: SomeProject): Set[VirtualSourceElement] = {
+    def this(
+        identifier: I,
+        identifierToString: I ⇒ String) {
+        this(identifier, identifierToString, Map("shape" -> "box"), List.empty)
+    }
 
-        val matchedClassFiles =
-            project.allClassFiles filter { classFile ⇒
-                val className = classFile.thisType.fqn.replace('/', '.')
-                matcher.findFirstIn(className).isDefined
-            }
-
-        matchCompleteClasses(matchedClassFiles)
+    def this(
+        identifier: I,
+        identifierToString: I ⇒ String = (_: Any).toString,
+        fillcolor: Option[String]) {
+        this(
+            identifier,
+            identifierToString,
+            fillcolor.map(c ⇒ Map("shape" -> "box", "style" -> "filled", "fillcolor" -> c)).
+                getOrElse(Map.empty[String, String]),
+            List.empty)
     }
 }
 

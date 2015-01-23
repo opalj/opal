@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -54,7 +54,7 @@ sealed trait ThrowsSignature extends SignatureElement {
 sealed trait Signature extends SignatureElement with Attribute
 
 case class ClassSignature(
-    formalTypeParameters: Option[List[FormalTypeParameter]],
+    formalTypeParameters: List[FormalTypeParameter],
     superClassSignature: ClassTypeSignature,
     superInterfacesSignature: List[ClassTypeSignature])
         extends Signature {
@@ -62,7 +62,6 @@ case class ClassSignature(
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 
     override def kindId: Int = ClassSignature.KindId
-
 }
 object ClassSignature {
 
@@ -71,7 +70,7 @@ object ClassSignature {
 }
 
 case class MethodTypeSignature(
-    formalTypeParameters: Option[List[FormalTypeParameter]],
+    formalTypeParameters: List[FormalTypeParameter],
     parametersTypeSignatures: List[TypeSignature],
     returnTypeSignature: ReturnTypeSignature,
     throwsSignature: List[ThrowsSignature])
@@ -152,7 +151,7 @@ object TypeVariableSignature {
 
 case class SimpleClassTypeSignature(
         simpleName: String,
-        typeArguments: Option[List[TypeArgument]]) {
+        typeArguments: List[TypeArgument]) {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }
@@ -233,14 +232,15 @@ object BasicClassTypeSignature {
  * @author Michael Eichberg
  */
 object GenericContainer { // matches : List<Object>
+
     def unapply(cts: ClassTypeSignature): Option[(ObjectType, ObjectType)] = {
         cts match {
             case ClassTypeSignature(
                 Some(cpn),
                 SimpleClassTypeSignature(
                     csn,
-                    Some(List(ProperTypeArgument(None, BasicClassTypeSignature(tp))))),
-                List()
+                    List(ProperTypeArgument(None, BasicClassTypeSignature(tp)))),
+                Nil
                 ) ⇒
                 Some((ObjectType(cpn + csn), tp))
             case _ ⇒

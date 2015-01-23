@@ -33,13 +33,12 @@ package analyses
 import scala.annotation.tailrec
 import scala.collection.{ Map, Set, SeqView }
 import scala.collection.mutable.HashSet
-
 import org.opalj.io.processSource
-import org.opalj.graphs.Node
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ObjectType.Object
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.graphs.Node
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -274,6 +273,10 @@ class ClassHierarchy private (
      *      `ClassHierarchy.ifKnown` for further details).
      */
     def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
+        assert(
+            objectType.id < subclassTypesMap.length,
+            s"no subtype information available for ${objectType.toJava}"+
+                s" (id=${objectType.id}); the type seems to be unknown")
 
         // We had to change this method to get better performance.
         // The naive implementation using foreach and (mutual) recursion
@@ -1186,11 +1189,14 @@ class ClassHierarchy private (
                         private val directSubtypes = directSubtypesOf(aType)
                         def uniqueId = aType.id
                         def toHRR: Option[String] = Some(aType.toJava)
-                        def backgroundColor: Option[String] =
-                            if (isInterface(aType))
-                                Some("aliceblue")
-                            else
-                                None
+                        override val visualProperties: Map[String, String] = {
+                            Map("shape" -> "box") ++ (
+                                if (isInterface(aType))
+                                    Map("fillcolor" -> "aliceblue", "style" -> "filled")
+                                else
+                                    Map.empty[String, String]
+                            )
+                        }
                         def foreachSuccessor(f: Node ⇒ Unit): Unit = {
                             directSubtypes foreach { subtype ⇒
                                 f(nodes(subtype))
@@ -1207,7 +1213,6 @@ class ClassHierarchy private (
         // a virtual root node
         def uniqueId = -1
         def toHRR = None
-        def backgroundColor = None
         def foreachSuccessor(f: Node ⇒ Unit): Unit = {
             /*
              * We may not see the class files of all classes that are referred

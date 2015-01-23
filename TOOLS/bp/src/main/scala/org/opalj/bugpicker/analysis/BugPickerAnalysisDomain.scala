@@ -61,6 +61,7 @@ class BugPickerAnalysisDomain(
         with domain.la.RefinedTypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
         with domain.la.RefinedTypeLevelInvokeInstructions
+        with domain.SpecialMethodsHandling
         //with domain.l1.DefaultReferenceValuesBinding
         with domain.l1.DefaultClassValuesBinding
         //with domain.l1.DefaultStringValuesBinding

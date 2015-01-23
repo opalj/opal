@@ -47,6 +47,7 @@ import org.opalj.ai.domain.TheClassFile
 import org.opalj.ai.domain.TheMethod
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
+import org.opalj.ai.domain.SpecialMethodsHandling
 import org.opalj.ai.domain.l0
 import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.la
@@ -88,6 +89,7 @@ class ExtVTACallGraphDomain[Source](
         with l1.NullPropertyRefinement
         with l0.TypeLevelInvokeInstructions // the foundation
         with la.RefinedTypeLevelInvokeInstructions
+        with SpecialMethodsHandling
         // with l0.TypeLevelFieldAccessInstructions
         // Using the following domain reduces the number of call edges by ~4%
         with la.RefinedTypeLevelFieldAccessInstructions

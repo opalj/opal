@@ -62,6 +62,8 @@ final class Code private (
     /**
      * Returns a new iterator to iterate over the program counters of the instructions
      * of this `Code` block.
+     *
+     * @see See the method [[foreach]] for an alternative.
      */
     def programCounters: Iterator[PC] =
         new Iterator[PC] {
@@ -285,12 +287,16 @@ final class Code private (
     def localVariablesAt(pc: PC): Map[Int, LocalVariable] = {
         localVariableTable match {
             case Some(lvt) ⇒
-                (
-                    lvt.collect {
-                        case lv @ LocalVariable(startPC, length, name, fieldType, index) if startPC <= pc && startPC + length > pc ⇒
-                            (index, lv)
-                    }
-                ).toMap
+                (lvt.collect {
+                    case lv @ LocalVariable(
+                        startPC,
+                        length,
+                        name,
+                        fieldType,
+                        index
+                        ) if startPC <= pc && startPC + length > pc ⇒
+                        (index, lv)
+                }).toMap
             case _ ⇒
                 Map.empty
         }
@@ -655,11 +661,25 @@ final class Code private (
     }
 
     /**
-     * Finds a sequence of 3 consecutive instructions for which the given function returns
-     * `true`, and returns the `PC` of the first instruction in each found sequence.
+     * Finds all sequences of three consecutive instructions that are matched by `f`.
      */
     def matchTriple(f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = {
+        matchTriple(Int.MaxValue, f)
+    }
+
+    /**
+     * Finds a sequence of 3 consecutive instructions for which the given function returns
+     * `true`, and returns the `PC` of the first instruction in each found sequence.
+     *
+     * @param matchMaxTriples Is the maximum number of triples that is passed to `f`.
+     *      E.g., if `matchMaxTriples` is "1" only the first three instructions are
+     *      passed to `f`.
+     */
+    def matchTriple(
+        matchMaxTriples: Int = Int.MaxValue,
+        f: (Instruction, Instruction, Instruction) ⇒ Boolean): List[PC] = {
         val max_pc = instructions.size
+        var matchedTriplesCount = 0
         var pc1 = 0
         var pc2 = pcOfNextInstruction(pc1)
         if (pc2 >= max_pc)
@@ -667,10 +687,12 @@ final class Code private (
         var pc3 = pcOfNextInstruction(pc2)
 
         var result: List[PC] = List.empty
-        while (pc3 < max_pc) {
+        while (pc3 < max_pc && matchedTriplesCount < matchMaxTriples) {
             if (f(instructions(pc1), instructions(pc2), instructions(pc3))) {
                 result = pc1 :: result
             }
+
+            matchedTriplesCount += 1
 
             // Move forward by 1 instruction at a time. Even though (..., 1, 2, 3, _, ...)
             // didn't match, it's possible that (..., _, 1, 2, 3, ...) matches.

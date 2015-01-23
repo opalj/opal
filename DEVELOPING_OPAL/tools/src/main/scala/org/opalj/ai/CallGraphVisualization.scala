@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -33,7 +33,6 @@ package debug
 import scala.Console.RED
 import scala.Console.RESET
 import scala.Console.err
-
 import org.opalj.br.{ Method }
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -46,8 +45,7 @@ import org.opalj.ai.analyses.cg.BasicVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.DefaultVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.ExtVTACallGraphAlgorithmConfiguration
-import org.opalj.graphs.Node
-import org.opalj.graphs.SimpleNode
+import org.opalj.graphs.DefaultMutableNode
 import org.opalj.util.PerformanceEvaluation.asMB
 import org.opalj.util.PerformanceEvaluation.memory
 import org.opalj.util.PerformanceEvaluation.ns2sec
@@ -82,7 +80,7 @@ object CallGraphVisualization {
             sys.exit(-1)
         }
 
-        // To make it possible to attach a profiler: 
+        // To make it possible to attach a profiler:
         if (args.size == 4) {
             try {
                 val secs = Integer.parseInt(args(3), 10)
@@ -162,7 +160,7 @@ object CallGraphVisualization {
                     CallGraphFactory.create(project, entryPoints, callGraphAlgorithmConfig)
                 } { t ⇒ println("Creating the call graph took: "+ns2sec(t)) }
 
-                // Some statistics 
+                // Some statistics
                 val callGraph = computedCallGraph.callGraph
                 import callGraph.{ calls, callsCount, calledByCount, foreachCallingMethod }
                 println("Methods with at least one resolved call: "+callsCount)
@@ -212,16 +210,15 @@ object CallGraphVisualization {
         //
         // Let's create the visualization
         //
-        import org.opalj.graphs.{ SimpleNode, Node }
-        val nodes: Set[Node] = {
+        val nodes: Set[DefaultMutableNode[Method]] = {
 
-            val nodesForMethods = scala.collection.mutable.AnyRefMap.empty[Method, Node]
+            val nodesForMethods = scala.collection.mutable.AnyRefMap.empty[Method, DefaultMutableNode[Method]]
 
-            def createNode(caller: Method): Node = {
+            def createNode(caller: Method): DefaultMutableNode[Method] = {
                 if (nodesForMethods.contains(caller))
                     return nodesForMethods(caller)
 
-                val node = new SimpleNode(
+                val node = new DefaultMutableNode(
                     caller,
                     (m: Method) ⇒ project.classFile(m).thisType.toJava+" { "+m.toJava+" } ",
                     {
@@ -251,7 +248,7 @@ object CallGraphVisualization {
                 if (project.classFile(method).thisType.fqn.startsWith(fqnFilter))
                     createNode(method)
             }
-            nodesForMethods.values.toSet[Node] // it is a set already...
+            nodesForMethods.values.toSet[DefaultMutableNode[Method]] // it is a set already...
         }
         // The unresolved methods________________________________________________________:
         if (unresolvedMethodCalls.size > 0) {
@@ -287,9 +284,9 @@ object CallGraphVisualization {
         }
 
         // Generate and show the graph
-        //        writeAndOpenDesktopApplication(
-        //            toDot.generateDot(nodes),
-        //            callGraphAlgorithm+"CallGraph", ".dot")
+        org.opalj.io.writeAndOpen(
+            org.opalj.graphs.toDot.generateDot(nodes),
+            callGraphAlgorithm+"CallGraph", ".dot")
         println("Callgraph:")
         println("Number of nodes: "+nodes.size)
         val edges = nodes.foldLeft(0) { (l, r) ⇒

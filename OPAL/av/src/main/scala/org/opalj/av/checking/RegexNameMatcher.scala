@@ -28,36 +28,20 @@
  */
 package org.opalj
 package av
+package checking
 
-import scala.collection.Set
-
-import br._
-import br.analyses.SomeProject
+import scala.util.matching.Regex
 
 /**
+ * Matches name of class, fields and methods based on their name. The name is matched
+ * against the binary notation.
+ *
  * @author Michael Eichberg
  */
-case class ClassMatcher(
-    className: String,
-    matchPrefix: Boolean = false)
-        extends SourceElementsMatcher {
+case class RegexNameMatcher(matcher: Regex) extends NameMatcher {
 
-    require(className.indexOf('*') == -1)
-    require(className.indexOf('.') == -1)
-
-    def extension(project: SomeProject): Set[VirtualSourceElement] = {
-
-        val matchedClassFiles =
-            project.allClassFiles filter { classFile ⇒
-                {
-                    val otherClassName = classFile.thisType.fqn
-                    otherClassName.startsWith(className) && (
-                        matchPrefix ||
-                        otherClassName.length == className.length)
-                }
-            }
-        matchCompleteClasses(matchedClassFiles)
+    def doesMatch(otherName: String): Boolean = {
+        matcher.findFirstIn(otherName).isDefined
     }
-
-    override def toString = "\""+className+"\""
 }
+

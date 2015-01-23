@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj.av
+package checking
 
 import org.junit.runner.RunWith
 

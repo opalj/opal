@@ -27,50 +27,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package av
+package br
+package instructions
 
-import scala.collection.{ Set }
-
-import br._
-import br.analyses.SomeProject
+import scala.annotation.switch
 
 /**
- * Matches all classes, fields and methods that are declared in the specified package.
- *
- * @param packageName The name of a package in binary notation.
- *      (I.e., "/" are used to separate a package name's segments; e.g.,
- *      "java/lang/Object").
- * @param matchSubpackages If true, all packages that start with the given package
- *      name are matched otherwise only classes declared in the given package are matched.
+ * Super class of the Goto instructions.
  *
  * @author Michael Eichberg
  */
-case class PackageNameBasedMatcher(
-    packageName: String,
-    matchSubpackages: Boolean = false)
-        extends SourceElementsMatcher {
+abstract class GotoInstruction extends UnconditionalBranchInstruction {
 
-    require(packageName.length >= 1)
-    require(packageName.indexOf('*') == -1)
-    require(packageName.indexOf('.') == -1)
+    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
-    def extension(project: SomeProject): Set[VirtualSourceElement] = {
-        val matchedClassFiles =
-            project.allClassFiles filter { classFile ⇒
-                val thisClassPackageName = classFile.thisType.packageName
-                thisClassPackageName.startsWith(packageName) && (
-                    matchSubpackages || thisClassPackageName.length() == packageName.length()
-                )
-            }
-        matchCompleteClasses(matchedClassFiles)
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || this == other
     }
 
-    override def toString = {
-        var s = "\""+packageName.replace('/', '.')+".*"
-        if (matchSubpackages)
-            s += "*"
-        s += "\""
-        s
+}
+
+object GotoInstruction {
+
+    def unapply(instruction: Instruction): Option[Int] = {
+        (instruction.opcode: @switch) match {
+            case GOTO.opcode | GOTO_W.opcode ⇒
+                Some(instruction.asInstanceOf[GotoInstruction].branchoffset)
+            case _ ⇒ None
+        }
     }
 }
 
