@@ -57,7 +57,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     // -----------------------------------------------------------------------------------
 
     /**
-     * Determines the maximum number of values captured by an Long set.
+     * Determines the maximum number of values captured by a set of Long values.
      *
      * Often, a very small cardinality (e.g., 2 or 8) may be
      * completely sufficient and a large cardinality does not significantly add to the
@@ -223,7 +223,6 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         (left, right) match {
             case (LongSet(leftValues), LongSet(rightValues)) ⇒
                 val results = for (l ← leftValues; r ← rightValues) yield l + r
-
                 if (results.size <= maxCardinalityOfLongSets)
                     LongSet(results)
                 else

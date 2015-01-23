@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,31 +22,35 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bugpicker
-package analysis
+package ai
+package domain
 
 /**
- * Collection of predefined issue kinds.
+ * Generic infrastructure to record the value returned by the method (calculated
+ * across all return instructions)
  *
- * In general, an issue kind describes how '''this issue manifests itself in the source
- * code'''.
+ * ==Usage==
+ * This domain can be stacked on top of other traits that handle
+ * return instructions that return some value.
+ *
+ * ==Usage==
+ * A domain that mixes in this trait should only be used to analyze a single method.
  *
  * @author Michael Eichberg
  */
-object IssueKind {
+trait RecordReturnedValueInfrastructure extends RecordReturnedValuesInfrastructure {
+    domain: ValuesDomain ⇒
 
-    final val ConstantComputation = "constant computation"
+    /**
+     *  A method that always throws an exception or returns "void" will never return a value.
+     *
+     */
+    def returnedValue: Option[DomainValue] // = Option(theReturnedValue)
 
-    final val DeadCode = "dead code"
-
-    final val ThrowsException = "throws exception"
-
-    final val UnguardedUse = "unguarded use"
-
-    final val Unused = "unused"
 }
+

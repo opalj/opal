@@ -59,6 +59,8 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.ObjectType
 
 /**
+ * Refines a reference's null property if the reference value may be null and
+ * this has resulted in a corresponding exception.
  *
  * @author Michael Eichberg
  */
@@ -104,7 +106,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                         targetPC, isExceptionalControlFlow, operands2, locals2)
                 } else {
                     // ... the value is not null... even if an exception was thrown,
-                    // because the execution is not a `NullPointerException`
+                    // because the exception is not a VM-level `NullPointerException`
                     val (operands2, locals2) =
                         refEstablishIsNonNull(targetPC, objectRef, newOperands, newLocals)
                     super.afterEvaluation(

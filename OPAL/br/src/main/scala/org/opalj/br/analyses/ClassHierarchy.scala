@@ -273,6 +273,10 @@ class ClassHierarchy private (
      *      `ClassHierarchy.ifKnown` for further details).
      */
     def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
+        assert(
+            objectType.id < subclassTypesMap.length,
+            s"no subtype information available for ${objectType.toJava}"+
+                s" (id=${objectType.id}); the type seems to be unknown")
 
         // We had to change this method to get better performance.
         // The naive implementation using foreach and (mutual) recursion
