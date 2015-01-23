@@ -109,10 +109,10 @@ function trimLongExceptionNames() {
 			// if the offset+width of the span is greater than offset+height of table body
 			// it would overlap to the next section (exception table)
 			if (offset(span).top+span.clientWidth > offset(tbody).top+tbody.clientHeight) {
-				span.innerHTML = span.getAttribute("data-exceptionNo") + ': ...';
+				span.innerHTML = span.getAttribute("data-exception-index") + ': ...';
 			}		
 			if (offset(span).top+span.clientWidth > offset(tbody).top+tbody.clientHeight) {
-				span.innerHTML = span.getAttribute("data-exceptionNo") + ':';
+				span.innerHTML = span.getAttribute("data-exception-index") + ':';
 			}
 		}
 	});

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -53,7 +53,7 @@ object SignatureParser {
      *
      * @author Michael Eichberg
      */
-    // TODO [Scala 2.11 - Improvement] investigate if Combinator Parsers are now thread-safe; if so the wrapper object which currently implements the necessary logic for thread safety can be removed 
+    // TODO [Scala 2.11 - Improvement] investigate if Combinator Parsers are now thread-safe; if so the wrapper object which currently implements the necessary logic for thread safety can be removed
     class SignatureParsers private[SignatureParser] () extends RegexParsers {
 
         def parseClassSignature(signature: String): ClassSignature = {
@@ -78,7 +78,8 @@ object SignatureParser {
             opt(formalTypeParametersParser) ~
                 superclassSignatureParser ~
                 rep(superinterfaceSignatureParser) ^^ {
-                    case ftps ~ scs ~ siss ⇒ ClassSignature(ftps, scs, siss)
+                    case ftps ~ scs ~ siss ⇒
+                        ClassSignature(ftps.getOrElse(Nil), scs, siss)
                 }
 
         protected val fieldTypeSignatureParser: Parser[FieldTypeSignature] =
@@ -91,7 +92,8 @@ object SignatureParser {
                 ('(' ~> rep(typeSignatureParser) <~ ')') ~
                 returnTypeParser ~
                 rep(throwsSignatureParser) ^^ {
-                    case ftps ~ psts ~ rt ~ tss ⇒ MethodTypeSignature(ftps, psts, rt, tss)
+                    case ftps ~ psts ~ rt ~ tss ⇒
+                        MethodTypeSignature(ftps.getOrElse(Nil), psts, rt, tss)
                 }
 
         protected val identifierParser: Parser[String] = """[^.;\[/\<>\:]*""".r
@@ -140,7 +142,7 @@ object SignatureParser {
 
         protected def simpleClassTypeSignatureParser: Parser[SimpleClassTypeSignature] =
             identifierParser ~ opt(typeArgumentsParser) ^^ {
-                case id ~ tas ⇒ SimpleClassTypeSignature(id, tas)
+                case id ~ tas ⇒ SimpleClassTypeSignature(id, tas.getOrElse(Nil))
             }
 
         protected def classTypeSignatureSuffixParser: Parser[SimpleClassTypeSignature] =
@@ -182,9 +184,9 @@ object SignatureParser {
             '^' ~> (classTypeSignatureParser | typeVariableSignatureParser)
 
         protected def baseTypeParser: Parser[BaseType] =
-            // This is what is conceptually done: 
-            // 'B' ^^ (_ ⇒ ByteType) | 'C' ^^ (_ ⇒ CharType) | 'D' ^^ (_ ⇒ DoubleType) | 
-            // 'F' ^^ (_ ⇒ FloatType) | 'I' ^^ (_ ⇒ IntegerType) | 'J' ^^ (_ ⇒ LongType) | 
+            // This is what is conceptually done:
+            // 'B' ^^ (_ ⇒ ByteType) | 'C' ^^ (_ ⇒ CharType) | 'D' ^^ (_ ⇒ DoubleType) |
+            // 'F' ^^ (_ ⇒ FloatType) | 'I' ^^ (_ ⇒ IntegerType) | 'J' ^^ (_ ⇒ LongType) |
             // 'S' ^^ (_ ⇒ ShortType) | 'Z' ^^ (_ ⇒ BooleanType)
             // This is a way more efficient implementation:
             new Parser[BaseType] {

@@ -70,7 +70,7 @@ trait DefaultLongSetValues
 
     class LongSet(val values: SortedSet[Long]) extends super.LongSet {
 
-        assert(values.size > 0)
+        assert(values.nonEmpty)
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             val result = other match {
@@ -110,6 +110,8 @@ trait DefaultLongSetValues
             if (target.isInstanceOf[LongSetValues]) {
                 val thatDomain = target.asInstanceOf[DefaultLongSetValues]
                 thatDomain.LongSet(this.values).asInstanceOf[target.DomainValue]
+            } else if (values.size == 1) {
+                target.LongValue(pc, values.head)
             } else {
                 target.LongValue(pc)
             }
