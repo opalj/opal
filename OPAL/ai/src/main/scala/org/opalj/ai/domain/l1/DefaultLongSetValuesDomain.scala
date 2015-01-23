@@ -35,11 +35,13 @@ import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.Project
 
 /**
- * This domain uses the l1 level ''stable'', partial domains.
+ * This domain uses the l1 level ''stable'', partial domains,
+ * including LongSetValues.
  *
  * @author Michael Eichberg
+ * @author David Becker
  */
-class DefaultConfigurableDomain[I, Source](
+class DefaultConfigurableLongSetValuesDomain[I, Source](
     val id: I,
     val project: Project[Source],
     val classFile: ClassFile,
@@ -56,7 +58,6 @@ class DefaultConfigurableDomain[I, Source](
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with SpecialMethodsHandling
         // [NEEDED IF WE DON'T MIXIN CLASS AND STRING VALUES BINDING] with l1.DefaultReferenceValuesBinding
         // [NEEDED IF WE DON'T MIXIN CLASS VALUES BINDING] with l1.DefaultStringValuesBinding
         with l1.DefaultClassValuesBinding
@@ -65,7 +66,7 @@ class DefaultConfigurableDomain[I, Source](
         with l1.NullPropertyRefinement // OPTIONAL
         with l1.DefaultIntegerRangeValues
         with l1.ConstraintsBetweenIntegerValues
-        with l1.DefaultLongValues
+        with l1.DefaultLongSetValues
         with l1.LongValuesShiftOperators
         with l1.ConcretePrimitiveValuesConversions {
 
@@ -73,7 +74,7 @@ class DefaultConfigurableDomain[I, Source](
 
 }
 
-class DefaultDomain[Source](
+class DefaultLongSetValuesDomain[Source](
     project: Project[Source],
     classFile: ClassFile,
     method: Method)
@@ -83,7 +84,7 @@ class DefaultDomain[Source](
             classFile,
             method)
 
-class DefaultDomainWithCFG[Source](
+class DefaultLongSetValuesDomainWithCFG[Source](
     project: Project[Source],
     classFile: ClassFile,
     method: Method)

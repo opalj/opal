@@ -30,6 +30,7 @@ package org.opalj
 package br
 package instructions
 
+import scala.annotation.switch
 import org.opalj.collection.mutable.UShortSet
 
 /**
@@ -73,7 +74,7 @@ object ReturnInstruction {
     val runtimeExceptions = List(ObjectType.IllegalMonitorStateException)
 
     def apply(theType: Type): ReturnInstruction =
-        (theType.id: @scala.annotation.switch) match {
+        (theType.id: @switch) match {
             case VoidType.id    ⇒ RETURN
             case IntegerType.id ⇒ IRETURN
             case ShortType.id   ⇒ IRETURN
@@ -85,5 +86,52 @@ object ReturnInstruction {
             case DoubleType.id  ⇒ DRETURN
             case _              ⇒ ARETURN
         }
+
+}
+
+object ReturnInstructions {
+
+    def unapply(code: Code): Option[PCs] = {
+        if (code eq null)
+            return None;
+
+        val instructions = code.instructions
+        val max = instructions.length
+        var pc = 0
+        var returnPCs = org.opalj.collection.mutable.UShortSet.empty
+        while (pc < max) {
+            val instruction = instructions(pc)
+            (instruction.opcode: @switch) match {
+                case RETURN.opcode |
+                    IRETURN.opcode |
+                    LRETURN.opcode |
+                    FRETURN.opcode |
+                    DRETURN.opcode |
+                    ARETURN.opcode ⇒ returnPCs = pc +≈: returnPCs
+                case _ ⇒ /*nothing to do*/
+            }
+            pc = instruction.indexOfNextInstruction(pc, code)
+        }
+        Some(returnPCs)
+    }
+}
+
+object MethodCompletionInstruction {
+
+    def unapply(i: Instruction): Boolean = {
+        (i.opcode: @switch) match {
+            case ATHROW.opcode |
+                RETURN.opcode |
+                ARETURN.opcode |
+                IRETURN.opcode | LRETURN.opcode | FRETURN.opcode | DRETURN.opcode ⇒ true
+            case _ ⇒ false
+        }
+
+    }
+}
+
+object NoMethodCompletionInstruction {
+
+    def unappy(i: Instruction): Boolean = !MethodCompletionInstruction.unapply(i)
 
 }

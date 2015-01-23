@@ -122,7 +122,7 @@ package object ai {
      *
      * The range of standard value origins is: [-257,65535]. Hence, whenever a value of
      * type `ValueOrigin` is required/is expected it is possible to use a value with
-     * type `PC` unless the program counters identifies the start of a subroutine
+     * type `PC` unless the program counter identifies the start of a subroutine
      * ([[SUBROUTINE_START]], [[SUBROUTINE_END]], [[SUBROUTINE]]).
      *
      * Recall that the maximum size of the method

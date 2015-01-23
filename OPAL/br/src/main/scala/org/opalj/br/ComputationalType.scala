@@ -35,13 +35,13 @@ package br
  * (cf. JVM Spec. 2.11.1 Types and the Java Virtual Machine).
  */
 sealed abstract class ComputationalType(
-        computationTypeCategory: ComputationalTypeCategory) {
+        val computationalTypeCategory: ComputationalTypeCategory) {
 
-    def operandSize = computationTypeCategory.operandSize
+    def operandSize = computationalTypeCategory.operandSize
 
     def isComputationalTypeReturnAddress: Boolean
 
-    def category = computationTypeCategory.id
+    def category = computationalTypeCategory.id
 
 }
 case object ComputationalTypeInt

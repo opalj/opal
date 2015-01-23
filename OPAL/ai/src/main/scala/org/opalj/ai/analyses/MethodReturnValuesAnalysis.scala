@@ -68,7 +68,7 @@ object MethodReturnValuesAnalysis {
     def doAnalyze(
         theProject: SomeProject,
         isInterrupted: () ⇒ Boolean,
-        createDomain: (InterruptableAI[Domain], Method) ⇒ Domain with RecordReturnedValue): MethodReturnValueInformation = {
+        createDomain: (InterruptableAI[Domain], Method) ⇒ Domain with RecordReturnedValueInfrastructure): MethodReturnValueInformation = {
 
         val results = new ConcurrentHashMap[Method, Option[Domain#DomainValue]]
         val candidates = new AtomicInteger(0)

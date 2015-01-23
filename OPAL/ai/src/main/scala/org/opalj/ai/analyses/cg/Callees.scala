@@ -48,7 +48,7 @@ trait Callees {
 
     def cache: CallGraphCache[MethodSignature, Set[Method]]
 
-    @inline protected[this] def callees(
+    @inline def callees(
         declaringClassType: ObjectType,
         name: String,
         descriptor: MethodDescriptor): Set[Method] = {

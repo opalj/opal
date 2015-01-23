@@ -27,41 +27,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bugpicker
-package analysis
+package ai
+package domain
+package la
 
-import java.net.URL
-import org.opalj.br.analyses.Project
+import scala.collection.Set
+
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.ai.CorrelationalDomain
-import org.opalj.ai.domain
+import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.FieldValueInformation
+import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.ai.analyses.MethodReturnValueInformation
-import org.opalj.br.MethodSignature
 import org.opalj.ai.analyses.cg.CallGraphCache
+import org.opalj.br.MethodSignature
 
 /**
- * The domain that is used to identify the issues.
+ * A default configuration of a Domain that uses - in particular - the domains implemented
+ * in package `la`.
  *
  * @author Michael Eichberg
  */
-class BugPickerAnalysisDomain(
-    override val project: Project[URL],
-    val fieldValueInformation: FieldValueInformation,
-    val methodReturnValueInformation: MethodReturnValueInformation,
-    val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    override val method: Method,
-    override val maxCardinalityOfIntegerRanges: Long = 16l)
+class DefaultDomain(
+    val project: SomeProject,
+    val classFile: ClassFile,
+    override val method: Method)
         extends CorrelationalDomain
         with domain.DefaultDomainValueBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues
         //with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.la.RefinedTypeLevelFieldAccessInstructions
+        with RefinedTypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
-        with domain.la.RefinedTypeLevelInvokeInstructions
-        with domain.SpecialMethodsHandling
+        with RefinedTypeLevelInvokeInstructions
         //with domain.l1.DefaultReferenceValuesBinding
         with domain.l1.DefaultClassValuesBinding
         //with domain.l1.DefaultStringValuesBinding
@@ -82,5 +82,15 @@ class BugPickerAnalysisDomain(
         // an exception (such as div by zero, a failing checkcast, a method call that
         // always fails etc.)
         with domain.RecordCFG
-        with domain.l1.RecordAllThrownExceptions
+        with domain.l1.RecordAllThrownExceptions {
 
+    override val maxCardinalityOfIntegerRanges: Long = 16l
+
+    val fieldValueInformation: FieldValueInformation = project.get(FieldValuesKey)
+
+    val methodReturnValueInformation: MethodReturnValueInformation = project.get(MethodReturnValuesKey)
+
+    val cache: CallGraphCache[MethodSignature, Set[Method]] =
+        new CallGraphCache[MethodSignature, Set[Method]](project)
+
+}

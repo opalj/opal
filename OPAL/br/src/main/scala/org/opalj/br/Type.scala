@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -1176,6 +1176,26 @@ object ObjectType {
             fqn
     }
 
+    /**
+     * The package name of this type. The package name does not include
+     * a final package separator char ("/").
+     *
+     * E.g.,
+     * {{{
+     * scala> val os = org.opalj.br.ObjectType("java/lang/String")
+     * os: org.opalj.br.ObjectType = ObjectType(java/lang/String)
+     *
+     * scala> os.packageName
+     * res1: String = java/lang
+     *
+     * scala> os.simpleName
+     * res2: String = String
+     *
+     * scala> os.toJava
+     * res3: String = java.lang.String
+     *
+     * }}}
+     */
     def packageName(fqn: String): String = {
         val index = fqn.lastIndexOf('/')
         if (index == -1)
@@ -1204,6 +1224,8 @@ object ObjectType {
     require(String.id == StringId)
 
     final val Class = ObjectType("java/lang/Class")
+    final val System = ObjectType("java/lang/System")
+
     final val Throwable = ObjectType("java/lang/Throwable")
     final val Error = ObjectType("java/lang/Error")
     final val Exception = ObjectType("java/lang/Exception")
@@ -1216,7 +1238,7 @@ object ObjectType {
     final val LambdaMetafactory = ObjectType("java/lang/invoke/LambdaMetafactory")
     final val CallSite = ObjectType("java/lang/invoke/CallSite")
 
-    // Exceptions and errors that may be thrown by the JVM (i.e., instances of these 
+    // Exceptions and errors that may be thrown by the JVM (i.e., instances of these
     // exceptions may be created at runtime by the JVM)
     final val IndexOutOfBoundsException = ObjectType("java/lang/IndexOutOfBoundsException")
     final val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
@@ -1233,7 +1255,7 @@ object ObjectType {
     final val ClassNotFoundException = ObjectType("java/lang/ClassNotFoundException")
 
     // the following types are relevant when checking the subtype relation between
-    // two reference types where the subtype is an array type 
+    // two reference types where the subtype is an array type
     final val Serializable = ObjectType("java/io/Serializable")
     final val Cloneable = ObjectType("java/lang/Cloneable")
 
@@ -1284,12 +1306,8 @@ object ObjectType {
 
     def unboxValue(wrapperType: Type): Array[Instruction] = {
         val wid = wrapperType.id
-        if (wid >= Boolean.id && wid <= Double.id)
-            unboxInstructions(wid)
-        else
-            throw new UnsupportedOperationException(
-                s"unboxing ${wrapperType.toJava} values is not supported"
-            )
+        assert(wid >= Boolean.id && wid <= Double.id)
+        unboxInstructions(wid)
     }
 
     /**
