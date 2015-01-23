@@ -97,28 +97,32 @@ function toggleUnusedFlags() {
     });
 }
 
-
-function trimLongExceptionNames() {
+/* removes the exception name, if the containing element (span) would overlap to the next
+section of the document */
+function removeLongExceptionNames() {
 
 	var exceptions = document.querySelectorAll('td.exception');
 	exceptions.forEach(function(e) {
 		var span = e.querySelector('span');
 		if (span != null) {
 			var tbody = span.parentNode.parentNode.parentNode;
-			
-			// if the offset+width of the span is greater than offset+height of table body
+
+			// if the totalOffset+width of the span is greater than totalOffset+height of table body
 			// it would overlap to the next section (exception table)
-			if (offset(span).top+span.clientWidth > offset(tbody).top+tbody.clientHeight) {
+			if (totalOffset(span).top+span.clientWidth > totalOffset(tbody).top+tbody.clientHeight) {
 				span.innerHTML = span.getAttribute("data-exception-index") + ': ...';
-			}		
-			if (offset(span).top+span.clientWidth > offset(tbody).top+tbody.clientHeight) {
+			}
+			if (totalOffset(span).top+span.clientWidth > totalOffset(tbody).top+tbody.clientHeight) {
 				span.innerHTML = span.getAttribute("data-exception-index") + ':';
 			}
 		}
 	});
 }
 
-function offset(elem) {
+/* computes the offset of an HTMLElement to the top/left corner of the document
+in contrast to HTMLElement.offsetLeft/offsetTop which compute the offset relative
+to their HTMLElement.offsetParent node. */
+function totalOffset(elem) {
 	if(!elem) elem = this;
 
 	var x = elem.offsetLeft;
@@ -132,17 +136,18 @@ function offset(elem) {
 	return { left: x, top: y };
 }
 
-function executeOnMethodBodyLoad() {
-	trimLongExceptionNames();
+// function is called when a details.method_body is set to open, i.e. the methods instructions can be seen
+function executeOnMethodBodyOpen() {
+	removeLongExceptionNames();
 }
 
 document.addEventListener("DOMContentLoaded", function(event) {
     toggleUnusedFlags();
 
-	// basically adds a listener to details that is called when it is opened
+	// adds a listener to details.method_body that is called when its attributes change
 	var targets = document.querySelectorAll('details.method_body');
 	var observer = new MutationObserver(function(mutations) {
-		executeOnMethodBodyLoad();
+		executeOnMethodBodyOpen();
 	});
 	var config = { attributes: true, childList: false, characterData: false};
 	targets.forEach(function(target) {

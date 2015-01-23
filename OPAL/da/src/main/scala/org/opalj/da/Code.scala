@@ -65,7 +65,7 @@ case class Code(instructions: Array[Byte]) {
                 <th>Instruction</th>
                 {
                     if (exceptions.nonEmpty)
-                        <th colspan={ exceptions.size.toString } class="exceptionHeader">Exceptions</th>
+                        <th class="exception_header">Exceptions</th> :: exceptions.tail.foldLeft(List.empty[Node])((e, nl) ⇒ <th class="exception_header"></th> :: e)
                     else
                         scala.xml.NodeSeq.Empty
                 }
@@ -573,24 +573,24 @@ case class Code(instructions: Array[Byte]) {
                 i ← (0 until exceptionHandler.start_pc)
                 if i != exceptionHandler.handler_pc
             } {
-                exceptions(index)(i) = <td></td>
+                exceptions(index)(i) = <td class="exception_empty"></td>
             }
 
             for {
                 i ← (exceptionHandler.end_pc until instructions.size)
                 if i != exceptionHandler.handler_pc
             } {
-                exceptions(index)(i) = <td></td>
+                exceptions(index)(i) = <td class="exception_empty"></td>
             }
 
             var classes = "exception"
 
             if (exceptionPCStart == exceptionHandler.handler_pc)
-                classes += " handlerOverlap"
+                classes += " handler_overlap"
             else
                 exceptions(index)(exceptionHandler.handler_pc) =
                     <td class="exception">
-                        <div title={ exceptionName } class="exceptionHandler" alt="the start of the exception handler"></div>
+                        <div title={ exceptionName } class="exception_handler" alt="the start of the exception handler"></div>
                     </td>
 
             exceptions(index)(exceptionPCStart) =
