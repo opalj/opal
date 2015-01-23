@@ -40,7 +40,7 @@ package li
 trait DefaultPreciseIntegerValues
         extends DefaultDomainValueBinding
         with PreciseIntegerValues {
-    domain: IntegerValuesFactory with VMLevelExceptionsFactory with Configuration ⇒
+    domain: IntegerValuesFactory with ExceptionsFactory with Configuration ⇒
 
     /**
      * @note The functionality to propagate a constraint crucially depends on

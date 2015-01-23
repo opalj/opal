@@ -28,22 +28,22 @@
  */
 package org.opalj
 package av
+package checking
 
 import scala.language.implicitConversions
-
 import java.net.URL
-
 import scala.util.matching.Regex
 import scala.collection.{ Map ⇒ AMap, Set ⇒ ASet }
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
 import scala.Console.{ GREEN, RED, BLUE, RESET }
-
 import org.opalj.util.PerformanceEvaluation.{ ns2sec, time, run }
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.{ ClassHierarchy, Project }
 import org.opalj.de._
+import org.opalj.io.processSource
 
 /**
  * A specification of a project's architectural constraints.
@@ -64,10 +64,14 @@ import org.opalj.de._
  */
 class Specification(
         val project: Project[URL],
-        private[this] val useAnsiColors: Boolean) {
+        val useAnsiColors: Boolean) {
 
     private[this] def ifUseAnsiColors(ansiEscapeSequence: String): String =
         if (useAnsiColors) ansiEscapeSequence else ""
+
+    def this(project: Project[URL]) {
+        this(project, false)
+    }
 
     def this(
         classFiles: Traversable[(ClassFile, URL)],
@@ -83,8 +87,7 @@ class Specification(
                     (if (useAnsiColors) RESET else ""))
                 project
             },
-            useAnsiColors
-        )
+            useAnsiColors)
     }
 
     @volatile
@@ -139,13 +142,10 @@ class Specification(
         ensembleSymbol: Symbol)(
             sourceElementMatcher: SourceElementsMatcher): Unit = {
         if (ensembles.contains(ensembleSymbol))
-            throw new SpecificationError("The ensemble is already defined: "+ensembleSymbol)
+            throw SpecificationError("the ensemble is already defined: "+ensembleSymbol)
 
         theEnsembles += (
-            (
-                ensembleSymbol,
-                (sourceElementMatcher, Set[VirtualSourceElement]())
-            )
+            (ensembleSymbol, (sourceElementMatcher, Set.empty[VirtualSourceElement]))
         )
     }
 
@@ -183,20 +183,18 @@ class Specification(
     @throws(classOf[SpecificationError])
     implicit def StringToSourceElementMatcher(matcher: String): SourceElementsMatcher = {
         if (matcher endsWith ".*")
-            new PackageNameBasedMatcher(matcher.substring(0, matcher.length() - 2).replace('.', '/'))
+            PackageMatcher(matcher.substring(0, matcher.length() - 2).replace('.', '/'))
         else if (matcher endsWith ".**")
-            new PackageNameBasedMatcher(matcher.substring(0, matcher.length() - 3).replace('.', '/'), true)
+            PackageMatcher(matcher.substring(0, matcher.length() - 3).replace('.', '/'), true)
         else if (matcher endsWith "*")
-            new ClassMatcher(matcher.substring(0, matcher.length() - 1).replace('.', '/'), true)
+            SimpleClassMatcher(matcher.substring(0, matcher.length() - 1).replace('.', '/'), true)
         else if (matcher.indexOf('*') == -1)
-            new ClassMatcher(matcher.replace('.', '/'))
+            SimpleClassMatcher(matcher.replace('.', '/'))
         else
-            throw new SpecificationError("unsupported pattern: "+matcher);
+            throw SpecificationError("unsupported matcher pattern: "+matcher);
     }
 
-    def classes(matcher: Regex): SourceElementsMatcher = {
-        new RegexClassMatcher(matcher)
-    }
+    def classes(matcher: Regex): SourceElementsMatcher = SimpleClassMatcher(matcher)
 
     /**
      * Returns the class files stored at the given location.
@@ -223,8 +221,7 @@ class Specification(
                 (incomingElement, dependencyType) ← incomingDependencies(targetEnsembleElement)
                 if !(
                     sourceEnsembleElements.contains(incomingElement) ||
-                    targetEnsembleElements.contains(incomingElement)
-                )
+                    targetEnsembleElements.contains(incomingElement))
             } yield {
                 SpecificationViolation(
                     project,
@@ -254,8 +251,7 @@ class Specification(
             val unknownEnsembles = targetEnsembles.filterNot(ensembles.contains(_))
             if (unknownEnsembles.nonEmpty)
                 throw SpecificationError(
-                    unknownEnsembles.mkString("unknown ensemble(s): ", ",", "")
-                )
+                    unknownEnsembles.mkString("unknown ensemble(s): ", ",", ""))
 
             val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
             val allAllowedLocalTargetSourceElements =
@@ -315,8 +311,7 @@ class Specification(
             val unknownEnsembles = targetEnsembles.filterNot(ensembles.contains(_))
             if (unknownEnsembles.nonEmpty)
                 throw SpecificationError(
-                    unknownEnsembles.mkString("unknown ensemble(s): ", ",", "")
-                )
+                    unknownEnsembles.mkString("unknown ensemble(s): ", ",", ""))
 
             val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
             val notAllowedTargetSourceElements =
@@ -451,8 +446,7 @@ class Specification(
                     theIncomingDependencies.update(
                         target,
                         theIncomingDependencies.getOrElse(target, Set.empty) +
-                            ((source, dType))
-                    )
+                            ((source, dType)))
                 }
             }
         } { executionTime ⇒
@@ -490,8 +484,8 @@ class Specification(
 
             unmatchedSourceElements = allSourceElements -- matchedSourceElements
 
-            Console.println("   => Matched source elements: "+matchedSourceElements.size)
-            Console.println("   => Other source elements: "+unmatchedSourceElements.size)
+            println("   => Matched source elements: "+matchedSourceElements.size)
+            println("   => Other source elements: "+unmatchedSourceElements.size)
         } { executionTime ⇒
             println(ifUseAnsiColors(GREEN)+
                 "3. Determing the extension of the ensembles finished in "+
@@ -503,7 +497,7 @@ class Specification(
         time {
             val result =
                 for (dependencyChecker ← dependencyCheckers.par) yield {
-                    Console.println("   Checking: "+dependencyChecker)
+                    println("   Checking: "+dependencyChecker)
                     for (violation ← dependencyChecker.violations) yield {
                         //println(violation)
                         violation
@@ -520,7 +514,7 @@ class Specification(
 }
 object Specification {
 
-    def SourceDirectory(directoryName: String): Seq[(ClassFile, URL)] = {
+    def ProjectDirectory(directoryName: String): Seq[(ClassFile, URL)] = {
         val file = new java.io.File(directoryName)
         if (!file.exists)
             throw SpecificationError("the specified directory does not exist: "+directoryName)
@@ -532,7 +526,7 @@ object Specification {
         Project.Java8ClassFileReader.ClassFiles(file)
     }
 
-    def SourceJAR(jarName: String): Seq[(ClassFile, URL)] = {
+    def ProjectJAR(jarName: String): Seq[(ClassFile, URL)] = {
         val file = new java.io.File(jarName)
         if (!file.exists)
             throw SpecificationError("the specified directory does not exist: "+jarName)
@@ -542,6 +536,73 @@ object Specification {
             throw SpecificationError("the specified jar file is a directory: "+jarName)
 
         Project.Java8ClassFileReader.ClassFiles(file)
+    }
+
+    /**
+     * Load all jar files.
+     */
+    def ProjectJARs(jarNames: Seq[String]): Seq[(ClassFile, URL)] = {
+        jarNames.map(ProjectJAR(_)).flatten
+    }
+
+    /**
+     * Loads all class files of the specified jar file using the library class file reader.
+     * (I.e., the all method implementations are skipped.)
+     *
+     * @param jarName The name of a jar file.
+     */
+    def LibraryJAR(jarName: String): Seq[(ClassFile, URL)] = {
+        val file = new java.io.File(jarName)
+        if (!file.exists)
+            throw SpecificationError("the specified directory does not exist: "+jarName)
+        if (!file.canRead)
+            throw SpecificationError("cannot read the specified JAR: "+jarName)
+        if (file.isDirectory)
+            throw SpecificationError("the specified jar file is a directory: "+jarName)
+
+        Project.Java8LibraryClassFileReader.ClassFiles(file)
+    }
+
+    /**
+     * Load all jar files using the library class loader.
+     */
+    def LibraryJARs(jarNames: Seq[String]): Seq[(ClassFile, URL)] = {
+        jarNames.map(LibraryJAR(_)).flatten
+    }
+
+    /**
+     * Returns a list of paths contained inside the given classpath file.
+     * A classpath file should contain paths as text seperated by a path-separator character.
+     * On UNIX systems, this character is <code>':'</code>; on Microsoft Windows systems it
+     * is <code>';'</code>.
+     *
+     * ===Example===
+     * /path/to/jar/library.jar:/path/to/library/example.jar:/path/to/library/example2.jar
+     *
+     * Classpath files should be used to prevent absolute paths in tests.
+     */
+    def ClassPath(fileName: String): Iterable[String] = {
+        processSource(scala.io.Source.fromFile(new java.io.File(fileName))) { s ⇒
+            s.getLines().map(_.split(java.io.File.pathSeparatorChar)).flatten.toSet
+        }
+    }
+
+    /**
+     * Returns the path to the given JAR from the given list of paths.
+     */
+    def PathToJAR(paths: Iterable[String], jarName: String): String = {
+        paths.collectFirst {
+            case p if (p.endsWith(jarName)) ⇒ p
+        }.getOrElse {
+            throw SpecificationError(s"cannot find a path to the specified JAR: $jarName.")
+        }
+    }
+
+    /**
+     * Returns a list of paths to the given JARs from the given list of paths.
+     */
+    def PathToJARs(paths: Iterable[String], jarNames: Iterable[String]): Iterable[String] = {
+        jarNames.foldLeft(Set.empty[String])((c, n) ⇒ c + PathToJAR(paths, n))
     }
 }
 

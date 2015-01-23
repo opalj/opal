@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -109,7 +109,7 @@ class DependencyExtractor(
 
                 case EnclosingMethod.KindId ⇒ {
                     val EnclosingMethod(enclosingClass, name, descriptor) = attribute
-                    // Check whether the enclosing method attribute refers to an enclosing 
+                    // Check whether the enclosing method attribute refers to an enclosing
                     // method or an enclosing class.
                     if (name.isDefined /*&& descriptor.isDefined*/ )
                         dependencyProcessor.processDependency(
@@ -159,7 +159,7 @@ class DependencyExtractor(
                 case SourceDebugExtension.KindId ⇒ /*do nothing*/
 
                 // The Java 7 BootstrapMethodTable Attribute is resolved and related
-                // dependencies will be extracted when the respective invokedynamic 
+                // dependencies will be extracted when the respective invokedynamic
                 // instructions are processed.
 
                 // We know nothing about:
@@ -267,7 +267,7 @@ class DependencyExtractor(
         // Code, Exceptions, Synthetic, Signature, Deprecated, RuntimeVisibleAnnotations,
         // RuntimeInvisibleAnnotations, RuntimeVisibleParameterAnnotations,
         // RuntimeInvisibleParameterAnnotations, and AnnotationDefault,
-        // RuntimeVisibleTypeAnnotations, RuntimeInvisibleTypeAnnotations, 
+        // RuntimeVisibleTypeAnnotations, RuntimeInvisibleTypeAnnotations,
         // MethodParameters
 
         if (method.body.isDefined) {
@@ -308,7 +308,7 @@ class DependencyExtractor(
                             process(vm, _, ANNOTATED_WITH)
                         }
 
-                    // The LineNumberTable and StackMapTable attributes do not define 
+                    // The LineNumberTable and StackMapTable attributes do not define
                     // relevant dependencies.
                     case StackMapTable.KindId   ⇒ /* Do Nothing */
                     case LineNumberTable.KindId ⇒ /* Do Nothing */
@@ -412,16 +412,14 @@ class DependencyExtractor(
          * parameter is set to `true`.
          */
         def processFormalTypeParameters(
-            formalTypeParameters: Option[List[FormalTypeParameter]]): Unit = {
-            formalTypeParameters foreach { list ⇒
-                for (ftp ← list) {
-                    val classBound = ftp.classBound
-                    if (classBound.isDefined)
-                        processSignature(declaringElement, classBound.get, true)
-                    val interfaceBound = ftp.interfaceBound
-                    if (interfaceBound.isDefined)
-                        processSignature(declaringElement, interfaceBound.get, true)
-                }
+            formalTypeParameters: List[FormalTypeParameter]): Unit = {
+            for (ftp ← formalTypeParameters) {
+                val classBound = ftp.classBound
+                if (classBound.isDefined)
+                    processSignature(declaringElement, classBound.get, true)
+                val interfaceBound = ftp.interfaceBound
+                if (interfaceBound.isDefined)
+                    processSignature(declaringElement, interfaceBound.get, true)
             }
         }
 
@@ -448,16 +446,13 @@ class DependencyExtractor(
          *
          * @param typeArguments The option of a type argument list that should be processed.
          */
-        def processTypeArguments(typeArguments: Option[List[TypeArgument]]): Unit = {
-            typeArguments foreach { args ⇒
-                args foreach {
+        def processTypeArguments(typeArguments: List[TypeArgument]): Unit = {
+            typeArguments foreach {
+                case pta: ProperTypeArgument ⇒
+                    processSignature(declaringElement, pta.fieldTypeSignature, true)
 
-                    case pta: ProperTypeArgument ⇒
-                        processSignature(declaringElement, pta.fieldTypeSignature, true)
-
-                    case _ ⇒
-                    // Wildcards refer to no type, hence there is nothing to do in this case.
-                }
+                case _ ⇒
+                // Wildcards refer to no type, hence there is nothing to do in this case.
             }
         }
 
@@ -493,7 +488,7 @@ class DependencyExtractor(
                 processSignature(declaringElement, typeSignature)
 
             case _ ⇒
-            // VoidType, TypeVariableSignature and Wildcard refer to no concrete 
+            // VoidType, TypeVariableSignature and Wildcard refer to no concrete
             // type, hence there is nothing to do in this case.
         }
     }
@@ -935,7 +930,7 @@ class DependencyExtractor(
                 processDependency(source, bt, dType)
             case at: ArrayType ⇒
                 processDependency(source, at, dType)
-                // Recursive call for the dependency on the element type, 
+                // Recursive call for the dependency on the element type,
                 // which is either an ObjectType or a BaseType.
                 processDependency(source, at.elementType, dType)
             case _ /*vt: VoidType*/ ⇒

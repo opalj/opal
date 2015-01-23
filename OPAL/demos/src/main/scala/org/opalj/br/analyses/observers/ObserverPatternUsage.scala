@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -62,8 +62,8 @@ object ObserverPatternUsage extends AnalysisExecutor {
                         filter(_ != ObjectType.Object).
                         map(_.toJava).mkString(", "))
             }
-            val appClassFiles = project.projectClassFiles.toSeq
-            val libClassFiles = project.libraryClassFiles.toSeq
+            val appClassFiles = project.allProjectClassFiles
+            val libClassFiles = project.allLibraryClassFiles
             println("Application:\n\tClasses:"+appClassFiles.size)
             println("\tMethods:"+appClassFiles.foldLeft(0)(_ + _.methods.filter(!_.isSynthetic).size))
             println("\tNon-final Fields:"+appClassFiles.foldLeft(0)(_ + _.fields.filter(!_.isFinal).size))
@@ -75,8 +75,8 @@ object ObserverPatternUsage extends AnalysisExecutor {
             val classHierarchy = project.classHierarchy
             import classHierarchy.allSubtypes
 
-            // PART 0 - Identifying Observers 
-            // Collect all classes that end with "Observer" or "Listener" or which are 
+            // PART 0 - Identifying Observers
+            // Collect all classes that end with "Observer" or "Listener" or which are
             // subclasses of them.
             var allObserverInterfaces: Set[ObjectType] = Set.empty
             var appObserverInterfaces: Set[ObjectType] = Set.empty
@@ -92,11 +92,11 @@ object ObserverPatternUsage extends AnalysisExecutor {
                         observers ++= observerTypes
                         observerTypes foreach { objectType ⇒
                             // If this class is "just" an interface and this type is later
-                            // used in the code, it is extremely likely that we have a 
+                            // used in the code, it is extremely likely that we have a
                             // relationship to the pattern; the error margin is very low.
-                            // This set is relevant to rule out cases such as identifying 
-                            // a class as being observable, because it has a field of type, 
-                            // e.g., JButton (which is an observer, but for different 
+                            // This set is relevant to rule out cases such as identifying
+                            // a class as being observable, because it has a field of type,
+                            // e.g., JButton (which is an observer, but for different
                             // elements.)
                             if (classHierarchy.isInterface(objectType)) {
                                 allObserverInterfaces += objectType
@@ -113,7 +113,7 @@ object ObserverPatternUsage extends AnalysisExecutor {
             }
 
             val allObserverTypes = allObserverInterfaces ++
-                // we also want to include classes such as WindowAdapater which are 
+                // we also want to include classes such as WindowAdapater which are
                 // pure implementations of an observer interface
                 (allObservers filter { observerType ⇒
                     if (project.classFile(observerType).isDefined) { // check that the project is complete

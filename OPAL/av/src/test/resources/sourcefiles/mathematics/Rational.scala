@@ -26,38 +26,33 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package av
-
-import scala.collection.Set
-
-import br._
-import br.analyses.SomeProject
+package mathematics
 
 /**
- * @author Michael Eichberg
+ * @author Samuel Beracasa
  */
-case class ClassMatcher(
-    className: String,
-    matchPrefix: Boolean = false)
-        extends SourceElementsMatcher {
+class Rational(val numer: Number, val denom: Number) extends Operations {
 
-    require(className.indexOf('*') == -1)
-    require(className.indexOf('.') == -1)
+    //Rational operator Number = Rational
+    def +(other: Number) =
+        new Rational(((other / this.denom) + this.numer), this.denom)
+    def -(other: Number) =
+        new Rational((other / this.denom) - this.numer, this.denom)
+    def *(other: Number) =
+        new Rational(other * this.numer, this.denom)
+    def /(other: Number) =
+        new Rational(this.numer, this.denom / other)
 
-    def extension(project: SomeProject): Set[VirtualSourceElement] = {
+    //Rational operator Rational = Rational
+    def +(other: Rational) =
+        new Rational((this.numer / other.denom) + (other.numer / this.denom), other.denom * this.denom)
+    def -(other: Rational) =
+        new Rational((this.numer / other.denom) - (other.numer / this.denom), other.denom * this.denom)
+    def *(other: Rational) =
+        new Rational((this.numer * other.numer), (other.denom / this.denom))
+    def /(other: Rational) =
+        new Rational((this.numer * other.denom), (other.numer * this.denom))
 
-        val matchedClassFiles =
-            project.classFiles filter { classFile ⇒
-                {
-                    val otherClassName = classFile.thisType.fqn
-                    otherClassName.startsWith(className) && (
-                        matchPrefix ||
-                        otherClassName.length == className.length)
-                }
-            }
-        matchCompleteClasses(matchedClassFiles)
-    }
-
-    override def toString = "\""+className+"\""
+    //Print
+    override def toString() = numer.toString+"/"+denom.toString
 }

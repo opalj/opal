@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -44,6 +44,11 @@ abstract class LoadLocalVariableInstruction extends Instruction {
      * of the operand stack.
      */
     def lvIndex: Int
+
+    /**
+     * The computational type of the local variable.
+     */
+    def computationalType: ComputationalType
 
     final def runtimeExceptions: List[ObjectType] = Nil
 
@@ -89,4 +94,11 @@ object LoadLocalVariableInstruction {
             case DoubleType.id  ⇒ DLOAD.canonicalRepresentation(lvIndex)
             case _              ⇒ ALOAD.canonicalRepresentation(lvIndex)
         }
+
+    /**
+     * Extracts the index of the accessed local variable.
+     */
+    def unapply(li: LoadLocalVariableInstruction): Option[(ComputationalType, Int)] =
+        Some((li.computationalType, li.lvIndex))
+
 }

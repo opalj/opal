@@ -61,9 +61,11 @@ class BugPickerAnalysisDomain(
         with domain.la.RefinedTypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
         with domain.la.RefinedTypeLevelInvokeInstructions
+        with domain.SpecialMethodsHandling
         //with domain.l1.DefaultReferenceValuesBinding
         with domain.l1.DefaultClassValuesBinding
         //with domain.l1.DefaultStringValuesBinding
+        with domain.l1.NullPropertyRefinement
         with domain.l1.DefaultIntegerRangeValues
         with domain.l1.MaxArrayLengthRefinement
         with domain.l1.ConstraintsBetweenIntegerValues
@@ -78,7 +80,7 @@ class BugPickerAnalysisDomain(
         with domain.ProjectBasedClassHierarchy
         // the following two are required to detect instructions that always throw
         // an exception (such as div by zero, a failing checkcast, a method call that
-        // always fails etc.
+        // always fails etc.)
         with domain.RecordCFG
         with domain.l1.RecordAllThrownExceptions
 

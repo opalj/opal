@@ -114,7 +114,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
         override def hashCode: Int = super.hashCode * 41 + value.hashCode()
 
         override def toString(): String =
-            s""""String(origin=$origin;value="$value";t=$t)"""
+            s"""String(origin=$origin;value="$value";t=$t)"""
 
     }
 

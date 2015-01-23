@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -89,7 +89,7 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * point to the same instance. The latter is, e.g., trivially the case when both
      * values have a different concrete type. Otherwise `Unknown` is returned.
      *
-     * If both values are representing the `null` value the [[org.opalj.util.Answer]] is `Yes`.
+     * If both values are representing the `null` value the [[org.opalj.Answer]] is `Yes`.
      *
      * @param value1 A value of computational type reference.
      * @param value2 A value of computational type reference.
@@ -102,7 +102,7 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
      * point to the same instance. The latter is, e.g., trivially the case when both
      * values have a different concrete type. Otherwise `Unknown` is returned.
      *
-     * If both values are representing the `null` value the [[org.opalj.util.Answer]] is `Yes`.
+     * If both values are representing the `null` value the [[org.opalj.Answer]] is `Yes`.
      *
      * @param value1 A value of computational type reference.
      * @param value2 A value of computational type reference.
@@ -118,6 +118,39 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
 
     //
     // W.r.t Reference Values
+
+    /**
+     * Called by the framework when the top-most operand stack value has to be null, but
+     * a previous `isNull` check returned [[Unknown]].
+     * E.g., after a [[org.opalj.br.instructions.CHECKCAST]] that fails unless the
+     * value is "null".
+     *
+     * '''This method can be ignored'''; it is e.g., used by
+     * instructions.
+     *
+     * A domain that is able to identify aliases can use this information to propagate
+     * the information to the other aliases.
+     */
+    def refSetIsNull(pc: PC, operands: Operands, locals: Locals): (Operands, Locals) =
+        (operands, locals)
+
+    /**
+     * Called by the abstract interpreter when '''the type bound of the top most stack
+     * value needs to be refined'''. This method is only called by the abstract
+     * interpreter iff an immediately preceding subtype query (typeOf(value) <: bound)
+     * returned `Unknown`. '''This method must not be ignored – w.r.t. refining the top-most
+     * stack value'''; it is e.g., used by [[org.opalj.br.instructions.CHECKCAST]]
+     * instructions.
+     *
+     * A domain that is able to identify aliases can use this information to propagate
+     * the information to the other aliases.
+     */
+    /*abstract*/ def refSetUpperBound(
+        pc: PC,
+        bound: ReferenceType,
+        operands: Operands,
+        locals: Locals): (Operands, Locals)
+
     /**
      * Called by the framework when the value is known to be `null`/has to be `null`.
      * E.g., after a comparison with `null` (IFNULL/IFNONNULL) OPAL-AI knows that the
@@ -167,23 +200,6 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
         operands: Operands,
         locals: Locals): (Operands, Locals) = (operands, locals)
     private[ai] final def RefAreNotEqual = refEstablishAreNotEqual _
-
-    /**
-     * Called by the abstract interpreter when '''the type bound of the top most stack
-     * value needs to be refined'''. This method is only called by the abstract
-     * interpreter iff an immediately preceding subtype query (typeOf(value) <: bound)
-     * returned `Unknown`. '''This method must not be ignored – w.r.t. refining the top-most
-     * stack value'''; it is e.g., used by [[org.opalj.br.instructions.CHECKCAST]]
-     * instructions.
-     *
-     * A domain that is able to identify aliases can use this information to propagate
-     * the information to the other aliases.
-     */
-    /*abstract*/ def refEstablishUpperBound(
-        pc: PC,
-        bound: ReferenceType,
-        operands: Operands,
-        locals: Locals): (Operands, Locals)
 
     // -----------------------------------------------------------------------------------
     //

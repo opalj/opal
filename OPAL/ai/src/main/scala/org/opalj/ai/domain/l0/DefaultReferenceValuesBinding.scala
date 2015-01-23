@@ -38,12 +38,6 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 
-import org.opalj.ai.IntegerValuesDomain
-import org.opalj.ai.TypedValuesFactory
-import org.opalj.ai.domain.ClassHierarchy
-import org.opalj.ai.domain.Configuration
-import org.opalj.ai.domain.DefaultVMLevelExceptionsFactory
-
 /**
  * Default implementation for handling reference values.
  *
@@ -51,7 +45,7 @@ import org.opalj.ai.domain.DefaultVMLevelExceptionsFactory
  */
 trait DefaultReferenceValuesBinding
         extends DefaultTypeLevelReferenceValues
-        with DefaultVMLevelExceptionsFactory {
+        with DefaultExceptionsFactory {
     domain: IntegerValuesDomain with TypedValuesFactory with Configuration with ClassHierarchy ⇒
 
     type AReferenceValue = ReferenceValue

@@ -34,7 +34,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.Type
 import org.opalj.ai.domain._
-import org.opalj.ai.domain.RecordReturnedValue
+import org.opalj.ai.domain.RecordReturnedValueInfrastructure
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.analyses.cg.CallGraphCache
@@ -71,7 +71,7 @@ class BaseMethodReturnValuesAnalysisDomain(
         with l0.TypeLevelInvokeInstructions
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        with RecordReturnedValue {
+        with RecordReturnedValueInfrastructure {
 
     type ReturnedValue = DomainValue
 

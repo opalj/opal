@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -72,8 +72,7 @@ class SwingMethodInvokedInSwingThread[Source] extends FindRealBugsAnalysis[Sourc
         // objects from inside public static main() or methods containing "benchmark" in
         // their name.
         for {
-            classFile ← project.classFiles
-            if !project.isLibraryType(classFile)
+            classFile ← project.allProjectClassFiles
             method @ MethodWithBody(body) ← classFile.methods
             if (method.isPublic &&
                 method.isStatic &&

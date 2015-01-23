@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -51,6 +51,7 @@ import org.opalj.br.{ ObjectType, ArrayType }
 class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecution {
 
     final val IrrelevantPC = Int.MinValue
+    final val SomePC = 100000
 
     class LongSetsTestDomain(
         override val maxCardinalityOfLongSets: Int = Int.MaxValue)
@@ -482,32 +483,32 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v1 = LongSet(SortedSet(0l, 3l))
                 val v2 = LongSet(SortedSet(0l, 2l))
 
-                ladd(-1, v1, v2) should be(LongSet(SortedSet(0l, 2l, 3l, 5l)))
-                ladd(-1, v2, v1) should be(LongSet(SortedSet(0l, 2l, 3l, 5l)))
+                ladd(SomePC, v1, v2) should be(LongSet(SortedSet(0l, 2l, 3l, 5l)))
+                ladd(SomePC, v2, v1) should be(LongSet(SortedSet(0l, 2l, 3l, 5l)))
             }
 
             it("{-3,-1} + {-10,-2} => {-13,-11,-5,-3}") {
                 val v1 = LongSet(SortedSet(-3l, -1l))
                 val v2 = LongSet(SortedSet(-10l, -2l))
 
-                ladd(-1, v1, v2) should be(LongSet(SortedSet(-13l, -11l, -5l, -3l)))
-                ladd(-1, v2, v1) should be(LongSet(SortedSet(-13l, -11l, -5l, -3l)))
+                ladd(SomePC, v1, v2) should be(LongSet(SortedSet(-13l, -11l, -5l, -3l)))
+                ladd(SomePC, v2, v1) should be(LongSet(SortedSet(-13l, -11l, -5l, -3l)))
             }
 
             it("{-1,3} + {0,2} => {-1,1,3,5}") {
                 val v1 = LongSet(SortedSet(-1l, 3l))
                 val v2 = LongSet(SortedSet(0l, 2l))
 
-                ladd(-1, v1, v2) should be(LongSet(SortedSet(-1l, 1l, 3l, 5l)))
-                ladd(-1, v2, v1) should be(LongSet(SortedSet(-1l, 1l, 3l, 5l)))
+                ladd(SomePC, v1, v2) should be(LongSet(SortedSet(-1l, 1l, 3l, 5l)))
+                ladd(SomePC, v2, v1) should be(LongSet(SortedSet(-1l, 1l, 3l, 5l)))
             }
 
             it("{0} + LongValue => LongValue") {
                 val v1 = LongSet(SortedSet(0l))
                 val v2 = LongValue(-1)
 
-                ladd(-1, v1, v2) should be(LongValue(-1))
-                ladd(-1, v2, v1) should be(LongValue(-1))
+                ladd(SomePC, v1, v2) should be(LongValue(-1))
+                ladd(SomePC, v2, v1) should be(LongValue(-1))
             }
 
             it("{Long.MinValue,3} + {3,2} => {Long.MinValue+2,Long.MinValue+3,5,6}") {
@@ -515,8 +516,8 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v2 = LongSet(SortedSet(3l, 2l))
 
                 val expected = SortedSet(Long.MinValue + 2l, Long.MinValue + 3l, 5l, 6l)
-                ladd(-1, v1, v2) should be(LongSet(expected))
-                ladd(-1, v2, v1) should be(LongSet(expected))
+                ladd(SomePC, v1, v2) should be(LongSet(expected))
+                ladd(SomePC, v2, v1) should be(LongSet(expected))
             }
 
             it("{-3,-1} + {-3,Long.MaxValue} => {-6,-4,Long.MaxValue-3,Long.MaxValue-1}") {
@@ -524,8 +525,8 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v2 = LongSet(SortedSet(-3l, Long.MaxValue))
 
                 val expected = SortedSet(-6l, -4l, Long.MaxValue - 3l, Long.MaxValue - 1l)
-                ladd(-1, v1, v2) should be(LongSet(expected))
-                ladd(-1, v2, v1) should be(LongSet(expected))
+                ladd(SomePC, v1, v2) should be(LongSet(expected))
+                ladd(SomePC, v2, v1) should be(LongSet(expected))
             }
 
         }
@@ -593,21 +594,21 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v1 = LongSet(SortedSet(1l, 3l))
                 val v2 = LongSet(SortedSet(2l))
 
-                ldiv(-1, v1, v2) should be(ComputedValue(LongSet(SortedSet(0l, 1l))))
+                ldiv(SomePC, v1, v2) should be(ComputedValue(LongSet(SortedSet(0l, 1l))))
             }
 
             it("{1,3} / {1} => {1,3}") {
                 val v1 = LongSet(SortedSet(1l, 3l))
                 val v2 = LongSet(SortedSet(1l))
 
-                ldiv(-1, v1, v2) should be(ComputedValue(LongSet(SortedSet(1l, 3l))))
+                ldiv(SomePC, v1, v2) should be(ComputedValue(LongSet(SortedSet(1l, 3l))))
             }
 
             it("{1,3} / {0} => ThrowsException") {
                 val v1 = LongSet(SortedSet(1l, 3l))
                 val v2 = LongSet(SortedSet(0l))
 
-                val result = ldiv(-1, v1, v2)
+                val result = ldiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -619,14 +620,14 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v1 = LongSet(SortedSet(1l, 3l))
                 val v2 = LongSet(SortedSet(-1l))
 
-                ldiv(-1, v1, v2) should be(ComputedValue(LongSet(SortedSet(-3l, -1l))))
+                ldiv(SomePC, v1, v2) should be(ComputedValue(LongSet(SortedSet(-3l, -1l))))
             }
 
             it("LongValue / {0} => ThrowsException") {
-                val v1 = LongValue(-1)
+                val v1 = LongValue(SomePC)
                 val v2 = LongSet(SortedSet(0l))
 
-                val result = ldiv(-1, v1, v2)
+                val result = ldiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -635,10 +636,10 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
             }
 
             it("LongValue / LongValue => Value and ThrowsException") {
-                val v1 = LongValue(-1)
-                val v2 = LongValue(-1)
+                val v1 = LongValue(SomePC)
+                val v2 = LongValue(SomePC)
 
-                val result = ldiv(-1, v1, v2)
+                val result = ldiv(SomePC, v1, v2)
                 result.result should be { LongValue(-1) }
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -648,9 +649,9 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
 
             it("{-1,200} / LongValue => Value and ThrowsException") {
                 val v1 = LongSet(SortedSet(-1l, 200l))
-                val v2 = LongValue(-1)
+                val v2 = LongValue(SomePC)
 
-                val result = ldiv(-1, v1, v2)
+                val result = ldiv(SomePC, v1, v2)
                 result.result should be { LongValue(-1) }
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -662,24 +663,24 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v1 = LongSet(SortedSet(Long.MinValue, -1))
                 val v2 = LongSet(SortedSet(Long.MaxValue, Long.MaxValue))
 
-                ldiv(-1, v1, v2) should be(ComputedValue(LongSet(SortedSet(-1l, 0l))))
+                ldiv(SomePC, v1, v2) should be(ComputedValue(LongSet(SortedSet(-1l, 0l))))
             }
 
             it("{Long.MinValue,Long.MaxValue} / Long.MaxValue => {-1,1}") {
                 val v1 = LongSet(SortedSet(Long.MinValue, Long.MaxValue))
                 val v2 = LongSet(SortedSet(Long.MaxValue, Long.MaxValue))
 
-                ldiv(-1, v1, v2) should be(ComputedValue(LongSet(SortedSet(-1l, 1l))))
+                ldiv(SomePC, v1, v2) should be(ComputedValue(LongSet(SortedSet(-1l, 1l))))
             }
         }
 
         describe("the behavior of lrem") {
 
             it("LongValue % LongValue => LongValue + Exception") {
-                val v1 = LongValue(-1)
-                val v2 = LongValue(-1)
+                val v1 = LongValue(SomePC)
+                val v2 = LongValue(SomePC)
 
-                val result = lrem(-1, v1, v2)
+                val result = lrem(SomePC, v1, v2)
                 result.result should be { LongValue(-1) }
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -691,7 +692,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v1 = LongSet(SortedSet(0l, 3l))
                 val v2 = LongSet(SortedSet(0l))
 
-                val result = lrem(-1, v1, v2)
+                val result = lrem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -700,10 +701,10 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
             }
 
             it("(the dividend is unknown, but the divisor is 0) LongValue % {0} => Exception") {
-                val v1 = LongValue(-1)
+                val v1 = LongValue(SomePC)
                 val v2 = LongSet(SortedSet(0l))
 
-                val result = lrem(-1, v1, v2)
+                val result = lrem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -712,10 +713,10 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
             }
 
             it("(the dividend is unknown, but the divisor is known) LongValue % {2} => LongValue") {
-                val v1 = LongValue(-1)
+                val v1 = LongValue(SomePC)
                 val v2 = LongSet(SortedSet(2l))
 
-                val result = lrem(-1, v1, v2)
+                val result = lrem(SomePC, v1, v2)
                 result.result should be(LongValue(-1))
                 result.throwsException should be(false)
             }
@@ -724,7 +725,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v1 = LongSet(SortedSet(0l, 3l))
                 val v2 = LongSet(SortedSet(1l, 2l))
 
-                val result = lrem(-1, v1, v2)
+                val result = lrem(SomePC, v1, v2)
                 result.result should be(LongSet(SortedSet(0l, 1l)))
             }
 
@@ -732,7 +733,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v1 = LongSet(SortedSet(-10l, -3l))
                 val v2 = LongSet(SortedSet(-2l, -1l))
 
-                val result = lrem(-1, v1, v2)
+                val result = lrem(SomePC, v1, v2)
                 result.result should be(LongSet(SortedSet(-1l, 0l)))
             }
 
@@ -740,7 +741,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v1 = LongSet(SortedSet(-10l, 3l))
                 val v2 = LongSet(SortedSet(1l, 2l))
 
-                val result = lrem(-1, v1, v2)
+                val result = lrem(SomePC, v1, v2)
                 result.result should be(LongSet(SortedSet(0l, 1l)))
             }
 
@@ -748,7 +749,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v1 = LongSet(SortedSet(-10l, 3l))
                 val v2 = LongSet(SortedSet(-3l, 4l))
 
-                val result = lrem(-1, v1, v2)
+                val result = lrem(SomePC, v1, v2)
                 result.result should be(LongSet(SortedSet(-2l, -1l, 0l, 3l)))
             }
 
@@ -756,7 +757,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v1 = LongSet(SortedSet(0l, Long.MaxValue))
                 val v2 = LongSet(SortedSet(16l))
 
-                val result = lrem(-1, v1, v2)
+                val result = lrem(SomePC, v1, v2)
                 result.result should be(LongSet(SortedSet(0l, 15l)))
             }
 
@@ -764,7 +765,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v1 = LongSet(SortedSet(2l))
                 val v2 = LongSet(SortedSet(16l))
 
-                val result = lrem(-1, v1, v2)
+                val result = lrem(SomePC, v1, v2)
                 result.result should be(LongSet(SortedSet(2l)))
             }
         }

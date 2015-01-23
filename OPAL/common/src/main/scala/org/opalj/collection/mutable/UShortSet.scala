@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,6 +31,7 @@ package collection
 package mutable
 
 import org.opalj.UShort.{ MinValue, MaxValue }
+import org.opalj.graphs.DefaultMutableNode
 
 /**
  * A memory-efficient, mutable, sorted set of unsigned short values that
@@ -60,7 +61,7 @@ trait UShortSet extends collection.UShortSet {
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int
-    private[mutable] def asGraph: org.opalj.graphs.Node
+    private[mutable] def asGraph: DefaultMutableNode[Int]
 }
 
 /**
@@ -114,7 +115,7 @@ private class UShortSet2(private var value: Int) extends UShortSet {
 
         if (notFull) {
             val value = this.value
-            // update this set's container, if necessary 
+            // update this set's container, if necessary
             if (newValue < value)
                 this.value = (value << 16) | newValue
             else if (newValue > value)
@@ -174,10 +175,10 @@ private class UShortSet2(private var value: Int) extends UShortSet {
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
-    private[mutable] def asGraph: org.opalj.graphs.Node =
-        new org.opalj.graphs.SimpleNode[Int](
-            System.identityHashCode(this), { i ⇒ this.toString })
+    private[mutable] def asGraph: DefaultMutableNode[Int] =
+        new DefaultMutableNode[Int](System.identityHashCode(this), { i ⇒ this.toString })
 }
+
 private object UShortSet2 {
     final val Value1Mask /*: Int*/ = UShort.MaxValue
     final val Value2Mask /*: Int*/ = Value1Mask << 16
@@ -339,9 +340,8 @@ private class UShortSet4(private var value: Long) extends UShortSet {
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
-    private[mutable] def asGraph: org.opalj.graphs.Node =
-        new org.opalj.graphs.SimpleNode[Int](
-            System.identityHashCode(this), { i ⇒ this.toString })
+    private[mutable] def asGraph: DefaultMutableNode[Int] =
+        new DefaultMutableNode[Int](System.identityHashCode(this), { i ⇒ this.toString })
 }
 
 private object UShortSet4 {
@@ -450,11 +450,11 @@ private class UShortSetNode(
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = set1.nodeCount + set2.nodeCount
-    private[mutable] def asGraph: org.opalj.graphs.Node =
-        new org.opalj.graphs.SimpleNode[Int](
+    private[mutable] def asGraph: DefaultMutableNode[Int] =
+        new DefaultMutableNode[Int](
             System.identityHashCode(this),
-            { i ⇒ "UShortSetNode" },
-            None,
+            { i: Int ⇒ "UShortSetNode" },
+            Map.empty,
             List(set1.asGraph, set2.asGraph))
 }
 
@@ -473,9 +473,10 @@ private object EmptyUShortSet extends UShortSet {
 
     // FOR DEBUGGING AND ANALYSIS PURPOSES ONLY:
     private[mutable] def nodeCount: Int = 1
-    private[mutable] def asGraph: org.opalj.graphs.Node =
-        new org.opalj.graphs.SimpleNode[Int](
-            System.identityHashCode(this), { i ⇒ "EmptyUShortSet" })
+    private[mutable] def asGraph: DefaultMutableNode[Int] =
+        new DefaultMutableNode[Int](
+            System.identityHashCode(this),
+            { i: Int ⇒ "EmptyUShortSet" })
 }
 /**
  * Factory to create sets of unsigned short values.

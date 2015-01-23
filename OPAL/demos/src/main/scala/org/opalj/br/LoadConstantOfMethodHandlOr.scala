@@ -26,7 +26,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -66,7 +66,7 @@ object LoadConstantOfMethodHandlOrMethodType extends AnalysisExecutor {
 
             val loads =
                 for {
-                    classFile ← project.classFiles
+                    classFile ← project.allProjectClassFiles.par
                     method @ MethodWithBody(code) ← classFile.methods
                     (pc, instruction) ← code.collect({
                         case LoadMethodHandle(mh)   ⇒ mh
@@ -82,9 +82,7 @@ object LoadConstantOfMethodHandlOrMethodType extends AnalysisExecutor {
                         "<"+project.source(classFile.thisType)+">"
                 }
 
-            BasicReport(
-                loads.mkString("\n\t")
-            )
+            BasicReport(loads.seq.mkString("\n\t"))
         }
     }
 }

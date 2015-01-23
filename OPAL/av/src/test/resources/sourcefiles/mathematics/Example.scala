@@ -26,51 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package av
-
-import scala.collection.{ Set }
-
-import br._
-import br.analyses.SomeProject
+package mathematics
 
 /**
- * Matches all classes, fields and methods that are declared in the specified package.
- *
- * @param packageName The name of a package in binary notation.
- *      (I.e., "/" are used to separate a package name's segments; e.g.,
- *      "java/lang/Object").
- * @param matchSubpackages If true, all packages that start with the given package
- *      name are matched otherwise only classes declared in the given package are matched.
- *
- * @author Michael Eichberg
+ * @author Samuel Beracasa
  */
-case class PackageNameBasedMatcher(
-    packageName: String,
-    matchSubpackages: Boolean = false)
-        extends SourceElementsMatcher {
-
-    require(packageName.length >= 1)
-    require(packageName.indexOf('*') == -1)
-    require(packageName.indexOf('.') == -1)
-
-    def extension(project: SomeProject): Set[VirtualSourceElement] = {
-        val matchedClassFiles =
-            project.classFiles filter { classFile ⇒
-                val thisClassPackageName = classFile.thisType.packageName
-                thisClassPackageName.startsWith(packageName) && (
-                    matchSubpackages || thisClassPackageName.length() == packageName.length()
-                )
-            }
-        matchCompleteClasses(matchedClassFiles)
-    }
-
-    override def toString = {
-        var s = "\""+packageName.replace('/', '.')+".*"
-        if (matchSubpackages)
-            s += "*"
-        s += "\""
-        s
-    }
+class Example {
+    val math = new Mathematics()
+    math.operation1
 }
-

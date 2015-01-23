@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -47,6 +47,7 @@ import org.opalj.ai.domain.TheClassFile
 import org.opalj.ai.domain.TheMethod
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
+import org.opalj.ai.domain.SpecialMethodsHandling
 import org.opalj.ai.domain.l0
 import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.la
@@ -84,8 +85,11 @@ class ExtVTACallGraphDomain[Source](
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l1.DefaultReferenceValuesBinding
+        with l1.MaxArrayLengthRefinement
+        with l1.NullPropertyRefinement
         with l0.TypeLevelInvokeInstructions // the foundation
         with la.RefinedTypeLevelInvokeInstructions
+        with SpecialMethodsHandling
         // with l0.TypeLevelFieldAccessInstructions
         // Using the following domain reduces the number of call edges by ~4%
         with la.RefinedTypeLevelFieldAccessInstructions

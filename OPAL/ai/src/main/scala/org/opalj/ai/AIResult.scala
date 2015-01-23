@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,18 +22,21 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 package ai
 
+import scala.collection.BitSet
+import scala.collection.mutable
+
 import org.opalj.br.Code
 
 /**
  * Encapsulates the ''result'' of the abstract interpretation of a method. If
- * the abstract interpretation was cancelled, the result encapsulate the current
+ * the abstract interpretation was cancelled, the result encapsulates the current
  * state and can be continued later on, if necessary/desired.
  *
  * @author Michael Eichberg
@@ -60,6 +63,18 @@ sealed abstract class AIResult {
      * The list of evaluated instructions ordered by the evaluation time.
      */
     val evaluated: List[PC]
+
+    /**
+     * Returns the information whether an instruction with a specific PC was evaluated
+     * at least once.
+     */
+    lazy val evaluatedInstructions: BitSet = {
+        val evaluatedInstructions = new mutable.BitSet(code.instructions.size)
+        evaluated.foreach { pc ⇒
+            if (pc >= 0 /*skip "subroutine boundaries"*/ ) evaluatedInstructions += pc
+        }
+        evaluatedInstructions
+    }
 
     /**
      * The array of the operand lists in effect before the execution of the
@@ -152,8 +167,8 @@ sealed abstract class AICompleted extends AIResult {
  *
  * @author Michael Eichberg
  */
-/* Design - We need to use a builder to construct a Result object in two steps. 
- * This is necessary to correctly type the data structures that store the memory 
+/* Design - We need to use a builder to construct a Result object in two steps.
+ * This is necessary to correctly type the data structures that store the memory
  * layout and which depend on the given domain. */
 object AIResultBuilder {
 

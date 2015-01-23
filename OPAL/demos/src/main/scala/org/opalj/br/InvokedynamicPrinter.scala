@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -43,32 +43,38 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
  * Prints out the immediately available information about invokedynamic instructions.
  *
  * @author Arne Lottmann
+ * @author Michael Eichberg
  */
-object InvokedynamicPrinter extends AnalysisExecutor {
+object InvokedynamicPrinter extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    val analysis = this
 
-        override def description: String =
-            "Prints information about invokedynamic instructions."
+    override def description: String =
+        "Prints information about invokedynamic instructions."
 
-        def doAnalyze(
-            project: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            val invokedynamics =
-                for {
-                    classFile ← project.classFiles.par
-                    MethodWithBody(code) ← classFile.methods
-                    INVOKEDYNAMIC(bootstrap, name, descriptor) ← code.instructions
-                } yield {
-                    bootstrap.toJava+"\nArguments:\t"+
-                        bootstrap.bootstrapArguments.mkString("{", ",", "}")+"\nCalling:\t"+
-                        descriptor.toJava(name)
+    def doAnalyze(
+        project: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
+        import scala.collection.JavaConversions._
+        val invokedynamics = new java.util.concurrent.ConcurrentLinkedQueue[String]
+        project.parForeachMethodWithBody(isInterrupted) { e ⇒
+            val (_, classFile, method) = e
+            invokedynamics.addAll(
+                method.body.get.collectWithIndex {
+                    case (pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) ⇒
+                        classFile.thisType.toJava+" {\n  "+method.toJava()+"{ "+pc+": \n"+
+                            s"    ${bootstrap.toJava}\n"+
+                            bootstrap.bootstrapArguments.mkString("    Arguments: {", ",", "}\n") +
+                            s"    Calling:   ${descriptor.toJava(name)}\n"+
+                            "} }\n"
                 }
-
-            BasicReport(
-                invokedynamics.size+" invokedynamic instructions found.\n"+
-                    invokedynamics.mkString("\n", "\n\n", "\n"))
+            )
         }
+        val result = invokedynamics.toSeq.sorted
+        BasicReport(
+            result.mkString(result.size+" invokedynamic instructions found:\n", "\n", "\n")
+        )
     }
+
 }

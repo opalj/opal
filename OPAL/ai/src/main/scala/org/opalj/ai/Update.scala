@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -51,9 +51,11 @@ sealed trait Update[+V] {
 
     def isStructuralUpdate: Boolean = false
 
-    def isNoUpdate: Boolean = false
-
     def isMetaInformationUpdate: Boolean = false
+
+    def isSomeUpdate: Boolean
+
+    def isNoUpdate: Boolean
 
     /**
      * The ''type'' of this update.
@@ -79,7 +81,13 @@ sealed trait Update[+V] {
  * ==Usage==
  * This class (and its companion object) are primarily used for pattern matching purposes.
  */
-sealed abstract class SomeUpdate[V] extends Update[V]
+sealed abstract class SomeUpdate[V] extends Update[V] {
+
+    def isNoUpdate: Boolean = false
+
+    def isSomeUpdate: Boolean = true
+
+}
 
 /**
  * Facilitates matching against updates that actually encapsulate an updated value.
@@ -151,7 +159,9 @@ case object NoUpdate extends Update[Nothing] {
 
     type ThisType[V] = NoUpdate.type
 
-    override def isNoUpdate: Boolean = true
+    def isNoUpdate: Boolean = true
+
+    def isSomeUpdate: Boolean = false
 
     override def updateType = NoUpdateType
 

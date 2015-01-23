@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -59,6 +59,7 @@ import org.scalatest.junit.JUnitRunner
 class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExecution {
 
     final val IrrelevantPC = Int.MinValue
+    final val SomePC = 100000
 
     class IntegerSetsTestDomain(
         override val maxCardinalityOfIntegerSets: Int = Int.MaxValue)
@@ -591,21 +592,21 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = IntegerSet(SortedSet[Int](1, 3))
                 val v2 = IntegerSet(SortedSet[Int](2))
 
-                idiv(-1, v1, v2) should be(ComputedValue(IntegerSet(SortedSet[Int](0, 1))))
+                idiv(SomePC, v1, v2) should be(ComputedValue(IntegerSet(SortedSet[Int](0, 1))))
             }
 
             it("{1,3} / {1} => {1,3}") {
                 val v1 = IntegerSet(SortedSet[Int](1, 3))
                 val v2 = IntegerSet(SortedSet[Int](1))
 
-                idiv(-1, v1, v2) should be(ComputedValue(IntegerSet(SortedSet[Int](1, 3))))
+                idiv(SomePC, v1, v2) should be(ComputedValue(IntegerSet(SortedSet[Int](1, 3))))
             }
 
             it("{1,3} / {0} => ThrowsException") {
                 val v1 = IntegerSet(SortedSet[Int](1, 3))
                 val v2 = IntegerSet(SortedSet[Int](0))
 
-                val result = idiv(-1, v1, v2)
+                val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -617,14 +618,14 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = IntegerSet(SortedSet[Int](1, 3))
                 val v2 = IntegerSet(SortedSet[Int](-1))
 
-                idiv(-1, v1, v2) should be(ComputedValue(IntegerSet(SortedSet[Int](-3, -1))))
+                idiv(SomePC, v1, v2) should be(ComputedValue(IntegerSet(SortedSet[Int](-3, -1))))
             }
 
             it("AnIntegerValue / {0} => ThrowsException") {
                 val v1 = AnIntegerValue()
                 val v2 = IntegerSet(SortedSet[Int](0))
 
-                val result = idiv(-1, v1, v2)
+                val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -636,7 +637,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = AnIntegerValue()
                 val v2 = AnIntegerValue()
 
-                val result = idiv(-1, v1, v2)
+                val result = idiv(SomePC, v1, v2)
                 result.result should be { AnIntegerValue }
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -648,7 +649,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = IntegerSet(SortedSet[Int](-1, 200))
                 val v2 = AnIntegerValue()
 
-                val result = idiv(-1, v1, v2)
+                val result = idiv(SomePC, v1, v2)
                 result.result should be { AnIntegerValue }
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -660,14 +661,14 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = IntegerSet(SortedSet[Int](Int.MinValue, -1))
                 val v2 = IntegerSet(SortedSet[Int](Int.MaxValue, Int.MaxValue))
 
-                idiv(-1, v1, v2) should be(ComputedValue(IntegerSet(SortedSet[Int](-1, 0))))
+                idiv(SomePC, v1, v2) should be(ComputedValue(IntegerSet(SortedSet[Int](-1, 0))))
             }
 
             it("{Int.MinValue,Int.MaxValue} / Int.MaxValue => {-1,1}") {
                 val v1 = IntegerSet(SortedSet[Int](Int.MinValue, Int.MaxValue))
                 val v2 = IntegerSet(SortedSet[Int](Int.MaxValue, Int.MaxValue))
 
-                idiv(-1, v1, v2) should be(ComputedValue(IntegerSet(SortedSet[Int](-1, 1))))
+                idiv(SomePC, v1, v2) should be(ComputedValue(IntegerSet(SortedSet[Int](-1, 1))))
             }
         }
 
@@ -677,7 +678,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = AnIntegerValue()
                 val v2 = AnIntegerValue()
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be { AnIntegerValue }
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -689,7 +690,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = IntegerSet(SortedSet[Int](0, 3))
                 val v2 = IntegerSet(SortedSet[Int](0))
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -701,7 +702,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = AnIntegerValue()
                 val v2 = IntegerSet(SortedSet[Int](0))
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
                     case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
@@ -713,7 +714,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = AnIntegerValue()
                 val v2 = IntegerSet(SortedSet[Int](2))
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be(AnIntegerValue)
                 result.throwsException should be(false)
             }
@@ -722,7 +723,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = IntegerSet(SortedSet[Int](0, 3))
                 val v2 = IntegerSet(SortedSet[Int](1, 2))
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerSet(SortedSet[Int](0, 1)))
             }
 
@@ -730,7 +731,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = IntegerSet(SortedSet[Int](-10, -3))
                 val v2 = IntegerSet(SortedSet[Int](-2, -1))
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerSet(SortedSet[Int](-1, 0)))
             }
 
@@ -738,7 +739,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = IntegerSet(SortedSet[Int](-10, 3))
                 val v2 = IntegerSet(SortedSet[Int](1, 2))
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerSet(SortedSet[Int](0, 1)))
             }
 
@@ -746,7 +747,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = IntegerSet(SortedSet[Int](-10, 3))
                 val v2 = IntegerSet(SortedSet[Int](-3, 4))
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerSet(SortedSet[Int](-2, -1, 0, 3)))
             }
 
@@ -754,7 +755,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = IntegerSet(SortedSet[Int](0, Int.MaxValue))
                 val v2 = IntegerSet(SortedSet[Int](16))
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerSet(SortedSet[Int](0, 15)))
             }
 
@@ -762,7 +763,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                 val v1 = IntegerSet(SortedSet[Int](2))
                 val v2 = IntegerSet(SortedSet[Int](16))
 
-                val result = irem(-1, v1, v2)
+                val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerSet(SortedSet[Int](2)))
             }
         }
@@ -1299,7 +1300,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                     domain.allReturnedValues.head._2 abstractsOver (
                         domain.InitializedArrayValue(2, List(10), ArrayType(IntegerType))) should be(true)
 
-                    // get the loop counter at the "icmple instruction" which controls the 
+                    // get the loop counter at the "icmple instruction" which controls the
                     // loops that initializes the array
                     result.operandsArray(20).tail.head should be(domain.IntegerSet(SortedSet[Int](0 to 11: _*)))
                 }
@@ -1425,7 +1426,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
                     val method = IntegerValues.findMethod("complexLoop").get
                     val result = BaseAI(IntegerValues, method, domain)
                     result.operandsArray(35).head should be(domain.IntegerSet(SortedSet[Int](0, 1, 2)))
-                    // when we perform a depth-first evaluation we do not want to 
+                    // when we perform a depth-first evaluation we do not want to
                     // evaluate the same instruction with the same abstract state
                     // multiple times
                     result.evaluated.head should be(24)

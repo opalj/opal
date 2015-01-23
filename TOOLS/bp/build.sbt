@@ -4,7 +4,7 @@ name := "BugPicker"
 
 version := "1.2.0-SNAPSHOT"
 
-scalaVersion in ThisBuild := "2.11.4"
+scalaVersion in ThisBuild := "2.11.5"
 
 scalacOptions in ThisBuild ++= Seq(
 	"-deprecation", "-feature", "-unchecked", 
@@ -12,6 +12,8 @@ scalacOptions in ThisBuild ++= Seq(
 	"-Ywarn-numeric-widen", "-Ywarn-unused", "-Ywarn-unused-import", "-Ywarn-nullary-unit", "-Ywarn-nullary-override", "-Ywarn-dead-code" )
 
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - BugPicker")
+
+fork in run := true
 
 libraryDependencies += "org.scalafx"  %% "scalafx"   % "1.0.0-R8"
 

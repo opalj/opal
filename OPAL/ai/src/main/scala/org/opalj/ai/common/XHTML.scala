@@ -208,10 +208,17 @@ object XHTML {
             operandsArray: TheOperandsArray[domain.Operands],
             localsArray: TheLocalsArray[domain.Locals]): Node = {
 
+        def methodToString(method: Method): String = {
+            if (method.isStatic)
+                "static "+method.toJava
+            else
+                method.toJava
+        }
+
         val title =
             classFile.
-                map(_.thisType.toJava + method.map("{ "+_.toJava+" }").getOrElse("")).
-                orElse(method.map(_.toJava))
+                map(_.thisType.toJava + method.map("{ "+methodToString(_)+" }").getOrElse("")).
+                orElse(method.map(methodToString(_)))
 
         val annotations =
             method.map(annotationsAsXHTML(_)).getOrElse(<div class="annotations"></div>)

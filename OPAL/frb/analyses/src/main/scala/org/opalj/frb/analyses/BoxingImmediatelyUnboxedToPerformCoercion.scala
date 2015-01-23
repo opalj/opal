@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -91,7 +91,8 @@ class BoxingImmediatelyUnboxedToPerformCoercion[Source]
 
         var result: List[LineAndColumnBasedReport[Source]] = List.empty
         for {
-            classFile ← project.classFiles.par if classFile.majorVersion >= 49
+            classFile ← project.allProjectClassFiles
+            if classFile.majorVersion >= 49
             if !project.isLibraryType(classFile)
             method @ MethodWithBody(body) ← classFile.methods
         } {

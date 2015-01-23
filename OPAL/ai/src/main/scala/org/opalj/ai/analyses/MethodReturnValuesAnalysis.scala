@@ -31,7 +31,11 @@ package ai
 package analyses
 
 import java.net.URL
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable.AnyRefMap
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
@@ -64,43 +68,36 @@ object MethodReturnValuesAnalysis {
     def doAnalyze(
         theProject: SomeProject,
         isInterrupted: () ⇒ Boolean,
-        createDomain: (InterruptableAI[Domain], Method) ⇒ Domain with RecordReturnedValue): MethodReturnValueInformation = {
+        createDomain: (InterruptableAI[Domain], Method) ⇒ Domain with RecordReturnedValueInfrastructure): MethodReturnValueInformation = {
 
+        val results = new ConcurrentHashMap[Method, Option[Domain#DomainValue]]
         val candidates = new AtomicInteger(0)
 
-        val methodsWithRefinedReturnValues = {
-            val parClassFiles = theProject.classFiles.par
-            parClassFiles.tasksupport = OPALExecutionContextTaskSupport
-            for {
-                classFile ← parClassFiles
-                if !isInterrupted()
-                method ← classFile.methods
-                originalReturnType = method.returnType
-                if method.body.isDefined
-                if originalReturnType.isObjectType
+        theProject.parForeachMethodWithBody(isInterrupted) { m ⇒
+            val (_ /*Source*/ , classFile, method) = m
+            val originalReturnType = method.returnType
 
+            if (originalReturnType.isObjectType &&
                 // ALTERNATIVE TEST: if we are only interested in type refinements but not
                 // in refinements to "null" values then we can also use the following
                 // check:
                 // if theProject.classHierarchy.hasSubtypes(originalReturnType.asObjectType).isYesOrUnknown
 
                 // We may still miss some refinements to "Null" but we don't care...
-                if theProject.classFile(originalReturnType.asObjectType).map(!_.isFinal).getOrElse(true)
-                if { candidates.incrementAndGet(); true }
+                theProject.classFile(originalReturnType.asObjectType).map(!_.isFinal).getOrElse(true)) {
 
-                ai = new InterruptableAI[Domain]
-                domain = createDomain(ai, method)
-                result = ai(classFile, method, domain)
-                if !ai.isInterrupted
-                returnedValue = domain.returnedValue
-            } yield {
-                (method, domain.returnedValue)
+                candidates.incrementAndGet()
+                val ai = new InterruptableAI[Domain]
+                val domain = createDomain(ai, method)
+                ai(classFile, method, domain)
+                if (!ai.isInterrupted) {
+                    results.put(method, domain.returnedValue)
+                }
             }
         }
 
-        println(s"[info] refined the return type of ${methodsWithRefinedReturnValues.size} methods out of ${candidates.get} methods")
-
-        methodsWithRefinedReturnValues.seq.toMap
+        println(s"[info] refined the return type of ${results.size} methods out of ${candidates.get} methods")
+        AnyRefMap.empty[Method, Option[Domain#DomainValue]] ++ results.asScala
     }
 
 }

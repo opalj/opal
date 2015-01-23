@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,44 +22,27 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
-
-import org.opalj.br.ObjectType
+package br
+package instructions
 
 /**
- * Default implementation of the [[VMLevelExceptionsFactory]] trait that relies
- * on the [[ReferenceValuesFactory]].
+ * Store long into local variable.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
-trait DefaultVMLevelExceptionsFactory extends VMLevelExceptionsFactory {
-    this: ValuesDomain with ReferenceValuesFactory ⇒
+trait LStoreInstruction extends StoreLocalVariableInstruction {
 
-    final override def Throwable(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.Throwable)
-
-    final override def ClassCastException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.ClassCastException)
-
-    final override def NullPointerException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.NullPointerException)
-
-    final override def NegativeArraySizeException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.NegativeArraySizeException)
-
-    final override def ArrayIndexOutOfBoundsException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.ArrayIndexOutOfBoundsException)
-
-    final override def ArrayStoreException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.ArrayStoreException)
-
-    final override def ArithmeticException(pc: PC): ExceptionValue =
-        InitializedObjectValue(pc, ObjectType.ArithmeticException)
+    def computationalType: ComputationalType = ComputationalTypeLong
 
 }
+
+object LStoreInstruction {
+
+    def unapply(lstore: LStoreInstruction): Some[Int] = Some(lstore.lvIndex)
+}
+

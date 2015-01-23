@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -35,6 +35,8 @@ import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.ai.common.XHTML
 import org.opalj.ai.common.XHTML.dump
 import org.opalj.io.writeAndOpen
+import org.opalj.ai.domain.RecordCFG
+import org.opalj.graphs.toDot
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -147,7 +149,7 @@ object InterpretMethod {
                     className.replace('.', '/')
                 else
                     className
-            project.classFiles.find(_.fqn == fqn).getOrElse {
+            project.allClassFiles.find(_.fqn == fqn).getOrElse {
                 println(RED+"[error] Cannot find the class: "+className+"."+RESET)
                 return ;
             }
@@ -193,6 +195,11 @@ object InterpretMethod {
                     println("Finished abstract interpretation.")
                     result
                 }
+            if (result.domain.isInstanceOf[RecordCFG]) {
+                val graph = result.domain.asInstanceOf[RecordCFG]
+                val dotGraph = toDot(Set(graph.cfgAsGraph()), ranksep = "0.3").toString
+                writeAndOpen(dotGraph, "RuntimeCFG", ".dot")
+            }
             writeAndOpen(dump(
                 Some(classFile),
                 Some(method),
