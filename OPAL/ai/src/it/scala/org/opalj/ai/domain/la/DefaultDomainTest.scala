@@ -29,7 +29,7 @@
 package org.opalj
 package ai
 package domain
-package l1
+package la
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -42,19 +42,17 @@ import org.opalj.br.analyses.Project
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
- * an abstract interpretation of all methods using the l1.DefaultDomain. It basically
+ * an abstract interpretation of all methods using the la.DefaultDomain. It basically
  * tests if we can load and process a large number of different classes without exceptions.
  *
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultDomainTest extends DomainTestInfrastructure("l1.DefaultDomain") {
+class DefaultDomainTest extends DomainTestInfrastructure("la.DefaultDomain") {
 
-    def Domain(
-        project: Project[URL],
-        classFile: ClassFile,
-        method: Method): l1.DefaultDomain[URL] =
-        new l1.DefaultDomain(project, classFile, method)
+    def Domain(project: Project[URL], classFile: ClassFile, method: Method): la.DefaultDomain =
+        new la.DefaultDomain(project, classFile, method)
 
 }
+
 
