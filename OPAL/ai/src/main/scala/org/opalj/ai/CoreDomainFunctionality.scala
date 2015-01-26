@@ -136,12 +136,6 @@ trait CoreDomainFunctionality extends ValuesDomain {
         otherLocals: Locals): Update[(Operands, Locals)] = {
         beforeBaseJoin(pc)
 
-        // FOR INTERNAL DEBUGGING PURPOSES:
-        // if (thisOperands.size != otherOperands.size)
-        //    throw DomainException(
-        //        s"impossible join:$pc: $thisOperands vs. $otherOperands"
-        //    )
-
         var operandsUpdated: UpdateType = NoUpdateType
         val newOperands: Operands =
             if (thisOperands eq otherOperands) {
