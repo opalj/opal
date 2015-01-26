@@ -327,9 +327,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
          *
          * @return Throws a `DomainException` that states that this method is not supported.
          */
-        @throws[DomainException]("always thrown since it is context-dependent.")
+        @throws[DomainException]("Always thrown because isValueSubtypeOf is not defined on \"null\" values.")
         final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing =
-            throw DomainException("isSubtypeOf is not defined for \"null\" values")
+            throw DomainException("the \"isValueSubtypeOf\" relation is not defined on \"null\" values")
 
         override def summarize(pc: PC): this.type = this
 
