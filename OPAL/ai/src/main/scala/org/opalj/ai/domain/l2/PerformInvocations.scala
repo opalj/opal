@@ -239,22 +239,18 @@ trait PerformInvocations extends MethodCallsDomain {
         operands: Operands): MethodCallResult = {
 
         def fallback() =
-            baseInvokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
+            super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
 
         invokeNonVirtual(
             pc, declaringClass, methodName, methodDescriptor, operands, fallback
         )
     }
 
-    def baseInvokespecial(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
-        super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
-    }
-
+    /**
+     * For those `invokestatic` calls for which we have no concrete method (e.g.,
+     * the respective class file was never loaded or the method is native) or
+     * if we have a recursive invocation, the super implementation is called.
+     */
     abstract override def invokestatic(
         pc: PC,
         declaringClass: ObjectType,
@@ -263,26 +259,11 @@ trait PerformInvocations extends MethodCallsDomain {
         operands: Operands): MethodCallResult = {
 
         def fallback() =
-            baseInvokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
+            super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
 
         invokeNonVirtual(
             pc, declaringClass, methodName, methodDescriptor, operands, fallback
         )
-    }
-
-    /**
-     * Handle those `invokestatic` calls for which we have no concrete method (e.g.,
-     * the respective class file was never loaded or the method is native) or
-     * if have a recursive invocation.
-     */
-    protected[this] def baseInvokestatic(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
-
-        super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
     }
 
 }
