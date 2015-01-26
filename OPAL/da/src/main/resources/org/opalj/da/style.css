@@ -1,4 +1,31 @@
-
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2014
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 html { font-family: "Helvetica Neue Light", Helvetica, "Arial"; }
 
 body{
@@ -22,8 +49,8 @@ fieldset{
 	padding: 1em;
 	background-color:#FFE7E7;
 }
- 
- 
+
+
 .members {
 	min-width: 900px;
 	width:100%;
@@ -33,7 +60,7 @@ fieldset{
 	font-weight:400;
 	font-style:italic;
 	color:#6666AA;
-	float:left;	
+	float:left;
 }
 .instruction{
 	width:8em;
@@ -60,35 +87,52 @@ table.fields td {
 	padding-right: 0.5em
 }
 
-
 div.methods,div.fields,div.attributes,div.constant_pool {
 	border-top: 1px solid #cccccc;
 }
 
-.exception{
-	border: 1px solid rgba( 184,0, 0, 0.8);
-    box-shadow: 0 2px 5px rgba( 108,0, 0, 0.7), 0 0 8px 5px rgba( 223,0, 0, 0.4) inset;
-  	width: 10px;
-  	height: 10px;
-	float:right;
-	border-radius: 30px;
-	background: none repeat scroll 0 0 #F70000;
-	background: -moz-linear-gradient(0 ,#F70000);
-	background: -webkit-linear-gradient(0   ,#F70000);
-	background: -o-linear-gradient(0   ,#F70000);
+td.exception {
+	position: relative;
 }
-.exceptionHandler{
-	border: 1px solid rgba(0, 184, 0, 0.8);
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 108, 0, 0.7), 0 0 8px 5px rgba(0, 223, 0, 0.4) inset;
-  	width: 10px;
-  	height: 10px;
-	float:right;
-	border-radius: 30px;
-	background: none repeat scroll 0 0 #00F700;
-	background: -moz-linear-gradient(0 ,#00F700);
-	background: -webkit-linear-gradient(0   ,#00F700);
-	background: -o-linear-gradient(0   ,#00F700);
+
+td.exception div {
+	height: 100%;
+	margin: 0 2px;
+	width: 23px;
+	position: absolute;
+	border-radius: 2px;
+}
+
+td.exception div.exception {
+	background: rgb(255, 168, 152);
+}
+
+td.exception div.exceptionHandler{
+	background: #77FD77;
+	z-index: 1;
+	height: 15px;
+}
+td.exception div.handlerOverlap:before {
+	position: absolute;
+	height: 15px;
+	width: 15px;
+	z-index: 2;
+	background: #77FD77;
+	content: " ";
+	border-radius: 2px;
+}
+
+td.exception span{
+	-webkit-transform: rotate(90deg) translate(0px, -17px);
+	-webkit-transform-origin: 0% 0%;
+	position: absolute;
+	text-align: center;
+	height: 25px;
+	margin-left: 5px;
+	margin-top: 5px;
+	white-space: nowrap;
+	pointer-events: none;
+	z-index: 3;
 }
 
 .simple_attribute{
@@ -103,18 +147,18 @@ details {
 	padding-right: 1em;
 	padding-top: 1em;
 	padding-bottom: 1em;
-} 
+}
 
 summary {
 	background-color: #eeeeee;
 	padding: 0.5em 0.5em 0.5em 0.5em;
-} 
-			
+}
+
 div#class_file {
 	background-color:#fcfcec;
 	padding: 1em 1em 1em 1em;
 }
-	
+
 .selfref {
 	color:#888888;
 }
@@ -127,7 +171,7 @@ div#class_file {
 	color:#ccDDDD;
 }
 
-.element_value_pair + .element_value_pair::before { 
+.element_value_pair + .element_value_pair::before {
 	content:", ";
 	color:#AA22FF;
 }
@@ -154,7 +198,7 @@ table.method_bytecode{
 	font-style:italic;
 }
 .access_flags {
-    color: rgba(0, 0, 100, 0.6);
+	color: rgba(0, 0, 100, 0.6);
 }
 
 .index, .pc{
@@ -163,20 +207,24 @@ table.method_bytecode{
 
 .line{
 	color: #A5CC00;
-}	
-	
+}
+
 th {
 	text-align: left;
-}	
-	
+}
+
 th.pc, td.pc, th.line, td.line {
 	width: 3.5em;
 }
-	
+
+th.exceptionHeader {
+	width: 2em;
+}
+
 .reservedwords,.verification{
 	color: #0000ff;
 }
-		
+
 .constant_value{
 	color: #FF00A5;
 }
@@ -185,21 +233,21 @@ th.pc, td.pc, th.line, td.line {
 	color: #d73b04;
 }
 
-.tooltip:hover > span{ 
-	display:inline; 
-	position:absolute; 
-	color:#111; 
-	border:1px solid #DCA; 
+.tooltip:hover > span{
+	display:inline;
+	position:absolute;
+	color:#111;
+	border:1px solid #DCA;
 	background:#fffAF0;}
 .callout {z-index:20;position:absolute;top:30px;border:0;left:-12px;}
-   /*CSS3 extras*/ 
-.tooltip > span { 
+   /*CSS3 extras*/
+.tooltip > span {
 	color:gray;
 	z-index:10;
-	display:none; 
-	padding:0.5em 0.5em; 
-	margin-top:-0.5em; 
-	margin-left:0.5em;  
+	display:none;
+	padding:0.5em 0.5em;
+	margin-top:-0.5em;
+	margin-left:0.5em;
 	line-height:1.5em;
 	border-radius:4px;
 	-moz-border-radius: 4px;
@@ -240,7 +288,7 @@ div.cp_ref > div.cp_entry{
 	top: -10px;
 	width: 24px;
 	text-decoration: none;
-	font-weight: bold;	
+	font-weight: bold;
 	-webkit-border-radius: 12px;
 	-moz-border-radius: 12px;
 	border-radius: 12px;
@@ -249,25 +297,25 @@ div.cp_ref > div.cp_entry{
 	box-shadow: 1px 1px 3px #000;
 }
 .constant_pool_link{
-    padding:10px 10px;
-    margin-top:10px;
-    padding-top:20px; 
-    /**give the bubble's background a gradient**/
-    background:gray; /*fallback colour for non-supporting browsers*/
-    background:-webkit-gradient(linear, 0 0, 0 100%, from(#fac868), to(#f3961c));
-    background:-moz-linear-gradient(#fac868, #f3961c);
-    background:-o-linear-gradient(#fac868, #f3961c);
-    background:linear-gradient(#fac868, #f3961c);
-    /**give the corners a large curve**/
-    -webkit-border-radius:8px;
-    -moz-border-radius:8px;
-    border-radius:8px;
-    /**add a drop shadow to the bubble**/
-    -webkit-box-shadow: -3px 4px 8px #989898;
-    -moz-box-shadow: -3px 4px 8px #989898;
-    box-shadow: -3px 4px 8px #989898;
-    /**style the text**/
-    color:black;
-    letter-spacing:.06em;
+	padding:10px 10px;
+	margin-top:10px;
+	padding-top:20px;
+	/**give the bubble's background a gradient**/
+	background:gray; /*fallback colour for non-supporting browsers*/
+	background:-webkit-gradient(linear, 0 0, 0 100%, from(#fac868), to(#f3961c));
+	background:-moz-linear-gradient(#fac868, #f3961c);
+	background:-o-linear-gradient(#fac868, #f3961c);
+	background:linear-gradient(#fac868, #f3961c);
+	/**give the corners a large curve**/
+	-webkit-border-radius:8px;
+	-moz-border-radius:8px;
+	border-radius:8px;
+	/**add a drop shadow to the bubble**/
+	-webkit-box-shadow: -3px 4px 8px #989898;
+	-moz-box-shadow: -3px 4px 8px #989898;
+	box-shadow: -3px 4px 8px #989898;
+	/**style the text**/
+	color:black;
+	letter-spacing:.06em;
 }
 .close:hover { background: #00d9ff; }

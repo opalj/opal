@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,31 +22,37 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package bugpicker
-package analysis
+package ai
+package domain
+package la
+
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+
+import java.net.URL
+
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
 
 /**
- * Collection of predefined issue kinds.
- *
- * In general, an issue kind describes how '''this issue manifests itself in the source
- * code'''.
+ * This system test(suite) just loads a very large number of class files and performs
+ * an abstract interpretation of all methods using the la.DefaultDomain. It basically
+ * tests if we can load and process a large number of different classes without exceptions.
  *
  * @author Michael Eichberg
  */
-object IssueKind {
+@RunWith(classOf[JUnitRunner])
+class DefaultDomainTest extends DomainTestInfrastructure("la.DefaultDomain") {
 
-    final val ConstantComputation = "constant computation"
+    def Domain(project: Project[URL], classFile: ClassFile, method: Method): la.DefaultDomain =
+        new la.DefaultDomain(project, classFile, method)
 
-    final val DeadCode = "dead code"
-
-    final val ThrowsException = "throws exception"
-
-    final val UnguardedUse = "unguarded use"
-
-    final val Unused = "unused"
 }
+
+

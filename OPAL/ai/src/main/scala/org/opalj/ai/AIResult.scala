@@ -29,6 +29,9 @@
 package org.opalj
 package ai
 
+import scala.collection.BitSet
+import scala.collection.mutable
+
 import org.opalj.br.Code
 
 /**
@@ -60,6 +63,18 @@ sealed abstract class AIResult {
      * The list of evaluated instructions ordered by the evaluation time.
      */
     val evaluated: List[PC]
+
+    /**
+     * Returns the information whether an instruction with a specific PC was evaluated
+     * at least once.
+     */
+    lazy val evaluatedInstructions: BitSet = {
+        val evaluatedInstructions = new mutable.BitSet(code.instructions.size)
+        evaluated.foreach { pc ⇒
+            if (pc >= 0 /*skip "subroutine boundaries"*/ ) evaluatedInstructions += pc
+        }
+        evaluatedInstructions
+    }
 
     /**
      * The array of the operand lists in effect before the execution of the

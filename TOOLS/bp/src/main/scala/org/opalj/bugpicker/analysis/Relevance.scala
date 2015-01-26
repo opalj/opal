@@ -41,11 +41,15 @@ import scala.Console.{ RED, YELLOW, RESET }
  *  - category of issue
  *  - accuracy of the analysis
  *
- * @param value A value between 1 (not really relevant) and 100 (absolutely relevant).
+ * @param value A value between 0 (undetermined), 1 (not really relevant) and
+ *      100 (absolutely relevant).
  *
  * @author Michael Eichberg
  */
 case class Relevance(value: Int) extends AnyVal {
+
+    def merge(other: Relevance): Relevance =
+        new Relevance(if (this.value > other.value) this.value else other.value)
 
     /**
      * The lower the value, the "whiter" the color. If the value is 100

@@ -82,7 +82,7 @@ object ThrowsExceptionAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions }): List[Issue] = {
+        result: AIResult { val domain: Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions }): Seq[StandardIssue] = {
 
         val operandsArray = result.operandsArray
         val domain = result.domain
@@ -126,7 +126,7 @@ object ThrowsExceptionAnalysis {
                 )
             }
 
-        exceptionIssues.toList
+        exceptionIssues
     }
 
 }

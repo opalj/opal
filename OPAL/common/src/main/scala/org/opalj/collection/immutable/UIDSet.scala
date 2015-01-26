@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -69,6 +69,10 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
      * If the element is already in this set, `this` set is returned.
      */
     /* ABSTRACT */ def +[X >: T <: UID](e: X): UIDSet[X]
+
+    @inline protected[UIDSet] final def cmpEs(thisE: UID, thatE: UID): Boolean = {
+        (thisE eq thatE) || thisE.id == thatE.id
+    }
 
     /**
      * Adds the given elements to this set. Each new element is added using the primitive
@@ -250,8 +254,7 @@ object UIDSet0 extends UIDSet[Nothing] {
 
     override def toSeq = Seq.empty[Nothing]
 
-    override def equals(other: Any): Boolean =
-        other.isInstanceOf[UIDSet[_]] && (other.asInstanceOf[UIDSet[_]] eq UIDSet0)
+    override def equals(other: Any): Boolean = other.isInstanceOf[UIDSet0.type]
 
     override def hashCode: Int = 1
 
@@ -307,7 +310,9 @@ final class UIDSet1[T <: UID]( final val e: T) extends NonEmptyUIDSet[T] { thisS
     override def equals(other: Any): Boolean = {
         other match {
             case that: UIDSet1[T] ⇒
-                this.e.id == that.e.id
+                val thisE = this.e
+                val thatE = that.e
+                (thisE eq thatE) || thisE.id == thatE.id
             case _ ⇒
                 false
         }
@@ -400,8 +405,10 @@ final class UIDSet2[T <: UID] private[collection] (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: UIDSet2[T] ⇒ this.e1.id == that.e1.id && this.e2.id == that.e2.id
-            case _                ⇒ false
+            case that: UIDSet2[T] ⇒
+                cmpEs(this.e1, that.e1) && cmpEs(this.e2, that.e2)
+            case _ ⇒
+                false
         }
     }
 
@@ -634,7 +641,22 @@ private final class UIDArraySet[T <: UID](
     override def equals(other: Any): Boolean = {
         other match {
             case that: UIDArraySet[T] ⇒
-                this.es == that.es
+                val thisEs = this.es
+                val thatEs = that.es
+                val max = thisEs.length
+
+                if (max != thatEs.length)
+                    return false;
+
+                var i = 0
+                while (i < max) {
+                    val thisE = thisEs(i)
+                    val thatE = thatEs(i)
+                    if (!((thisE eq thatE) || thisE.id == thatE.id))
+                        return false;
+                    i += 1
+                }
+                true
             case _ ⇒
                 false
         }

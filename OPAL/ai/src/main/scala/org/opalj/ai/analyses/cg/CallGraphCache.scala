@@ -58,7 +58,7 @@ import org.opalj.br.analyses.SomeProject
  * virtual method call (given some declaring class type and a method signature), the
  * cache could be instantiated as follows:
  * {{{
- * val cache = new CallGraphCache[MethodSignature,Iterable[Method]]
+ * val cache = new CallGraphCache[MethodSignature,Iterable[Method]](project)
  * }}}
  *
  * @note Creating a new cache is comparatively expensive and depends
