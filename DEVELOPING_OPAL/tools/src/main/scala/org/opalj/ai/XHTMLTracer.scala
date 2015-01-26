@@ -378,12 +378,3 @@ trait XHTMLTracer extends AITracer {
 
 }
 
-class ConfigurableXHTMLTracer(openDumpOnResult: Boolean = false) extends XHTMLTracer {
-
-    override def result(result: AIResult): Unit = {
-        if (openDumpOnResult)
-            super.result(result)
-    }
-
-}
-
