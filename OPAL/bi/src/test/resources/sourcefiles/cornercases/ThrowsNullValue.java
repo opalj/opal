@@ -44,7 +44,7 @@ public class ThrowsNullValue {
     public static void main(String[] args) {
         try {
             Exception e = null;
-            if ("".isEmpty())
+            if (args.isEmpty())
                 e = new RuntimeException();
 
             throw e;
