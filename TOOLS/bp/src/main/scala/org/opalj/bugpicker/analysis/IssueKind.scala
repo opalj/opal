@@ -42,7 +42,7 @@ object IssueKind {
 
     final val ConstantComputation = "constant computation"
 
-    final val DeadCode = "dead code"
+    final val DeadPath = "dead path"
 
     final val ThrowsException = "throws exception"
 

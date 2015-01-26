@@ -205,7 +205,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                 //
                 results.addAll(
                     scala.collection.JavaConversions.asJavaCollection(
-                        DeadCodeAnalysis.analyze(theProject, classFile, method, result)
+                        DeadPathAnalysis.analyze(theProject, classFile, method, result)
                     )
                 )
                 results.addAll(
