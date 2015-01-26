@@ -32,6 +32,7 @@ package br
 import scala.collection.BitSet
 
 import org.opalj.br.instructions._
+import scala.annotation.tailrec
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
