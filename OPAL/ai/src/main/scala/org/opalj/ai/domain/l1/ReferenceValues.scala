@@ -38,6 +38,8 @@ import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
 import scala.annotation.tailrec
 import scala.collection.SortedSet
+import scala.collection.immutable.{ SortedSet ⇒ ImmutableSortedSet }
+import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.collection.immutable.IdentityPair
 import org.opalj.collection.immutable.UIDSet
@@ -760,15 +762,15 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         def doRefineUpperTypeBound(supertype: ReferenceType): DomainSingleOriginReferenceValue = {
             val thisUTB = this.theUpperTypeBound
 
+            assert(thisUTB ne supertype)
             assert(
                 !isPrecise ||
                     // IMPROVE Do we want to support MObjectValues that have multiple types as an upper bound which are precise?
-                    (isPrecise && domain.isSubtypeOf(supertype, thisUTB).isUnknown),
-                s"this type is precise ${theUpperTypeBound.toJava}; "+
+                    (isPrecise && domain.isSubtypeOf(supertype, thisUTB).isNoOrUnknown),
+                s"this type is precise ${thisUTB.toJava}; "+
                     s"refinement goal: ${supertype.toJava} "+
                     s"(is this type a subtype of the given type: "+
-                    s"${classHierarchy.isSubtypeOf(theUpperTypeBound, supertype)})")
-            assert(thisUTB ne supertype)
+                    s"${domain.isSubtypeOf(thisUTB, supertype)})")
 
             if (domain.isSubtypeOf(supertype, thisUTB).isYes) {
                 // this also handles the case where we cast an Object to an array
@@ -1024,17 +1026,17 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             isNull.isNoOrUnknown || values.forall { _.isNull.isYesOrUnknown },
             s"inconsistent null property(isNull == $isNull): ${values.mkString(",")}")
         assert(
-            (isNull.isYes && upperTypeBound.isEmpty) ||
-                (
-                    isNull.isNoOrUnknown && upperTypeBound.nonEmpty &&
-                    (
-                        domain.upperTypeBound(values) == upperTypeBound ||
-                        classHierarchy.isSubtypeOf(
-                            domain.upperTypeBound(values),
-                            upperTypeBound).isNoOrUnknown
-                    )
-                ),
-            s"the upper type bound (isNull == $isNull) of ${values.mkString(",")} == ${domain.upperTypeBound(values)} <: $upperTypeBound"
+            (isNull.isYes && upperTypeBound.isEmpty) || (
+                isNull.isNoOrUnknown &&
+                upperTypeBound.nonEmpty && (
+                    domain.upperTypeBound(values) == upperTypeBound ||
+                    classHierarchy.isSubtypeOf(
+                        domain.upperTypeBound(values),
+                        upperTypeBound).isNoOrUnknown
+                )
+            ),
+            s"the upper type bound (isNull == $isNull) of ${values.mkString(",")} "+
+                s"== ${domain.upperTypeBound(values)} <: $upperTypeBound"
         )
 
         def joinValue( // TODO: addValue
@@ -1147,28 +1149,39 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // It may the case that the subtype relation of each individual value – 
             // when compared with supertype - is Unknown, but that the type of the
             // value as a whole is still known to be a subtype
-            val isSubtype =
-                if (classHierarchy.isSubtypeOf(this.upperTypeBound, supertype).isYes)
-                    Yes
-                else
-                    // Recall that the runtime type of this value can still be a
-                    // subtype of supertype even if this upperTypeBound is not
-                    // a subtype of supertype.
-                    Unknown
+            val isSubtypeOf = classHierarchy.isSubtypeOf(this.upperTypeBound, supertype)
+            if (isSubtypeOf eq Yes)
+                return Yes;
+            if ((isSubtypeOf eq No) && isPrecise)
+                return No;
 
-            val values = this.values.filter(_.isNull.isNoOrUnknown)
+            // Recall that the runtime type of this value can still be a
+            // subtype of supertype even if this upperTypeBound is not
+            // a subtype of supertype.
+
+            val values = this.values.view.filter(_.isNull.isNoOrUnknown)
             var answer: Answer = values.head.isValueSubtypeOf(supertype)
             values.tail foreach { value ⇒
-                if (answer == Unknown)
-                    return isSubtype;
+                if (answer eq Unknown)
+                    return answer //isSubtype;
 
                 answer = answer & value.isValueSubtypeOf(supertype)
             }
-            // if we reach this point, `answer` is either Yes or No
-            if (answer == Unknown)
-                isSubtype
-            else
-                answer
+
+            answer
+
+            //            if (classHierarchy.isSubtypeOf(this.upperTypeBound, supertype).isYes)
+            //                return Yes;
+            //            // Recall that the runtime type of this value can still be a
+            //            // subtype of supertype even if this upperTypeBound is not
+            //            // a subtype of supertype.
+            //            val values = this.values.view.filter(_.isNull.isNoOrUnknown)
+            //            val valuesIt = values.iterator
+            //            var answer: Answer = valuesIt.next.isValueSubtypeOf(supertype)
+            //            while ((answer ne Unknown) && valuesIt.hasNext) {
+            //                answer = answer & valuesIt.next().isValueSubtypeOf(supertype)
+            //            }
+            //            answer
         }
 
         protected def refineIf(refinements: Refinements): Boolean = {
@@ -1194,15 +1207,20 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             //    }
             // }
 
-            // this value (as whole) was not previously refined
+            // this value (as a whole) was not previously refined
             val thisIsNull = this.isNull
             var refined = false
-            var refinedValues = SortedSet.empty[DomainSingleOriginReferenceValue]
+            // [CONCEPTUALLY]var refinedValues = SortedSet.empty[DomainSingleOriginReferenceValue]
+            // we can use a buffer here, since the refinement will not change
+            // the origin of a value
+            val refinedValues = new ArrayBuffer[DomainSingleOriginReferenceValue](values.size)
             this.values.foreach { value ⇒
                 val refinedValue = refinements.get(value)
                 // INVARIANT: refinedValue ne value
-                if (refinedValue == null) refinedValues += value
-                else {
+                if (refinedValue == null) {
+                    refinedValues += value
+                } else {
+
                     refined = true
 
                     // we now have to check if the refined value can still be
@@ -1211,11 +1229,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         (!refinedValue.isPrecise ||
                             classHierarchy.isSubtypeOf(refinedValue.upperTypeBound, upperTypeBound).isYesOrUnknown)) {
 
-                        refinedValues += refinedValue.asInstanceOf[DomainSingleOriginReferenceValue]
+                        val refinedSingleOriginValue =
+                            refinedValue.asInstanceOf[DomainSingleOriginReferenceValue]
+
+                        assert(refinedSingleOriginValue.origin == value.origin)
+
+                        refinedValues += refinedSingleOriginValue
                     }
-                    // else {
-                    //     println(s"removed $value from ${this} due to refinement to $refinedValue")
-                    // }
                 }
             }
 
@@ -1250,7 +1270,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 refinements.put(this, refinedValue)
                 if (remainingValue ne refinedValue)
                     refinements.put(remainingValue, refinedValue)
-                true
 
             } else {
                 val newIsNull =
@@ -1266,7 +1285,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     if (newIsNull.isYes)
                         UIDSet.empty[ReferenceType]
                     else {
-                        val newRefinedValuesUTB = domain.upperTypeBound(refinedValues)
+                        val newRefinedValuesUTB =
+                            domain.upperTypeBound(ImmutableSortedSet.empty ++ refinedValues)
                         if (newRefinedValuesUTB != upperTypeBound &&
                             classHierarchy.isSubtypeOf(newRefinedValuesUTB, upperTypeBound).isYes)
                             newRefinedValuesUTB
@@ -1277,7 +1297,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 refinements.put(
                     this,
                     MultipleReferenceValues(
-                        refinedValues,
+                        ImmutableSortedSet.empty ++ refinedValues,
                         newIsNull,
                         isPrecise || domain.isPrecise(refinedValues),
                         newUTB,
@@ -1285,8 +1305,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     )
                 )
             }
-            true
 
+            true
         }
 
         protected[this] def refineToValue(
