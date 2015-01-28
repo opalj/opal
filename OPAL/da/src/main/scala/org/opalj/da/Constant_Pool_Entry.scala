@@ -44,6 +44,9 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
     def toNode(implicit cp: Constant_Pool): Node
 
+    def toXHTML(implicit cp: Constant_Pool): Node =
+        throw new UnsupportedOperationException()
+
     def toLDCString(implicit cp: Constant_Pool): String
 
 }

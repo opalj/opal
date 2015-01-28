@@ -113,6 +113,34 @@ package object da {
         s"$returnType $methodName(${parameterTypes.mkString(", ")})"
     }
 
+    def parseMethodDescriptorToXHTML(
+        //definingTypeFQN: String,
+        methodName: String,
+        descriptor: String): Node = {
+        var index = 1 // we are not interested in the leading '('
+        var parameterTypes: IndexedSeq[String] = IndexedSeq.empty
+        while (descriptor.charAt(index) != ')') {
+            val (ft, nextIndex) = parseParameterType(descriptor, index)
+            parameterTypes = parameterTypes :+ ft
+            index = nextIndex
+        }
+        val returnType =
+            parseReturnType(descriptor.substring(index + 1))
+
+        <span class="cp_method">
+            <span class="method_returntype fqn">{ returnType }</span>
+            <span class="method_name"> { methodName }></span>
+            <span class="method_parametertypes">({
+                if (parameterTypes.nonEmpty)
+                    <span class="method_parametertype fqn">{ parameterTypes.head }</span> ++ {
+                        parameterTypes.tail.map(x ⇒ { ", " } ++ <span class="method_parametertype fqn">{ x }</span>)
+                    }
+                else
+                    scala.xml.NodeSeq.Empty
+            })</span>
+        </span>
+    }
+
     private[this] def parseParameterType(md: String, startIndex: Int): (String, Int) = {
         val td = md.charAt(startIndex)
         (td: @scala.annotation.switch) match {

@@ -56,6 +56,19 @@ case class CONSTANT_NameAndType_info(
             )
         </div>
 
+    override def toXHTML(implicit cp: Constant_Pool): Node =
+        <span class="cp_name_and_type">
+            {
+                val descriptor = cp(descriptor_index).toString(cp)
+                if (descriptor.charAt(0) != '(') {
+                    <span class="cp_type fqn">{ parseFieldType(cp(descriptor_index).asString) } </span>
+                    <span class="cp_name">{ cp(name_index).toString(cp) } </span>
+                } else
+                    parseMethodDescriptorToXHTML(cp(name_index).asString, cp(descriptor_index).asString)
+
+            }
+        </span>
+
     def toString(implicit cp: Constant_Pool): String = {
         val descriptor = cp(descriptor_index).toString(cp)
         if (descriptor.charAt(0) != '(')
