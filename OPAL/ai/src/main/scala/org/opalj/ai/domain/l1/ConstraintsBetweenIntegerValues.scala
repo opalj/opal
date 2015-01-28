@@ -270,7 +270,9 @@ trait ConstraintsBetweenIntegerValues
     //
     // -----------------------------------------------------------------------------------
 
-    abstract override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
+    abstract override def intAreEqual(
+        pc: PC,
+        value1: DomainValue, value2: DomainValue): Answer = {
         super.intAreEqual(pc, value1, value2) match {
             case Unknown ⇒
                 val constraint = getConstraint(pc, value1, value2)
@@ -289,7 +291,10 @@ trait ConstraintsBetweenIntegerValues
         }
     }
 
-    override def intIsLessThan(pc: PC, left: DomainValue, right: DomainValue): Answer = {
+    override def intIsLessThan(
+        pc: PC,
+        left: DomainValue,
+        right: DomainValue): Answer = {
         super.intIsLessThan(pc, left, right) match {
             case Unknown ⇒
                 val constraint = getConstraint(pc, left, right)
