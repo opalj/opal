@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -99,6 +99,8 @@ class BaseFieldValuesAnalysisDomain(
                 fieldType = field.fieldType.asObjectType
 
                 // test that there is some potential for specialization
+                // e.g., an analysis for a field of type string doesn't make sense
+                // since there will be no subtype
                 if !project.classFile(fieldType).map(_.isFinal).getOrElse(false)
                 if classHierarchy.hasSubtypes(fieldType).isYes
 
@@ -118,7 +120,7 @@ class BaseFieldValuesAnalysisDomain(
      * Sets the method that is currently analyzed. This method '''must not be called'''
      * during the abstract interpretation of a method. It is allowed to be called
      * before this domain is used for the first time and immediately after the
-     * abstract interpretation of the method has completed/before the next interpreation
+     * abstract interpretation of the method has completed/before the next interpretation
      * starts.
      */
     def setMethodContext(method: Method): Unit = {
@@ -133,7 +135,7 @@ class BaseFieldValuesAnalysisDomain(
                 field ← classFile.fields
                 Some(fieldValue: ReferenceValue) ← fieldInformation.get(field.name)
                 upperTypeBound = fieldValue.upperTypeBound
-                // we filter those fields that are known to be "null" (the upper 
+                // we filter those fields that are known to be "null" (the upper
                 // type bound is empty), because some of them
                 // are actually not null; they are initialized using native code
                 if upperTypeBound.nonEmpty
