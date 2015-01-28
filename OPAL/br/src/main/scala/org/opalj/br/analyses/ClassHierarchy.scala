@@ -48,6 +48,7 @@ import org.opalj.graphs.Node
  * ==Thread safety==
  * This class is immutable. Hence, concurrent access to the class hierarchy is supported.
  *
+ * @param isFinal `true` if the class is known to be `final`.
  * @param superclassTypeMap Contains type information about a type's immediate superclass.
  *      This value is defined unless the key identifies the
  *      object type `java.lang.Object` or when the respective class files was not
@@ -70,16 +71,18 @@ class ClassHierarchy private (
         private[this] val knownTypesMap: Array[ObjectType],
         private[this] val interfaceTypesMap: Array[Boolean],
         private[this] val superclassTypeMap: Array[ObjectType],
+        private[this] val isKnownToBeFinalMap: Array[Boolean],
         // TODO use a UIDSet for storing the class hierarchy!
         private[this] val superinterfaceTypesMap: Array[Set[ObjectType]],
         private[this] val subclassTypesMap: Array[Set[ObjectType]],
         private[this] val subinterfaceTypesMap: Array[Set[ObjectType]]) {
 
-    require(knownTypesMap.length == superclassTypeMap.length)
-    require(knownTypesMap.length == interfaceTypesMap.length)
-    require(knownTypesMap.length == superinterfaceTypesMap.length)
-    require(knownTypesMap.length == subclassTypesMap.length)
-    require(knownTypesMap.length == subinterfaceTypesMap.length)
+    assert(knownTypesMap.length == superclassTypeMap.length)
+    assert(knownTypesMap.length == interfaceTypesMap.length)
+    assert(knownTypesMap.length == isKnownToBeFinalMap.length)
+    assert(knownTypesMap.length == superinterfaceTypesMap.length)
+    assert(knownTypesMap.length == subclassTypesMap.length)
+    assert(knownTypesMap.length == subinterfaceTypesMap.length)
 
     /**
      * Returns the set of all root types; if the class hierarchy
@@ -112,6 +115,7 @@ class ClassHierarchy private (
                     rootTypes.filterNot(_ eq ObjectType.Object).
                     map(_.toJava).mkString(", ")
             )
+
     }
 
     validateClassHierarchy()
@@ -189,6 +193,28 @@ class ClassHierarchy private (
         else
             None
     }
+
+    /**
+     * Returns `true` if the given type is `final`. I.e., the declaring class
+     * was explicitly declared final and hence, no subtypes may ever exist.
+     */
+    @inline def isKnownToBeFinal(objectType: ObjectType): Boolean =
+        if (isKnown(objectType)) isKnownToBeFinalMap(objectType.id) else false
+
+    /**
+     * Returns `true` if the given type is `final`. I.e., the declaring class
+     * was explicitly declared final and hence, no subtypes may ever exist or
+     * the type identifies an array type and the component type is either
+     * known to be final or is a primitive type.
+     */
+    @inline def isKnownToBeFinal(referenceType: ReferenceType): Boolean =
+        referenceType match {
+            case objectType: ObjectType ⇒
+                isKnownToBeFinal(objectType)
+            case at: ArrayType ⇒
+                at.componentType.isBaseType ||
+                    isKnownToBeFinal(at.componentType.asReferenceType)
+        }
 
     /**
      * Returns `true` if the given `objectType` defines an interface type.
@@ -1804,6 +1830,7 @@ object ClassHierarchy {
         val knownTypesMap = new Array[ObjectType](objectTypesCount)
         val interfaceTypesMap = new Array[Boolean](objectTypesCount)
         val superclassTypeMap = new Array[ObjectType](objectTypesCount)
+        val isKnownToBeFinalMap = new Array[Boolean](objectTypesCount)
         val superinterfaceTypesMap = new Array[Set[ObjectType]](objectTypesCount)
         val subclassTypesMap = new Array[Set[ObjectType]](objectTypesCount)
         val subinterfaceTypesMap = new Array[Set[ObjectType]](objectTypesCount)
@@ -1814,6 +1841,7 @@ object ClassHierarchy {
          * Extends the class hierarchy.
          */
         def process(
+            isFinal: Boolean,
             objectType: ObjectType,
             isInterfaceType: Boolean,
             theSuperclassType: Option[ObjectType],
@@ -1822,10 +1850,12 @@ object ClassHierarchy {
             //
             // Update the class hierarchy from the point of view of the newly added type
             //
-            knownTypesMap(objectType.id) = objectType
-            interfaceTypesMap(objectType.id) = isInterfaceType
-            superclassTypeMap(objectType.id) = theSuperclassType.orNull
-            superinterfaceTypesMap(objectType.id) = theSuperinterfaceTypes
+            val objectTypeId = objectType.id
+            knownTypesMap(objectTypeId) = objectType
+            interfaceTypesMap(objectTypeId) = isInterfaceType
+            superclassTypeMap(objectTypeId) = theSuperclassType.orNull
+            superinterfaceTypesMap(objectTypeId) = theSuperinterfaceTypes
+            isKnownToBeFinalMap(objectTypeId) = isFinal
 
             //
             // For each super(class|interface)type make sure that it is "known"
@@ -1834,8 +1864,9 @@ object ClassHierarchy {
                 knownTypesMap(superclassType.id) = superclassType
             }
             theSuperinterfaceTypes.foreach { aSuperinterfaceType ⇒
-                knownTypesMap(aSuperinterfaceType.id) = aSuperinterfaceType
-                interfaceTypesMap(aSuperinterfaceType.id) = true
+                val aSuperinterfaceTypeId = aSuperinterfaceType.id
+                knownTypesMap(aSuperinterfaceTypeId) = aSuperinterfaceType
+                interfaceTypesMap(aSuperinterfaceTypeId) = true
             }
 
             //
@@ -1855,6 +1886,7 @@ object ClassHierarchy {
 
         typeDeclarations foreach { typeDecl ⇒
             process(
+                false,
                 typeDecl.objectType,
                 typeDecl.isInterfaceType,
                 typeDecl.theSuperclassType,
@@ -1866,6 +1898,7 @@ object ClassHierarchy {
          */
         val processClassFile: (ClassFile) ⇒ Unit = { classFile ⇒
             process(
+                classFile.isFinal,
                 classFile.thisType,
                 classFile.isInterfaceDeclaration,
                 classFile.superclassType,
@@ -1879,6 +1912,7 @@ object ClassHierarchy {
             knownTypesMap,
             interfaceTypesMap,
             superclassTypeMap,
+            isKnownToBeFinalMap,
             superinterfaceTypesMap,
             subclassTypesMap,
             subinterfaceTypesMap

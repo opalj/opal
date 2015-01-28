@@ -40,6 +40,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.UpperTypeBound
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
 
 /**
  * Implements the foundations for performing computations related to reference values.
@@ -241,6 +242,14 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             with IsReferenceValue
             with ArrayAbstraction {
         this: AReferenceValue ⇒
+
+        override def isPrecise: Boolean =
+            upperTypeBound match {
+                case UIDSet1(theUpperTypeBound) ⇒
+                    classHierarchy.isKnownToBeFinal(theUpperTypeBound)
+                case _ ⇒
+                    false
+            }
 
         /**
          * Returns `ComputationalTypeReference`.
