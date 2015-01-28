@@ -64,8 +64,12 @@ case class Code(instructions: Array[Byte]) {
                 }
                 <th>Instruction</th>
                 {
-                    if (exceptions.nonEmpty)
-                        <th class="exception_header">Exceptions</th> :: exceptions.tail.foldLeft(List.empty[Node])((e, nl) ⇒ <th class="exception_header"></th> :: e)
+                    if (exceptionTable.nonEmpty)
+                        Seq(
+                            <th class="exception_header">Exceptions</th>
+                        ) ++ exceptionTable.tail.map(_ ⇒
+                                <th class="exception_header"></th>
+                            )
                     else
                         scala.xml.NodeSeq.Empty
                 }
