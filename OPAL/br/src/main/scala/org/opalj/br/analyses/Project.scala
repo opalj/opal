@@ -446,14 +446,15 @@ class Project[Source] private (
     def get[T <: AnyRef](pik: ProjectInformationKey[T]): T = {
         val pikUId = pik.uniqueId
 
-        def derive(projectInformation: AtomicReferenceArray[AnyRef]): T = { // calls are externally synchronized!
-            for (requiredProjectInformationKey ← pik.getRequirements) {
-                get(requiredProjectInformationKey)
+        def derive(projectInformation: AtomicReferenceArray[AnyRef]): T =
+            /* calls are externally synchronized! */ {
+                for (requiredProjectInformationKey ← pik.getRequirements) {
+                    get(requiredProjectInformationKey)
+                }
+                val pi = pik.doCompute(this)
+                projectInformation.set(pikUId, pi)
+                pi
             }
-            val pi = pik.doCompute(this)
-            projectInformation.set(pikUId, pi)
-            pi
-        }
 
         val thisProjectInformation = this.projectInformation
         if (pikUId < thisProjectInformation.length()) {
