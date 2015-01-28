@@ -29,31 +29,30 @@
 package org.opalj
 package ai
 package domain
-package l2
+package la
 
-import org.opalj.br.Method
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+
+import java.net.URL
+
 import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
 
 /**
- * Enables to perform invocations.
+ * This system test(suite) just loads a very large number of class files and performs
+ * an abstract interpretation of all methods using the la.DefaultDomain. It basically
+ * tests if we can load and process a large number of different classes without exceptions.
  *
  * @author Michael Eichberg
  */
-trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with domain.ClassHierarchy with Configuration with TheProject with TheCode ⇒
+@RunWith(classOf[JUnitRunner])
+class DefaultDomainTest extends DomainTestInfrastructure("la.DefaultDomain") {
 
-    val calledMethodsStore: CalledMethodsStore
+    def Domain(project: Project[URL], classFile: ClassFile, method: Method): la.DefaultDomain =
+        new la.DefaultDomain(project, classFile, method)
 
-    def isRecursive(classFile: ClassFile, method: Method, operands: Operands): Boolean =
-        calledMethodsStore.isRecursive(classFile, method, operands)
-
-    trait InvokeExecutionHandler extends super.InvokeExecutionHandler {
-
-        override val domain: Domain with MethodCallResults with PerformInvocationsWithRecursionDetection {
-            // we need to make sure that all instances use the same CalledMethodsStore
-            val calledMethodsStore: callingDomain.calledMethodsStore.type
-        }
-
-    }
 }
+
 
