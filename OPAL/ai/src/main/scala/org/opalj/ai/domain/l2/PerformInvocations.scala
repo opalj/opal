@@ -89,7 +89,10 @@ trait PerformInvocations extends MethodCallsDomain {
 
             val noOperands = List.empty[domain.DomainValue]
             val parameters = mapOperandsToParameters(operands, method, domain)
-            val aiResult = ai.perform(method.body.get, domain)(noOperands, parameters)
+            val aiResult =
+                ai.performInterpretation(
+                    method.isStrict, method.body.get, domain)(
+                        noOperands, parameters)
 
             transformResult(pc, method, operands, parameters, aiResult)
         }

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -64,7 +64,7 @@ trait DefaultTypeLevelReferenceValues
             other match {
                 case _: NullValue ⇒ NoUpdate
                 case _: ReferenceValue ⇒
-                    // THIS domain does not track whether ReferenceValues 
+                    // THIS domain does not track whether ReferenceValues
                     // are definitively not null!
                     StructuralUpdate(other)
             }
@@ -75,6 +75,10 @@ trait DefaultTypeLevelReferenceValues
         }
     }
 
+    /**
+     * @param theUpperTypeBound The upper type bound of this array, which is necessarily
+     *      precise if the element type of the array is a base type (primitive type).
+     */
     protected[this] class ArrayValue(override val theUpperTypeBound: ArrayType)
             extends super.ArrayValue with SReferenceValue[ArrayType] {
         this: DomainArrayValue ⇒
@@ -84,7 +88,7 @@ trait DefaultTypeLevelReferenceValues
             isSubtypeOf match {
                 case Yes ⇒ Yes
                 case No if isPrecise ||
-                    /* the array's supertypes: Object, Serializable and Cloneable 
+                    /* the array's supertypes: Object, Serializable and Cloneable
                      * are handled by domain.isSubtypeOf */
                     supertype.isObjectType ||
                     theUpperTypeBound.elementType.isBaseType ||
@@ -104,8 +108,8 @@ trait DefaultTypeLevelReferenceValues
             typeOfValue(value) match {
 
                 case IsPrimitiveValue(primitiveType) ⇒
-                    // The following is an over approximation that makes it theoretically 
-                    // possible to store an int value in a byte array. However, 
+                    // The following is an over approximation that makes it theoretically
+                    // possible to store an int value in a byte array. However,
                     // such bytecode is illegal
                     Answer(
                         theUpperTypeBound.componentType.computationalType eq
@@ -113,20 +117,44 @@ trait DefaultTypeLevelReferenceValues
                     )
 
                 case IsAReferenceValue(UIDSet1(valueType: ArrayType)) if valueType.elementType.isBaseType ⇒
-                    //... we want to store an Array (of Array of ...) of primitives 
-                    // in this array
+                    // We want to store an Array (of array of ...) of primitives
+                    // in this array. This will only work if this array is also an
+                    // array (of array of ...) primitive values.
                     if (theUpperTypeBound.componentType.isReferenceType)
-                        classHierarchy.isSubtypeOf(valueType, theUpperTypeBound.componentType.asReferenceType)
+                        Answer(theUpperTypeBound.componentType eq valueType)
                     else
                         No
 
-                case _ /* ReferenceValue */ ⇒
+                case other @ IsAReferenceValue(otherUpperTypeBound) ⇒
                     if (theUpperTypeBound.componentType.isBaseType)
                         No
-                    else
-                        // IMPROVE We could check if this array's type and the given value's type are in no inheritance hierarchy
-                        // IMPROVE We could check if the type of the other value is precise and if so if this type is a supertype of it
-                        Unknown
+                    else if (this.isPrecise) {
+                        if (other.isPrecise)
+                            classHierarchy.isSubtypeOf(otherUpperTypeBound, theUpperTypeBound)
+                        else {
+                            // The other value is not precise, but this may not be relevant
+                            // as long as the upper type bound is a subtype of the
+                            // component type of this array. If the other type bound
+                            // is not a subtype of this component type, a concrete value
+                            // still may be a subtype that we may be able to store
+                            // in this array...
+                            classHierarchy.isSubtypeOf(otherUpperTypeBound, theUpperTypeBound) match {
+                                case No ⇒
+                                    // let's check if a potential subtype
+                                    if (classHierarchy.isSubtypeOf(theUpperTypeBound, otherUpperTypeBound).isNo)
+                                        No
+                                    else
+                                        Unknown
+                                case answer ⇒ answer // Yes => Yes and Unknown => Unknown
+                            }
+                        }
+                    }
+                    // IMPROVE We could check if this array's type and the given value's type are in no inheritance hierarchy
+                    Unknown
+
+                case _ ⇒
+                    Unknown
+
             }
         }
 
@@ -382,12 +410,12 @@ trait DefaultTypeLevelReferenceValues
             }
             /* No | Unknown*/
             // In general, we could check whether a type exists that is a
-            // proper subtype of the type identified by this value's type bounds 
-            // and that is also a subtype of the given `supertype`. 
+            // proper subtype of the type identified by this value's type bounds
+            // and that is also a subtype of the given `supertype`.
             //
-            // If such a type does not exist the answer is truly `no` (if we 
-            // assume that we know the complete type hierarchy); 
-            // if we don't know the complete hierarchy or if we currently 
+            // If such a type does not exist the answer is truly `no` (if we
+            // assume that we know the complete type hierarchy);
+            // if we don't know the complete hierarchy or if we currently
             // analyze a library the answer generally has to be `Unknown`
             // unless we also consider the classes that are final or ....
 
@@ -398,7 +426,7 @@ trait DefaultTypeLevelReferenceValues
                     supertype.isArrayType &&
                     upperTypeBound != ObjectType.SerializableAndCloneable
                 ) ⇒
-                    // even if the upper bound is not precise we are now 100% sure 
+                    // even if the upper bound is not precise we are now 100% sure
                     // that this value is not a subtype of the given supertype
                     No
                 case _ ⇒
