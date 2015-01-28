@@ -274,6 +274,10 @@ ol.cp_entries > li {
 	white-space: nowrap;
 }
 
+ol.exception_table {
+	line-height: 1.5em;
+}
+
 div.cp_ref {
 	margin-left:1em;
 }
