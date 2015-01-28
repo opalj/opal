@@ -36,8 +36,69 @@ package ai;
  * test-classfiles directory.
  * 
  * @author Michael Eichberg
+ * @author Christos Votskos
  */
 public class MethodsWithArrays {
+	
+	public static byte[] simpleByteArrayInitializationWithLength4(){
+		byte newByteArray4Elements[] = { 1, 2, 3, 4 };
+		
+		return newByteArray4Elements;
+	}
+	
+	public static short[] simpleShortArrayInitializationWithLength4(){
+		short newShortArray4Elements[] = { 1, 2, 3, 4 };
+		
+		return newShortArray4Elements;
+	}
+	
+	public static int[] simpleIntArrayInitializationWithLength4() {
+        int newIntArray4Elements[] = { 1, 2, 3, 4 };
+        
+        return newIntArray4Elements;
+    }
+	
+	public static long[] simpleLongArrayInitializationWithLength4(){
+		long newLongArray4Elements[] = { 1l, 2l, 3l, 4l };
+		
+		return newLongArray4Elements;
+	}
+	
+	public static float[] simpleFloatArrayInitializationWithLength4(){
+		float newFloatArray4Elements[] = { 1.0f, 2.0f, 3.0f, 4.0f };
+		
+		return newFloatArray4Elements;
+	}
+	
+	public static double[] simpleDoubleArrayInitializationWithLength4(){
+		double newDoubleArray4Elements[] = { 1.0d, 2.0d, 3.0d, 4.0d };
+		
+		return newDoubleArray4Elements;
+	}
+	
+	public static boolean[] simpleBooleanArrayInitializationWithLength4(){
+		boolean newBooleanArray4Elements[] = { true, false, true, false };
+		
+		return newBooleanArray4Elements;
+	}
+	
+	public static char[] simpleCharArrayInitializationWithLength4(){
+		char newCharArray4Elements[] = { 'A', 'B', 'C', 'D'};
+		
+		return newCharArray4Elements;
+	}
+	
+	public static String[] simpleStringArrayInitializationWithLength4(){
+		String newStringArray4Elements[] = { "A1", "B2", "C3", "D4"};
+		
+		return newStringArray4Elements;
+	}
+	
+	public static Object[] simpleObjectArrayInitializationWithLength4(){
+		Object newObjectArray4Elements[] = { new Object(), new Object(), new Object(), new Object()};
+		
+		return newObjectArray4Elements;
+	}
 
     public static byte byteArrays(byte[] values) {
         int length = values.length;
