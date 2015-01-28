@@ -97,8 +97,10 @@ function toggleUnusedFlags() {
     });
 }
 
-/* removes the exception name, if the containing element (span) would overlap to the next
-section of the document */
+/** 
+ * Removes the exception name from the exceptions overview if the containing element
+ * (span) would overlap to the next section of the document.
+ */
 function removeLongExceptionNames() {
 
 	var exceptions = document.querySelectorAll('td.exception');
@@ -107,8 +109,8 @@ function removeLongExceptionNames() {
 		if (span != null) {
 			var tbody = span.parentNode.parentNode.parentNode;
 
-			// if the totalOffset+width of the span is greater than totalOffset+height of table body
-			// it would overlap to the next section (exception table)
+			// if the totalOffset+width of the span is greater than totalOffset+height of 
+			// the table body it would overlap to the next section (exception table)
 			if (totalOffset(span).top+span.clientWidth > totalOffset(tbody).top+tbody.clientHeight) {
 				span.innerHTML = span.getAttribute("data-exception-index") + ': ...';
 			}
@@ -119,9 +121,11 @@ function removeLongExceptionNames() {
 	});
 }
 
-/* computes the offset of an HTMLElement to the top/left corner of the document
-in contrast to HTMLElement.offsetLeft/offsetTop which compute the offset relative
-to their HTMLElement.offsetParent node. */
+/** 
+ * Computes the offset of an HTMLElement from the top/left corner of the document
+ * in contrast to HTMLElement.offsetLeft/offsetTop which computes the offset relative
+ * to their HTMLElement.offsetParent node. 
+ */
 function totalOffset(elem) {
 	if(!elem) elem = this;
 
@@ -136,7 +140,11 @@ function totalOffset(elem) {
 	return { left: x, top: y };
 }
 
-// function is called when a details.method_body is set to open, i.e. the methods instructions can be seen
+
+/**
+ * Removes (too) long exception names. This is a callback function that is called when 
+ * a details.method_body is set to open, i.e. the methods instructions can be seen.
+ */
 function executeOnMethodBodyOpen() {
 	removeLongExceptionNames();
 }
