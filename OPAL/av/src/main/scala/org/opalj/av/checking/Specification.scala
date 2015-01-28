@@ -581,9 +581,11 @@ object Specification {
      *
      * Classpath files should be used to prevent absolute paths in tests.
      */
-    def ClassPath(fileName: String): Iterable[String] = {
+    def Classpath(
+        fileName: String,
+        pathSeparatorChar: Char = java.io.File.pathSeparatorChar): Iterable[String] = {
         processSource(scala.io.Source.fromFile(new java.io.File(fileName))) { s ⇒
-            s.getLines().map(_.split(java.io.File.pathSeparatorChar)).flatten.toSet
+            s.getLines().map(_.split(pathSeparatorChar)).flatten.toSet
         }
     }
 

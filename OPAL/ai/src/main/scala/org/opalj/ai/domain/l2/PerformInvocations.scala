@@ -32,6 +32,7 @@ package domain
 package l2
 
 import org.opalj.br._
+import scala.util.control.ControlThrowable
 
 /**
  * Mix in this trait if methods that are called by `invokeXYZ` instructions should
@@ -189,26 +190,42 @@ trait PerformInvocations extends MethodCallsDomain {
         operands: Operands,
         fallback: () ⇒ MethodCallResult): MethodCallResult = {
 
-        classHierarchy.resolveMethodReference(
-            // the cast is safe since arrays do not have any static/special methods
-            declaringClass.asObjectType,
-            methodName,
-            methodDescriptor,
-            project) match {
-                case Some(method) if !method.isNative ⇒
-                    val classFile = project.classFile(method)
-                    if (!shouldInvocationBePerformed(classFile, method) ||
-                        isRecursive(classFile, method, operands))
+        try {
+            classHierarchy.resolveMethodReference(
+                // the cast is safe since arrays do not have any static/special methods
+                declaringClass.asObjectType,
+                methodName,
+                methodDescriptor,
+                project) match {
+                    case Some(method) ⇒
+                        if (!method.isNative) {
+                            val classFile = project.classFile(method)
+                            if (!shouldInvocationBePerformed(classFile, method) ||
+                                isRecursive(classFile, method, operands))
+                                fallback()
+                            else
+                                doInvoke(pc, classFile, method, operands)
+                        } else
+                            fallback()
+                    case _ ⇒
+                        println(
+                            Console.YELLOW+"[warn] method reference cannot be resolved: "+
+                                declaringClass.toJava+
+                                "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET)
                         fallback()
-                    else
-                        doInvoke(pc, classFile, method, operands)
-                case _ ⇒
-                    println(
-                        Console.YELLOW+"[warn] method reference cannot be resolved: "+
-                            declaringClass.toJava+
-                            "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET)
-                    fallback()
-            }
+                }
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct
+            case e: Throwable ⇒
+                println(
+                    Console.YELLOW + Console.RED_B+
+                        "[internal error] exception occured while resolving method reference: "+
+                        declaringClass.toJava+
+                        "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+
+                        ":\n[internal error] "+e.getMessage.replace("\n", "\n[internal error] ")+"\n"+
+                        Console.GREEN+"[internal error] continuing the analysis using the default method call handling strategy")
+                fallback()
+        }
     }
 
     abstract override def invokespecial(
