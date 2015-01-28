@@ -146,6 +146,12 @@ final class Method private (
     def parameterTypes = descriptor.parameterTypes
 
     /**
+     * The number of explicit and implicit – that is, including `this` in case of a
+     * non-static method – parameters of this method.
+     */
+    def parametersCount = (if (isStatic) 0 else 1) + descriptor.parametersCount
+
+    /**
      * Each method optionally defines a method type signature.
      */
     def methodTypeSignature: Option[MethodTypeSignature] =
