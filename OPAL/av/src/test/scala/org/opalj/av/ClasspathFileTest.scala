@@ -49,7 +49,7 @@ class ClasspathFileTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     behavior of "the Architecture Validation Library when processing classpath files"
 
-    val validClassPath = Classpath("OPAL/av/src/test/resources/ValidClasspathFile.txt",':')
+    val validClassPath = Classpath("OPAL/av/src/test/resources/ValidClasspathFile.txt", ':')
     val invalidClassPath = Classpath("OPAL/av/src/test/resources/InvalidClasspathFile.txt")
 
     it should "return the expected path to the given JAR" in {
