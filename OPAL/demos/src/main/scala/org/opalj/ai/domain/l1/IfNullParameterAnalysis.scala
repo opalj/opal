@@ -132,7 +132,7 @@ object IfNullParameterAnalysis
                 // 1. Default interpretation
                 val domain1 =
                     new DefaultDomain(theProject, classFile, method) with domain.RecordAllThrownExceptions
-                ai.perform(method.body.get, domain1)(
+                ai.performInterpretation(method.isStrict, method.body.get, domain1)(
                     ai.initialOperands(classFile, method, domain1),
                     ai.initialLocals(classFile, method, domain1)(None)
                 )
@@ -141,7 +141,7 @@ object IfNullParameterAnalysis
                 val domain2 =
                     new DefaultDomain(theProject, classFile, method) with domain.RecordAllThrownExceptions
                 val nonNullLocals = setToNonNull(domain2)(ai.initialLocals(classFile, method, domain2)(None))
-                ai.perform(method.body.get, domain2)(
+                ai.performInterpretation(method.isStrict, method.body.get, domain2)(
                     ai.initialOperands(classFile, method, domain2), nonNullLocals)
 
                 // Let's calculate the diff. The basic idea is to iterate over

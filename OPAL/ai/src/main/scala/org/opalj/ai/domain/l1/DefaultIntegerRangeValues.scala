@@ -82,6 +82,8 @@ trait DefaultIntegerRangeValues
 
     class IntegerRange(val lowerBound: Int, val upperBound: Int) extends super.IntegerRange {
 
+        assert(lowerBound <= upperBound)
+
         def update(newValue: Int): DomainValue = {
             val newLowerBound = if (lowerBound > newValue) newValue else lowerBound
             val newUpperBound = if (upperBound < newValue) newValue else upperBound

@@ -61,6 +61,8 @@ EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
 
 EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE17)
 
+EclipseKeys.withSource := true
+
 //
 //
 // SETTINGS REQUIRED TO PUBLISH OPAL ON MAVEN CENTRAL

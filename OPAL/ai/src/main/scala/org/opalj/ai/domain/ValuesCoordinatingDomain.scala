@@ -175,13 +175,6 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     /*override*/ def lreturn(pc: PC, value: DomainValue): Unit =
         throw new UnsupportedOperationException
 
-    /*override*/ def d2f(pc: PC, value: DomainValue): DomainValue =
-        throw new UnsupportedOperationException
-    /*override*/ def d2i(pc: PC, value: DomainValue): DomainValue =
-        throw new UnsupportedOperationException
-    /*override*/ def d2l(pc: PC, value: DomainValue): DomainValue =
-        throw new UnsupportedOperationException
-
     /*override*/ def l2d(pc: PC, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
     /*override*/ def l2f(pc: PC, value: DomainValue): DomainValue =
@@ -196,11 +189,18 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     /*override*/ def i2l(pc: PC, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
 
-    /*override*/ def f2d(pc: PC, value: DomainValue): DomainValue =
+    /*override*/ def f2d(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
     /*override*/ def f2i(pc: PC, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
     /*override*/ def f2l(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+
+    /*override*/ def d2f(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/ def d2i(pc: PC, value: DomainValue): DomainValue =
+        throw new UnsupportedOperationException
+    /*override*/ def d2l(pc: PC, value: DomainValue): DomainValue =
         throw new UnsupportedOperationException
 
     /*override*/ def lshl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
