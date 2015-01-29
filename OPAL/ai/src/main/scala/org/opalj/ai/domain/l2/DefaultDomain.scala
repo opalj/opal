@@ -88,8 +88,7 @@ class DefaultDomain[Source](
                 new SharedDefaultDomain(
                     project,
                     project.classFile(method),
-                    method
-                ) with RecordMethodCallResults
+                    method) with RecordMethodCallResults
 
             def ai = BaseAI
         }

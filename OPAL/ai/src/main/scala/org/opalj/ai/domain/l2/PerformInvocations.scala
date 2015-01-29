@@ -98,10 +98,11 @@ trait PerformInvocations extends MethodCallsDomain {
         }
 
         /**
-         * Converts the results (`DomainValue`s) of the evaluation of the called method into the
-         * calling domain. If the returned value is one of the parameters
-         * (determined using reference identity), then the parameter is mapped back
-         * to the original operand.
+         * Converts the results (`DomainValue`s) of the evaluation of the called
+         * method into the calling domain.
+         *
+         * If the returned value is one of the parameters (determined using reference
+         * identity), then the parameter is mapped back to the original operand.
          */
         protected[this] def transformResult(
             callerPC: PC,
