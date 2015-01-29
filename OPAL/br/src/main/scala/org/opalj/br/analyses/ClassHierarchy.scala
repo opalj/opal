@@ -116,6 +116,28 @@ class ClassHierarchy private (
                     map(_.toJava).mkString(", ")
             )
 
+        isKnownToBeFinalMap.zipWithIndex foreach { e ⇒
+            val (isFinal, index) = e
+            if (isFinal) {
+                if (subclassTypesMap(index) != null && subclassTypesMap(index).nonEmpty) {
+                    println(
+                        "[warn - project configuration] "+
+                            s"the final type ${knownTypesMap(index).toJava} "+
+                            "has subclasses: "+subclassTypesMap(index)+
+                            "; resetting the \"is final\" property.")
+                    isKnownToBeFinalMap(index) = false
+                }
+
+                if (subinterfaceTypesMap(index) != null && subinterfaceTypesMap(index).nonEmpty) {
+                    println(
+                        "[warn - project configuration] "+
+                            s"the final type ${knownTypesMap(index).toJava} "+
+                            "has subinterfaces: "+subclassTypesMap(index)+
+                            "; resetting the \"is final\" property.")
+                    isKnownToBeFinalMap(index) = false
+                }
+            }
+        }
     }
 
     validateClassHierarchy()
@@ -529,6 +551,81 @@ class ClassHierarchy private (
     }
 
     /**
+     * Determines if a value of type `elementValueType` can be stored in an array of
+     * type `arrayType`. E.g. a value of type `IntegerType` can be stored in an
+     * array (one-dimensional) of type `ArrayType(IntegerType)`. This method takes
+     * the fact that a type may just model an upper type bound into account.
+     *
+     * @param elementValueType The type of the value that should be stored in the
+     * 			array. This type is compared against the component type of the array.
+     * @param elementValueTypeIsPrecise Specifies if the type information is precise;
+     * 		  i.e., whether elementValueType models the precise runtime type (`true`)
+     * 		  or just an upper bound (`false`). If the `elementValueType` is a base/
+     * 			primitive type then this value should be `true`; but actually it is
+     * 			ignored.
+     * @param arrayType The type of the array.
+     * @param arrayTypeIsPrecise Specifies if the type information is precise;
+     * 		  i.e., whether arrayType models the precise runtime type (`true`)
+     * 		  or just an upper bound (`false`).
+     */
+    @tailrec final def canBeStoredIn(
+        elementValueType: FieldType,
+        elementValueTypeIsPrecise: Boolean,
+        arrayType: ArrayType,
+        arrayTypeIsPrecise: Boolean): Answer = {
+        if (elementValueType.isBaseType) {
+            Answer(elementValueType eq arrayType.componentType)
+        } else if (elementValueType.isArrayType) {
+            if (arrayType.componentType.isArrayType) {
+                canBeStoredIn(
+                    elementValueType.asArrayType.componentType,
+                    elementValueTypeIsPrecise,
+                    arrayType.componentType.asArrayType,
+                    arrayTypeIsPrecise
+                )
+            } else if (arrayType.componentType.isBaseType) {
+                No
+            } else /*arrayType.componentType.isObjectType*/ {
+                val componentObjectType = arrayType.componentType.asObjectType
+                isSubtypeOf(elementValueType.asArrayType, componentObjectType) match {
+                    case Yes ⇒
+                        if (arrayTypeIsPrecise) Yes else Unknown
+                    case No ⇒
+                        // Recall that isSubtypeOf completely handles all cases
+                        // that make it possible to store an array in a value of
+                        // type ObjectType.
+                        No
+                    case _ ⇒
+                        throw new AssertionError(
+                            "an isSubtypeOf query where the subtype is an array type "+
+                                "should never return Unknown")
+                }
+            }
+        } else /* the type of the element value is an ObjectType*/ {
+            if (arrayType.elementType.isBaseType) {
+                No
+            } else {
+                val elementValueObjectType = elementValueType.asObjectType
+                val arrayComponentReferenceType = arrayType.componentType.asReferenceType
+                isSubtypeOf(elementValueObjectType, arrayComponentReferenceType) match {
+                    case Yes ⇒
+                        if (arrayTypeIsPrecise ||
+                            isKnownToBeFinal(elementValueObjectType))
+                            Yes
+                        else
+                            Unknown
+                    case No ⇒
+                        if (elementValueTypeIsPrecise && arrayTypeIsPrecise)
+                            No
+                        else
+                            Unknown
+                    case unknown /*Unknown*/ ⇒ unknown
+                }
+            }
+        }
+    }
+
+    /**
      * Determines if the given class or interface type `subtype` is actually a subtype
      * of the class or interface type `supertype`.
      *
@@ -668,7 +765,10 @@ class ClassHierarchy private (
      *    the (upper) type (bounds) of the underlying values are not in an inheritance
      *    relation.
      */
-    def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
+    @tailrec final def isSubtypeOf(
+        subtype: ReferenceType,
+        supertype: ReferenceType): Answer = {
+
         if ((subtype eq supertype) || (supertype eq Object))
             return Yes
 

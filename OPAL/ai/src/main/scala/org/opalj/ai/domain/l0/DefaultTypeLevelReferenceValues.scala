@@ -105,6 +105,7 @@ trait DefaultTypeLevelReferenceValues
         }
 
         override def isAssignable(value: DomainValue): Answer = {
+
             typeOfValue(value) match {
 
                 case IsPrimitiveValue(primitiveType) ⇒
@@ -116,45 +117,33 @@ trait DefaultTypeLevelReferenceValues
                             primitiveType.computationalType
                     )
 
-                case IsAReferenceValue(UIDSet1(valueType: ArrayType)) if valueType.elementType.isBaseType ⇒
-                    // We want to store an Array (of array of ...) of primitives
-                    // in this array. This will only work if this array is also an
-                    // array (of array of ...) primitive values.
-                    if (theUpperTypeBound.componentType.isReferenceType)
-                        Answer(theUpperTypeBound.componentType eq valueType)
-                    else
-                        No
+                case elementValue @ IsAReferenceValue(UIDSet1(elementValueType)) ⇒
+                    classHierarchy.canBeStoredIn(
+                        elementValueType,
+                        elementValue.isPrecise,
+                        this.theUpperTypeBound,
+                        this.isPrecise)
 
-                case other @ IsAReferenceValue(otherUpperTypeBound) ⇒
-                    if (theUpperTypeBound.componentType.isBaseType)
-                        No
-                    else if (this.isPrecise) {
-                        if (other.isPrecise)
-                            classHierarchy.isSubtypeOf(otherUpperTypeBound, theUpperTypeBound)
-                        else {
-                            // The other value is not precise, but this may not be relevant
-                            // as long as the upper type bound is a subtype of the
-                            // component type of this array. If the other type bound
-                            // is not a subtype of this component type, a concrete value
-                            // still may be a subtype that we may be able to store
-                            // in this array...
-                            classHierarchy.isSubtypeOf(otherUpperTypeBound, theUpperTypeBound) match {
-                                case No ⇒
-                                    // let's check if a potential subtype
-                                    if (classHierarchy.isSubtypeOf(theUpperTypeBound, otherUpperTypeBound).isNo)
-                                        No
-                                    else
-                                        Unknown
-                                case answer ⇒ answer // Yes => Yes and Unknown => Unknown
+                case elementValue @ IsAReferenceValue(otherUpperTypeBound) ⇒
+                    val elementValueIsPrecise = elementValue.isPrecise
+                    val thisArrayType = this.theUpperTypeBound
+                    val thisIsPrecise = this.isPrecise
+                    var finalAnswer: Answer = No
+                    otherUpperTypeBound.exists { elementValueType ⇒
+                        classHierarchy.canBeStoredIn(
+                            elementValueType,
+                            elementValueIsPrecise,
+                            thisArrayType,
+                            thisIsPrecise) match {
+                                case Yes ⇒
+                                    return Yes;
+
+                                case intermediateAnswer ⇒
+                                    finalAnswer = finalAnswer & intermediateAnswer
+                                    false
                             }
-                        }
                     }
-                    // IMPROVE We could check if this array's type and the given value's type are in no inheritance hierarchy
-                    Unknown
-
-                case _ ⇒
-                    Unknown
-
+                    finalAnswer
             }
         }
 
