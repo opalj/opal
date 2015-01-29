@@ -29,39 +29,63 @@
 package cornercases;
 
 /**
- * This class was used to create a class file with some well defined issues. The created
- * class is subsequently used by several tests.
+ * This class was used to create a class file with some well defined issues. The
+ * created class is subsequently used by several tests.
  * 
  * NOTE<br />
- * This class is not meant to be (automatically) recompiled; it just serves documentation
- * purposes.
+ * This class is not meant to be (automatically) recompiled; it just serves
+ * documentation purposes.
  * 
  * @author Michael Eichberg
  */
 public class Assertions {
 
-    @SuppressWarnings("null")
-    public static void main(String[] args) {
+	private static void doIt() {
+		System.out.println("Great!");
+	}
 
-        assert (args != null);
+	public static void main1(String[] args) {
 
-        assert args.length > 0 : "Some parameters are required...";
+		assert (args != null);
 
-        int i = Integer.parseInt(args[0]);
+		doIt();
+	}
 
-        if (i < 1 || i > 2)
-            throw new IllegalArgumentException("i (" + i + ") is not valid");
+	public static void main2(String[] args) {
 
-        assert (i < 3 && i - 4 < 1) : "that's strange...";
+		assert args.length > 0 : "Some parameters are required...";
 
-        switch (i) {
-        case 1:
-            System.out.println("1");
-        case 2:
-            System.out.println("2");
-        default:
-            throw new AssertionError("should never be reached...");
-        }
+		doIt();
 
-    }
+	}
+
+	public static void main3(String[] args) {
+
+		int i = Integer.parseInt(args[0]);
+
+		if (i < 1 || i > 2)
+			throw new IllegalArgumentException("i (" + i + ") is not valid");
+
+		assert (i < 3 && i - 4 < 1) : "that's strange...";
+
+	}
+
+	public static void main4(String[] args) {
+
+		int i = Integer.parseInt(args[0]);
+
+		if (i < 1 || i > 2)
+			throw new IllegalArgumentException("i (" + i + ") is not valid");
+
+		switch (i) {
+		case 1:
+			System.out.println("1");
+		case 2:
+			System.out.println("2");
+		default:
+			throw new AssertionError("should never be reached...");
+		}
+
+	}
+
 }

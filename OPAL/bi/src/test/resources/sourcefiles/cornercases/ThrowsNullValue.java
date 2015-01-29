@@ -40,11 +40,10 @@ package cornercases;
  */
 public class ThrowsNullValue {
 
-    @SuppressWarnings("null")
     public static void main(String[] args) {
         try {
             Exception e = null;
-            if (args.isEmpty())
+            if (args.length == 0)
                 e = new RuntimeException();
 
             throw e;
