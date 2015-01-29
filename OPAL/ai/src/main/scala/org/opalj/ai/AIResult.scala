@@ -94,6 +94,11 @@ sealed abstract class AIResult {
     val operandsArray: domain.OperandsArray
 
     /**
+     * Returns true if the instruction with the given pc was evaluated at least once.
+     */
+    @inline final def wasEvaluted(pc: PC): Boolean = operandsArray(pc) != null
+
+    /**
      * The values stored in the registers. Note, that ''it makes only sense to analyze
      * those values that are not dead'', but this information is not directly available.
      */
