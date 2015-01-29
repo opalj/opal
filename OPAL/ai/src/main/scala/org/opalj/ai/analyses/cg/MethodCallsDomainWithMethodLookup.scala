@@ -92,18 +92,12 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                         val targetMethod =
                             if (receiverClassFile.isInterfaceDeclaration)
                                 classHierarchy.resolveInterfaceMethodReference(receiverType, methodName, methodDescriptor, project)
-                            else if (classHierarchy.isInterface(receiverClassFile.thisType)) {
-                                println("EERORRERERERERERERERERERERE: "+receiverClassFile)
-                                ???
-                            } else
+                            else
                                 classHierarchy.resolveMethodReference(receiverType, methodName, methodDescriptor, project)
 
                         targetMethod match {
                             case Some(method) if method.isFinal ⇒
-                                doNonVirtualInvoke(
-                                    pc,
-                                    receiverType, methodName, methodDescriptor, operands,
-                                    fallback)
+                                doInvoke(pc, method, operands, fallback)
                             case _ ⇒
                                 fallback()
                         }
@@ -189,23 +183,18 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         operands: Operands): MethodCallResult = {
 
         def fallback() =
-            baseInvokevirtual(pc, declaringClass, methodName, methodDescriptor, operands)
+            super.invokevirtual(pc, declaringClass, methodName, methodDescriptor, operands)
 
         if (declaringClass.isArrayType)
             fallback()
         else
             doVirtualInvoke(
-                pc, declaringClass.asObjectType, methodName, methodDescriptor, operands, fallback
+                pc,
+                declaringClass.asObjectType, methodName, methodDescriptor,
+                operands,
+                fallback
             )
     }
-
-    def baseInvokevirtual(
-        pc: PC,
-        declaringClass: ReferenceType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult =
-        super.invokevirtual(pc, declaringClass, name, methodDescriptor, operands)
 
     abstract override def invokeinterface(
         pc: PC,
@@ -215,20 +204,12 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         operands: Operands): MethodCallResult = {
 
         def fallback() =
-            baseInvokeinterface(pc, declaringClass, methodName, methodDescriptor, operands)
+            super.invokeinterface(pc, declaringClass, methodName, methodDescriptor, operands)
 
         doVirtualInvoke(
             pc, declaringClass, methodName, methodDescriptor, operands, fallback
         )
     }
-
-    def baseInvokeinterface(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult =
-        super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
 
     abstract override def invokespecial(
         pc: PC,
@@ -238,22 +219,18 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         operands: Operands): MethodCallResult = {
 
         def fallback() =
-            baseInvokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
+            super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
 
         doNonVirtualInvoke(
             pc, declaringClass, methodName, methodDescriptor, operands, fallback
         )
     }
 
-    def baseInvokespecial(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
-        super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
-    }
-
+    /**
+     * Those `invokestatic` calls for which we have no concrete method (e.g.,
+     * the respective class file was never loaded or the method is native) or
+     * if have a recursive invocation are delegated to the super class.
+     */
     abstract override def invokestatic(
         pc: PC,
         declaringClass: ObjectType,
@@ -262,25 +239,11 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         operands: Operands): MethodCallResult = {
 
         def fallback() =
-            baseInvokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
+            super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
 
         doNonVirtualInvoke(
             pc, declaringClass, methodName, methodDescriptor, operands, fallback
         )
-    }
-
-    /**
-     * Handle those `invokestatic` calls for which we have no concrete method (e.g.,
-     * the respective class file was never loaded or the method is native) or
-     * if have a recursive invocation.
-     */
-    protected[this] def baseInvokestatic(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
-        super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
     }
 
 }

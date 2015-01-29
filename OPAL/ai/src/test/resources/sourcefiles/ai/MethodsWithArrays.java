@@ -31,235 +31,237 @@ package ai;
 /**
  * Methods that create, initialize and update arrays.
  * 
- * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it just serves
- * documentation purposes. The compiled class that is used by the tests is found in the
- * test-classfiles directory.
+ * <h2>NOTE</h2> This class is not meant to be (automatically) recompiled; it
+ * just serves documentation purposes. The compiled class that is used by the
+ * tests is found in the test-classfiles directory.
  * 
  * @author Michael Eichberg
  * @author Christos Votskos
  */
 public class MethodsWithArrays {
-	
-	public static byte[] simpleByteArrayInitializationWithLength4(){
+
+	public static byte[] simpleByteArrayInitializationWithLength4() {
 		byte newByteArray4Elements[] = { 1, 2, 3, 4 };
-		
+
 		return newByteArray4Elements;
 	}
-	
-	public static short[] simpleShortArrayInitializationWithLength4(){
+
+	public static short[] simpleShortArrayInitializationWithLength4() {
 		short newShortArray4Elements[] = { 1, 2, 3, 4 };
-		
+
 		return newShortArray4Elements;
 	}
-	
+
 	public static int[] simpleIntArrayInitializationWithLength4() {
-        int newIntArray4Elements[] = { 1, 2, 3, 4 };
-        
-        return newIntArray4Elements;
-    }
-	
-	public static long[] simpleLongArrayInitializationWithLength4(){
+		int newIntArray4Elements[] = { 1, 2, 3, 4 };
+
+		return newIntArray4Elements;
+	}
+
+	public static long[] simpleLongArrayInitializationWithLength4() {
 		long newLongArray4Elements[] = { 1l, 2l, 3l, 4l };
-		
+
 		return newLongArray4Elements;
 	}
-	
-	public static float[] simpleFloatArrayInitializationWithLength4(){
+
+	public static float[] simpleFloatArrayInitializationWithLength4() {
 		float newFloatArray4Elements[] = { 1.0f, 2.0f, 3.0f, 4.0f };
-		
+
 		return newFloatArray4Elements;
 	}
-	
-	public static double[] simpleDoubleArrayInitializationWithLength4(){
+
+	public static double[] simpleDoubleArrayInitializationWithLength4() {
 		double newDoubleArray4Elements[] = { 1.0d, 2.0d, 3.0d, 4.0d };
-		
+
 		return newDoubleArray4Elements;
 	}
-	
-	public static boolean[] simpleBooleanArrayInitializationWithLength4(){
+
+	public static boolean[] simpleBooleanArrayInitializationWithLength4() {
 		boolean newBooleanArray4Elements[] = { true, false, true, false };
-		
+
 		return newBooleanArray4Elements;
 	}
-	
-	public static char[] simpleCharArrayInitializationWithLength4(){
-		char newCharArray4Elements[] = { 'A', 'B', 'C', 'D'};
-		
+
+	public static char[] simpleCharArrayInitializationWithLength4() {
+		char newCharArray4Elements[] = { 'A', 'B', 'C', 'D' };
+
 		return newCharArray4Elements;
 	}
-	
-	public static String[] simpleStringArrayInitializationWithLength4(){
-		String newStringArray4Elements[] = { "A1", "B2", "C3", "D4"};
-		
+
+	public static String[] simpleStringArrayInitializationWithLength4() {
+		String newStringArray4Elements[] = { "A1", "B2", "C3", "D4" };
+
 		return newStringArray4Elements;
 	}
-	
-	public static Object[] simpleObjectArrayInitializationWithLength4(){
-		Object newObjectArray4Elements[] = { new Object(), new Object(), new Object(), new Object()};
-		
+
+	public static Object[] simpleObjectArrayInitializationWithLength4() {
+		Object newObjectArray4Elements[] = { new Object(), new Object(),
+				new Object(), new Object() };
+
 		return newObjectArray4Elements;
 	}
 
-    public static byte byteArrays(byte[] values) {
-        int length = values.length;
-        values[length / 2] = 10;
-        return values[length - 1];
-    }
+	public static byte byteArrays(byte[] values) {
+		int length = values.length;
+		values[length / 2] = 10;
+		return values[length - 1];
+	}
 
-    public static boolean booleanArrays(boolean[] values) {
-        int length = values.length;
-        values[length / 2] = false;
-        return values[length - 1];
-    }
+	public static boolean booleanArrays(boolean[] values) {
+		int length = values.length;
+		values[length / 2] = false;
+		return values[length - 1];
+	}
 
-    public static Object covariantArrays(boolean b) {
-        Object[] foo = null;
+	public static Object covariantArrays(boolean b) {
+		Object[] foo = null;
 
-        if (b)
-            foo = new java.util.List[1];
-        else
-            foo = new java.util.Set[2];
+		if (b)
+			foo = new java.util.List[1];
+		else
+			foo = new java.util.Set[2];
 
-        Object o = foo[0];
+		Object o = foo[0];
 
-        return o;
-    }
+		return o;
+	}
 
-    public static Object integerArraysFrenzy(int id, Object data) {
-        // Inspiration: java/awt/image/DirectColorModel Object getDataElements(int,Object)
-        int intpixel[] = null;
-        if (id == 3 && data != null) {
-            intpixel = (int[]) data;
-        } else {
-            intpixel = new int[1];
-        }
+	public static Object integerArraysFrenzy(int id, Object data) {
+		// Inspiration: java/awt/image/DirectColorModel Object
+		// getDataElements(int,Object)
+		int intpixel[] = null;
+		if (id == 3 && data != null) {
+			intpixel = (int[]) data;
+		} else {
+			intpixel = new int[1];
+		}
 
-        switch (id) {
-        case 1: {
-            byte bdata[];
-            if (data == null) {
-                bdata = new byte[1];
-            } else {
-                bdata = (byte[]) data;
-            }
-            bdata[0] = (byte) (/* 0xff & */intpixel[0]);
-            return bdata;
-        }
-        case 3:
-            return intpixel;
-        }
+		switch (id) {
+		case 1: {
+			byte bdata[];
+			if (data == null) {
+				bdata = new byte[1];
+			} else {
+				bdata = (byte[]) data;
+			}
+			bdata[0] = (byte) (/* 0xff & */intpixel[0]);
+			return bdata;
+		}
+		case 3:
+			return intpixel;
+		}
 
-        throw new UnsupportedOperationException("What the heck is B?");
+		throw new UnsupportedOperationException("What the heck is B?");
 
-    }
+	}
 
-    //
-    // COMPARISON
+	//
+	// COMPARISON
 
-    public static Object[] wrap(java.io.Serializable o) {
-        if (o == null)
-            return new Object[0];
-        else
-            return new java.io.Serializable[] { o };
-    }
+	public static Object[] wrap(java.io.Serializable o) {
+		if (o == null)
+			return new Object[0];
+		else
+			return new java.io.Serializable[] { o };
+	}
 
-    public static boolean instanceofAndArrays(java.io.Serializable o) {
-        Object result = wrap(o);
-        if (result instanceof java.io.Serializable[]) {
-            return true;
-        }
-        if (result instanceof Object[]) {
-            return false;
-        } else {
-            throw new RuntimeException();
-        }
-    }
+	public static boolean instanceofAndArrays(java.io.Serializable o) {
+		Object result = wrap(o);
+		if (result instanceof java.io.Serializable[]) {
+			return true;
+		}
+		if (result instanceof Object[]) {
+			return false;
+		} else {
+			throw new RuntimeException();
+		}
+	}
 
-    public static int[] zeroToNine() {
-        int[] a = new int[10];
-        int i = 0;
-        while (i < 10) {
-            a[i] = i;
-            i = i + 1;
-        }
-        return a;
-    }
+	public static int[] zeroToNine() {
+		int[] a = new int[10];
+		int i = 0;
+		while (i < 10) {
+			a[i] = i;
+			i = i + 1;
+		}
+		return a;
+	}
 
-    public static int[] oneElement() {
-        int[] a = new int[1];
-        for (int i = 0; i < 1; i++)
-            a[i] = i + 1;
-        return a;
-    }
+	public static int[] oneElement() {
+		int[] a = new int[1];
+		for (int i = 0; i < 1; i++)
+			a[i] = i + 1;
+		return a;
+	}
 
-    public static int[] threeElements() {
-        int[] a = new int[3];
-        for (int i = 0; i < 3; i++)
-            a[i] = i + 1;
-        return a;
-    }
+	public static int[] threeElements() {
+		int[] a = new int[3];
+		for (int i = 0; i < 3; i++)
+			a[i] = i + 1;
+		return a;
+	}
 
-    public static int[] simpleSelectiveInitialization(int initial) {
-        int[] a = new int[1];
-        if (initial <= 5) {
-            a[0] = initial;
-        } else {
-            a[0] = -1;
-        }
+	public static int[] simpleSelectiveInitialization(int initial) {
+		int[] a = new int[1];
+		if (initial <= 5) {
+			a[0] = initial;
+		} else {
+			a[0] = -1;
+		}
 
-        return a;
-    }
+		return a;
+	}
 
-    public static int[] selectiveInitialization(int initial) {
-        if (initial < 0)
-            throw new IllegalArgumentException();
+	public static int[] selectiveInitialization(int initial) {
+		if (initial < 0)
+			throw new IllegalArgumentException();
 
-        int[] a = new int[4];
-        if (initial <= 2) {
-            int i = 0;
-            while (i < 2) {
-                a[i] = i;
-                i = i + 1;
-            }
-        } else {
-            int i = 2;
-            while (i < 4) {
-                a[i] = i;
-                i = i + 1;
-            }
-        }
+		int[] a = new int[4];
+		if (initial <= 2) {
+			int i = 0;
+			while (i < 2) {
+				a[i] = i;
+				i = i + 1;
+			}
+		} else {
+			int i = 2;
+			while (i < 4) {
+				a[i] = i;
+				i = i + 1;
+			}
+		}
 
-        return a;
-    }
+		return a;
+	}
 
-    public static Object[] pathsConverge(Object[] a) {
-        Object[] theArray = a;
+	public static Object[] pathsConverge(Object[] a) {
+		Object[] theArray = a;
 
-        if (theArray == null)
-            theArray = new java.io.Serializable[1];
-        else if (!(theArray instanceof java.io.Serializable[]))
-            theArray = new java.io.Serializable[1];
-        return a;
-    }
+		if (theArray == null)
+			theArray = new java.io.Serializable[1];
+		else if (!(theArray instanceof java.io.Serializable[]))
+			theArray = new java.io.Serializable[1];
+		return a;
+	}
 
-    public static void main(String[] args) {
-        final java.io.PrintStream out = System.out;
+	public static void main(String[] args) {
+		final java.io.PrintStream out = System.out;
 
-        Object o = new java.util.ArrayList[0];
-        Object s = new java.io.Serializable[10][5];
+		Object o = new java.util.ArrayList[0];
+		Object s = new java.io.Serializable[10][5];
 
-        out.println(o instanceof java.io.Serializable);
-        out.println(o instanceof java.lang.Cloneable);
+		out.println(o instanceof java.io.Serializable);
+		out.println(o instanceof java.lang.Cloneable);
 
-        out.println(o instanceof Object[]); // true
-        out.println(o instanceof java.io.Serializable[]); // true
-        out.println(o instanceof java.util.List[]); // true
+		out.println(o instanceof Object[]); // true
+		out.println(o instanceof java.io.Serializable[]); // true
+		out.println(o instanceof java.util.List[]); // true
 
-        out.println(s instanceof Object[]);
-        out.println(s instanceof java.io.Serializable[]);
-        out.println(s instanceof java.lang.Cloneable[]);
+		out.println(s instanceof Object[]);
+		out.println(s instanceof java.io.Serializable[]);
+		out.println(s instanceof java.lang.Cloneable[]);
 
-        out.println(o instanceof java.util.Set[]); // false
-        out.println(o instanceof int[]);// false
-    }
+		out.println(o instanceof java.util.Set[]); // false
+		out.println(o instanceof int[]);// false
+	}
 }

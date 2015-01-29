@@ -311,18 +311,34 @@ class IincTracingDomain
         MakeIntegerResult(pc, value1, value2)
     override def fcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         MakeIntegerResult(pc, value1, value2)
-    override def fneg(pc: PC, value: DomainValue) = MakeFloatResult(pc, value)
-    override def fadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fneg(
+        pc: PC, strictfp: Boolean, value: DomainValue) = MakeFloatResult(pc, value)
+    override def fadd(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         MakeFloatResult(pc, value1, value2)
-    override def fdiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fdiv(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         MakeFloatResult(pc, value1, value2)
-    override def fmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fmul(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         MakeFloatResult(pc, value1, value2)
-    override def frem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def frem(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         MakeFloatResult(pc, value1, value2)
-    override def fsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fsub(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         MakeFloatResult(pc, value1, value2)
-    override def f2d(pc: PC, value: DomainValue): DomainValue =
+    override def f2d(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue =
         MakeDoubleResult(pc, value)
     override def f2i(pc: PC, value: DomainValue): DomainValue =
         MakeIntegerResult(pc, value)
@@ -332,18 +348,39 @@ class IincTracingDomain
         MakeIntegerResult(pc, value1, value2)
     override def dcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
         MakeIntegerResult(pc, value1, value2)
-    override def dneg(pc: PC, value: DomainValue) = MakeDoubleResult(pc, value)
-    override def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dneg(
+        pc: PC,
+        strictfp: Boolean,
+        value: DomainValue) = MakeDoubleResult(pc, value)
+    override def dadd(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         MakeDoubleResult(pc, value1, value2)
-    override def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ddiv(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         MakeDoubleResult(pc, value1, value2)
-    override def dmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dmul(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         MakeDoubleResult(pc, value1, value2)
-    override def drem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def drem(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         MakeDoubleResult(pc, value1, value2)
-    override def dsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dsub(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         MakeDoubleResult(pc, value1, value2)
-    override def d2f(pc: PC, value: DomainValue): DomainValue = MakeFloatResult(pc, value)
+    override def d2f(
+        pc: PC,
+        strictfp: Boolean,
+        value: DomainValue): DomainValue = MakeFloatResult(pc, value)
     override def d2i(pc: PC, value: DomainValue): DomainValue =
         MakeIntegerResult(pc, value)
     override def d2l(pc: PC, value: DomainValue): DomainValue = MakeLongResult(pc, value)

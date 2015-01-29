@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -182,22 +182,22 @@ trait XHTMLTracer extends AITracer {
 			border: 1px solid gray;
         	border-collapse: collapse;
 		}}
-        tr {{ 
+        tr {{
         	margin: 0px;
         	padding: 0px;
         	border: 0px:
         }}
         td {{
-        	margin: 0px;	
+        	margin: 0px;
         	padding: 0px;
         	border: 0px;
         }}
         td ~ td {{
         	border-right: 1px solid #999;
         }}
-        td.hovered {{  
-        	background-color: lightblue;  
-        	color: #666;  
+        td.hovered {{
+        	background-color: lightblue;
+        	color: #666;
         }}
         /*
         ui-dialog: The outer container of the dialog.
@@ -210,7 +210,7 @@ trait XHTMLTracer extends AITracer {
         */
         .ui-dialog-content {{
         	font-family: Tahoma,Arial;
-        	font-size: 11px; 
+        	font-size: 11px;
         }}
                 </style>
             </head>
@@ -228,33 +228,33 @@ trait XHTMLTracer extends AITracer {
                 </table>
                 { dialogs }
                 <script>
-                    $('tbody tr').hover(function(){{  
-        	$(this).find('td').addClass('hovered');  
-        }}, function(){{  
-        	$(this).find('td').removeClass('hovered');  
+                    $('tbody tr').hover(function(){{
+        	$(this).find('td').addClass('hovered');
+        }}, function(){{
+        	$(this).find('td').removeClass('hovered');
         }});
-        function filter(selector, query) {{  
-        	$(selector).each(function() {{  
+        function filter(selector, query) {{
+        	$(selector).each(function() {{
         		($(this).text().search(new RegExp(query, 'i')){ xml.Unparsed("<") }
-                    0) ? $(this).show().addClass('visible') : $(this).hide().removeClass('visible');  
-        	}});  
+                    0) ? $(this).show().addClass('visible') : $(this).hide().removeClass('visible');
+        	}});
         }};
-        //default each row to visible  
-        $('tbody tr').addClass('visible');  
-    
-        $('#filter').keyup(function(event) {{  
-        		//if esc is pressed or nothing is entered  
-        		if (event.keyCode == 27 || $(this).val() == '') {{  
-        			//if esc is pressed we want to clear the value of search box  
-        			$(this).val('');  
-        			//we want each row to be visible because if nothing  
-        			//is entered then all rows are matched.  
-        			$('tbody tr').removeClass('visible').show().addClass('visible');  
-        		}}  
-        		//if there is text, lets filter  
-        		else {{  
-        			filter('tbody tr', $(this).val());  
-        		}} 
+        //default each row to visible
+        $('tbody tr').addClass('visible');
+
+        $('#filter').keyup(function(event) {{
+        		//if esc is pressed or nothing is entered
+        		if (event.keyCode == 27 || $(this).val() == '') {{
+        			//if esc is pressed we want to clear the value of search box
+        			$(this).val('');
+        			//we want each row to be visible because if nothing
+        			//is entered then all rows are matched.
+        			$('tbody tr').removeClass('visible').show().addClass('visible');
+        		}}
+        		//if there is text, lets filter
+        		else {{
+        			filter('tbody tr', $(this).val());
+        		}}
         }});
                 </script>
             </body>
@@ -264,6 +264,7 @@ trait XHTMLTracer extends AITracer {
     private var code: Code = null
 
     def continuingInterpretation(
+        strictfp: Boolean,
         code: Code,
         domain: Domain)(
             initialWorkList: List[PC],
@@ -373,15 +374,6 @@ trait XHTMLTracer extends AITracer {
             "TraceOfAbstractInterpretation",
             ".html"
         )
-    }
-
-}
-
-class ConfigurableXHTMLTracer(openDumpOnResult: Boolean = false) extends XHTMLTracer {
-
-    override def result(result: AIResult): Unit = {
-        if (openDumpOnResult)
-            super.result(result)
     }
 
 }

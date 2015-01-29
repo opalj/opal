@@ -31,7 +31,6 @@ package bugpicker
 package analysis
 
 import scala.language.existentials
-
 import scala.Console.{ GREEN, RESET }
 import scala.xml.Node
 import scala.xml.Text
@@ -45,6 +44,7 @@ import org.opalj.br.Code
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions._
 import scala.xml.UnprefixedAttribute
+import scala.xml.Unparsed
 
 /**
  * Describes some issue found in the source code.
@@ -64,6 +64,40 @@ case class StandardIssue(
         kind: Set[String],
         otherPCs: Seq[(PC, String)],
         relevance: Relevance) extends Issue {
+
+    def merge(other: StandardIssue): Option[StandardIssue] = {
+        val tMethod = this.method
+        val oMethod = other.method
+
+        if ((other.project ne this.project) ||
+            (other.classFile ne this.classFile) ||
+            ((oMethod.isDefined && tMethod.isDefined && (oMethod.get ne tMethod.get)) ||
+                (oMethod.isEmpty && tMethod.isDefined) || (oMethod.isDefined && tMethod.isEmpty)) ||
+                (other.pc != this.pc))
+            return None
+
+        Some(
+            StandardIssue(
+                this.project,
+                this.classFile,
+                this.method,
+                this.pc,
+                this.operands.orElse(other.operands),
+                this.localVariables.orElse(other.localVariables),
+                this.summary+"\n\n"+other.summary,
+                {
+                    val td = this.description
+                    val od = other.description
+                    td.map(_ + od.map("\n"+_).getOrElse("")).orElse(od)
+                },
+                this.categories ++ other.categories,
+                this.kind ++ other.kind,
+                (this.otherPCs.toSet ++ other.otherPCs).toSeq.sortWith {
+                    (a, b) ⇒ a._1 < b._1 || (a._1 == b._1 && a._2 < b._2)
+                },
+                this.relevance merge other.relevance
+            ))
+    }
 
     def asXHTML: Node = {
 
@@ -217,7 +251,7 @@ case class StandardIssue(
             }
 
             // The primary message... 
-            locations ::= <span class="issue_summary">{ summary }</span>
+            locations ::= <span class="issue_summary">{ summary.split("\n").map(Text(_)).foldLeft(List.empty[Node])((c, n) ⇒ c ++ List(<br/>, n)) }</span>
             locations ::= <br/>
             lineNode.foreach(ln ⇒
                 locations =
@@ -286,5 +320,21 @@ object StandardIssue {
             Set.empty,
             Seq.empty,
             Relevance.DefaultRelevance)
+    }
+
+    def fold(issues: Seq[StandardIssue]): Iterable[StandardIssue] = {
+
+        val sortedIssues = issues.sorted(IssueOrdering)
+
+        val foldedIssues =
+            sortedIssues.tail.foldLeft(List(sortedIssues.head)) { (issues, nextIssue) ⇒
+                val newIssue = issues.head merge nextIssue
+                if (newIssue.isDefined) {
+                    newIssue.get :: issues.tail
+                } else
+                    nextIssue :: issues
+            }
+
+        foldedIssues
     }
 }
