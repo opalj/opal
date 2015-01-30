@@ -113,7 +113,7 @@ case class StandardIssue(
 
         val firstLineOfMethod: Option[String] =
             method.flatMap(_.body.flatMap(_.firstLineNumber.map { ln ⇒
-                (if (ln > 0) (ln - 1) else 0).toString
+                (if (ln > 2) (ln - 2) else 0).toString
             }))
 
         def createPCNode(pc: PC): Node = {
@@ -216,23 +216,24 @@ case class StandardIssue(
             val method = this.method.get
             val dt =
                 <dt>method</dt>
-            val dd =
+            var dd =
                 <dd class="method" data-class={ classFile.fqn }>
                     { methodToXHTML(method.name, method.descriptor) }
                 </dd>
             if (methodId.isDefined)
-                dd % (new UnprefixedAttribute(
+                dd = dd % (new UnprefixedAttribute(
                     "data-method",
                     methodId.get.toString,
                     scala.xml.Null
                 ))
 
-            if (firstLineOfMethod.isDefined)
-                dd % (new UnprefixedAttribute(
+            if (firstLineOfMethod.isDefined) {
+                dd = dd % (new UnprefixedAttribute(
                     "data-line",
                     firstLineOfMethod.get.toString,
                     scala.xml.Null
                 ))
+            }
 
             infoNodes = infoNodes ::: List(dt, dd)
         }
