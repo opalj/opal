@@ -173,6 +173,18 @@ final class Code private (
         }
     }
 
+    @inline final def exists(f: (PC, Instruction) ⇒ Boolean): Boolean = {
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            if (f(pc, instruction))
+                return true;
+            pc = pcOfNextInstruction(pc)
+        }
+        false
+    }
+
     /**
      * Returns a view of all handlers (exception and finally handlers) (if any) for the
      * instruction with the given program counter (`pc`).
