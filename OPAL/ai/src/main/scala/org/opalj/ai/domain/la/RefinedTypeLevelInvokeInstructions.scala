@@ -62,7 +62,7 @@ trait RefinedTypeLevelInvokeInstructions extends MethodCallsDomainWithMethodLock
 
         if (returnValue.isDefined) {
             val adaptedReturnValue = returnValue.get.adapt(this, pc)
-            //  println(s"${method.toJava()} returning refined value $adaptedReturnValue (returntye: ${method.returnType}")
+            // println(s"${method.toJava()} returning refined value $adaptedReturnValue (returntye: ${method.returnType}; original value ${returnValue.get})")
             MethodCallResult(adaptedReturnValue, getPotentialExceptions(pc))
         } else {
             // the method always throws an exception... but we don't know which one
