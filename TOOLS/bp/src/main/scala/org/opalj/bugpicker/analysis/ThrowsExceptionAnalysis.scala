@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -78,22 +78,37 @@ import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.l1.RecordAllThrownExceptions
 import org.opalj.ai.domain.l1.ReferenceValues
 
+/**
+ * This analysis identifies those instructions
+ * (except ATHROW of course) that always just throw an exception.
+ *
+ * @author Michael Eichberg
+ */
 object ThrowsExceptionAnalysis {
+
+    type ThrowsExceptionAnalysisDomain = Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions }): Seq[StandardIssue] = {
+        result: AIResult { val domain: ThrowsExceptionAnalysisDomain }): Seq[StandardIssue] = {
 
         val operandsArray = result.operandsArray
         val domain = result.domain
 
-        val exceptionIssues: Seq[StandardIssue] =
-            for {
-                (pc, instruction) ← result.code collectWithIndex {
-                    case (pc, i: Instruction) if operandsArray(pc) != null && !i.isInstanceOf[ATHROW.type] && domain.regularSuccessorsOf(pc).isEmpty && (domain.exceptionHandlerSuccessorsOf(pc).nonEmpty || domain.allThrownExceptions.get(pc).nonEmpty) ⇒
-                        (pc, i)
-                }
-            } yield {
+        val exceptionThrowingInstructions =
+            result.code collectWithIndex {
+                case (pc, i: Instruction) if operandsArray(pc) != null &&
+                    i != ATHROW && domain.regularSuccessorsOf(pc).isEmpty &&
+                    (
+                        domain.exceptionHandlerSuccessorsOf(pc).nonEmpty ||
+                        domain.allThrownExceptions.get(pc).nonEmpty
+                    ) ⇒
+                    (pc, i)
+            }
+
+        val exceptionIssues: Seq[StandardIssue] = {
+
+            for { (pc, instruction) ← exceptionThrowingInstructions } yield {
                 val operands = operandsArray(pc)
                 val exceptions = {
                     var allExceptions: Set[domain.DomainSingleOriginReferenceValue] = {
@@ -118,13 +133,14 @@ object ThrowsExceptionAnalysis {
                     Some(operands),
                     Some(result.localsArray(pc)),
                     "causes exception",
-                    Some("The evaluation of the expression always throws the exception(s): "+exceptions),
+                    Some("The evaluation of the instruction always throws the exception(s): "+exceptions),
                     Set(IssueCategory.Bug),
                     Set(IssueKind.ThrowsException),
                     Seq.empty,
                     Relevance.VeryHigh
                 )
             }
+        }
 
         exceptionIssues
     }

@@ -53,15 +53,18 @@ class BugPickerAnalysisDomain(
     override val method: Method,
     override val maxCardinalityOfIntegerRanges: Long = 16l)
         extends CorrelationalDomain
+        with domain.TheProject
+        with domain.TheMethod
+        with domain.ProjectBasedClassHierarchy
         with domain.DefaultDomainValueBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
         //with domain.l0.TypeLevelFieldAccessInstructions
         with domain.la.RefinedTypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
         with domain.la.RefinedTypeLevelInvokeInstructions
         with domain.SpecialMethodsHandling
+        with domain.l0.DefaultTypeLevelFloatValues
+        with domain.l0.DefaultTypeLevelDoubleValues
         //with domain.l1.DefaultReferenceValuesBinding
         with domain.l1.DefaultClassValuesBinding
         //with domain.l1.DefaultStringValuesBinding
@@ -75,9 +78,6 @@ class BugPickerAnalysisDomain(
         with domain.l1.ConcretePrimitiveValuesConversions
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization
-        with domain.TheProject
-        with domain.TheMethod
-        with domain.ProjectBasedClassHierarchy
         // the following two are required to detect instructions that always throw
         // an exception (such as div by zero, a failing checkcast, a method call that
         // always fails etc.)

@@ -49,6 +49,7 @@ import org.opalj.ai.common.XHTML
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.br.Code
+import org.opalj.br.PC
 import org.opalj.ai.collectPCWithOperands
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.domain
@@ -78,137 +79,139 @@ import org.opalj.br.instructions.IFNONNULL
 import org.opalj.br.instructions.IFNULL
 
 /**
+ * Identifies computations that are useless.
+ *
  * @author Michael Eichberg
  */
 object UselessComputationsAnalysis {
 
+    type UselessComputationsAnalysisDomain = Domain with ConcreteIntegerValues with ConcreteLongValues with ReferenceValues
+
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain with ConcreteIntegerValues with ConcreteLongValues with ReferenceValues }): Seq[StandardIssue] = {
+        result: AIResult { val domain: UselessComputationsAnalysisDomain }): Seq[StandardIssue] = {
 
-        val methodsWithUselessComputations = {
+        val defaultRelevance = Relevance.DefaultRelevance
+        val defaultIIncRelevance = Relevance(5)
 
-            val body = result.code
+        val body = result.code
 
-            import result.domain
-            import result.operandsArray
-            import domain.ConcreteIntegerValue
-            import domain.ConcreteLongValue
+        def Issue(pc: PC, message: String, relevance: Relevance): StandardIssue =
+            StandardIssue(
+                theProject, classFile, Some(method),
+                Some(pc),
+                Some(result.operandsArray(pc)), Some(result.localsArray(pc)),
+                "the expression always evalutes to the same value",
+                Some(message),
+                Set(IssueCategory.Comprehensibility, IssueCategory.Performance),
+                Set(IssueKind.ConstantComputation),
+                Seq.empty,
+                relevance
+            )
 
-            val defaultRelevance = Relevance.DefaultRelevance
-            val defaultIIncRelevance = Relevance(5)
+        import result.domain
+        import result.operandsArray
+        import domain.ConcreteIntegerValue
+        import domain.ConcreteLongValue
 
-            collectPCWithOperands(domain)(body, operandsArray) {
+        collectPCWithOperands(domain)(body, operandsArray) {
 
-                // HANDLING INT VALUES
-                //
-                case (
-                    pc,
-                    instr @ BinaryArithmeticInstruction(ComputationalTypeInt),
-                    Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
-                    ) ⇒
-                    // The java "~" operator has no direct representation in bytecode
-                    // instead, compilers generate an "ixor" with "-1" as the
-                    // second value.
-                    if (instr.operator == "^" && a == -1)
-                        (
-                            pc,
-                            s"constant computation: ~$b (<=> $b ${instr.operator} $a).",
-                            defaultRelevance
-
-                        )
-                    else
-                        (
-                            pc,
-                            s"constant computation: $b ${instr.operator} $a.",
-                            defaultRelevance
-                        )
-
-                case (pc, instr: INEG.type, Seq(ConcreteIntegerValue(a), _*)) ⇒
-                    (
+            // HANDLING INT VALUES
+            //
+            case (
+                pc,
+                instr @ BinaryArithmeticInstruction(ComputationalTypeInt),
+                Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
+                ) ⇒
+                // The java "~" operator has no direct representation in bytecode
+                // instead, compilers generate an "ixor" with "-1" as the
+                // second value.
+                if (instr.operator == "^" && a == -1)
+                    Issue(
                         pc,
-                        s"constant computation: -${a}",
+                        s"constant computation: ~$b (<=> $b ${instr.operator} $a).",
+                        defaultRelevance
+
+                    )
+                else
+                    Issue(
+                        pc,
+                        s"constant computation: $b ${instr.operator} $a.",
                         defaultRelevance
                     )
 
-                case (pc, instr @ IINC(index, increment), _) if result.domain.intValueOption(result.localsArray(pc)(index)).isDefined ⇒
-                    val v = result.domain.intValueOption(result.localsArray(pc)(index)).get
-                    val relevance =
-                        if (increment == 1 || increment == -1)
-                            defaultIIncRelevance
-                        else
-                            defaultRelevance
-                    (pc, s"constant computation (inc): ${v} + $increment", relevance)
-
-                // HANDLING LONG VALUES
-                //
-                case (
+            case (pc, instr: INEG.type, Seq(ConcreteIntegerValue(a), _*)) ⇒
+                Issue(
                     pc,
-                    instr @ BinaryArithmeticInstruction(ComputationalTypeLong),
-                    Seq(ConcreteLongValue(a), ConcreteLongValue(b), _*)
-                    ) ⇒
-                    (
-                        pc,
-                        s"constant computation: ${b}l ${instr.operator} ${a}l.",
-                        defaultRelevance
-                    )
-                case (
-                    pc,
-                    instr @ ShiftInstruction(ComputationalTypeLong),
-                    Seq(ConcreteLongValue(a), ConcreteIntegerValue(b), _*)
-                    ) ⇒
-                    (
-                        pc,
-                        s"constant computation: ${b}l ${instr.operator} ${a}l.",
-                        defaultRelevance
-                    )
-
-                case (pc, instr: LNEG.type, Seq(ConcreteLongValue(a), _*)) ⇒
-                    (pc, s"constant computation: -${a}l", defaultRelevance)
-
-                // HANDLING REFERENCE VALUES
-                //
-
-                case (
-                    pc,
-                    INSTANCEOF(referenceType),
-                    Seq(rv: domain.ReferenceValue, _*)
-                    ) if domain.intValueOption(
-                    result.operandsArray(pc + INSTANCEOF.length).head).isDefined ⇒
-                    (
-                        pc,
-                        s"useless type test: ${rv.upperTypeBound.map(_.toJava).mkString("", " with ", "")} instanceof ${referenceType.toJava}",
-                        defaultRelevance
-                    )
-
-                case (
-                    pc,
-                    (IFNONNULL(_) | IFNULL(_)),
-                    Seq(rv: domain.ReferenceValue, _*)
-                    ) if rv.isNull.isYesOrNo ⇒
-                    (
-                        pc,
-                        s"useless null check: if($rv != null)",
-                        defaultRelevance
-                    )
-
-            }.map { issue ⇒
-                val (pc, message, relevance) = issue
-                StandardIssue(
-                    theProject, classFile, Some(method),
-                    Some(pc),
-                    Some(result.operandsArray(pc)), Some(result.localsArray(pc)),
-                    "the expression always evalutes to the same value",
-                    Some(message),
-                    Set(IssueCategory.Comprehensibility, IssueCategory.Performance),
-                    Set(IssueKind.ConstantComputation),
-                    Seq.empty,
-                    relevance
+                    s"constant computation: -${a}",
+                    defaultRelevance
                 )
-            }
-        }
 
-        methodsWithUselessComputations
+            case (
+                pc,
+                instr @ IINC(index, increment),
+                _
+                ) if domain.intValueOption(result.localsArray(pc)(index)).isDefined ⇒
+                val v = domain.intValueOption(result.localsArray(pc)(index)).get
+                val relevance =
+                    if (increment == 1 || increment == -1)
+                        defaultIIncRelevance
+                    else
+                        defaultRelevance
+                Issue(pc, s"constant computation (inc): ${v} + $increment", relevance)
+
+            // HANDLING LONG VALUES
+            //
+            case (
+                pc,
+                instr @ BinaryArithmeticInstruction(ComputationalTypeLong),
+                Seq(ConcreteLongValue(a), ConcreteLongValue(b), _*)
+                ) ⇒
+                Issue(
+                    pc,
+                    s"constant computation: ${b}l ${instr.operator} ${a}l.",
+                    defaultRelevance
+                )
+            case (
+                pc,
+                instr @ ShiftInstruction(ComputationalTypeLong),
+                Seq(ConcreteLongValue(a), ConcreteIntegerValue(b), _*)
+                ) ⇒
+                Issue(
+                    pc,
+                    s"constant computation: ${b}l ${instr.operator} ${a}l.",
+                    defaultRelevance
+                )
+
+            case (pc, LNEG, Seq(ConcreteLongValue(a), _*)) ⇒
+                Issue(pc, s"constant computation: -${a}l", defaultRelevance)
+
+            // HANDLING REFERENCE VALUES
+            //
+
+            case (
+                pc,
+                INSTANCEOF(referenceType),
+                Seq(rv: domain.ReferenceValue, _*)
+                ) if domain.intValueOption(
+                operandsArray(pc + INSTANCEOF.length).head).isDefined ⇒
+                Issue(
+                    pc,
+                    rv.upperTypeBound.map(_.toJava).mkString(
+                        "useless type test:",
+                        " with ",
+                        " instanceof "+referenceType.toJava),
+                    defaultRelevance
+                )
+
+            case (
+                pc,
+                (IFNONNULL(_) | IFNULL(_)),
+                Seq(rv: domain.ReferenceValue, _*)
+                ) if rv.isNull.isYesOrNo ⇒
+                Issue(pc, s"testing $rv against null is useless", defaultRelevance)
+
+        }
     }
 }
 
