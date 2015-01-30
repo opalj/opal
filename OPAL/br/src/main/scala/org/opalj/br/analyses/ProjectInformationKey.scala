@@ -100,11 +100,11 @@ trait ProjectInformationKey[T <: AnyRef] {
      */
     /*ABSTRACT*/ protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]]
 
-    // Only (intended to be) used by ProjectLike. 
+    // Only (intended to be) used by Project. 
     // "Solves" the issue that Scala has no "package protected" visibility; 
     // We wanted to make sure that the method "compute" is (at least by default)
     // only visible in the subclasses as it is not intended to be called by objects
-    // other than instances of `ProjectLike`.
+    // other than instances of `Project`.
     final private[analyses] def doCompute(project: SomeProject): T = {
         compute(project)
     }
@@ -114,7 +114,7 @@ trait ProjectInformationKey[T <: AnyRef] {
      *
      * @note Classes that inherit from this trait are ''not'' expected to
      *      make this method public. This method is only expected to be called
-     *      by an instance of a `ProjectLike`.
+     *      by an instance of a `Project`.
      */
     /*ABSTRACT*/ protected def compute(project: SomeProject): T
 

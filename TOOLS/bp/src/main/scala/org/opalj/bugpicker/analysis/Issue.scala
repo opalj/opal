@@ -43,7 +43,7 @@ import org.opalj.ai.domain.l1.IntegerRangeValues
 import org.opalj.br.analyses.SomeProject
 
 /**
- * Describes some issue found in the source code.
+ * Describes some issue found in source code.
  *
  * @author Michael Eichberg
  */

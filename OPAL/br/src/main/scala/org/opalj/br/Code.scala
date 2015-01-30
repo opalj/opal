@@ -32,6 +32,7 @@ package br
 import scala.collection.BitSet
 
 import org.opalj.br.instructions._
+import scala.annotation.tailrec
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -170,6 +171,18 @@ final class Code private (
             f(pc, instruction)
             pc = pcOfNextInstruction(pc)
         }
+    }
+
+    @inline final def exists(f: (PC, Instruction) ⇒ Boolean): Boolean = {
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            if (f(pc, instruction))
+                return true;
+            pc = pcOfNextInstruction(pc)
+        }
+        false
     }
 
     /**
@@ -704,15 +717,50 @@ final class Code private (
     }
 
     /**
+     * Returns the next instruction that will be returned at runtime that is not a
+     * [[org.opalj.br.instructions.GotoInstruction]].
+     * If the given instruction is not a [[org.opalj.br.instructions.GotoInstruction]],
+     * the given instruction is returned.
+     */
+    @tailrec def nextNonGotoInstruction(pc: PC): PC = {
+        instructions(pc) match {
+            case GotoInstruction(branchoffset) ⇒ nextNonGotoInstruction(pc + branchoffset)
+            case _                             ⇒ pc
+        }
+    }
+
+    /**
      * This attribute's kind id.
      */
     override def kindId: Int = Code.KindId
 
     //    /**
-    //     * Associates the current memory layout with each instruction.
+    //     * Returns the map of isomorphic instructions.
+    //     *
+    //     * @note
     //     */
-    //    def memoryLayout(): (Array[List[ValueInformation]], Array[Locals[ValueInformation]]) = {
+    //    def isomorphicInstructions(
+    //        startPC1: PC,
+    //        startPC2: PC)(
+    //            implicit map: Array[PC] = { val a = new Array[PC](instructions.length); Arrays.fill(a, -1); a },
+    //            subroutineCallChainLength: Int = 0): Array[PC] = {
     //
+    //        import scala.language.implicitConversions
+    //        implicit def pcToInstr(pc: PC): Instruction = this.instructions(pc)
+    //        implicit val code = this
+    //
+    //        // assert(startPC1.as)
+    //
+    //        var pc1 = startPC1
+    //        var pc2 = startPC2
+    //        var pc1Instr = pcToInstr(pc1)
+    //        if (pc1Instr.isIsomorphic(pc1, pc2)) {
+    //            map(startPC1) = startPC2
+    //            pc1Instr.nextInstructions(pc1)
+    //
+    //        }
+    //
+    //        map
     //    }
 
     /**

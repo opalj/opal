@@ -34,6 +34,7 @@ import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
+import scala.annotation.tailrec
 import scala.math.Ordered
 import scala.collection.SortedSet
 
@@ -1392,15 +1393,13 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
     val componentType: FieldType)
         extends ReferenceType {
 
-    assert(componentType != null)
-
     final override def isArrayType = true
 
     final override def asArrayType = this
 
     /**
-     * Returns this array type's element type.
-     *
+     * Returns this array type's element type. E.g., the element type of an
+     * array of arrays of arrays of `int` is `int`.
      */
     def elementType: FieldType =
         componentType match {
@@ -1455,8 +1454,7 @@ object ArrayType {
      * and to facilitate reference based comparisons. I.e., to `ArrayType`s are equal
      * iff it is the same object.
      */
-    def apply(
-        componentType: FieldType): ArrayType = {
+    def apply(componentType: FieldType): ArrayType = {
         cache.synchronized {
             val wrAT = cache.get(componentType)
             if (wrAT != null) {
@@ -1475,9 +1473,9 @@ object ArrayType {
      * Factory method to create an Array of the given component type with the given
      * dimension.
      */
-    @annotation.tailrec def apply(
-        dimension: Int,
-        componentType: FieldType): ArrayType = {
+    @tailrec def apply(dimension: Int, componentType: FieldType): ArrayType = {
+        assert(dimension >= 1)
+
         val at = apply(componentType)
         if (dimension > 1)
             apply(dimension - 1, at)

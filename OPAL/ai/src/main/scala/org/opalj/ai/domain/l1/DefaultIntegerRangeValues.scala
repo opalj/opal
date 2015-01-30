@@ -82,6 +82,10 @@ trait DefaultIntegerRangeValues
 
     class IntegerRange(val lowerBound: Int, val upperBound: Int) extends super.IntegerRange {
 
+        assert(
+            lowerBound <= upperBound,
+            s"the lower bound $lowerBound is not <= the upper bound $upperBound")
+
         def update(newValue: Int): DomainValue = {
             val newLowerBound = if (lowerBound > newValue) newValue else lowerBound
             val newUpperBound = if (upperBound < newValue) newValue else upperBound
@@ -156,25 +160,30 @@ trait DefaultIntegerRangeValues
         override def toString: String = "IntegerRange(lb="+lowerBound+", ub="+upperBound+")"
     }
 
-    override def IntegerRange(lb: Int, ub: Int): IntegerRange = new IntegerRange(lb, ub)
+    @inline final override def IntegerRange(lb: Int, ub: Int): IntegerRange =
+        new IntegerRange(lb, ub)
 
-    override def BooleanValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def BooleanValue(origin: ValueOrigin): DomainValue =
+        IntegerRange(0, 1)
     override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainValue =
         if (value) IntegerValue(origin, 1) else IntegerValue(origin, 0)
 
-    override def ByteValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def ByteValue(origin: ValueOrigin): DomainValue =
+        IntegerRange(Byte.MinValue, Byte.MaxValue)
     override def ByteValue(origin: ValueOrigin, value: Byte) = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def ShortValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def ShortValue(origin: ValueOrigin): DomainValue =
+        IntegerRange(Short.MinValue, Short.MaxValue)
     override def ShortValue(origin: ValueOrigin, value: Short) = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def CharValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def CharValue(origin: ValueOrigin): DomainValue =
+        IntegerRange(Char.MinValue, Char.MaxValue)
     override def CharValue(origin: ValueOrigin, value: Char) = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)

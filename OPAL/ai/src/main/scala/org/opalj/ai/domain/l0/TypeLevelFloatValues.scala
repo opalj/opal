@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -40,9 +40,10 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeFloat }
  * This domain can be used as a foundation to build more complex domains.
  *
  * @author Michael Eichberg
+ * @author David Becker
  */
 trait TypeLevelFloatValues extends FloatValuesDomain {
-    this: ValuesDomain with Configuration with IntegerValuesFactory ⇒
+    domain: IntegerValuesFactory ⇒
 
     // -----------------------------------------------------------------------------------
     //
@@ -68,33 +69,57 @@ trait TypeLevelFloatValues extends FloatValuesDomain {
     //
     // UNARY EXPRESSIONS
     //
-    override def fneg(pc: PC, value: DomainValue): DomainValue = FloatValue(pc)
+    override def fneg(
+        pc: PC,
+        strictfp: Boolean,
+        value: DomainValue): DomainValue = FloatValue(pc)
 
     //
     // RELATIONAL OPERATORS
     //
-    override def fcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fcmpg(
+        pc: PC,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
 
-    override def fcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fcmpl(
+        pc: PC,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         IntegerValue(pc)
 
     //
     // BINARY EXPRESSIONS
     //
-    override def fadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fadd(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         FloatValue(pc)
 
-    override def fdiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fdiv(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue,
+        value2: DomainValue): DomainValue =
         FloatValue(pc)
 
-    override def fmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fmul(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         FloatValue(pc)
 
-    override def frem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def frem(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue,
+        value2: DomainValue): DomainValue =
         FloatValue(pc)
 
-    override def fsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def fsub(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         FloatValue(pc)
 
 }

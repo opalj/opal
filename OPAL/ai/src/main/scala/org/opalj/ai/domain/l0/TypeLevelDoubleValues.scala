@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -41,6 +41,7 @@ import org.opalj.br.ComputationalTypeDouble
  * This domain can be used as a foundation to build more complex domains.
  *
  * @author Michael Eichberg
+ * @author David Becker
  */
 trait TypeLevelDoubleValues extends DoubleValuesDomain {
     domain: IntegerValuesFactory ⇒
@@ -69,7 +70,10 @@ trait TypeLevelDoubleValues extends DoubleValuesDomain {
     //
     // UNARY EXPRESSIONS
     //
-    override def dneg(pc: PC, value: DomainValue): DomainValue = DoubleValue(pc)
+    override def dneg(
+        pc: PC,
+        strictfp: Boolean,
+        value: DomainValue): DomainValue = DoubleValue(pc)
 
     //
     // RELATIONAL OPERATORS
@@ -83,19 +87,34 @@ trait TypeLevelDoubleValues extends DoubleValuesDomain {
     //
     // BINARY EXPRESSIONS
     //
-    override def dadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dadd(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         DoubleValue(pc)
 
-    override def ddiv(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def ddiv(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         DoubleValue(pc)
 
-    override def dmul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def drem(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         DoubleValue(pc)
 
-    override def drem(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dmul(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         DoubleValue(pc)
 
-    override def dsub(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
+    override def dsub(
+        pc: PC,
+        strictfp: Boolean,
+        value1: DomainValue, value2: DomainValue): DomainValue =
         DoubleValue(pc)
 
 }

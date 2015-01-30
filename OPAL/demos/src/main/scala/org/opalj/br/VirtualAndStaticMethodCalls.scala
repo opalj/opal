@@ -59,9 +59,9 @@ object VirtualAndStaticMethodCalls extends AnalysisExecutor with OneStepAnalysis
             for {
                 classFile ← project.allClassFiles
                 MethodWithBody(code) ← classFile.methods
-                invokeInstruction @ MethodInvocationInstruction(_, _, _) ← code.instructions
+                instruction @ MethodInvocationInstruction(_, _, _) ← code.instructions
             } {
-                if (invokeInstruction.isVirtualMethodCall)
+                if (instruction.asInstanceOf[MethodInvocationInstruction].isVirtualMethodCall)
                     virtualCalls += 1
                 else
                     staticCalls += 1

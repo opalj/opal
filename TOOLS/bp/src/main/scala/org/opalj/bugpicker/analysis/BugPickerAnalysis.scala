@@ -89,10 +89,12 @@ import org.opalj.br.MethodSignature
  * that we analyze Java bytecode, some findings may be the result of the compilation
  * scheme employed by the compiler and, hence, cannot be resolved at the
  * sourcecode level. This is in particular true for finally blocks in Java programs. In
- * this case compiler typically include the same block two times in the code.
+ * this case compilers typically include the same block two (or more) times in the code.
  *
  */
 class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
+
+    import BugPickerAnalysis.PRE_ANALYSES_COUNT
 
     override def title: String =
         "Dead/Useless/Buggy Code Identification"
@@ -103,7 +105,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
     /**
      * Executes the analysis of the projects concrete methods.
      *
-     * @param Either an empty sequence or a sequence that contains one or more of
+     * @param parameters
+     *      Either an empty sequence or a sequence that contains one or more of
      *      the following parameters:
      *      - a string that matches the following pattern: `-maxEvalFactor=(\d+(?:.\d+)?)`; e.g.,
      *      `-maxEvalFactor=0.5` or `-maxEvalFactor=1.5`. A value below 0.05 is usually
@@ -152,7 +155,6 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
 
-        val PRE_ANALYSES_COUNT = 2 // the FieldValues analysis + the MethodReturnValues analysis
         val progressManagement =
             initProgressManagement(PRE_ANALYSES_COUNT + classFilesCount)
 
@@ -161,11 +163,11 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         // DO PREANALYSES
         //
         //
-        progressManagement.start(1, "Analyzing field declarations")
+        progressManagement.start(1, "[Pre-Analysis] Analyzing field declarations to derive more precise field value information")
         theProject.get(FieldValuesKey)
         progressManagement.end(1)
 
-        progressManagement.start(2, "Analyzing methods")
+        progressManagement.start(2, "[Pre-Analysis] Analyzing methods to get more precise return type information")
         theProject.get(MethodReturnValuesKey)
         progressManagement.end(2)
 
@@ -177,7 +179,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
-        val results = new java.util.concurrent.ConcurrentLinkedQueue[Issue]()
+        val results = new java.util.concurrent.ConcurrentLinkedQueue[StandardIssue]()
         val fieldValueInformation = theProject.get(FieldValuesKey)
         val methodReturnValueInformation = theProject.get(MethodReturnValuesKey)
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](theProject)
@@ -205,7 +207,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                 //
                 results.addAll(
                     scala.collection.JavaConversions.asJavaCollection(
-                        DeadCodeAnalysis.analyze(theProject, classFile, method, result)
+                        DeadPathAnalysis.analyze(theProject, classFile, method, result)
                     )
                 )
                 results.addAll(
@@ -317,7 +319,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
             val stepIds = new java.util.concurrent.atomic.AtomicInteger(PRE_ANALYSES_COUNT + 1)
 
             theProject.parForeachProjectClassFile(() ⇒ progressManagement.isInterrupted()) { classFile ⇒
-                val stepId = stepIds.incrementAndGet()
+                val stepId = stepIds.getAndIncrement()
                 try {
                     progressManagement.start(stepId, classFile.thisType.toJava)
                     for (method @ MethodWithBody(body) ← classFile.methods) {
@@ -339,7 +341,9 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                 }
 
             }
-            scala.collection.JavaConversions.collectionAsScalaIterable(results)
+            StandardIssue.fold(
+                scala.collection.JavaConversions.collectionAsScalaIterable(results).toSeq
+            )
         } { t ⇒ analysisTime = t }
 
         (analysisTime, identifiedIssues)
@@ -347,6 +351,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
 }
 
 object BugPickerAnalysis {
+
+    val PRE_ANALYSES_COUNT = 2 // the FieldValues analysis + the MethodReturnValues analysis
 
     // we want to match expressions such as:
     // -maxEvalFactor=1

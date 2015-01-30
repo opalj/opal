@@ -28,52 +28,32 @@
  */
 package org.opalj
 package ai
+package domain
+package l2
+
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+
+import java.net.URL
+
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
 
 /**
- * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of `float` values.
+ * This system test(suite) just loads a very large number of class files and performs
+ * an abstract interpretation of all methods using the l2.DefaultDomain. It basically
+ * tests if we can load and process a large number of different classes without exceptions.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
+ * @author Michael Eichberg
  */
-trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
+@RunWith(classOf[JUnitRunner])
+class DefaultDomainTest extends DomainTestInfrastructure("l2.DefaultDomain") {
 
-    //
-    // RELATIONAL OPERATORS
-    //
-    def fcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def fcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+    def Domain(project: Project[URL], classFile: ClassFile, method: Method): l2.DefaultDomain[URL] =
+        new l2.DefaultDomain(project, classFile, method)
 
-    //
-    // UNARY ARITHMETIC EXPRESSIONS
-    //
-    def fneg(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue
-
-    //
-    // BINARY ARITHMETIC EXPRESSIONS
-    //
-    def fadd(
-        pc: PC,
-        strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
-
-    def fdiv(
-        pc: PC,
-        strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
-
-    def fmul(
-        pc: PC,
-        strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
-
-    def frem(
-        pc: PC,
-        strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
-
-    def fsub(
-        pc: PC,
-        strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
 }
+
+
+

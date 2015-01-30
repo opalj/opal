@@ -644,7 +644,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         this: DomainArrayValue ⇒
 
         assert(isNull.isNoOrUnknown)
-        assert(theUpperTypeBound.isBaseType && isPrecise || !theUpperTypeBound.isBaseType)
+        assert(!classHierarchy.isKnownToBeFinal(theUpperTypeBound) || isPrecise)
 
         override def updateT(
             t: Timestamp,
@@ -751,6 +751,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         this: DomainObjectValue ⇒
 
         assert(this.isNull.isNoOrUnknown)
+        assert(!classHierarchy.isKnownToBeFinal(theUpperTypeBound) || isPrecise)
 
         override def updateT(
             t: Timestamp,
@@ -1830,7 +1831,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             case ot: ObjectType ⇒
                 ObjectValue(origin, isNull, isPrecise, ot, t)
             case at: ArrayType ⇒
-                ArrayValue(origin, isNull, isPrecise || at.elementType.isBaseType, at, t)
+                ArrayValue(origin, isNull, isPrecise, at, t)
         }
     }
 
@@ -1857,19 +1858,18 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
     }
 
-    // TODO pc => origin
     protected[domain] def ObjectValue( // for MObjectValue
-        pc: PC,
+        origin: ValueOrigin,
         isNull: Answer,
         upperTypeBound: UIDSet[ObjectType]): DomainObjectValue =
-        ObjectValue(pc, isNull, upperTypeBound, nextT)
+        ObjectValue(origin, isNull, upperTypeBound, nextT())
 
     protected[domain] def ObjectValue( // for SObjectValue
-        pc: PC,
+        origin: ValueOrigin,
         isNull: Answer,
         isPrecise: Boolean,
         theUpperTypeBound: ObjectType): DomainObjectValue =
-        ObjectValue(pc, isNull, isPrecise, theUpperTypeBound, nextT())
+        ObjectValue(origin, isNull, isPrecise, theUpperTypeBound, nextT())
 
     //
     // DECLARATION OF ADDITIONAL DOMAIN VALUE FACTORY METHODS
@@ -1907,6 +1907,5 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         upperTypeBound: UpperTypeBound,
         t: Int): DomainMultipleReferenceValues
 
-    // TODO [Refactor] isPrecise => typeIsPrecise
 }
 

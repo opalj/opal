@@ -182,7 +182,7 @@ trait IsAReferenceValue {
     def isPrecise: Boolean = false
 
     /**
-     * Test if the type of this value is potentially a subtype of the specified
+     * Tests if the type of this value is potentially a subtype of the specified
      * reference type under the assumption that this value is not `null`.
      * This test takes the precision of the type information into account.
      * That is, if the currently available type information is not precise and
@@ -238,6 +238,7 @@ trait IsAReferenceValue {
  * @author Michael Eichberg
  */
 object IsAReferenceValue {
+
     def unapply(value: IsAReferenceValue): Option[UpperTypeBound] =
         Some(value.upperTypeBound)
 }

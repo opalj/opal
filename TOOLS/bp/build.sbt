@@ -29,6 +29,10 @@ jarName in assembly := "bugpicker-" + version.value + ".jar"
 
 test in assembly := {}
 
+EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE17)
+
+EclipseKeys.withSource := true
+
 mainClass in assembly := Some("org.opalj.bugpicker.BugPicker")
 
 resourceGenerators in Compile <+= Def.task {
