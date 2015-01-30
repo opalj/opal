@@ -120,8 +120,9 @@ trait DefaultTypeLevelReferenceValues
                 case elementValue @ IsAReferenceValue(UIDSet0) ⇒
                     // the elementValue is "null"
                     assert(elementValue.isNull.isYes)
-
-                    if (theUpperTypeBound.elementType.isReferenceType)
+                    // e.g., it is possible to store null in the n-1 dimensions of
+                    // a n-dimensional array of primitive values
+                    if (theUpperTypeBound.componentType.isReferenceType)
                         Yes
                     else
                         No
