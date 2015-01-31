@@ -33,10 +33,10 @@ package l0
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
-
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.collection.immutable.UIDSet0
 
 /**
  * Default implementation for handling reference values.
@@ -116,6 +116,16 @@ trait DefaultTypeLevelReferenceValues
                         theUpperTypeBound.componentType.computationalType eq
                             primitiveType.computationalType
                     )
+
+                case elementValue @ IsAReferenceValue(UIDSet0) ⇒
+                    // the elementValue is "null"
+                    assert(elementValue.isNull.isYes)
+                    // e.g., it is possible to store null in the n-1 dimensions of
+                    // a n-dimensional array of primitive values
+                    if (theUpperTypeBound.componentType.isReferenceType)
+                        Yes
+                    else
+                        No
 
                 case elementValue @ IsAReferenceValue(UIDSet1(elementValueType)) ⇒
                     classHierarchy.canBeStoredIn(

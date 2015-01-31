@@ -83,8 +83,9 @@ object CallGraphFactory {
      */
     def create(
         theProject: SomeProject,
-        entryPoints: Iterable[Method],
+        findEntryPoints: () ⇒ Iterable[Method],
         configuration: CallGraphAlgorithmConfiguration): ComputedCallGraph = {
+        val entryPoints = findEntryPoints()
         if (entryPoints.isEmpty)
             return ComputedCallGraph.empty(theProject)
 
@@ -196,7 +197,11 @@ object CallGraphFactory {
         // TODO use log
         println("[info] finished analzying the bytecode, constructing the final call graph")
 
-        ComputedCallGraph(builder.buildCallGraph, unresolvedMethodCalls, exceptions)
+        ComputedCallGraph(
+            builder.buildCallGraph,
+            findEntryPoints,
+            unresolvedMethodCalls,
+            exceptions)
     }
 }
 

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -47,24 +47,31 @@ import scala.xml.UnprefixedAttribute
 import scala.xml.Unparsed
 
 /**
- * Describes some issue found in the source code.
+ * Describes an issue found by an analysis.
  *
  * @author Michael Eichberg
  */
 case class StandardIssue(
-        project: SomeProject,
-        classFile: ClassFile,
-        method: Option[Method],
-        pc: Option[PC],
-        operands: Option[List[_ <: AnyRef]],
-        localVariables: Option[Locals[_ <: AnyRef]],
-        summary: String,
-        description: Option[String],
-        categories: Set[String],
-        kind: Set[String],
-        otherPCs: Seq[(PC, String)],
-        relevance: Relevance) extends Issue {
+    project: SomeProject,
+    classFile: ClassFile,
+    method: Option[Method],
+    pc: Option[PC],
+    operands: Option[List[_ <: AnyRef]],
+    localVariables: Option[Locals[_ <: AnyRef]],
+    summary: String,
+    description: Option[String],
+    categories: Set[String],
+    kind: Set[String],
+    otherPCs: Seq[(PC, String)],
+    relevance: Relevance)
+        extends Issue {
 
+    /**
+     * Merges this issue with the given issue if both issues refer to the same element.
+     *
+     * @return `Some(StandardIssue)` if this standard issue and the other standard issue
+     *      can be merged; `None` otherwise.
+     */
     def merge(other: StandardIssue): Option[StandardIssue] = {
         val tMethod = this.method
         val oMethod = other.method
@@ -106,7 +113,7 @@ case class StandardIssue(
 
         val firstLineOfMethod: Option[String] =
             method.flatMap(_.body.flatMap(_.firstLineNumber.map { ln ⇒
-                (if (ln > 0) (ln - 1) else 0).toString
+                (if (ln > 2) (ln - 2) else 0).toString
             }))
 
         def createPCNode(pc: PC): Node = {
@@ -209,23 +216,24 @@ case class StandardIssue(
             val method = this.method.get
             val dt =
                 <dt>method</dt>
-            val dd =
+            var dd =
                 <dd class="method" data-class={ classFile.fqn }>
                     { methodToXHTML(method.name, method.descriptor) }
                 </dd>
             if (methodId.isDefined)
-                dd % (new UnprefixedAttribute(
+                dd = dd % (new UnprefixedAttribute(
                     "data-method",
                     methodId.get.toString,
                     scala.xml.Null
                 ))
 
-            if (firstLineOfMethod.isDefined)
-                dd % (new UnprefixedAttribute(
+            if (firstLineOfMethod.isDefined) {
+                dd = dd % (new UnprefixedAttribute(
                     "data-line",
                     firstLineOfMethod.get.toString,
                     scala.xml.Null
                 ))
+            }
 
             infoNodes = infoNodes ::: List(dt, dd)
         }
@@ -250,7 +258,7 @@ case class StandardIssue(
                     </div>
             }
 
-            // The primary message... 
+            // The primary message...
             locations ::= <span class="issue_summary">{ summary.split("\n").map(Text(_)).foldLeft(List.empty[Node])((c, n) ⇒ c ++ List(<br/>, n)) }</span>
             locations ::= <br/>
             lineNode.foreach(ln ⇒
@@ -301,12 +309,22 @@ case class StandardIssue(
         node
 
     }
-
 }
 
+/**
+ * Provides factory and factory related methods for [[StandardIssue]]s.
+ *
+ * @author Michael Eichberg
+ */
 object StandardIssue {
 
-    def apply(project: SomeProject, classFile: ClassFile, summary: String) = {
+    /**
+     * Creates a new simple standard issues.
+     */
+    def apply(
+        project: SomeProject,
+        classFile: ClassFile,
+        summary: String): StandardIssue = {
         new StandardIssue(
             project,
             classFile,
@@ -322,19 +340,27 @@ object StandardIssue {
             Relevance.DefaultRelevance)
     }
 
+    /**
+     * Takes a sequence of [[StandardIssues]] and merges all those issues that
+     * refer to the same element (class file, method, pc).
+     *
+     * @return The sorted (using [[IssueOrdering]]), list of folded [[StandardIssue]]s.
+     */
     def fold(issues: Seq[StandardIssue]): Iterable[StandardIssue] = {
+        if (issues.isEmpty)
+            return Iterable.empty;
+
+        if (issues.tail.isEmpty)
+            return Iterable(issues.head);
 
         val sortedIssues = issues.sorted(IssueOrdering)
-
         val foldedIssues =
             sortedIssues.tail.foldLeft(List(sortedIssues.head)) { (issues, nextIssue) ⇒
-                val newIssue = issues.head merge nextIssue
-                if (newIssue.isDefined) {
-                    newIssue.get :: issues.tail
-                } else
-                    nextIssue :: issues
+                (issues.head merge nextIssue) match {
+                    case Some(newIssue) ⇒ newIssue :: issues.tail
+                    case None           ⇒ nextIssue :: issues
+                }
             }
-
         foldedIssues
     }
 }

@@ -83,6 +83,7 @@ import org.opalj.ai.domain.l1.ReferenceValues
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.GOTO
+import org.opalj.br.instructions.ATHROW
 import org.opalj.br.instructions.GOTO_W
 import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.PC
@@ -108,8 +109,8 @@ object DeadPathAnalysis {
         val body = result.code
         val instructions = body.instructions
 
-        // A return/goto instruction is only considered useless if the preceding
-        // instruction is a method call with a single target that _context-independently_ 
+        // A return/goto/athrow instruction is only considered useless if the preceding
+        // instruction is a method call with a single target that _context-independently_
         // always just throws (an) exception(s). This is common pattern found in the JDK.
         //
         def requiredButIrrelevantSuccessor(currentPC: PC, nextPC: PC): Boolean = {
@@ -121,16 +122,16 @@ object DeadPathAnalysis {
 
                         if (callees.size == 1) {
                             // we are only handling the special idiom where a
-                            // (satic) private method is used to create and throw
+                            // (static) private method is used to create and throw
                             // a special exception object
                             // ...
                             // catch(Exception e) {
-                            //     /*return*/ handleException(e);
+                            //     /*return|athrow*/ handleException(e);
                             // }
                             val callee = callees.head
                             callee.body match {
-                                case Some(ReturnInstructions(pcs)) if pcs.isEmpty ⇒
-                                    true
+                                case Some(code) ⇒
+                                    !code.exists((pc, i) ⇒ ReturnInstruction.isReturnInstruction(i))
                                 case _ ⇒
                                     false
                             }
@@ -144,12 +145,13 @@ object DeadPathAnalysis {
             val nextInstruction = body.instructions(nextPC)
             (
                 nextInstruction.isInstanceOf[ReturnInstruction] ||
+                nextInstruction == ATHROW ||
                 (
                     // We want to suppress false warning as found in JDK 1.8.0_25
                     //     javax.xml.bind.util.JAXBResult
-                    // when the method 
-                    //     assertFailed 
-                    // is called
+                    // when the method
+                    //     assertFailed
+                    // is called and afterwards a jump is done to a non-dead method.
                     nextInstruction.isInstanceOf[GotoInstruction] &&
                     evaluatedInstructions.contains(body.nextNonGotoInstruction(nextPC))
                 )

@@ -1204,11 +1204,11 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 iadd(-1, v2, v1) should be(AnIntegerValue)
             }
 
-            it("[Int.MinValue,3] + [3,2] => [Int.MinValue+3,5]") {
+            it("[Int.MinValue,3] + [2,3] => [Int.MinValue+2,6]") {
                 val v1 = IntegerRange(Int.MinValue, 3)
-                val v2 = IntegerRange(3, 2)
-                iadd(-1, v1, v2) should be(IntegerRange(Int.MinValue + 3, 5))
-                iadd(-1, v2, v1) should be(IntegerRange(Int.MinValue + 3, 5))
+                val v2 = IntegerRange(2, 3)
+                iadd(-1, v1, v2) should be(IntegerRange(Int.MinValue + 2, 6))
+                iadd(-1, v2, v1) should be(IntegerRange(Int.MinValue + 2, 6))
             }
 
             it("[-3,-1] + [-3,Int.MaxValue] => [-6,Int.MaxValue-1]") {
@@ -1294,15 +1294,15 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 isub(-1, v2, v1) should be theSameInstanceAs (v2)
             }
 
-            it("[Int.MinValue,3] - [3,2] => AnIntegerValue") {
+            it("[Int.MinValue,3] - [2,3] => AnIntegerValue") {
                 val v1 = IntegerRange(Int.MinValue, 3)
-                val v2 = IntegerRange(3, 2)
+                val v2 = IntegerRange(2, 3)
 
                 isub(-1, v1, v2) should be(AnIntegerValue)
             }
 
-            it("[3,2] - [Int.MinValue,3] => AnIntegerValue") {
-                val v2 = IntegerRange(3, 2)
+            it("[2,3] - [Int.MinValue,3] => AnIntegerValue") {
+                val v2 = IntegerRange(2, 3)
                 val v1 = IntegerRange(Int.MinValue, 3)
 
                 isub(-1, v2, v1) should be(AnIntegerValue)
