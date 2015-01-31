@@ -68,7 +68,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
     class IntegerSet(val values: SortedSet[Int]) extends super.IntegerSet {
 
-        require(values.size > 0)
+        assert(values.size > 0)
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             val result = other match {
