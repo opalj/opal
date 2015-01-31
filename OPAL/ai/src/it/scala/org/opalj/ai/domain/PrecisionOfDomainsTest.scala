@@ -37,6 +37,7 @@ import org.scalatest.Matchers
 import org.opalj.br.analyses.Project
 import org.opalj.br.MethodWithBody
 import org.opalj.br.Code
+import org.opalj.br.Method
 import org.scalatest.FunSpec
 
 /**
@@ -50,6 +51,8 @@ import org.scalatest.FunSpec
 class PrecisionOfDomainsTest extends FunSpec with Matchers {
 
     describe("a more precise domain") {
+
+        type TheAIResult = AIResult { val domain: Domain with TheMethod }
 
         it("should return a more precise result") {
             val project = org.opalj.br.TestSupport.createJREProject
@@ -68,10 +71,10 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with ProjectBasedClassHierarchy
                 with TheProject
 
-            class TypeLevelDomain(val code: Code, val project: Project[java.net.URL])
+            class TypeLevelDomain(val method: Method, val project: Project[java.net.URL])
                 extends Domain
                 with TheProject
-                with TheCode
+                with TheMethod
                 with DefaultHandlingOfMethodResults
                 with IgnoreSynchronization
                 with DefaultDomainValueBinding
@@ -87,8 +90,11 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelLongValuesShiftOperators
                 with ProjectBasedClassHierarchy
 
-            class L1RangesDomain[I](val code: Code, val project: Project[java.net.URL])
+            class L1RangesDomain[I](val method: Method, val project: Project[java.net.URL])
                 extends CorrelationalDomain
+                with TheProject
+                with TheMethod
+                with ProjectBasedClassHierarchy
                 with ThrowAllPotentialExceptionsConfiguration
                 with DefaultHandlingOfMethodResults
                 with IgnoreSynchronization
@@ -103,12 +109,11 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelPrimitiveValuesConversions
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelFieldAccessInstructions
-                with ProjectBasedClassHierarchy
-                with TheProject
-                with TheCode
 
-            class L1SetsDomain[I](val code: Code, val project: Project[java.net.URL])
+            class L1SetsDomain[I](val method: Method, val project: Project[java.net.URL])
                 extends CorrelationalDomain
+                with TheProject
+                with TheMethod
                 with ThrowAllPotentialExceptionsConfiguration
                 with DefaultHandlingOfMethodResults
                 with IgnoreSynchronization
@@ -123,33 +128,51 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelFieldAccessInstructions
                 with ProjectBasedClassHierarchy
-                with TheProject
-                with TheCode
 
             val ValuesDomain = new TheValuesDomain(project)
 
-            def checkAbstractsOver(r1: AIResult, r2: AIResult): Option[String] = {
+            def checkAbstractsOver(r1: TheAIResult, r2: TheAIResult): Option[String] = {
                 var pc = -1
                 r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) ⇒
                     pc += 1
-                    (lOperands == null && rOperands == null) ||
-                        (lOperands != null && (rOperands == null ||
-                            lOperands.corresponds(rOperands) { (lValue, rValue) ⇒
-                                val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                if (!lVD.abstractsOver(rVD)) {
-                                    return Some(s"$pc: the operand stack value $lVD (${lVD.getClass.getName})"+
+                    def compareOperands(): Option[String] = {
+                        var op = -1
+                        lOperands.corresponds(rOperands) { (lValue, rValue) ⇒
+                            op += 1
+                            val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
+                            val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
+                            if (!lVD.abstractsOver(rVD)) {
+                                val line =
+                                    r1.domain.code.lineNumber(pc).map(_.toString).getOrElse("N/A")
+                                return Some(
+                                    s"$pc[line=$line]: the operand stack $op "+
+                                        s"value $lVD (${lVD.getClass.getName})"+
                                         s" does not abstract over $rVD (${rVD.getClass.getName})"+
                                         s" (original: $lValue join $rValue )")
-                                }
-                                if (lVD.isMorePreciseThan(rVD)) {
-                                    return Some(s"$pc: the operand stack value $lVD#${System.identityHashCode(lVD)} (${lVD.getClass.getName})"+
-                                        s" is more precise than $rVD#${System.identityHashCode(rVD)} (${rVD.getClass.getName})"+
-                                        s" (original: $lValue join $rValue )")
-                                }
-                                true
                             }
-                        ))
+                            // this primarily tests the "isMorePreciseThan" method
+                            if (lVD.isMorePreciseThan(rVD)) {
+                                val line =
+                                    r1.domain.code.lineNumber(pc).map(_.toString).getOrElse("N/A")
+                                return Some(
+                                    s"$pc[line=$line]: the operand stack value $op "+
+                                        s"$lVD#${System.identityHashCode(lVD)} (${lVD.getClass.getName})"+
+                                        s" is more precise than "+
+                                        s"$rVD#${System.identityHashCode(rVD)} (${rVD.getClass.getName})"+
+                                        s" (original: $lValue join $rValue )")
+                            }
+                            true
+                        }
+                        None
+                    }
+
+                    (lOperands == null && rOperands == null) ||
+                        (lOperands != null && (rOperands == null || {
+                            val result = compareOperands()
+                            if (result.isDefined)
+                                return result;
+                            true
+                        }))
                 }
                 None
             }
@@ -165,13 +188,12 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
 			*/
             project.parForeachMethodWithBody() { m ⇒
                 val (_, classFile, method) = m
-                val body = method.body.get
                 val a1 = BaseAI
-                val r1 = a1(classFile, method, new TypeLevelDomain(body, project))
+                val r1 = a1(classFile, method, new TypeLevelDomain(method, project))
                 val a2 = BaseAI
-                val r2_ranges = a2(classFile, method, new L1RangesDomain(body, project))
+                val r2_ranges = a2(classFile, method, new L1RangesDomain(method, project))
                 val a3 = BaseAI
-                val r2_sets = a3(classFile, method, new L1SetsDomain(body, project))
+                val r2_sets = a3(classFile, method, new L1SetsDomain(method, project))
 
                 def handleAbstractsOverFailure(lpDomain: String, mpDomain: String)(m: String): Unit = {
                     failed.set(true)
