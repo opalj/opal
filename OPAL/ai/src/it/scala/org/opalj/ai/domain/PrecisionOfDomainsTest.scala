@@ -173,22 +173,27 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 val a3 = BaseAI
                 val r2_sets = a3(classFile, method, new L1SetsDomain(body, project))
 
-                def handleAbstractsOverFailure(m: String): Unit = {
+                def handleAbstractsOverFailure(lpDomain: String, mpDomain: String)(m: String): Unit = {
                     failed.set(true)
                     println(
                         classFile.thisType.toJava+" \""+
                             method.toJava+"\" /*Instructions "+
                             method.body.get.instructions.size+"*/\n"+
-                            "\t// the less precise domain did not abstract over the state of the more precise domain\n"+
+                            s"\t// the less precise domain ($lpDomain) did not abstract "+
+                            s"over the state of the more precise domain ($mpDomain)\n"+
                             "\t// "+Console.BOLD + m + Console.RESET+"\n"
                     )
 
                 }
 
-                checkAbstractsOver(r1, r2_ranges).foreach(handleAbstractsOverFailure)
+                checkAbstractsOver(r1, r2_ranges).foreach(
+                    handleAbstractsOverFailure("TypeLevelDomain", "L1RangesDomain")
+                )
                 comparisonCount.incrementAndGet()
 
-                checkAbstractsOver(r1, r2_sets).foreach(handleAbstractsOverFailure)
+                checkAbstractsOver(r1, r2_sets).foreach(
+                    handleAbstractsOverFailure("TypeLevelDomain", "L1SetsDomain")
+                )
                 comparisonCount.incrementAndGet()
 
             }
