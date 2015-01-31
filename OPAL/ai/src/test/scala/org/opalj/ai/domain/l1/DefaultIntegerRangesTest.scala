@@ -106,7 +106,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
             it("(join of two ranges one with [Int.MinValue+1 and Int.MaxValue]); i1 join i2 => \"StructuralUpdate(AnIntegerValue)\"") {
                 val v1 = IntegerRange(lb = Int.MinValue + 1, ub = Int.MaxValue)
                 val v2 = IntegerRange(lb = -10, ub = -1)
-                v1.join(-1, v2) should be(StructuralUpdate(AnIntegerValue))
+                v1.join(-1, v2) should be(MetaInformationUpdate(IntegerRange(lb = Int.MinValue + 1, ub = Int.MaxValue)))
                 v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue))
             }
 
