@@ -3087,10 +3087,10 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                     intIsGreaterThan(IrrelevantPC, p1, i2) should be(Unknown)
                 }
 
-                it("[0,3] > [3,3] should be Unknown") {
+                it("[0,3] > [3,3] should be No") {
                     val p1 = IntegerRange(lb = 3, ub = 3)
                     val i2 = IntegerRange(lb = 0, ub = 3)
-                    intIsGreaterThan(IrrelevantPC, i2, p1) should be(Unknown)
+                    intIsGreaterThan(IrrelevantPC, i2, p1) should be(No)
                 }
 
                 it("[2,3] > [1,4] should be Unknown") {
@@ -3099,10 +3099,10 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                     intIsGreaterThan(IrrelevantPC, i1, i2) should be(Unknown)
                 }
 
-                it("[-3,3] > [3,30] should be Unknown") {
+                it("[-3,3] > [3,30] should be No") {
                     val p1 = IntegerRange(lb = -3, ub = 3)
                     val p2 = IntegerRange(lb = 3, ub = 30)
-                    intIsGreaterThan(IrrelevantPC, p1, p2) should be(Unknown)
+                    intIsGreaterThan(IrrelevantPC, p1, p2) should be(No)
                 }
 
                 it("[3,3] > [4,4] should be No") {
@@ -3234,10 +3234,23 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
         val testProject = org.opalj.br.analyses.Project(testFolder)
         val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
-        describe("hanlding of complex dependent casts and moduluo operations") {
+        describe("when we have multiple loops that reuse the same local variable") {
+
+            it("the analysis should calculate the correct bounds (\"lowerBoundUpperBound\")") {
+                val domain = new DefaultIntegerRangesTestDomain(16)
+                val method = IntegerValues.findMethod("lowerBoundUpperBound").get
+
+                val result = BaseAI(IntegerValues, method, domain)
+                // we should not get an assertion error
+                assert(result.code.programCounters.forall(result.operandsArray(_) != null))
+            }
+
+        }
+
+        describe("handling of complex dependent casts and moduluo operations") {
 
             it("the analysis should be correct in the presence of type casts (\"randomModulo\")") {
-                val domain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+                val domain = new DefaultIntegerRangesTestDomain(128)
                 val method = IntegerValues.findMethod("randomModulo").get
                 val result = BaseAI(IntegerValues, method, domain)
                 result.operandsArray(41).head should be(domain.IntegerRange(0, 0))
@@ -3247,7 +3260,7 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
         describe("constraint propagation") {
 
-            it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing and calculated the correct summary value") {
+            it("it should be able to adapt (<) the bounds of an IntegerRange value in the presences of aliasing and calculate the correct summary value") {
                 val domain = new JoinResultsIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
                 val method = IntegerValues.findMethod("aliasingMax5").get
                 /*val result =*/ BaseAI(IntegerValues, method, domain)
@@ -3328,7 +3341,8 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
 
                 // we don't know the size of the array
                 domain.allReturnedValues.head._2 abstractsOver (
-                    domain.InitializedArrayValue(2, List(10), ArrayType(IntegerType))) should be(true)
+                    domain.InitializedArrayValue(2, List(10), ArrayType(IntegerType))
+                ) should be(true)
 
                 // get the loop counter at the "icmple instruction" which controls the
                 // loops that initializes the array

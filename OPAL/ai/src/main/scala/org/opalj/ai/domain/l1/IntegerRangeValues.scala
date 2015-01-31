@@ -286,11 +286,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                         case IntegerRange(leftLB, leftUB) ⇒
                             if (leftUB < rightLB)
                                 Yes
-                            else if (leftLB > rightUB ||
-                                ( /*"for point ranges":*/
-                                    leftLB == leftUB &&
-                                    rightLB == rightUB &&
-                                    leftLB == rightLB))
+                            else if (leftLB >= rightUB)
                                 No
                             else
                                 Unknown
@@ -443,11 +439,13 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
             case IntegerRange(lb2, ub2) ⇒ (lb2, ub2)
             case _                      ⇒ (Int.MinValue, Int.MaxValue)
         }
-        // establish new bounds
-        val ub = Math.min(ub2 - 1, ub1)
+        // establish new bounds // e.g. l=(0,0) & r=(-10,0)
+        assert(lb1 < ub2, s"the value $left cannot be less than $right")
+
+        val newUB1 = Math.min(ub1, ub2 - 1)
         val newMemoryLayout @ (operands1, locals1) =
-            if (ub != ub1)
-                updateMemoryLayout(left, IntegerRange(lb1, ub), operands, locals)
+            if (newUB1 != ub1)
+                updateMemoryLayout(left, IntegerRange(lb1, newUB1), operands, locals)
             else
                 (operands, locals)
 
