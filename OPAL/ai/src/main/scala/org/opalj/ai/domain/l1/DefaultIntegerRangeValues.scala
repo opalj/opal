@@ -75,7 +75,7 @@ trait DefaultIntegerRangeValues
             }
         }
 
-        override def toString: String = "AnIntegerValue"
+        override def toString: String = "an int"
     }
 
     def AnIntegerValue() = new AnIntegerValue()
@@ -159,7 +159,13 @@ trait DefaultIntegerRangeValues
             }
         }
 
-        override def toString: String = "IntegerRange(lb="+lowerBound+", ub="+upperBound+")"
+        override def toString: String = {
+            if (lowerBound == upperBound)
+                "int = "+lowerBound
+            else
+                s"int ∈ [$lowerBound,$upperBound]"
+
+        }
     }
 
     @inline final override def IntegerRange(lb: Int, ub: Int): IntegerRange =
