@@ -745,7 +745,8 @@ final class Code private (
 
     /**
      * Tests if the sequence of instructions that starts with the given `pc` always ends
-     * with an [[ATHROW]] instruction and contains no complex logic. Here, complex means
+     * with an
+     * [[instructions.ATHROW]] instruction and contains no complex logic. Here, complex means
      * that evaluating the instruction may result in multiple control flows.
      *
      * One use case of this method is to, e.g., check if the code
