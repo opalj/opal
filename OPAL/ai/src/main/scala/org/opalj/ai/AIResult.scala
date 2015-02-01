@@ -58,7 +58,7 @@ sealed abstract class AIResult {
     /**
      * The instructions where two or more control flow paths join.
      */
-    val joinInstructions: Code
+    val joinInstructions: BitSet
 
     /**
      * The domain object that was used to perform the abstract interpretation.

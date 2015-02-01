@@ -588,7 +588,7 @@ trait AI[D <: Domain] {
             if (isInterrupted) {
                 val result =
                     AIResultBuilder.aborted(
-                        strictfp, code, theDomain)(
+                        strictfp, code, joinInstructions, theDomain)(
                             worklist,
                             evaluated,
                             operandsArray,
@@ -680,7 +680,7 @@ trait AI[D <: Domain] {
                     if (worklist.isEmpty) {
                         val result =
                             AIResultBuilder.completed(
-                                strictfp, code, theDomain)(
+                                strictfp, code, joinInstructions, theDomain)(
                                     evaluated, operandsArray, localsArray)
 
                         if (tracer.isDefined) tracer.get.result(result)
@@ -2059,7 +2059,7 @@ trait AI[D <: Domain] {
 
         val result =
             AIResultBuilder.completed(
-                strictfp, code, theDomain)(
+                strictfp, code, joinInstructions, theDomain)(
                     evaluated, operandsArray, localsArray)
         theDomain.abstractInterpretationEnded(result)
         if (tracer.isDefined) tracer.get.result(result)
