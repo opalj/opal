@@ -330,6 +330,24 @@ trait AI[D <: Domain] {
         }
     }
 
+    protected[ai] def continueInterpretation(
+        strictfp: Boolean, code: Code,
+        theDomain: D)(
+            initialWorkList: List[PC],
+            alreadyEvaluated: List[PC],
+            theOperandsArray: theDomain.OperandsArray,
+            theLocalsArray: theDomain.LocalsArray,
+            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
+        val joinInstructions = code.joinInstructions
+
+        continueInterpretation(
+            strictfp, code, joinInstructions,
+            theDomain)(
+                initialWorkList, alreadyEvaluated,
+                theOperandsArray, theLocalsArray,
+                theMemoryLayoutBeforeSubroutineCall)
+    }
+
     /**
      * Continues the interpretation of the given method (code) using the given domain.
      *
@@ -337,6 +355,10 @@ trait AI[D <: Domain] {
      *      be used; `false` otherwise.
      *
      * @param code The bytecode that will be interpreted using the given domain.
+     *
+     * @param joinInstructions The set of instructions where two or more control flow
+     *      paths join. The abstract interpretation framework will only perform a
+     *      join operation for those instructions.
      *
      * @param theDomain The domain that will be used to perform the domain
      *      dependent computations.
@@ -375,8 +397,7 @@ trait AI[D <: Domain] {
      *      this array__.'''
      */
     protected[ai] def continueInterpretation(
-        strictfp: Boolean,
-        code: Code,
+        strictfp: Boolean, code: Code, joinInstructions: BitSet,
         theDomain: D)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
@@ -413,7 +434,6 @@ trait AI[D <: Domain] {
         type TwoValuesDomainTest = (PC, DomainValue, DomainValue) ⇒ Answer
 
         val instructions: Array[Instruction] = code.instructions
-        val joinInstructions = code.joinInstructions
 
         preInterpretationInitialization(
             strictfp, code, theDomain)(
