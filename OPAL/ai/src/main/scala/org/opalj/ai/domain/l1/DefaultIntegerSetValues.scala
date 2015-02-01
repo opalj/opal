@@ -148,7 +148,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
     override def ByteValue(pc: PC): DomainValue =
         if (maxCardinalityOfIntegerSets > 255)
-            IntegerSet(SortedSet.empty ++ Range.inclusive(Byte.MinValue, Byte.MaxValue))
+            IntegerSet(SortedSet(Range.inclusive(Byte.MinValue, Byte.MaxValue): _*))
         else
             AnIntegerValue()
 
