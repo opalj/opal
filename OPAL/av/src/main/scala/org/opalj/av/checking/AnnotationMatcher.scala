@@ -42,17 +42,32 @@ case class AnnotationMatcher(
         annotationType: FieldType,
         elementValuePairs: Option[ElementValuePairs]) {
 
+    	/**
+	 * Checks if the given annotation matches the one defined by this matcher.
+	 * The type of the annotation should be equal. If the matcher defines specific
+	 * [[ElementValuePairs]] the given annotation should have exactly the same
+	 * ones regardless of the order.
+	 * 
+	 * ==Example Scenario==
+     * If the matchers annotation type is `a` and the other annotations type is `b`
+     * they should not match.
+     * 
+     * If the matcher defines specific [[ElementValuePairs]] like
+     * `ArrayBuffer(ElementValuePair("target", ClassValue("org.opalj.av.checking.AnnotationMatcher")),
+     * 				ElementValuePair("name", StringValue("Annotation_Matcher"))`
+     * it should match even if the given annotations [[ElementValuePairs]] has a different order like
+     * `ArrayBuffer(ElementValuePair("name", StringValue("Annotation_Matcher"),
+     * 				ElementValuePair("target", ClassValue("org.opalj.av.checking.AnnotationMatcher")))`
+     *     
+     *  But it should not match if one/all of the two [[ElementValuePair]] are missing or there is
+     *  another [[ElementValuePair]] not defined by this matcher.
+	 */
     def doesMatch(otherAnnotation: Annotation): Boolean = {
         (otherAnnotation.annotationType eq annotationType) &&
             (elementValuePairs.isEmpty ||
                 (otherAnnotation.elementValuePairs.size == elementValuePairs.get.size &&
-                    elementValuePairs.get.foldLeft(true) {
-                        (v: Boolean, e: ElementValuePair) ⇒
-                            v &&
-                                otherAnnotation.elementValuePairs.foldLeft(false) {
-                                    (ov: Boolean, oe: ElementValuePair) ⇒ ov || (oe.toJava == e.toJava)
-                                }
-                    }))
+                    elementValuePairs.get.forall(e ⇒
+                        otherAnnotation.elementValuePairs.exists(_.toJava == e.toJava))))
     }
 
     override def toString: String = {

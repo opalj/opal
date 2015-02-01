@@ -343,7 +343,7 @@ class Specification(
      * Checks whether all elements in the source ensemble are annotated with the given
      * annotation.
      *
-     * * ==Example Scenario==
+     * ==Example Scenario==
      * If every element in the ensemble `ex` should be annotated with `ey` and the
      * source element `x` which belongs to ensemble `ex` has no annotation that matches
      * `ey` then a [[SpecificationViolation]] is generated.
@@ -395,7 +395,7 @@ class Specification(
                     sourceElement,
                     VirtualClass(annotationMatcher.annotationType.asObjectType),
                     ANNOTATED_WITH,
-                    "required local outgoing annotated with constraint violated")
+                    "required annotation not found")
             }
         }
 
