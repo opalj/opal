@@ -104,31 +104,27 @@ object GuardedAndUnguardedAccessAnalysis {
         theProject: SomeProject, classFile: ClassFile, method: Method,
         result: AIResult { val domain: UnGuardedAccessAnalysisDomain }): List[StandardIssue] = {
 
+        import result.domain
         val operandsArray = result.operandsArray
         val body = result.code
 
-        import result.domain
-
-        val guardedAccesses =
-            body collectWithIndex {
-                case (guardPC, i: IFXNullInstruction) if operandsArray(guardPC) != null ⇒
-                    (guardPC, operandsArray(guardPC).head)
-            }
-
         var origins = Map.empty[ValueOrigin, PC]
         var timestamps = Map.empty[domain.Timestamp, PC]
-        guardedAccesses.foreach { pcValue ⇒
-            val (guardPC, value: domain.ReferenceValue) = pcValue
-            value match {
-                case sov: domain.SingleOriginValue ⇒
-                    origins += ((sov.origin, guardPC))
-                    timestamps += ((value.t, guardPC))
-                case mov: domain.MultipleOriginsValue ⇒
-                    timestamps += ((value.t, guardPC))
+
+        body foreach { (pc, instr) ⇒
+            if ((operandsArray(pc) ne null) && instr.isInstanceOf[IFXNullInstruction]) {
+                operandsArray(pc).head match {
+                    case domain.DomainSingleOriginReferenceValue(sov) ⇒
+                        origins += ((sov.origin, pc))
+                        timestamps += ((sov.t, pc))
+                    case domain.DomainMultipleReferenceValues(mov) ⇒
+                        timestamps += ((mov.t, pc))
+                }
             }
         }
 
         if (origins.isEmpty && timestamps.isEmpty)
+            // we don't have any "guard instructions"
             return List.empty;
 
         val unguardedAccesses =

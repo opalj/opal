@@ -79,6 +79,7 @@ import org.opalj.ai.domain.ConcreteLongValues
 import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.ai.analyses.cg.CallGraphCache
 import org.opalj.br.MethodSignature
+import scala.util.control.ControlThrowable
 
 /**
  * A static analysis that analyzes the data-flow to identify various issues in the
@@ -318,29 +319,38 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
         val identifiedIssues = time {
             val stepIds = new java.util.concurrent.atomic.AtomicInteger(PRE_ANALYSES_COUNT + 1)
 
-            theProject.parForeachProjectClassFile(() ⇒ progressManagement.isInterrupted()) { classFile ⇒
-                val stepId = stepIds.getAndIncrement()
-                try {
-                    progressManagement.start(stepId, classFile.thisType.toJava)
-                    for (method @ MethodWithBody(body) ← classFile.methods) {
-                        try {
-                            analyzeMethod(classFile, method, body)
-                        } catch {
-                            case afe: InterpretationFailedException ⇒
-                                val ms = method.fullyQualifiedSignature(classFile.thisType)
-                                val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
-                                val cause = afe.cause
-                                println(
-                                    s"[error] the analysis of ${ms} failed after $steps steps: "+cause
-                                )
-                                afe.printStackTrace()
+            theProject.parForeachProjectClassFile(
+                () ⇒ progressManagement.isInterrupted()
+            ) { classFile ⇒
+                    val stepId = stepIds.getAndIncrement()
+                    try {
+                        progressManagement.start(stepId, classFile.thisType.toJava)
+                        for (method @ MethodWithBody(body) ← classFile.methods) {
+                            try {
+                                analyzeMethod(classFile, method, body)
+                            } catch {
+                                case afe: InterpretationFailedException ⇒
+                                    val ms = method.fullyQualifiedSignature(classFile.thisType)
+                                    val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
+                                    val cause = afe.cause
+                                    println(
+                                        s"[error] the analysis of ${ms} "+
+                                            s"failed/was aborted after $steps steps: "+
+                                            cause)
+                                    afe.printStackTrace()
+                                case ct: ControlThrowable ⇒ throw ct;
+                                case t: Throwable ⇒
+                                    val ms = method.fullyQualifiedSignature(classFile.thisType)
+                                    println(s"[error] the analysis of ${ms} failed: ")
+                                    t.printStackTrace()
+                                    throw t;
+                            }
                         }
+                    } finally {
+                        progressManagement.end(stepId)
                     }
-                } finally {
-                    progressManagement.end(stepId)
-                }
 
-            }
+                }
             StandardIssue.fold(
                 scala.collection.JavaConversions.collectionAsScalaIterable(results).toSeq
             )

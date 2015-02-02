@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -35,6 +35,7 @@ import scala.collection.SortedMap
 
 import org.opalj.util.PerformanceEvaluation.ns2sec
 import org.opalj.io.writeAndOpen
+import org.opalj.io.process
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.common.XHTML
@@ -48,7 +49,10 @@ import org.opalj.bugpicker.analysis.BugPickerAnalysis
  */
 object Console extends AnalysisExecutor { analysis ⇒
 
+    val FileOutputNameMatcher = """-o=([\w\./\\]+)""".r
+
     private final val bugPickerAnalysis = new BugPickerAnalysis
+
     val analysis = new Analysis[URL, BasicReport] {
 
         override def title: String = bugPickerAnalysis.title
@@ -64,48 +68,52 @@ object Console extends AnalysisExecutor { analysis ⇒
                 bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
 
             val doc = BugPickerAnalysis.resultsAsXHTML(results).toString
-            writeAndOpen(doc, "BugPickerAnalysisResults", ".html")
 
-            //            BasicReport(
-            //                methodsWithDeadCode.toList.sortWith((l, r) ⇒
-            //                    l.classFile.thisType < r.classFile.thisType ||
-            //                        (l.classFile.thisType == r.classFile.thisType && (
-            //                            l.method < r.method || (
-            //                                l.method == r.method &&
-            //                                l.ctiPC < r.ctiPC
-            //                            )
-            //                        ))
-            //                ).mkString(
-            //                    "Dead code (number of dead branches: "+methodsWithDeadCode.size+"): \n",
-            //                    "\n",
-            //                    f"%nIdentified in: ${ns2sec(analysisTime)}%2.2f seconds."))
+            parameters.collectFirst { case FileOutputNameMatcher(name) ⇒ name } match {
 
+                case Some(fileName) ⇒
+                    process { new java.io.FileOutputStream(fileName) } { fos ⇒
+                        fos.write(doc.getBytes("UTF-8"))
+                    }
+
+                case None ⇒
+                    writeAndOpen(doc, "BugPickerAnalysisResults", ".html")
+            }
+
+            val groupedAndCountedIssues =
+                issues.groupBy(_.relevance).toList.
+                    sortWith((e1, e2) ⇒ e1._1.value < e2._1.value).
+                    map(e ⇒ e._1+": "+e._2.size)
             BasicReport(
-                "Issues (number of issues: "+issues.size+") "+
-                    f"identified in: ${ns2sec(analysisTime)}%2.2f seconds."
+                groupedAndCountedIssues.mkString(
+                    s"Issues (∑${issues.size}):\n\t",
+                    "\n\t",
+                    f"\nIdentified in: ${ns2sec(analysisTime)}%2.2f seconds.\n")
             )
         }
     }
 
     final override val analysisSpecificParametersDescription: String =
-        """[-maxEvalFactor=<DoubleValue [0.1,15.0]=1.75> determines the maximum effort that the analysis 
-            |               will spend when analyzing a specific method. The effort is always relative 
-            |               to the size of the method. For the vast majority of methods a value 
+        """[-maxEvalFactor=<DoubleValue [0.1,15.0]=1.75> determines the maximum effort that the analysis
+            |               will spend when analyzing a specific method. The effort is always relative
+            |               to the size of the method. For the vast majority of methods a value
             |               between 0.5 and 1.5 is sufficient to completely analyze the method using
             |               the default settings.
             |               A value greater than 1.5 can already lead to very long evaluation times.
-            |               If the threshold is exceeded the analysis of the method is aborted and no 
+            |               If the threshold is exceeded the analysis of the method is aborted and no
             |               result can be drawn.]
             |[-maxEvalTime=<IntValue [10,1000000]=10000> determines the time (in ms) that the analysis is allowed
-            |               to take for one method before the analysis is terminated. 
+            |               to take for one method before the analysis is terminated.
             |[-maxCardinalityOfIntegerRanges=<IntValue [1,1024]=16> basically determines for each integer
-            |               value how long the value is "precisely" tracked. Internally the analysis 
+            |               value how long the value is "precisely" tracked. Internally the analysis
             |               computes the range of values that an integer value may have at runtime. The
-            |               maximum size/cardinality of this range is controlled by this setting. If 
+            |               maximum size/cardinality of this range is controlled by this setting. If
             |               the range is exceeded the precise tracking of the respective value is
             |               terminated.
             |               Increasing this value may significantly increase the analysis time and
-            |               may require the increase of -maxEvalFactor.""".stripMargin('|')
+            |               may require the increase of -maxEvalFactor.
+            |[-o=<FileName> determines the name of the output file (if an output file is specified
+            |               no browser will be opened.""".stripMargin('|')
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
         parameters.forall(parameter ⇒
@@ -131,8 +139,9 @@ object Console extends AnalysisExecutor { analysis ⇒
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }
-                case "-debug" ⇒ true
-                case _        ⇒ false
+                case FileOutputNameMatcher(_) ⇒ true
+                case "-debug"                 ⇒ true
+                case _                        ⇒ false
             })
 
 }

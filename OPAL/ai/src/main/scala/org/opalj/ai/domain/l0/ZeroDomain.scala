@@ -28,46 +28,34 @@
  */
 package org.opalj
 package ai
-package analyses
-package cg
-
-import org.opalj.ai.analyses.FieldValuesKey
-import org.opalj.br.analyses.ProjectInformationKey
-
-import br.analyses.ProjectInformationKey
-import br.analyses.SomeProject
+package domain
+package l0
 
 /**
- * The ''key'' object to get a call graph that was calculated using the VTA algorithm.
+ * A complete domain that performs all computations at the type level and where no
+ * potential exceptions are thrown.
  *
- * You can assume that – in general – the call graph calculated using the VTA algorithm
- * is more precise than the call graph calculated using the CHA algorithm. Depending
- * on the project, the performance may be better, equal or worse.
+ * This domain is called the zero domain as it represents the most basic configuration
+ * that is useful for performing data-flow analyses.
  *
- * @example
- *      To get the call graph object use the `Project`'s `get` method and pass in
- *      `this` object.
- *      {{{
- *      val ComputedCallGraph = project.get(VTACallGraphKey)
- *      }}}
+ * ==Example Usage==
+ * {{{
+ * class ZDomain extends { // we need the "early initializer
+ *      val project: SomeProject = theProject
+ *      val code: Code = body
+ * }
+ *      with ZeroDomain
+ *      with ThrowNoPotentialExceptionsConfiguration
+ * }}}
  *
  * @author Michael Eichberg
  */
-object VTACallGraphKey extends ProjectInformationKey[ComputedCallGraph] {
+trait ZeroDomain
+        extends TypeLevelDomain
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with TheProject
+        with TheCode { domain: Configuration ⇒
 
-    override protected def requirements = List(FieldValuesKey)
-
-    /**
-     * Computes the `CallGraph` for the given project.
-     */
-    override protected def compute(project: SomeProject): ComputedCallGraph = {
-
-        // TODO query the project to decide which configuration to choose
-
-        CallGraphFactory.create(
-            project,
-            () ⇒ CallGraphFactory.defaultEntryPointsForLibraries(project),
-            new DefaultVTACallGraphAlgorithmConfiguration(project))
-    }
 }
 

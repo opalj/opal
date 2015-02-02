@@ -38,6 +38,12 @@ import org.opalj.ai.domain.l0.RecordMethodCallResults
 /**
  * This domain uses the l1 and l2 level ''stable'' domains.
  *
+ * @note This domain is intended to be used for '''demo purposes only'''.
+ *      '''Tests should create their own domains to make sure that
+ *      the test results remain stable. The configuration of this
+ *      domain just reflects a reasonable configuration that may
+ *      change without further notice.'''
+ *
  * @author Michael Eichberg
  */
 class SharedDefaultDomain[Source](

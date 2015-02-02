@@ -75,14 +75,16 @@ trait DefaultIntegerRangeValues
             }
         }
 
-        override def toString: String = "AnIntegerValue"
+        override def toString: String = "an int"
     }
 
     def AnIntegerValue() = new AnIntegerValue()
 
     class IntegerRange(val lowerBound: Int, val upperBound: Int) extends super.IntegerRange {
 
-        assert(lowerBound <= upperBound)
+        assert(
+            lowerBound <= upperBound,
+            s"the lower bound $lowerBound is not <= the upper bound $upperBound")
 
         def update(newValue: Int): DomainValue = {
             val newLowerBound = if (lowerBound > newValue) newValue else lowerBound
@@ -92,29 +94,31 @@ trait DefaultIntegerRangeValues
         }
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
-            val result = other match {
+            other match {
                 case that: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
                 case IntegerRange(otherLB, otherUB) ⇒
-                    val newLowerBound = Math.min(this.lowerBound, otherLB)
-                    val newUpperBound = Math.max(this.upperBound, otherUB)
+                    val thisLB = this.lowerBound
+                    val thisUB = this.upperBound
+                    val newLowerBound = Math.min(thisLB, otherLB)
+                    val newUpperBound = Math.max(thisUB, otherUB)
 
                     if (newLowerBound == newUpperBound)
                         // This is a "point-range" (a concrete value), hence there
                         // will be NO further constraints
                         NoUpdate
 
-                    else if (newUpperBound.toLong - newLowerBound.toLong > maxCardinalityOfIntegerRanges)
-                        StructuralUpdate(AnIntegerValue())
-
-                    else if (newLowerBound == lowerBound && newUpperBound == upperBound)
+                    else if (newLowerBound == thisLB && newUpperBound == thisUB)
                         // This is NOT a "NoUpdate" since we have two values that may
                         // have the same range, but which can still be two different
                         // runtime values (they were not created at the same time!
                         MetaInformationUpdate(IntegerRange(newLowerBound, newUpperBound))
+
+                    else if (newUpperBound.toLong - newLowerBound.toLong > maxCardinalityOfIntegerRanges)
+                        StructuralUpdate(AnIntegerValue())
+
                     else
                         StructuralUpdate(IntegerRange(newLowerBound, newUpperBound))
             }
-            result
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
@@ -155,28 +159,39 @@ trait DefaultIntegerRangeValues
             }
         }
 
-        override def toString: String = "IntegerRange(lb="+lowerBound+", ub="+upperBound+")"
+        override def toString: String = {
+            if (lowerBound == upperBound)
+                "int = "+lowerBound
+            else
+                s"int ∈ [$lowerBound,$upperBound]"
+
+        }
     }
 
-    override def IntegerRange(lb: Int, ub: Int): IntegerRange = new IntegerRange(lb, ub)
+    @inline final override def IntegerRange(lb: Int, ub: Int): IntegerRange =
+        new IntegerRange(lb, ub)
 
-    override def BooleanValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def BooleanValue(origin: ValueOrigin): DomainValue =
+        IntegerRange(0, 1)
     override def BooleanValue(origin: ValueOrigin, value: Boolean): DomainValue =
         if (value) IntegerValue(origin, 1) else IntegerValue(origin, 0)
 
-    override def ByteValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def ByteValue(origin: ValueOrigin): DomainValue =
+        IntegerRange(Byte.MinValue, Byte.MaxValue)
     override def ByteValue(origin: ValueOrigin, value: Byte) = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def ShortValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def ShortValue(origin: ValueOrigin): DomainValue =
+        IntegerRange(Short.MinValue, Short.MaxValue)
     override def ShortValue(origin: ValueOrigin, value: Short) = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)
     }
 
-    override def CharValue(origin: ValueOrigin): DomainValue = AnIntegerValue()
+    override def CharValue(origin: ValueOrigin): DomainValue =
+        IntegerRange(Char.MinValue, Char.MaxValue)
     override def CharValue(origin: ValueOrigin, value: Char) = {
         val theValue = value.toInt
         new IntegerRange(theValue, theValue)

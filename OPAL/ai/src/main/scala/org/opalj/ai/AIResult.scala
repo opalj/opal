@@ -56,6 +56,11 @@ sealed abstract class AIResult {
     val code: Code
 
     /**
+     * The instructions where two or more control flow paths join.
+     */
+    val joinInstructions: BitSet
+
+    /**
      * The domain object that was used to perform the abstract interpretation.
      */
     val domain: Domain
@@ -193,6 +198,7 @@ object AIResultBuilder {
     def aborted(
         theStrictfp: Boolean,
         theCode: Code,
+        theJoinInstructions: BitSet,
         theDomain: Domain)(
             theWorklist: List[PC],
             theEvaluated: List[PC],
@@ -203,6 +209,7 @@ object AIResultBuilder {
         new AIAborted {
             val strictfp: Boolean = theStrictfp
             val code: Code = theCode
+            val joinInstructions: BitSet = theJoinInstructions
             val domain: theDomain.type = theDomain
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
@@ -213,7 +220,7 @@ object AIResultBuilder {
             def continueInterpretation(
                 ai: AI[_ >: domain.type]): AIResult =
                 ai.continueInterpretation(
-                    strictfp, code, domain)(
+                    strictfp, code, joinInstructions, domain)(
                         worklist, evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
 
         }
@@ -227,6 +234,7 @@ object AIResultBuilder {
     def completed(
         theStrictfp: Boolean,
         theCode: Code,
+        theJoinInstructions: BitSet,
         theDomain: Domain)(
             theEvaluated: List[PC],
             theOperandsArray: theDomain.OperandsArray,
@@ -235,6 +243,7 @@ object AIResultBuilder {
         new AICompleted {
             val strictfp: Boolean = theStrictfp
             val code: Code = theCode
+            val joinInstructions = theJoinInstructions
             val domain: theDomain.type = theDomain
             val evaluated: List[PC] = theEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
@@ -244,7 +253,7 @@ object AIResultBuilder {
             def restartInterpretation(
                 ai: AI[_ >: theDomain.type]): AIResult =
                 ai.continueInterpretation(
-                    strictfp, code, domain)(
+                    strictfp, code, joinInstructions, domain)(
                         List(0), evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
 
         }

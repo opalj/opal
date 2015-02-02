@@ -70,7 +70,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
     describe("call graphs") {
         info("loading the JRE")
         val project = org.opalj.br.TestSupport.createRTJarProject
-        val entryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project)
+        val entryPoints = () ⇒ CallGraphFactory.defaultEntryPointsForLibraries(project)
         info("loaded the JRE")
 
         describe("result of calculating a callgraph") {
@@ -115,7 +115,7 @@ class CallGraphPrecisionTest extends FunSpec with Matchers {
                 val ComputedCallGraph(newCHACG, newCHACGUnresolvedCalls, newCHACGCreationExceptions) =
                     CallGraphFactory.create(
                         newProject,
-                        CallGraphFactory.defaultEntryPointsForLibraries(newProject),
+                        () ⇒ CallGraphFactory.defaultEntryPointsForLibraries(newProject),
                         new CHACallGraphAlgorithmConfiguration(newProject)
                     )
 

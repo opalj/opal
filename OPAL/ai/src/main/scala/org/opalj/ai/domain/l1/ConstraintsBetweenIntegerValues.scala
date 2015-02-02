@@ -82,7 +82,7 @@ trait ConstraintsBetweenIntegerValues
         store: ConstraintsStore,
         v1: IntegerLikeValue, v2: IntegerLikeValue, c: Constraint): ConstraintsStore = {
 
-        require(v1 ne v2)
+        assert(v1 ne v2)
 
         var m = store.get(v1)
         if (m == null) {
