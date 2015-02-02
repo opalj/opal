@@ -746,7 +746,9 @@ final class Code private (
     /**
      * Tests if the sequence of instructions that starts with the given `pc` always ends
      * with an
-     * [[instructions.ATHROW]] instruction and contains no complex logic. Here, complex means
+     * [[instructions.ATHROW]] instruction or a method call that always throws an
+     * exception. The call sequence furthermore has to contain no complex logic.
+     * Here, complex means
      * that evaluating the instruction may result in multiple control flows.
      *
      * One use case of this method is to, e.g., check if the code
@@ -767,11 +769,23 @@ final class Code private (
      *      by [[#joinInstructions]]. This is naturally the case for the very first
      *      instruction of each method and each exception handler unless these
      *      instructions are joinInstructions; in this case the `false` is returned.
+     *
+     * @param anInvocation When the analysis finds a method call, it calls this method
+     *      to let the caller decide whether the called method is an (indirect) way
+     *      of always throwing an exception.
+     *      If `true` is returned the analysis terminates and returns `true`; otherwise
+     *      the analysis continues.
+     *
+     * @param aThrow If all (non-exception) paths will always end in one specific
+     *      `ATHROW` instruction then this function is called (callback) to let the
+     *      caller decide if the "expected" exception is thrown. This analysis will
+     *      return with the result of this call.
      */
     @inline def alwaysResultsInException(
         pc: PC,
         joinInstructions: BitSet,
-        thrownException: (PC) ⇒ Boolean): Boolean = {
+        anInvocation: (PC) ⇒ Boolean,
+        aThrow: (PC) ⇒ Boolean): Boolean = {
 
         var currentPC = pc
         while (!joinInstructions.contains(currentPC)) {
@@ -779,7 +793,8 @@ final class Code private (
 
             (instruction.opcode: @scala.annotation.switch) match {
                 case ATHROW.opcode ⇒
-                    return thrownException(currentPC);
+                    val result = aThrow(currentPC)
+                    return result;
 
                 case RET.opcode | JSR.opcode | JSR_W.opcode ⇒
                     return false;
@@ -800,8 +815,17 @@ final class Code private (
                 case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒
                     return false;
 
+                case INVOKEINTERFACE.opcode
+                    | INVOKESPECIAL.opcode
+                    | INVOKESTATIC.opcode
+                    | INVOKEVIRTUAL.opcode ⇒
+                    if (anInvocation(currentPC))
+                        return true;
+
+                    currentPC = pcOfNextInstruction(currentPC)
+
                 case _ ⇒
-                    currentPC = pcOfNextInstruction(pc)
+                    currentPC = pcOfNextInstruction(currentPC)
             }
         }
 

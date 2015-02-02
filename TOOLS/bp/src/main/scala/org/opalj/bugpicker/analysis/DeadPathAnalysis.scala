@@ -52,6 +52,7 @@ import org.opalj.br.Code
 import org.opalj.ai.collectPCWithOperands
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.domain
+import org.opalj.ai.domain.l0.ZeroDomain
 import org.opalj.br.AnalysisFailedException
 import org.opalj.br.ObjectType
 import org.opalj.br.ComputationalTypeInt
@@ -91,6 +92,8 @@ import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.ai.analyses.cg.Callees
 import org.opalj.br.instructions.GotoInstruction
 import org.opalj.br.instructions.ReturnInstructions
+import org.opalj.ai.IsAReferenceValue
+import org.opalj.ai.domain.ThrowNoPotentialExceptionsConfiguration
 
 /**
  * Implementation of an analysis to find code that is "dead"/"useless".
@@ -103,44 +106,46 @@ object DeadPathAnalysis {
         theProject: SomeProject, classFile: ClassFile, method: Method,
         result: AIResult { val domain: Domain with Callees }): Seq[StandardIssue] = {
 
-        val domain = result.domain
-        val operandsArray = result.operandsArray
+        import result.domain
+        import result.operandsArray
+        import result.localsArray
         val evaluatedInstructions = result.evaluatedInstructions
         val body = result.code
         val instructions = body.instructions
+        import result.joinInstructions
+
+        def isAlwaysExceptionThrowingMethodCall(pc: PC): Boolean = {
+            body.instructions(pc) match {
+                case MethodInvocationInstruction(receiver: ObjectType, name, descriptor) ⇒
+                    val callees = domain.callees(receiver, name, descriptor)
+
+                    if (callees.size == 1) {
+                        // we are only handling the special idiom where a
+                        // (static) private method is used to create and throw
+                        // a special exception object
+                        // ...
+                        // catch(Exception e) {
+                        //     /*return|athrow*/ handleException(e);
+                        // }
+                        val callee = callees.head
+                        callee.body match {
+                            case Some(code) ⇒
+                                !code.exists((pc, i) ⇒ ReturnInstruction.isReturnInstruction(i))
+                            case _ ⇒
+                                false
+                        }
+                    } else
+                        false
+
+                case _ ⇒ false
+            }
+        }
 
         // A return/goto/athrow instruction is only considered useless if the preceding
         // instruction is a method call with a single target that _context-independently_
         // always just throws (an) exception(s). This is common pattern found in the JDK.
         //
         def requiredButIrrelevantSuccessor(currentPC: PC, nextPC: PC): Boolean = {
-
-            def isAlwaysExceptionThrowingMethodCall(pc: PC): Boolean = {
-                body.instructions(pc) match {
-                    case MethodInvocationInstruction(receiver: ObjectType, name, descriptor) ⇒
-                        val callees = domain.callees(receiver, name, descriptor)
-
-                        if (callees.size == 1) {
-                            // we are only handling the special idiom where a
-                            // (static) private method is used to create and throw
-                            // a special exception object
-                            // ...
-                            // catch(Exception e) {
-                            //     /*return|athrow*/ handleException(e);
-                            // }
-                            val callee = callees.head
-                            callee.body match {
-                                case Some(code) ⇒
-                                    !code.exists((pc, i) ⇒ ReturnInstruction.isReturnInstruction(i))
-                                case _ ⇒
-                                    false
-                            }
-                        } else
-                            false
-
-                    case _ ⇒ false
-                }
-            }
 
             val nextInstruction = body.instructions(nextPC)
             (
@@ -182,8 +187,76 @@ object DeadPathAnalysis {
 
                 allOperands = operandsArray(pc)
             } {
-                // filter those instructions that are pure technical artifcats
-                val falsePositive = requiredButIrrelevantSuccessor(pc, nextPC)
+                // identify those dead edges that are pure technical artifacts
+                val isLikelyFalsePositive = requiredButIrrelevantSuccessor(pc, nextPC)
+
+                // identify those dead edges that are the result of common programming
+                // idioms; e.g.,
+                // switch(v){
+                // default:
+                //   1: throw new XYZError(...);
+                //   2: throw new IllegalStateException(...);
+                //   3: assert(false); // TODO !!!
+                //   4: stateError();
+                //         AN ALWAYS (PRIVATE AND/OR STATIC) EXCEPTION
+                //         THROWING METHOD
+                //         HERE, THE DEFAULT CASE MAY EVEN FALL THROUGH!
+                // }
+                //
+                val isLikelyIntendedDeadDefaultBranch = {
+                    val isDefaultBranch =
+                        instruction.isInstanceOf[CompoundConditionalBranchInstruction] &&
+                            nextPC == pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset
+
+                    if (isDefaultBranch) {
+                        // this is the default branch of a switch instruction that is dead
+                        val resultsInError = body.alwaysResultsInException(
+                            nextPC,
+                            joinInstructions,
+                            (invocationPC) ⇒ {
+                                isAlwaysExceptionThrowingMethodCall(invocationPC)
+                            },
+                            (athrowPC) ⇒ {
+                                // let's do a basic analysis to determine the type of
+                                // the thrown exception
+                                // what we do next is basic a local data-flow analysis
+                                // using the most basic domain available.
+                                val codeLength = body.instructions.length
+                                val zDomain = new ZeroDomain(theProject, body) with ThrowNoPotentialExceptionsConfiguration
+                                val zOperandsArray = new zDomain.OperandsArray(codeLength)
+                                val zInitialOperands = operandsArray(pc).tail.map(_.adapt(zDomain, Int.MinValue))
+                                zOperandsArray(nextPC) = zInitialOperands
+                                val zLocalsArray = new zDomain.LocalsArray(codeLength)
+                                zLocalsArray(nextPC) = localsArray(pc).map(_.adapt(zDomain, Int.MinValue))
+                                BaseAI.continueInterpretation(
+                                    result.strictfp,
+                                    result.code,
+                                    result.joinInstructions,
+                                    zDomain)(
+                                        /*initialWorkList =*/ List(nextPC),
+                                        /*alreadyEvaluated =*/ List(),
+                                        zOperandsArray,
+                                        zLocalsArray,
+                                        List.empty
+                                    )
+                                val exceptionValue = zOperandsArray(athrowPC).head
+                                val throwsError =
+                                    (
+                                        zDomain.asReferenceValue(exceptionValue).
+                                        isValueSubtypeOf(ObjectType.Error).
+                                        isYesOrUnknown
+                                    ) ||
+                                        zDomain.asReferenceValue(exceptionValue).
+                                        isValueSubtypeOf(ObjectType("java/lang/IllegalStateException")).
+                                        isYesOrUnknown
+
+                                throwsError
+                            }
+                        )
+                        resultsInError
+                    } else
+                        None
+                }
 
                 val operands =
                     allOperands.take(
@@ -218,15 +291,20 @@ object DeadPathAnalysis {
                     s"the successor instruction pc=$nextPC$line is dead",
                     Some(
                         "The evaluation of the instruction never leads to the evaluation of the given subsequent instruction."+(
-                            if (falsePositive)
+                            if (isLikelyFalsePositive)
                                 "(It seems to be a technical artifact that cannot be avoided; i.e., there is probably nothing to fix!)"
-                            else ""
+                            else if (isLikelyIntendedDeadDefaultBranch)
+                                "(Identified a dead default branch of a switch instruction; this is often due to an established idiom and it is probably not meaningful to change the code.)"
+                            else
+                                ""
                         )),
                     Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
                     Set(IssueKind.DeadPath),
                     hints,
-                    if (falsePositive)
+                    if (isLikelyFalsePositive)
                         Relevance.OfNoRelevance
+                    else if (isLikelyIntendedDeadDefaultBranch)
+                        new Relevance(Relevance.OfNoRelevance.value + 1)
                     else
                         Relevance.OfUtmostRelevance
                 )
@@ -238,4 +316,3 @@ object DeadPathAnalysis {
     }
 
 }
-

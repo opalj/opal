@@ -44,9 +44,8 @@ import org.opalj.br.Code
  *
  * @author Michael Eichberg
  */
-class ZeroDomain[S](val project: Project[S], val code: Code)
+abstract class ZeroDomain[S](val project: Project[S], val code: Code)
     extends TypeLevelDomain
-    with ThrowNoPotentialExceptionsConfiguration
     with DefaultHandlingOfMethodResults
     with IgnoreSynchronization
     with TheProject
