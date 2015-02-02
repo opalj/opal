@@ -224,7 +224,7 @@ trait PerformInvocations extends MethodCallsDomain {
                 }
         } catch {
             case ct: ControlThrowable ⇒ throw ct
-            case e: Throwable ⇒
+            case e: AssertionError ⇒
                 println(
                     Console.YELLOW + Console.RED_B+
                         "[internal error] exception occured while resolving method reference: "+
@@ -232,6 +232,19 @@ trait PerformInvocations extends MethodCallsDomain {
                         "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+
                         ":\n[internal error] "+e.getMessage.replace("\n", "\n[internal error] ")+"\n"+
                         Console.GREEN+"[internal error] continuing the analysis using the default method call handling strategy")
+                fallback()
+            case e: Throwable ⇒
+                println(
+                    Console.YELLOW + Console.RED_B+
+                        "[internal error] exception occured while resolving method reference: "+
+                        declaringClass.toJava+
+                        "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+":\n"
+                )
+
+                e.printStackTrace()
+                println(
+                    Console.GREEN+
+                        "[internal error] continuing the analysis using the default method call handling strategy")
                 fallback()
         }
     }
