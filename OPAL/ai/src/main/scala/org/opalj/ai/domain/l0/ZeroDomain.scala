@@ -45,9 +45,11 @@ import org.opalj.br.Code
  * @author Michael Eichberg
  */
 abstract class ZeroDomain[S](val project: Project[S], val code: Code)
-    extends TypeLevelDomain
-    with DefaultHandlingOfMethodResults
-    with IgnoreSynchronization
-    with TheProject
-    with TheCode
+        extends TypeLevelDomain
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with TheProject
+        with TheCode { domain: Configuration ⇒
+
+}
 
