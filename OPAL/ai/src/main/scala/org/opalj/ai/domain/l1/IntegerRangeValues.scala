@@ -294,7 +294,10 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                             Unknown
                     }
             case _ ⇒
-                Unknown
+                left match {
+                    case IntegerRange(Int.MaxValue, _ /* Int.MaxValue*/ ) ⇒ No
+                    case _ ⇒ Unknown
+                }
         }
     }
 
