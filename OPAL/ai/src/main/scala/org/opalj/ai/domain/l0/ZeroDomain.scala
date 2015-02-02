@@ -31,10 +31,6 @@ package ai
 package domain
 package l0
 
-import org.opalj.br.analyses.Project
-
-import org.opalj.br.Code
-
 /**
  * A complete domain that performs all computations at the type level and where no
  * potential exceptions are thrown.
@@ -42,9 +38,19 @@ import org.opalj.br.Code
  * This domain is called the zero domain as it represents the most basic configuration
  * that is useful for performing data-flow analyses.
  *
+ * ==Example Usage==
+ * {{{
+ * class ZDomain extends { // we need the "early initializer
+ *      val project: SomeProject = theProject
+ *      val code: Code = body
+ * }
+ *      with ZeroDomain
+ *      with ThrowNoPotentialExceptionsConfiguration
+ * }}}
+ *
  * @author Michael Eichberg
  */
-abstract class ZeroDomain[S](val project: Project[S], val code: Code)
+trait ZeroDomain
         extends TypeLevelDomain
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
