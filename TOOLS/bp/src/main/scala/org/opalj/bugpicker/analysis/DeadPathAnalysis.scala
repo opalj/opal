@@ -30,6 +30,8 @@ package org.opalj
 package bugpicker
 package analysis
 
+import scala.language.existentials
+
 import java.net.URL
 import scala.xml.Node
 import scala.xml.UnprefixedAttribute
@@ -203,60 +205,68 @@ object DeadPathAnalysis {
                 //         HERE, THE DEFAULT CASE MAY EVEN FALL THROUGH!
                 // }
                 //
-                val isLikelyIntendedDeadDefaultBranch = {
-                    val isDefaultBranch =
-                        instruction.isInstanceOf[CompoundConditionalBranchInstruction] &&
-                            nextPC == pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset
+                val isDefaultBranchOfSwitch =
+                    instruction.isInstanceOf[CompoundConditionalBranchInstruction] &&
+                        nextPC == pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset
 
-                    if (isDefaultBranch) {
-                        // this is the default branch of a switch instruction that is dead
-                        val resultsInError = body.alwaysResultsInException(
-                            nextPC,
-                            joinInstructions,
-                            (invocationPC) ⇒ {
-                                isAlwaysExceptionThrowingMethodCall(invocationPC)
-                            },
-                            (athrowPC) ⇒ {
-                                // let's do a basic analysis to determine the type of
-                                // the thrown exception
-                                // what we do next is basic a local data-flow analysis
-                                // using the most basic domain available.
-                                val codeLength = body.instructions.length
-                                val zDomain = new ZeroDomain(theProject, body) with ThrowNoPotentialExceptionsConfiguration
-                                val zOperandsArray = new zDomain.OperandsArray(codeLength)
-                                val zInitialOperands = operandsArray(pc).tail.map(_.adapt(zDomain, Int.MinValue))
-                                zOperandsArray(nextPC) = zInitialOperands
-                                val zLocalsArray = new zDomain.LocalsArray(codeLength)
-                                zLocalsArray(nextPC) = localsArray(pc).map(_.adapt(zDomain, Int.MinValue))
-                                BaseAI.continueInterpretation(
-                                    result.strictfp,
-                                    result.code,
-                                    result.joinInstructions,
-                                    zDomain)(
-                                        /*initialWorkList =*/ List(nextPC),
-                                        /*alreadyEvaluated =*/ List(),
-                                        zOperandsArray,
-                                        zLocalsArray,
-                                        List.empty
-                                    )
-                                val exceptionValue = zOperandsArray(athrowPC).head
-                                val throwsError =
-                                    (
-                                        zDomain.asReferenceValue(exceptionValue).
-                                        isValueSubtypeOf(ObjectType.Error).
-                                        isYesOrUnknown
-                                    ) ||
-                                        zDomain.asReferenceValue(exceptionValue).
-                                        isValueSubtypeOf(ObjectType("java/lang/IllegalStateException")).
-                                        isYesOrUnknown
+                val isLikelyIntendedDeadDefaultBranch = isDefaultBranchOfSwitch &&
+                    // this is the default branch of a switch instruction that is dead
+                    body.alwaysResultsInException(
+                        nextPC,
+                        joinInstructions,
+                        (invocationPC) ⇒ {
+                            isAlwaysExceptionThrowingMethodCall(invocationPC)
+                        },
+                        (athrowPC) ⇒ {
+                            // Let's do a basic analysis to determine the type of
+                            // the thrown exception.
+                            // What we do next is basic a local data-flow analysis that
+                            // starts with the first instruction of the default branch
+                            // of the switch instruction and which uses
+                            // the most basic domain available.
+                            val codeLength = body.instructions.length
+                            class ZDomain extends { // we need the "early initializer
+                                val project: SomeProject = theProject
+                                val code: Code = body
+                            } with ZeroDomain with ThrowNoPotentialExceptionsConfiguration
+                            val zDomain = new ZDomain
+                            val zOperandsArray = new zDomain.OperandsArray(codeLength)
+                            val zInitialOperands =
+                                operandsArray(pc).tail.map(_.adapt(zDomain, Int.MinValue))
+                            zOperandsArray(nextPC) = zInitialOperands
+                            val zLocalsArray = new zDomain.LocalsArray(codeLength)
+                            zLocalsArray(nextPC) =
+                                localsArray(pc) map { l ⇒
+                                    if (l ne null)
+                                        l.adapt(zDomain, Int.MinValue)
+                                    else
+                                        null
+                                }
+                            BaseAI.continueInterpretation(
+                                result.strictfp,
+                                result.code,
+                                result.joinInstructions,
+                                zDomain)(
+                                    /*initialWorkList =*/ List(nextPC),
+                                    /*alreadyEvaluated =*/ List(),
+                                    zOperandsArray,
+                                    zLocalsArray,
+                                    List.empty
+                                )
+                            val exceptionValue = zOperandsArray(athrowPC).head
+                            val throwsError =
+                                (
+                                    zDomain.asReferenceValue(exceptionValue).
+                                    isValueSubtypeOf(ObjectType.Error).
+                                    isYesOrUnknown
+                                ) ||
+                                    zDomain.asReferenceValue(exceptionValue).
+                                    isValueSubtypeOf(ObjectType("java/lang/IllegalStateException")).
+                                    isYesOrUnknown
 
-                                throwsError
-                            }
-                        )
-                        resultsInError
-                    } else
-                        None
-                }
+                            throwsError
+                        }
+                    )
 
                 val operands =
                     allOperands.take(
@@ -292,9 +302,9 @@ object DeadPathAnalysis {
                     Some(
                         "The evaluation of the instruction never leads to the evaluation of the given subsequent instruction."+(
                             if (isLikelyFalsePositive)
-                                "(It seems to be a technical artifact that cannot be avoided; i.e., there is probably nothing to fix!)"
+                                "\n(This seems to be a technical artifact that cannot be avoided; i.e., there is probably nothing to fix!)"
                             else if (isLikelyIntendedDeadDefaultBranch)
-                                "(Identified a dead default branch of a switch instruction; this is often due to an established idiom and it is probably not meaningful to change the code.)"
+                                "\n(This seems to be a deliberately dead default branch of a switch instruction; i.e., there is probably nothing to fix!)"
                             else
                                 ""
                         )),
@@ -302,9 +312,9 @@ object DeadPathAnalysis {
                     Set(IssueKind.DeadPath),
                     hints,
                     if (isLikelyFalsePositive)
-                        Relevance.OfNoRelevance
+                        Relevance.TechnicalArtifact
                     else if (isLikelyIntendedDeadDefaultBranch)
-                        new Relevance(Relevance.OfNoRelevance.value + 1)
+                        Relevance.CommonIdiom
                     else
                         Relevance.OfUtmostRelevance
                 )
