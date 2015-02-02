@@ -32,6 +32,7 @@ package domain
 package l2
 
 import org.opalj.br._
+import scala.util.control.ControlThrowable
 
 /**
  * Mix in this trait if methods that are called by `invokeXYZ` instructions should
@@ -88,16 +89,20 @@ trait PerformInvocations extends MethodCallsDomain {
 
             val noOperands = List.empty[domain.DomainValue]
             val parameters = mapOperandsToParameters(operands, method, domain)
-            val aiResult = ai.perform(method.body.get, domain)(noOperands, parameters)
+            val aiResult =
+                ai.performInterpretation(
+                    method.isStrict, method.body.get, domain)(
+                        noOperands, parameters)
 
             transformResult(pc, method, operands, parameters, aiResult)
         }
 
         /**
-         * Converts the results (`DomainValue`s) of the evaluation of the called method into the
-         * calling domain. If the returned value is one of the parameters
-         * (determined using reference identity), then the parameter is mapped back
-         * to the original operand.
+         * Converts the results (`DomainValue`s) of the evaluation of the called
+         * method into the calling domain.
+         *
+         * If the returned value is one of the parameters (determined using reference
+         * identity), then the parameter is mapped back to the original operand.
          */
         protected[this] def transformResult(
             callerPC: PC,
@@ -189,26 +194,42 @@ trait PerformInvocations extends MethodCallsDomain {
         operands: Operands,
         fallback: () ⇒ MethodCallResult): MethodCallResult = {
 
-        classHierarchy.resolveMethodReference(
-            // the cast is safe since arrays do not have any static/special methods
-            declaringClass.asObjectType,
-            methodName,
-            methodDescriptor,
-            project) match {
-                case Some(method) if !method.isNative ⇒
-                    val classFile = project.classFile(method)
-                    if (!shouldInvocationBePerformed(classFile, method) ||
-                        isRecursive(classFile, method, operands))
+        try {
+            classHierarchy.resolveMethodReference(
+                // the cast is safe since arrays do not have any static/special methods
+                declaringClass.asObjectType,
+                methodName,
+                methodDescriptor,
+                project) match {
+                    case Some(method) ⇒
+                        if (!method.isNative) {
+                            val classFile = project.classFile(method)
+                            if (!shouldInvocationBePerformed(classFile, method) ||
+                                isRecursive(classFile, method, operands))
+                                fallback()
+                            else
+                                doInvoke(pc, classFile, method, operands)
+                        } else
+                            fallback()
+                    case _ ⇒
+                        println(
+                            Console.YELLOW+"[warn] method reference cannot be resolved: "+
+                                declaringClass.toJava+
+                                "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET)
                         fallback()
-                    else
-                        doInvoke(pc, classFile, method, operands)
-                case _ ⇒
-                    println(
-                        Console.YELLOW+"[warn] method reference cannot be resolved: "+
-                            declaringClass.toJava+
-                            "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET)
-                    fallback()
-            }
+                }
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct
+            case e: Throwable ⇒
+                println(
+                    Console.YELLOW + Console.RED_B+
+                        "[internal error] exception occured while resolving method reference: "+
+                        declaringClass.toJava+
+                        "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+
+                        ":\n[internal error] "+e.getMessage.replace("\n", "\n[internal error] ")+"\n"+
+                        Console.GREEN+"[internal error] continuing the analysis using the default method call handling strategy")
+                fallback()
+        }
     }
 
     abstract override def invokespecial(
@@ -219,22 +240,18 @@ trait PerformInvocations extends MethodCallsDomain {
         operands: Operands): MethodCallResult = {
 
         def fallback() =
-            baseInvokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
+            super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
 
         invokeNonVirtual(
             pc, declaringClass, methodName, methodDescriptor, operands, fallback
         )
     }
 
-    def baseInvokespecial(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
-        super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
-    }
-
+    /**
+     * For those `invokestatic` calls for which we have no concrete method (e.g.,
+     * the respective class file was never loaded or the method is native) or
+     * if we have a recursive invocation, the super implementation is called.
+     */
     abstract override def invokestatic(
         pc: PC,
         declaringClass: ObjectType,
@@ -243,26 +260,11 @@ trait PerformInvocations extends MethodCallsDomain {
         operands: Operands): MethodCallResult = {
 
         def fallback() =
-            baseInvokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
+            super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
 
         invokeNonVirtual(
             pc, declaringClass, methodName, methodDescriptor, operands, fallback
         )
-    }
-
-    /**
-     * Handle those `invokestatic` calls for which we have no concrete method (e.g.,
-     * the respective class file was never loaded or the method is native) or
-     * if have a recursive invocation.
-     */
-    protected[this] def baseInvokestatic(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult = {
-
-        super.invokestatic(pc, declaringClass, name, methodDescriptor, operands)
     }
 
 }

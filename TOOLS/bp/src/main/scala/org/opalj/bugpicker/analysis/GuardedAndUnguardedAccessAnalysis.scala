@@ -86,42 +86,50 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 
-// This is only a very shallow (but always correct) analysis; if we would integrate
-// the analysis with the evaluation process more precise results would be possible
+/**
+ * Identifies accesses to local
+ * reference variables that are once done in a guarded context
+ * (guarded by an if instruction) and that are also done in an unguarded context.
+ *
+ * This is only a very shallow (but always correct) analysis; if we would integrate
+ * the analysis with the evaluation process more precise results would be possible.
+ *
+ * @author Michael Eichberg
+ */
 object GuardedAndUnguardedAccessAnalysis {
+
+    type UnGuardedAccessAnalysisDomain = Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions }): List[StandardIssue] = {
+        result: AIResult { val domain: UnGuardedAccessAnalysisDomain }): List[StandardIssue] = {
 
+        import result.domain
         val operandsArray = result.operandsArray
         val body = result.code
 
-        val guardedAccesses =
-            body collectWithIndex {
-                case (guardPC, i: IFXNullInstruction) if operandsArray(guardPC) != null ⇒
-                    (guardPC, operandsArray(guardPC).head)
-            }
-
         var origins = Map.empty[ValueOrigin, PC]
-        var timestamps = Map.empty[result.domain.Timestamp, PC]
-        guardedAccesses.foreach { pcValue ⇒
-            val (guardPC, value: result.domain.ReferenceValue) = pcValue
-            value match {
-                case sov: result.domain.SingleOriginValue ⇒
-                    origins += ((sov.origin, guardPC))
-                    timestamps += ((value.t, guardPC))
-                case mov: result.domain.MultipleOriginsValue ⇒
-                    timestamps += ((value.t, guardPC))
+        var timestamps = Map.empty[domain.Timestamp, PC]
+
+        body foreach { (pc, instr) ⇒
+            if ((operandsArray(pc) ne null) && instr.isInstanceOf[IFXNullInstruction]) {
+                operandsArray(pc).head match {
+                    case domain.DomainSingleOriginReferenceValue(sov) ⇒
+                        origins += ((sov.origin, pc))
+                        timestamps += ((sov.t, pc))
+                    case domain.DomainMultipleReferenceValues(mov) ⇒
+                        timestamps += ((mov.t, pc))
+                }
             }
         }
 
         if (origins.isEmpty && timestamps.isEmpty)
+            // we don't have any "guard instructions"
             return List.empty;
 
         val unguardedAccesses =
             for {
-                (pc, receiver: result.domain.ReferenceValue) ← body collectWithIndex {
+                (pc, receiver: domain.ReferenceValue) ← body collectWithIndex {
                     case (pc, i: GETFIELD) if operandsArray(pc) != null ⇒
                         (pc, operandsArray(pc).head)
 
@@ -139,8 +147,8 @@ object GuardedAndUnguardedAccessAnalysis {
                 }
                 if receiver.isNull.isUnknown
                 if timestamps.contains(receiver.t) ||
-                    (receiver.isInstanceOf[result.domain.SingleOriginValue] &&
-                        origins.contains(receiver.asInstanceOf[result.domain.SingleOriginValue].origin))
+                    (receiver.isInstanceOf[domain.SingleOriginValue] &&
+                        origins.contains(receiver.asInstanceOf[domain.SingleOriginValue].origin))
             } yield {
                 if (timestamps.contains(receiver.t))
                     (
@@ -150,7 +158,7 @@ object GuardedAndUnguardedAccessAnalysis {
                     )
                 else
                     (
-                        origins(receiver.asInstanceOf[result.domain.SingleOriginValue].origin),
+                        origins(receiver.asInstanceOf[domain.SingleOriginValue].origin),
                         Relevance.High,
                         pc
                     )

@@ -35,7 +35,7 @@ import scala.Console.{ RED, YELLOW, RESET }
 /**
  * Describes the overall relevance of a finding.
  *
- * When calculation the relevance you should take all
+ * When calculating the relevance you should take all
  * properties of the associated issue into consideration:
  *  - kind of issue
  *  - category of issue

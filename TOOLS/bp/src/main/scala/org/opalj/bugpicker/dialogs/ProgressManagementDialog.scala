@@ -68,10 +68,11 @@ class ProgressManagementDialog(
         reportView: WebView,
         progressListView: ListView[String],
         theProgress: ReadOnlyDoubleProperty,
+        numberOfSteps: Int,
         interrupted: BooleanProperty) extends Stage {
 
     theStage ⇒
-    title = "Analysis Progress "
+    title = s"Analysis Progress (Number of Steps: $numberOfSteps)"
     width = 800
 
     val cancelAnalysisAndCloseWindow: () ⇒ Unit = () ⇒ {

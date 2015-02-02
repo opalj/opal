@@ -156,7 +156,7 @@ object CallGraphVisualization {
                             println("Unknown call graph algorithm: "+cga+"; available: CHA, BasicVTA, DefaultVTA, ExtVTA")
                             return ;
                     }
-                    val entryPoints = defaultEntryPointsForLibraries(project)
+                    val entryPoints = () ⇒ defaultEntryPointsForLibraries(project)
                     CallGraphFactory.create(project, entryPoints, callGraphAlgorithmConfig)
                 } { t ⇒ println("Creating the call graph took: "+ns2sec(t)) }
 

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,54 +26,66 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package ai
+package cornercases;
 
 /**
- * Defines the public interface between the abstract interpreter and the domain
- * that implements the functionality related to the handling of `float` values.
- *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
- * @author Dennis Siebert
+ * This class was used to create a class file with some well defined issues. The
+ * created class is subsequently used by several tests.
+ * 
+ * NOTE<br />
+ * This class is not meant to be (automatically) recompiled; it just serves
+ * documentation purposes.
+ * 
+ * @author Michael Eichberg
  */
-trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
+public class Assertions {
 
-    //
-    // RELATIONAL OPERATORS
-    //
-    def fcmpg(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
-    def fcmpl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue
+	private static void doIt() {
+		System.out.println("Great!");
+	}
 
-    //
-    // UNARY ARITHMETIC EXPRESSIONS
-    //
-    def fneg(pc: PC, strictfp: Boolean, value: DomainValue): DomainValue
+	public static void main1(String[] args) {
 
-    //
-    // BINARY ARITHMETIC EXPRESSIONS
-    //
-    def fadd(
-        pc: PC,
-        strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+		assert (args != null);
 
-    def fdiv(
-        pc: PC,
-        strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+		doIt();
+	}
 
-    def fmul(
-        pc: PC,
-        strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+	public static void main2(String[] args) {
 
-    def frem(
-        pc: PC,
-        strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+		assert args.length > 0 : "Some parameters are required...";
 
-    def fsub(
-        pc: PC,
-        strictfp: Boolean,
-        value1: DomainValue, value2: DomainValue): DomainValue
+		doIt();
+
+	}
+
+	public static void main3(String[] args) {
+
+		int i = Integer.parseInt(args[0]);
+
+		if (i < 1 || i > 2)
+			throw new IllegalArgumentException("i (" + i + ") is not valid");
+
+		assert (i < 3 && i - 4 < 1) : "that's strange...";
+
+	}
+
+	public static void main4(String[] args) {
+
+		int i = Integer.parseInt(args[0]);
+
+		if (i < 1 || i > 2)
+			throw new IllegalArgumentException("i (" + i + ") is not valid");
+
+		switch (i) {
+		case 1:
+			System.out.println("1");
+		case 2:
+			System.out.println("2");
+		default:
+			throw new AssertionError("should never be reached...");
+		}
+
+	}
+
 }

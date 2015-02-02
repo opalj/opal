@@ -40,6 +40,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.UpperTypeBound
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
 
 /**
  * Implements the foundations for performing computations related to reference values.
@@ -242,6 +243,14 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
             with ArrayAbstraction {
         this: AReferenceValue ⇒
 
+        override def isPrecise: Boolean =
+            upperTypeBound match {
+                case UIDSet1(theUpperTypeBound) ⇒
+                    classHierarchy.isKnownToBeFinal(theUpperTypeBound)
+                case _ ⇒
+                    false
+            }
+
         /**
          * Returns `ComputationalTypeReference`.
          */
@@ -318,9 +327,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
          *
          * @return Throws a `DomainException` that states that this method is not supported.
          */
-        @throws[DomainException]("always thrown since it is context-dependent.")
+        @throws[DomainException]("Always thrown because isValueSubtypeOf is not defined on \"null\" values.")
         final override def isValueSubtypeOf(referenceType: ReferenceType): Nothing =
-            throw DomainException("isSubtypeOf is not defined for \"null\" values")
+            throw DomainException("the \"isValueSubtypeOf\" relation is not defined on \"null\" values")
 
         override def summarize(pc: PC): this.type = this
 

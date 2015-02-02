@@ -32,6 +32,7 @@ package br
 import scala.collection.BitSet
 
 import org.opalj.br.instructions._
+import scala.annotation.tailrec
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -80,6 +81,12 @@ final class Code private (
 
     /**
      * Calculates the number of instructions. This operation has complexity O(n).
+     *
+     * The number of instructions is always smaller or equal to the size of the code
+     * array.
+     *
+     * @note The result is not cached and recalculated on-demand.
+     *
      */
     def instructionsCount: Int = {
         var c = 0
@@ -134,7 +141,7 @@ final class Code private (
                 case GOTO.opcode | GOTO_W.opcode ⇒
                     runtimeSuccessor(pc + instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset)
 
-                case 165 | 166 | 198 | 199 |
+                case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
                     153 | 154 | 155 | 156 | 157 | 158 ⇒
                     runtimeSuccessor(pc + instruction.asInstanceOf[SimpleConditionalBranchInstruction].branchoffset)
@@ -173,6 +180,22 @@ final class Code private (
     }
 
     /**
+     * Iterates over all instructions until an instruction is found that matches
+     * the given predicate.
+     */
+    @inline final def exists(p: (PC, Instruction) ⇒ Boolean): Boolean = {
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            if (p(pc, instruction))
+                return true;
+            pc = pcOfNextInstruction(pc)
+        }
+        false
+    }
+
+    /**
      * Returns a view of all handlers (exception and finally handlers) (if any) for the
      * instruction with the given program counter (`pc`).
      *
@@ -197,6 +220,10 @@ final class Code private (
                 handler.endPC > pc
         }
 
+    /**
+     * The set of pc of those instructions that may handle an exception if the evaluation
+     * of the instruction with the given `pc` throws an exception.
+     */
     def handlerInstructionsFor(pc: PC): PCs = {
         var pcs = org.opalj.collection.mutable.UShortSet.empty
         exceptionHandlers foreach { handler ⇒
@@ -704,15 +731,115 @@ final class Code private (
     }
 
     /**
+     * Returns the next instruction that will be returned at runtime that is not a
+     * [[org.opalj.br.instructions.GotoInstruction]].
+     * If the given instruction is not a [[org.opalj.br.instructions.GotoInstruction]],
+     * the given instruction is returned.
+     */
+    @tailrec def nextNonGotoInstruction(pc: PC): PC = {
+        instructions(pc) match {
+            case GotoInstruction(branchoffset) ⇒ nextNonGotoInstruction(pc + branchoffset)
+            case _                             ⇒ pc
+        }
+    }
+
+    /**
+     * Tests if the sequence of instructions that starts with the given `pc` always ends
+     * with an
+     * [[instructions.ATHROW]] instruction and contains no complex logic. Here, complex means
+     * that evaluating the instruction may result in multiple control flows.
+     *
+     * One use case of this method is to, e.g., check if the code
+     * of the default case of a switch
+     * instruction always throws some error (e.g., an `UnknownError` or `AssertionError`).
+     * {{{
+     * switch(...) {
+     *  case X : ....
+     *  default :
+     *      throw new AssertionError();
+     * }
+     * }}}
+     * This is a typical idiom used in Java programs and which may be relevant for
+     * certain analyses to detect.
+     *
+     * @param pc The program counter of an instruction that strictly dominates all
+     *      succeeding instructions up until the next join instruction (as determined
+     *      by [[#joinInstructions]]. This is naturally the case for the very first
+     *      instruction of each method and each exception handler unless these
+     *      instructions are joinInstructions; in this case the `false` is returned.
+     */
+    @inline def alwaysResultsInException(
+        pc: PC,
+        joinInstructions: BitSet,
+        thrownException: (PC) ⇒ Boolean): Boolean = {
+
+        var currentPC = pc
+        while (!joinInstructions.contains(currentPC)) {
+            val instruction = instructions(currentPC)
+
+            (instruction.opcode: @scala.annotation.switch) match {
+                case ATHROW.opcode ⇒
+                    return thrownException(currentPC);
+
+                case RET.opcode | JSR.opcode | JSR_W.opcode ⇒
+                    return false;
+
+                case GOTO.opcode | GOTO_W.opcode ⇒
+                    currentPC =
+                        currentPC +
+                            instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset
+
+                case /*IFs:*/ 165 | 166 | 198 | 199 |
+                    159 | 160 | 161 | 162 | 163 | 164 |
+                    153 | 154 | 155 | 156 | 157 | 158 ⇒
+                    return false;
+
+                case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
+                    return false;
+
+                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒
+                    return false;
+
+                case _ ⇒
+                    currentPC = pcOfNextInstruction(pc)
+            }
+        }
+
+        false
+    }
+
+    /**
      * This attribute's kind id.
      */
     override def kindId: Int = Code.KindId
 
     //    /**
-    //     * Associates the current memory layout with each instruction.
+    //     * Returns the map of isomorphic instructions.
+    //     *
+    //     * @note
     //     */
-    //    def memoryLayout(): (Array[List[ValueInformation]], Array[Locals[ValueInformation]]) = {
+    //    def isomorphicInstructions(
+    //        startPC1: PC,
+    //        startPC2: PC)(
+    //            implicit map: Array[PC] = { val a = new Array[PC](instructions.length); Arrays.fill(a, -1); a },
+    //            subroutineCallChainLength: Int = 0): Array[PC] = {
     //
+    //        import scala.language.implicitConversions
+    //        implicit def pcToInstr(pc: PC): Instruction = this.instructions(pc)
+    //        implicit val code = this
+    //
+    //        // assert(startPC1.as)
+    //
+    //        var pc1 = startPC1
+    //        var pc2 = startPC2
+    //        var pc1Instr = pcToInstr(pc1)
+    //        if (pc1Instr.isIsomorphic(pc1, pc2)) {
+    //            map(startPC1) = startPC2
+    //            pc1Instr.nextInstructions(pc1)
+    //
+    //        }
+    //
+    //        map
     //    }
 
     /**

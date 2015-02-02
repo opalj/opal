@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -68,7 +68,7 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
     class IntegerSet(val values: SortedSet[Int]) extends super.IntegerSet {
 
-        require(values.size > 0)
+        assert(values.size > 0)
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
             val result = other match {
@@ -137,11 +137,21 @@ trait DefaultIntegerSetValues extends DefaultDomainValueBinding with IntegerSetV
 
     override def IntegerSet(values: SortedSet[Int]): IntegerSet = new IntegerSet(values)
 
-    override def BooleanValue(pc: PC): DomainValue = AnIntegerValue()
+    override def BooleanValue(pc: PC): DomainValue =
+        if (maxCardinalityOfIntegerSets > 1)
+            IntegerSet(SortedSet(0, 1))
+        else
+            AnIntegerValue()
+
     override def BooleanValue(pc: PC, value: Boolean): DomainValue =
         if (value) IntegerValue(pc, 1) else IntegerValue(pc, 0)
 
-    override def ByteValue(pc: PC): DomainValue = AnIntegerValue()
+    override def ByteValue(pc: PC): DomainValue =
+        if (maxCardinalityOfIntegerSets > 255)
+            IntegerSet(SortedSet(Range.inclusive(Byte.MinValue, Byte.MaxValue): _*))
+        else
+            AnIntegerValue()
+
     override def ByteValue(pc: PC, value: Byte) = IntegerSet(value.toInt)
 
     override def ShortValue(pc: PC): DomainValue = AnIntegerValue()

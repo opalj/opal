@@ -263,7 +263,8 @@ trait AI[D <: Domain] {
         theDomain: D)(
             someLocals: Option[IndexedSeq[theDomain.DomainValue]] = None): AIResult { val domain: theDomain.type } = {
 
-        perform(method.body.get, theDomain)(
+        val body = method.body.get
+        performInterpretation(method.isStrict, body, theDomain)(
             initialOperands(classFile, method, theDomain),
             initialLocals(classFile, method, theDomain)(someLocals))
     }
@@ -272,7 +273,8 @@ trait AI[D <: Domain] {
      * Performs an abstract interpretation of the given (byte)code using
      * the given domain and the initial operand stack and initial register assignment.
      */
-    def perform(
+    def performInterpretation(
+        strictfp: Boolean,
         code: Code,
         theDomain: D)(
             initialOperands: theDomain.Operands,
@@ -287,7 +289,7 @@ trait AI[D <: Domain] {
         localsArray(0) = initialLocals
 
         continueInterpretation(
-            code, theDomain)(
+            strictfp, code, theDomain)(
                 AI.initialWorkList, List.empty[PC], operandsArray, localsArray, Nil)
     }
 
@@ -298,6 +300,7 @@ trait AI[D <: Domain] {
      * This method is called before the abstract interpretation is started/continued.
      */
     protected[this] def preInterpretationInitialization(
+        strictfp: Boolean,
         code: Code,
         theDomain: D)(
             instructions: Array[Instruction],
@@ -327,10 +330,35 @@ trait AI[D <: Domain] {
         }
     }
 
+    protected[ai] def continueInterpretation(
+        strictfp: Boolean, code: Code,
+        theDomain: D)(
+            initialWorkList: List[PC],
+            alreadyEvaluated: List[PC],
+            theOperandsArray: theDomain.OperandsArray,
+            theLocalsArray: theDomain.LocalsArray,
+            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
+        val joinInstructions = code.joinInstructions
+
+        continueInterpretation(
+            strictfp, code, joinInstructions,
+            theDomain)(
+                initialWorkList, alreadyEvaluated,
+                theOperandsArray, theLocalsArray,
+                theMemoryLayoutBeforeSubroutineCall)
+    }
+
     /**
      * Continues the interpretation of the given method (code) using the given domain.
      *
+     * @param strictfp `true` if strict semantics for floating point operations should
+     *      be used; `false` otherwise.
+     *
      * @param code The bytecode that will be interpreted using the given domain.
+     *
+     * @param joinInstructions The set of instructions where two or more control flow
+     *      paths join. The abstract interpretation framework will only perform a
+     *      join operation for those instructions.
      *
      * @param theDomain The domain that will be used to perform the domain
      *      dependent computations.
@@ -369,7 +397,7 @@ trait AI[D <: Domain] {
      *      this array__.'''
      */
     protected[ai] def continueInterpretation(
-        code: Code,
+        strictfp: Boolean, code: Code, joinInstructions: BitSet,
         theDomain: D)(
             initialWorkList: List[PC],
             alreadyEvaluated: List[PC],
@@ -378,7 +406,7 @@ trait AI[D <: Domain] {
             theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
 
         if (tracer.isDefined)
-            tracer.get.continuingInterpretation(code, theDomain)(
+            tracer.get.continuingInterpretation(strictfp, code, theDomain)(
                 initialWorkList, alreadyEvaluated,
                 theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall
             )
@@ -406,10 +434,9 @@ trait AI[D <: Domain] {
         type TwoValuesDomainTest = (PC, DomainValue, DomainValue) ⇒ Answer
 
         val instructions: Array[Instruction] = code.instructions
-        val joinInstructions = code.joinInstructions
 
         preInterpretationInitialization(
-            code, theDomain)(
+            strictfp, code, theDomain)(
                 instructions, joinInstructions,
                 theOperandsArray, theLocalsArray, theMemoryLayoutBeforeSubroutineCall)
 
@@ -561,7 +588,7 @@ trait AI[D <: Domain] {
             if (isInterrupted) {
                 val result =
                     AIResultBuilder.aborted(
-                        code, theDomain)(
+                        strictfp, code, joinInstructions, theDomain)(
                             worklist,
                             evaluated,
                             operandsArray,
@@ -653,7 +680,7 @@ trait AI[D <: Domain] {
                     if (worklist.isEmpty) {
                         val result =
                             AIResultBuilder.completed(
-                                code, theDomain)(
+                                strictfp, code, joinInstructions, theDomain)(
                                     evaluated, operandsArray, localsArray)
 
                         if (tracer.isDefined) tracer.get.result(result)
@@ -1679,9 +1706,9 @@ trait AI[D <: Domain] {
                     // UNARY EXPRESSIONS
                     //
                     case 119 /*dneg*/ ⇒
-                        fallThrough(theDomain.dneg(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.dneg(pc, strictfp, operands.head) :: (operands.tail))
                     case 118 /*fneg*/ ⇒
-                        fallThrough(theDomain.fneg(pc, operands.head) :: (operands.tail))
+                        fallThrough(theDomain.fneg(pc, strictfp, operands.head) :: (operands.tail))
                     case 117 /*lneg*/ ⇒
                         fallThrough(theDomain.lneg(pc, operands.head) :: (operands.tail))
                     case 116 /*ineg*/ ⇒
@@ -1693,44 +1720,44 @@ trait AI[D <: Domain] {
 
                     case 99 /*dadd*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThrough(theDomain.dadd(pc, value1, value2) :: rest)
+                        fallThrough(theDomain.dadd(pc, strictfp, value1, value2) :: rest)
                     }
                     case 111 /*ddiv*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThrough(theDomain.ddiv(pc, value1, value2) :: rest)
+                        fallThrough(theDomain.ddiv(pc, strictfp, value1, value2) :: rest)
                     }
                     case 107 /*dmul*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThrough(theDomain.dmul(pc, value1, value2) :: rest)
+                        fallThrough(theDomain.dmul(pc, strictfp, value1, value2) :: rest)
                     }
                     case 115 /*drem*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThrough(theDomain.drem(pc, value1, value2) :: rest)
+                        fallThrough(theDomain.drem(pc, strictfp, value1, value2) :: rest)
                     }
                     case 103 /*dsub*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThrough(theDomain.dsub(pc, value1, value2) :: rest)
+                        fallThrough(theDomain.dsub(pc, strictfp, value1, value2) :: rest)
                     }
 
                     case 98 /*fadd*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThrough(theDomain.fadd(pc, value1, value2) :: rest)
+                        fallThrough(theDomain.fadd(pc, strictfp, value1, value2) :: rest)
                     }
                     case 110 /*fdiv*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThrough(theDomain.fdiv(pc, value1, value2) :: rest)
+                        fallThrough(theDomain.fdiv(pc, strictfp, value1, value2) :: rest)
                     }
                     case 106 /*fmul*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThrough(theDomain.fmul(pc, value1, value2) :: rest)
+                        fallThrough(theDomain.fmul(pc, strictfp, value1, value2) :: rest)
                     }
                     case 114 /*frem*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThrough(theDomain.frem(pc, value1, value2) :: rest)
+                        fallThrough(theDomain.frem(pc, strictfp, value1, value2) :: rest)
                     }
                     case 102 /*fsub*/ ⇒ {
                         val value2 :: value1 :: rest = operands
-                        fallThrough(theDomain.fsub(pc, value1, value2) :: rest)
+                        fallThrough(theDomain.fsub(pc, strictfp, value1, value2) :: rest)
                     }
 
                     case 96 /*iadd*/ ⇒ {
@@ -1880,14 +1907,16 @@ trait AI[D <: Domain] {
                     // TYPE CONVERSION
                     //
                     case 144 /*d2f*/ ⇒
-                        fallThrough(theDomain.d2f(pc, operands.head) :: (operands.tail))
+                        fallThrough(
+                            theDomain.d2f(pc, strictfp, operands.head) :: (operands.tail))
                     case 142 /*d2i*/ ⇒
                         fallThrough(theDomain.d2i(pc, operands.head) :: (operands.tail))
                     case 143 /*d2l*/ ⇒
                         fallThrough(theDomain.d2l(pc, operands.head) :: (operands.tail))
 
                     case 141 /*f2d*/ ⇒
-                        fallThrough(theDomain.f2d(pc, operands.head) :: (operands.tail))
+                        fallThrough(
+                            theDomain.f2d(pc, strictfp, operands.head) :: (operands.tail))
                     case 139 /*f2i*/ ⇒
                         fallThrough(theDomain.f2i(pc, operands.head) :: (operands.tail))
                     case 140 /*f2l*/ ⇒
@@ -2030,7 +2059,7 @@ trait AI[D <: Domain] {
 
         val result =
             AIResultBuilder.completed(
-                code, theDomain)(
+                strictfp, code, joinInstructions, theDomain)(
                     evaluated, operandsArray, localsArray)
         theDomain.abstractInterpretationEnded(result)
         if (tracer.isDefined) tracer.get.result(result)

@@ -413,11 +413,11 @@ trait ValuesDomain {
      */
     protected class IllegalValue extends Value { this: DomainIllegalValue ⇒
 
-        @throws[DomainException]("This method is not supported.")
+        @throws[DomainException]("An illegal value has no computational type")
         final override def computationalType: ComputationalType =
             throw DomainException("the illegal value has no computational type")
 
-        @throws[DomainException]("This method is not supported.")
+        @throws[DomainException]("\"doJoin\" is not defined on illegal values.")
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] =
             throw DomainException("this method is not supported")
 
@@ -427,7 +427,7 @@ trait ValuesDomain {
             else
                 MetaInformationUpdateIllegalValue
 
-        @throws[DomainException]("This method is not supported.")
+        @throws[DomainException]("\"summarize\" is not defined on illegal values.")
         override def summarize(pc: PC): DomainValue =
             throw DomainException("creating a summary of an illegal value is meaningless")
 
