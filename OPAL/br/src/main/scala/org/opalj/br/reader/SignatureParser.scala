@@ -102,7 +102,7 @@ object SignatureParser {
             '<' ~> rep1(formalTypeParameterParser) <~ '>'
 
         protected def formalTypeParameterParser: Parser[FormalTypeParameter] =
-            identifierParser ~ classBoundParser ~ opt(interfaceBoundParser) ^^ {
+            identifierParser ~ classBoundParser ~ rep(interfaceBoundParser) ^^ {
                 case id ~ cb ~ ib ⇒ FormalTypeParameter(id, cb, ib)
             }
 
