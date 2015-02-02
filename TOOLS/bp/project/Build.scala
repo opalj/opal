@@ -35,13 +35,13 @@ object BugPickerBuild extends Build {
 		))
 	
 	lazy val core = Project(
-		id = "Core",
+		id = "BugPickerCore",
 		base = file("core"),
 		settings = buildSettings
 	)
 
 	lazy val ui = Project(
-		id = "UI",
+		id = "BugPickerUI",
 		base = file("ui"),
 		settings = buildSettings ++
 			JavaFXPlugin.jfxSettings ++ 
