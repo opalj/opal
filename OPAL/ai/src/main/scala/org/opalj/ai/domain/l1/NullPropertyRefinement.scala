@@ -156,7 +156,8 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                 val objectRef = oldOperands.tail.head
                 establishNullProperty(objectRef)
 
-            // INVOKESTATIC and INVOKESPECIAL ARE IRRELEVANT!
+            // THE RECEIVER OF AN INVOKESPECIAL IS ALWAYS "THIS" AND, HENCE, IS
+            // IRRELEVANT!
             case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
                 val invoke = instruction.asInstanceOf[VirtualMethodInvocationInstruction]
                 val receiver = oldOperands(invoke.methodDescriptor.parametersCount)

@@ -36,7 +36,7 @@ public class Point {
 
     static final int eX = e2 * 2;
 
-    static final int eZ = e2 * e3;
+    static final int eZ = e2 * eX;
 
     public final int x;
 
