@@ -82,7 +82,7 @@ trait ConstraintsBetweenIntegerValues
         store: ConstraintsStore,
         v1: IntegerLikeValue, v2: IntegerLikeValue, c: Constraint): ConstraintsStore = {
 
-        require(v1 ne v2)
+        assert(v1 ne v2)
 
         var m = store.get(v1)
         if (m == null) {
@@ -270,7 +270,9 @@ trait ConstraintsBetweenIntegerValues
     //
     // -----------------------------------------------------------------------------------
 
-    abstract override def intAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
+    abstract override def intAreEqual(
+        pc: PC,
+        value1: DomainValue, value2: DomainValue): Answer = {
         super.intAreEqual(pc, value1, value2) match {
             case Unknown ⇒
                 val constraint = getConstraint(pc, value1, value2)
@@ -289,7 +291,10 @@ trait ConstraintsBetweenIntegerValues
         }
     }
 
-    override def intIsLessThan(pc: PC, left: DomainValue, right: DomainValue): Answer = {
+    override def intIsLessThan(
+        pc: PC,
+        left: DomainValue,
+        right: DomainValue): Answer = {
         super.intIsLessThan(pc, left, right) match {
             case Unknown ⇒
                 val constraint = getConstraint(pc, left, right)

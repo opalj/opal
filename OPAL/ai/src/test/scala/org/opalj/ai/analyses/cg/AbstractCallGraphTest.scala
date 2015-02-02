@@ -90,7 +90,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     // GRAPH CONSTRUCTION
     //
     val ComputedCallGraph(callGraph, unresolvedMethodCalls, exceptions) = {
-        val entryPoints = CallGraphFactory.defaultEntryPointsForLibraries(project)
+        val entryPoints = () ⇒ CallGraphFactory.defaultEntryPointsForLibraries(project)
         CallGraphFactory.create(project, entryPoints, testCallGraphConfiguration)
     }
 

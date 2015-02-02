@@ -48,6 +48,7 @@ import org.opalj.graphs.Node
  * ==Thread safety==
  * This class is immutable. Hence, concurrent access to the class hierarchy is supported.
  *
+ * @param isFinal `true` if the class is known to be `final`.
  * @param superclassTypeMap Contains type information about a type's immediate superclass.
  *      This value is defined unless the key identifies the
  *      object type `java.lang.Object` or when the respective class files was not
@@ -70,16 +71,18 @@ class ClassHierarchy private (
         private[this] val knownTypesMap: Array[ObjectType],
         private[this] val interfaceTypesMap: Array[Boolean],
         private[this] val superclassTypeMap: Array[ObjectType],
+        private[this] val isKnownToBeFinalMap: Array[Boolean],
         // TODO use a UIDSet for storing the class hierarchy!
         private[this] val superinterfaceTypesMap: Array[Set[ObjectType]],
         private[this] val subclassTypesMap: Array[Set[ObjectType]],
         private[this] val subinterfaceTypesMap: Array[Set[ObjectType]]) {
 
-    require(knownTypesMap.length == superclassTypeMap.length)
-    require(knownTypesMap.length == interfaceTypesMap.length)
-    require(knownTypesMap.length == superinterfaceTypesMap.length)
-    require(knownTypesMap.length == subclassTypesMap.length)
-    require(knownTypesMap.length == subinterfaceTypesMap.length)
+    assert(knownTypesMap.length == superclassTypeMap.length)
+    assert(knownTypesMap.length == interfaceTypesMap.length)
+    assert(knownTypesMap.length == isKnownToBeFinalMap.length)
+    assert(knownTypesMap.length == superinterfaceTypesMap.length)
+    assert(knownTypesMap.length == subclassTypesMap.length)
+    assert(knownTypesMap.length == subinterfaceTypesMap.length)
 
     /**
      * Returns the set of all root types; if the class hierarchy
@@ -112,6 +115,29 @@ class ClassHierarchy private (
                     rootTypes.filterNot(_ eq ObjectType.Object).
                     map(_.toJava).mkString(", ")
             )
+
+        isKnownToBeFinalMap.zipWithIndex foreach { e ⇒
+            val (isFinal, index) = e
+            if (isFinal) {
+                if (subclassTypesMap(index) != null && subclassTypesMap(index).nonEmpty) {
+                    println(
+                        "[warn - project configuration] "+
+                            s"the final type ${knownTypesMap(index).toJava} "+
+                            "has subclasses: "+subclassTypesMap(index)+
+                            "; resetting the \"is final\" property.")
+                    isKnownToBeFinalMap(index) = false
+                }
+
+                if (subinterfaceTypesMap(index) != null && subinterfaceTypesMap(index).nonEmpty) {
+                    println(
+                        "[warn - project configuration] "+
+                            s"the final type ${knownTypesMap(index).toJava} "+
+                            "has subinterfaces: "+subclassTypesMap(index)+
+                            "; resetting the \"is final\" property.")
+                    isKnownToBeFinalMap(index) = false
+                }
+            }
+        }
     }
 
     validateClassHierarchy()
@@ -189,6 +215,28 @@ class ClassHierarchy private (
         else
             None
     }
+
+    /**
+     * Returns `true` if the given type is `final`. I.e., the declaring class
+     * was explicitly declared final and hence, no subtypes may ever exist.
+     */
+    @inline def isKnownToBeFinal(objectType: ObjectType): Boolean =
+        if (isKnown(objectType)) isKnownToBeFinalMap(objectType.id) else false
+
+    /**
+     * Returns `true` if the given type is `final`. I.e., the declaring class
+     * was explicitly declared final and hence, no subtypes may ever exist or
+     * the type identifies an array type and the component type is either
+     * known to be final or is a primitive type.
+     */
+    @inline def isKnownToBeFinal(referenceType: ReferenceType): Boolean =
+        referenceType match {
+            case objectType: ObjectType ⇒
+                isKnownToBeFinal(objectType)
+            case at: ArrayType ⇒
+                at.componentType.isBaseType ||
+                    isKnownToBeFinal(at.componentType.asReferenceType)
+        }
 
     /**
      * Returns `true` if the given `objectType` defines an interface type.
@@ -503,6 +551,81 @@ class ClassHierarchy private (
     }
 
     /**
+     * Determines if a value of type `elementValueType` can be stored in an array of
+     * type `arrayType`. E.g. a value of type `IntegerType` can be stored in an
+     * array (one-dimensional) of type `ArrayType(IntegerType)`. This method takes
+     * the fact that a type may just model an upper type bound into account.
+     *
+     * @param elementValueType The type of the value that should be stored in the
+     * 			array. This type is compared against the component type of the array.
+     * @param elementValueTypeIsPrecise Specifies if the type information is precise;
+     * 		  i.e., whether elementValueType models the precise runtime type (`true`)
+     * 		  or just an upper bound (`false`). If the `elementValueType` is a base/
+     * 			primitive type then this value should be `true`; but actually it is
+     * 			ignored.
+     * @param arrayType The type of the array.
+     * @param arrayTypeIsPrecise Specifies if the type information is precise;
+     * 		  i.e., whether arrayType models the precise runtime type (`true`)
+     * 		  or just an upper bound (`false`).
+     */
+    @tailrec final def canBeStoredIn(
+        elementValueType: FieldType,
+        elementValueTypeIsPrecise: Boolean,
+        arrayType: ArrayType,
+        arrayTypeIsPrecise: Boolean): Answer = {
+        if (elementValueType.isBaseType) {
+            Answer(elementValueType eq arrayType.componentType)
+        } else if (elementValueType.isArrayType) {
+            if (arrayType.componentType.isArrayType) {
+                canBeStoredIn(
+                    elementValueType.asArrayType.componentType,
+                    elementValueTypeIsPrecise,
+                    arrayType.componentType.asArrayType,
+                    arrayTypeIsPrecise
+                )
+            } else if (arrayType.componentType.isBaseType) {
+                No
+            } else /*arrayType.componentType.isObjectType*/ {
+                val componentObjectType = arrayType.componentType.asObjectType
+                isSubtypeOf(elementValueType.asArrayType, componentObjectType) match {
+                    case Yes ⇒
+                        if (arrayTypeIsPrecise) Yes else Unknown
+                    case No ⇒
+                        // Recall that isSubtypeOf completely handles all cases
+                        // that make it possible to store an array in a value of
+                        // type ObjectType.
+                        No
+                    case _ ⇒
+                        throw new AssertionError(
+                            "an isSubtypeOf query where the subtype is an array type "+
+                                "should never return Unknown")
+                }
+            }
+        } else /* the type of the element value is an ObjectType*/ {
+            if (arrayType.elementType.isBaseType) {
+                No
+            } else {
+                val elementValueObjectType = elementValueType.asObjectType
+                val arrayComponentReferenceType = arrayType.componentType.asReferenceType
+                isSubtypeOf(elementValueObjectType, arrayComponentReferenceType) match {
+                    case Yes ⇒
+                        if (arrayTypeIsPrecise ||
+                            isKnownToBeFinal(elementValueObjectType))
+                            Yes
+                        else
+                            Unknown
+                    case No ⇒
+                        if (elementValueTypeIsPrecise && arrayTypeIsPrecise)
+                            No
+                        else
+                            Unknown
+                    case unknown /*Unknown*/ ⇒ unknown
+                }
+            }
+        }
+    }
+
+    /**
      * Determines if the given class or interface type `subtype` is actually a subtype
      * of the class or interface type `supertype`.
      *
@@ -642,7 +765,10 @@ class ClassHierarchy private (
      *    the (upper) type (bounds) of the underlying values are not in an inheritance
      *    relation.
      */
-    def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer = {
+    @tailrec final def isSubtypeOf(
+        subtype: ReferenceType,
+        supertype: ReferenceType): Answer = {
+
         if ((subtype eq supertype) || (supertype eq Object))
             return Yes
 
@@ -1804,6 +1930,7 @@ object ClassHierarchy {
         val knownTypesMap = new Array[ObjectType](objectTypesCount)
         val interfaceTypesMap = new Array[Boolean](objectTypesCount)
         val superclassTypeMap = new Array[ObjectType](objectTypesCount)
+        val isKnownToBeFinalMap = new Array[Boolean](objectTypesCount)
         val superinterfaceTypesMap = new Array[Set[ObjectType]](objectTypesCount)
         val subclassTypesMap = new Array[Set[ObjectType]](objectTypesCount)
         val subinterfaceTypesMap = new Array[Set[ObjectType]](objectTypesCount)
@@ -1814,6 +1941,7 @@ object ClassHierarchy {
          * Extends the class hierarchy.
          */
         def process(
+            isFinal: Boolean,
             objectType: ObjectType,
             isInterfaceType: Boolean,
             theSuperclassType: Option[ObjectType],
@@ -1822,10 +1950,12 @@ object ClassHierarchy {
             //
             // Update the class hierarchy from the point of view of the newly added type
             //
-            knownTypesMap(objectType.id) = objectType
-            interfaceTypesMap(objectType.id) = isInterfaceType
-            superclassTypeMap(objectType.id) = theSuperclassType.orNull
-            superinterfaceTypesMap(objectType.id) = theSuperinterfaceTypes
+            val objectTypeId = objectType.id
+            knownTypesMap(objectTypeId) = objectType
+            interfaceTypesMap(objectTypeId) = isInterfaceType
+            superclassTypeMap(objectTypeId) = theSuperclassType.orNull
+            superinterfaceTypesMap(objectTypeId) = theSuperinterfaceTypes
+            isKnownToBeFinalMap(objectTypeId) = isFinal
 
             //
             // For each super(class|interface)type make sure that it is "known"
@@ -1834,8 +1964,9 @@ object ClassHierarchy {
                 knownTypesMap(superclassType.id) = superclassType
             }
             theSuperinterfaceTypes.foreach { aSuperinterfaceType ⇒
-                knownTypesMap(aSuperinterfaceType.id) = aSuperinterfaceType
-                interfaceTypesMap(aSuperinterfaceType.id) = true
+                val aSuperinterfaceTypeId = aSuperinterfaceType.id
+                knownTypesMap(aSuperinterfaceTypeId) = aSuperinterfaceType
+                interfaceTypesMap(aSuperinterfaceTypeId) = true
             }
 
             //
@@ -1855,6 +1986,7 @@ object ClassHierarchy {
 
         typeDeclarations foreach { typeDecl ⇒
             process(
+                false,
                 typeDecl.objectType,
                 typeDecl.isInterfaceType,
                 typeDecl.theSuperclassType,
@@ -1866,6 +1998,7 @@ object ClassHierarchy {
          */
         val processClassFile: (ClassFile) ⇒ Unit = { classFile ⇒
             process(
+                classFile.isFinal,
                 classFile.thisType,
                 classFile.isInterfaceDeclaration,
                 classFile.superclassType,
@@ -1879,6 +2012,7 @@ object ClassHierarchy {
             knownTypesMap,
             interfaceTypesMap,
             superclassTypeMap,
+            isKnownToBeFinalMap,
             superinterfaceTypesMap,
             subclassTypesMap,
             subinterfaceTypesMap

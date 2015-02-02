@@ -83,7 +83,12 @@ trait DefaultReferenceValuesBinding
         isPrecise: Boolean,
         theUpperTypeBound: ObjectType,
         t: Timestamp): SObjectValue = {
-        new SObjectValue(origin, isNull, isPrecise, theUpperTypeBound, t)
+
+        new SObjectValue(
+            origin,
+            isNull,
+            isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
+            theUpperTypeBound, t)
     }
 
     override protected[domain] def ObjectValue(
@@ -92,9 +97,9 @@ trait DefaultReferenceValuesBinding
         upperTypeBound: UIDSet[ObjectType],
         t: Timestamp): DomainObjectValue = {
 
-        if (upperTypeBound.hasOneElement)
+        if (upperTypeBound.hasOneElement) {
             ObjectValue(origin, isNull, false, upperTypeBound.first, t)
-        else
+        } else
             new MObjectValue(origin, isNull, upperTypeBound, t)
     }
 
@@ -107,7 +112,7 @@ trait DefaultReferenceValuesBinding
         new ArrayValue(
             origin,
             isNull,
-            isPrecise || theUpperTypeBound.elementType.isBaseType,
+            isPrecise || classHierarchy.isKnownToBeFinal(theUpperTypeBound),
             theUpperTypeBound,
             t)
     }

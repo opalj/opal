@@ -1,13 +1,16 @@
 import sbt._
 import Keys._
 
-import sbtassembly.Plugin.AssemblyKeys._
-
 import com.typesafe.sbteclipse.plugin.EclipsePlugin._
 
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
+
+import no.vedaadata.sbtjavafx.JavaFXPlugin
+import no.vedaadata.sbtjavafx.JavaFXPlugin.JFX
+
+import sbtassembly.AssemblyPlugin.autoImport._
 
 object BugPickerBuild extends Build {
 	
@@ -18,7 +21,11 @@ object BugPickerBuild extends Build {
 		SbtScalariform.scalariformSettingsWithIt ++
 		Seq(ScalariformKeys.preferences <<= baseDirectory.apply(getScalariformPreferences)) ++
 		Seq(Defaults.itSettings : _*) ++
-		Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest)) ++
+		Seq(
+			EclipseKeys.configurations := Set(Compile, Test, IntegrationTest),
+			EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE17),
+			EclipseKeys.withSource := true
+		) ++
 		Seq(libraryDependencies ++= Seq(
 			"de.opal-project" % "abstract-interpretation-framework_2.11" % "0.0.1-SNAPSHOT",
 			"de.opal-project" % "bytecode-disassembler_2.11" % "0.1.0-SNAPSHOT"
@@ -26,10 +33,31 @@ object BugPickerBuild extends Build {
 		Seq(resolvers ++= Seq(
 			"Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 		))
-
-	lazy val bugpicker = Project(
-		id = "BugPicker",
-		base = file("."),
-		settings = buildSettings ++ Seq(publishArtifact := false)
+	
+	lazy val core = Project(
+		id = "BugPickerCore",
+		base = file("core"),
+		settings = buildSettings
 	)
+
+	lazy val ui = Project(
+		id = "BugPickerUI",
+		base = file("ui"),
+		settings = buildSettings ++
+			JavaFXPlugin.jfxSettings ++ 
+			Seq(
+				JFX.mainClass := Option("org.opalj.bugpicker.BugPicker"),
+				JFX.addJfxrtToClasspath := true
+			) ++
+			Seq(mainClass in (Compile, run) := Some("org.opalj.bugpicker.ui.BugPicker")) ++
+			Seq(libraryDependencies += "org.scalafx"  %% "scalafx"   % "1.0.0-R8") ++
+			Seq(
+				resourceGenerators in Compile <+= Def.task {
+					val versionFile = (baseDirectory in Compile).value / "target" / "scala-2.11" / "classes" / "org" / "opalj" / "bugpicker" / "version.txt"
+					versionFile.getParentFile.mkdirs()
+					IO.write(versionFile, (version in Compile).value)
+					Seq(versionFile)
+				}
+			)
+	).dependsOn(core)
 }
