@@ -80,23 +80,15 @@ object Console extends AnalysisExecutor { analysis ⇒
                     writeAndOpen(doc, "BugPickerAnalysisResults", ".html")
             }
 
-            //            BasicReport(
-            //                methodsWithDeadCode.toList.sortWith((l, r) ⇒
-            //                    l.classFile.thisType < r.classFile.thisType ||
-            //                        (l.classFile.thisType == r.classFile.thisType && (
-            //                            l.method < r.method || (
-            //                                l.method == r.method &&
-            //                                l.ctiPC < r.ctiPC
-            //                            )
-            //                        ))
-            //                ).mkString(
-            //                    "Dead code (number of dead branches: "+methodsWithDeadCode.size+"): \n",
-            //                    "\n",
-            //                    f"%nIdentified in: ${ns2sec(analysisTime)}%2.2f seconds."))
-
+            val groupedAndCountedIssues =
+                issues.groupBy(_.relevance).toList.
+                    sortWith((e1, e2) ⇒ e1._1.value < e2._1.value).
+                    map(e ⇒ e._1+": "+e._2.size)
             BasicReport(
-                "Issues (number of issues: "+issues.size+") "+
-                    f"identified in: ${ns2sec(analysisTime)}%2.2f seconds."
+                groupedAndCountedIssues.mkString(
+                    s"Issues (∑${issues.size}):\n\t",
+                    "\n\t",
+                    f"\nIdentified in: ${ns2sec(analysisTime)}%2.2f seconds.\n")
             )
         }
     }
