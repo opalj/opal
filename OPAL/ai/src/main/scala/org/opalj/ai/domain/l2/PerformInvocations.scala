@@ -85,7 +85,8 @@ trait PerformInvocations extends MethodCallsDomain {
             pc: PC,
             definingClass: ClassFile,
             method: Method,
-            operands: callingDomain.Operands): MethodCallResult = {
+            operands: callingDomain.Operands,
+            fallback: () ⇒ MethodCallResult): MethodCallResult = {
 
             val noOperands = List.empty[domain.DomainValue]
             val parameters = mapOperandsToParameters(operands, method, domain)
@@ -93,6 +94,9 @@ trait PerformInvocations extends MethodCallsDomain {
                 ai.performInterpretation(
                     method.isStrict, method.body.get, domain)(
                         noOperands, parameters)
+
+            if (aiResult.wasAborted)
+                return fallback();
 
             transformResult(pc, method, operands, parameters, aiResult)
         }
@@ -141,20 +145,6 @@ trait PerformInvocations extends MethodCallsDomain {
     }
 
     /**
-     * Performs the invocation of the given method using the given operands.
-     */
-    protected[this] def doInvoke(
-        pc: PC,
-        definingClass: ClassFile,
-        method: Method,
-        operands: Operands): MethodCallResult = {
-
-        val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
-        val callResult = executionHandler.perform(pc, definingClass, method, operands)
-        callResult
-    }
-
-    /**
      * Returns (most often creates) the [[InvokeExecutionHandler]] that will be
      * used to perform the abstract interpretation of the called method.
      */
@@ -163,6 +153,20 @@ trait PerformInvocations extends MethodCallsDomain {
         definingClass: ClassFile,
         method: Method,
         operands: Operands): InvokeExecutionHandler
+
+    /**
+     * Performs the invocation of the given method using the given operands.
+     */
+    protected[this] def doInvoke(
+        pc: PC,
+        definingClass: ClassFile,
+        method: Method,
+        operands: Operands,
+        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+
+        val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
+        executionHandler.perform(pc, definingClass, method, operands, fallback)
+    }
 
     // -----------------------------------------------------------------------------------
     //
@@ -208,7 +212,7 @@ trait PerformInvocations extends MethodCallsDomain {
                                 isRecursive(classFile, method, operands))
                                 fallback()
                             else
-                                doInvoke(pc, classFile, method, operands)
+                                doInvoke(pc, classFile, method, operands, fallback)
                         } else
                             fallback()
                     case _ ⇒
