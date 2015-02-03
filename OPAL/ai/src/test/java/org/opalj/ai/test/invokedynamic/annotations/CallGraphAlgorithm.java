@@ -28,7 +28,25 @@
  */
 package org.opalj.ai.test.invokedynamic.annotations;
 
+/**
+ * @author Michael Reif
+ * @author Michael Eichberg
+ */
 public enum CallGraphAlgorithm {
 
-    CHA, DefaultVTA, BasicVTA, ExtVTA
+    // defined by increasing order of precision
+    /** Class Hierarchy Analysis */
+    CHA,
+    /** Variable Type Analysis */
+    BasicVTA,
+    /**
+     * Variable Type Analysis with field and return type refinement and local reference
+     * values tracking
+     */
+    DefaultVTA,
+    /**
+     * Variable Type Analysis with field and return type refinement and local values
+     * tracking.
+     */
+    ExtVTA
 }

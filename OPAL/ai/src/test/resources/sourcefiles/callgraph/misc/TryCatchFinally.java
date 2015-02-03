@@ -61,8 +61,8 @@ public class TryCatchFinally {
     Base simple = new SimpleBase();
     Base alternate = new AlternateBase();
 
-    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 70)
-    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 71)
+    @InvokedConstructor(receiverType = SimpleBase.class, line = 70)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 71)
     void callVirtualMethodInCatch() {
         try {
             throw new Exception();
@@ -72,7 +72,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 80)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "staticMethod", isStatic = true, line = 80)
     void callStaticMethodInCatch() {
         try {
             throw new Exception();
@@ -100,8 +100,8 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 111)
-    @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 112)
+    @InvokedConstructor(receiverType = SimpleBase.class, line = 111)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 112)
     void callVirtualMethodInFinally() {
         try {
             throw new Exception();
@@ -113,7 +113,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 123)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "staticMethod", isStatic = true, line = 123)
     void callStaticMethodInFinally() {
         try {
             throw new Exception();
@@ -124,7 +124,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 132)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "staticMethod", isStatic = true, line = 132)
     void callsMethodThatThrowsException() {
         try {
             throwsException();
@@ -148,7 +148,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 159)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "staticMethod", isStatic = true, line = 159)
     void callsMethodThatThrowsExceptionCatchNoInfiniteLoop() {
         try {
             throwsException();
@@ -162,7 +162,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 173)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "staticMethod", isStatic = true, line = 173)
     void callMethodInCatchWithDoWhile() {
         try {
             throw new IllegalAccessError();
@@ -175,7 +175,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 186)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "staticMethod", isStatic = true, line = 186)
     void callInCatchAfterDoWhileInfiniteLoop() {
         try {
             throw new IllegalAccessError();
@@ -189,7 +189,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 199)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "staticMethod", isStatic = true, line = 199)
     void throwErrorCatchExceptionOrError() {
         try {
             throw new IllegalAccessError();
@@ -200,7 +200,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 206)
+    @InvokedMethod(receiverType = "callgraph/base/AlternateBase", name = "implementedMethod", line = 206)
     void callInCatchWithBreak() {
         try {
             alternate.implementedMethod();
@@ -215,7 +215,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 221)
+    @InvokedMethod(receiverType = "callgraph/base/AlternateBase", name = "implementedMethod", line = 221)
     void noCallInCatchWithLabeledBreak() {
         try {
             alternate.implementedMethod();
@@ -233,7 +233,7 @@ public class TryCatchFinally {
         }
     }
 
-    @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 244)
+    @InvokedMethod(receiverType = "callgraph/base/AlternateBase", name = "implementedMethod", line = 244)
     void callInEmptyForLoop() {
         try {
             throw new Exception();
@@ -246,10 +246,10 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = TryCatchFinally.class, name = "createThrowable", lineNumber = 255),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 257),
-            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 259),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 261) })
+            @InvokedMethod(receiverType = "callgraph/misc/TryCatchFinally", name = "createThrowable", line = 255),
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 257),
+            @InvokedMethod(receiverType = "callgraph/base/AlternateBase", name = "implementedMethod", line = 259),
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "staticMethod", isStatic = true, line = 261) })
     void callMethodBasedOnThrowableType() {
         try {
             throw createThrowable();
@@ -265,9 +265,9 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = TryCatchFinally.class, name = "throwThrowablePartly", lineNumber = 273),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 275),
-            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 277) })
+            @InvokedMethod(receiverType = "callgraph/misc/TryCatchFinally", name = "throwThrowablePartly", line = 273),
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 275),
+            @InvokedMethod(receiverType = "callgraph/base/AlternateBase", name = "implementedMethod", line = 277) })
     void callMethodBasedOnThrowableTypePartly() {
         try {
             throwThrowablePartly();
@@ -283,9 +283,9 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = TryCatchFinally.class, name = "canThrowNullPointerException", lineNumber = 291),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 293),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 294) })
+            @InvokedMethod(receiverType = "callgraph/misc/TryCatchFinally", name = "canThrowNullPointerException", line = 291),
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 293),
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "staticMethod", isStatic = true, line = 294) })
     void possibleNullPointerException(Object o) {
         try {
             canThrowNullPointerException(o);
@@ -296,9 +296,9 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = TryCatchFinally.class, name = "canThrowNullPointerException", lineNumber = 304),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 306),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 307) })
+            @InvokedMethod(receiverType = "callgraph/misc/TryCatchFinally", name = "canThrowNullPointerException", line = 304),
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 306),
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "staticMethod", isStatic = true, line = 307) })
     void possibleNullPointerExceptionCatchOtherExceptions(Object o) {
         try {
             canThrowNullPointerException(o);
@@ -311,8 +311,8 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = TryCatchFinally.class, name = "alwaysThrowsCheckedException", lineNumber = 318),
-            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", isStatic = true, lineNumber = 320) })
+            @InvokedMethod(receiverType = "callgraph/misc/TryCatchFinally", name = "alwaysThrowsCheckedException", line = 318),
+            @InvokedMethod(receiverType = "callgraph/base/AlternateBase", name = "implementedMethod", isStatic = true, line = 320) })
     void callThrowCheckedException() {
         try {
             alwaysThrowsCheckedException();
@@ -322,10 +322,10 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = TryCatchFinally.class, name = "mayThrowException", lineNumber = 331),
-            @InvokedMethod(receiverType = TryCatchFinally.class, name = "alwaysThrowsException", lineNumber = 332),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 334),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 336) })
+            @InvokedMethod(receiverType = "callgraph/misc/TryCatchFinally", name = "mayThrowException", line = 331),
+            @InvokedMethod(receiverType = "callgraph/misc/TryCatchFinally", name = "alwaysThrowsException", line = 332),
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 334),
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 336) })
     void callMultipleMethodsInTry(Object o) {
         try {
             mayThrowException();
@@ -338,9 +338,9 @@ public class TryCatchFinally {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = TryCatchFinally.class, name = "alwaysThrowsException", lineNumber = 346),
-            @InvokedMethod(receiverType = TryCatchFinally.class, name = "mayThrowException", lineNumber = 347),
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 349) })
+            @InvokedMethod(receiverType = "callgraph/misc/TryCatchFinally", name = "alwaysThrowsException", line = 346),
+            @InvokedMethod(receiverType = "callgraph/misc/TryCatchFinally", name = "mayThrowException", line = 347),
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 349) })
     void callMultipleMethodsInTryAlternateOrder(Object o) {
         try {
             alwaysThrowsException();

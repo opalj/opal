@@ -30,7 +30,10 @@ package callgraph.highPrecision;
 
 import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
 import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
-import org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm;
+import static org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm.CHA;
+import static org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm.BasicVTA;
+
+;
 
 /**
  * This class was used to create a class file with some well defined attributes. The
@@ -54,7 +57,6 @@ import org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm;
  * 
  * @author Michael Reif
  */
-
 public class ExecutionClass {
 
     private IBase innerClass = new InnerClass();
@@ -67,16 +69,17 @@ public class ExecutionClass {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = "callgraph/highPrecision/ExecutionClass$InnerClass", name = "interfaceMethod", lineNumber = 73),
-            @InvokedMethod(receiverType = "callgraph/highPrecision/ConcreteClass", name = "interfaceMethod", lineNumber = 73, canBeResolvedUsing = { CallGraphAlgorithm.CHA }) })
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ExecutionClass$InnerClass", name = "interfaceMethod", line = 76),
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ConcreteClass", name = "interfaceMethod", line = 76, isContainedIn = {
+                    CHA, BasicVTA }) })
     public void testInnerClass() {
         innerClass.interfaceMethod();
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = "callgraph/highPrecision/ExecutionClass$1", name = "interfaceMethod", lineNumber = 92),
-            @InvokedMethod(receiverType = "callgraph/highPrecision/ConcreteClass", name = "interfaceMethod", lineNumber = 92, canBeResolvedUsing = { CallGraphAlgorithm.CHA }),
-            @InvokedMethod(receiverType = "callgraph/highPrecision/ExecutionClass$InnerClass", name = "interfaceMethod", lineNumber = 92, canBeResolvedUsing = { CallGraphAlgorithm.CHA }) })
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ExecutionClass$1", name = "interfaceMethod", line = 92),
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ConcreteClass", name = "interfaceMethod", line = 92, isContainedIn = { CHA }),
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ExecutionClass$InnerClass", name = "interfaceMethod", line = 92, isContainedIn = { CHA }) })
     public void testAnonClass() {
         IBase anon = new IBase() {
 

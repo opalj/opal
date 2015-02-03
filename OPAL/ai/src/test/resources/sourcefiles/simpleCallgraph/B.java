@@ -65,16 +65,16 @@ public class B implements Base {
     }
 
     @Override
-    @InvokedMethod(receiverType = "simpleCallgraph/A", name = "callOnConstructor", lineNumber = 71)
-    @InvokedConstructor(receiverType = A.class, lineNumber = 71)
+    @InvokedMethod(receiverType = "simpleCallgraph/A", name = "callOnConstructor", line = 71)
+    @InvokedConstructor(receiverType = A.class, line = 71)
     public void callOnConstructor() {
         new A().callOnConstructor();
     }
 
     @Override
     @InvokedMethods({
-            @InvokedMethod(receiverType = "simpleCallgraph/A", name = "callOnConstructor", lineNumber = 79),
-            @InvokedMethod(receiverType = "simpleCallgraph/B", name = "callOnConstructor", lineNumber = 79)})
+            @InvokedMethod(receiverType = "simpleCallgraph/A", name = "callOnConstructor", line = 79),
+            @InvokedMethod(receiverType = "simpleCallgraph/B", name = "callOnConstructor", line = 79)})
     public void callOnMethodParameter(@SuppressWarnings("hiding") Base b) {
         b.callOnConstructor();
     }

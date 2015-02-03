@@ -56,13 +56,15 @@ public @interface InvokedMethod {
 
 	Class<?>[] parameterTypes() default {};
 
-	int lineNumber() default -1;
+	int line() default -1;
 
 	boolean isStatic() default false;
 
 	boolean isReflective() default false;
 
-	CallGraphAlgorithm[] canBeResolvedUsing() default { CallGraphAlgorithm.CHA,
-			CallGraphAlgorithm.ExtVTA, CallGraphAlgorithm.BasicVTA,
-			CallGraphAlgorithm.DefaultVTA };
+	CallGraphAlgorithm[] isContainedIn() default { 
+			CallGraphAlgorithm.CHA,
+			CallGraphAlgorithm.BasicVTA,
+			CallGraphAlgorithm.DefaultVTA,
+			CallGraphAlgorithm.ExtVTA  };
 }

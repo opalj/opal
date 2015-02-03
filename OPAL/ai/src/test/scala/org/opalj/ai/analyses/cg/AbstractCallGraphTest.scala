@@ -111,7 +111,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
             evps collectFirst { case ElementValuePair("name", StringValue(name)) ⇒ name }
         val Some(lineNumber) =
             evps collectFirst {
-                case ElementValuePair("lineNumber", IntValue(lineNumber)) ⇒ lineNumber
+                case ElementValuePair("line", IntValue(lineNumber)) ⇒ lineNumber
             }
         val isReflective: Boolean =
             (
@@ -120,11 +120,11 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                         isReflective
                 }).getOrElse(false)
 
-        val canBeResolvedUsing =
+        val isContainedIn =
             (
                 evps collectFirst {
-                    case ElementValuePair("canBeResolvedUsing", ArrayValue(canBeResolvedUsing)) ⇒
-                        canBeResolvedUsing collect {
+                    case ElementValuePair("isContainedIn", ArrayValue(isContainedIn)) ⇒
+                        isContainedIn collect {
                             case (EnumValue(ObjectType("org/opalj/ai/test/invokedynamic/annotations/CallGraphAlgorithm"), "CHA"))        ⇒ CallGraphAlgorithm.CHA
                             case (EnumValue(ObjectType("org/opalj/ai/test/invokedynamic/annotations/CallGraphAlgorithm"), "DefaultVTA")) ⇒ CallGraphAlgorithm.DefaultVTA
                             case (EnumValue(ObjectType("org/opalj/ai/test/invokedynamic/annotations/CallGraphAlgorithm"), "BasicVTA"))   ⇒ CallGraphAlgorithm.BasicVTA
@@ -133,8 +133,8 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                 })
 
         val receiverClassIsUnknown = !project.classFile(receiver).isDefined
-        val algorithmSpecified = canBeResolvedUsing != None
-        val preciselyResolvable = algorithmSpecified && canBeResolvedUsing.get.contains(testCallGraphAlgorithm)
+        val algorithmSpecified = isContainedIn != None
+        val preciselyResolvable = algorithmSpecified && isContainedIn.get.contains(testCallGraphAlgorithm)
 
         // If we are not able to handle reflective calls and we have one, forget about it
         if (isReflective && ignoreReflectiveCalls)
@@ -233,7 +233,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
                 { case ElementValuePair("receiverType", ClassValue(receiver)) ⇒ receiver })
         val Some(lineNumber) =
             evps collectFirst (
-                { case ElementValuePair("lineNumber", IntValue(lineNumber)) ⇒ lineNumber })
+                { case ElementValuePair("line", IntValue(lineNumber)) ⇒ lineNumber })
 
         val isReflective: Boolean =
             (evps collectFirst (
@@ -310,7 +310,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
 
         val Some(lineNumber) =
             evps collectFirst {
-                case ElementValuePair("lineNumber", IntValue(lineNumber)) ⇒ lineNumber
+                case ElementValuePair("line", IntValue(lineNumber)) ⇒ lineNumber
             }
 */
 
