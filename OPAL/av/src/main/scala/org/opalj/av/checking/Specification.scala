@@ -229,7 +229,7 @@ class Specification(
                     incomingElement,
                     targetEnsembleElement,
                     dependencyType,
-                    "violation of a global incoming constraint ")
+                    "not allowed global incoming dependency found")
             }
         }
 
@@ -277,7 +277,7 @@ class Specification(
                     sourceElement,
                     targetElement,
                     dependencyType,
-                    "violation of a local outgoing constraint")
+                    "not allowed local outgoing dependency found")
             }
         }
 
@@ -331,12 +331,76 @@ class Specification(
                     sourceElement,
                     targetElement,
                     dependencyType,
-                    "violation of a local outgoing not allowed constraint")
+                    "not allowed local outgoing dependency found")
             }
         }
 
         override def toString =
             targetEnsembles.mkString(s"$sourceEnsemble is_not_allowed_to_use (", ",", ")")
+    }
+
+    /**
+     * Checks whether all elements in the source ensemble are annotated with the given
+     * annotation.
+     *
+     * ==Example Scenario==
+     * If every element in the ensemble `ex` should be annotated with `ey` and the
+     * source element `x` which belongs to ensemble `ex` has no annotation that matches
+     * `ey` then a [[SpecificationViolation]] is generated.
+     *
+     * 	@param sourceEnsemble An ensemble containing elements that should be annotated.
+     *  @param annotationMatcher The annotation that should match.
+     */
+    case class LocalOutgoingAnnotatedWithConstraint(
+        sourceEnsemble: Symbol,
+        annotationMatcher: AnnotationMatcher)
+            extends DependencyChecker {
+
+        import DependencyType._
+
+        override def targetEnsembles: Seq[Symbol] = Seq(EnsembleID(annotationMatcher.toString))
+
+        override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
+
+        override def violations(): ASet[SpecificationViolation] = {
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
+
+            for {
+                sourceElement ← sourceEnsembleElements
+                classFile ← project.classFile(sourceElement.classType.asObjectType)
+                annotations = sourceElement match {
+                    case s: VirtualClass ⇒ classFile.annotations
+                    case s: VirtualField ⇒ classFile.fields.collectFirst {
+                        case field if field.asVirtualField(classFile).compareTo(s) == 0 ⇒ field
+                    } match {
+                        case Some(f) ⇒ f.annotations
+                        case _       ⇒ IndexedSeq.empty
+                    }
+                    case s: VirtualMethod ⇒ classFile.methods.collectFirst {
+                        case method if method.asVirtualMethod(classFile).compareTo(s) == 0 ⇒ method
+                    } match {
+                        case Some(m) ⇒ m.annotations
+                        case _       ⇒ IndexedSeq.empty
+                    }
+                    case _ ⇒ IndexedSeq.empty
+                }
+
+                if !annotations.foldLeft(false) {
+                    (v: Boolean, a: Annotation) ⇒ v || annotationMatcher.doesMatch(a)
+                }
+            } yield {
+                SpecificationViolation(
+                    project,
+                    this,
+                    sourceElement,
+                    VirtualClass(annotationMatcher.annotationType.asObjectType),
+                    ANNOTATED_WITH,
+                    "required annotation not found")
+            }
+        }
+
+        override def toString =
+            s"$sourceEnsemble every_element_should_be_annotated_with ("+annotationMatcher.toString+")"
     }
 
     case class SpecificationFactory(contextEnsembleSymbol: Symbol) {
@@ -371,6 +435,13 @@ class Specification(
                 LocalOutgoingNotAllowedConstraint(
                     contextEnsembleSymbol,
                     targetEnsembles.toSeq) :: dependencyCheckers
+        }
+
+        def every_element_should_be_annotated_with(annotationMatcher: AnnotationMatcher): Unit = {
+            dependencyCheckers =
+                LocalOutgoingAnnotatedWithConstraint(
+                    contextEnsembleSymbol,
+                    annotationMatcher) :: dependencyCheckers
         }
     }
 
