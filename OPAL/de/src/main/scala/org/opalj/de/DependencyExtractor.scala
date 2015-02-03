@@ -418,8 +418,9 @@ class DependencyExtractor(
                 if (classBound.isDefined)
                     processSignature(declaringElement, classBound.get, true)
                 val interfaceBound = ftp.interfaceBound
-                if (interfaceBound.isDefined)
-                    processSignature(declaringElement, interfaceBound.get, true)
+                interfaceBound.foreach { interfaceBound ⇒
+                    processSignature(declaringElement, interfaceBound, true)
+                }
             }
         }
 

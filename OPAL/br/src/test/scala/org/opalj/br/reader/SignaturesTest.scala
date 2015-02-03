@@ -334,6 +334,8 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
 
     val MethodTypeSignatures: Array[String] =
         s"""
+    <T::Ljava/io/Serializable;Cloneable:Ljava/lang/Object;>(TT;)V
+    <T::Ljava/io/Serializable;:Ljava/lang/Cloneable;>(TT;)V      
 	()Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/ParameterAnnotation;>;
 	()Lde/tud/bat/util/BATIterator<Lde/tud/bat/instruction/Instruction;>;
 	()Lde/tud/bat/util/BATIterator<Lde/tud/bat/type/FormalTypeParameter;>;
