@@ -30,78 +30,113 @@ package org.opalj
 package av
 package checking
 
-import scala.collection.mutable.ArrayBuffer
 import org.opalj.br._
 
 /**
- * Matches an annotation of a field, method or class.
+ * Matches an annotation of a class, field, method or method parameter.
  *
+ * {{{
+ * scala> val am = org.opalj.av.checking.AnnotationMatcher("java.lang.Foo",Map("clazz" -> org.opalj.br.StringValue("")))
+ * am: org.opalj.av.checking.AnnotationMatcher = @java.lang.Foo(clazz="")
+ * scala> am.doesMatch(org.opalj.br.Annotation(org.opalj.br.ObjectType("java/lang/Foo"),IndexedSeq(org.opalj.br.ElementValuePair("clazz",org.opalj.br.StringValue("")))))
+ * res: Boolean = true
+ * scala> am.doesMatch(org.opalj.br.Annotation(org.opalj.br.ObjectType("java/lang/Foo"),IndexedSeq(org.opalj.br.ElementValuePair("clazz",org.opalj.br.StringValue("-+-")))))
+ * res: Boolean = false
+ *
+ * // match the annotation independent of the number of specified annotations
+ * scala> val am = org.opalj.av.checking.AnnotationMatcher("java.lang.Foo")
+ * am: org.opalj.av.checking.AnnotationMatcher = @java.lang.Foo
+ * scala> am.doesMatch(org.opalj.br.Annotation(org.opalj.br.ObjectType("java/lang/Foo"),IndexedSeq(org.opalj.br.ElementValuePair("clazz",org.opalj.br.StringValue(" ")))))
+ * res: Boolean = true
+ *
+ * // match the annotation only if no values are specified
+ * scala> val am = org.opalj.av.checking.AnnotationMatcher("java.lang.Foo",Some(IndexedSeq.empty))
+ * am: org.opalj.av.checking.AnnotationMatcher = @java.lang.Foo()
+ * scala> am.doesMatch(org.opalj.br.Annotation(org.opalj.br.ObjectType("java/lang/Foo"),IndexedSeq(org.opalj.br.ElementValuePair("clazz",org.opalj.br.StringValue(" ")))))
+ * res: Boolean = false
+ * }}}
  * @author Marco Torsello
  */
 case class AnnotationMatcher(
         annotationType: FieldType,
         elementValuePairs: Option[ElementValuePairs]) {
 
-    	/**
-	 * Checks if the given annotation matches the one defined by this matcher.
-	 * The type of the annotation should be equal. If the matcher defines specific
-	 * [[ElementValuePairs]] the given annotation should have exactly the same
-	 * ones regardless of the order.
-	 * 
-	 * ==Example Scenario==
-     * If the matchers annotation type is `a` and the other annotations type is `b`
-     * they should not match.
-     * 
-     * If the matcher defines specific [[ElementValuePairs]] like
-     * `ArrayBuffer(ElementValuePair("target", ClassValue("org.opalj.av.checking.AnnotationMatcher")),
+    /**
+     * Checks if the given annotation is matched by this matcher.
+     * The given annotation is matched if it has this matcher's specified type
+     * and – if this matcher defines an [[org.opalj.br.ElementValuePair]]s matcher -
+     * if all element value pairs are matched.	When matching element value
+     * pairs the order is ignored.
+     *
+     * ==Example Scenarios==
+     *  - If the matcher's annotation type is `A` and the other annotation's type is `B`
+     *    then the elements will not match.
+     *
+     *  - If the matcher defines specific [[org.opalj.br.ElementValuePair]]s such as
+     * 		`ArrayBuffer(ElementValuePair("target", ClassValue("org.opalj.av.checking.AnnotationMatcher")),
      * 				ElementValuePair("name", StringValue("Annotation_Matcher"))`
-     * it should match even if the given annotations [[ElementValuePairs]] has a different order like
-     * `ArrayBuffer(ElementValuePair("name", StringValue("Annotation_Matcher"),
+     * 		it will then match annotations where the [[org.opalj.br.ElementValuePair]]s have a different order:
+     * 		`ArrayBuffer(ElementValuePair("name", StringValue("Annotation_Matcher"),
      * 				ElementValuePair("target", ClassValue("org.opalj.av.checking.AnnotationMatcher")))`
-     *     
-     *  But it should not match if one/all of the two [[ElementValuePair]] are missing or there is
-     *  another [[ElementValuePair]] not defined by this matcher.
-	 */
-    def doesMatch(otherAnnotation: Annotation): Boolean = {
-        (otherAnnotation.annotationType eq annotationType) &&
-            (elementValuePairs.isEmpty ||
-                (otherAnnotation.elementValuePairs.size == elementValuePairs.get.size &&
-                    elementValuePairs.get.forall(e ⇒
-                        otherAnnotation.elementValuePairs.exists(_.toJava == e.toJava))))
+     *  	But it will not match if one or both of the two [[org.opalj.br.ElementValuePair]]s are missing or there is
+     *  	another [[org.opalj.br.ElementValuePair]] not defined by this matcher.
+     */
+    def doesMatch(other: Annotation): Boolean = {
+        (other.annotationType eq this.annotationType) &&
+            (this.elementValuePairs.isEmpty ||
+                (other.elementValuePairs.size == this.elementValuePairs.get.size &&
+                    this.elementValuePairs.get.forall(e ⇒
+                        other.elementValuePairs.exists(_ == e))))
     }
 
     override def toString: String = {
-        elementValuePairs match {
-            case Some(e) ⇒ "@"+annotationType.toJava+
-                "("+e.foldLeft("")((s: String, ev: ElementValuePair) ⇒ s + ev.toJava)
-            case _ ⇒ "@"+annotationType.toJava
-        }
+        val at = "@"+annotationType.toJava
+        if (elementValuePairs.isDefined)
+            elementValuePairs.get.map(_.toJava).mkString(at+"(", ",", ")")
+        else
+            at
+
     }
+
 }
 
+/**
+ * Defines several additional factory methods to facilitate the creation of
+ * [[AnnotationMatcher]]s.
+ *
+ * @author Marco Torsello
+ */
 object AnnotationMatcher {
 
     def apply(
         annotationType: String,
         elementValuePairs: Option[ElementValuePairs] = None): AnnotationMatcher = {
-        this(ObjectType(annotationType.replace('.', '/')), elementValuePairs)
+        new AnnotationMatcher(
+            ObjectType(annotationType.replace('.', '/')),
+            elementValuePairs)
     }
 
     def apply(
         annotationType: String,
         elementValuePairs: ElementValuePairs): AnnotationMatcher = {
-        this(ObjectType(annotationType.replace('.', '/')), Some(elementValuePairs))
+        new AnnotationMatcher(
+            ObjectType(annotationType.replace('.', '/')),
+            Some(elementValuePairs))
     }
 
     def apply(
         annotationType: String,
         elementValuePairs: Map[String, ElementValue]): AnnotationMatcher = {
 
-        var pairs: ElementValuePairs = ArrayBuffer[ElementValuePair]()
-        elementValuePairs.map { element ⇒ pairs = pairs :+ ElementValuePair(element._1, element._2) }
-
-        this(ObjectType(annotationType.replace('.', '/')),
-            Some(pairs))
+        new AnnotationMatcher(
+            ObjectType(annotationType.replace('.', '/')),
+            Some(
+                (elementValuePairs.map { kv ⇒
+                    val (name, value) = kv
+                    ElementValuePair(name, value)
+                }).toIndexedSeq
+            )
+        )
     }
 
 }
