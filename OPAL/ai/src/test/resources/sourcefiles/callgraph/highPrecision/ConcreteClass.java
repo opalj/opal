@@ -26,10 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package callgraph.base;
+
+package callgraph.highPrecision;
 
 /**
- * This class was used to create a class file with some well defined attributes. The
+ * This class was used to create a class file with some well defined properties. The
  * created class is subsequently used by several tests.
  * 
  * NOTE<br />
@@ -45,42 +46,13 @@ package callgraph.base;
  * 
  * -->
  * 
- * @author Marco Jacobasch
+ * @author Michael Reif
  */
-public class SimpleBase implements Base {
+
+public class ConcreteClass implements IBase {
 
     @Override
-    public void interfaceMethod() {
-        // empty
+    public IBase interfaceMethod() {
+        return this;
     }
-
-    @Override
-    public void abstractMethod() {
-        // empty
-    }
-
-    @Override
-    public void abstractImplementedMethod() {
-        // empty
-    }
-
-    @Override
-    public void implementedMethod() {
-        // empty
-    }
-
-    public static void staticMethod() {
-        // empty
-    }
-
-    @Override
-    public String toString() {
-        return "SimpleBase";
-    }
-
-    @Override
-    public int hashCode() {
-        return 0;
-    }
-
 }

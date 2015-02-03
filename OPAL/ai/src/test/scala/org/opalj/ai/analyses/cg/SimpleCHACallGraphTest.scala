@@ -31,6 +31,8 @@ package ai
 package analyses
 package cg
 
+import org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm
+
 /**
  * Tests the generation of the call graph for a small project.
  *
@@ -45,4 +47,6 @@ class SimpleCHACallGraphTest extends AbstractCallGraphTest {
 
     override def testCallGraphConfiguration =
         new CHACallGraphAlgorithmConfiguration(project)
+
+    override def testCallGraphAlgorithm = CallGraphAlgorithm.CHA
 }

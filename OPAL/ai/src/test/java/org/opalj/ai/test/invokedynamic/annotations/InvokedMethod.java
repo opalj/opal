@@ -29,6 +29,9 @@
 package org.opalj.ai.test.invokedynamic.annotations;
 
 import java.lang.annotation.*;
+
+import org.opalj.ai.analyses.cg.CallGraph;
+
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
@@ -41,19 +44,27 @@ import static java.lang.annotation.ElementType.*;
 @Target(METHOD)
 public @interface InvokedMethod {
 
-    TargetResolution resolution() default TargetResolution.DEFAULT;
+	TargetResolution resolution() default TargetResolution.DEFAULT;
 
-    Class<?> receiverType();
+	/**
+	 * The type name of the receiver using JVM notation (e.g.,
+	 * "java/lang/Object").
+	 */
+	String receiverType();
 
-    String name();
+	String name();
 
-    Class<?> returnType() default Void.class;
+	Class<?> returnType() default Void.class;
 
-    Class<?>[] parameterTypes() default {};
+	Class<?>[] parameterTypes() default {};
 
-    int lineNumber() default -1;
+	int lineNumber() default -1;
 
-    boolean isStatic() default false;
+	boolean isStatic() default false;
 
-    boolean isReflective() default false;
+	boolean isReflective() default false;
+
+	CallGraphAlgorithm[] canBeResolvedUsing() default { CallGraphAlgorithm.CHA,
+			CallGraphAlgorithm.ExtVTA, CallGraphAlgorithm.BasicVTA,
+			CallGraphAlgorithm.DefaultVTA };
 }

@@ -31,6 +31,8 @@ package ai
 package analyses
 package cg
 
+import org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm
+
 /**
  * @author Marco Jacobasch
  * @author Michael Eichberg
@@ -43,4 +45,6 @@ class SimpleDefaultVTACallGraphTest extends AbstractCallGraphTest {
 
     override def testCallGraphConfiguration =
         new DefaultVTACallGraphAlgorithmConfiguration(project)
+
+    override def testCallGraphAlgorithm = CallGraphAlgorithm.DefaultVTA
 }
