@@ -29,9 +29,6 @@
 package org.opalj.ai.test.invokedynamic.annotations;
 
 import java.lang.annotation.*;
-
-import org.opalj.ai.analyses.cg.CallGraph;
-
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
@@ -39,6 +36,7 @@ import static java.lang.annotation.ElementType.*;
  * Describes a method call. For types see the {@link TargetResolution} enum.
  * 
  * @author Arne Lottmann
+ * @author Michael Reif
  */
 @Retention(RUNTIME)
 @Target(METHOD)
