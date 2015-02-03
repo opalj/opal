@@ -23,7 +23,7 @@ object BugPickerBuild extends Build {
 		Seq(Defaults.itSettings : _*) ++
 		Seq(
 			EclipseKeys.configurations := Set(Compile, Test, IntegrationTest),
-			EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE17),
+			EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE18),
 			EclipseKeys.withSource := true
 		) ++
 		Seq(libraryDependencies ++= Seq(
