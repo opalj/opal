@@ -26,7 +26,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package callgraph.base;
+package callgraph.highPrecision;
+
+import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
+import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
+import org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm;
 
 /**
  * This class was used to create a class file with some well defined attributes. The
@@ -39,48 +43,49 @@ package callgraph.base;
  * <!--
  * 
  * 
+ * 
+ * 
+ * 
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
  * 
  * 
  * -->
  * 
- * @author Marco Jacobasch
+ * @author Michael Reif
  */
-public class SimpleBase implements Base {
 
-    @Override
-    public void interfaceMethod() {
-        // empty
+public class ExecutionClass {
+
+    private IBase innerClass = new InnerClass();
+
+    class InnerClass implements IBase {
+
+        public IBase interfaceMethod() {
+            return this;
+        }
     }
 
-    @Override
-    public void abstractMethod() {
-        // empty
+    @InvokedMethods({
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ExecutionClass$InnerClass", name = "interfaceMethod", lineNumber = 73),
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ConcreteClass", name = "interfaceMethod", lineNumber = 73, canBeResolvedUsing = { CallGraphAlgorithm.CHA }) })
+    public void testInnerClass() {
+        innerClass.interfaceMethod();
     }
 
-    @Override
-    public void abstractImplementedMethod() {
-        // empty
-    }
+    @InvokedMethods({
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ExecutionClass$1", name = "interfaceMethod", lineNumber = 92),
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ConcreteClass", name = "interfaceMethod", lineNumber = 92, canBeResolvedUsing = { CallGraphAlgorithm.CHA }),
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ExecutionClass$InnerClass", name = "interfaceMethod", lineNumber = 92, canBeResolvedUsing = { CallGraphAlgorithm.CHA }) })
+    public void testAnonClass() {
+        IBase anon = new IBase() {
 
-    @Override
-    public void implementedMethod() {
-        // empty
-    }
+            @Override
+            public IBase interfaceMethod() {
+                return this;
+            }
 
-    public static void staticMethod() {
-        // empty
+        };
+        anon.interfaceMethod();
     }
-
-    @Override
-    public String toString() {
-        return "SimpleBase";
-    }
-
-    @Override
-    public int hashCode() {
-        return 0;
-    }
-
 }
