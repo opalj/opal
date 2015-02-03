@@ -31,9 +31,12 @@ package br
 
 /**
  * @author Michael Eichberg
+ * @author Andre Pacak
  */
+
 trait SignatureElement {
     def accept[T](sv: SignatureVisitor[T]): T
+    def toJVMSignature: String
 }
 
 trait ReturnTypeSignature extends SignatureElement {
@@ -62,6 +65,15 @@ case class ClassSignature(
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 
     override def kindId: Int = ClassSignature.KindId
+
+    override def toJVMSignature: String =
+        (formalTypeParameters match {
+            case Nil   ⇒ ""
+            case l @ _ ⇒ l.map { _.toJVMSignature }.mkString("<", "", ">")
+
+        }) +
+            superClassSignature.toJVMSignature +
+            superInterfacesSignature.map { _.toJVMSignature }.mkString("")
 }
 object ClassSignature {
 
@@ -79,7 +91,14 @@ case class MethodTypeSignature(
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 
     override def kindId: Int = MethodTypeSignature.KindId
-
+    override def toJVMSignature: String =
+        (formalTypeParameters match {
+            case Nil   ⇒ ""
+            case l @ _ ⇒ l.map { _.toJVMSignature }.mkString("<", "", ">")
+        }) +
+            parametersTypeSignatures.map { _.toJVMSignature }.mkString("(", "", ")") +
+            returnTypeSignature.toJVMSignature +
+            throwsSignature.map { "^"+_.toJVMSignature }.mkString(" ")
 }
 object MethodTypeSignature {
 
@@ -88,6 +107,9 @@ object MethodTypeSignature {
 }
 
 trait FieldTypeSignature extends Signature with TypeSignature
+object FieldTypeSignature {
+    def unapply(signature: FieldTypeSignature): Boolean = true
+}
 
 case class ArrayTypeSignature(
     typeSignature: TypeSignature)
@@ -97,6 +119,7 @@ case class ArrayTypeSignature(
 
     override def kindId: Int = ArrayTypeSignature.KindId
 
+    override def toJVMSignature: String = "["+typeSignature.toJVMSignature
 }
 object ArrayTypeSignature {
 
@@ -126,6 +149,19 @@ case class ClassTypeSignature(
 
     override def kindId: Int = ClassTypeSignature.KindId
 
+    override def toJVMSignature: String =
+        "L"+
+            (packageIdentifier match {
+                case Some(x) ⇒ x
+                case None    ⇒ ""
+            }) +
+            simpleClassTypeSignature.toJVMSignature +
+            (classTypeSignatureSuffix match {
+                case Nil   ⇒ ""
+                case l @ _ ⇒ l.map { _.toJVMSignature }.mkString(".", ".", "")
+            })+
+            ";"
+
 }
 object ClassTypeSignature {
 
@@ -142,18 +178,25 @@ case class TypeVariableSignature(
 
     override def kindId: Int = TypeVariableSignature.KindId
 
+    override def toJVMSignature: String = "T"+identifier+";"
 }
 object TypeVariableSignature {
 
     final val KindId = 16
 
 }
-
 case class SimpleClassTypeSignature(
         simpleName: String,
         typeArguments: List[TypeArgument]) {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+
+    def toJVMSignature: String =
+        simpleName +
+            (typeArguments match {
+                case Nil   ⇒ ""
+                case l @ _ ⇒ l.map { _.toJVMSignature }.mkString("<", "", ">")
+            })
 }
 
 case class FormalTypeParameter(
@@ -162,6 +205,17 @@ case class FormalTypeParameter(
         interfaceBound: List[FieldTypeSignature]) {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+
+    def toJVMSignature: String =
+        identifier +
+            (classBound match {
+                case Some(x) ⇒ ":"+x.toJVMSignature
+                case None    ⇒ ":"
+            }) +
+            (interfaceBound match {
+                case Nil   ⇒ ""
+                case l @ _ ⇒ ":"+l.map { _.toJVMSignature }.mkString(":")
+            })
 }
 
 sealed trait TypeArgument extends SignatureElement
@@ -172,6 +226,14 @@ case class ProperTypeArgument(
         extends TypeArgument {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+
+    override def toJVMSignature: String =
+        (varianceIndicator match {
+            case Some(x) ⇒ x.toJVMSignature
+            case None    ⇒ ""
+        }) +
+            fieldTypeSignature.toJVMSignature
+
 }
 
 /**
@@ -180,12 +242,14 @@ case class ProperTypeArgument(
 sealed trait VarianceIndicator extends SignatureElement {
     // EMPTY
 }
+
 /**
  * If you have a declaration such as &lt;? extends Entry&gt; then the "? extends" part
  * is represented by the `CovariantIndicator`.
  */
 sealed trait CovariantIndicator extends VarianceIndicator {
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    override def toJVMSignature: String = "+"
 }
 case object CovariantIndicator extends CovariantIndicator
 
@@ -195,6 +259,7 @@ case object CovariantIndicator extends CovariantIndicator
  */
 sealed trait ContravariantIndicator extends VarianceIndicator {
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    override def toJVMSignature: String = "-"
 }
 case object ContravariantIndicator extends ContravariantIndicator
 
@@ -204,6 +269,7 @@ case object ContravariantIndicator extends ContravariantIndicator
  */
 sealed trait Wildcard extends TypeArgument {
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
+    override def toJVMSignature: String = "*"
 }
 case object Wildcard extends Wildcard
 
