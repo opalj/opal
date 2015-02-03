@@ -28,6 +28,7 @@
  */
 package simpleCallgraph;
 
+import org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm;
 import org.opalj.ai.test.invokedynamic.annotations.InvokedConstructor;
 import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
 import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
@@ -49,47 +50,46 @@ import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
  * SPECIFIED LINE NUMBERS ARE STABLE.
  * 
  * 
- * 
- * 
  * -->
  * 
  * @author Marco Jacobasch
+ * @author Michael Reif
  */
 public class A implements Base {
 
     Base b = new B();
 
     @Override
-    @InvokedMethod(receiverType = B.class, name = "string", lineNumber = 65)
-    public String string() {
-        return b.string();
+    @InvokedMethod(receiverType = "simpleCallgraph/B", name = "callOnInstanceField", line = 65)
+    public String callOnInstanceField() {
+        return b.callOnInstanceField();
     }
 
     @Override
-    @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 72)
-    @InvokedConstructor(receiverType = B.class, lineNumber = 72)
-    public void method() {
-        new B().method();
+    @InvokedMethod(receiverType = "simpleCallgraph/B", name = "callOnConstructor", line = 72)
+    @InvokedConstructor(receiverType = B.class, line = 72)
+    public void callOnConstructor() {
+        new B().callOnConstructor();
     }
 
     @Override
     @InvokedMethods({
-            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 83),
-            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 83),
-            @InvokedMethod(receiverType = A.class, name = "methodParameter", lineNumber = 82) })
-    public void methodParameter(@SuppressWarnings("hiding") Base b) {
+    	@InvokedMethod(receiverType = "simpleCallgraph/A", name = "callOnMethodParameter", line = 82),
+            @InvokedMethod(receiverType = "simpleCallgraph/A", name = "callOnConstructor", line = 83),
+            @InvokedMethod(receiverType = "simpleCallgraph/B", name = "callOnConstructor", line = 83)})
+    public void callOnMethodParameter(Base b) {
         if (b != null) {
-            this.methodParameter(null);
-            b.method();
+            this.callOnMethodParameter(null);
+            b.callOnConstructor();
         }
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 91),
-            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 92) })
-    public void secondMethod() {
-        new A().method();
-        new B().method();
+            @InvokedMethod(receiverType = "simpleCallgraph/A", name = "callOnConstructor", line = 91),
+            @InvokedMethod(receiverType = "simpleCallgraph/B", name = "callOnConstructor", line = 92)})
+    public void directCallOnConstructor() {
+        new A().callOnConstructor();
+        new B().callOnConstructor();
     }
 
 }

@@ -28,6 +28,7 @@
  */
 package simpleCallgraph;
 
+import org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm;
 import org.opalj.ai.test.invokedynamic.annotations.InvokedConstructor;
 import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
 import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
@@ -50,7 +51,6 @@ import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
  * 
  * 
  * 
- * 
  * -->
  * 
  * @author Marco Jacobasch
@@ -60,23 +60,22 @@ public class B implements Base {
     String b = "B";
 
     @Override
-    public String string() {
+    public String callOnInstanceField() {
         return b;
     }
 
     @Override
-    @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 71)
-    @InvokedConstructor(receiverType = A.class, lineNumber = 71)
-    public void method() {
-        new A().method();
+    @InvokedMethod(receiverType = "simpleCallgraph/A", name = "callOnConstructor", line = 71)
+    @InvokedConstructor(receiverType = A.class, line = 71)
+    public void callOnConstructor() {
+        new A().callOnConstructor();
     }
 
     @Override
     @InvokedMethods({
-            @InvokedMethod(receiverType = A.class, name = "method", lineNumber = 79),
-            @InvokedMethod(receiverType = B.class, name = "method", lineNumber = 79) })
-    public void methodParameter(@SuppressWarnings("hiding") Base b) {
-        b.method();
+            @InvokedMethod(receiverType = "simpleCallgraph/A", name = "callOnConstructor", line = 79),
+            @InvokedMethod(receiverType = "simpleCallgraph/B", name = "callOnConstructor", line = 79)})
+    public void callOnMethodParameter(@SuppressWarnings("hiding") Base b) {
+        b.callOnConstructor();
     }
-
 }

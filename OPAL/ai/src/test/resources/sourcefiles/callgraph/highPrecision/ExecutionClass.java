@@ -26,9 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package callgraph.base;
+package callgraph.highPrecision;
 
 import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
+import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
+import static org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm.CHA;
+import static org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm.BasicVTA;
+
+;
 
 /**
  * This class was used to create a class file with some well defined attributes. The
@@ -43,45 +48,47 @@ import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
  * 
  * 
  * 
+ * 
  * INTENTIONALLY LEFT EMPTY (THIS AREA CAN BE EXTENDED/REDUCED TO MAKE SURE THAT THE
  * SPECIFIED LINE NUMBERS ARE STABLE.
  * 
  * 
- * 
- * 
  * -->
  * 
- * @author Marco Jacobasch
+ * @author Michael Reif
  */
-public class AlternateBase extends AbstractBase {
+public class ExecutionClass {
 
-    @SuppressWarnings("hiding")
-    public String string;
-    public double number;
+    private IBase innerClass = new InnerClass();
 
-    public AlternateBase() {
-        this("alternate");
+    class InnerClass implements IBase {
+
+        public IBase interfaceMethod() {
+            return this;
+        }
     }
 
-    public AlternateBase(String s) {
-        this(s, 0);
+    @InvokedMethods({
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ExecutionClass$InnerClass", name = "interfaceMethod", line = 76),
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ConcreteClass", name = "interfaceMethod", line = 76, isContainedIn = {
+                    CHA, BasicVTA }) })
+    public void testInnerClass() {
+        innerClass.interfaceMethod();
     }
 
-    public AlternateBase(String s, double d) {
-        this.string = s;
-        this.number = d;
-    }
+    @InvokedMethods({
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ExecutionClass$1", name = "interfaceMethod", line = 92),
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ConcreteClass", name = "interfaceMethod", line = 92, isContainedIn = { CHA }),
+            @InvokedMethod(receiverType = "callgraph/highPrecision/ExecutionClass$InnerClass", name = "interfaceMethod", line = 92, isContainedIn = { CHA }) })
+    public void testAnonClass() {
+        IBase anon = new IBase() {
 
-    @Override
-    @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "abstractImplementedMethod", line = 78)
-    public void abstractMethod() {
-        super.abstractImplementedMethod();
-    }
+            @Override
+            public IBase interfaceMethod() {
+                return this;
+            }
 
-    @Override
-    @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "implementedMethod", line = 84)
-    public void implementedMethod() {
-        super.implementedMethod();
+        };
+        anon.interfaceMethod();
     }
-
 }

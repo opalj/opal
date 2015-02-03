@@ -31,6 +31,8 @@ package ai
 package analyses
 package cg
 
+import org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm
+
 /**
  * Tests the CHA based `CallGraph` algorithm using a more complex (explicitly
  * annotated) project.
@@ -46,5 +48,7 @@ class ComplexCHACallGraphTest extends AbstractCallGraphTest {
 
     override def testCallGraphConfiguration =
         new CHACallGraphAlgorithmConfiguration(project)
+
+    override def testCallGraphAlgorithm = CallGraphAlgorithm.CHA
 
 }
