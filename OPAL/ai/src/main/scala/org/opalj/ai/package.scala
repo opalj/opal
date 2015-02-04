@@ -137,7 +137,7 @@ package object ai {
      *
      * Values in the range [ [[SpecialValuesOriginOffset]] (`-10000000`) ,
      * [[VMLevelValuesOriginOffset]] (`-100000`) ] are used to identify values that are
-     * created by the VM.
+     * created by the VM while evaluating the instruction with the `pc = origin+100000`.
      *
      * @see For further information see [[isVMLevelValue]],
      *      [[ValueOriginForVMLevelValue]], [[PCOfVMLevelValue]].
@@ -328,28 +328,35 @@ package object ai {
         calledMethod: Method,
         targetDomain: ValuesDomain with ValuesFactory): Locals[targetDomain.DomainValue] = {
 
+        assert(operands.size == calledMethod.parametersCount)
+
         import org.opalj.collection.mutable.Locals
         implicit val domainValue = targetDomain.DomainValue
         val parameters = Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
         var localVariableIndex = 0
-        var index = 0
+        var processedOperands = 0
         val operandsInParameterOrder = operands.reverse
-        for (operand ← operandsInParameterOrder) {
+        operandsInParameterOrder foreach { operand ⇒
             val parameter = {
                 // Was the same value (determined by "eq") already adapted?
+                // If so, we reuse it to facilitate correlation analyses
                 var pOperands = operandsInParameterOrder
-                var p = 0
-                while (p < index && (pOperands.head ne operand)) {
-                    p += 1; pOperands = pOperands.tail
+                var pOperandIndex = 0
+                var pLocalVariableIndex = 0
+                while (pOperandIndex < processedOperands && (pOperands.head ne operand)) {
+                    pOperandIndex += 1
+                    pLocalVariableIndex += pOperands.head.computationalType.operandSize
+                    pOperands = pOperands.tail
                 }
-                if (p < index)
-                    parameters(p)
-                else
+                if (pOperandIndex < processedOperands) {
+                    parameters(pLocalVariableIndex)
+                } else {
                     // the value was not previously adapted
-                    operand.adapt(targetDomain, -(index + 1))
+                    operand.adapt(targetDomain, -(processedOperands + 1))
+                }
             }
-            parameters.set(localVariableIndex, parameter)
-            index += 1
+            parameters(localVariableIndex) = parameter
+            processedOperands += 1
             localVariableIndex += operand.computationalType.operandSize
         }
 

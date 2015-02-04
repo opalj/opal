@@ -73,6 +73,18 @@ object ReturnInstruction {
 
     val runtimeExceptions = List(ObjectType.IllegalMonitorStateException)
 
+    @inline final def isReturnInstruction(instruction: Instruction): Boolean = {
+        (instruction.opcode: @switch) match {
+            case RETURN.opcode |
+                IRETURN.opcode |
+                LRETURN.opcode |
+                FRETURN.opcode |
+                DRETURN.opcode |
+                ARETURN.opcode ⇒ true
+            case _ ⇒ false
+        }
+    }
+
     def apply(theType: Type): ReturnInstruction =
         (theType.id: @switch) match {
             case VoidType.id    ⇒ RETURN
@@ -88,7 +100,11 @@ object ReturnInstruction {
         }
 
 }
-
+/**
+ * Defines extractor methods related to return instructions.
+ *
+ * @author Michael Eichberg
+ */
 object ReturnInstructions {
 
     def unapply(code: Code): Option[PCs] = {
@@ -101,15 +117,8 @@ object ReturnInstructions {
         var returnPCs = org.opalj.collection.mutable.UShortSet.empty
         while (pc < max) {
             val instruction = instructions(pc)
-            (instruction.opcode: @switch) match {
-                case RETURN.opcode |
-                    IRETURN.opcode |
-                    LRETURN.opcode |
-                    FRETURN.opcode |
-                    DRETURN.opcode |
-                    ARETURN.opcode ⇒ returnPCs = pc +≈: returnPCs
-                case _ ⇒ /*nothing to do*/
-            }
+            if (ReturnInstruction.isReturnInstruction(instruction))
+                returnPCs = pc +≈: returnPCs
             pc = instruction.indexOfNextInstruction(pc, code)
         }
         Some(returnPCs)

@@ -107,12 +107,21 @@ td.exception div.exception {
 	background: rgb(255, 168, 152);
 }
 
-td.exception div.exceptionHandler{
+td.exception_empty, th.exception_empty, td.exception {
+	background-color: rgb(245, 245, 172)
+}
+
+th.exception_header {
+	width: 2em;
+	max-width: 2em;
+}
+
+td.exception div.exception_handler{
 	background: #77FD77;
 	z-index: 1;
 	height: 15px;
 }
-td.exception div.handlerOverlap:before {
+td.exception div.handler_overlap:before {
 	position: absolute;
 	height: 15px;
 	width: 15px;
@@ -217,10 +226,6 @@ th.pc, td.pc, th.line, td.line {
 	width: 3.5em;
 }
 
-th.exceptionHeader {
-	width: 2em;
-}
-
 .reservedwords,.verification{
 	color: #0000ff;
 }
@@ -267,6 +272,10 @@ ol.cp_entries, ol.exception_table {
 ol.cp_entries > li {
 	padding-top:0.5em;
 	white-space: nowrap;
+}
+
+ol.exception_table {
+	line-height: 1.5em;
 }
 
 div.cp_ref {

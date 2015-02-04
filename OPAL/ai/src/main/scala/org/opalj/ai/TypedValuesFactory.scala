@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -62,19 +62,20 @@ trait TypedValuesFactory {
      * values are given and initial values need to be generated. This method is not
      * used elsewhere by the framework.
      */
-    def TypedValue(origin: ValueOrigin, valueType: Type): DomainValue = valueType match {
-        case BooleanType       ⇒ BooleanValue(origin)
-        case ByteType          ⇒ ByteValue(origin)
-        case ShortType         ⇒ ShortValue(origin)
-        case CharType          ⇒ CharValue(origin)
-        case IntegerType       ⇒ IntegerValue(origin)
-        case FloatType         ⇒ FloatValue(origin)
-        case LongType          ⇒ LongValue(origin)
-        case DoubleType        ⇒ DoubleValue(origin)
-        case rt: ReferenceType ⇒ ReferenceValue(origin, rt)
-        case VoidType ⇒
-            throw DomainException("a domain value cannot have the type void")
-    }
+    def TypedValue(origin: ValueOrigin, valueType: Type): DomainValue =
+        valueType match {
+            case BooleanType       ⇒ BooleanValue(origin)
+            case ByteType          ⇒ ByteValue(origin)
+            case ShortType         ⇒ ShortValue(origin)
+            case CharType          ⇒ CharValue(origin)
+            case IntegerType       ⇒ IntegerValue(origin)
+            case FloatType         ⇒ FloatValue(origin)
+            case LongType          ⇒ LongValue(origin)
+            case DoubleType        ⇒ DoubleValue(origin)
+            case rt: ReferenceType ⇒ ReferenceValue(origin, rt)
+            case VoidType ⇒
+                throw DomainException("a domain value cannot have the type void")
+        }
 
     /**
      * Creates a `DomainValue` that represents a a value with the given type

@@ -872,13 +872,11 @@ object ClassFileFactory {
      * `typeOnStack` to it first if necessary.
      * If `typeOnStack` is `Object`, it will be treated as a generic return type and
      * converted to the required type.
-     *
-     * @throws IllegalArgumentException
-     *     		If  `typeOnStack` is not compatible with `toBeReturnedType` and
-     *        	`typeOnStack` is not `Object`
      */
+    @throws[IllegalArgumentException]("if `typeOnStack` is not compatible with `toBeReturnedType` and `typeOnStack` is not `Object`")
     def returnAndConvertInstructions(
-        toBeReturnedType: FieldType, typeOnStack: FieldType): Array[Instruction] = {
+        toBeReturnedType: FieldType,
+        typeOnStack: FieldType): Array[Instruction] = {
 
         if (toBeReturnedType eq typeOnStack)
             return Array(ReturnInstruction(toBeReturnedType))
@@ -981,8 +979,9 @@ object ClassFileFactory {
         val returnInstruction = ReturnInstruction(bridgeMethodDescriptor.returnType)
         instructions(currentPC) = returnInstruction
 
-        val maxStack = targetMethodDescriptor.parameterTypes.map(
-            _.computationalType.operandSize).sum + 1
+        val maxStack =
+            targetMethodDescriptor.parameterTypes.map(
+                _.computationalType.operandSize).sum + 1
         val maxLocals =
             maxStack +
                 {

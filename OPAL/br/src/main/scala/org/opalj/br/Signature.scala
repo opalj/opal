@@ -159,7 +159,7 @@ case class SimpleClassTypeSignature(
 case class FormalTypeParameter(
         identifier: String,
         classBound: Option[FieldTypeSignature],
-        interfaceBound: Option[FieldTypeSignature]) {
+        interfaceBound: List[FieldTypeSignature]) {
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
 }

@@ -4,6 +4,10 @@ scala:
    - 2.11.5
 jdk:
   - oraclejdk8
+  
+branches:
+  only:
+    - master 
 
 script:
   - export SBT_OPTS="-XX:+CMSClassUnloadingEnabled -XX:PermSize=256M -XX:MaxPermSize=512M"

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -33,10 +33,10 @@ package l0
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
-
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.collection.immutable.UIDSet0
 
 /**
  * Default implementation for handling reference values.
@@ -64,7 +64,7 @@ trait DefaultTypeLevelReferenceValues
             other match {
                 case _: NullValue ⇒ NoUpdate
                 case _: ReferenceValue ⇒
-                    // THIS domain does not track whether ReferenceValues 
+                    // THIS domain does not track whether ReferenceValues
                     // are definitively not null!
                     StructuralUpdate(other)
             }
@@ -75,6 +75,10 @@ trait DefaultTypeLevelReferenceValues
         }
     }
 
+    /**
+     * @param theUpperTypeBound The upper type bound of this array, which is necessarily
+     *      precise if the element type of the array is a base type (primitive type).
+     */
     protected[this] class ArrayValue(override val theUpperTypeBound: ArrayType)
             extends super.ArrayValue with SReferenceValue[ArrayType] {
         this: DomainArrayValue ⇒
@@ -84,7 +88,7 @@ trait DefaultTypeLevelReferenceValues
             isSubtypeOf match {
                 case Yes ⇒ Yes
                 case No if isPrecise ||
-                    /* the array's supertypes: Object, Serializable and Cloneable 
+                    /* the array's supertypes: Object, Serializable and Cloneable
                      * are handled by domain.isSubtypeOf */
                     supertype.isObjectType ||
                     theUpperTypeBound.elementType.isBaseType ||
@@ -101,32 +105,55 @@ trait DefaultTypeLevelReferenceValues
         }
 
         override def isAssignable(value: DomainValue): Answer = {
+
             typeOfValue(value) match {
 
                 case IsPrimitiveValue(primitiveType) ⇒
-                    // The following is an over approximation that makes it theoretically 
-                    // possible to store an int value in a byte array. However, 
+                    // The following is an over approximation that makes it theoretically
+                    // possible to store an int value in a byte array. However,
                     // such bytecode is illegal
                     Answer(
                         theUpperTypeBound.componentType.computationalType eq
                             primitiveType.computationalType
                     )
 
-                case IsAReferenceValue(UIDSet1(valueType: ArrayType)) if valueType.elementType.isBaseType ⇒
-                    //... we want to store an Array (of Array of ...) of primitives 
-                    // in this array
+                case elementValue @ IsAReferenceValue(UIDSet0) ⇒
+                    // the elementValue is "null"
+                    assert(elementValue.isNull.isYes)
+                    // e.g., it is possible to store null in the n-1 dimensions of
+                    // a n-dimensional array of primitive values
                     if (theUpperTypeBound.componentType.isReferenceType)
-                        classHierarchy.isSubtypeOf(valueType, theUpperTypeBound.componentType.asReferenceType)
+                        Yes
                     else
                         No
 
-                case _ /* ReferenceValue */ ⇒
-                    if (theUpperTypeBound.componentType.isBaseType)
-                        No
-                    else
-                        // IMPROVE We could check if this array's type and the given value's type are in no inheritance hierarchy
-                        // IMPROVE We could check if the type of the other value is precise and if so if this type is a supertype of it
-                        Unknown
+                case elementValue @ IsAReferenceValue(UIDSet1(elementValueType)) ⇒
+                    classHierarchy.canBeStoredIn(
+                        elementValueType,
+                        elementValue.isPrecise,
+                        this.theUpperTypeBound,
+                        this.isPrecise)
+
+                case elementValue @ IsAReferenceValue(otherUpperTypeBound) ⇒
+                    val elementValueIsPrecise = elementValue.isPrecise
+                    val thisArrayType = this.theUpperTypeBound
+                    val thisIsPrecise = this.isPrecise
+                    var finalAnswer: Answer = No
+                    otherUpperTypeBound.exists { elementValueType ⇒
+                        classHierarchy.canBeStoredIn(
+                            elementValueType,
+                            elementValueIsPrecise,
+                            thisArrayType,
+                            thisIsPrecise) match {
+                                case Yes ⇒
+                                    return Yes;
+
+                                case intermediateAnswer ⇒
+                                    finalAnswer = finalAnswer & intermediateAnswer
+                                    false
+                            }
+                    }
+                    finalAnswer
             }
         }
 
@@ -134,9 +161,8 @@ trait DefaultTypeLevelReferenceValues
             pc: PC,
             index: DomainValue,
             potentialExceptions: ExceptionValues): ArrayLoadResult = {
-            ComputedValueOrException(
-                TypedValue(pc, theUpperTypeBound.componentType),
-                potentialExceptions)
+            val value = TypedValue(pc, theUpperTypeBound.componentType)
+            ComputedValueOrException(value, potentialExceptions)
         }
 
         override protected def doStore(
@@ -382,12 +408,12 @@ trait DefaultTypeLevelReferenceValues
             }
             /* No | Unknown*/
             // In general, we could check whether a type exists that is a
-            // proper subtype of the type identified by this value's type bounds 
-            // and that is also a subtype of the given `supertype`. 
+            // proper subtype of the type identified by this value's type bounds
+            // and that is also a subtype of the given `supertype`.
             //
-            // If such a type does not exist the answer is truly `no` (if we 
-            // assume that we know the complete type hierarchy); 
-            // if we don't know the complete hierarchy or if we currently 
+            // If such a type does not exist the answer is truly `no` (if we
+            // assume that we know the complete type hierarchy);
+            // if we don't know the complete hierarchy or if we currently
             // analyze a library the answer generally has to be `Unknown`
             // unless we also consider the classes that are final or ....
 
@@ -398,7 +424,7 @@ trait DefaultTypeLevelReferenceValues
                     supertype.isArrayType &&
                     upperTypeBound != ObjectType.SerializableAndCloneable
                 ) ⇒
-                    // even if the upper bound is not precise we are now 100% sure 
+                    // even if the upper bound is not precise we are now 100% sure
                     // that this value is not a subtype of the given supertype
                     No
                 case _ ⇒

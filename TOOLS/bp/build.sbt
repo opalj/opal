@@ -1,8 +1,6 @@
-import AssemblyKeys._
-
 name := "BugPicker"
 
-version := "1.2.0-SNAPSHOT"
+version in ThisBuild := "1.2.0-SNAPSHOT"
 
 scalaVersion in ThisBuild := "2.11.5"
 
@@ -14,30 +12,6 @@ scalacOptions in ThisBuild ++= Seq(
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - BugPicker")
 
 fork in run := true
-
-libraryDependencies += "org.scalafx"  %% "scalafx"   % "1.0.0-R8"
-
-jfxSettings
-
-JFX.addJfxrtToClasspath := true
-
-JFX.mainClass := Some("org.opalj.bugpicker.BugPicker")
-
-assemblySettings
-
-jarName in assembly := "bugpicker-" + version.value + ".jar"
-
-test in assembly := {}
-
-mainClass in assembly := Some("org.opalj.bugpicker.BugPicker")
-
-resourceGenerators in Compile <+= Def.task {
- val versionFile = (baseDirectory in Compile).value / "target" / "scala-2.11" / "classes" / "org" / "opalj" / "bugpicker" / "version.txt"
- versionFile.getParentFile.mkdirs()
- IO.write(versionFile, (version in Compile).value)
- Seq(versionFile)
-}
-
 
 val zipAllSrc = taskKey[Unit]("Creates a zip file of all source files (including the build script etc.).")
 

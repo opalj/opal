@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -125,7 +125,7 @@ object DomainRegistry {
         }
     }
 
-    // initialize the registry with the known default domains 
+    // initialize the registry with the known default domains
     register(
         "[l0.BaseDomain] The most basic domain; it does all computations at the type level.",
         classOf[domain.l0.BaseDomain[_]],
@@ -159,10 +159,26 @@ object DomainRegistry {
     )
 
     register(
-        "[li.DefaultDomain] This domain performs some partial concrete evaluation.",
-        classOf[domain.li.DefaultDomain[_]],
+        "[l2.DefaultDomain] This abstract domain performs method invocations additionally to the features of the l1.DefaultDomain.",
+        classOf[domain.l2.DefaultDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.li.DefaultDomain(project, classFile, method)
+            new domain.l2.DefaultDomain(project, classFile, method)
+        }
+    )
+
+    register(
+        "[la.DefaultDomain] This abstract domain reuses information provided by some pre analyses additionally to the features of the l1.DefaultDomain.",
+        classOf[domain.l1.DefaultDomain[_]],
+        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
+            new domain.l1.DefaultDomain(project, classFile, method)
+        }
+    )
+
+    register(
+        "[li.DefaultDomain] This domain performs some partial concrete evaluation.",
+        classOf[domain.la.DefaultDomain],
+        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
+            new domain.la.DefaultDomain(project, classFile, method)
         }
     )
 }

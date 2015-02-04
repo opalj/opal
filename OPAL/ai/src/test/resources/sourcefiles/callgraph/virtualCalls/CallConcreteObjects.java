@@ -61,16 +61,16 @@ import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
  */
 public class CallConcreteObjects {
 
-    // @InvokedConstructor(receiverType = SimpleBase.class, lineNumber = 12)
+    // @InvokedConstructor(receiverType = "callgraph/base/SimpleBase", line = 12)
     SimpleBase simpleBase = new SimpleBase();
 
-    // @InvokedConstructor(receiverType = ConcreteBase.class, lineNumber = 15)
+    // @InvokedConstructor(receiverType = "callgraph/base/ConcreteBase", line = 15)
     ConcreteBase concreteBase = new ConcreteBase();
 
-    // @InvokedConstructor(receiverType = AlternateBase.class, lineNumber = 18)
+    // @InvokedConstructor(receiverType = "callgraph/base/AlternateBase", line = 18)
     AlternateBase alternerateBase = new AlternateBase();
 
-    // @InvokedConstructor(receiverType = AbstractBase.class, lineNumber = 21)
+    // @InvokedConstructor(receiverType = "callgraph/base/AbstractBase", line = 21)
     AbstractBase abstractBase = new AbstractBase() {
 
         @Override
@@ -80,10 +80,10 @@ public class CallConcreteObjects {
     };
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "implementedMethod", lineNumber = 88),
-            @InvokedMethod(receiverType = ConcreteBase.class, name = "implementedMethod", lineNumber = 89),
-            @InvokedMethod(receiverType = AlternateBase.class, name = "implementedMethod", lineNumber = 90),
-            @InvokedMethod(receiverType = AbstractBase.class, name = "implementedMethod", lineNumber = 91) })
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 88),
+            @InvokedMethod(receiverType = "callgraph/base/ConcreteBase", name = "implementedMethod", line = 89),
+            @InvokedMethod(receiverType = "callgraph/base/AlternateBase", name = "implementedMethod", line = 90),
+            @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "implementedMethod", line = 91) })
     void callImplementedMethod() {
         simpleBase.implementedMethod();
         concreteBase.implementedMethod();
@@ -92,9 +92,9 @@ public class CallConcreteObjects {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "abstractMethod", lineNumber = 99),
-            @InvokedMethod(receiverType = ConcreteBase.class, name = "abstractMethod", lineNumber = 100),
-            @InvokedMethod(receiverType = AlternateBase.class, name = "abstractMethod", lineNumber = 101) })
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "abstractMethod", line = 99),
+            @InvokedMethod(receiverType = "callgraph/base/ConcreteBase", name = "abstractMethod", line = 100),
+            @InvokedMethod(receiverType = "callgraph/base/AlternateBase", name = "abstractMethod", line = 101) })
     void callAbstractMethod() {
         simpleBase.abstractMethod();
         concreteBase.abstractMethod();
@@ -102,10 +102,10 @@ public class CallConcreteObjects {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "abstractImplementedMethod", lineNumber = 110),
-            @InvokedMethod(receiverType = AbstractBase.class, name = "abstractImplementedMethod", lineNumber = 111),
-            @InvokedMethod(receiverType = AbstractBase.class, name = "abstractImplementedMethod", lineNumber = 112),
-            @InvokedMethod(receiverType = AbstractBase.class, name = "abstractImplementedMethod", lineNumber = 113) })
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "abstractImplementedMethod", line = 110),
+            @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "abstractImplementedMethod", line = 111),
+            @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "abstractImplementedMethod", line = 112),
+            @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "abstractImplementedMethod", line = 113) })
     void callAbstractImplementedMethod() {
         simpleBase.abstractImplementedMethod();
         concreteBase.abstractImplementedMethod();
@@ -114,10 +114,10 @@ public class CallConcreteObjects {
     }
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "interfaceMethod", lineNumber = 122),
-            @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 123),
-            @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 124),
-            @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 125) })
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "interfaceMethod", line = 122),
+            @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "interfaceMethod", line = 123),
+            @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "interfaceMethod", line = 124),
+            @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "interfaceMethod", line = 125) })
     void callInterfaceMethod() {
         simpleBase.interfaceMethod();
         concreteBase.interfaceMethod();

@@ -60,22 +60,22 @@ public class AccessFields {
     ConcreteBase concreteBase = new ConcreteBase();
     AlternateBase alternerateBase = new AlternateBase();
 
-    @AccessedField(declaringType = ConcreteBase.class, fieldType = Integer.class, name = "integer", lineNumber = 65)
+    @AccessedField(declaringType = ConcreteBase.class, fieldType = Integer.class, name = "integer", line = 65)
     public int accessFieldInClass() {
         return concreteBase.integer;
     }
 
-    @AccessedField(declaringType = ConcreteBase.class, fieldType = String.class, name = "string", lineNumber = 70)
+    @AccessedField(declaringType = ConcreteBase.class, fieldType = String.class, name = "string", line = 70)
     public String accessFieldInSuperClass() {
         return concreteBase.string;
     }
 
-    @AccessedField(declaringType = AlternateBase.class, fieldType = String.class, name = "string", lineNumber = 75)
+    @AccessedField(declaringType = AlternateBase.class, fieldType = String.class, name = "string", line = 75)
     public String accessFieldInClassSameFieldNameInSuperClass() {
         return alternerateBase.string;
     }
 
-    @AccessedField(declaringType = ConcreteBase.class, fieldType = Double.class, name = "DOUBLE_FIELD", lineNumber = 80)
+    @AccessedField(declaringType = ConcreteBase.class, fieldType = Double.class, name = "DOUBLE_FIELD", line = 80)
     public double accessStaticField() {
         return ConcreteBase.DOUBLE_FIELD;
     }

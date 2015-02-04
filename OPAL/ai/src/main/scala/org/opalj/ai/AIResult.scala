@@ -44,9 +44,21 @@ import org.opalj.br.Code
 sealed abstract class AIResult {
 
     /**
+     * If `true` then then code was evaluated using `strict` semantics (in Java
+     * the `strictfp` modifier was used), otherwise
+     * it was evaluated using the standard JVM semantics.
+     */
+    val strictfp: Boolean
+
+    /**
      * The code for which the abstract interpretation was performed.
      */
     val code: Code
+
+    /**
+     * The instructions where two or more control flow paths join.
+     */
+    val joinInstructions: BitSet
 
     /**
      * The domain object that was used to perform the abstract interpretation.
@@ -85,6 +97,11 @@ sealed abstract class AIResult {
      * value will be `null`).
      */
     val operandsArray: domain.OperandsArray
+
+    /**
+     * Returns true if the instruction with the given pc was evaluated at least once.
+     */
+    @inline final def wasEvaluted(pc: PC): Boolean = operandsArray(pc) != null
 
     /**
      * The values stored in the registers. Note, that ''it makes only sense to analyze
@@ -142,8 +159,10 @@ sealed abstract class AIAborted extends AIResult {
 }
 
 object AICompleted {
+
     def unapply(result: AICompleted): Some[(result.domain.type, result.operandsArray.type, result.localsArray.type)] =
         Some((result.domain, result.operandsArray, result.localsArray))
+
 }
 
 /**
@@ -177,7 +196,9 @@ object AIResultBuilder {
      * computation.
      */
     def aborted(
+        theStrictfp: Boolean,
         theCode: Code,
+        theJoinInstructions: BitSet,
         theDomain: Domain)(
             theWorklist: List[PC],
             theEvaluated: List[PC],
@@ -186,7 +207,9 @@ object AIResultBuilder {
             theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIAborted { val domain: theDomain.type } = {
 
         new AIAborted {
+            val strictfp: Boolean = theStrictfp
             val code: Code = theCode
+            val joinInstructions: BitSet = theJoinInstructions
             val domain: theDomain.type = theDomain
             val worklist: List[PC] = theWorklist
             val evaluated: List[PC] = theEvaluated
@@ -197,7 +220,7 @@ object AIResultBuilder {
             def continueInterpretation(
                 ai: AI[_ >: domain.type]): AIResult =
                 ai.continueInterpretation(
-                    code, domain)(
+                    strictfp, code, joinInstructions, domain)(
                         worklist, evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
 
         }
@@ -209,14 +232,18 @@ object AIResultBuilder {
      * ''completed'' is depending on the used domain.
      */
     def completed(
+        theStrictfp: Boolean,
         theCode: Code,
+        theJoinInstructions: BitSet,
         theDomain: Domain)(
             theEvaluated: List[PC],
             theOperandsArray: theDomain.OperandsArray,
             theLocalsArray: theDomain.LocalsArray): AICompleted { val domain: theDomain.type } = {
 
         new AICompleted {
+            val strictfp: Boolean = theStrictfp
             val code: Code = theCode
+            val joinInstructions = theJoinInstructions
             val domain: theDomain.type = theDomain
             val evaluated: List[PC] = theEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
@@ -226,7 +253,7 @@ object AIResultBuilder {
             def restartInterpretation(
                 ai: AI[_ >: theDomain.type]): AIResult =
                 ai.continueInterpretation(
-                    code, domain)(
+                    strictfp, code, joinInstructions, domain)(
                         List(0), evaluated, operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
 
         }
