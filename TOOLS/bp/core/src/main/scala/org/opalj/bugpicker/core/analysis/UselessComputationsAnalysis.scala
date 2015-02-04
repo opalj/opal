@@ -210,7 +210,7 @@ object UselessComputationsAnalysis {
                 (IFNONNULL(_) | IFNULL(_)),
                 Seq(rv: domain.ReferenceValue, _*)
                 ) if rv.isNull.isYesOrNo ⇒
-                Issue(pc, s"testing $rv against null is useless", defaultRelevance)
+                Issue(pc, s"Testing $rv against null is useless.", defaultRelevance)
 
         }
     }
