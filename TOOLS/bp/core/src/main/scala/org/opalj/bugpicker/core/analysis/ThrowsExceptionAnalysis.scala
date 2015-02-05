@@ -134,7 +134,7 @@ object ThrowsExceptionAnalysis {
                     Some(operands),
                     Some(result.localsArray(pc)),
                     "causes exception",
-                    Some("The evaluation of the instruction always throws the exception(s): "+exceptions),
+                    Some(s"The evaluation of the instruction always throws the exception(s): $exceptions."),
                     Set(IssueCategory.Bug),
                     Set(IssueKind.ThrowsException),
                     Seq.empty,
