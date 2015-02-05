@@ -94,6 +94,7 @@ import org.opalj.br.instructions.L2I
  * ''void type &lt; primitive types &lt; array types &lt; class/interface types''
  *
  * @author Michael Eichberg
+ * @author Andre Pacak
  */
 sealed abstract class Type extends UID with Ordered[Type] {
 
@@ -299,6 +300,8 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
         throw new UnsupportedOperationException("void does not have a computational type")
 
     final override def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
+
+    override def toJVMSignature = "V"
 
     override def toJava: String = "void"
 
@@ -533,6 +536,8 @@ sealed abstract class ByteType private () extends IntLikeType {
 
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
+    override def toJVMSignature = "B"
+
     def toJava: String = "byte"
 
     override def toBinaryJavaName: String = "B"
@@ -595,6 +600,8 @@ sealed abstract class CharType private () extends IntLikeType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
+    override def toJVMSignature = "C"
+
     def toJava: String = "char"
 
     override def toBinaryJavaName: String = "C"
@@ -649,6 +656,8 @@ sealed abstract class DoubleType private () extends NumericType {
     final override def computationalType = ComputationalTypeDouble
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+
+    override def toJVMSignature = "D"
 
     final val atype = 7
 
@@ -726,6 +735,8 @@ sealed abstract class FloatType private () extends NumericType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
+    override def toJVMSignature = "F"
+
     def toJava: String = "float"
 
     override def toBinaryJavaName: String = "F"
@@ -796,6 +807,8 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
+    override def toJVMSignature = "S"
+
     def toJava: String = "short"
 
     override def toBinaryJavaName: String = "S"
@@ -857,6 +870,8 @@ sealed abstract class IntegerType private () extends IntLikeType {
     final override def computationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+
+    override def toJVMSignature = "I"
 
     def toJava: String = "int"
 
@@ -923,6 +938,8 @@ sealed abstract class LongType private () extends NumericType {
     final override def computationalType = ComputationalTypeLong
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+
+    override def toJVMSignature = "J"
 
     def toJava: String = "long"
 
@@ -1000,6 +1017,8 @@ sealed abstract class BooleanType private () extends BaseType {
     final override def computationalType = ComputationalTypeInt
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
+
+    override def toJVMSignature = "Z"
 
     final val toJava /*: String*/ = "boolean"
 

@@ -36,9 +36,10 @@ import org.scalatest.ParallelTestExecution
 import org.opalj.bi.TestSupport.locateTestResources
 
 /**
- * Tests the parsing of signatures.
+ * Tests the parsing and reconstructing of signatures.
  *
  * @author Michael Eichberg
+ * @author Andre Pacak
  */
 @org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class SignaturesTest extends FunSuite with ParallelTestExecution {
@@ -124,6 +125,34 @@ class SignaturesTest extends FunSuite with ParallelTestExecution {
             assert(r ne null)
         }
         MethodTypeSignatures.par.foreach(parse _)
+    }
+
+    //
+    // Test that .toJVMSignature returns the correct String
+    //
+
+    test("parse and reconstruct various class signatures in parallel") {
+        def parseAndReconstruct(s: String): Unit = {
+            val r = SignatureParser.parseClassSignature(s)
+            assert(r.toJVMSignature == s)
+        }
+        ClassFileSignatures.par.foreach { parseAndReconstruct }
+    }
+
+    test("parse and reconstruct various field type signatures in parallel") {
+        def parseAndReconstruct(s: String): Unit = {
+            val r = SignatureParser.parseFieldTypeSignature(s)
+            assert(r.toJVMSignature == s)
+        }
+        FieldTypeSignatures.par.foreach { parseAndReconstruct }
+    }
+
+    test("parse and reconstruct various method type signatures in parallel") {
+        def parseAndReconstruct(s: String): Unit = {
+            val r = SignatureParser.parseMethodTypeSignature(s)
+            assert(r.toJVMSignature == s)
+        }
+        MethodTypeSignatures.par.foreach { parseAndReconstruct }
     }
 
     //
