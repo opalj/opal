@@ -20,3 +20,4 @@ Icon?
 /shippable/
 .history
 local.sbt
+.tmpBin
