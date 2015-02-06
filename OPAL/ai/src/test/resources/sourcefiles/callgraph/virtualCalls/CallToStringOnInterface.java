@@ -72,22 +72,22 @@ public class CallToStringOnInterface {
         }
     };
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "toString", returnType = String.class, lineNumber = 77)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "toString", returnType = String.class, line = 77)
     void callToStringOnSimpleBase() {
         simpleBase.toString();
     }
 
-    @InvokedMethod(receiverType = Object.class, name = "toString", returnType = String.class, lineNumber = 82)
+    @InvokedMethod(receiverType = "java/lang/Object", name = "toString", returnType = String.class, line = 82)
     void callToStringOnConcreteBase() {
         concreteBase.toString();
     }
 
-    @InvokedMethod(receiverType = Object.class, name = "toString", returnType = String.class, lineNumber = 87)
+    @InvokedMethod(receiverType = "java/lang/Object", name = "toString", returnType = String.class, line = 87)
     void callToStringOnAlternateBase() {
         alternerateBase.toString();
     }
 
-    @InvokedMethod(receiverType = Object.class, name = "toString", returnType = String.class, lineNumber = 92)
+    @InvokedMethod(receiverType = "java/lang/Object", name = "toString", returnType = String.class, line = 92)
     void callToStringOnAbstractBase() {
         abstractBase.toString();
     }

@@ -50,5 +50,5 @@ public @interface AccessedField {
 
     boolean isStatic() default false;
 
-    int lineNumber() default -1;
+    int line() default -1;
 }

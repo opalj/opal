@@ -29,13 +29,16 @@
 package org.opalj.ai.test.invokedynamic.annotations;
 
 /**
- * Describes whether the method call instruction is a standard invoke instruction (invokevirtual,
- * invokestatic, invokespecial, invokeinterface), an invokedynamic, or a call made through use of
+ * Describes whether the method call instruction is a standard invoke 
+ * instruction (invokevirtual,
+ * invokestatic, invokespecial, invokeinterface), an invokedynamic, 
+ * or a call made through use of
  * the Java reflection API.
  * 
  * @author Arne Lottmann
  */
 public enum TargetResolution {
+	
     /**
      * Describes a method call made using one of the following instructions:
      * <ul>

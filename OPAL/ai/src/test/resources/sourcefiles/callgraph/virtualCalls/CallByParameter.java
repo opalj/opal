@@ -62,28 +62,28 @@ import org.opalj.ai.test.invokedynamic.annotations.InvokedMethods;
 public class CallByParameter {
 
     @InvokedMethods({
-            @InvokedMethod(receiverType = SimpleBase.class, name = "interfaceMethod", lineNumber = 68),
-            @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 68) })
+            @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "interfaceMethod", line = 68),
+            @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "interfaceMethod", line = 68) })
     void callByInterface(Base object) {
         object.interfaceMethod();
     }
 
-    @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 73)
+    @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "interfaceMethod", line = 73)
     void callByInterface(AbstractBase object) {
         object.interfaceMethod();
     }
 
-    @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 78)
+    @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "interfaceMethod", line = 78)
     void callByInterface(ConcreteBase object) {
         object.interfaceMethod();
     }
 
-    @InvokedMethod(receiverType = AbstractBase.class, name = "interfaceMethod", lineNumber = 83)
+    @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "interfaceMethod", line = 83)
     void callByInterface(AlternateBase object) {
         object.interfaceMethod();
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "interfaceMethod", lineNumber = 88)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "interfaceMethod", line = 88)
     void callByInterface(SimpleBase object) {
         object.interfaceMethod();
     }

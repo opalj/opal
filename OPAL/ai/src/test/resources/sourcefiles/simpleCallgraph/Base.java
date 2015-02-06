@@ -46,13 +46,14 @@ package simpleCallgraph;
  * -->
  * 
  * @author Marco Jacobasch
+ *
  */
 public interface Base {
 
-    public String string();
+    public String callOnInstanceField();
 
-    public void method();
+    public void callOnConstructor();
 
-    public void methodParameter(Base b);
+    public void callOnMethodParameter(Base b);
 
 }

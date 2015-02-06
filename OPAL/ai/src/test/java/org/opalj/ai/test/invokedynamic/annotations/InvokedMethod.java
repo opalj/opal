@@ -36,24 +36,35 @@ import static java.lang.annotation.ElementType.*;
  * Describes a method call. For types see the {@link TargetResolution} enum.
  * 
  * @author Arne Lottmann
+ * @author Michael Reif
  */
 @Retention(RUNTIME)
 @Target(METHOD)
 public @interface InvokedMethod {
 
-    TargetResolution resolution() default TargetResolution.DEFAULT;
+	TargetResolution resolution() default TargetResolution.DEFAULT;
 
-    Class<?> receiverType();
+	/**
+	 * The type name of the receiver using JVM notation (e.g.,
+	 * "java/lang/Object").
+	 */
+	String receiverType();
 
-    String name();
+	String name();
 
-    Class<?> returnType() default Void.class;
+	Class<?> returnType() default Void.class;
 
-    Class<?>[] parameterTypes() default {};
+	Class<?>[] parameterTypes() default {};
 
-    int lineNumber() default -1;
+	int line() default -1;
 
-    boolean isStatic() default false;
+	boolean isStatic() default false;
 
-    boolean isReflective() default false;
+	boolean isReflective() default false;
+
+	CallGraphAlgorithm[] isContainedIn() default { 
+			CallGraphAlgorithm.CHA,
+			CallGraphAlgorithm.BasicVTA,
+			CallGraphAlgorithm.DefaultVTA,
+			CallGraphAlgorithm.ExtVTA  };
 }

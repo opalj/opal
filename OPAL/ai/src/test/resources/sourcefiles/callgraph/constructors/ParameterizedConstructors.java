@@ -59,27 +59,27 @@ import org.opalj.ai.test.invokedynamic.annotations.InvokedConstructor;
 public class ParameterizedConstructors {
 
     @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = ConcreteBase.class, parameterTypes = { String.class }, lineNumber = 64)
+    @InvokedConstructor(receiverType = ConcreteBase.class, parameterTypes = { String.class }, line = 64)
     public void createConcreteBaseSingleParameter() {
         Base concreteBase = new ConcreteBase("test");
     }
 
     @SuppressWarnings("unused")
-    @InvokedConstructor(receiverType = AlternateBase.class, parameterTypes = { String.class }, lineNumber = 70)
+    @InvokedConstructor(receiverType = AlternateBase.class, parameterTypes = { String.class }, line = 70)
     public void createAlternateBaseSingleParameter() {
         Base alternerateBase = new AlternateBase("test");
     }
 
     @SuppressWarnings("unused")
     @InvokedConstructor(receiverType = ConcreteBase.class, parameterTypes = {
-            String.class, Integer.class }, lineNumber = 77)
+            String.class, Integer.class }, line = 77)
     public void createConcreteBaseTwoParameters() {
         Base concreteBase = new ConcreteBase("test", 42);
     }
 
     @SuppressWarnings("unused")
     @InvokedConstructor(receiverType = AlternateBase.class, parameterTypes = {
-            String.class, Double.class }, lineNumber = 84)
+            String.class, Double.class }, line = 84)
     public void createAlternateBaseTwoParameters() {
         Base alternerateBase = new AlternateBase("test", 42);
     }

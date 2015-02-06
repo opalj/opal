@@ -330,7 +330,7 @@ trait AI[D <: Domain] {
         }
     }
 
-    protected[ai] def continueInterpretation(
+    def continueInterpretation(
         strictfp: Boolean, code: Code,
         theDomain: D)(
             initialWorkList: List[PC],
@@ -396,7 +396,7 @@ trait AI[D <: Domain] {
      *      __recommended that a `Domain` does not directly mutate the state of
      *      this array__.'''
      */
-    protected[ai] def continueInterpretation(
+    def continueInterpretation(
         strictfp: Boolean, code: Code, joinInstructions: BitSet,
         theDomain: D)(
             initialWorkList: List[PC],

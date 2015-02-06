@@ -137,7 +137,7 @@ package object ai {
      *
      * Values in the range [ [[SpecialValuesOriginOffset]] (`-10000000`) ,
      * [[VMLevelValuesOriginOffset]] (`-100000`) ] are used to identify values that are
-     * created by the VM.
+     * created by the VM while evaluating the instruction with the `pc = origin+100000`.
      *
      * @see For further information see [[isVMLevelValue]],
      *      [[ValueOriginForVMLevelValue]], [[PCOfVMLevelValue]].
