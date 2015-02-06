@@ -13,6 +13,10 @@ scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - BugPicker")
 
 fork in run := true
 
+mainClass in "bp" in Compile := (mainClass in "BugPickerUI" in Compile).value
+
+fullClasspath in "bp" in Runtime ++= (fullClasspath in "BugPickerUI" in Runtime).value
+
 val zipAllSrc = taskKey[Unit]("Creates a zip file of all source files (including the build script etc.).")
 
 zipAllSrc := {
