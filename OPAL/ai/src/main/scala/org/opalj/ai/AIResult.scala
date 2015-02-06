@@ -37,7 +37,8 @@ import org.opalj.br.Code
 /**
  * Encapsulates the ''result'' of the abstract interpretation of a method. If
  * the abstract interpretation was cancelled, the result encapsulates the current
- * state and can be continued later on, if necessary/desired.
+ * state of the evaluation which can be used to continue
+ * the abstract interpretation later on, if necessary/desired.
  *
  * @author Michael Eichberg
  */

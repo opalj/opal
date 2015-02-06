@@ -47,6 +47,12 @@ import org.opalj.br.instructions.Instruction
  */
 trait CoreDomainFunctionality extends ValuesDomain {
 
+    /**
+     * Replaces all occurrences of `oldValue` (using
+     * reference-quality) with `newValue`. If no
+     * occurrences are found the original operands and locals data structures
+     * are returned.
+     */
     def updateMemoryLayout(
         oldValue: DomainValue,
         newValue: DomainValue,
@@ -215,6 +221,13 @@ trait CoreDomainFunctionality extends ValuesDomain {
         joinPostProcessing(updateType, pc, thisOperands, thisLocals, newOperands, newLocals)
     }
 
+    /**
+     * This method is called immediately before a join operation with regard
+     * to the specified `pc` is performed.
+     *
+     * @note This method is intended to be overwritten by clients to perform custom
+     *      operations.
+     */
     protected[this] def beforeBaseJoin(pc: PC): Unit = { /*empty*/ }
 
     protected[this] def joinValues(

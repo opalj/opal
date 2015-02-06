@@ -517,7 +517,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
                     No
                 else
                     // though both values have the same runtime type, we don't know
-                    // if they refere to the same object
+                    // if they refer to the same object
                     Unknown
             else {
                 // - both values may not be null
