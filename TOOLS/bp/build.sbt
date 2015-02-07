@@ -1,5 +1,11 @@
 name := "BugPicker"
 
+organization in ThisBuild := "de.opal-project"
+
+homepage in ThisBuild := Some(url("http://www.opal-project.de/tools/bugpicker/"))
+
+licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
+
 version in ThisBuild := "1.2.0-SNAPSHOT"
 
 scalaVersion in ThisBuild := "2.11.5"
