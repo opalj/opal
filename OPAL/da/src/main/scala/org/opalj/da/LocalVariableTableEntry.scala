@@ -54,7 +54,7 @@ case class LocalVariableTableEntry(
             =>
             <span class="local_variable_name"> { name }</span>
             :
-            <span class="type"> { descriptor }</span>
+            <span class="type fqn"> { descriptor }</span>
         </div>
     }
 

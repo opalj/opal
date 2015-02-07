@@ -78,14 +78,17 @@ case class ClassFile(
     final val superTypeFQNs = {
         {
             if (super_class != 0)
-                "extends "+cp(super_class).toString+" "
+                <span class="extends">{ "extends " }<span class="super_class">{ cp(super_class).toString }</span></span>
             else
-                ""
-        } + {
+                scala.xml.NodeSeq.Empty
+        } ++ {
             if (interfaces.nonEmpty)
-                interfaces.map(i ⇒ cp(i).toString).mkString("implements ", ", ", "")
+                <span class="implements">
+                    { "implements " }<span class="interface">{ cp(interfaces.head).toString }</span>
+                    { interfaces.tail.map(i ⇒ { ", " } + <span class="interface">{ cp(i).toString }</span>) }
+                </span>
             else
-                ""
+                scala.xml.NodeSeq.Empty
         }
     }
 
@@ -170,7 +173,7 @@ case class ClassFile(
             <body>
                 <div id="class_file">
                     { accessFlags }
-                    &nbsp;<b>{ fqn }</b>
+                    &nbsp;<b id="defining_class">{ fqn }</b>
                     &nbsp;{ superTypeFQNs }
                     <div id="class_file_version">
                         Version:&nbsp;{ s"$major_version.$minor_version ($jdkVersion)" }
