@@ -463,6 +463,9 @@ trait AI[D <: Domain] {
          */
         def gotoTarget(
             sourcePC: PC,
+            sourceInstruction: Instruction,
+            sourceOperands: Operands,
+            sourceLocals: Locals,
             targetPC: PC,
             isExceptionalControlFlow: Boolean,
             newOperands: Operands,
@@ -470,8 +473,8 @@ trait AI[D <: Domain] {
 
             val (operands, locals) =
                 theDomain.afterEvaluation(
-                    sourcePC, instructions(sourcePC),
-                    operandsArray(sourcePC), localsArray(sourcePC),
+                    sourcePC, sourceInstruction,
+                    sourceOperands, sourceLocals,
                     targetPC, isExceptionalControlFlow,
                     newOperands, newLocals)
 
@@ -669,7 +672,10 @@ trait AI[D <: Domain] {
                     memoryLayoutBeforeSubroutineCall = memoryLayoutBeforeSubroutineCall.tail
                     targets.foreach { target ⇒
                         val (retPC, operands, updatedLocals) = target
-                        gotoTarget(retPC, returnAddress, false, operands, updatedLocals)
+                        gotoTarget(
+                            retPC, instructions(retPC),
+                            operandsArray(retPC), localsArray(retPC),
+                            returnAddress, false, operands, updatedLocals)
                     }
 
                     // it may be possible that – after the return from a
@@ -722,8 +728,14 @@ trait AI[D <: Domain] {
                     val branchTarget = pc + branchInstruction.branchoffset
 
                     domainTest(pc, operand) match {
-                        case Yes ⇒ gotoTarget(pc, branchTarget, false, rest, locals)
-                        case No  ⇒ gotoTarget(pc, nextPC, false, rest, locals)
+                        case Yes ⇒
+                            gotoTarget(
+                                pc, instruction, operands, locals,
+                                branchTarget, false, rest, locals)
+                        case No ⇒
+                            gotoTarget(
+                                pc, instruction, operands, locals,
+                                nextPC, false, rest, locals)
                         case Unknown ⇒ {
                             {
                                 val (newOperands, newLocals) =
@@ -734,7 +746,9 @@ trait AI[D <: Domain] {
                                         pc, branchTarget, rest, locals, newOperands, newLocals
                                     )
                                 }
-                                gotoTarget(pc, branchTarget, false, newOperands, newLocals)
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    branchTarget, false, newOperands, newLocals)
                             }
                             {
                                 val (newOperands, newLocals) =
@@ -745,7 +759,9 @@ trait AI[D <: Domain] {
                                         pc, nextPC, rest, locals, newOperands, newLocals
                                     )
                                 }
-                                gotoTarget(pc, nextPC, false, newOperands, newLocals)
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    nextPC, false, newOperands, newLocals)
                             }
                         }
                     }
@@ -768,8 +784,14 @@ trait AI[D <: Domain] {
                     val nextPC = code.pcOfNextInstruction(pc)
                     val testResult = domainTest(pc, left, right)
                     testResult match {
-                        case Yes ⇒ gotoTarget(pc, branchTarget, false, rest, locals)
-                        case No  ⇒ gotoTarget(pc, nextPC, false, rest, locals)
+                        case Yes ⇒
+                            gotoTarget(
+                                pc, instruction, operands, locals,
+                                branchTarget, false, rest, locals)
+                        case No ⇒
+                            gotoTarget(
+                                pc, instruction, operands, locals,
+                                nextPC, false, rest, locals)
                         case Unknown ⇒ {
                             {
                                 val (newOperands, newLocals) =
@@ -780,7 +802,9 @@ trait AI[D <: Domain] {
                                         pc, branchTarget, rest, locals, newOperands, newLocals
                                     )
                                 }
-                                gotoTarget(pc, branchTarget, false, newOperands, newLocals)
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    branchTarget, false, newOperands, newLocals)
                             }
                             {
                                 val (newOperands, newLocals) =
@@ -791,7 +815,9 @@ trait AI[D <: Domain] {
                                         pc, nextPC, rest, locals, newOperands, newLocals
                                     )
                                 }
-                                gotoTarget(pc, nextPC, false, newOperands, newLocals)
+                                gotoTarget(
+                                    pc, instruction, operands, locals,
+                                    nextPC, false, newOperands, newLocals)
                             }
                         }
                     }
@@ -820,12 +846,12 @@ trait AI[D <: Domain] {
                         pc: PC,
                         branchTarget: PC,
                         upperBound: Option[ObjectType]): Unit = {
-                        val operands = List(exceptionValue)
+                        val newOperands = List(exceptionValue)
                         val memoryLayout1 @ (updatedOperands1, updatedLocals1) =
                             if (establishNonNull)
-                                theDomain.refEstablishIsNonNull(pc, exceptionValue, operands, locals)
+                                theDomain.refEstablishIsNonNull(pc, exceptionValue, newOperands, locals)
                             else
-                                (operands, locals)
+                                (newOperands, locals)
 
                         val (updatedOperands2, updatedLocals2) =
                             if (upperBound.isDefined)
@@ -837,7 +863,9 @@ trait AI[D <: Domain] {
                             else
                                 memoryLayout1
 
-                        gotoTarget(pc, branchTarget, true, updatedOperands2, updatedLocals2)
+                        gotoTarget(
+                            pc, instruction, operands, locals,
+                            branchTarget, true, updatedOperands2, updatedLocals2)
                     }
 
                     val isHandled = code.handlersFor(pc) exists { eh ⇒
@@ -912,7 +940,9 @@ trait AI[D <: Domain] {
                 def fallThrough(
                     newOperands: Operands = operands,
                     newLocals: Locals = locals): Unit = {
-                    gotoTarget(pc, pcOfNextInstruction, false, newOperands, newLocals)
+                    gotoTarget(
+                        pc, instruction, operands, locals,
+                        pcOfNextInstruction, false, newOperands, newLocals)
                 }
 
                 def computationWithException(
@@ -982,7 +1012,9 @@ trait AI[D <: Domain] {
                         val goto = as[UnconditionalBranchInstruction](instruction)
                         val offset = goto.branchoffset
                         val branchtarget = pc + offset
-                        gotoTarget(pc, branchtarget, false, operands, locals)
+                        gotoTarget(
+                            pc, instruction, operands, locals,
+                            branchtarget, false, operands, locals)
 
                     // Fundamental idea: we treat a "jump to subroutine" similar to
                     // the call of a method. I.e., we make sure the operand
@@ -1025,12 +1057,11 @@ trait AI[D <: Domain] {
                                         SUBROUTINE ::
                                         worklist
                         }
-                        val newOperands = theDomain.ReturnAddressValue(returnTarget) :: operands
+                        val newOperands =
+                            theDomain.ReturnAddressValue(returnTarget) :: operands
                         gotoTarget(
-                            pc,
-                            branchtarget,
-                            false,
-                            newOperands, locals)
+                            pc, instruction, operands, locals,
+                            branchtarget, false, newOperands, locals)
 
                         if (tracer.isDefined) {
                             tracer.get.jumpToSubroutine(
@@ -1121,14 +1152,15 @@ trait AI[D <: Domain] {
                         ifXX(intIsLessThanOrEqualTo0 _, IntIsLessThanOrEqualTo0, IntIsGreaterThan0)
 
                     case 171 /*lookupswitch*/ ⇒
-                        val switch = instructions(pc).asInstanceOf[LOOKUPSWITCH]
+                        val switch = instruction.asInstanceOf[LOOKUPSWITCH]
                         val index = operands.head
                         val remainingOperands = operands.tail
                         if (switch.npairs.isEmpty) {
                             // in the Java 7 JDK 45 we found a lookupswitch
                             // that just had a defaultBranch (glorified "goto")
                             gotoTarget(
-                                pc, pc + switch.defaultOffset, false,
+                                pc, instruction, operands, locals,
+                                pc + switch.defaultOffset, isExceptionalControlFlow = false,
                                 remainingOperands, locals)
                         } else {
                             var branchToDefaultRequired = false
@@ -1151,13 +1183,18 @@ trait AI[D <: Domain] {
                                         theDomain.intEstablishValue(
                                             branchTarget, key, index, remainingOperands, locals)
                                     if (tracer.isDefined &&
-                                        ((remainingOperands ne updatedOperands) || (locals ne updatedLocals))) {
+                                        (
+                                            (remainingOperands ne updatedOperands) ||
+                                            (locals ne updatedLocals)
+                                        )) {
                                         tracer.get.establishedConstraint(theDomain)(
-                                            pc, branchTarget, remainingOperands, locals, updatedOperands, updatedLocals
+                                            pc, branchTarget, remainingOperands, locals,
+                                            updatedOperands, updatedLocals
                                         )
                                     }
                                     gotoTarget(
-                                        pc, branchTarget, false,
+                                        pc, instruction, operands, locals,
+                                        branchTarget, isExceptionalControlFlow = false,
                                         updatedOperands, updatedLocals)
                                 }
                             }
@@ -1169,13 +1206,14 @@ trait AI[D <: Domain] {
                                     firstKey,
                                     switch.npairs(switch.npairs.size - 1)._1).isYesOrUnknown) {
                                 gotoTarget(
-                                    pc, pc + switch.defaultOffset, false,
+                                    pc, instruction, operands, locals,
+                                    pc + switch.defaultOffset, isExceptionalControlFlow = false,
                                     remainingOperands, locals)
                             }
                         }
 
                     case 170 /*tableswitch*/ ⇒
-                        val tableswitch = instructions(pc).asInstanceOf[TABLESWITCH]
+                        val tableswitch = instruction.asInstanceOf[TABLESWITCH]
                         val index = operands.head
                         val remainingOperands = operands.tail
                         val low = tableswitch.low
@@ -1189,20 +1227,26 @@ trait AI[D <: Domain] {
                                     theDomain.intEstablishValue(
                                         branchTarget, v, index, remainingOperands, locals)
                                 if (tracer.isDefined &&
-                                    ((remainingOperands ne updatedOperands) || (locals ne updatedLocals))) {
+                                    (
+                                        (remainingOperands ne updatedOperands) ||
+                                        (locals ne updatedLocals)
+                                    )) {
                                     tracer.get.establishedConstraint(theDomain)(
-                                        pc, branchTarget, remainingOperands, locals, updatedOperands, updatedLocals
+                                        pc, branchTarget, remainingOperands, locals,
+                                        updatedOperands, updatedLocals
                                     )
                                 }
                                 gotoTarget(
-                                    pc, branchTarget, false,
+                                    pc, instruction, operands, locals,
+                                    branchTarget, isExceptionalControlFlow = false,
                                     updatedOperands, updatedLocals)
                             }
                             v = v + 1
                         }
                         if (theDomain.intIsSomeValueNotInRange(pc, index, low, high).isYesOrUnknown) {
                             gotoTarget(
-                                pc, pc + tableswitch.defaultOffset, false,
+                                pc, instruction, operands, locals,
+                                pc + tableswitch.defaultOffset, isExceptionalControlFlow = false,
                                 remainingOperands, locals)
                         }
 

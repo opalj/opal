@@ -97,6 +97,36 @@ function toggleUnusedFlags() {
     });
 }
 
+/**
+ * Trims the package names of classes that are on the same package-path
+ * as the disassembled class. Each match is replaced by a dot.
+ *
+ * Examples with java.awt.event.ActionEvent as disassembled class:
+ * 		java.awt.event.InputEvent -> ...InputEvent
+ *	 	java.awt.font.GraphicAttribute -> ..font.GraphicAttribute
+ * 		org.opalj.SomeClass -> org.opalj.SomeClass
+*/
+function trimPackageNames() {
+	// get defining class name and split for packages
+	var definingClassNameFQN = document.querySelector("#defining_class").innerHTML;
+	var definingPackages = definingClassNameFQN.split(".");
+	// splice removes the class name from the package array and returns it:
+	var definingClassName = definingPackages.splice(definingPackages.length-1);
+	
+	for(var i=1;i<definingPackages.length;i++) {
+		definingPackages[i] = definingPackages[i-1] + "." + definingPackages[i];
+	}
+	document.querySelectorAll(".fqn").forEach(function(e) {
+		for(var i=definingPackages.length-1;i>=0;i--) {
+			while (e.innerHTML.indexOf(definingPackages[i]+".") >= 0) {
+				e.innerHTML = e.innerHTML.replace(definingPackages[i], new Array(i + 1).join( "." ));
+				e.title = definingPackages[i] + ".";
+			}
+		}
+	});
+}
+
+
 /** 
  * Removes the exception name from the exceptions overview if the containing element
  * (span) would overlap to the next section of the document.
@@ -151,6 +181,7 @@ function executeOnMethodBodyOpen() {
 
 document.addEventListener("DOMContentLoaded", function(event) {
     toggleUnusedFlags();
+	trimPackageNames();
 
 	// adds a listener to details.method_body that is called when its attributes change
 	var targets = document.querySelectorAll('details.method_body');
