@@ -166,8 +166,10 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
     /**
      * Creates a new IntegerRange value with the given bounds.
      */
-    final def IntegerRange(pc: PC, lb: Int, ub: Int): DomainValue = {
-        IntegerRange(lb, ub)
+    final def IntegerRange(
+        origin: ValueOrigin,
+        lowerBound: Int, upperBound: Int): DomainValue = {
+        IntegerRange(lowerBound, upperBound)
     }
 
     object IntegerRange {
