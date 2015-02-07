@@ -2,7 +2,7 @@
  * Copyright (c) 2009 - 2014
  * Software Technology Group
  * Department of Computer Science
- * Technische Universität Darmstadt
+ * Technische UniversitÃ¤t Darmstadt
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -99,12 +99,12 @@ function toggleUnusedFlags() {
 
 /**
  * Trims the package names of classes that are on the same package-path
- * as the analysed class. Each match is replaced by a dot.
+ * as the disassembled class. Each match is replaced by a dot.
  *
- * Examples with java.awt.event.ActionEvent as analysed class:
- * java.awt.event.InputEvent -> ...InputEvent
- * java.awt.font.GraphicAttribute -> ..font.GraphicAttribute
- * org.opalj.SomeClass -> org.opalj.SomeClass
+ * Examples with java.awt.event.ActionEvent as disassembled class:
+ * 		java.awt.event.InputEvent -> ...InputEvent
+ *	 	java.awt.font.GraphicAttribute -> ..font.GraphicAttribute
+ * 		org.opalj.SomeClass -> org.opalj.SomeClass
 */
 function trimPackageNames() {
 	// get defining class name and split for packages

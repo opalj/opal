@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -36,6 +36,7 @@ import scala.xml.Node
  * @author Wael Alkhatib
  * @author Isbel Isbel
  * @author Noorulla Sharief
+ * @author Tobias Becker
  */
 case class LocalVariableTableEntry(
         start_pc: Int,
@@ -48,10 +49,10 @@ case class LocalVariableTableEntry(
         val name = cp(name_index).toString(cp)
         val descriptor = parseFieldType(cp(descriptor_index).asString)
         <div class="local_variable">
-            <span class="pc">pc={ start_pc }</span>
+            <span class="pc">pc=[{ start_pc } &rarr; { start_pc + length })</span>
             /
             <span class="local_variable_index"> lv={ index }</span>
-            =>
+            &rArr;
             <span class="local_variable_name"> { name }</span>
             :
             <span class="type fqn"> { descriptor }</span>

@@ -33,6 +33,7 @@ import scala.xml.Node
 
 /**
  * @author Michael Eichberg
+ * @author Tobias Becker
  */
 trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
@@ -42,6 +43,9 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
     def toString(implicit cp: Constant_Pool): String
 
+    /**
+     * Creates a one-to-one representation of this constant pool entry node.
+     */
     def toNode(implicit cp: Constant_Pool): Node
 
     def toXHTML(implicit cp: Constant_Pool): Node =
