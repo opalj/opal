@@ -689,4 +689,12 @@ public class IntegerValuesFrenzy {
     // ORIGINAL ISSUE: LED TO AN EXCESSIVE NUMBER OF CONSTRAINTS BETWEEN INTEGER
     // VALUES!
 
+    public static void lowerBoundUpperBound(int size) throws Exception {
+        for (int i = 0; i < size; i++) {
+            ;
+        }
+        for (int i = 0; i < size; i++) {
+            ;
+        }
+    }
 }

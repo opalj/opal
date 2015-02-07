@@ -94,6 +94,7 @@ import org.opalj.br.instructions.L2I
  * ''void type &lt; primitive types &lt; array types &lt; class/interface types''
  *
  * @author Michael Eichberg
+ * @author Andre Pacak
  */
 sealed abstract class Type extends UID with Ordered[Type] {
 
@@ -224,7 +225,8 @@ sealed abstract class Type extends UID with Ordered[Type] {
     def toBinaryJavaName: String
 
     /**
-     * Returns the representation of this type as used by the JVM.
+     * Returns the representation of this type as used by the JVM in, for example,
+     * method descriptors or signatures.
      */
     def toJVMTypeName: String
 
@@ -290,6 +292,8 @@ object ReturnType {
  * @author Michael Eichberg
  */
 sealed abstract class VoidType private () extends Type with ReturnTypeSignature {
+
+    final override def toJVMSignature: String = toJVMTypeName
 
     final val id = Int.MinValue
 
@@ -402,6 +406,8 @@ sealed abstract class BaseType extends FieldType with TypeSignature {
     final override def isBaseType = true
 
     final override def asBaseType: this.type = this
+
+    final override def toJVMSignature: String = toJVMTypeName
 
     /**
      * The atype value of the base type. The atype value uniquely identifies a base

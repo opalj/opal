@@ -48,6 +48,9 @@ case class CONSTANT_Class_info(
             &raquo;)
         </span>
 
+    override def toXHTML(implicit cp: Constant_Pool): Node =
+        <span class="cp_class fqn">{ cp(name_index).toString(cp).replace('/', '.') } </span>
+
     def toString(implicit cp: Constant_Pool): String =
         cp(name_index).toString.replace('/', '.')
 

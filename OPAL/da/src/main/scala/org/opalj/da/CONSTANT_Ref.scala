@@ -62,6 +62,12 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
             )
         </div>
 
+    override def toXHTML(implicit cp: Constant_Pool): Node =
+        <span class="cp_string">
+            { cp(class_index).toXHTML(cp) }
+            <span>{{ { cp(name_and_type_index).toXHTML(cp) } }}</span>
+        </span>
+
     def toString(implicit cp: Constant_Pool): String = {
         cp(class_index).toString(cp).replace('/', '.')+"{ "+
             cp(name_and_type_index).toString(cp)+" }"

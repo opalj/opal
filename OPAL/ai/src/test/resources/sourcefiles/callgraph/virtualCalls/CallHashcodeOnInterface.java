@@ -71,22 +71,22 @@ public class CallHashcodeOnInterface {
         }
     };
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "hashCode", returnType = Integer.class, lineNumber = 76)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "hashCode", returnType = Integer.class, line = 76)
     void callHashCodeOnSimpleBase() {
         simpleBase.hashCode();
     }
 
-    @InvokedMethod(receiverType = Object.class, name = "hashCode", returnType = Integer.class, lineNumber = 81)
+    @InvokedMethod(receiverType = "java/lang/Object", name = "hashCode", returnType = Integer.class, line = 81)
     void callHashCodeOnConcreteBase() {
         concreteBase.hashCode();
     }
 
-    @InvokedMethod(receiverType = Object.class, name = "hashCode", returnType = Integer.class, lineNumber = 86)
+    @InvokedMethod(receiverType = "java/lang/Object", name = "hashCode", returnType = Integer.class, line = 86)
     void callHashCodeOnAlternateBase() {
         alternerateBase.hashCode();
     }
 
-    @InvokedMethod(receiverType = Object.class, name = "hashCode", returnType = Integer.class, lineNumber = 91)
+    @InvokedMethod(receiverType = "java/lang/Object", name = "hashCode", returnType = Integer.class, line = 91)
     void callHashCodeOnAbstractBase() {
         abstractBase.hashCode();
     }

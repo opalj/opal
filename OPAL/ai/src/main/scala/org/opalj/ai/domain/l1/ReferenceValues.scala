@@ -109,19 +109,22 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     /**
      * Identifies two `DomainReferenceValues` as equal if they definitively identify
      * the same object at runtime.
-     * Hence, it is in general not possible to determine that two values are definitvely
-     * not reference equal.
+     * Hence, using this domain, it is in general not possible to determine that two
+     * values are definitively not reference equal unless they are type incompatible.
      */
     override def refAreEqual(pc: PC, value1: DomainValue, value2: DomainValue): Answer = {
         assert(value1.isInstanceOf[ReferenceValue] && value2.isInstanceOf[ReferenceValue])
 
         if (value1 eq value2)
             Yes
-        else
-            (value1, value2) match {
-                case (T(t1), T(t2)) if t1 == t2 ⇒ Yes
-                case _                          ⇒ super.refAreEqual(pc, value1, value2)
-            }
+        else {
+            val t1 = asReferenceValue(value1).t
+            val t2 = asReferenceValue(value2).t
+            if (t1 == t2)
+                Yes
+            else
+                super.refAreEqual(pc, value1, value2)
+        }
     }
 
     /**

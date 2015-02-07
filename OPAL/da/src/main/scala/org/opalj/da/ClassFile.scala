@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -78,14 +78,17 @@ case class ClassFile(
     final val superTypeFQNs = {
         {
             if (super_class != 0)
-                "extends "+cp(super_class).toString+" "
+                <span class="extends">{ "extends " }<span class="super_class">{ cp(super_class).toString }</span></span>
             else
-                ""
-        } + {
+                scala.xml.NodeSeq.Empty
+        } ++ {
             if (interfaces.nonEmpty)
-                interfaces.map(i ⇒ cp(i).toString).mkString("implements ", ", ", "")
+                <span class="implements">
+                    { "implements " }<span class="interface">{ cp(interfaces.head).toString }</span>
+                    { interfaces.tail.map(i ⇒ <span class="interface">{ ", "+cp(i).toString }</span>) }
+                </span>
             else
-                ""
+                scala.xml.NodeSeq.Empty
         }
     }
 
@@ -170,7 +173,7 @@ case class ClassFile(
             <body>
                 <div id="class_file">
                     { accessFlags }
-                    &nbsp;<b>{ fqn }</b>
+                    &nbsp;<b id="defining_class">{ fqn }</b>
                     &nbsp;{ superTypeFQNs }
                     <div id="class_file_version">
                         Version:&nbsp;{ s"$major_version.$minor_version ($jdkVersion)" }

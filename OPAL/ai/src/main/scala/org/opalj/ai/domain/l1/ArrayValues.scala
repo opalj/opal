@@ -26,7 +26,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -80,7 +80,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
             intValue[ArrayLoadResult](index) { index ⇒
                 ComputedValue(values(index))
             } {
-                // This handles the case that we know that the index is not precise 
+                // This handles the case that we know that the index is not precise
                 // but it is still known to be valid.
                 super.doLoad(loadPC, index, potentialExceptions)
             }
@@ -119,7 +119,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
             intValue[ArrayStoreResult](index) { index ⇒
                 // let's check if we need to do anything
                 if (values(index) != value) {
-                    // TODO [BUG] Mark array as dead                    
+                    // TODO [BUG] Mark array as dead
                     var newArrayValue: DomainValue = null // <= we create the new array value only on demand and at most once!
                     registerOnRegularControlFlowUpdater { someDomainValue ⇒
                         if (someDomainValue eq ArrayValue.this) {
@@ -135,10 +135,10 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
                 ComputationWithSideEffectOnly
             } {
                 // This handles the case that the index is not precise, but still
-                // known to be valid. In this case we have to resort to the 
+                // known to be valid. In this case we have to resort to the
                 // abstract representation of the array.
 
-                // TODO [BUG] Mark array as dead 
+                // TODO [BUG] Mark array as dead
                 ComputationWithSideEffectOrException(potentialExceptions)
             }
         }
@@ -148,24 +148,27 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
             other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case that: ArrayValue if this.values.size == that.values.size ⇒
+                case that: ArrayValue if this.values.size == that.values.size && this.t == that.t ⇒
                     var update: UpdateType = NoUpdateType
                     var isOther: Boolean = true
                     val allValues = this.values.view.zip(that.values)
                     val newValues =
                         (allValues map { (v) ⇒
                             val (v1, v2) = v
-                            val joinResult = v1.join(joinPC, v2)
-                            joinResult match {
-                                case NoUpdate ⇒
-                                    v1
-                                case SomeUpdate(newValue) ⇒
-                                    if (v2 ne newValue) {
-                                        isOther = false
-                                    }
-                                    update = joinResult &: update
-                                    newValue
-                            }
+                            if (v1 ne v2) {
+                                val joinResult = v1.join(joinPC, v2)
+                                joinResult match {
+                                    case NoUpdate ⇒
+                                        v1
+                                    case SomeUpdate(newValue) ⇒
+                                        if (v2 ne newValue) {
+                                            isOther = false
+                                        }
+                                        update = joinResult &: update
+                                        newValue
+                                }
+                            } else
+                                v1
                         }).toArray // <= forces the evaluation - WHICH IS REQUIRED
                     update match {
                         case NoUpdateType ⇒ NoUpdate

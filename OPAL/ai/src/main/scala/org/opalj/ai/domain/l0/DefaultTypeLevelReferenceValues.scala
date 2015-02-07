@@ -161,9 +161,8 @@ trait DefaultTypeLevelReferenceValues
             pc: PC,
             index: DomainValue,
             potentialExceptions: ExceptionValues): ArrayLoadResult = {
-            ComputedValueOrException(
-                TypedValue(pc, theUpperTypeBound.componentType),
-                potentialExceptions)
+            val value = TypedValue(pc, theUpperTypeBound.componentType)
+            ComputedValueOrException(value, potentialExceptions)
         }
 
         override protected def doStore(

@@ -170,8 +170,8 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
 
                 def pcsToString(pcs: List[PC]): String = {
                     def pcToString(pc: PC): String = {
-                        val ln = code.lineNumber(pc).map(ln ⇒ s"[line=$ln]").getOrElse("")
-                        pc + ln+":"+domain.code.instructions(pc).toString(pc)
+                        val ln = code.lineNumber(pc).map(ln ⇒ s"[ln=$ln]").getOrElse("")
+                        pc + ln+": "+domain.code.instructions(pc).toString(pc)
                     }
                     pcs.map(pcToString(_)).mkString("", "\\l\\l", "\\l")
                 }

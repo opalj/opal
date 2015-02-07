@@ -75,7 +75,7 @@ trait DefaultIntegerRangeValues
             }
         }
 
-        override def toString: String = "AnIntegerValue"
+        override def toString: String = "an int"
     }
 
     def AnIntegerValue() = new AnIntegerValue()
@@ -94,29 +94,31 @@ trait DefaultIntegerRangeValues
         }
 
         override def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
-            val result = other match {
+            other match {
                 case that: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
                 case IntegerRange(otherLB, otherUB) ⇒
-                    val newLowerBound = Math.min(this.lowerBound, otherLB)
-                    val newUpperBound = Math.max(this.upperBound, otherUB)
+                    val thisLB = this.lowerBound
+                    val thisUB = this.upperBound
+                    val newLowerBound = Math.min(thisLB, otherLB)
+                    val newUpperBound = Math.max(thisUB, otherUB)
 
                     if (newLowerBound == newUpperBound)
                         // This is a "point-range" (a concrete value), hence there
                         // will be NO further constraints
                         NoUpdate
 
-                    else if (newUpperBound.toLong - newLowerBound.toLong > maxCardinalityOfIntegerRanges)
-                        StructuralUpdate(AnIntegerValue())
-
-                    else if (newLowerBound == lowerBound && newUpperBound == upperBound)
+                    else if (newLowerBound == thisLB && newUpperBound == thisUB)
                         // This is NOT a "NoUpdate" since we have two values that may
                         // have the same range, but which can still be two different
                         // runtime values (they were not created at the same time!
                         MetaInformationUpdate(IntegerRange(newLowerBound, newUpperBound))
+
+                    else if (newUpperBound.toLong - newLowerBound.toLong > maxCardinalityOfIntegerRanges)
+                        StructuralUpdate(AnIntegerValue())
+
                     else
                         StructuralUpdate(IntegerRange(newLowerBound, newUpperBound))
             }
-            result
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
@@ -157,7 +159,13 @@ trait DefaultIntegerRangeValues
             }
         }
 
-        override def toString: String = "IntegerRange(lb="+lowerBound+", ub="+upperBound+")"
+        override def toString: String = {
+            if (lowerBound == upperBound)
+                "int = "+lowerBound
+            else
+                s"int ∈ [$lowerBound,$upperBound]"
+
+        }
     }
 
     @inline final override def IntegerRange(lb: Int, ub: Int): IntegerRange =

@@ -73,13 +73,13 @@ public class AlternateBase extends AbstractBase {
     }
 
     @Override
-    @InvokedMethod(receiverType = AbstractBase.class, name = "abstractImplementedMethod", lineNumber = 78)
+    @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "abstractImplementedMethod", line = 78)
     public void abstractMethod() {
         super.abstractImplementedMethod();
     }
 
     @Override
-    @InvokedMethod(receiverType = AbstractBase.class, name = "implementedMethod", lineNumber = 84)
+    @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "implementedMethod", line = 84)
     public void implementedMethod() {
         super.implementedMethod();
     }
