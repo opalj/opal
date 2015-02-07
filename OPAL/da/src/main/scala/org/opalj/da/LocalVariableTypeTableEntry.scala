@@ -37,22 +37,24 @@ import scala.xml.Node
  * @author Isbel Isbel
  * @author Noorulla Sharief
  */
-case class LocalVariableTypeTable_attribute(
-        attribute_name_index: Int,
-        local_variable_type_table: Seq[LocalVariableTypeTableEntry]) extends Attribute {
+case class LocalVariableTypeTableEntry(
+        start_pc: Int,
+        length: Int,
+        name_index: Int,
+        signature_index: Int,
+        index: Int) {
 
-    def attribute_length: Int = 2 + (local_variable_type_table.size * 10)
-
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <details>
-            <summary>LocalVariableTypeTable:</summary>
-            { local_variable_type_table.map(_.toXHTML(cp)) }
-        </details>
+    def toXHTML(implicit cp: Constant_Pool): Node = {
+        val name = cp(name_index).toString(cp)
+        val signature = cp(signature_index).asString // TODO "Decipher the signature"
+        <div class="local_variable">
+            <span class="pc">pc=[{ start_pc } &rarr; { start_pc + length })</span>
+            /
+            <span class="local_variable_index"> lv={ index }</span>
+            &rArr;
+            <span class="local_variable_name"> { name }</span>
+            :
+            <span class="signature"> { signature }</span>
+        </div>
     }
-
-}
-object LocalVariableTypeTable_attribute {
-
-    val name = "LocalVariableTypeTable"
-
 }
