@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -39,17 +39,18 @@ import scala.xml.Node
  * @author Michael Eichberg
  */
 case class CONSTANT_Utf8_info(
-        value: String) extends Constant_Pool_Entry {
+    value: String)
+        extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Utf8
 
     override def asString = value
 
-    def toNode(implicit cp: Constant_Pool): Node =
+    override def asCPNode(implicit cp: Constant_Pool): Node =
         <span class="cp_entry">CONSTANT_Utf8_info("<span class="constant_value">{ value }</span>")</span>
 
-    def toString(implicit cp: Constant_Pool): String = value
-
-    def toLDCString(implicit cp: Constant_Pool): String =
+    override def asInlineNode(implicit cp: Constant_Pool): Node =
         throw new UnsupportedOperationException
+
+    def toString(implicit cp: Constant_Pool): String = value
 }

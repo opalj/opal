@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -37,39 +37,39 @@ case class CONSTANT_NameAndType_info(
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_NameAndType
 
-    def toNode(implicit cp: Constant_Pool): Node =
+    override def asCPNode(implicit cp: Constant_Pool): Node =
         <div class="cp_entry">
             { this.getClass().getSimpleName }
             (
             <div class="cp_ref">
                 name_index={ name_index }
                 &laquo;
-                { cp(name_index).toNode(cp) }
+                { cp(name_index).asCPNode }
                 &raquo;
             </div>
             <div class="cp_ref">
                 descriptor_index={ descriptor_index }
                 &laquo;
-                { cp(descriptor_index).toNode(cp) }
+                { cp(descriptor_index).asCPNode }
                 &raquo;
             </div>
             )
         </div>
 
-    override def toXHTML(implicit cp: Constant_Pool): Node =
+    override def asInlineNode(implicit cp: Constant_Pool): Node =
         <span class="cp_name_and_type">
             {
                 val descriptor = cp(descriptor_index).toString(cp)
                 if (descriptor.charAt(0) != '(') {
-                    <span class="cp_type fqn">{ parseFieldType(cp(descriptor_index).asString) } </span>
-                    <span class="cp_name">{ cp(name_index).toString(cp) } </span>
+                    <span class="fqn">{ parseFieldType(cp(descriptor_index).asString) } </span>
+                    <span class="identifier">{ cp(name_index).toString(cp) } </span>
                 } else
-                    parseMethodDescriptorToXHTML(cp(name_index).asString, cp(descriptor_index).asString)
+                    methodDescriptorAsInlineNode(cp(name_index).asString, cp(descriptor_index).asString)
 
             }
         </span>
 
-    def toString(implicit cp: Constant_Pool): String = {
+    override def toString(implicit cp: Constant_Pool): String = {
         val descriptor = cp(descriptor_index).toString(cp)
         if (descriptor.charAt(0) != '(')
             parseFieldType(cp(descriptor_index).asString)+" "+cp(name_index).toString(cp)
@@ -77,7 +77,5 @@ case class CONSTANT_NameAndType_info(
             parseMethodDescriptor(cp(name_index).asString, cp(descriptor_index).asString)
     }
 
-    def toLDCString(implicit cp: Constant_Pool): String =
-        throw new UnsupportedOperationException
 }
 
