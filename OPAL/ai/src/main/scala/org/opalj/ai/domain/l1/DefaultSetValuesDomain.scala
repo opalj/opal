@@ -35,12 +35,12 @@ import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.Project
 
 /**
- * This domain uses the l1 level ''stable'', partial domains.
+ * This domain uses the l1 level ''stable'', partial domains that represent the
+ * values of variables using sets.
  *
  * @author Michael Eichberg
  */
-class DefaultConfigurableDomain[I, Source](
-    val id: I,
+class DefaultSetValuesDomain[Source](
     val project: Project[Source],
     val classFile: ClassFile,
     val method: Method)
@@ -55,37 +55,9 @@ class DefaultConfigurableDomain[I, Source](
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
-        with SpecialMethodsHandling
-        // [NEEDED IF WE DON'T MIXIN CLASS AND STRING VALUES BINDING] with l1.DefaultReferenceValuesBinding
-        // [NEEDED IF WE DON'T MIXIN CLASS VALUES BINDING] with l1.DefaultStringValuesBinding
-        with l1.DefaultClassValuesBinding
-        // [NOT YET SUFFICIENTLY TESTED:] with l1.DefaultArrayValuesBinding
-        with l1.MaxArrayLengthRefinement // OPTIONAL
-        with l1.NullPropertyRefinement // OPTIONAL
-        with l1.DefaultIntegerRangeValues
-        with l1.ConstraintsBetweenIntegerValues
-        with l1.DefaultLongValues
+        with l0.DefaultReferenceValuesBinding
+        with l1.DefaultIntegerSetValues
+        with l1.DefaultLongSetValues
         with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions {
-
-    type Id = I
-
-}
-
-class DefaultDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends DefaultConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)
-
-class DefaultDomainWithCFG[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends DefaultDomain[Source](project, classFile, method)
-        with RecordCFG
+        with l1.ConcretePrimitiveValuesConversions
 

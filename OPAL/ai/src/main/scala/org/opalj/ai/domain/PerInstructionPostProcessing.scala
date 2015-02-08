@@ -26,7 +26,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -64,14 +64,18 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         tracer: Option[AITracer]): List[PC] = {
 
         def doUpdate(updaters: List[DomainValueUpdater]): Unit = {
-            operandsArray(successorPC) =
+            var isOperandUpdated = false
+            val newOperands =
                 operandsArray(successorPC) map { op ⇒
-                    val updatedValue = updaters.head(op)
-                    updaters.tail.foldLeft(updatedValue) { (updatedValue, updater) ⇒
-                        updater(updatedValue)
+                    var updatedOp = updaters.head(op)
+                    updatedOp = updaters.tail.foldLeft(updatedOp) { (updatedOp, updater) ⇒
+                        updater(updatedOp)
                     }
-                    updatedValue
+                    if (op ne updatedOp) isOperandUpdated = true
+                    updatedOp
                 }
+            if (isOperandUpdated)
+                operandsArray(successorPC) = newOperands
 
             val locals: Locals = localsArray(successorPC)
             localsArray(successorPC) = locals.transform { l ⇒
