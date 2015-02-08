@@ -113,7 +113,7 @@ package object da {
         s"$returnType $methodName(${parameterTypes.mkString(", ")})"
     }
 
-    def parseMethodDescriptorToXHTML(
+    def methodDescriptorAsInlineNode(
         //definingTypeFQN: String,
         methodName: String,
         descriptor: String): Node = {

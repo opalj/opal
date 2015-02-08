@@ -101,7 +101,7 @@ case class ClassFile(
                 cpIndex ← (1 until constant_pool.length)
                 if cp(cpIndex) != null /*<= need for constant_double/_long entries*/
             } yield {
-                <li value={ cpIndex.toString }>{ cp(cpIndex).toNode }</li>
+                <li value={ cpIndex.toString }>{ cp(cpIndex).asCPNode }</li>
             }
 
         <ol class="cp_entries">
