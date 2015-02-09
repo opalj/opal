@@ -13,9 +13,9 @@
 *  - Redistributions in binary form must reproduce the above copyright notice,
 *    this list of conditions and the following disclaimer in the documentation
 *    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische 
-*    Universität Darmstadt nor the names of its contributors may be used to 
-*    endorse or promote products derived from this software without specific 
+*  - Neither the name of the Software Technology Group or Technische
+*    Universität Darmstadt nor the names of its contributors may be used to
+*    endorse or promote products derived from this software without specific
 *    prior written permission.
 *
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
@@ -44,35 +44,33 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
 
     val name_and_type_index: Constant_Pool_Index
 
-    def toNode(implicit cp: Constant_Pool): Node =
+    def asCPNode(implicit cp: Constant_Pool): Node =
         <div class="cp_entry">
             { this.getClass().getSimpleName }
             (<div class="cp_ref">
                  class_index={ class_index }
                  &laquo;
-                 { cp(class_index).toNode(cp) }
+                 { cp(class_index).asCPNode }
                  &raquo;
              </div>
             <div class="cp_ref">
                 name_and_type_index={ name_and_type_index }
                 &laquo;
-                { cp(name_and_type_index).toNode(cp) }
+                { cp(name_and_type_index).asCPNode }
                 &raquo;
             </div>
             )
         </div>
 
-    override def toXHTML(implicit cp: Constant_Pool): Node =
+    override def asInlineNode(implicit cp: Constant_Pool): Node =
         <span class="cp_string">
-            { cp(class_index).toXHTML(cp) }
-            <span>{{ { cp(name_and_type_index).toXHTML(cp) } }}</span>
+            { cp(class_index).asInlineNode }
+            <span>{{ { cp(name_and_type_index).asInlineNode } }}</span>
         </span>
 
-    def toString(implicit cp: Constant_Pool): String = {
+    override def toString(implicit cp: Constant_Pool): String = {
         cp(class_index).toString(cp).replace('/', '.')+"{ "+
             cp(name_and_type_index).toString(cp)+" }"
     }
 
-    def toLDCString(implicit cp: Constant_Pool): String =
-        throw new UnsupportedOperationException
 }

@@ -94,7 +94,7 @@ import scala.util.control.ControlThrowable
  * this case compilers typically include the same block two (or more) times in the code.
  *
  */
-class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
+class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[AnalysisException])] {
 
     import BugPickerAnalysis.PRE_ANALYSES_COUNT
 
@@ -119,7 +119,13 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
     override def analyze(
         theProject: Project[URL],
         parameters: Seq[String],
-        initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[Issue]) = {
+        initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[Issue], Iterable[AnalysisException]) = {
+
+        // related to managing the analysis progress
+        val classFilesCount = theProject.projectClassFilesCount
+
+        val progressManagement =
+            initProgressManagement(PRE_ANALYSES_COUNT + classFilesCount)
 
         val maxEvalFactor: Double =
             parameters.collectFirst {
@@ -143,22 +149,18 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                 BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges
             )
 
-        if (parameters.contains("-debug")) {
+        val debug = parameters.contains("-debug")
+        if (debug) {
             val cp = System.getProperty("java.class.path")
             val cpSorted = cp.split(java.io.File.pathSeparatorChar).sorted
             println("ClassPath:\n\t"+cpSorted.mkString("\n\t"))
-
             println("Settings:")
             println(s"\tmaxEvalFactor=$maxEvalFactor")
             println(s"\tmaxEvalTime=${maxEvalTime}ms")
             println(s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges")
+            println("Overview:")
+            println(s"\tclassFiles=$classFilesCount")
         }
-
-        // related to managing the analysis progress
-        val classFilesCount = theProject.projectClassFilesCount
-
-        val progressManagement =
-            initProgressManagement(PRE_ANALYSES_COUNT + classFilesCount)
 
         //
         //
@@ -316,6 +318,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
             } /* else (doInterrupt === true) the analysis as such was interrupted*/
         }
 
+        val exceptions = new java.util.concurrent.LinkedBlockingQueue[AnalysisException]
         var analysisTime: Long = 0l
         val identifiedIssues = time {
             val stepIds = new java.util.concurrent.atomic.AtomicInteger(PRE_ANALYSES_COUNT + 1)
@@ -333,18 +336,15 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
                                 case afe: InterpretationFailedException ⇒
                                     val ms = method.fullyQualifiedSignature(classFile.thisType)
                                     val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
-                                    val cause = afe.cause
-                                    println(
-                                        s"[error] the analysis of ${ms} "+
-                                            s"failed/was aborted after $steps steps: "+
-                                            cause)
-                                    afe.printStackTrace()
+                                    val message =
+                                        s"the analysis of ${ms} "+
+                                            s"failed/was aborted after $steps steps"
+                                    exceptions add (AnalysisException(message, afe))
                                 case ct: ControlThrowable ⇒ throw ct;
                                 case t: Throwable ⇒
                                     val ms = method.fullyQualifiedSignature(classFile.thisType)
-                                    println(s"[error] the analysis of ${ms} failed: ")
-                                    t.printStackTrace()
-                                    throw t;
+                                    val message = s"the analysis of ${ms} failed"
+                                    exceptions add (AnalysisException(message, t))
                             }
                         }
                     } finally {
@@ -357,7 +357,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue])] {
             )
         } { t ⇒ analysisTime = t }
 
-        (analysisTime, identifiedIssues)
+        import scala.collection.JavaConverters._
+        (analysisTime, identifiedIssues, exceptions.asScala)
     }
 }
 
@@ -390,14 +391,13 @@ object BugPickerAnalysis {
             scala.io.Source.fromInputStream(_).mkString
         )
 
-    def resultsAsXHTML(results: (Long, Iterable[Issue])): Node = {
-        val (_ /*analysis time*/ , methodsWithDeadCode) = results
+    def resultsAsXHTML(methodsWithDeadCode: Iterable[Issue]): Node = {
         val methodWithDeadCodeCount = methodsWithDeadCode.size
 
         val issuesNode: Iterable[Node] = {
             import scala.collection.SortedMap
             val groupedMessages =
-                SortedMap.empty[String, Seq[Issue]] ++
+                SortedMap.empty[String, List[Issue]] ++
                     methodsWithDeadCode.groupBy(dc ⇒ dc.classFile.thisType.packageName)
             val result =
                 (for { (pkg, mdc) ← groupedMessages } yield {
@@ -454,3 +454,6 @@ object BugPickerAnalysis {
         </html>
     }
 }
+
+case class AnalysisException(message: String, cause: Throwable)
+    extends RuntimeException(message, cause)

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,25 +30,41 @@ package org.opalj
 package da
 
 import scala.xml.Node
+import scala.xml.Text
 
 /**
  *
  * @author Michael Eichberg
  */
 case class CONSTANT_Integer_info(
-        value: Int) extends Constant_Pool_Entry {
+    value: Int)
+        extends Constant_Pool_Entry {
 
     override def Constant_Type_Value = bi.ConstantPoolTags.CONSTANT_Integer
 
-    def toNode(implicit cp: Constant_Pool): Node =
-        <span class="cp_entry">CONSTANT_Integer_info(<span class="constant_value">{ value }</span>)</span>
+    override def asCPNode(implicit cp: Constant_Pool): Node =
+        <span class="cp_entry">
+            CONSTANT_Integer_info(
+            <span class="constant_value">{ value }</span>
+            )
+        </span>
 
-    def toString(implicit cp: Constant_Pool): String = {
+    override def asInlineNode(implicit cp: Constant_Pool): Node = {
+        val repr =
+            if (value < 0 || value >= 10)
+                Seq(
+                    Text(value.toString),
+                    <span class="comment">{ "==0x"+value.toHexString }</span>)
+            else
+                Seq(Text(value.toString))
+
+        <span class="constant_value">{ repr }</span>
+    }
+
+    override def toString(implicit cp: Constant_Pool): String = {
         if (value < 0 || value >= 10)
             value+" (== 0x"+value.toHexString+")"
         else
             value.toString
     }
-
-    def toLDCString(implicit cp: Constant_Pool): String = toString
 }

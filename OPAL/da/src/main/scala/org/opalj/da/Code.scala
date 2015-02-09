@@ -262,12 +262,12 @@ case class Code(instructions: Array[Byte]) {
                 case 180 ⇒
                     <span>
                         <span class="instruction getfield">getfield </span>
-                        { val c = in.readUnsignedShort; cp(c).toXHTML(cp) }
+                        { val c = in.readUnsignedShort; cp(c).asInlineNode }
                     </span>
                 case 178 ⇒
                     <span>
                         <span class="instruction getstatic">getstatic </span>
-                        { val c = in.readUnsignedShort; cp(c).toXHTML(cp) }
+                        { val c = in.readUnsignedShort; cp(c).asInlineNode }
                     </span>
                 case 167 ⇒
                     val targetPC = in.readShort + pc
@@ -356,7 +356,7 @@ case class Code(instructions: Array[Byte]) {
                     val c = in.readUnsignedShort
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
-                    val signature = cp(c).toXHTML(cp)
+                    val signature = cp(c).asInlineNode
                     <span>
                         <span class="instruction invokedynamic">invokedynamic </span>
                         { signature }
@@ -365,28 +365,28 @@ case class Code(instructions: Array[Byte]) {
                     val c = in.readUnsignedShort
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
-                    val signature = cp(c).toXHTML(cp)
+                    val signature = cp(c).asInlineNode
                     <span>
                         <span class="instruction invokeinterface">invokeinterface </span>
                         { signature }
                     </span>
                 case 183 ⇒
                     val c = in.readUnsignedShort
-                    val signature = cp(c).toXHTML(cp)
+                    val signature = cp(c).asInlineNode
                     <span>
                         <span class="instruction invokespecial">invokespecial </span>
                         { signature }
                     </span>
                 case 184 ⇒
                     val c = in.readUnsignedShort
-                    val signature = cp(c).toXHTML(cp)
+                    val signature = cp(c).asInlineNode
                     <span>
                         <span class="instruction invokespecial">invokestatic  </span>
                         { signature }
                     </span>
                 case 182 ⇒
                     val c = in.readUnsignedShort
-                    val signature = cp(c).toXHTML(cp)
+                    val signature = cp(c).asInlineNode
                     <span>
                         <span class="instruction invokevirtual">invokevirtual </span>
                         { signature }
@@ -433,19 +433,27 @@ case class Code(instructions: Array[Byte]) {
                 case 9   ⇒ <span class="instruction lconst_0">lconst_0</span>
                 case 10  ⇒ <span class="instruction lconst_1">lconst_1</span>
                 case 18 ⇒
-                    val constantValue = cp(in.readUnsignedByte()).toLDCString(cp)
+                    val constantValue =
+                        cp(in.readUnsignedByte) match {
+                            case ci: CONSTANT_Class_info ⇒ Seq(ci.asInlineNode, Text(".class"))
+                            case cv                      ⇒ Seq(cv.asInlineNode)
+                        }
                     <span>
                         <span class="instruction ldc">ldc </span>
                         <span class="constant_value">{ constantValue }</span>
                     </span>
                 case 19 ⇒
-                    val constantValue = cp(in.readUnsignedShort).toLDCString(cp)
+                    val constantValue =
+                        cp(in.readUnsignedShort) match {
+                            case ci: CONSTANT_Class_info ⇒ Seq(ci.asInlineNode, Text(".class"))
+                            case cv                      ⇒ Seq(cv.asInlineNode)
+                        }
                     <span>
                         <span class="instruction ldc_w">ldc_w </span>
                         <span class="constant_value">{ constantValue }</span>
                     </span>
                 case 20 ⇒
-                    val constantValue = cp(in.readUnsignedShort).toLDCString(cp)
+                    val constantValue = cp(in.readUnsignedShort).asInlineNode
                     <span>
                         <span class="instruction ldc2_w">ldc2_w </span>
                         <span class="constant_value">{ constantValue }</span>
@@ -506,11 +514,11 @@ case class Code(instructions: Array[Byte]) {
                 case 88  ⇒ <span class="instruction pop2">pop2</span>
                 case 181 ⇒
                     val c = in.readUnsignedShort
-                    val signature = cp(c).toXHTML(cp)
+                    val signature = cp(c).asInlineNode
                     <span><span class="instruction putfield">putfield </span>{ signature }</span>
                 case 179 ⇒
                     val c = in.readUnsignedShort
-                    val signature = cp(c).toXHTML(cp)
+                    val signature = cp(c).asInlineNode
                     <span><span class="instruction putstatic">putstatic </span>{ signature }</span>
                 case 169 ⇒
                     <span>

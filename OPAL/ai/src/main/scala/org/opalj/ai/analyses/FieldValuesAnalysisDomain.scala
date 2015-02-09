@@ -118,10 +118,9 @@ class BaseFieldValuesAnalysisDomain(
 
     /**
      * Sets the method that is currently analyzed. This method '''must not be called'''
-     * during the abstract interpretation of a method. It is allowed to be called
-     * before this domain is used for the first time and immediately after the
-     * abstract interpretation of the method has completed/before the next interpretation
-     * starts.
+     * during the abstract interpretation of a method. It is must be called
+     * before this domain is used for the first time and immediately before the
+     * interpretation of the next method (code block) starts.
      */
     def setMethodContext(method: Method): Unit = {
         currentCode = method.body.get
