@@ -119,6 +119,13 @@ final class Method private (
     def parameterAnnotations: ParameterAnnotations =
         runtimeVisibleParameterAnnotations ++ runtimeInvisibleParameterAnnotations
 
+    /**
+     * If this method represents a method of an annotation that defines a default
+     * value then this value is returned.
+     */
+    def annotationDefault: Option[ElementValue] =
+        attributes collectFirst { case ev: ElementValue ⇒ ev }
+
     // This is directly supported due to its need for the resolution of signature
     // polymorphic methods.
     final def isNativeAndVarargs = Method.isNativeAndVarargs(accessFlags)
