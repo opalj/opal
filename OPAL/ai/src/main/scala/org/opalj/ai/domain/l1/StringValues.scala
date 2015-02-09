@@ -53,7 +53,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
             extends SObjectValue(origin, No, true, ObjectType.String, t) {
         this: DomainStringValue ⇒
 
-        require(value != null)
+        assert(value != null)
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,
@@ -103,7 +103,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
 
         override def equals(other: Any): Boolean = {
             other match {
-                case sv: StringValue ⇒ sv.value == this.value && super.equals(other)
+                case that: StringValue ⇒ that.value == this.value && super.equals(other)
                 case _               ⇒ false
             }
         }
