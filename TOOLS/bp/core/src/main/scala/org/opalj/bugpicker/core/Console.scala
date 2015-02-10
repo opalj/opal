@@ -50,7 +50,7 @@ import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
  */
 object Console extends AnalysisExecutor { analysis ⇒
 
-    val FileOutputNameMatcher = """-o=([\w\./\\]+)""".r
+    val FileOutputNameMatcher = """-o=([\w\.\:/\\]+)""".r
 
     private final val bugPickerAnalysis = new BugPickerAnalysis
 
