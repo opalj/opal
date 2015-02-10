@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -35,12 +35,12 @@ import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.Project
 
 /**
- * This domain uses the l1 level ''stable'', partial domains.
+ * This domain uses the l1 level ''stable'', partial domains that represent the
+ * values of variables using sets.
  *
  * @author Michael Eichberg
  */
-class DefaultConfigurableIntegerRangeValuesDomain[I, Source](
-    val id: I,
+class DefaultSetValuesDomain[Source](
     val project: Project[Source],
     val classFile: ClassFile,
     val method: Method)
@@ -56,22 +56,8 @@ class DefaultConfigurableIntegerRangeValuesDomain[I, Source](
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
         with l0.DefaultReferenceValuesBinding
-        with l1.DefaultIntegerRangeValues
-        with l1.ConstraintsBetweenIntegerValues
-        with l1.DefaultLongValues
+        with l1.DefaultIntegerSetValues
+        with l1.DefaultLongSetValues
         with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions {
+        with l1.ConcretePrimitiveValuesConversions
 
-    type Id = I
-
-}
-
-class DefaultIntegerValuesDomain[Source](
-    project: Project[Source],
-    classFile: ClassFile,
-    method: Method)
-        extends DefaultConfigurableIntegerRangeValuesDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)

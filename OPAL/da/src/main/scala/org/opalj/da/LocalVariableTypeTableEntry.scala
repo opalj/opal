@@ -30,44 +30,31 @@ package org.opalj
 package da
 
 import scala.xml.Node
-import scala.xml.Text
 
 /**
- * <pre>
- * Exceptions_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 number_of_exceptions;
- * 	u2 exception_index_table[number_of_exceptions];
- * }
- * </pre>
- *
  * @author Michael Eichberg
+ * @author Wael Alkhatib
+ * @author Isbel Isbel
+ * @author Noorulla Sharief
  */
-case class Exceptions_attribute(
-        attribute_name_index: Int,
-        exception_index_table: IndexedSeq[Constant_Pool_Index]) extends Attribute {
+case class LocalVariableTypeTableEntry(
+        start_pc: Int,
+        length: Int,
+        name_index: Int,
+        signature_index: Int,
+        index: Int) {
 
-    assert(exception_index_table.nonEmpty)
-
-    def attribute_length: Int = 2 + exception_index_table.size * 2
-
-    def attribute_name = Exceptions_attribute.name
-
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span><span class="attributename">throws </span> { exceptionsToXHTML(cp) }</span>
+    def toXHTML(implicit cp: Constant_Pool): Node = {
+        val name = cp(name_index).toString(cp)
+        val signature = cp(signature_index).asString // TODO "Decipher the signature"
+        <div class="local_variable">
+            <span class="pc">pc=[{ start_pc } &rarr; { start_pc + length })</span>
+            /
+            <span class="local_variable_index"> lv={ index }</span>
+            &rArr;
+            <span class="local_variable_name"> { name }</span>
+            :
+            <span class="signature"> { signature }</span>
+        </div>
     }
-
-    def exceptionsToXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{
-            exception_index_table.tail.foldLeft(Seq(cp(exception_index_table.head).asInlineNode)) { (c, i) ⇒
-                c ++ Seq(Text(", "), cp(i).asInlineNode)
-            }
-        }</span>
-    }
-}
-object Exceptions_attribute {
-
-    val name = "Exceptions"
-
 }

@@ -27,47 +27,46 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
+package av
+package checking
 
-import scala.xml.Node
-import scala.xml.Text
+import scala.collection.{ Set ⇒ ASet }
 
 /**
- * <pre>
- * Exceptions_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 number_of_exceptions;
- * 	u2 exception_index_table[number_of_exceptions];
- * }
- * </pre>
+ * An architecture checker validates if the implemented architecture
+ * complies with the expected/specified one.
+ *
+ * @author Marco Torsello
+ */
+sealed trait ArchitectureChecker {
+
+    def violations(): ASet[SpecificationViolation]
+
+}
+
+/**
+ * A dependency checker validates if the dependencies between elements of
+ * the implementation complies with the expected/specified dependencies.
  *
  * @author Michael Eichberg
+ * @author Marco Torsello
  */
-case class Exceptions_attribute(
-        attribute_name_index: Int,
-        exception_index_table: IndexedSeq[Constant_Pool_Index]) extends Attribute {
+trait DependencyChecker extends ArchitectureChecker {
 
-    assert(exception_index_table.nonEmpty)
+    def targetEnsembles: Seq[Symbol]
 
-    def attribute_length: Int = 2 + exception_index_table.size * 2
-
-    def attribute_name = Exceptions_attribute.name
-
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span><span class="attributename">throws </span> { exceptionsToXHTML(cp) }</span>
-    }
-
-    def exceptionsToXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{
-            exception_index_table.tail.foldLeft(Seq(cp(exception_index_table.head).asInlineNode)) { (c, i) ⇒
-                c ++ Seq(Text(", "), cp(i).asInlineNode)
-            }
-        }</span>
-    }
+    def sourceEnsembles: Seq[Symbol]
 }
-object Exceptions_attribute {
 
-    val name = "Exceptions"
+/**
+ * A property checker validates if the properties of a specific element of
+ * the implementation complies with the expected/specified property.
+ *
+ * @author Marco Torsello
+ */
+trait PropertyChecker extends ArchitectureChecker {
 
+    def property: String
+
+    def sourceEnsembles: Seq[Symbol]
 }

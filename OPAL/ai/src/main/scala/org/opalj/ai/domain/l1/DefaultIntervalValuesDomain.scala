@@ -27,16 +27,51 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package av
-package checking
+package ai
+package domain
+package l1
 
-import scala.collection.{ Set ⇒ ASet }
+import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.analyses.Project
 
-trait DependencyChecker {
+/**
+ * This domain uses the l1 level ''stable'', partial domains.
+ *
+ * @author Michael Eichberg
+ */
+class DefaultConfigurableIntervalValuesDomain[I, Source](
+    val id: I,
+    val project: Project[Source],
+    val classFile: ClassFile,
+    val method: Method)
+        extends CorrelationalDomain
+        with TheProject
+        with TheMethod
+        with DefaultDomainValueBinding
+        with ThrowAllPotentialExceptionsConfiguration
+        with DefaultHandlingOfMethodResults
+        with IgnoreSynchronization
+        with l0.DefaultTypeLevelFloatValues
+        with l0.DefaultTypeLevelDoubleValues
+        with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelInvokeInstructions
+        with l0.DefaultReferenceValuesBinding
+        with l1.DefaultIntegerRangeValues
+        with l1.ConstraintsBetweenIntegerValues
+        with l1.DefaultLongValues
+        with l1.LongValuesShiftOperators
+        with l1.ConcretePrimitiveValuesConversions {
 
-    def violations(): ASet[SpecificationViolation]
+    type Id = I
 
-    def targetEnsembles: Seq[Symbol]
-
-    def sourceEnsembles: Seq[Symbol]
 }
+
+class DefaultIntervalValuesDomain[Source](
+    project: Project[Source],
+    classFile: ClassFile,
+    method: Method)
+        extends DefaultConfigurableIntervalValuesDomain[String, Source](
+            classFile.thisType.toJava+"{ "+method.toJava+"}",
+            project,
+            classFile,
+            method)

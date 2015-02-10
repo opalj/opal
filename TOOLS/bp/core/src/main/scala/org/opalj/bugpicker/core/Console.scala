@@ -50,7 +50,7 @@ import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
  */
 object Console extends AnalysisExecutor { analysis ⇒
 
-    val FileOutputNameMatcher = """-o=([\w\./\\]+)""".r
+    val FileOutputNameMatcher = """-o=([\w\.\:/\\]+)""".r
 
     private final val bugPickerAnalysis = new BugPickerAnalysis
 
@@ -65,10 +65,10 @@ object Console extends AnalysisExecutor { analysis ⇒
             parameters: Seq[String],
             initProgressManagement: (Int) ⇒ ProgressManagement) = {
 
-            val results @ (analysisTime, issues) =
+            val (analysisTime, issues, exceptions) =
                 bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
 
-            val doc = BugPickerAnalysis.resultsAsXHTML(results).toString
+            val doc = BugPickerAnalysis.resultsAsXHTML(issues).toString
 
             parameters.collectFirst { case FileOutputNameMatcher(name) ⇒ name } match {
 
@@ -79,6 +79,15 @@ object Console extends AnalysisExecutor { analysis ⇒
 
                 case None ⇒
                     writeAndOpen(doc, "BugPickerAnalysisResults", ".html")
+            }
+
+            if (parameters.contains("-debug") && exceptions.nonEmpty) {
+                val exceptionNodes = exceptions.map(e ⇒ <p>{ XHTML.throwableToXHTML(e) }</p>)
+                val exceptionsDoc =
+                    XHTML.createXHTML(
+                        Some("Thrown Exceptions"),
+                        <div>{ exceptionNodes }</div>)
+                org.opalj.io.writeAndOpen(exceptionsDoc, "Exceptions", ".html")
             }
 
             val groupedAndCountedIssues =
@@ -104,7 +113,7 @@ object Console extends AnalysisExecutor { analysis ⇒
             |               If the threshold is exceeded the analysis of the method is aborted and no
             |               result can be drawn.]
             |[-maxEvalTime=<IntValue [10,1000000]=10000> determines the time (in ms) that the analysis is allowed
-            |               to take for one method before the analysis is terminated.
+            |               to take for one method before the analysis is terminated.]
             |[-maxCardinalityOfIntegerRanges=<IntValue [1,1024]=16> basically determines for each integer
             |               value how long the value is "precisely" tracked. Internally the analysis
             |               computes the range of values that an integer value may have at runtime. The
@@ -112,9 +121,10 @@ object Console extends AnalysisExecutor { analysis ⇒
             |               the range is exceeded the precise tracking of the respective value is
             |               terminated.
             |               Increasing this value may significantly increase the analysis time and
-            |               may require the increase of -maxEvalFactor.
+            |               may require the increase of -maxEvalFactor.]
             |[-o=<FileName> determines the name of the output file (if an output file is specified
-            |               no browser will be opened.""".stripMargin('|')
+            |               no browser will be opened.]
+            |[-debug turns on the debugging mode.]""".stripMargin('|')
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
         parameters.forall(parameter ⇒

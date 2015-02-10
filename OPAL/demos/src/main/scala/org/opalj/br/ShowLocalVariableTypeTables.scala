@@ -27,47 +27,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package da
+package br
 
-import scala.xml.Node
-import scala.xml.Text
+import java.net.URL
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import scala.collection.JavaConverters
 
 /**
- * <pre>
- * Exceptions_attribute {
- * 	u2 attribute_name_index;
- * 	u4 attribute_length;
- * 	u2 number_of_exceptions;
- * 	u2 exception_index_table[number_of_exceptions];
- * }
- * </pre>
+ * Shows the local variable type tables of given class files.
  *
- * @author Michael Eichberg
+ * @author Daniel Klauer
  */
-case class Exceptions_attribute(
-        attribute_name_index: Int,
-        exception_index_table: IndexedSeq[Constant_Pool_Index]) extends Attribute {
+object ShowLocalVariableTypeTables extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
 
-    assert(exception_index_table.nonEmpty)
+    val analysis = this
 
-    def attribute_length: Int = 2 + exception_index_table.size * 2
+    override def description: String = "Prints out the local variable type tables."
 
-    def attribute_name = Exceptions_attribute.name
+    def doAnalyze(
+        project: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean): BasicReport = {
 
-    override def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span><span class="attributename">throws </span> { exceptionsToXHTML(cp) }</span>
+        val messages = new java.util.concurrent.ConcurrentLinkedQueue[String]
+        project.parForeachMethodWithBody(() ⇒ false) { e ⇒
+            val (_, cf, m) = e
+            val lvtt = m.body.get.localVariableTypeTable
+            if (lvtt.nonEmpty)
+                messages.add(
+                    Console.BOLD + Console.BLUE + m.toJava(cf) + Console.RESET+" "+
+                        lvtt.mkString("LocalVariableTypeTable: ", ",", "")
+                )
+        }
+
+        import JavaConverters._
+        BasicReport(messages.asScala.mkString("\n", "\n\n", "\n"))
+
     }
-
-    def exceptionsToXHTML(implicit cp: Constant_Pool): Node = {
-        <span>{
-            exception_index_table.tail.foldLeft(Seq(cp(exception_index_table.head).asInlineNode)) { (c, i) ⇒
-                c ++ Seq(Text(", "), cp(i).asInlineNode)
-            }
-        }</span>
-    }
-}
-object Exceptions_attribute {
-
-    val name = "Exceptions"
-
 }

@@ -1701,7 +1701,7 @@ class ClassHierarchy private (
             }
         } else if (thisUTBDim > thatUTBDim) {
             if (thatUpperTypeBound.elementType.isBaseType) {
-                if (thisUTBDim == 1)
+                if (thatUTBDim == 1)
                     Right(SerializableAndCloneable)
                 else
                     Left(ArrayType(thatUTBDim - 1, ObjectType.Object))

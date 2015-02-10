@@ -91,7 +91,7 @@ object FieldValuesAnalysis {
         createDomain: (SomeProject, ClassFile) ⇒ BaseFieldValuesAnalysisDomain,
         isInterrupted: () ⇒ Boolean): FieldValueInformation = {
 
-        val results = new ConcurrentHashMap[Field, BaseFieldValuesAnalysisDomain#DomainValue]
+        val results = new ConcurrentHashMap[Field, Domain#DomainValue]
 
         theProject.parForeachProjectClassFile(isInterrupted) { classFile ⇒
             // this analysis does not support parallelization at a more
@@ -117,7 +117,7 @@ object FieldValuesAnalysis {
             }
         }
 
-        AnyRefMap.empty[Field, BaseFieldValuesAnalysisDomain#DomainValue] ++ results.asScala
+        AnyRefMap.empty[Field, Domain#DomainValue] ++ results.asScala
     }
 
 }

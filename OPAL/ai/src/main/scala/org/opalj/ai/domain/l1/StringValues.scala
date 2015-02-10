@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -53,7 +53,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
             extends SObjectValue(origin, No, true, ObjectType.String, t) {
         this: DomainStringValue ⇒
 
-        require(value != null)
+        assert(value != null)
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: PC,
@@ -65,7 +65,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
                         if (this.t == that.t)
                             NoUpdate
                         else
-                            MetaInformationUpdate(StringValue(origin, value, t))
+                            MetaInformationUpdate(StringValue(origin, value, nextT()))
                     } else {
                         // we have to drop the concrete information...
                         // given that the values are different the timestamp must
@@ -103,8 +103,8 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
 
         override def equals(other: Any): Boolean = {
             other match {
-                case sv: StringValue ⇒ sv.value == this.value && super.equals(other)
-                case _               ⇒ false
+                case that: StringValue ⇒ that.value == this.value && super.equals(other)
+                case _                 ⇒ false
             }
         }
 
@@ -139,7 +139,7 @@ trait StringValues extends ReferenceValues with JavaObjectConversion {
     // Needs to be implemented (the default implementation is now longer sufficient!)
     override def StringValue(origin: ValueOrigin, value: String): DomainObjectValue
 
-    // todo use the same t for all constant JVM strings 
+    // todo use the same t for all constant JVM strings
     def StringValue(origin: ValueOrigin, value: String, t: Timestamp): DomainStringValue
 }
 
