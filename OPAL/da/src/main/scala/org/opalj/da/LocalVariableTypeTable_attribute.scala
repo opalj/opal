@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,12 +22,14 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 package da
+
+import scala.xml.Node
 
 /**
  * @author Michael Eichberg
@@ -41,7 +43,12 @@ case class LocalVariableTypeTable_attribute(
 
     def attribute_length: Int = 2 + (local_variable_type_table.size * 10)
 
-    // TODO Implement conversion to XHTML
+    override def toXHTML(implicit cp: Constant_Pool): Node = {
+        <details>
+            <summary>LocalVariableTypeTable:</summary>
+            { local_variable_type_table.map(_.toXHTML(cp)) }
+        </details>
+    }
 
 }
 object LocalVariableTypeTable_attribute {
@@ -49,10 +56,3 @@ object LocalVariableTypeTable_attribute {
     val name = "LocalVariableTypeTable"
 
 }
-
-case class LocalVariableTypeTableEntry(
-    start_pc: Int,
-    length: Int,
-    name_index: Int,
-    signature_index: Int,
-    index: Int)

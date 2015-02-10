@@ -94,6 +94,8 @@ private class UShortSet2(private var value: Int) extends UShortSet {
 
     override def size: Int = if (notFull) 1 else 2
 
+    def hasOneElement: Boolean = notFull
+
     def contains(value: UShort): Boolean = {
         this.value1 == value || (value > 0 && this.value2 == value)
     }
@@ -206,6 +208,8 @@ private class UShortSet4(private var value: Long) extends UShortSet {
     def min: UShort = value1.toInt
 
     override def size: Int = if (notFull) 3 else 4
+
+    def hasOneElement: Boolean = false
 
     def mutableCopy: mutable.UShortSet = {
         if (notFull)
@@ -441,6 +445,8 @@ private class UShortSetNode(
 
     override def isEmpty = false
 
+    def hasOneElement: Boolean = false
+
     override def hashCode = (set1.hashCode() * 37 + set2.hashCode()) * 37
 
     override def equals(other: Any): Boolean = other match {
@@ -460,6 +466,7 @@ private class UShortSetNode(
 
 private object EmptyUShortSet extends UShortSet {
     override def isEmpty = true
+    def hasOneElement: Boolean = false
     override def size: Int = 0
     def mutableCopy: mutable.UShortSet = this
     def iterator = Iterator.empty

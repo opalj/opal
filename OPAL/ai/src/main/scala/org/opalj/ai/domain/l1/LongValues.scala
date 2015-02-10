@@ -76,8 +76,9 @@ trait LongValues extends LongValuesDomain with ConcreteLongValues {
     }
 
     object TheLongValue {
-        def unapply(v: TheLongValue): Option[Long] =
-            Some(v.value)
+
+        def unapply(v: TheLongValue): Some[Long] = Some(v.value)
+
     }
 
     // -----------------------------------------------------------------------------------

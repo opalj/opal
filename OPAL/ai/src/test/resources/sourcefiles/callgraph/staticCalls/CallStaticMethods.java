@@ -58,17 +58,17 @@ import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
  */
 public class CallStaticMethods {
 
-    @InvokedMethod(receiverType = AbstractBase.class, name = "staticMethod", isStatic = true, lineNumber = 63)
+    @InvokedMethod(receiverType = "callgraph/base/AbstractBase", name = "staticMethod", isStatic = true, line = 63)
     void callStaticAbstract() {
         AbstractBase.staticMethod();
     }
 
-    @InvokedMethod(receiverType = ConcreteBase.class, name = "staticMethod", isStatic = true, lineNumber = 68)
+    @InvokedMethod(receiverType = "callgraph/base/ConcreteBase", name = "staticMethod", isStatic = true, line = 68)
     void callStaticConcrete() {
         ConcreteBase.staticMethod();
     }
 
-    @InvokedMethod(receiverType = SimpleBase.class, name = "staticMethod", isStatic = true, lineNumber = 73)
+    @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "staticMethod", isStatic = true, line = 73)
     void callStaticSimple() {
         SimpleBase.staticMethod();
     }

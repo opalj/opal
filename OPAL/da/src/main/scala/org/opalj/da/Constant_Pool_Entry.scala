@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -33,6 +33,7 @@ import scala.xml.Node
 
 /**
  * @author Michael Eichberg
+ * @author Tobias Becker
  */
 trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
@@ -42,8 +43,23 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
 
     def toString(implicit cp: Constant_Pool): String
 
-    def toNode(implicit cp: Constant_Pool): Node
+    /**
+     * Creates a one-to-one representation of this constant pool entry node. The
+     * created representation is intended to be used to completely represent this
+     * constant pool entry.
+     */
+    def asCPNode(implicit cp: Constant_Pool): Node
 
-    def toLDCString(implicit cp: Constant_Pool): String
+    /**
+     * Creates a resolved (i.e., a representation that contains no more
+     * pointers in the CP)
+     * representation of this constant pool entry that is well-suited as an
+     * output in combination with an instruction (e.g., an `ldc`, `get|putfield`,
+     * `invokXYZ`,...).
+     *
+     * @note This operation is only supported by constant pool entries related to
+     *      load constant instructions (ldc(2)(_W)).
+     */
+    def asInlineNode(implicit cp: Constant_Pool): Node
 
 }

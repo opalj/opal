@@ -106,7 +106,7 @@ object OPALBuild extends Build {
 	lazy val DeveloperTools = Project(
 		id = "OPAL-DeveloperTools",
 		base = file("DEVELOPING_OPAL/tools"),
-		settings = buildSettings ++ Seq(publishArtifact := false)
+		settings = buildSettings 
 	).dependsOn(de % "test->test;compile->compile")
 	 .configs(IntegrationTest)
 

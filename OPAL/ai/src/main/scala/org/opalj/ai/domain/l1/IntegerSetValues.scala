@@ -105,7 +105,9 @@ trait IntegerSetValues
      * with the given bounds of the IntegerRange, as long as they don't
      * exceed maxCardinalityOfIntegerSets.
      */
-    def IntegerRange(origin: ValueOrigin, lowerBound: Int, upperBound: Int): DomainValue = {
+    def IntegerRange(
+        origin: ValueOrigin,
+        lowerBound: Int, upperBound: Int): DomainValue = {
         assert(lowerBound <= upperBound)
 
         if (upperBound.toLong - lowerBound.toLong <= maxCardinalityOfIntegerSets)

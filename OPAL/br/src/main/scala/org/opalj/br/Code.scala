@@ -81,6 +81,12 @@ final class Code private (
 
     /**
      * Calculates the number of instructions. This operation has complexity O(n).
+     *
+     * The number of instructions is always smaller or equal to the size of the code
+     * array.
+     *
+     * @note The result is not cached and recalculated on-demand.
+     *
      */
     def instructionsCount: Int = {
         var c = 0
@@ -135,7 +141,7 @@ final class Code private (
                 case GOTO.opcode | GOTO_W.opcode ⇒
                     runtimeSuccessor(pc + instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset)
 
-                case 165 | 166 | 198 | 199 |
+                case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
                     153 | 154 | 155 | 156 | 157 | 158 ⇒
                     runtimeSuccessor(pc + instruction.asInstanceOf[SimpleConditionalBranchInstruction].branchoffset)
@@ -173,12 +179,16 @@ final class Code private (
         }
     }
 
-    @inline final def exists(f: (PC, Instruction) ⇒ Boolean): Boolean = {
+    /**
+     * Iterates over all instructions until an instruction is found that matches
+     * the given predicate.
+     */
+    @inline final def exists(p: (PC, Instruction) ⇒ Boolean): Boolean = {
         val instructionsLength = instructions.length
         var pc = 0
         while (pc < instructionsLength) {
             val instruction = instructions(pc)
-            if (f(pc, instruction))
+            if (p(pc, instruction))
                 return true;
             pc = pcOfNextInstruction(pc)
         }
@@ -210,6 +220,10 @@ final class Code private (
                 handler.endPC > pc
         }
 
+    /**
+     * The set of pc of those instructions that may handle an exception if the evaluation
+     * of the instruction with the given `pc` throws an exception.
+     */
     def handlerInstructionsFor(pc: PC): PCs = {
         var pcs = org.opalj.collection.mutable.UShortSet.empty
         exceptionHandlers foreach { handler ⇒
@@ -727,6 +741,95 @@ final class Code private (
             case GotoInstruction(branchoffset) ⇒ nextNonGotoInstruction(pc + branchoffset)
             case _                             ⇒ pc
         }
+    }
+
+    /**
+     * Tests if the sequence of instructions that starts with the given `pc` always ends
+     * with an
+     * [[instructions.ATHROW]] instruction or a method call that always throws an
+     * exception. The call sequence furthermore has to contain no complex logic.
+     * Here, complex means
+     * that evaluating the instruction may result in multiple control flows.
+     *
+     * One use case of this method is to, e.g., check if the code
+     * of the default case of a switch
+     * instruction always throws some error (e.g., an `UnknownError` or `AssertionError`).
+     * {{{
+     * switch(...) {
+     *  case X : ....
+     *  default :
+     *      throw new AssertionError();
+     * }
+     * }}}
+     * This is a typical idiom used in Java programs and which may be relevant for
+     * certain analyses to detect.
+     *
+     * @param pc The program counter of an instruction that strictly dominates all
+     *      succeeding instructions up until the next join instruction (as determined
+     *      by [[#joinInstructions]]. This is naturally the case for the very first
+     *      instruction of each method and each exception handler unless these
+     *      instructions are joinInstructions; in this case the `false` is returned.
+     *
+     * @param anInvocation When the analysis finds a method call, it calls this method
+     *      to let the caller decide whether the called method is an (indirect) way
+     *      of always throwing an exception.
+     *      If `true` is returned the analysis terminates and returns `true`; otherwise
+     *      the analysis continues.
+     *
+     * @param aThrow If all (non-exception) paths will always end in one specific
+     *      `ATHROW` instruction then this function is called (callback) to let the
+     *      caller decide if the "expected" exception is thrown. This analysis will
+     *      return with the result of this call.
+     */
+    @inline def alwaysResultsInException(
+        pc: PC,
+        joinInstructions: BitSet,
+        anInvocation: (PC) ⇒ Boolean,
+        aThrow: (PC) ⇒ Boolean): Boolean = {
+
+        var currentPC = pc
+        while (!joinInstructions.contains(currentPC)) {
+            val instruction = instructions(currentPC)
+
+            (instruction.opcode: @scala.annotation.switch) match {
+                case ATHROW.opcode ⇒
+                    val result = aThrow(currentPC)
+                    return result;
+
+                case RET.opcode | JSR.opcode | JSR_W.opcode ⇒
+                    return false;
+
+                case GOTO.opcode | GOTO_W.opcode ⇒
+                    currentPC =
+                        currentPC +
+                            instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset
+
+                case /*IFs:*/ 165 | 166 | 198 | 199 |
+                    159 | 160 | 161 | 162 | 163 | 164 |
+                    153 | 154 | 155 | 156 | 157 | 158 ⇒
+                    return false;
+
+                case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
+                    return false;
+
+                case /*xReturn:*/ 176 | 175 | 174 | 172 | 173 | 177 ⇒
+                    return false;
+
+                case INVOKEINTERFACE.opcode
+                    | INVOKESPECIAL.opcode
+                    | INVOKESTATIC.opcode
+                    | INVOKEVIRTUAL.opcode ⇒
+                    if (anInvocation(currentPC))
+                        return true;
+
+                    currentPC = pcOfNextInstruction(currentPC)
+
+                case _ ⇒
+                    currentPC = pcOfNextInstruction(currentPC)
+            }
+        }
+
+        false
     }
 
     /**

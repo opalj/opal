@@ -53,31 +53,31 @@ import org.opalj.de._
  * @author Michael Eichberg
  * @author Marco Torsello
  */
-case class SpecificationViolation(
-        project: SomeProject,
-        dependencyChecker: DependencyChecker,
-        source: VirtualSourceElement,
-        target: VirtualSourceElement,
-        dependencyType: DependencyType,
-        description: String) {
+sealed trait SpecificationViolation {
 
     override def toString(): String = {
         toString(useAnsiColors = false)
     }
 
-    def toString(useAnsiColors: Boolean): String = {
-        //        var javaSource = source.toJava
-        //        var javaTarget = target.toJava
-        //
-        //        if (javaSource.contains("{")) {
-        //            javaSource = javaSource.substring(0, javaSource.indexOf("{"))
-        //        }
-        //        javaSource = "("+javaSource+".java:"+source.getLineNumber(project).getOrElse("1):"+javaSource)+")"
-        //
-        //        if (javaTarget.contains("{")) {
-        //            javaTarget = javaTarget.substring(0, javaTarget.indexOf("{"))
-        //        }
-        //        javaTarget = "("+javaTarget+".java:"+target.getLineNumber(project).getOrElse("1):"+javaTarget)+")"
+    def toString(useAnsiColors: Boolean): String
+
+}
+
+/**
+ * Used to report deviations between the specified and the implemented dependencies.
+ *
+ * @author Michael Eichberg
+ * @author Marco Torsello
+ */
+case class DependencyViolation(
+        project: SomeProject,
+        dependencyChecker: DependencyChecker,
+        source: VirtualSourceElement,
+        target: VirtualSourceElement,
+        dependencyType: DependencyType,
+        description: String) extends SpecificationViolation {
+
+    override def toString(useAnsiColors: Boolean): String = {
 
         val sourceLineNumber = source.getLineNumber(project).getOrElse(1)
         val javaSource = s"(${source.classType.toJava}.java:${sourceLineNumber})"
@@ -96,4 +96,47 @@ case class SpecificationViolation(
                 javaSource+" "+dependencyType+" "+javaTarget
 
     }
+
 }
+
+/**
+ * Used to report deviations between the specified and the implemented properties.
+ *
+ * @author Marco Torsello
+ */
+case class PropertyViolation(
+        project: SomeProject,
+        propertyChecker: PropertyChecker,
+        source: VirtualSourceElement,
+        dependencyType: DependencyType,
+        description: String) extends SpecificationViolation {
+
+    override def toString(useAnsiColors: Boolean): String = {
+
+        val sourceLineNumber = source.getLineNumber(project).getOrElse(1)
+        val javaSourceClass = s"(${source.classType.toJava}.java:${sourceLineNumber})"
+        val javaSource = source match {
+            case field: VirtualField ⇒ javaSourceClass + s" {${field.fieldType.toJava} ${field.name}}"
+            case method: VirtualMethod ⇒
+                if (sourceLineNumber == 1)
+                    javaSourceClass + s" {${method.descriptor.toJava(method.name)}}"
+                else
+                    javaSourceClass
+            case _ ⇒ javaSourceClass
+        }
+
+        if (useAnsiColors)
+            RED + description+
+                " between "+BLUE + propertyChecker.sourceEnsembles.mkString(", ") + RED+
+                " and "+BLUE + propertyChecker.property + RESET+": "+
+                javaSource+" "+BOLD + dependencyType + RESET+" "+propertyChecker.property
+        else
+            description+
+                " between "+propertyChecker.sourceEnsembles.mkString(", ")+
+                " and "+propertyChecker.property+": "+
+                javaSource+" "+dependencyType+" "+propertyChecker.property
+
+    }
+
+}
+

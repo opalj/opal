@@ -274,6 +274,30 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
             })
         }
 
+        it("should be able to analyze a simple object array initialization") {
+            evaluateMethod("simpleObjectArrayInitializationWithLength4", domain ⇒ {
+                import domain._
+
+                val returnIndex = 46
+
+                val varray = allReturnedValues(returnIndex)
+
+                allReturnedValues.size should be(1)
+
+                isValueSubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
+
+                arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
+
+            })
+        }
+
+        it("should be able to handle joins of two different arrays that have the same shape") {
+            evaluateMethod("localArrayCreation", domain ⇒ {
+                import domain._
+
+                allReturnedValues.size should be(1)
+            })
+        }
     }
 
 }

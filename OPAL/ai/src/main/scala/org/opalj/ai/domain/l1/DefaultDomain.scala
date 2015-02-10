@@ -51,7 +51,6 @@ class DefaultConfigurableDomain[I, Source](
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        // [NOT YET NEEDED] with PerInstructionPostProcessing
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelFieldAccessInstructions

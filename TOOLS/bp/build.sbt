@@ -1,8 +1,12 @@
-import AssemblyKeys._
-
 name := "BugPicker"
 
-version := "1.2.0-SNAPSHOT"
+organization in ThisBuild := "de.opal-project"
+
+homepage in ThisBuild := Some(url("http://www.opal-project.de/tools/bugpicker/"))
+
+licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
+
+version in ThisBuild := "1.2.0-SNAPSHOT"
 
 scalaVersion in ThisBuild := "2.11.5"
 
@@ -15,33 +19,9 @@ scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - BugPicker")
 
 fork in run := true
 
-libraryDependencies += "org.scalafx"  %% "scalafx"   % "1.0.0-R8"
+mainClass in "bp" in Compile := (mainClass in "BugPickerUI" in Compile).value
 
-jfxSettings
-
-JFX.addJfxrtToClasspath := true
-
-JFX.mainClass := Some("org.opalj.bugpicker.BugPicker")
-
-assemblySettings
-
-jarName in assembly := "bugpicker-" + version.value + ".jar"
-
-test in assembly := {}
-
-EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE17)
-
-EclipseKeys.withSource := true
-
-mainClass in assembly := Some("org.opalj.bugpicker.BugPicker")
-
-resourceGenerators in Compile <+= Def.task {
- val versionFile = (baseDirectory in Compile).value / "target" / "scala-2.11" / "classes" / "org" / "opalj" / "bugpicker" / "version.txt"
- versionFile.getParentFile.mkdirs()
- IO.write(versionFile, (version in Compile).value)
- Seq(versionFile)
-}
-
+fullClasspath in "bp" in Runtime ++= (fullClasspath in "BugPickerUI" in Runtime).value
 
 val zipAllSrc = taskKey[Unit]("Creates a zip file of all source files (including the build script etc.).")
 

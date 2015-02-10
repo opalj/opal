@@ -202,7 +202,7 @@ class Specification(
     implicit def FileToClassFileProvider(file: java.io.File): Seq[(ClassFile, URL)] =
         ClassFiles(file)
 
-    var dependencyCheckers: List[DependencyChecker] = Nil
+    var architectureCheckers: List[ArchitectureChecker] = Nil
 
     case class GlobalIncomingConstraint(
         targetEnsemble: Symbol,
@@ -223,13 +223,13 @@ class Specification(
                     sourceEnsembleElements.contains(incomingElement) ||
                     targetEnsembleElements.contains(incomingElement))
             } yield {
-                SpecificationViolation(
+                DependencyViolation(
                     project,
                     this,
                     incomingElement,
                     targetEnsembleElement,
                     dependencyType,
-                    "violation of a global incoming constraint ")
+                    "not allowed global incoming dependency found")
             }
         }
 
@@ -271,13 +271,13 @@ class Specification(
                 // from here on, we have found a violation
                 dependencyType ← dependencyTypes
             } yield {
-                SpecificationViolation(
+                DependencyViolation(
                     project,
                     this,
                     sourceElement,
                     targetElement,
                     dependencyType,
-                    "violation of a local outgoing constraint")
+                    "not allowed local outgoing dependency found")
             }
         }
 
@@ -325,18 +325,81 @@ class Specification(
                 dependencyType ← dependencyTypes
                 if (notAllowedTargetSourceElements contains targetElement)
             } yield {
-                SpecificationViolation(
+                DependencyViolation(
                     project,
                     this,
                     sourceElement,
                     targetElement,
                     dependencyType,
-                    "violation of a local outgoing not allowed constraint")
+                    "not allowed local outgoing dependency found")
             }
         }
 
         override def toString =
             targetEnsembles.mkString(s"$sourceEnsemble is_not_allowed_to_use (", ",", ")")
+    }
+
+    /**
+     * Checks whether all elements in the source ensemble are annotated with the given
+     * annotation.
+     *
+     * ==Example Scenario==
+     * If every element in the ensemble `ex` should be annotated with `ey` and the
+     * source element `x` which belongs to ensemble `ex` has no annotation that matches
+     * `ey` then a [[SpecificationViolation]] is generated.
+     *
+     * 	@param sourceEnsemble An ensemble containing elements that should be annotated.
+     *  @param annotationMatcher The annotation that should match.
+     */
+    case class LocalOutgoingAnnotatedWithConstraint(
+        sourceEnsemble: Symbol,
+        annotationMatcher: AnnotationMatcher)
+            extends PropertyChecker {
+
+        import DependencyType._
+
+        override def property: String = annotationMatcher.toString
+
+        override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
+
+        override def violations(): ASet[SpecificationViolation] = {
+            val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
+
+            for {
+                sourceElement ← sourceEnsembleElements
+                classFile ← project.classFile(sourceElement.classType.asObjectType)
+                annotations = sourceElement match {
+                    case s: VirtualClass ⇒ classFile.annotations
+                    case s: VirtualField ⇒ classFile.fields.collectFirst {
+                        case field if field.asVirtualField(classFile).compareTo(s) == 0 ⇒ field
+                    } match {
+                        case Some(f) ⇒ f.annotations
+                        case _       ⇒ IndexedSeq.empty
+                    }
+                    case s: VirtualMethod ⇒ classFile.methods.collectFirst {
+                        case method if method.asVirtualMethod(classFile).compareTo(s) == 0 ⇒ method
+                    } match {
+                        case Some(m) ⇒ m.annotations
+                        case _       ⇒ IndexedSeq.empty
+                    }
+                    case _ ⇒ IndexedSeq.empty
+                }
+
+                if !annotations.foldLeft(false) {
+                    (v: Boolean, a: Annotation) ⇒ v || annotationMatcher.doesMatch(a)
+                }
+            } yield {
+                PropertyViolation(
+                    project,
+                    this,
+                    sourceElement,
+                    ANNOTATED_WITH,
+                    "required annotation not found")
+            }
+        }
+
+        override def toString =
+            s"$sourceEnsemble every_element_should_be_annotated_with "+annotationMatcher.toString
     }
 
     case class SpecificationFactory(contextEnsembleSymbol: Symbol) {
@@ -346,31 +409,38 @@ class Specification(
         }
 
         def is_only_to_be_used_by(sourceEnsembleSymbols: Symbol*): Unit = {
-            dependencyCheckers =
+            architectureCheckers =
                 GlobalIncomingConstraint(
                     contextEnsembleSymbol,
-                    sourceEnsembleSymbols.toSeq) :: dependencyCheckers
+                    sourceEnsembleSymbols.toSeq) :: architectureCheckers
         }
 
         def allows_incoming_dependencies_from(sourceEnsembleSymbols: Symbol*): Unit = {
-            dependencyCheckers =
+            architectureCheckers =
                 GlobalIncomingConstraint(
                     contextEnsembleSymbol,
-                    sourceEnsembleSymbols.toSeq) :: dependencyCheckers
+                    sourceEnsembleSymbols.toSeq) :: architectureCheckers
         }
 
         def is_only_allowed_to_use(targetEnsembles: Symbol*): Unit = {
-            dependencyCheckers =
+            architectureCheckers =
                 LocalOutgoingIsOnlyAllowedToConstraint(
                     contextEnsembleSymbol,
-                    targetEnsembles.toSeq) :: dependencyCheckers
+                    targetEnsembles.toSeq) :: architectureCheckers
         }
 
         def is_not_allowed_to_use(targetEnsembles: Symbol*): Unit = {
-            dependencyCheckers =
+            architectureCheckers =
                 LocalOutgoingNotAllowedConstraint(
                     contextEnsembleSymbol,
-                    targetEnsembles.toSeq) :: dependencyCheckers
+                    targetEnsembles.toSeq) :: architectureCheckers
+        }
+
+        def every_element_should_be_annotated_with(annotationMatcher: AnnotationMatcher): Unit = {
+            architectureCheckers =
+                LocalOutgoingAnnotatedWithConstraint(
+                    contextEnsembleSymbol,
+                    annotationMatcher) :: architectureCheckers
         }
     }
 
@@ -496,10 +566,9 @@ class Specification(
         //
         time {
             val result =
-                for (dependencyChecker ← dependencyCheckers.par) yield {
-                    println("   Checking: "+dependencyChecker)
-                    for (violation ← dependencyChecker.violations) yield {
-                        //println(violation)
+                for (architectureChecker ← architectureCheckers.par) yield {
+                    println("   Checking: "+architectureChecker)
+                    for (violation ← architectureChecker.violations) yield {
                         violation
                     }
                 }
