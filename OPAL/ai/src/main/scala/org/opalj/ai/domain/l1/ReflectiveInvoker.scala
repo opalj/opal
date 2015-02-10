@@ -86,10 +86,9 @@ trait ReflectiveInvoker extends JavaObjectConversion { domain: Domain ⇒
                     }
                 }
                 val jParameterClassTypes = descriptor.parameterTypes map (_.toJavaClass)
-                // TODO [improvement] Look for signature compatible methods. E.g., If the current type is String and the method is equals, we should not only look for the method equals(String), but also equals(Object)
-                val method = declaringClass.toJavaClass.getDeclaredMethod(
-                    name, jParameterClassTypes: _*
-                )
+                val method =
+                    declaringClass.toJavaClass.getDeclaredMethod(
+                        name, jParameterClassTypes: _*)
                 (method, jReceiver, jOperands)
             } catch {
                 case e: ClassNotFoundException ⇒
