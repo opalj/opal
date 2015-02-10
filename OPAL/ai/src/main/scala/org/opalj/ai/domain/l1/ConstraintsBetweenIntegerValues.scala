@@ -251,6 +251,7 @@ trait ConstraintsBetweenIntegerValues
 
         oldValue match {
             case iv: IntegerLikeValue ⇒ updatedValues.put(oldValue, newValue)
+            case _                    ⇒ /*nothing special to do*/
         }
 
         super.updateMemoryLayout(oldValue, newValue, operands, locals)
