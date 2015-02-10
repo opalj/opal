@@ -529,7 +529,21 @@ object Project {
      * files, all class files will be loaded and a project will be returned.
      */
     def apply(file: File): Project[URL] = {
-        Project.apply[URL](Java8ClassFileReader.ClassFiles(file))
+        Project.apply[URL](Java8ClassFileReader.ClassFiles(file), Traversable.empty)
+    }
+
+    def apply(projectFile: File, libraryFile: File): Project[URL] = {
+        Project.apply[URL](
+            Java8ClassFileReader.ClassFiles(projectFile),
+            Java8LibraryClassFileReader.ClassFiles(libraryFile)
+        )
+    }
+
+    def apply(projectFiles: Array[File], libraryFiles: Array[File]): Project[URL] = {
+        Project.apply[URL](
+            Java8ClassFileReader.AllClassFiles(projectFiles),
+            Java8LibraryClassFileReader.AllClassFiles(libraryFiles)
+        )
     }
 
     def extend(project: Project[URL], file: File): Project[URL] = {
@@ -585,7 +599,7 @@ object Project {
      */
     def apply[Source](
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Traversable[(ClassFile, Source)] = Traversable.empty,
+        libraryClassFilesWithSources: Traversable[(ClassFile, Source)],
         virtualClassFiles: Traversable[ClassFile] = Traversable.empty,
         handleInconsistentProject: (InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
 
