@@ -122,7 +122,7 @@ object CallGraphVisualization {
                         }
                     cache = null
                     ClassFileReader = null
-                    val project = Project(classFiles)
+                    val project = Project(classFiles, Traversable.empty)
                     println(
                         project.statistics.map(e ⇒ "\t"+e._1+": "+e._2).toSeq.sorted.
                             mkString("Project statistics:\n\t", "\n\t", "")
