@@ -62,6 +62,7 @@ import org.opalj.bi.ACC_PUBLIC
  *      means of the `body` attribute.).
  *
  * @author Michael Eichberg
+ * @author Marco Torsello
  */
 final class Method private (
     val accessFlags: Int,
@@ -82,12 +83,31 @@ final class Method private (
      *      (The Java compiler generate the appropriate methods.)
      */
     def hasSameSignature(other: Method, ignoreReturnType: Boolean = false): Boolean = {
-        this.name == other.name && {
+        this.hasSameSignature(other.name, other.descriptor, ignoreReturnType)
+    }
+
+    /**
+     * Returns true if this methods signature corresponds the given name and descriptor.
+     *
+     * @param ignoreReturnType If `false` (default), then the return type is taken
+     *      into consideration. This models the behavior of the JVM w.r.t. method
+     *      dispatch.
+     */
+    def hasSameSignature(name: String, descriptor: MethodDescriptor, ignoreReturnType: Boolean): Boolean = {
+        this.name == name && {
             if (ignoreReturnType)
-                this.descriptor.equalParameters(other.descriptor)
+                this.descriptor.equalParameters(descriptor)
             else
-                this.descriptor == other.descriptor
+                this.descriptor == descriptor
         }
+    }
+
+    /**
+     * Returns true if this methods signature corresponds the given name and descriptor.
+     * The return type is not taken into consideration.
+     */
+    def hasSameSignature(name: String, descriptor: MethodDescriptor): Boolean = {
+        this.hasSameSignature(name, descriptor, false)
     }
 
     final override def isMethod = true
