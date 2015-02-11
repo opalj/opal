@@ -1667,7 +1667,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def length(pc: PC): Computation[DomainValue, ExceptionValue] = {
             if (isNull.isYes)
-                return throws(NullPointerException(pc));
+                return throws(VMNullPointerException(pc));
 
             assert(upperTypeBound.hasOneElement)
             assert(upperTypeBound.first.isArrayType, s"$upperTypeBound (values=$values)")
