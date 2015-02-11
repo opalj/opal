@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,32 +26,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.ai.test.invokedynamic.annotations;
+package org.opalj
+package ai
+package analyses
+package cg
+
+import org.opalj.ai.test.invokedynamic.annotations.CallGraphAlgorithm
 
 /**
- * @author Michael Reif
+ * Tests the VTA based `CallGraph` algorithm using a more complex (explicitly
+ * annotated) project.
+ *
  * @author Michael Eichberg
  */
-public enum CallGraphAlgorithm {
+class ComplexCFACallGraphTest extends AbstractCallGraphTest {
 
-    // defined by increasing order of precision
-    /** Class Hierarchy Analysis */
-    CHA,
-    /** Variable Type Analysis */
-    BasicVTA,
-    /**
-     * Variable Type Analysis with field and return type refinement and local reference
-     * values tracking
-     */
-    DefaultVTA,
-    /**
-     * Variable Type Analysis with field and return type refinement and local values
-     * tracking.
-     */
-    ExtVTA,
-    /**
-     * Context-sensitive Variable Type Analysis with field and return type refinement and local reference
-     * values tracking.
-     */
-    CFA
+    override def testFileName = "classfiles/callgraph.jar"
+
+    override def testFilePath = "ai"
+
+    override def testCallGraphConfiguration =
+        new ExtVTACallGraphAlgorithmConfiguration(project)
+
+    override def testCallGraphAlgorithm = CallGraphAlgorithm.CFA
 }
