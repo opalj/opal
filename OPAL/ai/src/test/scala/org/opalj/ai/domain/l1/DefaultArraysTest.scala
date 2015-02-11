@@ -44,6 +44,7 @@ import org.opalj.bi.TestSupport.locateTestResources
 import br.reader.Java8Framework.ClassFiles
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import org.opalj.br.instructions.ArrayLoadInstruction
+import org.opalj.br.ComputationalType
 
 /**
  * Tests the ArrayValues domain.
@@ -57,7 +58,7 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
     import DefaultArraysTest._
 
     private def evaluateMethod(name: String, f: DefaultArraysTestDomain ⇒ Unit): Unit = {
-        val domain = new DefaultArraysTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
+        val domain = new DefaultArraysTestDomain()
 
         val method = classFile.methods.find(_.name == name).get
         val result = BaseAI(classFile, method, domain)
@@ -286,7 +287,119 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
 
                 isValueSubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
 
-                arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
+                arraylength(
+                    returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
+
+            })
+        }
+
+        it("should be able to analyze a an object array initialization with different concrete types") {
+            evaluateMethod("differentTypesInOneArrayInitialization", domain ⇒ {
+                import domain._
+
+                val returnIndex = 44
+
+                val varray = allReturnedValues(returnIndex)
+
+                allReturnedValues.size should be(1)
+
+                isValueSubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
+
+                arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(5)))
+
+                isValueSubtypeOf(
+                    arrayload(returnIndex,
+                        IntegerValue(10, 0),
+                        varray).result, ObjectType.Integer) should be(Yes)
+
+                isValueSubtypeOf(
+                    arrayload(returnIndex,
+                        IntegerValue(17, 1),
+                        varray).result, ObjectType.Float) should be(Yes)
+
+                isValueSubtypeOf(
+                    arrayload(returnIndex,
+                        IntegerValue(26, 2),
+                        varray).result, ObjectType.Double) should be(Yes)
+
+                isValueSubtypeOf(
+                    arrayload(returnIndex,
+                        IntegerValue(33, 3),
+                        varray).result, ObjectType.Boolean) should be(Yes)
+
+                isValueSubtypeOf(
+                    arrayload(returnIndex,
+                        IntegerValue(41, 4),
+                        varray).result, ObjectType.Character) should be(Yes)
+
+                isValueSubtypeOf(
+                    arrayload(returnIndex,
+                        IntegerValue(41, 4),
+                        varray).result, ObjectType.Character) should be(Yes)
+
+                arrayload(
+                    returnIndex,
+                    IntegerValue(20, 2),
+                    varray).result.computationalType.computationalTypeCategory.id should be(1)
+
+                arrayload(
+                    returnIndex,
+                    IntegerValue(13, 1),
+                    varray).result.computationalType.computationalTypeCategory.id should be(1)
+
+                arrayload(
+                    returnIndex,
+                    IntegerValue(6, 0),
+                    varray).result.computationalType.computationalTypeCategory.id should be(1)
+
+                arrayload(
+                    returnIndex,
+                    IntegerValue(29, 3),
+                    varray).result.computationalType.computationalTypeCategory.id should be(1)
+
+                arrayload(
+                    returnIndex,
+                    IntegerValue(36, 4),
+                    varray).result.computationalType.computationalTypeCategory.id should be(1)
+
+            })
+        }
+
+    }
+
+    describe("complex array operations") {
+        it("should be able to analyze that every returned array is null") {
+            evaluateMethod("setArrayNull", domain ⇒ {
+                import domain._
+
+                val returnIndex = 7
+
+                val varray = allReturnedValues(returnIndex)
+
+                allReturnedValues.size should be(1)
+
+                isValueSubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
+
+                arraylength(returnIndex, varray) should be(throws(InitializedObjectValue(-100007, ObjectType.NullPointerException)))
+
+                arraystore(returnIndex, IntegerValue(20), IntegerValue(12, 0), varray) should be(ThrowsException(List(InitializedObjectValue(-100007, ObjectType.NullPointerException))))
+
+                arrayload(returnIndex, IntegerValue(1), varray) should be(ThrowsException(List(InitializedObjectValue(-100007, ObjectType.NullPointerException))))
+
+            })
+        }
+
+        it("should be able to analyze array initializations of different number types with different length") {
+            evaluateMethod("branchInits", domain ⇒ {
+                import domain._
+
+                val returnIndex = 98
+
+                val varray = allReturnedValues(returnIndex)
+
+                allReturnedValues.size should be(1)
+
+                isValueSubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
 
             })
         }
@@ -323,7 +436,6 @@ class DefaultArraysTestDomain(
         with DefaultArrayValuesBinding
 
 private object DefaultArraysTest {
-
     val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))
 
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithArrays").get
