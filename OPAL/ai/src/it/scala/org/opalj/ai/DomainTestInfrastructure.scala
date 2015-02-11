@@ -171,7 +171,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
 
     it should ("be able to perform an abstract interpretation of the OPAL 0.3 snapshot") in {
         val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-        val project = Project(reader.ClassFiles(classFiles))
+        val project = Project(reader.ClassFiles(classFiles), Traversable.empty)
 
         analyzeProject("OPAL-0.3", project, 2.5d)
     }
@@ -186,7 +186,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
         })
         info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
         opalJARs.size should not be (0)
-        val project = Project(AllClassFiles(opalJARs))
+        val project = Project(AllClassFiles(opalJARs), Traversable.empty)
 
         analyzeProject("OPAL-SNAPSHOT-08-14-2014", project, 1.5d)
     }

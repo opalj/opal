@@ -45,6 +45,8 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
  */
 object CallGraphFactory {
 
+    @volatile var debug: Boolean = false
+
     /**
      * Returns a list of all entry points that is well suited if we want to
      * analyze a library/framework.
@@ -166,11 +168,17 @@ object CallGraphFactory {
         val builder = new CallGraphBuilder(theProject)
         var exceptions = List.empty[CallGraphConstructionException]
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
+        var analyzedMethods = 0
         while (futuresCount > 0) {
             // 1. GET NEXT RESULT
             val (callSite @ (_ /*method*/ , callEdges), moreUnresolvedMethodCalls, exception) =
                 completionService.take().get()
             futuresCount -= 1
+            analyzedMethods += 1
+
+            if (debug && (analyzedMethods % 1000 == 0)) {
+                println(s"[info - call graph] analyzed: $analyzedMethods methods")
+            }
 
             // 2. ENQUE NEXT METHODS
             if (callEdges.nonEmpty) {
@@ -195,7 +203,8 @@ object CallGraphFactory {
         }
 
         // TODO use log
-        println("[info] finished analzying the bytecode, constructing the final call graph")
+        if (debug)
+            println("[info - call graph] finished analzying the bytecode, constructing the final call graph")
 
         ComputedCallGraph(
             builder.buildCallGraph,

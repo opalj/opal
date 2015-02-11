@@ -1781,6 +1781,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     //
     // -----------------------------------------------------------------------------------
 
+    abstract override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
+        value match {
+            case sov: SObjectValue if sov.isPrecise && sov.isNull.isNo &&
+                (sov.upperTypeBound eq ObjectType.Object) ⇒ Some(new Object)
+            case _ ⇒ super.toJavaObject(pc, value)
+        }
+    }
+
     //
     // REFINEMENT OF EXISTING DOMAIN VALUE FACTORY METHODS
     //

@@ -221,14 +221,14 @@ trait TaintAnalysisDomain[Source]
         with TypeLevelLongValuesShiftOperators
         with TypeLevelPrimitiveValuesConversions
         with DefaultDomainValueBinding
+        with TypeLevelInvokeInstructions
+        with TypeLevelFieldAccessInstructions
         with DefaultTypeLevelLongValues
         with DefaultTypeLevelFloatValues
         with DefaultTypeLevelDoubleValues
         with DefaultTypeLevelIntegerValues
         with DefaultStringValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
-        with TypeLevelFieldAccessInstructions
-        with TypeLevelInvokeInstructions
         with TypeLevelReferenceValues
         with TheProject
         with TheCode
@@ -522,7 +522,7 @@ trait TaintAnalysisDomain[Source]
         return doTypeLevelInvoke
     }
 
-    override def invokespecial(
+    abstract override def invokespecial(
         pc: Int,
         declaringClass: ObjectType,
         methodName: String,

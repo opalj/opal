@@ -27,47 +27,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package av
-package checking
+package ai
+package analyses
+package cg
 
-import scala.collection.{ Set ⇒ ASet }
+import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
 
 /**
- * An architecture checker validates if the implemented architecture
- * complies with the expected/specified one.
+ * Configuration of a call graph algorithm that uses "variable type analysis".
  *
- * @author Marco Torsello
- */
-sealed trait ArchitectureChecker {
-
-    def violations(): ASet[SpecificationViolation]
-
-}
-
-/**
- * A dependency checker validates if the dependencies between the elements of
- * two ensembles comply with the expected/specified dependencies.
+ * ==Thread Safety==
+ * This class is thread-safe (it contains no mutable state.)
+ *
+ * ==Usage==
+ * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
  *
  * @author Michael Eichberg
- * @author Marco Torsello
  */
-trait DependencyChecker extends ArchitectureChecker {
+class CFACallGraphAlgorithmConfiguration(
+    project: SomeProject)
+        extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
-    def targetEnsembles: Seq[Symbol]
+    CallGraphFactory.debug = true
 
-    def sourceEnsembles: Seq[Symbol]
-}
-
-/**
- * A property checker validates if the elements of the source ensemble also
- * have a specific property or whether there is a difference between the
- * expected/specified properties.
- *
- * @author Marco Torsello
- */
-trait PropertyChecker extends ArchitectureChecker {
-
-    def property: String
-
-    def sourceEnsembles: Seq[Symbol]
+    def Domain[Source](
+        classFile: ClassFile,
+        method: Method) =
+        new CFACallGraphDomain(
+            project, fieldValueInformation, methodReturnValueInformation,
+            cache,
+            classFile, method)
 }
