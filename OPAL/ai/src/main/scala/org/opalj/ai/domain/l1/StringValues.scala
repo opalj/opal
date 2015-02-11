@@ -206,11 +206,9 @@ trait StringValues
         super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
     }
 
-    // Needs to be implemented (the default implementation is now longer sufficient!)
     final override def StringValue(origin: ValueOrigin, value: String): DomainObjectValue =
         StringValue(origin, value, nextT())
 
-    // todo use the same t for all constant JVM strings
     def StringValue(origin: ValueOrigin, value: String, t: Timestamp): DomainStringValue
 }
 

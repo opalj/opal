@@ -45,6 +45,7 @@ import org.opalj.ai.analyses.cg.BasicVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.BasicVTAWithPreAnalysisCallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.DefaultVTACallGraphAlgorithmConfiguration
 import org.opalj.ai.analyses.cg.ExtVTACallGraphAlgorithmConfiguration
+import org.opalj.ai.analyses.cg.CFACallGraphAlgorithmConfiguration
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.util.PerformanceEvaluation.asMB
 import org.opalj.util.PerformanceEvaluation.memory
@@ -73,7 +74,7 @@ object CallGraphVisualization {
     def main(args: Array[String]): Unit = {
         if ((args.size < 3) || (args.size > 4)) {
             println("You have to specify:")
-            println("\t1) The algorithm to use (CHA, BasicVTA, DefaultVTA, ExtVTA).")
+            println("\t1) The algorithm to use (CHA, BasicVTA, DefaultVTA, ExtVTA, CFA).")
             println("\t2) A jar/class file or a directory containing jar/class files.")
             println("\t3) A pattern that specifies which class/interface types should be included in the output.")
             println("\t4 - Optional) The number of seconds (max. 30) before the analysis starts (e.g., to attach a profiler).")
@@ -152,6 +153,8 @@ object CallGraphVisualization {
                             new DefaultVTACallGraphAlgorithmConfiguration(project)
                         case "ExtVTA" ⇒
                             new ExtVTACallGraphAlgorithmConfiguration(project)
+                        case "CFA" ⇒
+                            new CFACallGraphAlgorithmConfiguration(project)
                         case cga ⇒
                             println("Unknown call graph algorithm: "+cga+"; available: CHA, BasicVTA, DefaultVTA, ExtVTA")
                             return ;
