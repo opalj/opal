@@ -33,10 +33,6 @@
 package org.opalj
 package ai
 package domain
-package l1
-
-import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 
 /**
  * Mixed in by domain's that support the conversation of a `DomainValue` into
@@ -57,37 +53,34 @@ import org.opalj.br.ObjectType
  * @author Frederik Buss-Joraschek
  * @author Michael Eichberg
  */
-trait JavaObjectConversion extends AsJavaObject { domain: ReferenceValuesDomain ⇒
+trait AsJavaObject { domain: ReferenceValuesDomain ⇒
 
     /**
-     * Converts the given Java object (not a primitive value) to a corresponding
-     * `DomainValue`. The conversion may be lossy.
+     * Converts – if possible – a given `DomainValue` to a Java object that is
+     * appropriately initialized.
      *
-     * @note To convert primitive values to `DomainValue`s use the domain's
-     * 		respective factory methods. I.e., this method deliberately does not perform any
-     *   	(Un-)Boxing as it does not have the necessary information. For more
-     *    	information study the implementation of the [[ReflectiveInvoker]].
+     * ==Implementation==
+     * Every domain that supports the creation of a Java object based on a domain
+     * value is expected to implement this method and to test if it can create
+     * a representation of the given value. If not, the implementation has to delegate
+     * the responsibility to the super method.
+     * {{{
+     * abstract override def toJavaObject(value : DomainValue): Option[Object] = {
+     *  if(value...)
+     *      // create and return Java object
+     *  else
+     *      super.toJavaObject(value)
+     * }
+     * }}}
      *
-     * @param pc The program counter of the instruction that was responsible for
-     * 		creating the respective value. (This is in – in general – not the
-     * 		instruction where the transformation is performed.)
-     * @param value The object.
-     * @return A `DomainValue`.
+     * @note This operation is generally only possible if the domain value maintains
+     *      "enough" state information to completely initialize the Java object.
+     *
+     * @return Some(Object) is returned if it was possible to create a compatible
+     *      corresponding Java object; otherwise `None` is returned.
+     *      Default: `None` unless the `value` is null. In the latter case `Some(null)`
+     *      is returned.
      */
-    def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
-        if (value == null)
-            return NullValue(pc)
+    def toJavaObject(pc: PC, value: DomainValue): Option[Object] = None
 
-        val clazz = value.getClass
-        val fqnInBinaryNotation = clazz.getName.replace('.', '/')
-        if (clazz.isArray) {
-            val array: Array[_] = value.asInstanceOf[Array[_]]
-            InitializedArrayValue(
-                pc,
-                List(array.length),
-                FieldType(fqnInBinaryNotation).asArrayType)
-        } else /*if (!clazz.isPrimitive()) */ {
-            InitializedObjectValue(pc, ObjectType(fqnInBinaryNotation))
-        }
-    }
 }

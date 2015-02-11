@@ -78,7 +78,7 @@ class Specification(
         useAnsiColors: Boolean = false) {
         this(
             run {
-                Project(projectClassFilesWithSources = classFiles)
+                Project(projectClassFilesWithSources = classFiles, Traversable.empty)
             } { (executionTime, project) ⇒
                 println((if (useAnsiColors) GREEN else "")+
                     "1. Reading "+
