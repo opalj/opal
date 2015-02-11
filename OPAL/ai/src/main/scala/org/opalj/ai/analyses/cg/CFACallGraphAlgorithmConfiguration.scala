@@ -47,15 +47,19 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  */
 class CFACallGraphAlgorithmConfiguration(
-    project: SomeProject)
+    project: SomeProject,
+    val k: Int = 2)
         extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
     CallGraphFactory.debug = true
+
+    println(s"[info] constructing a $k-CFA call graph")
 
     def Domain[Source](
         classFile: ClassFile,
         method: Method) =
         new CFACallGraphDomain(
+            k,
             project, fieldValueInformation, methodReturnValueInformation,
             cache,
             classFile, method)

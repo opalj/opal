@@ -52,26 +52,25 @@ import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.la
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValueInformation
-import org.opalj.ai.domain.l2.PerformInvocations
+import org.opalj.ai.domain.l2.PerformInvocationsWithBasicVirtualMethodCallResolution
 import org.opalj.ai.domain.l0.RecordMethodCallResults
 
 /**
- * Domain object which can used to calculate the call graph using variable type analysis.
+ * Domain object which can used to calculate a context-sensitive call graph.
  * This domain uses advanced domains for tracking primitive values to rule out
  * potential dead branches/method calls on dead branches.
  *
  * @author Michael Eichberg
  */
 class CFACallGraphDomain[Source](
+    val k: Int, // the maximum length of the call chain
     val project: Project[Source],
     val fieldValueInformation: FieldValueInformation,
     val methodReturnValueInformation: MethodReturnValueInformation,
     val cache: CallGraphCache[MethodSignature, Set[Method]],
     val classFile: ClassFile,
     val method: Method,
-    val calledMethods: Set[Method] = Set.empty,
-    // the maximum length of the call chain
-    val k: Int = 4)
+    val calledMethods: Set[Method] = Set.empty)
         extends CorrelationalDomain
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
@@ -92,19 +91,34 @@ class CFACallGraphDomain[Source](
         with l0.TypeLevelLongValuesShiftOperators
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
-        //with l1.MaxArrayLengthRefinement
+        with l1.MaxArrayLengthRefinement
         with l0.TypeLevelInvokeInstructions // the foundation
         with la.RefinedTypeLevelInvokeInstructions
         with SpecialMethodsHandling
         with la.RefinedTypeLevelFieldAccessInstructions
-        with PerformInvocations
+        with PerformInvocationsWithBasicVirtualMethodCallResolution
         with RecordMethodCallResults {
     callingDomain ⇒
+
+    // we just want to be able to track "booleans"
+    override protected def maxCardinalityOfIntegerRanges: Long = 2l
 
     def shouldInvocationBePerformed(
         definingClass: ClassFile,
         method: Method): Boolean =
-        !method.returnType.isVoidType && calledMethods.size < k
+        // we only call methods where we have a chance that the return value
+        // actually depends on the calling context and may directly affect
+        // subsequent calls (i.e., if the return value is a primitive value
+        // then we are not interested.) The return value of methods where the
+        // return value does not depend on the calling context should
+        // be precise based on the results of the pre-analyses.
+        calledMethods.size < k &&
+            method.descriptor.parametersCount > 0 &&
+            !method.returnType.isVoidType &&
+            (
+                !method.returnType.isObjectType ||
+                classHierarchy.hasSubtypes(method.returnType.asObjectType).isYes
+            )
 
     def isRecursive(
         definingClass: ClassFile,
@@ -121,6 +135,7 @@ class CFACallGraphDomain[Source](
         new InvokeExecutionHandler {
 
             override val domain = new CFACallGraphDomain(
+                k,
                 project,
                 fieldValueInformation,
                 methodReturnValueInformation,
@@ -131,5 +146,18 @@ class CFACallGraphDomain[Source](
 
             def ai: AI[_ >: this.domain.type] = BaseAI
         }
+
+    override protected[this] def doInvoke(
+        pc: PC,
+        definingClass: ClassFile,
+        method: Method,
+        operands: Operands,
+        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+
+        val result = super.doInvoke(pc, definingClass, method, operands, fallback)
+        //        if (calledMethods.isEmpty)
+        //            println(s"[info - call graph] ${callingDomain.method.toJava(callingDomain.classFile)}:$pc the result of calling ${method.toJava(definingClass)} is $result")
+        result
+    }
 }
 
