@@ -404,13 +404,6 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
             })
         }
 
-        it("should be able to handle joins of two different arrays that have the same shape") {
-            evaluateMethod("localArrayCreation", domain ⇒ {
-                import domain._
-
-                allReturnedValues.size should be(1)
-            })
-        }
     }
 
 }
