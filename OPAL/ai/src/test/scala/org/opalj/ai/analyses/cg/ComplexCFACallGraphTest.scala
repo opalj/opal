@@ -46,7 +46,7 @@ class ComplexCFACallGraphTest extends AbstractCallGraphTest {
     override def testFilePath = "ai"
 
     override def testCallGraphConfiguration =
-        new ExtVTACallGraphAlgorithmConfiguration(project)
+        new CFACallGraphAlgorithmConfiguration(project)
 
     override def testCallGraphAlgorithm = CallGraphAlgorithm.CFA
 }
