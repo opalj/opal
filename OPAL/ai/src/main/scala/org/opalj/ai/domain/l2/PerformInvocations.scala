@@ -191,6 +191,24 @@ trait PerformInvocations extends MethodCallsHandling {
         executionHandler.perform(pc, definingClass, method, operands, fallback)
     }
 
+    protected[this] def testAndDoInvoke(
+        pc: PC,
+        definingClass: ClassFile,
+        method: Method,
+        operands: Operands,
+        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+
+        if (!method.isNative) {
+            if (!shouldInvocationBePerformed(definingClass, method) ||
+                isRecursive(definingClass, method, operands))
+                fallback()
+            else {
+                doInvoke(pc, definingClass, method, operands, fallback)
+            }
+        } else
+            fallback()
+    }
+
     // -----------------------------------------------------------------------------------
     //
     // Implementation of the invoke instructions
@@ -221,7 +239,7 @@ trait PerformInvocations extends MethodCallsHandling {
                         declaringClass.toJava+
                         "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+
                         ":\n[internal error] "+e.getMessage.replace("\n", "\n[internal error] ")+"\n"+
-                        Console.GREEN+"[internal error] continuing the analysis using the default method call handling strategy")
+                        Console.GREEN+"[internal error] continuing the analysis using the default method call handling strategy"+Console.RESET)
                 return fallback();
             case e: Throwable ⇒
                 println(
@@ -234,21 +252,14 @@ trait PerformInvocations extends MethodCallsHandling {
                 e.printStackTrace()
                 println(
                     Console.GREEN+
-                        "[internal error] continuing the analysis using the default method call handling strategy")
+                        "[internal error] continuing the analysis using the default method call handling strategy"+Console.RESET)
                 return fallback();
         }
 
         methodOption match {
             case Some(method) ⇒
-                if (!method.isNative) {
-                    val classFile = project.classFile(method)
-                    if (!shouldInvocationBePerformed(classFile, method) ||
-                        isRecursive(classFile, method, operands))
-                        fallback()
-                    else
-                        doInvoke(pc, classFile, method, operands, fallback)
-                } else
-                    fallback()
+                val classFile = project.classFile(method)
+                testAndDoInvoke(pc, classFile, method, operands, fallback)
             case _ ⇒
                 println(
                     Console.YELLOW+"[warn] method reference cannot be resolved: "+
@@ -269,11 +280,11 @@ trait PerformInvocations extends MethodCallsHandling {
         descriptor: MethodDescriptor,
         operands: Operands,
         fallback: () ⇒ MethodCallResult): MethodCallResult = {
-
-        typeOfValue( /*receiver = */ operands(descriptor.parametersCount)) match {
+        val receiver = operands(descriptor.parametersCount)
+        typeOfValue(receiver) match {
             case refValue: IsAReferenceValue if (
                 refValue.isPrecise &&
-                refValue.isNull.isNo &&
+                refValue.isNull.isNo && // TODO handle the case that null is unknown
                 refValue.upperTypeBound.hasOneElement &&
                 refValue.upperTypeBound.head.isObjectType) ⇒
                 val receiverClass = refValue.upperTypeBound.head.asObjectType

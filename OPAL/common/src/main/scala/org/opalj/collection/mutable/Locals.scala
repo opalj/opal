@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -66,6 +66,8 @@ sealed trait Locals[T >: Null <: AnyRef] {
     /* ABSTRACT */ def updated(index: Int, value: T): Locals[T]
 
     /* ABSTRACT */ def foreach(f: T ⇒ Unit): Unit
+
+    /* ABSTRACT */ def foreachReverse(f: T ⇒ Unit): Unit
 
     /* ABSTRACT */ def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals[T]
 
@@ -152,6 +154,12 @@ sealed trait Locals[T >: Null <: AnyRef] {
     def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = {
         var result: B = b
         foreach { elem ⇒ result = op(result, elem) }
+        result
+    }
+
+    def foldRight[B](b: B)(op: (B, T) ⇒ B): B = {
+        var result: B = b
+        foreachReverse { elem ⇒ result = op(result, elem) }
         result
     }
 
@@ -271,6 +279,8 @@ private[mutable] final object Locals0 extends Locals[Null] {
 
     override def foreach(f: Null ⇒ Unit): Unit = { /*nothing to do*/ }
 
+    override def foreachReverse(f: Null ⇒ Unit): Unit = { /*nothing to do*/ }
+
     override def map[X >: Null <: AnyRef: ClassTag](f: Null ⇒ X): Locals[X] = {
         this.asInstanceOf[Locals[X]]
     }
@@ -346,6 +356,8 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
     }
 
     override def foreach(f: T ⇒ Unit): Unit = { f(v) }
+
+    override def foreachReverse(f: T ⇒ Unit): Unit = { f(v) }
 
     override def map[X >: Null <: AnyRef: ClassTag](f: T ⇒ X): Locals1[X] = {
         new Locals1[X](f(v))
@@ -447,6 +459,8 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
     }
 
     override def foreach(f: T ⇒ Unit): Unit = { f(v0); f(v1) }
+
+    override def foreachReverse(f: T ⇒ Unit): Unit = { f(v1); f(v0) }
 }
 
 private[mutable] final class Locals3[T >: Null <: AnyRef](
@@ -560,6 +574,8 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
     }
 
     override def foreach(f: T ⇒ Unit): Unit = { f(v0); f(v1); f(v2) }
+
+    override def foreachReverse(f: T ⇒ Unit): Unit = { f(v2); f(v1); f(v0) }
 }
 
 private[mutable] final class Locals4[T >: Null <: AnyRef](
@@ -692,6 +708,8 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
     }
 
     final override def foreach(f: T ⇒ Unit): Unit = { f(v0); f(v1); f(v2); f(v3) }
+
+    final override def foreachReverse(f: T ⇒ Unit): Unit = { f(v3); f(v2); f(v1); f(v0) }
 }
 
 private[mutable] final class Locals5[T >: Null <: AnyRef](
@@ -772,6 +790,11 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
     }
 
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
+
+    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+        vs2.foreachReverse(f)
+        vs1.foreachReverse(f)
+    }
 }
 
 private[mutable] final class Locals6[T >: Null <: AnyRef](
@@ -801,6 +824,11 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
     }
 
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
+
+    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+        vs2.foreachReverse(f)
+        vs1.foreachReverse(f)
+    }
 
     override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals6[T] = {
         val that = other.asInstanceOf[Locals6[T]]
@@ -881,6 +909,11 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
     }
 
     override def foreach(f: T ⇒ Unit): Unit = { vs1.foreach(f); vs2.foreach(f) }
+
+    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+        vs2.foreachReverse(f)
+        vs1.foreachReverse(f)
+    }
 
     override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals7[T] = {
         val that = other.asInstanceOf[Locals7[T]]
@@ -979,6 +1012,12 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
 
     override def foreach(f: T ⇒ Unit): Unit = {
         vs1.foreach(f); vs2.foreach(f); vs3.foreach(f)
+    }
+
+    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+        vs3.foreachReverse(f)
+        vs2.foreachReverse(f)
+        vs1.foreachReverse(f)
     }
 
     override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals8[T] = {
@@ -1094,6 +1133,12 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
         vs1.foreach(f); vs2.foreach(f); vs3.foreach(f)
     }
 
+    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+        vs3.foreachReverse(f)
+        vs2.foreachReverse(f)
+        vs1.foreachReverse(f)
+    }
+
     override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals9[T] = {
         val that = other.asInstanceOf[Locals9[T]]
         var useThis = true
@@ -1204,6 +1249,12 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
 
     override def foreach(f: T ⇒ Unit): Unit = {
         vs1.foreach(f); vs2.foreach(f); vs3.foreach(f)
+    }
+
+    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+        vs3.foreachReverse(f)
+        vs2.foreachReverse(f)
+        vs1.foreachReverse(f)
     }
 
     override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals10[T] = {
@@ -1318,6 +1369,12 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
         vs1.foreach(f); vs2.foreach(f); vs3.foreach(f)
     }
 
+    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+        vs3.foreachReverse(f)
+        vs2.foreachReverse(f)
+        vs1.foreachReverse(f)
+    }
+
     override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals11[T] = {
         val that = other.asInstanceOf[Locals11[T]]
         var useThis = true
@@ -1429,6 +1486,11 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
     override def foreach(f: T ⇒ Unit): Unit = {
         vs11.foreach(f)
         vs12_N.foreach(f)
+    }
+
+    final override def foreachReverse(f: T ⇒ Unit): Unit = {
+        vs12_N.reverseIterator.foreach { f }
+        vs11.foreachReverse(f)
     }
 
     override def merge(other: Locals[T], onDiff: (T, T) ⇒ T): Locals12_N[T] = {

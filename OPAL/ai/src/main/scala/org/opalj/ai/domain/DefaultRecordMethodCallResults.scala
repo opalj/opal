@@ -28,39 +28,20 @@
  */
 package org.opalj
 package ai
-package analyses
-package cg
-
-import org.opalj.br.ClassFile
-import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
+package domain
 
 /**
- * Configuration of a call graph algorithm that uses "variable type analysis".
- *
- * ==Thread Safety==
- * This class is thread-safe (it contains no mutable state.)
- *
- * ==Usage==
- * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
+ * Records the results of the evaluation of the `current` method such that the results
+ * can directly be adapted to the calling context and can be used by the caller to continue
+ * the abstract interpretation of the calling method.
  *
  * @author Michael Eichberg
  */
-class CFACallGraphAlgorithmConfiguration(
-    project: SomeProject,
-    val k: Int = 2)
-        extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
+trait DefaultRecordMethodCallResults
+        extends RecordMethodCallResults
+        with RecordLastReturnedValues
+        with RecordAllThrownExceptions {
+    this: Domain with ClassHierarchy ⇒
 
-    CallGraphFactory.debug = true
-
-    println(s"[info] constructing a $k-CFA call graph")
-
-    def Domain[Source](
-        classFile: ClassFile,
-        method: Method) =
-        new CFACallGraphDomain(
-            k,
-            project, fieldValueInformation, methodReturnValueInformation,
-            cache,
-            classFile, method)
 }
+

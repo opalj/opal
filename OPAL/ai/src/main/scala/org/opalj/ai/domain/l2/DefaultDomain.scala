@@ -33,7 +33,7 @@ package l2
 
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.Project
-import org.opalj.ai.domain.l0.RecordMethodCallResults
+import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
 /**
  * This domain uses the l1 and l2 level ''stable'' domains.
@@ -93,7 +93,7 @@ class DefaultDomain[Source](
                 new SharedDefaultDomain(
                     project,
                     project.classFile(method),
-                    method) with RecordMethodCallResults
+                    method) with DefaultRecordMethodCallResults
 
             def ai = BaseAI
         }

@@ -153,8 +153,14 @@ object CallGraphVisualization {
                             new DefaultVTACallGraphAlgorithmConfiguration(project)
                         case "ExtVTA" ⇒
                             new ExtVTACallGraphAlgorithmConfiguration(project)
-                        case "CFA" ⇒
-                            new CFACallGraphAlgorithmConfiguration(project)
+                        case "2CFA" ⇒
+                            new CFACallGraphAlgorithmConfiguration(project, 2)
+                        case "CFA" | "3CFA" ⇒
+                            new CFACallGraphAlgorithmConfiguration(project, 3)
+                        case "4CFA" ⇒
+                            new CFACallGraphAlgorithmConfiguration(project, 4)
+                        case "6CFA" ⇒
+                            new CFACallGraphAlgorithmConfiguration(project, 6)
                         case cga ⇒
                             println("Unknown call graph algorithm: "+cga+"; available: CHA, BasicVTA, DefaultVTA, ExtVTA")
                             return ;
