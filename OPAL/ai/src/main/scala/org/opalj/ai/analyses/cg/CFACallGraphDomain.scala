@@ -52,8 +52,8 @@ import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.la
 import org.opalj.ai.analyses.FieldValueInformation
 import org.opalj.ai.analyses.MethodReturnValueInformation
-import org.opalj.ai.domain.l2.PerformInvocationsWithBasicVirtualMethodCallResolution
-import org.opalj.ai.domain.l0.RecordMethodCallResults
+import org.opalj.ai.domain.DefaultRecordMethodCallResults
+import org.opalj.ai.domain.la.PerformInvocationsWithBasicVirtualMethodCallResolution
 
 /**
  * Domain object which can used to calculate a context-sensitive call graph.
@@ -97,7 +97,7 @@ class CFACallGraphDomain[Source](
         with SpecialMethodsHandling
         with la.RefinedTypeLevelFieldAccessInstructions
         with PerformInvocationsWithBasicVirtualMethodCallResolution
-        with RecordMethodCallResults {
+        with DefaultRecordMethodCallResults {
     callingDomain ⇒
 
     // we just want to be able to track "booleans"

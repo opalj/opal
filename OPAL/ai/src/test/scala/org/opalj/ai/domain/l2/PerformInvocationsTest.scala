@@ -43,7 +43,7 @@ import org.opalj.bi.TestSupport.locateTestResources
 import org.opalj.br._
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.domain.l0.RecordMethodCallResults
+import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
 /**
  *
@@ -248,7 +248,7 @@ object PerformInvocationsTestFixture {
             with l0.TypeLevelInvokeInstructions
             with PerformInvocations
             with DefaultHandlingOfMethodResults
-            with RecordMethodCallResults {
+            with DefaultRecordMethodCallResults {
         domain: ValuesFactory with ClassHierarchy with Configuration with TheProject with TheMethod ⇒
 
         def isRecursive(

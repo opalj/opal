@@ -29,10 +29,11 @@
 package org.opalj
 package ai
 package domain
-package l2
+package la
 
 import org.opalj.br._
 import org.opalj.ai.analyses.cg.Callees
+import org.opalj.ai.domain.l2.PerformInvocations
 
 /**
  * Mix in this trait if methods that are called by `invokeXYZ` instructions should

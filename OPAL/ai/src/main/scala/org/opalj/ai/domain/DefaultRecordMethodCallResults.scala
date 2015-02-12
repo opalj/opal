@@ -30,35 +30,18 @@ package org.opalj
 package ai
 package domain
 
-import scala.collection.Set
-
 /**
- * Records '''all''' exceptions thrown by a method. I.e., for each instruction that
- * throws an exception (or multiple exceptions) all exceptions are recorded.
- *
- * @note This domain requires that `DomainValue`s that represent thrown exceptions
- *      have meaningful `equals` and `hashCode` methods. (Depending on the purpose
- *      of the abstract interpretation, reference equality may be sufficient.)
- *
- * @note This domain is only effective if the calculation of joins is fast. Otherwise
- *      it can significantly hamper overall performance!
+ * Records the results of the evaluation of the `current` method such that the results
+ * can directly be adapted to the calling context and can be used by the caller to continue
+ * the abstract interpretation of the calling method.
  *
  * @author Michael Eichberg
  */
-trait RecordAllThrownExceptions extends RecordThrownExceptions { domain: ValuesDomain ⇒
-
-    type ThrownException = Set[ExceptionValue]
-
-    override protected[this] def recordThrownException(
-        pc: PC,
-        value: ExceptionValue): ThrownException =
-        Set.empty + value
-
-    override protected[this] def joinThrownExceptions(
-        pc: PC,
-        previouslyThrownException: ThrownException,
-        value: ExceptionValue): ThrownException =
-        previouslyThrownException + value
+trait DefaultRecordMethodCallResults
+        extends RecordMethodCallResults
+        with RecordLastReturnedValues
+        with RecordAllThrownExceptions {
+    this: Domain with ClassHierarchy ⇒
 
 }
 
