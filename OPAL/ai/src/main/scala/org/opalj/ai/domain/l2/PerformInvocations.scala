@@ -239,7 +239,7 @@ trait PerformInvocations extends MethodCallsHandling {
                         declaringClass.toJava+
                         "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+
                         ":\n[internal error] "+e.getMessage.replace("\n", "\n[internal error] ")+"\n"+
-                        Console.GREEN+"[internal error] continuing the analysis using the default method call handling strategy")
+                        Console.GREEN+"[internal error] continuing the analysis using the default method call handling strategy"+Console.RESET)
                 return fallback();
             case e: Throwable ⇒
                 println(
@@ -252,7 +252,7 @@ trait PerformInvocations extends MethodCallsHandling {
                 e.printStackTrace()
                 println(
                     Console.GREEN+
-                        "[internal error] continuing the analysis using the default method call handling strategy")
+                        "[internal error] continuing the analysis using the default method call handling strategy"+Console.RESET)
                 return fallback();
         }
 
