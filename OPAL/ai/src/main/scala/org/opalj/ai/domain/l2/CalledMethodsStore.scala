@@ -39,14 +39,13 @@ import org.opalj.br.ClassFile
  * ==Thread Safety==
  * A "CalledMethodsStore" is not thread-safe.
  *
+ * @param frequentEvaluationWarningLevel Determines when we issue a frequent evaluation warning.
+ *
  * @author Michael Eichberg
  */
-class CalledMethodsStore(val domain: ValuesFactory with ReferenceValuesDomain) {
-
-    /**
-     * Determines when we issue a frequent evaluation warning.
-     */
-    val frequentEvaluationWarningLevel = 10
+class CalledMethodsStore(
+        val domain: ValuesFactory with ReferenceValuesDomain,
+        val frequentEvaluationWarningLevel: Int = 10) {
 
     private[this] val calledMethods =
         scala.collection.mutable.HashMap.empty[Method, List[domain.Operands]]
@@ -93,7 +92,7 @@ class CalledMethodsStore(val domain: ValuesFactory with ReferenceValuesDomain) {
         method: Method,
         operandsSet: List[domain.Operands]): Unit = {
         println(
-            "[info] the method "+
+            "[warn] the method "+
                 definingClass.thisType.toJava+
                 "{ "+method.toJava+" } "+
                 "is frequently evaluated using different operands ("+operandsSet.size+"): "+
