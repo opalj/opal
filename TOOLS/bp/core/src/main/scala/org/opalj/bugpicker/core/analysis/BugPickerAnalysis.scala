@@ -148,6 +148,13 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
             }.getOrElse(
                 BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges
             )
+        val maxCallChainLength: Int =
+            parameters.collectFirst {
+                case BugPickerAnalysis.maxCallChainLengthPattern(i) ⇒
+                    java.lang.Integer.parseInt(i)
+            }.getOrElse(
+                BugPickerAnalysis.defaultMaxCallChainLength
+            )
 
         val debug = parameters.contains("-debug")
         if (debug) {
@@ -158,6 +165,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
             println(s"\tmaxEvalFactor=$maxEvalFactor")
             println(s"\tmaxEvalTime=${maxEvalTime}ms")
             println(s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges")
+            println(s"\tmaxCallChainLength=$maxCallChainLength")
             println("Overview:")
             println(s"\tclassFiles=$classFilesCount")
         }
@@ -189,20 +197,54 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](theProject)
 
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code): Unit = {
+
             val analysisDomain =
-                new BugPickerAnalysisDomain(
+                new RootBugPickerAnalysisDomain(
                     theProject,
                     // Map.empty, Map.empty,
                     fieldValueInformation, methodReturnValueInformation,
                     cache,
-                    method, maxCardinalityOfIntegerRanges)
+                    classFile, method,
+                    maxCardinalityOfIntegerRanges, maxCallChainLength)
             val ai =
                 new BoundedInterruptableAI[analysisDomain.type](
                     body,
                     maxEvalFactor,
                     maxEvalTime,
                     doInterrupt)
-            val result = ai(classFile, method, analysisDomain)
+            val result = {
+                val result0 = ai(classFile, method, analysisDomain)
+                if (result0.wasAborted && maxCallChainLength > 0) {
+                    print(
+                        s"[info] analysis of ${method.fullyQualifiedSignature(classFile.thisType)} with method call execution aborted "+
+                            s"after ${ai.currentEvaluationCount} steps "+
+                            s"(code size: ${method.body.get.instructions.length})")
+                    // let's try it again, but without performing method calls
+                    val analysisDomain =
+                        new FallbackBugPickerAnalysisDomain(
+                            theProject,
+                            fieldValueInformation, methodReturnValueInformation,
+                            cache,
+                            method,
+                            maxCardinalityOfIntegerRanges)
+
+                    val result1 = new BoundedInterruptableAI[analysisDomain.type](
+                        body,
+                        maxEvalFactor,
+                        maxEvalTime,
+                        doInterrupt)(
+                        classFile, method, analysisDomain)
+
+                    if (result1.wasAborted)
+                        println(": retry without performing invocations also failed")
+                    else
+                        println()
+
+                    result1
+                } else
+                    result0
+
+            }
 
             if (!result.wasAborted) {
 
@@ -376,6 +418,9 @@ object BugPickerAnalysis {
 
     final val maxEvalTimePattern = """-maxEvalTime=(\d+)""".r
     final val defaultMaxEvalTime = 10000
+
+    final val maxCallChainLengthPattern = """-maxCallChainLength=(\d)""".r
+    final val defaultMaxCallChainLength = 0
 
     final val maxCardinalityOfIntegerRangesPattern =
         """-maxCardinalityOfIntegerRanges=(\d+)""".r
