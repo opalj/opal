@@ -38,7 +38,7 @@ import org.opalj.br.Method
  */
 package object analyses {
 
-    type FieldValueInformation = Map[Field, BaseFieldValuesAnalysisDomain#DomainValue]
+    type FieldValueInformation = Map[Field, Domain#DomainValue]
 
     type MethodReturnValueInformation = Map[Method, Option[Domain#DomainValue]]
 

@@ -56,13 +56,13 @@ class AnalysisWorker(
 
     protected def createTask(): jTask[Unit] = new jTask[Unit] {
         protected def call(): Unit = {
-            val results =
+            val (_, issues, _) =
                 AnalysisRunner.analyze(project, parameters.toStringParameters, initProgressManagement)
-            doc() = createHTMLReport(results)
+            doc() = createHTMLReport(issues)
         }
 
-        def createHTMLReport(results: (Long, Iterable[Issue])): scala.xml.Node = {
-            val report = BugPickerAnalysis.resultsAsXHTML(results)
+        def createHTMLReport(issues: Iterable[Issue]): scala.xml.Node = {
+            val report = BugPickerAnalysis.resultsAsXHTML(issues)
 
             val additionalStyles = process(getClass.getResourceAsStream("report.ext.css")) {
                 Source.fromInputStream(_).mkString

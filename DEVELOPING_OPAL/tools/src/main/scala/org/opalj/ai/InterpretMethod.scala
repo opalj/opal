@@ -71,8 +71,9 @@ object InterpretMethod {
         import Console.{ RED, RESET }
         import language.existentials
 
-        def printUsage(): Unit = {
-            println("You have to specify the method that should be analyzed.")
+        def printUsage(issue: Option[String]): Unit = {
+            issue.foreach(issue ⇒ println(s"Failure: $issue."))
+            println("You have to specify the following parameters.")
             println("\t1: a jar/class file or a directory containing jar/class files.")
             println("\t2: the name of a class.")
             println("\t3: the simple name or signature of a method of the specified class.")
@@ -81,7 +82,7 @@ object InterpretMethod {
         }
 
         if (args.size < 3 || args.size > 5) {
-            printUsage()
+            printUsage(Some("wrong number of parameters"))
             return ;
         }
         var remainingArgs = args.toList
@@ -105,7 +106,7 @@ object InterpretMethod {
                 true
         }
         if (remainingArgs.nonEmpty) {
-            printUsage()
+            printUsage(Some(remainingArgs.mkString("unexpected arguments: ", ", ", "")))
             return ;
         }
 

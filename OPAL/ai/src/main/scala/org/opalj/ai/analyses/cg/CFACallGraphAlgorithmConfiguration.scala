@@ -28,32 +28,35 @@
  */
 package org.opalj
 package ai
-package domain
-package l2
+package analyses
+package cg
 
-import org.opalj.br.Method
 import org.opalj.br.ClassFile
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
 
 /**
- * Enables to perform invocations.
+ * Configuration of a call graph algorithm that uses "variable type analysis".
+ *
+ * ==Thread Safety==
+ * This class is thread-safe (it contains no mutable state.)
+ *
+ * ==Usage==
+ * Instances of this class are passed to a `CallGraphFactory`'s `create` method.
  *
  * @author Michael Eichberg
  */
-trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with ClassHierarchy with Configuration with TheProject with TheCode ⇒
+class CFACallGraphAlgorithmConfiguration(
+    project: SomeProject)
+        extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
-    val calledMethodsStore: CalledMethodsStore
+    CallGraphFactory.debug = true
 
-    def isRecursive(classFile: ClassFile, method: Method, operands: Operands): Boolean =
-        calledMethodsStore.isRecursive(classFile, method, operands)
-
-    trait InvokeExecutionHandler extends super.InvokeExecutionHandler {
-
-        override val domain: Domain with MethodCallResults with PerformInvocationsWithRecursionDetection {
-            // we need to make sure that all instances use the same CalledMethodsStore
-            val calledMethodsStore: callingDomain.calledMethodsStore.type
-        }
-
-    }
+    def Domain[Source](
+        classFile: ClassFile,
+        method: Method) =
+        new CFACallGraphDomain(
+            project, fieldValueInformation, methodReturnValueInformation,
+            cache,
+            classFile, method)
 }
-

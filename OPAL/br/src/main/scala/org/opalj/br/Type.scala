@@ -1480,7 +1480,7 @@ object ArrayType {
      * dimension.
      */
     @tailrec def apply(dimension: Int, componentType: FieldType): ArrayType = {
-        assert(dimension >= 1)
+        assert(dimension >= 1, s"dimension=$dimension, componentType=$componentType")
 
         val at = apply(componentType)
         if (dimension > 1)
