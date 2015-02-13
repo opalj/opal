@@ -122,7 +122,7 @@ trait AnalysisExecutor {
                     val paramMatcher(kind, value) = p.matched
                     kind + value
                 } ++
-                unqoutedParams.findAllMatchIn(input).map(_.matched)
+                unqoutedParams.findAllMatchIn(input).map(_.matched.trim())
             ).toArray
 
         if (args.contains("-help")) {
