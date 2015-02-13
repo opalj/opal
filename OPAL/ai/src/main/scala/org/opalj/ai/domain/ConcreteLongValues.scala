@@ -46,7 +46,7 @@ package domain
 trait ConcreteLongValues { this: ValuesDomain ⇒
 
     /**
-     * If the given value encapsulates a precise integer value then the function
+     * If the given value encapsulates a precise long value then the function
      * `ifThen` is called with the respective value otherwise `orElse` is called.
      */
     def longValue[T](value: DomainValue)(ifThen: Long ⇒ T)(orElse: ⇒ T): T
