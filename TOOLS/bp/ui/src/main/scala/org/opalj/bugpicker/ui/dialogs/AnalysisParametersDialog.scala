@@ -66,11 +66,18 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
         hgrow = Priority.ALWAYS
         alignment = Pos.BASELINE_RIGHT
     }
+
     val maxEvalTimeField = new TextField {
         hgrow = Priority.ALWAYS
         alignment = Pos.BASELINE_RIGHT
     }
+
     val maxCardinalityOfIntegerRangesField = new TextField {
+        hgrow = Priority.ALWAYS
+        alignment = Pos.BASELINE_RIGHT
+    }
+
+    val maxCallChainLengthField = new TextField {
         hgrow = Priority.ALWAYS
         alignment = Pos.BASELINE_RIGHT
     }
@@ -105,6 +112,15 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                     }
                 }, 2, 2)
 
+                add(new Label("Maximum cardinality of integer ranges:"), 0, 3)
+                add(maxCallChainLengthField, 1, 3)
+                add(new Button {
+                    text = "Default"
+                    onAction = { e: ActionEvent ⇒
+                        maxCallChainLengthField.text = BugPickerAnalysis.defaultMaxCallChainLength.toString
+                    }
+                }, 2, 3)
+
                 children foreach (c ⇒ GridPane.setMargin(c, Insets(10)))
 
                 style = "-fx-border-width: 0 0 1 0; -fx-border-color: #ccc;"
@@ -120,6 +136,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                             maxEvalFactorField.text = BugPickerAnalysis.defaultMaxEvalFactor.toString
                             maxEvalTimeField.text = BugPickerAnalysis.defaultMaxEvalTime.toString
                             maxCardinalityOfIntegerRangesField.text = BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges.toString
+                            maxCallChainLengthField.text = BugPickerAnalysis.defaultMaxCallChainLength.toString
                         }
                     },
                     new Button {
@@ -142,7 +159,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                             } catch {
                                 case _: Exception | _: Error ⇒ {
                                     DialogStage.showMessage("Error",
-                                        "You entered an illegal value for maximum evaluation factor!",
+                                        "You entered an illegal value for the maximum evaluation factor!",
                                         theStage)
                                     interrupt = true
                                     Double.NaN
@@ -153,7 +170,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                             } catch {
                                 case _: Exception | _: Error ⇒ {
                                     DialogStage.showMessage("Error",
-                                        "You entered an illegal value for maximum evaluation time!",
+                                        "You entered an illegal value for the maximum evaluation time!",
                                         theStage)
                                     interrupt = true
                                     Int.MinValue
@@ -164,7 +181,18 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                             } catch {
                                 case _: Exception | _: Error ⇒ {
                                     DialogStage.showMessage("Error",
-                                        "You entered an illegal value for maximum cardinality of integer ranges!",
+                                        "You entered an illegal value for the maximum cardinality of integer ranges!",
+                                        theStage)
+                                    interrupt = true
+                                    Int.MinValue
+                                }
+                            }
+                            val maxCallChainLength = try {
+                                maxCallChainLengthField.text().toInt
+                            } catch {
+                                case _: Exception | _: Error ⇒ {
+                                    DialogStage.showMessage("Error",
+                                        "You entered an illegal value for the maximum call chain length!",
                                         theStage)
                                     interrupt = true
                                     Int.MinValue
@@ -175,7 +203,8 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                 parameters = Some(new AnalysisParameters(
                                     maxEvalTime = maxEvalTime,
                                     maxEvalFactor = maxEvalFactor,
-                                    maxCardinalityOfIntegerRanges = maxCardinalityOfIntegerRanges))
+                                    maxCardinalityOfIntegerRanges = maxCardinalityOfIntegerRanges,
+                                    maxCallChainLength = maxCallChainLength))
                                 close()
                             }
                         }
@@ -190,6 +219,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
         maxEvalFactorField.text = parameters.maxEvalFactor.toString
         maxEvalTimeField.text = parameters.maxEvalTime.toString
         maxCardinalityOfIntegerRangesField.text = parameters.maxCardinalityOfIntegerRanges.toString
+        maxCallChainLengthField.text = parameters.maxCallChainLength.toString
         showAndWait()
         this.parameters
     }

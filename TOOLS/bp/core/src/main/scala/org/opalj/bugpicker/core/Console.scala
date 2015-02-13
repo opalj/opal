@@ -90,10 +90,10 @@ object Console extends AnalysisExecutor { analysis ⇒
                 org.opalj.io.writeAndOpen(exceptionsDoc, "Exceptions", ".html")
             }
 
-            val groupedAndCountedIssues =
+            val groupedIssues =
                 issues.groupBy(_.relevance).toList.
-                    sortWith((e1, e2) ⇒ e1._1.value < e2._1.value).
-                    map(e ⇒ e._1+": "+e._2.size)
+                    sortWith((e1, e2) ⇒ e1._1.value < e2._1.value)
+            val groupedAndCountedIssues = groupedIssues.map(e ⇒ e._1+": "+e._2.size)
             BasicReport(
                 groupedAndCountedIssues.mkString(
                     s"Issues (∑${issues.size}):\n\t",

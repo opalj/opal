@@ -73,31 +73,31 @@ class DefaultPreciseLongValuesTest extends FlatSpec with Matchers with ParallelT
     behavior of "LongRange values"
 
     it should ("be able to join two identical values") in {
-        val v = LongRange(0, 0)
-        v.join(-1, LongRange(0, 0)) should be(NoUpdate)
+        val v = LongRange(0l, 0l)
+        v.join(-1, LongRange(0l, 0l)) should be(NoUpdate)
     }
 
     it should ("be able to join two overlapping values") in {
-        val v1 = LongRange(0, 1)
-        val v2 = LongRange(0, 2)
+        val v1 = LongRange(0l, 1l)
+        val v2 = LongRange(0l, 2l)
 
-        v1.join(-1, v2) should be(StructuralUpdate(LongRange(0, 2)))
+        v1.join(-1, v2) should be(StructuralUpdate(LongRange(0l, 2l)))
         v2.join(-1, v1) should be(NoUpdate)
 
-        val v3 = LongRange(-10, 10)
+        val v3 = LongRange(-10l, 10l)
         //v3.join(-1, v1) should be(NoUpdate)
         v1.join(-1, v3) should be(StructuralUpdate(v3))
 
-        val v4 = LongRange(1, 0)
-        val v5 = LongRange(-3, -10)
-        v4.join(-1, v5) should be(StructuralUpdate(LongRange(1, -10)))
+        val v4 = LongRange(1l, 0l)
+        val v5 = LongRange(-3l, -10l)
+        v4.join(-1, v5) should be(StructuralUpdate(LongRange(1l, -10l)))
 
-        val v6 = LongRange(-3, -102)
+        val v6 = LongRange(-3l, -102l)
         v4.join(-1, v6) should be(StructuralUpdate(ALongValue())) // > SPREAD!
     }
 
     it should ("be able to join with ALongValue") in {
-        val v1 = LongRange(0, 1)
+        val v1 = LongRange(0l, 1l)
 
         v1.join(-1, ALongValue()) should be(StructuralUpdate(ALongValue()))
     }

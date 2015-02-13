@@ -70,7 +70,11 @@ class SharedDefaultDomain[Source](
         with l1.ConstraintsBetweenIntegerValues
         with l1.DefaultLongValues
         with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions
+        with l1.ConcretePrimitiveValuesConversions {
+
+    override def toString: String = super.toString()+"("+method.toJava(classFile)+")"
+
+}
 
 class DefaultDomain[Source](
     project: Project[Source],
