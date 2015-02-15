@@ -63,7 +63,7 @@ import org.opalj.collection.immutable.UIDSet1
  *
  * @author Michael Eichberg
  */
-trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
+trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObject {
     domain: IntegerValuesDomain with Configuration with ClassHierarchy ⇒
 
     /**
@@ -823,6 +823,13 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling {
     // HANDLING OF CONSTRAINTS
     //
     // -----------------------------------------------------------------------------------
+
+    abstract override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
+        value match {
+            case _: NullValue ⇒ Some(null)
+            case _            ⇒ super.toJavaObject(pc, value)
+        }
+    }
 
     // This domain does not support the propagation of constraints, since
     // the join operator reuses the current domain value (the same instance)

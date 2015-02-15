@@ -48,5 +48,10 @@ public enum CallGraphAlgorithm {
      * Variable Type Analysis with field and return type refinement and local values
      * tracking.
      */
-    ExtVTA
+    ExtVTA,
+    /**
+     * Context-sensitive Variable Type Analysis with field and return type refinement and local reference
+     * values tracking.
+     */
+    CFA
 }

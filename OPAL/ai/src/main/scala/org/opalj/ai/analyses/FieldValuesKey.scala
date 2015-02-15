@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,6 +30,7 @@ package org.opalj
 package ai
 package analyses
 
+import org.opalj.log.OPALLogger
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
@@ -53,14 +54,22 @@ object FieldValuesKey extends ProjectInformationKey[FieldValueInformation] {
      */
     override protected def compute(project: SomeProject): FieldValueInformation = {
         // TODO Introduce the concept of a "configuration to a project"
-        // TODO Use project-specific logging facility
-        println("computing field value information")
+
+        implicit val logContext = project.logContext
+
+        OPALLogger.info(
+            "progress",
+            "computing field value information")
+
         val result = FieldValuesAnalysis.doAnalyze(
             project,
             (project: SomeProject, classFile: ClassFile) ⇒ new BaseFieldValuesAnalysisDomain(project, classFile),
             () ⇒ false // make it configurable
         )
-        println(s"computed the field value information; refined the type of ${result.size} fields")
+
+        OPALLogger.info(
+            "progress",
+            s"computed the field value information; refined the type of ${result.size} fields")
 
         result
     }

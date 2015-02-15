@@ -39,6 +39,12 @@ import org.opalj.br.ObjectType.Object
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.graphs.Node
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
+import org.opalj.log.Error
+import org.opalj.log.GlobalContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -75,7 +81,8 @@ class ClassHierarchy private (
         // TODO use a UIDSet for storing the class hierarchy!
         private[this] val superinterfaceTypesMap: Array[Set[ObjectType]],
         private[this] val subclassTypesMap: Array[Set[ObjectType]],
-        private[this] val subinterfaceTypesMap: Array[Set[ObjectType]]) {
+        private[this] val subinterfaceTypesMap: Array[Set[ObjectType]],
+        implicit val logContext: LogContext) {
 
     assert(knownTypesMap.length == superclassTypeMap.length)
     assert(knownTypesMap.length == interfaceTypesMap.length)
@@ -109,31 +116,27 @@ class ClassHierarchy private (
     private[this] def validateClassHierarchy(): Unit = {
         val rootTypes = this.rootTypes
         if (rootTypes.tail.nonEmpty)
-            // TODO Use a Log...
-            println(
-                "[warn] missing supertype information for: "+
+            OPALLogger.log(Warn("project configuration",
+                "missing supertype information for: "+
                     rootTypes.filterNot(_ eq ObjectType.Object).
-                    map(_.toJava).mkString(", ")
-            )
+                    map(_.toJava).mkString(", ")))
 
         isKnownToBeFinalMap.zipWithIndex foreach { e ⇒
             val (isFinal, index) = e
             if (isFinal) {
                 if (subclassTypesMap(index) != null && subclassTypesMap(index).nonEmpty) {
-                    println(
-                        "[warn - project configuration] "+
-                            s"the final type ${knownTypesMap(index).toJava} "+
+                    OPALLogger.log(Warn("project configuration ",
+                        s"the final type ${knownTypesMap(index).toJava} "+
                             "has subclasses: "+subclassTypesMap(index)+
-                            "; resetting the \"is final\" property.")
+                            "; resetting the \"is final\" property."))
                     isKnownToBeFinalMap(index) = false
                 }
 
                 if (subinterfaceTypesMap(index) != null && subinterfaceTypesMap(index).nonEmpty) {
-                    println(
-                        "[warn - project configuration] "+
-                            s"the final type ${knownTypesMap(index).toJava} "+
+                    OPALLogger.log(Warn("project configuration] ",
+                        s"the final type ${knownTypesMap(index).toJava} "+
                             "has subinterfaces: "+subclassTypesMap(index)+
-                            "; resetting the \"is final\" property.")
+                            "; resetting the \"is final\" property."))
                     isKnownToBeFinalMap(index) = false
                 }
             }
@@ -1485,7 +1488,8 @@ class ClassHierarchy private (
             return upperTypeBoundB;
 
         if (isUnknown(upperTypeBoundA)) {
-            println(s"[warn] type unknown: ${upperTypeBoundA.toJava}")
+            OPALLogger.logOnce(Warn("project configuration",
+                "type unknown: "+upperTypeBoundA.toJava))
             // there is nothing that we can do...
             return UIDSet(ObjectType.Object)
         }
@@ -1838,7 +1842,8 @@ object ClassHierarchy {
      *
      * This class hierarchy is primarily useful for testing purposes.
      */
-    def preInitializedClassHierarchy: ClassHierarchy = apply(Traversable.empty)
+    def preInitializedClassHierarchy: ClassHierarchy =
+        apply(classFiles = Traversable.empty)(logContext = GlobalContext)
 
     /**
      * Creates the class hierarchy by analyzing the given class files, the predefined
@@ -1870,7 +1875,8 @@ object ClassHierarchy {
             () ⇒ { getClass.getResourceAsStream("ClassHierarchyJLS.ths") },
             () ⇒ { getClass.getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
             () ⇒ { getClass.getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
-        )): ClassHierarchy = {
+        ))(
+            implicit logContext: LogContext): ClassHierarchy = {
 
         import scala.collection.mutable.HashSet
         import scala.collection.mutable.HashMap
@@ -1880,10 +1886,10 @@ object ClassHierarchy {
             val in = createInputStream()
             processSource(new scala.io.BufferedSource(in)) { source ⇒
                 if (source == null) {
-                    import Console._
-                    err.println(BOLD+"Loading the predefined class hierarchy failed."+RESET)
-                    err.println("Make sure that all resources are found in the correct folders.")
-                    err.println("Try to rebuild the project using"+BOLD + BLUE+"sbt copy-resources"+RESET+".")
+                    OPALLogger.log(Error("project configuration",
+                        "Loading the predefined class hierarchy failed.\n"+
+                            "Make sure that all resources are found in the correct folders.\n"+
+                            "Try to rebuild the project using \"sbt copy-resources\"."))
                     return Iterator.empty
                 }
 
@@ -2008,15 +2014,17 @@ object ClassHierarchy {
 
         classFiles foreach { processClassFile }
 
-        val classHierarchy = new ClassHierarchy(
-            knownTypesMap,
-            interfaceTypesMap,
-            superclassTypeMap,
-            isKnownToBeFinalMap,
-            superinterfaceTypesMap,
-            subclassTypesMap,
-            subinterfaceTypesMap
-        )
+        val classHierarchy =
+            new ClassHierarchy(
+                knownTypesMap,
+                interfaceTypesMap,
+                superclassTypeMap,
+                isKnownToBeFinalMap,
+                superinterfaceTypesMap,
+                subclassTypesMap,
+                subinterfaceTypesMap,
+                logContext
+            )
         classHierarchy
     }
 }

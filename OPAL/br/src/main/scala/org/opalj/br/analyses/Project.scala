@@ -44,22 +44,25 @@ import scala.reflect.ClassTag
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.concurrent.OPALExecutionContext
 import org.opalj.concurrent.parForeachArrayElement
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
  * library, framework or application as well as the libraries or frameworks used by
  * the former.
+ *
  * This class has several purposes:
  *
  *  1. It is a container for `ClassFile`s.
  *  1. It directly gives access to the project's class hierarchy.
  *  1. It serves as a container for project-wide information (e.g., a call graph,
- *     information about the mutability of classes, constant values,...) that can be queried
- *     using [[org.opalj.br.analyses.ProjectInformationKey]]s.
+ *     information about the mutability of classes, constant values,...) that can
+ *     be queried using [[org.opalj.br.analyses.ProjectInformationKey]]s.
  *     The list of project wide information that can be made available is equivalent
  *     to the list of (concrete/singleton) objects implementing the trait
  *     [[org.opalj.br.analyses.ProjectInformationKey]].
@@ -74,27 +77,35 @@ import org.opalj.concurrent.parForeachArrayElement
  *      tools such as IDEs. E.g., in Eclipse `IResource`'s are used to identify the
  *      location of a resource (e.g., a source or class file.)
  *
+ * @param logContext The logging context associated with this project. Using the logging
+ *      context after the project is no longer referenced (garbage collected) is not
+ *      possible.
+ *
  * @author Michael Eichberg
  * @author Marco Torsello
  */
 class Project[Source] private (
-        private[this] val projectClassFiles: Array[ClassFile],
-        private[this] val libraryClassFiles: Array[ClassFile],
-        private[this] val methods: Array[Method], // the concrete methods, sorted by size in descending order
-        private[this] val projectTypes: Set[ObjectType],
-        private[this] val fieldToClassFile: AnyRefMap[Field, ClassFile],
-        private[this] val methodToClassFile: AnyRefMap[Method, ClassFile],
-        private[this] val objectTypeToClassFile: OpenHashMap[ObjectType, ClassFile],
-        private[this] val sources: OpenHashMap[ObjectType, Source],
-        private[this] val methodsWithClassFilesAndSource: Array[(Source, ClassFile, Method)], // the concrete methods, sorted by size in descending order
-        val projectClassFilesCount: Int,
-        val projectMethodsCount: Int,
-        val projectFieldsCount: Int,
-        val libraryClassFilesCount: Int,
-        val libraryMethodsCount: Int,
-        val libraryFieldsCount: Int,
-        val codeSize: Long,
-        val classHierarchy: ClassHierarchy) extends ClassFileRepository {
+    private[this] val projectClassFiles: Array[ClassFile],
+    private[this] val libraryClassFiles: Array[ClassFile],
+    private[this] val methods: Array[Method], // the concrete methods, sorted by size in descending order
+    private[this] val projectTypes: Set[ObjectType],
+    private[this] val fieldToClassFile: AnyRefMap[Field, ClassFile],
+    private[this] val methodToClassFile: AnyRefMap[Method, ClassFile],
+    private[this] val objectTypeToClassFile: OpenHashMap[ObjectType, ClassFile],
+    private[this] val sources: OpenHashMap[ObjectType, Source],
+    private[this] val methodsWithClassFilesAndSource: Array[(Source, ClassFile, Method)], // the concrete methods, sorted by size in descending order
+    val projectClassFilesCount: Int,
+    val projectMethodsCount: Int,
+    val projectFieldsCount: Int,
+    val libraryClassFilesCount: Int,
+    val libraryMethodsCount: Int,
+    val libraryFieldsCount: Int,
+    val codeSize: Long,
+    val classHierarchy: ClassHierarchy,
+    implicit val logContext: LogContext)
+        extends ClassFileRepository {
+
+    OPALLogger.debug("project", "created ("+logContext+")")
 
     def extend(
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
@@ -511,6 +522,12 @@ class Project[Source] private (
             None
     }
 
+    override protected def finalize(): Unit = {
+        OPALLogger.debug("project", "finalized ("+logContext+")")
+        OPALLogger.unregister(logContext)
+
+        super.finalize()
+    }
 }
 
 /**
@@ -529,7 +546,21 @@ object Project {
      * files, all class files will be loaded and a project will be returned.
      */
     def apply(file: File): Project[URL] = {
-        Project.apply[URL](Java8ClassFileReader.ClassFiles(file))
+        Project.apply[URL](Java8ClassFileReader.ClassFiles(file), Traversable.empty)
+    }
+
+    def apply(projectFile: File, libraryFile: File): Project[URL] = {
+        Project.apply[URL](
+            Java8ClassFileReader.ClassFiles(projectFile),
+            Java8LibraryClassFileReader.ClassFiles(libraryFile)
+        )
+    }
+
+    def apply(projectFiles: Array[File], libraryFiles: Array[File]): Project[URL] = {
+        Project.apply[URL](
+            Java8ClassFileReader.AllClassFiles(projectFiles),
+            Java8LibraryClassFileReader.AllClassFiles(libraryFiles)
+        )
     }
 
     def extend(project: Project[URL], file: File): Project[URL] = {
@@ -551,9 +582,10 @@ object Project {
         )
     }
 
-    def defaultHandlerForInconsistentProject(ex: InconsistentProjectException): Unit = {
-        import Console._
-        println(YELLOW+"[warn] "+ex.message + RESET)
+    def defaultHandlerForInconsistentProject(
+        logContext: LogContext,
+        ex: InconsistentProjectException): Unit = {
+        OPALLogger.log(Warn("project configuration", ex.message))(logContext)
     }
 
     /**
@@ -585,9 +617,19 @@ object Project {
      */
     def apply[Source](
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources: Traversable[(ClassFile, Source)] = Traversable.empty,
+        libraryClassFilesWithSources: Traversable[(ClassFile, Source)],
         virtualClassFiles: Traversable[ClassFile] = Traversable.empty,
-        handleInconsistentProject: (InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
+        handleInconsistentProject: (LogContext, InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
+
+        implicit val logContext = new LogContext {
+
+            final val startTime = System.currentTimeMillis()
+
+            override def toString: String =
+                "project context:"+startTime.toString().drop(6)
+
+        }
+        OPALLogger.register(logContext)
 
         import scala.collection.mutable.{ Set, Map }
         import scala.concurrent.{ Future, Await, ExecutionContext }
@@ -636,6 +678,7 @@ object Project {
             }
             if (objectTypeToClassFile.contains(objectType)) {
                 handleInconsistentProject(
+                    logContext,
                     InconsistentProjectException(
                         "The type "+
                             objectType.toJava+
@@ -704,7 +747,8 @@ object Project {
             libraryMethodsCount,
             libraryFieldsCount,
             codeSize,
-            Await.result(classHierarchyFuture, Duration.Inf)
+            Await.result(classHierarchyFuture, Duration.Inf),
+            logContext
         )
     }
 }

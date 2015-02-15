@@ -78,7 +78,7 @@ class Specification(
         useAnsiColors: Boolean = false) {
         this(
             run {
-                Project(projectClassFilesWithSources = classFiles)
+                Project(projectClassFilesWithSources = classFiles, Traversable.empty)
             } { (executionTime, project) ⇒
                 println((if (useAnsiColors) GREEN else "")+
                     "1. Reading "+
@@ -202,7 +202,7 @@ class Specification(
     implicit def FileToClassFileProvider(file: java.io.File): Seq[(ClassFile, URL)] =
         ClassFiles(file)
 
-    var dependencyCheckers: List[DependencyChecker] = Nil
+    var architectureCheckers: List[ArchitectureChecker] = Nil
 
     case class GlobalIncomingConstraint(
         targetEnsemble: Symbol,
@@ -223,7 +223,7 @@ class Specification(
                     sourceEnsembleElements.contains(incomingElement) ||
                     targetEnsembleElements.contains(incomingElement))
             } yield {
-                SpecificationViolation(
+                DependencyViolation(
                     project,
                     this,
                     incomingElement,
@@ -271,7 +271,7 @@ class Specification(
                 // from here on, we have found a violation
                 dependencyType ← dependencyTypes
             } yield {
-                SpecificationViolation(
+                DependencyViolation(
                     project,
                     this,
                     sourceElement,
@@ -325,7 +325,7 @@ class Specification(
                 dependencyType ← dependencyTypes
                 if (notAllowedTargetSourceElements contains targetElement)
             } yield {
-                SpecificationViolation(
+                DependencyViolation(
                     project,
                     this,
                     sourceElement,
@@ -354,11 +354,11 @@ class Specification(
     case class LocalOutgoingAnnotatedWithConstraint(
         sourceEnsemble: Symbol,
         annotationMatcher: AnnotationMatcher)
-            extends DependencyChecker {
+            extends PropertyChecker {
 
         import DependencyType._
 
-        override def targetEnsembles: Seq[Symbol] = Seq(EnsembleID(annotationMatcher.toString))
+        override def property: String = annotationMatcher.toString
 
         override def sourceEnsembles: Seq[Symbol] = Seq(sourceEnsemble)
 
@@ -389,18 +389,17 @@ class Specification(
                     (v: Boolean, a: Annotation) ⇒ v || annotationMatcher.doesMatch(a)
                 }
             } yield {
-                SpecificationViolation(
+                PropertyViolation(
                     project,
                     this,
                     sourceElement,
-                    VirtualClass(annotationMatcher.annotationType.asObjectType),
                     ANNOTATED_WITH,
                     "required annotation not found")
             }
         }
 
         override def toString =
-            s"$sourceEnsemble every_element_should_be_annotated_with ("+annotationMatcher.toString+")"
+            s"$sourceEnsemble every_element_should_be_annotated_with "+annotationMatcher.toString
     }
 
     case class SpecificationFactory(contextEnsembleSymbol: Symbol) {
@@ -410,38 +409,38 @@ class Specification(
         }
 
         def is_only_to_be_used_by(sourceEnsembleSymbols: Symbol*): Unit = {
-            dependencyCheckers =
+            architectureCheckers =
                 GlobalIncomingConstraint(
                     contextEnsembleSymbol,
-                    sourceEnsembleSymbols.toSeq) :: dependencyCheckers
+                    sourceEnsembleSymbols.toSeq) :: architectureCheckers
         }
 
         def allows_incoming_dependencies_from(sourceEnsembleSymbols: Symbol*): Unit = {
-            dependencyCheckers =
+            architectureCheckers =
                 GlobalIncomingConstraint(
                     contextEnsembleSymbol,
-                    sourceEnsembleSymbols.toSeq) :: dependencyCheckers
+                    sourceEnsembleSymbols.toSeq) :: architectureCheckers
         }
 
         def is_only_allowed_to_use(targetEnsembles: Symbol*): Unit = {
-            dependencyCheckers =
+            architectureCheckers =
                 LocalOutgoingIsOnlyAllowedToConstraint(
                     contextEnsembleSymbol,
-                    targetEnsembles.toSeq) :: dependencyCheckers
+                    targetEnsembles.toSeq) :: architectureCheckers
         }
 
         def is_not_allowed_to_use(targetEnsembles: Symbol*): Unit = {
-            dependencyCheckers =
+            architectureCheckers =
                 LocalOutgoingNotAllowedConstraint(
                     contextEnsembleSymbol,
-                    targetEnsembles.toSeq) :: dependencyCheckers
+                    targetEnsembles.toSeq) :: architectureCheckers
         }
 
         def every_element_should_be_annotated_with(annotationMatcher: AnnotationMatcher): Unit = {
-            dependencyCheckers =
+            architectureCheckers =
                 LocalOutgoingAnnotatedWithConstraint(
                     contextEnsembleSymbol,
-                    annotationMatcher) :: dependencyCheckers
+                    annotationMatcher) :: architectureCheckers
         }
     }
 
@@ -567,10 +566,9 @@ class Specification(
         //
         time {
             val result =
-                for (dependencyChecker ← dependencyCheckers.par) yield {
-                    println("   Checking: "+dependencyChecker)
-                    for (violation ← dependencyChecker.violations) yield {
-                        //println(violation)
+                for (architectureChecker ← architectureCheckers.par) yield {
+                    println("   Checking: "+architectureChecker)
+                    for (violation ← architectureChecker.violations) yield {
                         violation
                     }
                 }

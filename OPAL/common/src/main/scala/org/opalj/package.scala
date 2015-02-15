@@ -34,6 +34,8 @@ import scala.reflect.api.Trees
 import scala.reflect.macros.blackbox.Context
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
+import org.opalj.log.GlobalContext
+import org.opalj.log.OPALLogger
 
 /**
  * OPAL is a Scala-based framework for the static analysis of Java bytecode
@@ -82,12 +84,13 @@ import scala.annotation.elidable.ASSERTION
 package object opalj {
 
     private[this] final val checkAssert: Boolean = {
+        implicit val logContext = GlobalContext
         try {
             scala.Predef.assert(false)
-            println("[info - Common] Production Build - Assertions are disabled")
+            OPALLogger.info("OPAL", "Common - Production Build")
         } catch {
             case ae: AssertionError ⇒
-                println("[info - Common] Development Build - Assertions are enabled")
+                OPALLogger.info("OPAL", "Common - Assertions are enabled - Development Build.")
         }
         true
     }

@@ -33,10 +33,8 @@ package analyses
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.AnyRefMap
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.util.PerformanceEvaluation.time
@@ -51,6 +49,7 @@ import org.opalj.ai.InterruptableAI
 import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.SomeUpdate
+import org.opalj.log.OPALLogger
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
@@ -69,6 +68,7 @@ object MethodReturnValuesAnalysis {
         theProject: SomeProject,
         isInterrupted: () ⇒ Boolean,
         createDomain: (InterruptableAI[Domain], Method) ⇒ Domain with RecordReturnedValueInfrastructure): MethodReturnValueInformation = {
+        implicit val logContext = theProject.logContext
 
         val results = new ConcurrentHashMap[Method, Option[Domain#DomainValue]]
         val candidates = new AtomicInteger(0)
@@ -96,7 +96,9 @@ object MethodReturnValuesAnalysis {
             }
         }
 
-        println(s"[info] refined the return type of ${results.size} methods out of ${candidates.get} methods")
+        OPALLogger.info(
+            "analysis result",
+            s"refined the return type of ${results.size} methods out of ${candidates.get} methods")
         AnyRefMap.empty[Method, Option[Domain#DomainValue]] ++ results.asScala
     }
 

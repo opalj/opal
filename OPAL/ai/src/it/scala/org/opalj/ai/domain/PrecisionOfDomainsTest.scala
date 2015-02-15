@@ -197,13 +197,13 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
 
                 def handleAbstractsOverFailure(lpDomain: String, mpDomain: String)(m: String): Unit = {
                     failed.set(true)
-                    println(
+                    info(
                         classFile.thisType.toJava+" \""+
                             method.toJava+"\" /*Instructions "+
                             method.body.get.instructions.size+"*/\n"+
-                            s"\t// the less precise domain ($lpDomain) did not abstract "+
+                            s"\tthe less precise domain ($lpDomain) did not abstract "+
                             s"over the state of the more precise domain ($mpDomain)\n"+
-                            "\t// "+Console.BOLD + m + Console.RESET+"\n"
+                            "\t"+Console.BOLD + m + Console.RESET+"\n"
                     )
 
                 }

@@ -29,6 +29,9 @@
 package org.opalj
 package ai
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
+import org.opalj.log.Warn
 import org.opalj.br.Code
 
 /**
@@ -56,7 +59,7 @@ class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extend
      * @param maxEvaluationFactor Determines the maximum number of instruction evaluations
      *      before the evaluation of the method is automatically interrupted.
      */
-    def this(code: Code, maxEvaluationFactor: Double = 1.5d) = {
+    def this(code: Code, maxEvaluationFactor: Double = 1.5d)(implicit logContext: LogContext) = {
 
         this(InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor))
     }
@@ -92,7 +95,8 @@ object InstructionCountBoundedAI {
      */
     def calculateMaxEvaluationCount(
         code: Code,
-        maxEvaluationFactor: Double): Int = {
+        maxEvaluationFactor: Double)(
+            implicit logContext: LogContext): Int = {
         val min = code.instructions.size.toDouble
         // this is roughly the number of instructions * ~2
         var upperBound: Double = min
@@ -107,19 +111,22 @@ object InstructionCountBoundedAI {
         upperBound = (upperBound * maxEvaluationFactor)
         if (upperBound < 0.0) {
             upperBound = Int.MaxValue
-            println(Console.YELLOW+"[warn] effectively unbounded evaluation"+
-                "; instructions size="+code.instructions.size+
-                "; exception handlers="+code.exceptionHandlers.size+
-                "; maxEvaluationFactor="+maxEvaluationFactor + Console.RESET)
+            OPALLogger.log(Warn(
+                "analysis configuration",
+                "effectively unbounded evaluation"+
+                    "; instructions size="+code.instructions.size+
+                    "; exception handlers="+code.exceptionHandlers.size+
+                    "; maxEvaluationFactor="+maxEvaluationFactor))
         }
 
         if (upperBound > 65535.0 /*Max Length*/ * 10.0) {
-            println(Console.YELLOW+
-                "[warn] evaluation (up to: "+upperBound.toInt+
-                " instructions) may take execessively long"+
-                "; instructions size="+code.instructions.size+
-                "; exception handlers="+code.exceptionHandlers.size+
-                "; maxEvaluationFactor="+maxEvaluationFactor + Console.RESET)
+            OPALLogger.log(Warn(
+                "analysis configuration",
+                "evaluation (up to: "+upperBound.toInt+
+                    " instructions) may take execessively long"+
+                    "; instructions size="+code.instructions.size+
+                    "; exception handlers="+code.exceptionHandlers.size+
+                    "; maxEvaluationFactor="+maxEvaluationFactor))
         }
 
         Math.max(min, upperBound).toInt

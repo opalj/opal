@@ -33,7 +33,7 @@ package l2
 
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.Project
-import org.opalj.ai.domain.l0.RecordMethodCallResults
+import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
 /**
  * This domain uses the l1 and l2 level ''stable'' domains.
@@ -70,7 +70,11 @@ class SharedDefaultDomain[Source](
         with l1.ConstraintsBetweenIntegerValues
         with l1.DefaultLongValues
         with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions
+        with l1.ConcretePrimitiveValuesConversions {
+
+    override def toString: String = super.toString()+"("+method.toJava(classFile)+")"
+
+}
 
 class DefaultDomain[Source](
     project: Project[Source],
@@ -93,7 +97,7 @@ class DefaultDomain[Source](
                 new SharedDefaultDomain(
                     project,
                     project.classFile(method),
-                    method) with RecordMethodCallResults
+                    method) with DefaultRecordMethodCallResults
 
             def ai = BaseAI
         }

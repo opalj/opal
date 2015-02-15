@@ -1173,19 +1173,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
 
             answer
-
-            //            if (classHierarchy.isSubtypeOf(this.upperTypeBound, supertype).isYes)
-            //                return Yes;
-            //            // Recall that the runtime type of this value can still be a
-            //            // subtype of supertype even if this upperTypeBound is not
-            //            // a subtype of supertype.
-            //            val values = this.values.view.filter(_.isNull.isNoOrUnknown)
-            //            val valuesIt = values.iterator
-            //            var answer: Answer = valuesIt.next.isValueSubtypeOf(supertype)
-            //            while ((answer ne Unknown) && valuesIt.hasNext) {
-            //                answer = answer & valuesIt.next().isValueSubtypeOf(supertype)
-            //            }
-            //            answer
         }
 
         protected def refineIf(refinements: Refinements): Boolean = {
@@ -1214,7 +1201,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // this value (as a whole) was not previously refined
             val thisIsNull = this.isNull
             var refined = false
-            // [CONCEPTUALLY]var refinedValues = SortedSet.empty[DomainSingleOriginReferenceValue]
+            // [CONCEPTUALLY] var refinedValues = SortedSet.empty[DomainSingleOriginReferenceValue]
             // we can use a buffer here, since the refinement will not change
             // the origin of a value
             val refinedValues = new ArrayBuffer[DomainSingleOriginReferenceValue](values.size)
@@ -1416,22 +1403,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
             if (filteredValues.size == 1) {
                 refineToValue(filteredValues.head, this.isNull, UIDSet(supertype), operands, locals)
-                //                val valueToRefine = filteredValues.head
-                //                val valueToRefineUTB = valueToRefine.upperTypeBound
-                //                if ((valueToRefineUTB.hasOneElement &&
-                //                    (valueToRefineUTB.first eq supertype)) ||
-                //                    classHierarchy.isSubtypeOf(valueToRefineUTB.first, supertype).isYes)
-                //                    // the encapsulated values does not need to be refined; it
-                //                    // already has the required properties
-                //                    propagateRefinement(this, valueToRefine, operands, locals)
-                //                else {
-                //                    val newValue = valueToRefine.doRefineUpperTypeBound(supertype)
-                //                    // propagate the refinement of this value
-                //                    val (operands1, locals1) =
-                //                        propagateRefinement(this, newValue, operands, locals)
-                //                    // propagate the refinement of the single encapsulated value
-                //                    propagateRefinement(valueToRefine, newValue, operands1, locals1)
-                //                }
             } else {
                 // there are no individual values to refine....
                 // we have to choose the more "precise" utb
@@ -1780,6 +1751,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     // FACTORY METHODS
     //
     // -----------------------------------------------------------------------------------
+
+    abstract override def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
+        value match {
+            case sov: SObjectValue if sov.isPrecise && sov.isNull.isNo &&
+                (sov.upperTypeBound eq ObjectType.Object) ⇒ Some(new Object)
+            case _ ⇒ super.toJavaObject(pc, value)
+        }
+    }
 
     //
     // REFINEMENT OF EXISTING DOMAIN VALUE FACTORY METHODS

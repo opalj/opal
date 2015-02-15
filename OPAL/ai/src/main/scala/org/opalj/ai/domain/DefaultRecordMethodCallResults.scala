@@ -27,16 +27,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package av
-package checking
+package ai
+package domain
 
-import scala.collection.{ Set ⇒ ASet }
+/**
+ * Records the results of the evaluation of the `current` method such that the results
+ * can directly be adapted to the calling context and can be used by the caller to continue
+ * the abstract interpretation of the calling method.
+ *
+ * @author Michael Eichberg
+ */
+trait DefaultRecordMethodCallResults
+        extends RecordMethodCallResults
+        with RecordLastReturnedValues
+        with RecordAllThrownExceptions {
+    this: Domain with ClassHierarchy ⇒
 
-trait DependencyChecker {
-
-    def violations(): ASet[SpecificationViolation]
-
-    def targetEnsembles: Seq[Symbol]
-
-    def sourceEnsembles: Seq[Symbol]
 }
+
