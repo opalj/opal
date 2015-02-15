@@ -31,10 +31,10 @@ package ai
 package analyses
 package cg
 
+import org.opalj.log.OPALLogger
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
-
 import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
@@ -87,6 +87,8 @@ object CallGraphFactory {
         theProject: SomeProject,
         findEntryPoints: () ⇒ Iterable[Method],
         configuration: CallGraphAlgorithmConfiguration): ComputedCallGraph = {
+        implicit val logContext = theProject.logContext
+
         val entryPoints = findEntryPoints()
         if (entryPoints.isEmpty)
             return ComputedCallGraph.empty(theProject)
@@ -177,7 +179,9 @@ object CallGraphFactory {
             analyzedMethods += 1
 
             if (debug && (analyzedMethods % 1000 == 0)) {
-                println(s"[info - call graph] analyzed: $analyzedMethods methods")
+                OPALLogger.info(
+                    "progress - call graph",
+                    s"analyzed: $analyzedMethods methods")
             }
 
             // 2. ENQUE NEXT METHODS
@@ -204,7 +208,9 @@ object CallGraphFactory {
 
         // TODO use log
         if (debug)
-            println("[info - call graph] finished analzying the bytecode, constructing the final call graph")
+            OPALLogger.info(
+                "progress - call graph",
+                "finished analzying the bytecode, constructing the final call graph")
 
         ComputedCallGraph(
             builder.buildCallGraph,

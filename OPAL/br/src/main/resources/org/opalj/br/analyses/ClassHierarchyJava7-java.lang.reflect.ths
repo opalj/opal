@@ -24,3 +24,12 @@ interface java/lang/reflect/ParameterizedType extends java/lang/Object implement
 interface java/lang/reflect/Type extends java/lang/Object
 interface java/lang/reflect/TypeVariable extends java/lang/Object implements java/lang/reflect/Type
 interface java/lang/reflect/WildcardType extends java/lang/Object implements java/lang/reflect/Type
+# Classes that are required to get a complete type hierarchy
+class java/security/BasicPermission extends java/security/Permission implements java/io/Serializable
+class java/security/SecurityPermission extends java/security/BasicPermission
+class java/security/Permission extends java/lang/Object implements java/security/Guard, java/io/Serializable
+interface java/security/Guard extends java/lang/Object
+interface java/io/Serializable extends java/lang/Object
+interface java/security/PrivilegedAction extends java/lang/Object
+interface sun/reflect/LangReflectAccess extends java/lang/Object
+

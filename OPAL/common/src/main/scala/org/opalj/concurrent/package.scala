@@ -40,6 +40,8 @@ import java.util.concurrent.ThreadPoolExecutor
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import org.opalj.log.GlobalContext
+import org.opalj.log.OPALLogger
 
 /**
  * Common constants, factory methods and objects used throughout OPAL when doing
@@ -48,6 +50,8 @@ import scala.concurrent.duration.Duration
  * @author Michael Eichberg
  */
 package object concurrent {
+
+    private implicit def logContext = GlobalContext
 
     //
     // STEP 1
@@ -59,6 +63,7 @@ package object concurrent {
      * ones).
      */
     final val NumberOfThreadsForCPUBoundTasks: Int = {
+
         val maxCPUBoundTasks = System.getProperty("org.opalj.threads.CPUBoundTasks")
         if (maxCPUBoundTasks ne null) {
             val t = Integer.parseInt(maxCPUBoundTasks)
@@ -68,13 +73,17 @@ package object concurrent {
                 )
             t
         } else {
-            println("[info] the property org.opalj.threads.CPUBoundTasks is unspecified")
+            OPALLogger.warn(
+                "OPAL",
+                "the property org.opalj.threads.CPUBoundTasks is unspecified")
             Runtime.getRuntime.availableProcessors()
         }
     }
-    println(s"[info] using $NumberOfThreadsForCPUBoundTasks thread(s) for CPU bound tasks "+
-        "(can be changed by setting the system property org.opalj.threads.CPUBoundTasks; "+
-        "the number should be equal to the number of physical – not hyperthreaded – cores)")
+    OPALLogger.info(
+        "OPAL",
+        s"using $NumberOfThreadsForCPUBoundTasks thread(s) for CPU bound tasks "+
+            "(can be changed by setting the system property org.opalj.threads.CPUBoundTasks; "+
+            "the number should be equal to the number of physical – not hyperthreaded – cores)")
 
     //
     // STEP 2
@@ -95,13 +104,17 @@ package object concurrent {
                 )
             s
         } else {
-            println("[info] the property org.opalj.threads.IOBoundTasks is unspecified")
+            OPALLogger.warn(
+                "OPAL",
+                "the property org.opalj.threads.IOBoundTasks is unspecified")
             Runtime.getRuntime.availableProcessors() * 2
         }
     }
-    println(s"[info] using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks "+
-        "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; "+
-        "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)")
+    OPALLogger.info(
+        "OPAL",
+        s"using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks "+
+            "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; "+
+            "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)")
 
     //
     // STEP 3

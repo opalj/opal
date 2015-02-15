@@ -33,6 +33,8 @@ package cg
 
 import scala.util.control.ControlThrowable
 
+import org.opalj.log.Info
+import org.opalj.log.OPALLogger
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -110,13 +112,13 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
         } catch {
             case ct: ControlThrowable ⇒ throw ct
             case t: Throwable ⇒
-                println(
-                    Console.RED+"[error] resolving the method reference resulted in an exception: "+
+                OPALLogger.error(
+                    "internal, project configuration",
+                    "resolving the method reference resulted in an exception: "+
                         project.classFile(declaringClassType).map(cf ⇒ if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
                         declaringClassType.toJava+
-                        "{ "+methodDescriptor.toJava(methodName)+" }"+Console.RESET+
-                        " "+t.getMessage)
-                t.printStackTrace()
+                        "{ "+methodDescriptor.toJava(methodName)+" }",
+                    t)
                 fallback()
         }
     }
@@ -150,21 +152,23 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                     else
                         fallback()
                 case _ ⇒
-                    println(
-                        Console.YELLOW+"[warn] method reference cannot be resolved: "+
+                    OPALLogger.logOnce(Info(
+                        "project configuration",
+                        "method reference cannot be resolved: "+
                             declaringClassType.toJava+
-                            "{ /*non virtual*/ "+methodDescriptor.toJava(methodName)+"}"+Console.RESET)
+                            "{ /*non virtual*/ "+methodDescriptor.toJava(methodName)+"}"))
                     fallback()
             }
         } catch {
             case ct: ControlThrowable ⇒ throw ct
             case t: Throwable ⇒
-                println(
-                    Console.RED+"[error] resolving the method reference resulted in an exception: "+
+                OPALLogger.error(
+                    "internal, project configuration",
+                    "resolving the method reference resulted in an exception: "+
                         project.classFile(declaringClassType).map(cf ⇒ if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
                         declaringClassType.toJava+
-                        "{ /*non virtual*/ "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+
-                        " "+t.getMessage)
+                        "{ /*non virtual*/ "+methodDescriptor.toJava(methodName)+"}",
+                    t)
                 fallback()
         }
     }

@@ -64,11 +64,15 @@ object DependencyStore {
                 de.process(classFile)
             }
             dc
-        } { t ⇒ println("[info] Collecting dependencies:"+ns2sec(t)) }
+        } { t ⇒
+            println(f"[info] Collecting dependencies took: ${ns2sec(t)}%2.3f seconds")
+        }
 
         time {
             dc.toStore
-        } { t ⇒ println("[info] Creating dependencies store: "+ns2sec(t)) }
+        } { t ⇒
+            println(f"[info] Creating dependencies storetook: ${ns2sec(t)}%2.3f seconds")
+        }
     }
 
     def initialize[Source](

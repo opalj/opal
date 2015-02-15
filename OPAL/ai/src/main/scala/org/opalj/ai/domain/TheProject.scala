@@ -30,6 +30,7 @@ package org.opalj
 package ai
 package domain
 
+import org.opalj.log.LogContext
 import org.opalj.br.analyses.SomeProject
 
 /**
@@ -64,4 +65,6 @@ trait TheProject extends ProjectBasedClassHierarchy {
      * Returns the project that is currently analyzed.
      */
     def project: SomeProject
+
+    implicit def logContext: LogContext = project.logContext
 }

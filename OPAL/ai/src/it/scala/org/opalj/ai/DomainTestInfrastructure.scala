@@ -43,6 +43,7 @@ import org.opalj.ai.common.XHTML
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.log.GlobalContext
 
 /**
  * Infrastructure to just load a very large number of class files and performs
@@ -52,6 +53,8 @@ import org.opalj.br.reader.BytecodeInstructionsCache
  * @author Michael Eichberg
  */
 abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec with Matchers {
+
+    private[this] implicit val logContext = GlobalContext
 
     def Domain(project: Project[URL], classFile: ClassFile, method: Method): Domain
 

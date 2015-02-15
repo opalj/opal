@@ -31,6 +31,7 @@ package ai
 package analyses
 package cg
 
+import org.opalj.log.OPALLogger
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
@@ -51,9 +52,11 @@ class CFACallGraphAlgorithmConfiguration(
     val k: Int = 2)
         extends VTAWithPreAnalysisCallGraphAlgorithmConfiguration(project) {
 
+    import project.logContext
+
     CallGraphFactory.debug = true
 
-    println(s"[info] constructing a $k-CFA call graph")
+    OPALLogger.info("progress", s"constructing a $k-CFA call graph")
 
     def Domain[Source](
         classFile: ClassFile,

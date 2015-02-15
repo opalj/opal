@@ -31,6 +31,9 @@ package ai
 package domain
 package l2
 
+import org.opalj.log.Warn
+import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
 
@@ -45,7 +48,8 @@ import org.opalj.br.ClassFile
  */
 class CalledMethodsStore(
         val domain: ValuesFactory with ReferenceValuesDomain,
-        val frequentEvaluationWarningLevel: Int = 10) {
+        val frequentEvaluationWarningLevel: Int = 10)(
+                implicit val logContext: LogContext) {
 
     private[this] val calledMethods =
         scala.collection.mutable.HashMap.empty[Method, List[domain.Operands]]
@@ -91,12 +95,13 @@ class CalledMethodsStore(
         definingClass: ClassFile,
         method: Method,
         operandsSet: List[domain.Operands]): Unit = {
-        println(
+        OPALLogger.log(Warn(
+            "analysis configuration",
             "[warn] the method "+
                 definingClass.thisType.toJava+
                 "{ "+method.toJava+" } "+
                 "is frequently evaluated using different operands ("+operandsSet.size+"): "+
-                operandsSet.map(_.mkString("[", ",", "]")).mkString("( ", " ; ", " )")
+                operandsSet.map(_.mkString("[", ",", "]")).mkString("( ", " ; ", " )"))
         )
     }
 }

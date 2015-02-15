@@ -31,6 +31,8 @@ package ai
 package domain
 package l2
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 import org.opalj.br._
 import scala.util.control.ControlThrowable
 
@@ -233,26 +235,21 @@ trait PerformInvocations extends MethodCallsHandling {
         } catch {
             case ct: ControlThrowable ⇒ throw ct
             case e: AssertionError ⇒
-                println(
-                    Console.YELLOW + Console.RED_B+
-                        "[internal error] exception occured while resolving method reference: "+
+                OPALLogger.error(
+                    "internal error - recoverable",
+                    "exception occured while resolving method reference: "+
                         declaringClass.toJava+
-                        "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+
-                        ":\n[internal error] "+e.getMessage.replace("\n", "\n[internal error] ")+"\n"+
-                        Console.GREEN+"[internal error] continuing the analysis using the default method call handling strategy"+Console.RESET)
+                        "{ static "+methodDescriptor.toJava(methodName)+"}"+
+                        ": "+e.getMessage)
                 return fallback();
             case e: Throwable ⇒
-                println(
-                    Console.YELLOW + Console.RED_B+
-                        "[internal error] exception occured while resolving method reference: "+
+                OPALLogger.error(
+                    "internal error - recoverable",
+                    "exception occured while resolving method reference: "+
                         declaringClass.toJava+
-                        "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+":\n"
+                        "{ static "+methodDescriptor.toJava(methodName)+"}",
+                    e
                 )
-
-                e.printStackTrace()
-                println(
-                    Console.GREEN+
-                        "[internal error] continuing the analysis using the default method call handling strategy"+Console.RESET)
                 return fallback();
         }
 
@@ -261,10 +258,11 @@ trait PerformInvocations extends MethodCallsHandling {
                 val classFile = project.classFile(method)
                 testAndDoInvoke(pc, classFile, method, operands, fallback)
             case _ ⇒
-                println(
-                    Console.YELLOW+"[warn] method reference cannot be resolved: "+
+                OPALLogger.logOnce(Warn(
+                    "project configuration",
+                    "method reference cannot be resolved: "+
                         declaringClass.toJava+
-                        "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET)
+                        "{ static "+methodDescriptor.toJava(methodName)+"}"))
                 fallback()
         }
     }
