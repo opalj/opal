@@ -41,6 +41,7 @@ import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.collection.SortedMap
+import org.opalj.log.OPALLogger
 import org.opalj.io.process
 import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
@@ -121,6 +122,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
         parameters: Seq[String],
         initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[Issue], Iterable[AnalysisException]) = {
 
+        implicit val logContext = theProject.logContext
+
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
 
@@ -160,15 +163,15 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
         if (debug) {
             val cp = System.getProperty("java.class.path")
             val cpSorted = cp.split(java.io.File.pathSeparatorChar).sorted
-			OPALLogger.info("configuration",
-            cpSorted.mkString("System ClassPath:\n\t","\n\t","\n")+"\n"+
-            "Settings:"+"\n"+
-            s"\tmaxEvalFactor=$maxEvalFactor"+"\n"+
-            s"\tmaxEvalTime=${maxEvalTime}ms"+"\n"+
-            s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges"+"\n"+
-            s"\tmaxCallChainLength=$maxCallChainLength"+"\n"+
-            "Overview:"+"\n"+
-            s"\tclassFiles=$classFilesCount")
+            OPALLogger.info("configuration",
+                cpSorted.mkString("System ClassPath:\n\t", "\n\t", "\n")+"\n"+
+                    "Settings:"+"\n"+
+                    s"\tmaxEvalFactor=$maxEvalFactor"+"\n"+
+                    s"\tmaxEvalTime=${maxEvalTime}ms"+"\n"+
+                    s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges"+"\n"+
+                    s"\tmaxCallChainLength=$maxCallChainLength"+"\n"+
+                    "Overview:"+"\n"+
+                    s"\tclassFiles=$classFilesCount")
         }
 
         //
@@ -207,20 +210,21 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                     cache,
                     classFile, method,
                     maxCardinalityOfIntegerRanges, maxCallChainLength)
-            val ai =
+            val ai0 =
                 new BoundedInterruptableAI[analysisDomain.type](
                     body,
                     maxEvalFactor,
                     maxEvalTime,
                     doInterrupt)
             val result = {
-                val result0 = ai(classFile, method, analysisDomain)
+                val result0 = ai0(classFile, method, analysisDomain)
                 if (result0.wasAborted && maxCallChainLength > 0) {
-					val logMessage =
+                    val logMessage =
                         s"analysis of ${method.fullyQualifiedSignature(classFile.thisType)} with method call execution aborted "+
-                            s"after ${ai.currentEvaluationCount} steps "+
+                            s"after ${ai0.currentEvaluationCount} steps "+
                             s"(code size: ${method.body.get.instructions.length})"
                     // let's try it again, but without performing method calls
+                    // let's reuse the current state
                     val analysisDomain =
                         new FallbackBugPickerAnalysisDomain(
                             theProject,
@@ -229,20 +233,22 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                             method,
                             maxCardinalityOfIntegerRanges)
 
-                    val result1 = new BoundedInterruptableAI[analysisDomain.type](
-                        body,
-                        maxEvalFactor,
-                        maxEvalTime,
-                        doInterrupt)(
-                        classFile, method, analysisDomain)
+                    val ai1 =
+                        new BoundedInterruptableAI[analysisDomain.type](
+                            body,
+                            maxEvalFactor,
+                            maxEvalTime,
+                            doInterrupt)
+
+                    val result1 = ai1(classFile, method, analysisDomain)
 
                     if (result1.wasAborted)
                         OPALLogger.warn(
-							"configuration",
-							logmessage+
-							": retry without performing invocations also failed")
+                            "configuration",
+                            logMessage+
+                                ": retry without performing invocations also failed")
                     else
-                    OPALLogger.info(						"configuration",						logmessage)
+                        OPALLogger.info("configuration", logMessage)
 
                     result1
                 } else
@@ -357,9 +363,9 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                 }
 
             } else if (!doInterrupt()) {
-                println(
-                    s"[warn] analysis of ${method.fullyQualifiedSignature(classFile.thisType)} aborted "+
-                        s"after ${ai.currentEvaluationCount} steps "+
+                OPALLogger.error("internal error",
+                    s"analysis of ${method.fullyQualifiedSignature(classFile.thisType)} aborted "+
+                        s"after ${ai0.currentEvaluationCount} steps "+
                         s"(code size: ${method.body.get.instructions.length})")
             } /* else (doInterrupt === true) the analysis as such was interrupted*/
         }
