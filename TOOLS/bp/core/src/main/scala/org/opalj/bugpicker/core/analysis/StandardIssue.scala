@@ -92,7 +92,7 @@ case class StandardIssue(
                 this.pc,
                 this.operands.orElse(other.operands),
                 this.localVariables.orElse(other.localVariables),
-                this.summary+"\n\n"+other.summary,
+                this.summary+"\n"+other.summary,
                 {
                     val td = this.description
                     val od = other.description
