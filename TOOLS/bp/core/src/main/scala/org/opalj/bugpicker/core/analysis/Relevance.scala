@@ -69,6 +69,10 @@ final case class Relevance(value: Int) extends AnyVal {
         else
             "[info]"
     }
+
+    def asEclipseConsoleString: String = {
+        s"[relevance=$value]"
+    }
 }
 
 object Relevance {

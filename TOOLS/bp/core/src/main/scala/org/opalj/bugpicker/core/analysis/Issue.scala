@@ -214,5 +214,25 @@ trait Issue {
             relevance.asAnsiColoredString + (": ") +
             scala.Console.GREEN + summary + scala.Console.RESET
     }
+
+    /**
+     * A representation of this bug report well suited for console output.
+     */
+    def asEclipseConsoleString: String = {
+        //        val file =
+        //            project.source(classFile.thisType) match {
+        //                case Some(url: java.net.URL)  ⇒ url.getPath
+        //                case Some(file: java.io.File) ⇒ file.toString
+        //                case Some(o: AnyRef)          ⇒ o.toString
+        //                case _                        ⇒ "<No Source>"
+        //            }
+        //
+        //        "("+file + line.map(":"+_+") ").getOrElse(") ") +
+        //            relevance.asEclipseConsoleString+" "+summary
+
+        val source = classFile.thisType.toJava.split('$').head
+        "("+source+".java"+line.map(":"+_+") ").getOrElse(") ") +
+            relevance.asEclipseConsoleString+" "+summary.replace('\n', ';')
+    }
 }
 
