@@ -269,11 +269,11 @@ object DeadPathAnalysis {
                         }
                     )
 
-                val operands =
-                    allOperands.take(
-                        instruction.numberOfPoppedOperands { index ⇒
-                            allOperands(index).computationalType.computationalTypeCategory
-                        })
+                val poppedOperandsCount =
+                    instruction.numberOfPoppedOperands { index ⇒
+                        allOperands(index).computationalType.computationalTypeCategory
+                    }
+                val operands = allOperands.take(poppedOperandsCount)
 
                 val line = body.lineNumber(nextPC).map(l ⇒ s" (line=$l)").getOrElse("")
 
