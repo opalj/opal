@@ -31,9 +31,7 @@ package bugpicker
 package core
 
 import java.net.URL
-
 import scala.collection.SortedMap
-
 import org.opalj.util.PerformanceEvaluation.ns2sec
 import org.opalj.io.writeAndOpen
 import org.opalj.io.process
@@ -41,6 +39,7 @@ import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project 
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.common.XHTML
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
+import org.opalj.bugpicker.core.analysis.IssueKind
 
 /**
  * A data-flow analysis that tries to identify dead code based on the evaluation
@@ -50,7 +49,7 @@ import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
  */
 object Console extends AnalysisExecutor { analysis ⇒
 
-    val FileOutputNameMatcher = """-o=([\w\.\:/\\]+)""".r
+    val HTMLFileOutputNameMatcher = """-html=([\w\.\:/\\]+)""".r
 
     private final val bugPickerAnalysis = new BugPickerAnalysis
 
@@ -65,28 +64,53 @@ object Console extends AnalysisExecutor { analysis ⇒
             parameters: Seq[String],
             initProgressManagement: (Int) ⇒ ProgressManagement) = {
 
-            val (analysisTime, issues, exceptions) =
+            val minRelevance: Int =
+                parameters.collectFirst {
+                    case minRelevancePattern(i) ⇒ java.lang.Integer.parseInt(i)
+                }.getOrElse(
+                    Console.minRelevance
+                )
+
+            val (analysisTime, issues0, exceptions) =
                 bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
 
-            val doc = BugPickerAnalysis.resultsAsXHTML(issues).toString
+            val issues1 = issues0.filter { i ⇒ i.relevance.value >= minRelevance }
 
-            parameters.collectFirst { case FileOutputNameMatcher(name) ⇒ name } match {
+            val issues = parameters.collectFirst { case issueKindsPattern(ks) ⇒ ks } match {
+                case Some(ks) ⇒
+                    val relevantKinds = ks.split(',').toSet
+                    issues1.filter(issue ⇒ (issue.kind intersect (relevantKinds)).nonEmpty)
+                case None ⇒
+                    issues1
+            }
 
+            if (parameters.contains("-eclipse")) {
+                val formattedIssues = issues.map { issue ⇒ issue.asEclipseConsoleString }
+                println(formattedIssues.toSeq.sorted.mkString("\n"))
+            }
+
+            var htmlReport: String = null
+            def getHTMLReport = {
+                if (htmlReport eq null)
+                    htmlReport = BugPickerAnalysis.resultsAsXHTML(issues).toString
+                htmlReport
+            }
+            parameters.collectFirst { case HTMLFileOutputNameMatcher(name) ⇒ name } match {
                 case Some(fileName) ⇒
                     process { new java.io.FileOutputStream(fileName) } { fos ⇒
-                        fos.write(doc.getBytes("UTF-8"))
+                        fos.write(getHTMLReport.getBytes("UTF-8"))
                     }
-
-                case None ⇒
-                    writeAndOpen(doc, "BugPickerAnalysisResults", ".html")
+                case _ ⇒ // Nothing to do
+            }
+            if (parameters.contains("-html")) {
+                writeAndOpen(getHTMLReport, "BugPickerAnalysisResults", ".html")
             }
 
             if (parameters.contains("-debug") && exceptions.nonEmpty) {
                 val exceptionNodes = exceptions.map(e ⇒ <p>{ XHTML.throwableToXHTML(e) }</p>)
                 val exceptionsDoc =
                     XHTML.createXHTML(
-                        Some("Thrown Exceptions"),
-                        <div>{ exceptionNodes }</div>)
+                        Some("Thrown Exceptions"), <div>{ exceptionNodes }</div>)
                 org.opalj.io.writeAndOpen(exceptionsDoc, "Exceptions", ".html")
             }
 
@@ -94,6 +118,7 @@ object Console extends AnalysisExecutor { analysis ⇒
                 issues.groupBy(_.relevance).toList.
                     sortWith((e1, e2) ⇒ e1._1.value < e2._1.value)
             val groupedAndCountedIssues = groupedIssues.map(e ⇒ e._1+": "+e._2.size)
+
             BasicReport(
                 groupedAndCountedIssues.mkString(
                     s"Issues (∑${issues.size}):\n\t",
@@ -102,6 +127,11 @@ object Console extends AnalysisExecutor { analysis ⇒
             )
         }
     }
+
+    final val minRelevancePattern = """-minRelevance=(\d\d?)""".r
+    final val minRelevance = 0
+
+    final val issueKindsPattern = """-kinds=([\w, ]+)""".r
 
     final override val analysisSpecificParametersDescription: String =
         """[-maxEvalFactor=<DoubleValue [0.1,15.0]=1.75> determines the maximum effort that the analysis
@@ -128,11 +158,19 @@ object Console extends AnalysisExecutor { analysis ⇒
             |               to also increase the maxEvalFactor by a factor of 2 to 3. Otherwise it
             |               may happen that many analyses are aborted because the evaluation time
             |               is exhausted and – overall – the analysis reports less issues!]
-            |[-o=<FileName> determines the name of the output file (if an output file is specified
-            |               no browser will be opened.]
-            |[-debug        turns on the debug mode.]""".stripMargin('|')
+            |[-minRelevance=<IntValue [0..99]=0> the minimum relevance of the shown issues.
+            |[-kinds=<Issue Kinds="constant computation,dead path,throws exception,
+            |                unguarded use,unused">] a comma seperated list of issue kinds
+            |                that should be reported
+            |[-eclipse      creates an eclipse console compatible output).]
+            |[-html[=<FileName>] generates an HTML report which is written to the optionally
+            |               specified location.]
+            |[-debug        turns on the debug mode (more information are logged and
+            |               internal, recoverable exceptions are logged).]""".stripMargin('|')
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean = {
+        var outputFormatGiven = false
+
         parameters.forall(parameter ⇒
             parameter match {
                 case BugPickerAnalysis.maxEvalFactorPattern(d) ⇒
@@ -156,17 +194,31 @@ object Console extends AnalysisExecutor { analysis ⇒
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }
-                case BugPickerAnalysis.maxCallChainLengthPattern(i) ⇒
-                    try {
-                        // the pattern ensures that the value is legal...
-                        true
-                    } catch {
-                        case nfe: NumberFormatException ⇒ false
-                    }
-                case FileOutputNameMatcher(_) ⇒ true
-                case "-debug"                 ⇒ true
-                case _                        ⇒ false
-            })
+                case BugPickerAnalysis.maxCallChainLengthPattern(_) ⇒
+                    // the pattern ensures that the value is legal...
+                    true
+
+                case issueKindsPattern(ks) ⇒
+                    val kinds = ks.split(',')
+                    kinds.length > 0 &&
+                        kinds.forall { k ⇒ IssueKind.AllKinds.contains(k) }
+
+                case minRelevancePattern(_) ⇒
+                    // the pattern ensures that the value is legal...
+                    true
+
+                case HTMLFileOutputNameMatcher(_) ⇒
+                    outputFormatGiven = true; true
+                case "-html" ⇒
+                    outputFormatGiven = true; true
+                case "-eclipse" ⇒
+                    outputFormatGiven = true; true
+                case "-debug" ⇒ true
+                case _        ⇒ false
+            }
+        ) &&
+            outputFormatGiven
+    }
 
 }
 
