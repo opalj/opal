@@ -90,10 +90,10 @@ object Console extends AnalysisExecutor { analysis ⇒
                 org.opalj.io.writeAndOpen(exceptionsDoc, "Exceptions", ".html")
             }
 
-            val groupedAndCountedIssues =
+            val groupedIssues =
                 issues.groupBy(_.relevance).toList.
-                    sortWith((e1, e2) ⇒ e1._1.value < e2._1.value).
-                    map(e ⇒ e._1+": "+e._2.size)
+                    sortWith((e1, e2) ⇒ e1._1.value < e2._1.value)
+            val groupedAndCountedIssues = groupedIssues.map(e ⇒ e._1+": "+e._2.size)
             BasicReport(
                 groupedAndCountedIssues.mkString(
                     s"Issues (∑${issues.size}):\n\t",
@@ -122,9 +122,15 @@ object Console extends AnalysisExecutor { analysis ⇒
             |               terminated.
             |               Increasing this value may significantly increase the analysis time and
             |               may require the increase of -maxEvalFactor.]
+            |[-maxCallChainLength=<IntValue [0..9]=0> determines the maximum length of the call chain
+            |               that is analyzed.
+            |               If you increase this value by one it is typically also necessary
+            |               to also increase the maxEvalFactor by a factor of 2 to 3. Otherwise it
+            |               may happen that many analyses are aborted because the evaluation time
+            |               is exhausted and – overall – the analysis reports less issues!]
             |[-o=<FileName> determines the name of the output file (if an output file is specified
             |               no browser will be opened.]
-            |[-debug turns on the debugging mode.]""".stripMargin('|')
+            |[-debug        turns on the debug mode.]""".stripMargin('|')
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
         parameters.forall(parameter ⇒
@@ -147,6 +153,13 @@ object Console extends AnalysisExecutor { analysis ⇒
                     try {
                         val cardinality = java.lang.Integer.parseInt(i).toInt
                         cardinality >= 1 && cardinality <= 1024
+                    } catch {
+                        case nfe: NumberFormatException ⇒ false
+                    }
+                case BugPickerAnalysis.maxCallChainLengthPattern(i) ⇒
+                    try {
+                        // the pattern ensures that the value is legal...
+                        true
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }

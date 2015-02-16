@@ -45,8 +45,8 @@ sealed trait ArchitectureChecker {
 }
 
 /**
- * A dependency checker validates if the dependencies between elements of
- * the implementation complies with the expected/specified dependencies.
+ * A dependency checker validates if the dependencies between the elements of
+ * two ensembles comply with the expected/specified dependencies.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
@@ -59,8 +59,9 @@ trait DependencyChecker extends ArchitectureChecker {
 }
 
 /**
- * A property checker validates if the properties of a specific element of
- * the implementation complies with the expected/specified property.
+ * A property checker validates if the elements of the source ensemble also
+ * have a specific property or whether there is a difference between the
+ * expected/specified properties.
  *
  * @author Marco Torsello
  */

@@ -297,6 +297,7 @@ object BugPicker {
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR = "maxEvalFactor"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME = "maxEvalTime"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES = "maxCardinalityOfIntegerRanges"
+    final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH = "maxCallChainLength"
     final val PREFERENCES_KEY_WINDOW_SIZE = "windowSize"
 
     final val defaultAppCSSURL = getClass.getResource("/org/opalj/bugpicker/ui/app.css").toExternalForm
@@ -323,7 +324,14 @@ object BugPicker {
         val maxCardinalityOfIntegerRanges = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
             BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges)
-        new AnalysisParameters(maxEvalTime, maxEvalFactor, maxCardinalityOfIntegerRanges)
+        val maxCallChainLength = PREFERENCES.getInt(
+            PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH,
+            BugPickerAnalysis.defaultMaxCallChainLength)
+        new AnalysisParameters(
+            maxEvalTime,
+            maxEvalFactor,
+            maxCardinalityOfIntegerRanges,
+            maxCallChainLength)
     }
 
     def storeParametersToPreferences(parameters: AnalysisParameters): Unit = {
@@ -336,6 +344,9 @@ object BugPicker {
         PREFERENCES.putInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
             parameters.maxCardinalityOfIntegerRanges)
+        PREFERENCES.putInt(
+            PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH,
+            parameters.maxCallChainLength)
     }
 
     def storeFilesToPreferences(loadedFiles: LoadedFiles): Unit = {

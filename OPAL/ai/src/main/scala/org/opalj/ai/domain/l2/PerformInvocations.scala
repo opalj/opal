@@ -31,6 +31,8 @@ package ai
 package domain
 package l2
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 import org.opalj.br._
 import scala.util.control.ControlThrowable
 
@@ -40,7 +42,7 @@ import scala.util.control.ControlThrowable
  *
  * @author Michael Eichberg
  */
-trait PerformInvocations extends MethodCallsDomain {
+trait PerformInvocations extends MethodCallsHandling {
     callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
 
     /**
@@ -66,6 +68,12 @@ trait PerformInvocations extends MethodCallsDomain {
      * method.
      */
     trait InvokeExecutionHandler {
+
+        /**
+         * If `true` the exceptions thrown by the called method are returned by this
+         * method.
+         */
+        val propagateExceptionsThrownByCalledMethod: Boolean = false
 
         /**
          * The domain that will be used to perform the abstract interpretation of the
@@ -115,30 +123,47 @@ trait PerformInvocations extends MethodCallsDomain {
             passedParameters: domain.Locals,
             result: AIResult { val domain: InvokeExecutionHandler.this.domain.type }): MethodCallResult = {
 
-            val domain = result.domain
-            val thrownExceptions = domain.thrownExceptions(callingDomain, callerPC)
-            if (!domain.returnedNormally) {
-                // The method must have returned with an exception or not at all...
-                if (thrownExceptions.nonEmpty)
-                    ThrowsException(thrownExceptions)
-                else
-                    ComputationFailed
-            } else {
-                if (calledMethod.descriptor.returnType eq VoidType) {
-                    if (thrownExceptions.nonEmpty) {
-                        ComputationWithSideEffectOrException(thrownExceptions)
-                    } else {
-                        ComputationWithSideEffectOnly
-                    }
+            if (propagateExceptionsThrownByCalledMethod) {
+                val domain = result.domain
+                val thrownExceptions = domain.thrownExceptions(callingDomain, callerPC)
+                if (!domain.returnedNormally) {
+                    // The method must have returned with an exception or not at all...
+                    if (thrownExceptions.nonEmpty)
+                        ThrowsException(thrownExceptions)
+                    else
+                        ComputationFailed
                 } else {
-                    val returnedValue =
-                        domain.returnedValueRemapped(
-                            callingDomain, callerPC)(originalOperands, passedParameters)
-                    if (thrownExceptions.nonEmpty) {
-                        ComputedValueOrException(returnedValue.get, thrownExceptions)
+                    if (calledMethod.descriptor.returnType eq VoidType) {
+                        if (thrownExceptions.nonEmpty) {
+                            ComputationWithSideEffectOrException(thrownExceptions)
+                        } else {
+                            ComputationWithSideEffectOnly
+                        }
                     } else {
-                        ComputedValue(returnedValue.get)
+                        val returnedValue =
+                            domain.returnedValueRemapped(
+                                callingDomain, callerPC)(
+                                    originalOperands, passedParameters)
+                        if (thrownExceptions.nonEmpty) {
+                            ComputedValueOrException(returnedValue.get, thrownExceptions)
+                        } else {
+                            ComputedValue(returnedValue.get)
+                        }
                     }
+                }
+            } else {
+                val returnedValue =
+                    domain.returnedValueRemapped(
+                        callingDomain, callerPC)(
+                            originalOperands, passedParameters)
+                if (calledMethod.descriptor.returnType eq VoidType) {
+                    MethodCallResult(callingDomain.getPotentialExceptions(callerPC))
+                } else if (returnedValue.isEmpty /*the method always */ ) {
+                    ThrowsException(callingDomain.getPotentialExceptions(callerPC))
+                } else {
+                    MethodCallResult(
+                        returnedValue.get,
+                        callingDomain.getPotentialExceptions(callerPC))
                 }
             }
         }
@@ -168,29 +193,31 @@ trait PerformInvocations extends MethodCallsDomain {
         executionHandler.perform(pc, definingClass, method, operands, fallback)
     }
 
+    protected[this] def testAndDoInvoke(
+        pc: PC,
+        definingClass: ClassFile,
+        method: Method,
+        operands: Operands,
+        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+
+        if (!method.isNative) {
+            if (!shouldInvocationBePerformed(definingClass, method) ||
+                isRecursive(definingClass, method, operands))
+                fallback()
+            else {
+                doInvoke(pc, definingClass, method, operands, fallback)
+            }
+        } else
+            fallback()
+    }
+
     // -----------------------------------------------------------------------------------
     //
     // Implementation of the invoke instructions
     //
     // -----------------------------------------------------------------------------------
 
-    abstract override def invokevirtual(
-        pc: PC,
-        declaringClass: ReferenceType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult =
-        super.invokevirtual(pc, declaringClass, name, methodDescriptor, operands)
-
-    abstract override def invokeinterface(
-        pc: PC,
-        declaringClass: ObjectType,
-        name: String,
-        methodDescriptor: MethodDescriptor,
-        operands: Operands): MethodCallResult =
-        super.invokeinterface(pc, declaringClass, name, methodDescriptor, operands)
-
-    protected[this] def invokeNonVirtual(
+    protected[this] def doInvokeNonVirtual(
         pc: PC,
         declaringClass: ObjectType,
         methodName: String,
@@ -198,55 +225,100 @@ trait PerformInvocations extends MethodCallsDomain {
         operands: Operands,
         fallback: () ⇒ MethodCallResult): MethodCallResult = {
 
-        try {
+        val methodOption = try {
             classHierarchy.resolveMethodReference(
                 // the cast is safe since arrays do not have any static/special methods
                 declaringClass.asObjectType,
                 methodName,
                 methodDescriptor,
-                project) match {
-                    case Some(method) ⇒
-                        if (!method.isNative) {
-                            val classFile = project.classFile(method)
-                            if (!shouldInvocationBePerformed(classFile, method) ||
-                                isRecursive(classFile, method, operands))
-                                fallback()
-                            else
-                                doInvoke(pc, classFile, method, operands, fallback)
-                        } else
-                            fallback()
-                    case _ ⇒
-                        println(
-                            Console.YELLOW+"[warn] method reference cannot be resolved: "+
-                                declaringClass.toJava+
-                                "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET)
-                        fallback()
-                }
+                project)
         } catch {
             case ct: ControlThrowable ⇒ throw ct
             case e: AssertionError ⇒
-                println(
-                    Console.YELLOW + Console.RED_B+
-                        "[internal error] exception occured while resolving method reference: "+
+                OPALLogger.error(
+                    "internal error - recoverable",
+                    "exception occured while resolving method reference: "+
                         declaringClass.toJava+
-                        "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+
-                        ":\n[internal error] "+e.getMessage.replace("\n", "\n[internal error] ")+"\n"+
-                        Console.GREEN+"[internal error] continuing the analysis using the default method call handling strategy")
-                fallback()
+                        "{ static "+methodDescriptor.toJava(methodName)+"}"+
+                        ": "+e.getMessage)
+                return fallback();
             case e: Throwable ⇒
-                println(
-                    Console.YELLOW + Console.RED_B+
-                        "[internal error] exception occured while resolving method reference: "+
+                OPALLogger.error(
+                    "internal error - recoverable",
+                    "exception occured while resolving method reference: "+
                         declaringClass.toJava+
-                        "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+":\n"
+                        "{ static "+methodDescriptor.toJava(methodName)+"}",
+                    e
                 )
+                return fallback();
+        }
 
-                e.printStackTrace()
-                println(
-                    Console.GREEN+
-                        "[internal error] continuing the analysis using the default method call handling strategy")
+        methodOption match {
+            case Some(method) ⇒
+                val classFile = project.classFile(method)
+                testAndDoInvoke(pc, classFile, method, operands, fallback)
+            case _ ⇒
+                OPALLogger.logOnce(Warn(
+                    "project configuration",
+                    "method reference cannot be resolved: "+
+                        declaringClass.toJava+
+                        "{ static "+methodDescriptor.toJava(methodName)+"}"))
                 fallback()
         }
+    }
+
+    /**
+     * The default implementation only supports the case where we can precisely
+     * resolve the target.
+     */
+    def doInvokeVirtual(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        descriptor: MethodDescriptor,
+        operands: Operands,
+        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+        val receiver = operands(descriptor.parametersCount)
+        typeOfValue(receiver) match {
+            case refValue: IsAReferenceValue if (
+                refValue.isPrecise &&
+                refValue.isNull.isNo && // TODO handle the case that null is unknown
+                refValue.upperTypeBound.hasOneElement &&
+                refValue.upperTypeBound.head.isObjectType) ⇒
+                val receiverClass = refValue.upperTypeBound.head.asObjectType
+                doInvokeNonVirtual(pc, receiverClass, name, descriptor, operands, fallback)
+
+            case _ ⇒
+                fallback();
+        }
+
+    }
+
+    abstract override def invokevirtual(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        descriptor: MethodDescriptor,
+        operands: Operands): MethodCallResult = {
+
+        def fallback() =
+            super.invokevirtual(pc, declaringClass, name, descriptor, operands)
+
+        doInvokeVirtual(pc, declaringClass, name, descriptor, operands, fallback)
+
+    }
+
+    abstract override def invokeinterface(
+        pc: PC,
+        declaringClass: ObjectType,
+        name: String,
+        descriptor: MethodDescriptor,
+        operands: Operands): MethodCallResult = {
+
+        def fallback() =
+            super.invokeinterface(pc, declaringClass, name, descriptor, operands)
+
+        doInvokeVirtual(pc, declaringClass, name, descriptor, operands, fallback)
     }
 
     abstract override def invokespecial(
@@ -259,7 +331,7 @@ trait PerformInvocations extends MethodCallsDomain {
         def fallback() =
             super.invokespecial(pc, declaringClass, methodName, methodDescriptor, operands)
 
-        invokeNonVirtual(
+        doInvokeNonVirtual(
             pc, declaringClass, methodName, methodDescriptor, operands, fallback
         )
     }
@@ -279,7 +351,7 @@ trait PerformInvocations extends MethodCallsDomain {
         def fallback() =
             super.invokestatic(pc, declaringClass, methodName, methodDescriptor, operands)
 
-        invokeNonVirtual(
+        doInvokeNonVirtual(
             pc, declaringClass, methodName, methodDescriptor, operands, fallback
         )
     }

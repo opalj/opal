@@ -43,6 +43,7 @@ import org.opalj.ai.common.XHTML
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.log.GlobalContext
 
 /**
  * Infrastructure to just load a very large number of class files and performs
@@ -52,6 +53,8 @@ import org.opalj.br.reader.BytecodeInstructionsCache
  * @author Michael Eichberg
  */
 abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec with Matchers {
+
+    private[this] implicit val logContext = GlobalContext
 
     def Domain(project: Project[URL], classFile: ClassFile, method: Method): Domain
 
@@ -171,7 +174,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
 
     it should ("be able to perform an abstract interpretation of the OPAL 0.3 snapshot") in {
         val classFiles = org.opalj.bi.TestSupport.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-        val project = Project(reader.ClassFiles(classFiles))
+        val project = Project(reader.ClassFiles(classFiles), Traversable.empty)
 
         analyzeProject("OPAL-0.3", project, 2.5d)
     }
@@ -186,7 +189,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
         })
         info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
         opalJARs.size should not be (0)
-        val project = Project(AllClassFiles(opalJARs))
+        val project = Project(AllClassFiles(opalJARs), Traversable.empty)
 
         analyzeProject("OPAL-SNAPSHOT-08-14-2014", project, 1.5d)
     }

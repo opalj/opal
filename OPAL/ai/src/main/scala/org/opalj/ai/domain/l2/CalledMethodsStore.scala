@@ -31,6 +31,9 @@ package ai
 package domain
 package l2
 
+import org.opalj.log.Warn
+import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
 
@@ -39,14 +42,14 @@ import org.opalj.br.ClassFile
  * ==Thread Safety==
  * A "CalledMethodsStore" is not thread-safe.
  *
+ * @param frequentEvaluationWarningLevel Determines when we issue a frequent evaluation warning.
+ *
  * @author Michael Eichberg
  */
-class CalledMethodsStore(val domain: ValuesFactory with ReferenceValuesDomain) {
-
-    /**
-     * Determines when we issue a frequent evaluation warning.
-     */
-    val frequentEvaluationWarningLevel = 10
+class CalledMethodsStore(
+        val domain: ValuesFactory with ReferenceValuesDomain,
+        val frequentEvaluationWarningLevel: Int = 10)(
+                implicit val logContext: LogContext) {
 
     private[this] val calledMethods =
         scala.collection.mutable.HashMap.empty[Method, List[domain.Operands]]
@@ -92,12 +95,13 @@ class CalledMethodsStore(val domain: ValuesFactory with ReferenceValuesDomain) {
         definingClass: ClassFile,
         method: Method,
         operandsSet: List[domain.Operands]): Unit = {
-        println(
-            "[info] the method "+
+        OPALLogger.log(Warn(
+            "analysis configuration",
+            "[warn] the method "+
                 definingClass.thisType.toJava+
                 "{ "+method.toJava+" } "+
                 "is frequently evaluated using different operands ("+operandsSet.size+"): "+
-                operandsSet.map(_.mkString("[", ",", "]")).mkString("( ", " ; ", " )")
+                operandsSet.map(_.mkString("[", ",", "]")).mkString("( ", " ; ", " )"))
         )
     }
 }

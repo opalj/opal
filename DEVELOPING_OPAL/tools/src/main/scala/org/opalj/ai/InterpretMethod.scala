@@ -37,6 +37,7 @@ import org.opalj.ai.common.XHTML.dump
 import org.opalj.io.writeAndOpen
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.graphs.toDot
+import scala.util.control.ControlThrowable
 
 /**
  * A small basic framework that facilitates the abstract interpretation of a
@@ -71,8 +72,9 @@ object InterpretMethod {
         import Console.{ RED, RESET }
         import language.existentials
 
-        def printUsage(): Unit = {
-            println("You have to specify the method that should be analyzed.")
+        def printUsage(issue: Option[String]): Unit = {
+            issue.foreach(issue ⇒ println(s"Failure: $issue."))
+            println("You have to specify the following parameters.")
             println("\t1: a jar/class file or a directory containing jar/class files.")
             println("\t2: the name of a class.")
             println("\t3: the simple name or signature of a method of the specified class.")
@@ -81,7 +83,7 @@ object InterpretMethod {
         }
 
         if (args.size < 3 || args.size > 5) {
-            printUsage()
+            printUsage(Some("wrong number of parameters"))
             return ;
         }
         var remainingArgs = args.toList
@@ -105,7 +107,7 @@ object InterpretMethod {
                 true
         }
         if (remainingArgs.nonEmpty) {
-            printUsage()
+            printUsage(Some(remainingArgs.mkString("unexpected arguments: ", ", ", "")))
             return ;
         }
 
@@ -216,14 +218,36 @@ object InterpretMethod {
             )
         } catch {
             case ife: InterpretationFailedException ⇒
+
+                def causeToString(ife: InterpretationFailedException, nested: Boolean): String = {
+                    val context =
+                        if (nested)
+                            ife.localsArray(0).toSeq.filter(_ != null).map(_.toString).mkString("Parameters:<i>", ", ", "</i><br>")
+                        else
+                            ""
+
+                    val d =
+                        "<p><b>"+ife.domain.getClass.getName+"("+ife.domain.toString+")"+"</b></p>"+
+                            context+
+                            "Current instruction: "+ife.pc+"<br>"+
+                            XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
+                            ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
+
+                    ife.cause match {
+                        case ct: ControlThrowable ⇒ throw ct
+                        case ife: InterpretationFailedException ⇒
+                            d + ife.cause.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
+                                "<div style='margin-left:5em'>"+causeToString(ife, true)+"</div>"
+                        case e: Throwable ⇒
+                            d+"<br>"+"Underlying cause: "+e.getMessage() +
+                                e.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")
+                        case _ ⇒
+                            d
+                    }
+                }
+
                 val resultHeader =
-                    Some("<p><b>"+domainClass.getName+"</b></p>"+
-                        ife.cause.getMessage+"<br>"+
-                        ife.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n")+
-                        "Current instruction: "+ife.pc+"<br>"+
-                        XHTML.evaluatedInstructionsToXHTML(ife.evaluated) +
-                        ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
-                    )
+                    Some(causeToString(ife, false))
                 val evaluationDump =
                     dump(
                         Some(classFile), Some(method), method.body.get,

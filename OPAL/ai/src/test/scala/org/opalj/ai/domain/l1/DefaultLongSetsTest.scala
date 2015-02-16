@@ -266,9 +266,9 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
             }
 
             it("{0,Long.MaxValue} * {Long.MinValue,0} => {Long.MaxValue*Long.MinValue,0}") {
-                val v1 = LongSet(SortedSet(0, Long.MaxValue))
-                val v2 = LongSet(SortedSet(Long.MinValue, 0))
-                val expected = SortedSet(Long.MaxValue * Long.MinValue, 0)
+                val v1 = LongSet(SortedSet(0l, Long.MaxValue))
+                val v2 = LongSet(SortedSet(Long.MinValue, 0l))
+                val expected = SortedSet(Long.MaxValue * Long.MinValue, 0l)
                 lmul(-1, v1, v2) should be(LongSet(expected))
                 lmul(-1, v2, v1) should be(LongSet(expected))
             }
@@ -304,7 +304,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers with ParallelTestExecuti
                 val v1 = LongSet(SortedSet(Long.MinValue, Long.MaxValue))
                 val v2 = LongSet(SortedSet(8l, 19l))
 
-                val expected = SortedSet(Long.MinValue + 8, Long.MinValue + 19, Long.MaxValue)
+                val expected = SortedSet(Long.MinValue + 8l, Long.MinValue + 19l, Long.MaxValue)
                 lor(-1, v1, v2) should be(LongSet(expected))
                 lor(-1, v2, v1) should be(LongSet(expected))
             }

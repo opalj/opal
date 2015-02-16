@@ -275,11 +275,11 @@ class VTACallGraphExtractor[TheDomain <: Domain with TheProject with TheClassFil
                 // multiple reference values:
                 //     Creating the call graph took: ~28sec (Mac Pro; 3 GHz 8-Core Intel Xeon E5)
                 //     Number of call sites: 911.253
-                //     Number of call edges: 6.925.997 / called-by edges: 6.925.997
+                //     Number of call edges: 6.925.997
                 //
                 // With explicit support, we get the following numbers:
                 //     Number of call sites: 911.253
-                //     Number of call edges: 6.923.015 / called-by edges: 6.923.015
+                //     Number of call edges: 6.923.015
 
                 val receiversAreMorePrecise =
                     !receiver.isPrecise &&

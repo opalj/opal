@@ -26,7 +26,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -57,40 +57,7 @@ import org.opalj.br.ObjectType
  * @author Frederik Buss-Joraschek
  * @author Michael Eichberg
  */
-trait JavaObjectConversion { domain: ReferenceValuesDomain ⇒
-
-    /**
-     * Converts – if possible – a given `DomainValue` to a Java object that is
-     * appropriately initialized.
-     *
-     * ==Implementation==
-     * Every domain that supports the creation of a Java object based on a domain
-     * value is expected to implement this method and to test if it can create
-     * a representation of the given value. If not, the implementation has to delegate
-     * the responsibility to the super method.
-     * {{{
-     * abstract override def toJavaObject(value : DomainValue): Option[Object] = {
-     * 	if(value...)
-     *  	// create and return Java object
-     *  else
-     *  	super.toJavaObject(value)
-     * }
-     * }}}
-     *
-     * @note This operation is generally only possible if the domain value maintains
-     * 		"enough" state information to completely initialize the Java object.
-     *
-     * @return Some(Object) is returned if it was possible to create a compatible
-     * 		corresponding Java object; otherwise `None` is returned.
-     *   	Default: `None` unless the `value` is null. In the latter case `Some(null)`
-     *    	is returned.
-     */
-    def toJavaObject(pc: PC, value: DomainValue): Option[Object] = {
-        if (refIsNull(pc, value).isYes)
-            Some(null)
-        else
-            None
-    }
+trait JavaObjectConversion extends AsJavaObject { domain: ReferenceValuesDomain ⇒
 
     /**
      * Converts the given Java object (not a primitive value) to a corresponding
