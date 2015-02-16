@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -126,7 +126,7 @@ trait ValuesDomain {
          */
         def computationalType: ComputationalType
 
-        // This method is only used by the abstract interpretation framework 
+        // This method is only used by the abstract interpretation framework
         // and is only implemented by ReturnAddressValue.
         @throws[DomainException]("This value is not a return address value.")
         private[ai] def asReturnAddressValue: PC =
@@ -220,7 +220,7 @@ trait ValuesDomain {
 
         //
         // METHODS THAT ARE PREDEFINED BECAUSE THEY ARE GENERALLY USEFUL WHEN
-        // ANALYZING PROJECTS, BUT WHICH ARE NOT REQUIRED BY THIS FRAMEWORK. 
+        // ANALYZING PROJECTS, BUT WHICH ARE NOT REQUIRED BY THIS FRAMEWORK.
         // I.E. THESE METHODS ARE USED - IF AT ALL - BY THE DOMAIN.
         //
 
@@ -290,10 +290,10 @@ trait ValuesDomain {
                 case NoUpdateType
                     // ... if the other values abstracts over this value (or equals
                     // this value).
-                    | MetaInformationUpdateType // W.r.t. the props. relevant for a join: 
-                    // the other value is either more precise than this value or is 
+                    | MetaInformationUpdateType // W.r.t. the props. relevant for a join:
+                    // the other value is either more precise than this value or is
                     // equal to this value, but some property that is not relevant to
-                    // a join has changed. We now have to rule out the case 
+                    // a join has changed. We now have to rule out the case
                     // that the other is actually more precise than this and
                     ⇒
                     this.join(Int.MinValue /*Irrelevant*/ , other).isStructuralUpdate
@@ -342,6 +342,11 @@ trait ValuesDomain {
         @throws[DomainException]("Adaptation of this value is not supported.")
         def adapt(target: TargetDomain, origin: ValueOrigin): target.DomainValue =
             throw new DomainException(s"adaptation of $this to $target is unsupported")
+
+        // TODO implement adaptInPlace
+        // @throws[DomainException]("Adaptation of this value is not supported.")
+        // def adaptInPlace(target: TargetDomain): target.DomainValue =
+        //    throw new DomainException(s"adaptation of $this to $target is unsupported")
 
     }
 
@@ -491,8 +496,8 @@ trait ValuesDomain {
 
         @throws[DomainException]("Return address values cannot be joined.")
         override protected def doJoin(pc: PC, other: DomainValue): Update[DomainValue] = {
-            // Note that "Value" already handles the case where this 
-            // value is joined with itself. Furthermore, a join of this value with a 
+            // Note that "Value" already handles the case where this
+            // value is joined with itself. Furthermore, a join of this value with a
             // different return address value either indicates a serious bug
             // in the framework/the analysis or that the byte code is invalid!
             throw DomainException(
