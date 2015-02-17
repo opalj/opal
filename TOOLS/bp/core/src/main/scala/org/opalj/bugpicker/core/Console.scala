@@ -50,6 +50,7 @@ import org.opalj.bugpicker.core.analysis.IssueKind
 object Console extends AnalysisExecutor { analysis ⇒
 
     val HTMLFileOutputNameMatcher = """-html=([\w\.\:/\\]+)""".r
+    val DebugFileOutputNameMatcher = """-debug=([\w\.\:/\\]+)""".r
 
     private final val bugPickerAnalysis = new BugPickerAnalysis
 
@@ -106,14 +107,23 @@ object Console extends AnalysisExecutor { analysis ⇒
                 writeAndOpen(getHTMLReport, "BugPickerAnalysisResults", ".html")
             }
 
-            if (parameters.contains("-debug") && exceptions.nonEmpty) {
+            if (exceptions.nonEmpty) {
                 val exceptionNodes = exceptions.map(e ⇒ <p>{ XHTML.throwableToXHTML(e) }</p>)
                 val exceptionsDoc =
                     XHTML.createXHTML(
                         Some("Thrown Exceptions"), <div>{ exceptionNodes }</div>)
-                org.opalj.io.writeAndOpen(exceptionsDoc, "Exceptions", ".html")
-            }
 
+                parameters.collectFirst { case DebugFileOutputNameMatcher(name) ⇒ name } match {
+                    case Some(fileName) ⇒
+                        process { new java.io.FileOutputStream(fileName) } { fos ⇒
+                            fos.write(exceptionsDoc.toString.getBytes("UTF-8"))
+                        }
+                    case _ ⇒ // Nothing to do
+                }
+                if (parameters.contains("-debug")) {
+                    org.opalj.io.writeAndOpen(exceptionsDoc, "Exceptions", ".html")
+                }
+            }
             val groupedIssues =
                 issues.groupBy(_.relevance).toList.
                     sortWith((e1, e2) ⇒ e1._1.value < e2._1.value)
@@ -165,8 +175,9 @@ object Console extends AnalysisExecutor { analysis ⇒
             |[-eclipse      creates an eclipse console compatible output).]
             |[-html[=<FileName>] generates an HTML report which is written to the optionally
             |               specified location.]
-            |[-debug        turns on the debug mode (more information are logged and
-            |               internal, recoverable exceptions are logged).]""".stripMargin('|')
+            |[-debug[=<FileName>] turns on the debug mode (more information are logged and
+            |               internal, recoverable exceptions are logged). Optionally written
+            |               to specified location.]""".stripMargin('|')
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean = {
         var outputFormatGiven = false
@@ -213,8 +224,9 @@ object Console extends AnalysisExecutor { analysis ⇒
                     outputFormatGiven = true; true
                 case "-eclipse" ⇒
                     outputFormatGiven = true; true
-                case "-debug" ⇒ true
-                case _        ⇒ false
+                case "-debug"                      ⇒ true
+                case DebugFileOutputNameMatcher(_) ⇒ true
+                case _                             ⇒ false
             }
         ) &&
             outputFormatGiven
