@@ -108,7 +108,11 @@ object InstructionCountBoundedAI {
         upperBound = upperBound * Math.log(code.exceptionHandlers.size + 2 * Math.E)
 
         // to accommodate for analysis specific factors
-        upperBound = (upperBound * maxEvaluationFactor)
+        upperBound = (
+            upperBound * maxEvaluationFactor +
+            // we want to guarantee a certain minimum length
+            (maxEvaluationFactor * 250)
+        )
         if (upperBound < 0.0) {
             upperBound = Int.MaxValue
             OPALLogger.log(Warn(
