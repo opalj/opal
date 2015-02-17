@@ -225,7 +225,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                             s"(code size: ${method.body.get.instructions.length})"
                     // let's try it again, but without performing method calls
                     // let's reuse the current state
-                    val analysisDomain =
+                    val fallbackAnalysisDomain =
                         new FallbackBugPickerAnalysisDomain(
                             theProject,
                             fieldValueInformation, methodReturnValueInformation,
@@ -234,13 +234,13 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                             maxCardinalityOfIntegerRanges)
 
                     val ai1 =
-                        new BoundedInterruptableAI[analysisDomain.type](
+                        new BoundedInterruptableAI[fallbackAnalysisDomain.type](
                             body,
                             maxEvalFactor,
                             maxEvalTime,
                             doInterrupt)
 
-                    val result1 = ai1(classFile, method, analysisDomain)
+                    val result1 = ai1(classFile, method, fallbackAnalysisDomain)
 
                     if (result1.wasAborted)
                         OPALLogger.warn(
@@ -324,8 +324,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
 
                                 StandardIssue(
                                     theProject, classFile, Some(method), Some(pc),
-                                    Some(result.operandsArray(pc)),
-                                    Some(result.localsArray(pc)),
+                                    Some(operandsArray(pc)),
+                                    Some(localsArray(pc)),
                                     "useless (re-)assignment",
                                     Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
                                     Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
@@ -346,8 +346,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
 
                                 StandardIssue(
                                     theProject, classFile, Some(method), Some(pc),
-                                    Some(result.operandsArray(pc)),
-                                    Some(result.localsArray(pc)),
+                                    Some(operandsArray(pc)),
+                                    Some(localsArray(pc)),
                                     "useless (re-)assignment",
                                     Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
                                     Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
@@ -392,13 +392,18 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                                         s"the analysis of ${ms} "+
                                             s"failed/was aborted after $steps steps"
                                     exceptions add (AnalysisException(message, afe))
-                                case ct: ControlThrowable ⇒ throw ct;
+                                case ct: ControlThrowable ⇒ throw ct
                                 case t: Throwable ⇒
                                     val ms = method.fullyQualifiedSignature(classFile.thisType)
                                     val message = s"the analysis of ${ms} failed"
                                     exceptions add (AnalysisException(message, t))
                             }
                         }
+                    } catch {
+                        case t: Throwable ⇒
+                            OPALLogger.error(
+                                "internal error", s"evaluation step $stepId failed", t)
+                            throw t
                     } finally {
                         progressManagement.end(stepId)
                     }

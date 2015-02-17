@@ -31,48 +31,42 @@ package ai
 package domain
 package l2
 
-import org.opalj.br.Method
-import org.opalj.br.ClassFile
+import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.analyses.Project
+import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
-/**
- * Enables to perform invocations.
- *
- * ==Example==
- * (PerformInvocationsWithRecursionDetection is in particular used by BugPicker's domain.)
- *
- * @author Michael Eichberg
- */
-trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with ClassHierarchy with Configuration with TheProject with TheCode ⇒
+class DefaultPerformInvocationsDomain[Source](
+    project: Project[Source],
+    classFile: ClassFile,
+    method: Method)
+        extends SharedDefaultDomain[Source](project, classFile, method)
+        with PerformInvocations {
 
-    /**
-     * The `CalledMethodsStore`, stores (method,concrete parameters) pairs to
-     * make it possible to detect (and prevent) recursive calls.
-     *
-     * The `CalledMethodsStore` does not store the results.
-     */
-    val calledMethodsStore: CalledMethodsStore
-
-    /**
-     * @inheritdoc
-     *
-     * @return The result of calling [[CalledMethodsStore.isRecursive]].
-     */
     def isRecursive(classFile: ClassFile, method: Method, operands: Operands): Boolean =
-        calledMethodsStore.isRecursive(classFile, method, operands)
+        false // {        this.method eq method &&    }
 
-    trait InvokeExecutionHandler extends super.InvokeExecutionHandler {
+    def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean =
+        !method.returnType.isVoidType
 
-        override val domain: Domain with MethodCallResults with PerformInvocationsWithRecursionDetection {
+    def invokeExecutionHandler(
+        pc: PC,
+        classFile: ClassFile, method: Method, operands: Operands): InvokeExecutionHandler =
+        new InvokeExecutionHandler {
+            val domain =
+                new SharedDefaultDomain(
+                    project,
+                    project.classFile(method),
+                    method) with DefaultRecordMethodCallResults
 
-            /*
-             * A reference to the calling domain's called method store.
-             */
-            // We are using the type system to ensure that all instances use the
-            // _same_ CalledMethodsStore
-            val calledMethodsStore: callingDomain.calledMethodsStore.type
+            def ai = BaseAI
         }
 
-    }
 }
+
+class DefaultPerformInvocationsDomainWithCFG[Source](
+    project: Project[Source],
+    classFile: ClassFile,
+    method: Method)
+        extends DefaultPerformInvocationsDomain[Source](project, classFile, method)
+        with RecordCFG
 

@@ -97,39 +97,44 @@ object InstructionCountBoundedAI {
         code: Code,
         maxEvaluationFactor: Double)(
             implicit logContext: LogContext): Int = {
-        val min = code.instructions.size.toDouble
+        val instructionsSize = code.instructions.size.toDouble
         // this is roughly the number of instructions * ~2
-        var upperBound: Double = min
+        var upperBound: Double = instructionsSize
 
         // to accommodate for the reduced complexity of long methods
-        upperBound = upperBound * Math.min(48, Math.pow(65535 / upperBound, 2d / 3d))
+        upperBound = upperBound * Math.min(48, Math.pow(65535d / upperBound, 2d / 3d))
 
         // exception handling usually leads to a large number of evaluations
         upperBound = upperBound * Math.log(code.exceptionHandlers.size + 2 * Math.E)
 
         // to accommodate for analysis specific factors
-        upperBound = (upperBound * maxEvaluationFactor)
-        if (upperBound < 0.0) {
+        upperBound = (
+            upperBound * maxEvaluationFactor +
+            // we want to guarantee a certain minimum length
+            (maxEvaluationFactor * 250.0d)
+        )
+        if (upperBound == java.lang.Double.POSITIVE_INFINITY ||
+            upperBound >= Int.MaxValue.toDouble) {
             upperBound = Int.MaxValue
-            OPALLogger.log(Warn(
+            OPALLogger.warn(
                 "analysis configuration",
                 "effectively unbounded evaluation"+
                     "; instructions size="+code.instructions.size+
                     "; exception handlers="+code.exceptionHandlers.size+
-                    "; maxEvaluationFactor="+maxEvaluationFactor))
+                    "; maxEvaluationFactor="+maxEvaluationFactor)
         }
 
-        if (upperBound > 65535.0 /*Max Length*/ * 10.0) {
-            OPALLogger.log(Warn(
+        if (upperBound > 1000000.0d) {
+            OPALLogger.warn(
                 "analysis configuration",
                 "evaluation (up to: "+upperBound.toInt+
                     " instructions) may take execessively long"+
                     "; instructions size="+code.instructions.size+
                     "; exception handlers="+code.exceptionHandlers.size+
-                    "; maxEvaluationFactor="+maxEvaluationFactor))
+                    "; maxEvaluationFactor="+maxEvaluationFactor)
         }
 
-        Math.max(min, upperBound).toInt
+        Math.max(instructionsSize, upperBound).toInt
     }
 
 }
