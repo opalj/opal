@@ -324,8 +324,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
 
                                 StandardIssue(
                                     theProject, classFile, Some(method), Some(pc),
-                                    Some(result.operandsArray(pc)),
-                                    Some(result.localsArray(pc)),
+                                    Some(operandsArray(pc)),
+                                    Some(localsArray(pc)),
                                     "useless (re-)assignment",
                                     Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
                                     Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
@@ -346,8 +346,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
 
                                 StandardIssue(
                                     theProject, classFile, Some(method), Some(pc),
-                                    Some(result.operandsArray(pc)),
-                                    Some(result.localsArray(pc)),
+                                    Some(operandsArray(pc)),
+                                    Some(localsArray(pc)),
                                     "useless (re-)assignment",
                                     Some("(Re-)Assigned the same value ("+a+") to the same variable ("+lv.name+")."),
                                     Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
