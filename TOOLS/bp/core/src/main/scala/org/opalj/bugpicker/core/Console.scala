@@ -41,6 +41,7 @@ import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.common.XHTML
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
 import org.opalj.bugpicker.core.analysis.IssueKind
+import org.opalj.log.OPALLogger
 
 /**
  * A data-flow analysis that tries to identify dead code based on the evaluation
@@ -121,10 +122,22 @@ object Console extends AnalysisExecutor { analysis ⇒
             // PREPARE THE GENERATION OF THE REPORT OF THE OCCURED EXCEPTIONS
             //
             if (exceptions.nonEmpty) {
+                OPALLogger.error(
+                    "internal error",
+                    s"the analysis threw ${exceptions.size} exceptions")(
+                        theProject.logContext)
+                exceptions.foreach { e ⇒
+                    OPALLogger.error(
+                        "internal error", "the analysis failed", e)(theProject.logContext)
+                }
+
                 var exceptionsReport: Node = null
                 def getExceptionsReport = {
                     if (exceptionsReport eq null) {
-                        val exceptionNodes = exceptions.map(e ⇒ <p>{ XHTML.throwableToXHTML(e) }</p>)
+                        val exceptionNodes =
+                            exceptions.take(10).map { e ⇒
+                                <p>{ XHTML.throwableToXHTML(e) }</p>
+                            }
                         exceptionsReport =
                             XHTML.createXHTML(
                                 Some("Thrown Exceptions"), <div>{ exceptionNodes }</div>)
@@ -166,7 +179,7 @@ object Console extends AnalysisExecutor { analysis ⇒
     final val issueKindsPattern = """-kinds=([\w, ]+)""".r
 
     final override val analysisSpecificParametersDescription: String =
-        """[-maxEvalFactor=<DoubleValue [0.1,15.0]=1.75> determines the maximum effort that the analysis
+        """[-maxEvalFactor=<DoubleValue [0.1,100)=1.75> determines the maximum effort that the analysis
             |               will spend when analyzing a specific method. The effort is always relative
             |               to the size of the method. For the vast majority of methods a value
             |               between 0.5 and 1.5 is sufficient to completely analyze the method using
@@ -209,7 +222,7 @@ object Console extends AnalysisExecutor { analysis ⇒
                 case BugPickerAnalysis.maxEvalFactorPattern(d) ⇒
                     try {
                         val factor = java.lang.Double.parseDouble(d).toDouble
-                        factor >= 0.1d && factor <= 15.0d
+                        factor >= 0.1d && factor < 100.0d
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }
