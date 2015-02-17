@@ -143,7 +143,7 @@ object Console extends AnalysisExecutor { analysis ⇒
                 }
             }
 
-               //
+            //
             // Print some statistics and "return"
             //
             val groupedIssues =
