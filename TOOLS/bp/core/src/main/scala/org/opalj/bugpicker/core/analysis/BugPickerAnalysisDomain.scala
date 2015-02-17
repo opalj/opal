@@ -129,7 +129,7 @@ class RootBugPickerAnalysisDomain(
     lazy val calledMethodsStore: CalledMethodsStore = {
         val store = new CalledMethodsStore(this, /*Frequent Evaluation Warning=*/ 256)
         val operands =
-            localsArray(0).foldRight(List.empty[DomainValue])((l, n) ⇒
+            localsArray(0).foldLeft(List.empty[DomainValue])((l, n) ⇒
                 if (n ne null) n :: l else l
             )
         // we want to add this method to avoid useless recursions;
