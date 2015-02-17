@@ -32,6 +32,7 @@ package core
 
 import java.net.URL
 import scala.collection.SortedMap
+import scala.xml.Node
 import org.opalj.util.PerformanceEvaluation.ns2sec
 import org.opalj.io.writeAndOpen
 import org.opalj.io.process
@@ -65,16 +66,21 @@ object Console extends AnalysisExecutor { analysis ⇒
             parameters: Seq[String],
             initProgressManagement: (Int) ⇒ ProgressManagement) = {
 
+            val (analysisTime, issues0, exceptions) =
+                bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
+
+            //
+            // PREPARE THE GENERATION OF THE REPORT OF THE FOUND ISSUES
+            // (HTML/Eclipse)
+            //
+
+            // Filter the report
             val minRelevance: Int =
                 parameters.collectFirst {
                     case minRelevancePattern(i) ⇒ java.lang.Integer.parseInt(i)
                 }.getOrElse(
                     Console.minRelevance
                 )
-
-            val (analysisTime, issues0, exceptions) =
-                bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
-
             val issues1 = issues0.filter { i ⇒ i.relevance.value >= minRelevance }
 
             val issues = parameters.collectFirst { case issueKindsPattern(ks) ⇒ ks } match {
@@ -85,11 +91,15 @@ object Console extends AnalysisExecutor { analysis ⇒
                     issues1
             }
 
+            // Generate the report well suited for the eclipse console
+            //
             if (parameters.contains("-eclipse")) {
                 val formattedIssues = issues.map { issue ⇒ issue.asEclipseConsoleString }
                 println(formattedIssues.toSeq.sorted.mkString("\n"))
             }
 
+            // Generate the HTML report
+            //
             var htmlReport: String = null
             def getHTMLReport = {
                 if (htmlReport eq null)
@@ -107,23 +117,35 @@ object Console extends AnalysisExecutor { analysis ⇒
                 writeAndOpen(getHTMLReport, "BugPickerAnalysisResults", ".html")
             }
 
+            //
+            // PREPARE THE GENERATION OF THE REPORT OF THE OCCURED EXCEPTIONS
+            //
             if (exceptions.nonEmpty) {
-                val exceptionNodes = exceptions.map(e ⇒ <p>{ XHTML.throwableToXHTML(e) }</p>)
-                val exceptionsDoc =
-                    XHTML.createXHTML(
-                        Some("Thrown Exceptions"), <div>{ exceptionNodes }</div>)
-
+                var exceptionsReport: Node = null
+                def getExceptionsReport = {
+                    if (exceptionsReport eq null) {
+                        val exceptionNodes = exceptions.map(e ⇒ <p>{ XHTML.throwableToXHTML(e) }</p>)
+                        exceptionsReport =
+                            XHTML.createXHTML(
+                                Some("Thrown Exceptions"), <div>{ exceptionNodes }</div>)
+                    }
+                    exceptionsReport
+                }
                 parameters.collectFirst { case DebugFileOutputNameMatcher(name) ⇒ name } match {
                     case Some(fileName) ⇒
                         process { new java.io.FileOutputStream(fileName) } { fos ⇒
-                            fos.write(exceptionsDoc.toString.getBytes("UTF-8"))
+                            fos.write(getExceptionsReport.toString.getBytes("UTF-8"))
                         }
                     case _ ⇒ // Nothing to do
                 }
                 if (parameters.contains("-debug")) {
-                    org.opalj.io.writeAndOpen(exceptionsDoc, "Exceptions", ".html")
+                    org.opalj.io.writeAndOpen(getExceptionsReport, "Exceptions", ".html")
                 }
             }
+
+               //
+            // Print some statistics and "return"
+            //
             val groupedIssues =
                 issues.groupBy(_.relevance).toList.
                     sortWith((e1, e2) ⇒ e1._1.value < e2._1.value)
@@ -176,8 +198,8 @@ object Console extends AnalysisExecutor { analysis ⇒
             |[-html[=<FileName>] generates an HTML report which is written to the optionally
             |               specified location.]
             |[-debug[=<FileName>] turns on the debug mode (more information are logged and
-            |               internal, recoverable exceptions are logged). Optionally written
-            |               to specified location.]""".stripMargin('|')
+            |               internal, recoverable exceptions are logged) the report is optionally
+            |               written to the specified location.]""".stripMargin('|')
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean = {
         var outputFormatGiven = false
