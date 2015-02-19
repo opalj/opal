@@ -99,7 +99,7 @@ import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.domain.ThrowNoPotentialExceptionsConfiguration
 
 /**
- * Implementation of an analysis to find code that is "dead"/"useless".
+ * Implementation of an analysis to find code that is "dead".
  *
  * @author Michael Eichberg
  */
@@ -117,6 +117,10 @@ object DeadPathAnalysis {
         val instructions = body.instructions
         import result.joinInstructions
 
+        /*
+         * Helper function to identify methods that will always throw an exception if
+         * executed.
+         */
         def isAlwaysExceptionThrowingMethodCall(pc: PC): Boolean = {
             body.instructions(pc) match {
                 case MethodInvocationInstruction(receiver: ObjectType, name, descriptor) ⇒
@@ -144,10 +148,16 @@ object DeadPathAnalysis {
             }
         }
 
-        // A return/goto/athrow instruction is only considered useless if the preceding
-        // instruction is a method call with a single target that _context-independently_
-        // always just throws (an) exception(s). This is common pattern found in the JDK.
-        //
+        /*
+         *  A return/goto/athrow instruction is considered useless if the preceding
+        * instruction is a method call with a single target that _context-independently_
+        * always just throws (an) exception(s). This is common pattern found in the JDK.
+        */
+        // We want to suppress false warning as found in JDK 1.8.0_25
+        //     javax.xml.bind.util.JAXBResult
+        // when the method
+        //     assertFailed
+        // is called and afterwards a jump is done to a non-dead instruction.
         def requiredButIrrelevantSuccessor(currentPC: PC, nextPC: PC): Boolean = {
 
             val nextInstruction = body.instructions(nextPC)
@@ -155,11 +165,6 @@ object DeadPathAnalysis {
                 nextInstruction.isInstanceOf[ReturnInstruction] ||
                 nextInstruction == ATHROW ||
                 (
-                    // We want to suppress false warning as found in JDK 1.8.0_25
-                    //     javax.xml.bind.util.JAXBResult
-                    // when the method
-                    //     assertFailed
-                    // is called and afterwards a jump is done to a non-dead method.
                     nextInstruction.isInstanceOf[GotoInstruction] &&
                     evaluatedInstructions.contains(body.nextNonGotoInstruction(nextPC))
                 )
@@ -177,18 +182,23 @@ object DeadPathAnalysis {
                 if evaluatedInstructions.contains(pc)
                 instruction = instructions(pc)
 
-                // if we are the end of the method everything is fine by definition...
-                if !MethodCompletionInstruction.unapply(instruction)
-
-                // we don't know the next one, but the next one is not dead... (ever)
-                // if we reach this one
-                if instruction.opcode != RET.opcode
+                if {
+                    val opcode = instruction.opcode
+                    // we don't know the next one, but the next one is not dead... (ever)
+                    // if we reach this one
+                    opcode != RET.opcode &&
+                        // We don't have an analysis in place that enables us to determine
+                        // the real successors
+                        opcode != ATHROW.opcode
+                }
 
                 // test if one or all of the successors are dead
                 (nextPC: PC) ← instruction.nextInstructions(pc, body)
                 if !evaluatedInstructions.contains(nextPC)
 
                 allOperands = operandsArray(pc)
+                // TODO store the state of the subroutines to facilitate the identification of dead paths
+                if allOperands ne null // null if we are in a subroutine (java < 1.5)
             } {
                 // identify those dead edges that are pure technical artifacts
                 val isLikelyFalsePositive = requiredButIrrelevantSuccessor(pc, nextPC)

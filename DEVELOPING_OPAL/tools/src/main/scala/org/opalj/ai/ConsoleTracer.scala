@@ -121,7 +121,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
             alreadyEvaluated: List[PC],
             operandsArray: domain.OperandsArray,
             localsArray: domain.LocalsArray,
-            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]): Unit = {
+            memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]): Unit = {
 
         println(BLACK_B + WHITE+"Starting Code Analysis"+RESET)
         println("Number of registers:      "+code.maxLocals)

@@ -97,7 +97,10 @@ object InstructionCountBoundedAI {
         code: Code,
         maxEvaluationFactor: Double)(
             implicit logContext: LogContext): Int = {
-        val instructionsSize = code.instructions.size.toDouble
+        // If this method is just a convenience wrapper we want to ensure that
+        // we can still analyze the called methods if we also analyze the called
+        // methods.
+        val instructionsSize = Math.max(code.instructions.size, 100).toDouble
         // this is roughly the number of instructions * ~2
         var upperBound: Double = instructionsSize
 
@@ -110,7 +113,8 @@ object InstructionCountBoundedAI {
         // to accommodate for analysis specific factors
         upperBound = (
             upperBound * maxEvaluationFactor +
-            // we want to guarantee a certain minimum length
+            // we want to guarantee a certain minimum length if we raise the
+            // evaluation factor
             (maxEvaluationFactor * 250.0d)
         )
         if (upperBound == java.lang.Double.POSITIVE_INFINITY ||
