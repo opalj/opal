@@ -3079,6 +3079,12 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                     val p = AnIntegerValue
                     intIsLessThanOrEqualTo(IrrelevantPC, p, p) should be(Yes)
                 }
+                it("comparison(<=) of anInt with IntMin") {
+                    val v1 = AnIntegerValue
+                    val v2 = IntegerRange(Int.MinValue, Int.MinValue)
+                    intIsLessThanOrEqualTo(IrrelevantPC, v1, v2) should be(Unknown)
+                    intIsLessThanOrEqualTo(IrrelevantPC, v2, v1) should be(Yes)
+                }
             }
 
             describe("the behavior of the greater than (>) operator") {
