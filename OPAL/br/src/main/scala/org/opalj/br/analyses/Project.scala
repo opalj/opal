@@ -680,16 +680,16 @@ object Project {
                 handleInconsistentProject(
                     logContext,
                     InconsistentProjectException(
-                        "The type "+
-                            objectType.toJava+
-                            " is defined by multiple class files: "+
+                        s"${objectType.toJava} is defined by multiple class files: "+
                             sources.get(objectType).getOrElse("<VIRTUAL>")+" and "+
-                            (if (source == null) "<VIRTUAL>" else source)+"."
+                            source.map(_.toString).getOrElse("<VIRTUAL>")+
+                            "; keeping the first one."
                     )
                 )
+            } else {
+                objectTypeToClassFile.put(objectType, classFile)
+                source.foreach(sources.put(classFile.thisType, _))
             }
-            objectTypeToClassFile.put(objectType, classFile)
-            source.foreach(sources.put(classFile.thisType, _))
         }
 
         for ((classFile, source) ← projectClassFilesWithSources) {
