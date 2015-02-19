@@ -114,7 +114,7 @@ sealed abstract class AIResult {
      * Contains the memory layout before the call to a subroutine. This list is
      * empty if the abstract interpretation completed successfully.
      */
-    val memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]
+    val memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
 
     /**
      * Returns `true` if the abstract interpretation was aborted.
@@ -132,8 +132,8 @@ sealed abstract class AIResult {
             else "Worklist: empty\n"
         )
         if (memoryLayoutBeforeSubroutineCall.nonEmpty) {
-            for ((operandsArray, localsArray) ← memoryLayoutBeforeSubroutineCall) {
-                result += "Memory Layout Before Subroutine Call:\n"
+            for ((subroutineId, operandsArray, localsArray) ← memoryLayoutBeforeSubroutineCall) {
+                result += s"Memory Layout Before Calling Subroutine $subroutineId:\n"
                 result += memoryLayoutToText(domain)(operandsArray, localsArray)
             }
         }
@@ -205,7 +205,7 @@ object AIResultBuilder {
             theEvaluated: List[PC],
             theOperandsArray: theDomain.OperandsArray,
             theLocalsArray: theDomain.LocalsArray,
-            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIAborted { val domain: theDomain.type } = {
+            theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]): AIAborted { val domain: theDomain.type } = {
 
         new AIAborted {
             val strictfp: Boolean = theStrictfp
@@ -216,7 +216,7 @@ object AIResultBuilder {
             val evaluated: List[PC] = theEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+            val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
             def continueInterpretation(
                 ai: AI[_ >: domain.type]): AIResult =
@@ -249,7 +249,7 @@ object AIResultBuilder {
             val evaluated: List[PC] = theEvaluated
             val operandsArray: theDomain.OperandsArray = theOperandsArray
             val localsArray: theDomain.LocalsArray = theLocalsArray
-            val memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
+            val memoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)] = Nil
 
             def restartInterpretation(
                 ai: AI[_ >: theDomain.type]): AIResult =

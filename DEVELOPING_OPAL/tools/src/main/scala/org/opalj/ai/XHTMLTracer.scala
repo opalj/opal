@@ -271,7 +271,7 @@ trait XHTMLTracer extends AITracer {
             alreadyEvaluated: List[PC],
             operandsArray: domain.OperandsArray,
             localsArray: domain.LocalsArray,
-            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]): Unit = {
+            memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]): Unit = {
         if ((this.code eq code) || (this.code == null))
             this.code = code
         else

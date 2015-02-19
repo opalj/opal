@@ -307,7 +307,7 @@ trait AI[D <: Domain] {
             joinInstructions: BitSet,
             theOperandsArray: theDomain.OperandsArray,
             theLocalsArray: theDomain.LocalsArray,
-            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): Unit = {
+            theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]): Unit = {
 
         // The following order must not change:
         // (The order is part of the contract of AI.)
@@ -337,7 +337,7 @@ trait AI[D <: Domain] {
             alreadyEvaluated: List[PC],
             theOperandsArray: theDomain.OperandsArray,
             theLocalsArray: theDomain.LocalsArray,
-            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
+            theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
         val joinInstructions = code.joinInstructions
 
         continueInterpretation(
@@ -403,7 +403,7 @@ trait AI[D <: Domain] {
             alreadyEvaluated: List[PC],
             theOperandsArray: theDomain.OperandsArray,
             theLocalsArray: theDomain.LocalsArray,
-            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
+            theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
 
         if (tracer.isDefined)
             tracer.get.continuingInterpretation(strictfp, code, theDomain)(
@@ -446,13 +446,15 @@ trait AI[D <: Domain] {
         /* 2 */ var localsArray = theLocalsArray
         /* 3 */ var worklist = initialWorkList
         /* 4 */ var evaluated = alreadyEvaluated
-        /* 5 */ var memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+        /* 5 */ var memoryLayoutBeforeSubroutineCall: List[(PC /* the pc of the first instruction of the subroutine <=> the subroutine id */ , theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
         // -------------------------------------------------------------------------------
         //
         // Main loop of the abstract interpreter
         //
         // -------------------------------------------------------------------------------
+
+        lazy val belongsToSubroutine = code.belongsToSubroutine()
 
         /*
          * Updates the state of the abstract interpreter to make it possible to
@@ -470,6 +472,12 @@ trait AI[D <: Domain] {
             isExceptionalControlFlow: Boolean,
             newOperands: Operands,
             newLocals: Locals): Unit = {
+
+            if (isExceptionalControlFlow &&
+                memoryLayoutBeforeSubroutineCall.nonEmpty &&
+                belongsToSubroutine(targetPC) != memoryLayoutBeforeSubroutineCall.head._1) {
+                println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the subroutine ended abruptly")
+            }
 
             val (operands, locals) =
                 theDomain.afterEvaluation(
@@ -490,9 +498,12 @@ trait AI[D <: Domain] {
                     operandsArray(targetPC) = operands
                     localsArray(targetPC) = locals
                     worklist = targetPC :: worklist
+
                     if (tracer.isDefined)
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
-                    /* no join: */ false
+
+                    /* join: */ false
+
                 } else if (!joinInstructions.contains(targetPC)) {
                     // The instruction is not an instruction where multiple control-flow
                     // paths join; however, we may have a dangling computation.
@@ -512,11 +523,14 @@ trait AI[D <: Domain] {
                     localsArray(targetPC) = locals
                     if (!containsInPrefix(worklist, targetPC, SUBROUTINE_START))
                         worklist = targetPC :: worklist
+
                     if (tracer.isDefined)
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
-                    /* no join: */ false
+
+                    /* join: */ false
+
                 } else {
-                    // we already evaluated the target instruction ...
+                    // we already evaluated the target (join) instruction ...
                     val currentLocals = localsArray(targetPC)
                     val mergeResult =
                         theDomain.join(
@@ -575,12 +589,14 @@ trait AI[D <: Domain] {
                                 }
                             }
                     }
-                    true
+
+                    /*join: */ true
                 }
 
             worklist =
                 theDomain.flow(
-                    sourcePC, targetPC, isExceptionalControlFlow, wasJoinPerformed,
+                    sourcePC, targetPC, isExceptionalControlFlow,
+                    wasJoinPerformed,
                     worklist,
                     operandsArray, localsArray,
                     tracer)
@@ -666,7 +682,8 @@ trait AI[D <: Domain] {
                         (retPC, operands, updatedLocals)
                     }
                     // clear all computations to make this subroutine callable again
-                    val (oldOperandsArray, oldLocalsArray) = memoryLayoutBeforeSubroutineCall.head
+                    val (_ /*subroutineId*/ , oldOperandsArray, oldLocalsArray) =
+                        memoryLayoutBeforeSubroutineCall.head
                     operandsArray = oldOperandsArray
                     localsArray = oldLocalsArray
                     memoryLayoutBeforeSubroutineCall = memoryLayoutBeforeSubroutineCall.tail
@@ -1017,10 +1034,11 @@ trait AI[D <: Domain] {
                             branchtarget, false, operands, locals)
 
                     // Fundamental idea: we treat a "jump to subroutine" similar to
-                    // the call of a method. I.e., we make sure the operand
+                    // the call of a method. I.e., we make sure that the operand
                     // stack and the registers are empty for all instructions that
-                    // potentially belong to the subroutine by clearing all information
-                    // when the exploration of all paths of the subroutine is finished
+                    // potentially belong to the subroutine.
+                    // Basically, we clear all information when the exploration of
+                    // all paths of the subroutine is finished
                     // and before we return from the subroutine.
                     // Semantics (from the JVM Spec):
                     // - The instruction following each jsr(_w) instruction may be
@@ -1030,19 +1048,23 @@ trait AI[D <: Domain] {
                     //      present in the subroutine call chain. (Subroutines can be
                     //      nested when using try-finally constructs from within a
                     //      finally clause.)
+                    //      HOWEVER, if a subroutine is terminated by a thrown exception
+                    //      it may be the case that we call the same subroutine again
+                    //      even though it appears as if the subroutine was not finished.
                     // - Each instance of type return address can be returned to at most
                     //      once.
                     case 168 /*jsr*/
                         | 201 /*jsr_w*/ ⇒
                         val returnTarget = pcOfNextInstruction
+                        val branchTarget = pc + as[JSRInstruction](instruction).branchoffset
                         evaluated = SUBROUTINE_START :: evaluated
                         memoryLayoutBeforeSubroutineCall =
-                            (operandsArray.clone, localsArray.clone) :: memoryLayoutBeforeSubroutineCall
+                            (branchTarget, operandsArray.clone, localsArray.clone) ::
+                                memoryLayoutBeforeSubroutineCall
 
-                        val branchtarget = pc + as[JSRInstruction](instruction).branchoffset
                         // let's check if we can eagerly fetch the information where the
                         // return address is stored!
-                        instructions(branchtarget) match {
+                        instructions(branchTarget) match {
                             case AStoreInstruction(lvIndex) ⇒
                                 worklist =
                                     SUBROUTINE_START ::
@@ -1061,12 +1083,12 @@ trait AI[D <: Domain] {
                             theDomain.ReturnAddressValue(returnTarget) :: operands
                         gotoTarget(
                             pc, instruction, operands, locals,
-                            branchtarget, false, newOperands, locals)
+                            branchTarget, false, newOperands, locals)
 
                         if (tracer.isDefined) {
                             tracer.get.jumpToSubroutine(
                                 theDomain)(
-                                    pc, branchtarget, memoryLayoutBeforeSubroutineCall.size)
+                                    pc, branchTarget, memoryLayoutBeforeSubroutineCall.size)
                         }
 
                     case 169 /*ret*/ ⇒
