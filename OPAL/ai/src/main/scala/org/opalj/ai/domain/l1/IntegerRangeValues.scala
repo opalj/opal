@@ -330,7 +330,12 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                             Unknown
                     }
             case _ ⇒
-                Unknown
+                left match {
+                    case IntegerRange(_, Int.MinValue) ⇒
+                        Yes
+                    case _ ⇒
+                        Unknown
+                }
         }
     }
 
