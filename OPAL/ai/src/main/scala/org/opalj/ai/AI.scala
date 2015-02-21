@@ -492,46 +492,51 @@ trait AI[D <: Domain] {
 
                 val jumpToSubroutineId = belongsToSubroutine(targetPC)
 
-                println("handleAbruptSubroutineTermination - sourcePC: "+sourcePC+"; targetPC: "+targetPC+"-subroutineId: "+jumpToSubroutineId)
-                println("handleAbruptSubroutineTermination - old: "+worklist)
-
-                var terminatedSubroutinesCount = 0
+                var subroutinesToTerminate = 0
                 val it = memoryLayoutBeforeSubroutineCall.iterator
                 while (it.hasNext && it.next()._1 != jumpToSubroutineId) {
-                    terminatedSubroutinesCount += 1
+                    subroutinesToTerminate += 1
                 }
-                println("handleAbruptSubroutineTermination - terminatedSubroutinesCount: "+terminatedSubroutinesCount)
+                val terminatedSubroutinesCount = subroutinesToTerminate
+
                 // we now know the number of subroutines that are terminated (at most
                 // all active real subroutines) now let's remove the elements of those
                 // subroutines from the worklist, schedule the instruction (if necessary)
                 // and re-add the header
                 var header: List[PC] = Nil
-                var remainingWorkList: List[PC] = worklist
-                while (terminatedSubroutinesCount > 0) {
-                    val pc = remainingWorkList.head
+                var remainingWorklist: List[PC] = worklist
+                while (subroutinesToTerminate > 0) {
+                    val pc = remainingWorklist.head
                     header = pc :: header
-                    remainingWorkList = remainingWorkList.tail
+                    remainingWorklist = remainingWorklist.tail
                     if (pc == SUBROUTINE)
-                        terminatedSubroutinesCount -= 1
+                        subroutinesToTerminate -= 1
                 }
 
-                if (remainingWorkList.nonEmpty && remainingWorkList.head == targetPC)
+                if (remainingWorklist.nonEmpty && remainingWorklist.head == targetPC)
                     // The instruction was already scheduled.
                     // Note that "rescheduled" basically just means that the instruction
                     // was already scheduled
                     return true;
 
-                val filteredRemainingWorkList = removeFirstUnless(remainingWorkList, targetPC) { _ < 0 }
-                val rescheduled = filteredRemainingWorkList ne remainingWorkList
+                val filteredRemainingWorkList = removeFirstUnless(remainingWorklist, targetPC) { _ < 0 }
+                val rescheduled = filteredRemainingWorkList ne remainingWorklist
                 if (rescheduled || doSchedule)
-                    remainingWorkList = targetPC :: filteredRemainingWorkList
+                    remainingWorklist = targetPC :: filteredRemainingWorkList
                 while (header.nonEmpty) {
-                    remainingWorkList = header.head :: remainingWorkList
+                    remainingWorklist = header.head :: remainingWorklist
                     header = header.tail
                 }
-                worklist = remainingWorkList
 
-                println("handleAbruptSubroutineTermination - new: "+worklist)
+                if (tracer.isDefined) {
+                    tracer.get.abruptSubroutineTermination(theDomain)(
+                        sourcePC, targetPC, jumpToSubroutineId,
+                        terminatedSubroutinesCount,
+                        oldWorklist = worklist,
+                        newWorklist = remainingWorklist)
+                }
+
+                worklist = remainingWorklist
 
                 rescheduled
             }

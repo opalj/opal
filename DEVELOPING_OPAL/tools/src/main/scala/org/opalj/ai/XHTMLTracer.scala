@@ -353,6 +353,13 @@ trait XHTMLTracer extends AITracer {
             returnAddress: PC,
             subroutineInstructions: List[PC]): Unit = { /*ignored*/ }
 
+    def abruptSubroutineTermination(
+        domain: Domain)(
+            sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+            terminatedSubroutinesCount: Int,
+            oldWorklist: List[PC],
+            newWorklist: List[PC]): Unit = { /*ignored*/ }
+
     /**
      * Called when a ret instruction is encountered.
      */

@@ -189,6 +189,13 @@ trait AITracer {
             returnAddress: PC,
             subroutineInstructions: List[PC]): Unit
 
+    def abruptSubroutineTermination(
+        domain: Domain)(
+            sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+            terminatedSubroutinesCount: Int,
+            oldWorklist: List[PC],
+            newWorklist: List[PC]): Unit
+
     /**
      * Called when the analyzed method throws an exception that is not caught within
      * the method. I.e., the interpreter evaluates an `athrow` instruction or some
