@@ -620,7 +620,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         def theUpperTypeBound: ReferenceType
 
-        def doPeformJoinWithNonNullValueWithSameOrigin(
+        override def doPeformJoinWithNonNullValueWithSameOrigin(
             that: DomainSingleOriginReferenceValue,
             newT: Timestamp): DomainSingleOriginReferenceValue = {
             val thisUTB = this.theUpperTypeBound
@@ -633,7 +633,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             val newUTB = classHierarchy.joinReferenceType(thisUTB, thatUTB)
             ReferenceValue(origin, newIsNull, newIsPrecise, newUTB, t)
         }
-
     }
 
     protected class ArrayValue(
@@ -1052,8 +1051,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             val newValueUTB = newValue.upperTypeBound
             val joinedUTB = classHierarchy.joinUpperTypeBounds(thisUTB, newValueUTB)
 
-            //   println(s"joinValue: $thisUTB join $newValueUTB ==> $joinedUTB")
-
             MultipleReferenceValues(
                 this.values + newValue,
                 this.isNull & newValue.isNull,
@@ -1436,6 +1433,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
+        /**
+         * Join of a value (`thatValue`)  with a value (`thisValue) referenced by this
+         * value.
+         */
         protected[this] def doReJoinSingleOriginReferenceValue(
             joinPC: PC,
             thisValue: DomainSingleOriginReferenceValue,
@@ -1474,7 +1475,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     val newIsPrecise = this.isPrecise && thatValue.isPrecise && (
                         thisUTB.isEmpty || thatUTB.isEmpty || thisUTB == thatUTB
                     )
-
                     if (updateType != NoUpdateType) {
                         updateType(
                             MultipleReferenceValues(
@@ -1491,7 +1491,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 case update @ SomeUpdate(newValue) ⇒
                     val joinedValue = newValue.asInstanceOf[DomainSingleOriginReferenceValue]
 
-                    //println(this+" :::"+thisValue+"   joined     "+joinedValue)
                     update.updateValue(
                         rejoinValue(thisValue, thatValue, joinedValue)
                     )
