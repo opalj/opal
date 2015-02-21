@@ -390,6 +390,8 @@ class Project[Source] private (
             ("ProjectFields" -> projectFieldsCount),
             ("LibraryMethods" -> libraryMethodsCount),
             ("LibraryFields" -> libraryFieldsCount),
+            ("ProjectPackages" -> projectPackages.size),
+            ("LibraryPackages" -> libraryPackages.size),
             ("ProjectInstructions" ->
                 projectClassFiles.foldLeft(0)(_ + _.methods.filter(_.body.isDefined).
                     foldLeft(0)(_ + _.body.get.instructions.count(_ != null))))
