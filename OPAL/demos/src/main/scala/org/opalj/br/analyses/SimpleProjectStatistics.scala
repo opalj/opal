@@ -33,7 +33,7 @@ package analyses
 import java.net.URL
 
 /**
- * Some statistics about the projects (created for Entwicklertag 2015 in Frankfurt)
+ * Some statistics about the analyzed project (created for Entwicklertag 2015 in Frankfurt).
  *
  * @author Michael Eichberg
  */
@@ -53,14 +53,26 @@ object SimpleProjectStatistics extends AnalysisExecutor with OneStepAnalysis[URL
 
         // the following is highly inefficient,
 
-        val maxInstanceFieldsInAClass = project.allClassFiles.map(_.fields.filter(f ⇒ !f.isStatic).size).max
-        val classWithMaxInstanceFields = project.allClassFiles.find(_.fields.filter(f ⇒ !f.isStatic).size == maxInstanceFieldsInAClass).map(_.thisType.toJava)
+        val maxInstanceFieldsInAClass =
+            project.allClassFiles.map(_.fields.filter(f ⇒ !f.isStatic).size).max
+        val classWithMaxInstanceFields =
+            project.allClassFiles.find(
+                _.fields.filter(f ⇒ !f.isStatic).size == maxInstanceFieldsInAClass
+            ).map(_.thisType.toJava)
 
-        val maxClassFieldsInAClass = project.allClassFiles.map(_.fields.filter(f ⇒ f.isStatic).size).max
-        val classWithMaxClassFields = project.allClassFiles.find(_.fields.filter(f ⇒ f.isStatic).size == maxClassFieldsInAClass).map(_.thisType.toJava)
+        val maxClassFieldsInAClass =
+            project.allClassFiles.map(_.fields.filter(f ⇒ f.isStatic).size).max
+        val classWithMaxClassFields =
+            project.allClassFiles.find(
+                _.fields.filter(f ⇒ f.isStatic).size == maxClassFieldsInAClass
+            ).map(_.thisType.toJava)
 
-        val maxMethodsInAClass = project.allClassFiles.map(_.methods.size).max
-        val classWithMaxMethods = project.allClassFiles.find(_.methods.size == maxMethodsInAClass).map(_.thisType.toJava)
+        val maxMethodsInAClass =
+            project.allClassFiles.map(_.methods.size).max
+        val classWithMaxMethods =
+            project.allClassFiles.find(
+                _.methods.size == maxMethodsInAClass
+            ).map(_.thisType.toJava)
 
         val (longestMethodInAClass, theLongestMethod) =
             {
