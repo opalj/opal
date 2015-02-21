@@ -113,6 +113,7 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
         currentPC: PC,
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
+        abruptSubroutineTermination: Boolean,
         wasJoinPerformed: Boolean,
         worklist: List[PC],
         operandsArray: OperandsArray,
@@ -133,7 +134,8 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
 
         super.flow(
             currentPC, successorPC,
-            isExceptionalControlFlow, wasJoinPerformed,
+            isExceptionalControlFlow, abruptSubroutineTermination,
+            wasJoinPerformed,
             worklist,
             operandsArray, localsArray,
             tracer)

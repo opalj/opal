@@ -94,7 +94,8 @@ trait AITracer {
      * before the instruction with the program counter `targetPC` may be evaluated.
      *
      * This method is only called if the instruction with the program counter
-     * `targetPC` will be evaluated. I.e., when the abstract interpreter
+     * `targetPC` will be evaluated in the future and was not yet scheduled.
+     * I.e., when the abstract interpreter
      * determines that the evaluation of an instruction does not change the abstract
      * state (associated with the successor instruction) and, therefore, will not
      * schedule the successor instruction this method is not called.
@@ -103,7 +104,9 @@ trait AITracer {
      * called multiple times (even with the same targetPC) before the method
      * `instructionEvaluation` is called again.
      *
-     * @note OPAL performs a depth-first exploration.
+     * @note OPAL performs a depth-first exploration. However, subroutines are always
+     *      first finished analyzing before an exception handler - that handles abrupt
+     *      executions of the subroutine - is evaluated.
      */
     def flow(
         domain: Domain)(
@@ -121,10 +124,11 @@ trait AITracer {
             targetPC: PC): Unit
 
     /**
-     * Called if the instruction with the `targetPC` was rescheduled. I.e., the
-     * instruction was already scheduled for evaluation in the future, but was now
-     * rescheduled for a more immediate evaluation. I.e., it was moved to the first
-     * position in the list that contains the instructions that will be evaluated.
+     * Called if the instruction with the `targetPC` was already scheduled. I.e., the
+     * instruction was already scheduled for evaluation, but is now moved to the first
+     * position in the list of all instructions to be executed (related to the specific
+     * subroutine). '''A rescheduled event is also issued if the instruction was the
+     * the first in the list of instructions executed next.'''
      * However, further instructions may be appended to the list before the
      * next `instructionEvaluation` takes place.
      *
