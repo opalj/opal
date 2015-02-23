@@ -125,6 +125,13 @@ trait ConsoleEvaluationTracer extends AITracer {
         printIndent
     }
 
+    def abruptSubroutineTermination(
+        domain: Domain)(
+            sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+            terminatedSubroutinesCount: Int,
+            oldWorklist: List[PC],
+            newWorklist: List[PC]): Unit = { /* EMPTY */ }
+
     override def ret(
         domain: Domain)(
             pc: PC,

@@ -78,7 +78,7 @@ class ExtVTACallGraphDomain[Source](
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with l1.DefaultIntegerRangeValues
-        with l1.ConstraintsBetweenIntegerValues
+        // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues 
         with l1.DefaultLongSetValues
         with l1.LongSetValuesShiftOperators
         with l1.ConcretePrimitiveValuesConversions

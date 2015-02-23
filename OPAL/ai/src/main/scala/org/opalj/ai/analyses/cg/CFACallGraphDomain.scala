@@ -84,7 +84,7 @@ class CFACallGraphDomain[Source](
         with l1.NullPropertyRefinement
         with l1.DefaultIntegerRangeValues
         //with l0.DefaultTypeLevelIntegerValues
-        //with l1.ConstraintsBetweenIntegerValues
+        // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
         with l0.DefaultTypeLevelLongValues
         //with l1.LongSetValuesShiftOperators
         with l0.TypeLevelPrimitiveValuesConversions

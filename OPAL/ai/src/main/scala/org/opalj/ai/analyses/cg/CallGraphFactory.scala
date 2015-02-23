@@ -56,8 +56,12 @@ object CallGraphFactory {
      *  - every non-private static method,
      *  - every non-private constructor,
      *  - every non-private method,
-     *  - every private method related to Serialization, if the respective
-     *    declaring class is a subtype of java.io.Serializable.
+     *  - every private method (including a default constructor) related to
+     *    Serialization, if the respective declaring class is a subtype of
+     *    java.io.Serializable,
+     *  // TODO ...
+     *  - No entry points:
+     *    public instance methods of a class that provides no way to create an instance of it (e.g., java.lang.Math)
      */
     def defaultEntryPointsForLibraries(project: SomeProject): Iterable[Method] = {
         val classHierarchy = project.classHierarchy

@@ -189,6 +189,13 @@ trait PerformInvocations extends MethodCallsHandling {
         operands: Operands,
         fallback: () ⇒ MethodCallResult): MethodCallResult = {
 
+        assert(definingClass.methods.contains(method))
+        assert(
+            method.body.isDefined,
+            s"the method ${project.source(definingClass.thisType)}: "+
+                s"${method.toJava(definingClass)} does not have a body "+
+                "(is the project self-consistent?)")
+
         val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
         executionHandler.perform(pc, definingClass, method, operands, fallback)
     }
@@ -200,7 +207,16 @@ trait PerformInvocations extends MethodCallsHandling {
         operands: Operands,
         fallback: () ⇒ MethodCallResult): MethodCallResult = {
 
-        if (!method.isNative) {
+        if (project.isLibraryType(definingClass.thisType))
+            return fallback();
+
+        if (method.isAbstract) {
+            OPALLogger.error(
+                "project configuration",
+                "the resolved method on a concrete object is abstract: "+
+                    method.toJava(definingClass))
+            fallback()
+        } else if (!method.isNative) {
             if (!shouldInvocationBePerformed(definingClass, method) ||
                 isRecursive(definingClass, method, operands))
                 fallback()
@@ -219,7 +235,7 @@ trait PerformInvocations extends MethodCallsHandling {
 
     protected[this] def doInvokeNonVirtual(
         pc: PC,
-        declaringClass: ObjectType,
+        declaringClassType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
         operands: Operands,
@@ -228,7 +244,7 @@ trait PerformInvocations extends MethodCallsHandling {
         val methodOption = try {
             classHierarchy.resolveMethodReference(
                 // the cast is safe since arrays do not have any static/special methods
-                declaringClass.asObjectType,
+                declaringClassType.asObjectType,
                 methodName,
                 methodDescriptor,
                 project)
@@ -238,7 +254,7 @@ trait PerformInvocations extends MethodCallsHandling {
                 OPALLogger.error(
                     "internal error - recoverable",
                     "exception occured while resolving method reference: "+
-                        declaringClass.toJava+
+                        declaringClassType.toJava+
                         "{ static "+methodDescriptor.toJava(methodName)+"}"+
                         ": "+e.getMessage)
                 return fallback();
@@ -246,7 +262,7 @@ trait PerformInvocations extends MethodCallsHandling {
                 OPALLogger.error(
                     "internal error - recoverable",
                     "exception occured while resolving method reference: "+
-                        declaringClass.toJava+
+                        declaringClassType.toJava+
                         "{ static "+methodDescriptor.toJava(methodName)+"}",
                     e
                 )
@@ -261,7 +277,7 @@ trait PerformInvocations extends MethodCallsHandling {
                 OPALLogger.logOnce(Warn(
                     "project configuration",
                     "method reference cannot be resolved: "+
-                        declaringClass.toJava+
+                        declaringClassType.toJava+
                         "{ static "+methodDescriptor.toJava(methodName)+"}"))
                 fallback()
         }
