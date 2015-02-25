@@ -57,6 +57,7 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         currentPC: PC,
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
+        abruptSubroutineTermination: Boolean,
         wasJoinPerformed: Boolean,
         worklist: List[PC],
         operandsArray: OperandsArray,
@@ -100,8 +101,12 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         }
 
         super.flow(
-            currentPC, successorPC, isExceptionalControlFlow, wasJoinPerformed, worklist,
-            operandsArray, localsArray, tracer)
+            currentPC, successorPC,
+            isExceptionalControlFlow, abruptSubroutineTermination,
+            wasJoinPerformed,
+            worklist,
+            operandsArray, localsArray,
+            tracer)
     }
 
     def registerOnRegularControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit = {

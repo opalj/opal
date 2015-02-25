@@ -280,6 +280,20 @@ trait ConsoleTracer extends AITracer { tracer ⇒
                 RESET)
     }
 
+    override def abruptSubroutineTermination(
+        domain: Domain)(
+            sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+            terminatedSubroutinesCount: Int,
+            oldWorklist: List[PC],
+            newWorklist: List[PC]): Unit = {
+        println(
+            RED_B + WHITE + sourcePC + line(domain, sourcePC)+
+                ":ABRUPT RETURN FROM SUBROUTINE: target="+targetPC+
+                " : number of terminated subroutines="+terminatedSubroutinesCount + RESET+
+                "\n"+RED_B + WHITE+"\t\told worklist: "+oldWorklist.mkString(",") + RESET+
+                "\n"+RED_B + WHITE+"\t\tnew worklist: "+newWorklist.mkString(",") + RESET)
+    }
+
     /**
      * Called when a ret instruction is encountered.
      */

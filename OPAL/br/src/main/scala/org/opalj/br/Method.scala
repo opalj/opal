@@ -242,7 +242,9 @@ object Method {
         import MethodDescriptor.JustReturnsObject
         import MethodDescriptor.NoArgsAndReturnVoid
 
-        (method.name == "readObjectNoData" && method.descriptor == NoArgsAndReturnVoid) ||
+        /*The default constructor is used by the deserialization process*/
+        (method.name == "<init>" && method.descriptor == NoArgsAndReturnVoid) ||
+            (method.name == "readObjectNoData" && method.descriptor == NoArgsAndReturnVoid) ||
             (method.name == "readObject" && method.descriptor == readObjectDescriptor) ||
             (method.name == "writeObject" && method.descriptor == writeObjectDescriptor) ||
             (method.name == "readResolve" && method.descriptor == JustReturnsObject) ||

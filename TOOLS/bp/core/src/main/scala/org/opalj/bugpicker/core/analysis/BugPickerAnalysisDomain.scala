@@ -61,8 +61,8 @@ trait BaseBugPickerAnalysisDomain
         with domain.la.RefinedTypeLevelInvokeInstructions
         with domain.SpecialMethodsHandling
         with domain.l1.DefaultIntegerRangeValues
-        //with domain.l1.DefaultIntegerSetValues
-        with domain.l1.ConstraintsBetweenIntegerValues
+        // with domain.l1.DefaultIntegerSetValues
+        // [CURRENTLY ONLY A WASTE OF RESOURCES] with domain.l1.ConstraintsBetweenIntegerValues
         with domain.l1.DefaultLongSetValues
         with domain.l1.LongSetValuesShiftOperators
         with domain.l0.DefaultTypeLevelFloatValues

@@ -135,6 +135,20 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         }
     }
 
+    override def abruptSubroutineTermination(
+        domain: Domain)(
+            sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+            terminatedSubroutinesCount: Int,
+            oldWorklist: List[PC],
+            newWorklist: List[PC]): Unit = {
+        tracers foreach { tracer ⇒
+            tracer.abruptSubroutineTermination(domain)(
+                sourcePC, targetPC,
+                jumpToSubroutineId, terminatedSubroutinesCount,
+                oldWorklist, newWorklist)
+        }
+    }
+
     override def result(result: AIResult): Unit = {
         tracers foreach { _.result(result) }
     }

@@ -99,13 +99,15 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
                     project,
                     Class.forName(parameters.head.substring(8)).asInstanceOf[Class[_ <: Domain]],
                     verbose,
-                    initProgressManagement)
+                    initProgressManagement,
+                    6d)
             } else {
                 InterpretMethodsAnalysis.interpret(
                     project,
                     classOf[domain.l0.BaseDomain[java.net.URL]],
                     verbose,
-                    initProgressManagement)
+                    initProgressManagement,
+                    6d)
 
             }
         BasicReport(

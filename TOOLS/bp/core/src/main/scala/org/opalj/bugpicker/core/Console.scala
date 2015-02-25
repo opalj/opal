@@ -140,7 +140,9 @@ object Console extends AnalysisExecutor { analysis ⇒
                             }
                         exceptionsReport =
                             XHTML.createXHTML(
-                                Some("Thrown Exceptions"), <div>{ exceptionNodes }</div>)
+                                Some(s"${exceptions.size}/${exceptionNodes.size} Thrown Exceptions"),
+                                <div>{ exceptionNodes }</div>
+                            )
                     }
                     exceptionsReport
                 }

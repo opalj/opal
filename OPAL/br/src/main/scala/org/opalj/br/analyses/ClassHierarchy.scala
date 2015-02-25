@@ -1371,9 +1371,15 @@ class ClassHierarchy private (
         reflexive: Boolean): scala.collection.Set[ObjectType] = {
         val allSupertypesOf = scala.collection.mutable.HashSet.empty[ObjectType]
         types foreach { (t: ObjectType) ⇒
-            if (!allSupertypesOf.contains(t) && isKnown(t))
-                allSupertypesOf ++= allSupertypes(t, reflexive)
+            if (!allSupertypesOf.contains(t))
+                if (isKnown(t))
+                    allSupertypesOf ++= allSupertypes(t, reflexive)
+                else if (reflexive)
+                    // the project's class hierarchy is obviously not complete
+                    // however, we do as much as we can...
+                    allSupertypesOf += t
         }
+
         allSupertypesOf
     }
 
@@ -1444,12 +1450,16 @@ class ClassHierarchy private (
         upperTypeBoundsB: UIDSet[ObjectType],
         reflexive: Boolean): UIDSet[ObjectType] = {
 
+        assert(upperTypeBoundsA.nonEmpty)
+        assert(upperTypeBoundsB.nonEmpty)
+
         if (upperTypeBoundsA == upperTypeBoundsB)
             return upperTypeBoundsA
 
         val allSupertypesOfA = allSupertypesOf(upperTypeBoundsA, reflexive)
         val allSupertypesOfB = allSupertypesOf(upperTypeBoundsB, reflexive)
         val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
+
         leafTypes(commonSupertypes)
     }
 
