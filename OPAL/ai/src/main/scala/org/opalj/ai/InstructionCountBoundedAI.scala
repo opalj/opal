@@ -45,15 +45,14 @@ import org.opalj.br.Code
  *
  * @param maxEvaluationCount Determines the maximum number of instructions that should
  *      be interpreted. If the interpretation did not finish before that, the abstract
- *      interpretation is aborted.
+ *      interpretation is aborted. An aborted abstract interpretation can be continued
+ *      later on using the `continueInterpretation` method of the [[AIAborted]] object.
  *      In general, it makes sense to determine this value based on the complexity of
  *      the code as it is done by [[InstructionCountBoundedAI.calculateMaxEvaluationCount]].
  *
  * @author Michael Eichberg
  */
 class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extends AI[D] {
-
-    assert(maxEvaluationCount > 0)
 
     /**
      * @param maxEvaluationFactor Determines the maximum number of instruction evaluations
@@ -64,12 +63,13 @@ class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extend
         this(InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor))
     }
 
+    assert(maxEvaluationCount > 0)
+
     private[this] val evaluationCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
     def currentEvaluationCount: Int = evaluationCount.get
 
     override def isInterrupted = {
-
         var count = evaluationCount.get()
         var newCount = count + 1
         while (count < maxEvaluationCount &&
