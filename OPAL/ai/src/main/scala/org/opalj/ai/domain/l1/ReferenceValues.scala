@@ -1039,9 +1039,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 true
         }, s"should be precise "+values)
         assert(
-            !isPrecise || upperTypeBound.isEmpty || (upperTypeBound.hasOneElement && (upperTypeBound.first().isArrayType || !classHierarchy.isInterface(upperTypeBound.first().asObjectType)))
-        )
-        assert(
             (isNull.isYes && upperTypeBound.isEmpty) || (
                 isNull.isNoOrUnknown &&
                 upperTypeBound.nonEmpty && (
