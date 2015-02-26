@@ -220,6 +220,22 @@ case class ControlFlowGraph(
         endBlock: ExitBlock) {
 
     val AllBlocks: HashSet[CFGBlock] = startBlock.returnAllBlocks(new HashSet[CFGBlock])
+    
+    def traverseWithFunction[T](f: CFGBlock => T): Unit = {
+    	traverseWithFunctionAndBlock(f)(startBlock, new HashSet[CFGBlock])
+    }
+    
+    private def traverseWithFunctionAndBlock[T](f: CFGBlock => T)(block: CFGBlock, visited: HashSet[CFGBlock]): Unit = {
+    	
+    	val newVisitedSet: HashSet[CFGBlock] = visited + block
+    	val successors = block match { case bb: BasicBlock => bb.successors ++ bb.catchBlockSuccessors; case _ => block.successors}
+    	
+    	f(block)
+    	
+    	for(successor <- successors if(!visited.contains(successor))){
+    		traverseWithFunctionAndBlock[T](f)(successor, newVisitedSet)
+    	}
+    }
 
     def toDot: String = {
 
