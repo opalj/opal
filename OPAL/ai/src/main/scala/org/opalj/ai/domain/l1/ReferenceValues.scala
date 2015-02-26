@@ -134,24 +134,21 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      */
     protected def isPrecise(values: Iterable[AReferenceValue]): Boolean = {
         val vIt = values.iterator
-        var isPrecise: Boolean = true
         var theUpperTypeBound: UpperTypeBound = null
-        while (isPrecise && vIt.hasNext) {
+        while (vIt.hasNext) {
             val v = vIt.next()
-            if (v.isPrecise) {
-                if (v.isNull.isNoOrUnknown) {
-                    val upperTypeBound = v.upperTypeBound
-                    if (theUpperTypeBound != null) {
-                        isPrecise = theUpperTypeBound == upperTypeBound
-                    } else
-                        theUpperTypeBound = upperTypeBound
-                }
-                // else // v.isNull.isYes === true
-            } else {
-                isPrecise = false
-            }
+            val vUpperTypeBound = v.upperTypeBound
+            val vIsNotNull = v.isNull.isNoOrUnknown
+            if (vIsNotNull &&
+                (
+                    !v.isPrecise ||
+                    (theUpperTypeBound != null && theUpperTypeBound != vUpperTypeBound)
+                ))
+                return false;
+            if (vIsNotNull)
+                theUpperTypeBound = vUpperTypeBound
         }
-        isPrecise
+        true
     }
 
     protected def isNull(values: Iterable[AReferenceValue]): Answer = {
@@ -754,6 +751,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         assert(this.isNull.isNoOrUnknown)
         assert(!classHierarchy.isKnownToBeFinal(theUpperTypeBound) || isPrecise)
+        assert(!isPrecise || !classHierarchy.isInterface(theUpperTypeBound),
+            s"the type $theUpperTypeBound is an interface type and, hence, should be an upper type bound (not be precise)")
 
         override def updateT(
             t: Timestamp,
@@ -999,7 +998,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      *
      * @param  isPrecise `true` if the upper type bound of this value precisely
      *      captures the runtime type of the value.
-     *      This ba-sically requires that all '''non-null''' values
+     *      This basically requires that all '''non-null''' values
      *      are precise and have the same upper type bound. Null values are ignored.
      */
     protected class MultipleReferenceValues(
@@ -1028,6 +1027,20 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         assert(
             isNull.isNoOrUnknown || values.forall { _.isNull.isYesOrUnknown },
             s"inconsistent null property(isNull == $isNull): ${values.mkString(",")}")
+        assert({
+            val nonNullValues = values.filter { _.isNull.isNoOrUnknown }
+            if (nonNullValues.nonEmpty && nonNullValues.forall { _.isPrecise }) {
+                val theUTB = nonNullValues.head.upperTypeBound
+                if (nonNullValues.tail.forall(_.upperTypeBound == theUTB))
+                    isPrecise
+                else
+                    true
+            } else
+                true
+        }, s"should be precise "+values)
+        assert(
+            !isPrecise || upperTypeBound.isEmpty || (upperTypeBound.hasOneElement && (upperTypeBound.first().isArrayType || !classHierarchy.isInterface(upperTypeBound.first().asObjectType)))
+        )
         assert(
             (isNull.isYes && upperTypeBound.isEmpty) || (
                 isNull.isNoOrUnknown &&
@@ -1042,7 +1055,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 s"== ${domain.upperTypeBound(values)} <: $upperTypeBound"
         )
 
-        def joinValue( // TODO: addValue
+        def joinValue( // TODO rename addValue
             newValue: DomainSingleOriginReferenceValue): DomainMultipleReferenceValues = {
 
             assert(values.find(_.origin == newValue.origin).isEmpty)
@@ -1050,12 +1063,16 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             val thisUTB = this.upperTypeBound
             val newValueUTB = newValue.upperTypeBound
             val joinedUTB = classHierarchy.joinUpperTypeBounds(thisUTB, newValueUTB)
-
+            val newIsNull = this.isNull & newValue.isNull
             MultipleReferenceValues(
                 this.values + newValue,
-                this.isNull & newValue.isNull,
+                newIsNull,
                 this.isPrecise && newValue.isPrecise &&
-                    this.upperTypeBound == newValue.upperTypeBound,
+                    (
+                        this.upperTypeBound == newValue.upperTypeBound ||
+                        this.upperTypeBound.isEmpty ||
+                        newValue.upperTypeBound.isEmpty
+                    ),
                 joinedUTB,
                 nextT()
             )
