@@ -64,7 +64,7 @@ import scala.annotation.elidable.ASSERTION
  */
 package object ai {
 
-    private[this] final val checkAssert: Boolean = {
+    {
         implicit val logContext = GlobalContext
         try {
             scala.Predef.assert(false) // <= test whether assertions are turned on or off...
@@ -73,21 +73,6 @@ package object ai {
             case ae: AssertionError ⇒
                 OPALLogger.info("OPAL", "Abstract Interpretation Framework - Assertions are enabled - Development Build.")
         }
-        true
-    }
-
-    // "override" Scala Predef's corresponding assert method
-    @elidable(ASSERTION)
-    def assert(assertion: Boolean): Unit = {
-        if (checkAssert && !assertion)
-            throw new java.lang.AssertionError("assertion failed")
-    }
-
-    // "override" Scala Predef's corresponding assert method
-    @elidable(ASSERTION) @inline
-    final def assert(assertion: Boolean, message: ⇒ Any): Unit = {
-        if (checkAssert && !assertion)
-            throw new java.lang.AssertionError("assertion failed: "+message)
     }
 
     /**

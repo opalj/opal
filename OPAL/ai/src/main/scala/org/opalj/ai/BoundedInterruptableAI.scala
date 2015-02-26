@@ -37,18 +37,14 @@ import org.opalj.log.LogContext
  * the given number of instructions or if the callback function `doInterrupt` returns
  * `false` or if the maximum allowed time is exceeded.
  *
- * @param maxEvaluationCount The maximum number of instructions after which the
- *      abstract interpretation is aborted. In general this number should be calculated
- *      based on the method's/project's properties. To calculate it based on the properties
- *      of a method, it is possible to use the predefined function
- *      [[InstructionCountBoundedAI#calculateMaxEvaluationCount]].
+ * @param maxEvaluationCount See [[InstructionCountBoundedAI.maxEvaluationCount]].
  *
  * @param maxEvaluationTimeInNS The maximum number of nanoseconds the abstract interpreter
- *      is allowed to run.
+ *      is allowed to run. It starts with the evaluation of the first instruction.
  *
  * @param doInterrupt This function is called by the abstract interpreter to check if
  *      the abstract interpretation should be aborted. Given that this function is called
- *      very often, it is important that it is efficient.
+ *      very often (before the evaluation of each instruction) , it is important that it is efficient.
  *
  * @author Michael Eichberg
  */

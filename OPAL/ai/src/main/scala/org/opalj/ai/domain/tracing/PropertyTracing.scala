@@ -31,7 +31,8 @@ package ai
 package domain
 package tracing
 
-import br._
+import org.opalj.br._
+import org.opalj.ai.util.containsInPrefix
 
 /**
  * Enables the tracing of some user-defined property while a method is analyzed.
@@ -96,7 +97,7 @@ trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
         currentPC: PC,
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
-        abruptSubroutineTermination: Boolean,
+        abruptSubroutineTerminationCount: Int,
         wasJoinPerformed: Boolean,
         worklist: List[PC],
         operandsArray: OperandsArray,
@@ -106,7 +107,7 @@ trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
         val forceScheduling: Boolean = {
             if (!wasJoinPerformed /* weaker: || propertiesArray(successorPC) eq null*/ ) {
                 propertiesArray(successorPC) = propertiesArray(currentPC)
-                true
+                true // actually, it doesn't matter as we will continue the analysis anyway
             } else {
                 propertiesArray(successorPC) join propertiesArray(currentPC) match {
                     case NoUpdate ⇒ false
@@ -120,7 +121,25 @@ trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
             }
         }
 
-        if (forceScheduling && (worklist.isEmpty || worklist.head != successorPC)) {
+        def isUnscheduled(): Boolean = {
+            val relevantWorklist =
+                if (abruptSubroutineTerminationCount > 0) {
+                    var subroutinesToTerminate = abruptSubroutineTerminationCount
+                    worklist.dropWhile { pc ⇒
+                        if (pc == SUBROUTINE) {
+                            subroutinesToTerminate -= 1
+                            subroutinesToTerminate == 0
+                        } else
+                            true
+                    }.tail
+                } else
+                    worklist
+
+            !containsInPrefix(relevantWorklist, successorPC, SUBROUTINE_START)
+
+        }
+
+        if (forceScheduling && isUnscheduled) {
             val filteredList = util.removeFirst(worklist, successorPC)
             if (tracer.isDefined) {
                 if (filteredList eq worklist)
@@ -134,7 +153,7 @@ trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
             }
             super.flow(
                 currentPC, successorPC,
-                isExceptionalControlFlow, abruptSubroutineTermination,
+                isExceptionalControlFlow, abruptSubroutineTerminationCount,
                 wasJoinPerformed,
                 successorPC :: filteredList,
                 operandsArray, localsArray,
@@ -142,7 +161,7 @@ trait PropertyTracing extends CoreDomainFunctionality { domain: Domain ⇒
         } else {
             super.flow(
                 currentPC, successorPC,
-                isExceptionalControlFlow, abruptSubroutineTermination,
+                isExceptionalControlFlow, abruptSubroutineTerminationCount,
                 wasJoinPerformed,
                 worklist,
                 operandsArray, localsArray,

@@ -38,7 +38,7 @@ import org.opalj.br.Code
  * Encapsulates the ''result'' of the abstract interpretation of a method. If
  * the abstract interpretation was cancelled, the result encapsulates the current
  * state of the evaluation which can be used to continue
- * the abstract interpretation later on, if necessary/desired.
+ * the abstract interpretation later on if necessary/desired.
  *
  * @author Michael Eichberg
  */
@@ -58,6 +58,8 @@ sealed abstract class AIResult {
 
     /**
      * The instructions where two or more control flow paths join.
+     *
+     * (See also [[org.opalj.br.Code.joinInstructions]].)
      */
     val joinInstructions: BitSet
 
@@ -93,7 +95,7 @@ sealed abstract class AIResult {
      * The array of the operand lists in effect before the execution of the
      * instruction with the respective program counter.
      *
-     * For those instruction that were never executed (potentially dead code if the
+     * For those instructions that were never executed (potentially dead code if the
      * abstract interpretation succeeded) the operands array will be empty (the
      * value will be `null`).
      */
@@ -102,11 +104,14 @@ sealed abstract class AIResult {
     /**
      * Returns true if the instruction with the given pc was evaluated at least once.
      */
-    @inline final def wasEvaluted(pc: PC): Boolean = operandsArray(pc) != null
+    @inline final def wasEvaluted(pc: PC): Boolean = operandsArray(pc) ne null
 
     /**
-     * The values stored in the registers. Note, that ''it makes only sense to analyze
-     * those values that are not dead'', but this information is not directly available.
+     * The values stored in the registers.
+     *
+     * For those instructions that were never executed (potentially dead code if the
+     * abstract interpretation succeeded) the locals array will be empty (the
+     * value will be `null`).
      */
     val localsArray: domain.LocalsArray
 
