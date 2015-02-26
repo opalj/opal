@@ -175,7 +175,7 @@ trait ConstraintsBetweenIntegerValues
         currentPC: PC,
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
-        abruptSubroutineTermination: Boolean,
+        abruptSubroutineTerminationCount: Int,
         wasJoinPerformed: Boolean,
         worklist: List[PC],
         operandsArray: OperandsArray,
@@ -235,7 +235,7 @@ trait ConstraintsBetweenIntegerValues
 
         super.flow(
             currentPC, successorPC,
-            isExceptionalControlFlow, abruptSubroutineTermination,
+            isExceptionalControlFlow, abruptSubroutineTerminationCount,
             wasJoinPerformed,
             worklist,
             operandsArray, localsArray,
