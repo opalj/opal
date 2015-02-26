@@ -83,7 +83,7 @@ import org.opalj.log.OPALLogger
  */
 package object opalj {
 
-    private[this] final val checkAssert: Boolean = {
+    {
         implicit val logContext = GlobalContext
         try {
             scala.Predef.assert(false)
@@ -92,20 +92,6 @@ package object opalj {
             case ae: AssertionError ⇒
                 OPALLogger.info("OPAL", "Common - Assertions are enabled - Development Build.")
         }
-        true
-    }
-
-    // "override" Scala Predef's corresponding assert method
-    @elidable(ASSERTION) def assert(assertion: Boolean): Unit = {
-        if (checkAssert && !assertion)
-            throw new java.lang.AssertionError("assertion failed")
-    }
-
-    // "override" Scala Predef's corresponding assert method
-    @elidable(ASSERTION)
-    @inline final def assert(assertion: Boolean, message: ⇒ Any): Unit = {
-        if (checkAssert && !assertion)
-            throw new java.lang.AssertionError("assertion failed: "+message)
     }
 
     final val WEBPAGE = "http://www.opal-project.de"

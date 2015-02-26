@@ -1080,9 +1080,10 @@ class ClassHierarchy private (
         project: SomeProject): Option[Method] = {
 
         // TODO [Java8] Support Extension Methods!
-        assume(
+        assert(
             !isInterface(receiverType),
-            s"${receiverType.toJava} is classified as an interface; ${project.classFile(receiverType).map(_.toString).getOrElse("<precise information missing>")}")
+            s"${receiverType.toJava} is classified as an interface (looking up ${methodDescriptor.toJava(methodName)}); "+
+                project.classFile(receiverType).map(_.toString).getOrElse("<precise information missing>"))
 
         @tailrec def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
             val classFileOption = project.classFile(receiverType)

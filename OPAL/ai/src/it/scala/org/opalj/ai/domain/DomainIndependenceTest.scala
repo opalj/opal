@@ -153,8 +153,14 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                                 lValue != null && rValue != null && {
                                     val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                                     val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                    if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
-                                        return Some(Console.YELLOW_B+"the register value "+lVD+" does not correspond with "+rVD)
+                                    if (lVD.isInstanceOf[ValuesDomain.ReturnAddressValue] || rVD.isInstanceOf[ValuesDomain.ReturnAddressValue]) {
+                                        if ((lVD.isInstanceOf[ValuesDomain.ReturnAddressValue] && !rVD.isInstanceOf[ValuesDomain.ReturnAddressValue]) ||
+                                            (rVD.isInstanceOf[ValuesDomain.ReturnAddressValue] && !lVD.isInstanceOf[ValuesDomain.ReturnAddressValue]))
+                                            return Some(Console.BLUE_B+"the register value "+lVD+" does not correspond with "+rVD)
+                                        else
+                                            true
+                                    } else if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
+                                        return Some(Console.BLUE_B+"the register value "+lVD+" does not correspond with "+rVD)
                                     else
                                         true
                                 }

@@ -57,7 +57,7 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         currentPC: PC,
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
-        abruptSubroutineTermination: Boolean,
+        abruptSubroutineTerminationCount: Int,
         wasJoinPerformed: Boolean,
         worklist: List[PC],
         operandsArray: OperandsArray,
@@ -102,7 +102,7 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
 
         super.flow(
             currentPC, successorPC,
-            isExceptionalControlFlow, abruptSubroutineTermination,
+            isExceptionalControlFlow, abruptSubroutineTerminationCount,
             wasJoinPerformed,
             worklist,
             operandsArray, localsArray,

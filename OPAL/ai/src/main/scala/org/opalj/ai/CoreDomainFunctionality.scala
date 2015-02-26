@@ -311,8 +311,9 @@ trait CoreDomainFunctionality extends ValuesDomain {
      *      `false` otherwise. Hence, if `true` the instruction with `successorPC` is the
      *      first instruction of the handler.
      *
-     * @param abruptSubroutineTermination `true` if and only if we have an exceptional
-     *      control flow that terminates a subroutine. In this case the successor instruction
+     * @param abruptSubroutineTerminationCount `> 0` if and only if we have an exceptional
+     *      control flow that terminates one or more subroutines.
+     *      In this case the successor instruction
      *      is scheduled (if at all) after all subroutines that will be terminated by
      *      the exception.
      *
@@ -323,12 +324,16 @@ trait CoreDomainFunctionality extends ValuesDomain {
      * @param operandsArray The array that associates '''every instruction''' with its
      *      operand stack that is in effect.  Note, that only those elements of the
      *      array contain values that are related to instructions that were
-     *      evaluated in the past. The other elements are `null`.
+     *      evaluated in the past; the other elements are `null`. Furthermore,
+     *      it identifies the `operandsArray` of the subroutine that will executed the
+     *      instruction with `successorPC`.
      *
      * @param localsArray The array that associates every instruction with its current
      *      register values. Note, that only those elements of the
      *      array contain values that are related to instructions that were evaluated in
-     *      the past. The other elements are `null`.
+     *      the past. The other elements are `null`. Furthermore,
+     *      it identifies the `localsArray` of the subroutine that will executed the
+     *      instruction with `successorPC`.
      *
      * @param worklist The current list of instructions that will be evaluated next.
      *      ==If subroutines are not used (i.e., Java >= 6)==
@@ -371,7 +376,7 @@ trait CoreDomainFunctionality extends ValuesDomain {
         currentPC: PC,
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
-        abruptSubroutineTermination: Boolean,
+        abruptSubroutineTerminationCount: Int,
         wasJoinPerformed: Boolean,
         worklist: List[PC],
         operandsArray: OperandsArray,

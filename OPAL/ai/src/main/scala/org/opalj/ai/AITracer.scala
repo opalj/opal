@@ -43,10 +43,8 @@ import org.opalj.br.instructions.Instruction
  *
  * @note '''All data structures passed to the tracer are the original data structures
  *      used by the abstract interpreter.''' Hence, if a value is mutated (e.g., for
- *      debugging purposes) it has to be guaranteed that the VM's conditions are never
- *      violated. E.g., exchanging a integer value against a reference value will most
- *      likely crash the interpreter.
- *      However, using the [[AITracer]] it is possible to develop a debugger for OPAL and
+ *      debugging purposes) it has to be guaranteed that the state remains meaningful.
+ *      Hence, using the [[AITracer]] it is possible to develop a debugger for OPAL and
  *      to enable the user to perform certain mutations.
  *
  * @author Michael Eichberg
@@ -54,13 +52,12 @@ import org.opalj.br.instructions.Instruction
 trait AITracer {
 
     /**
-     * Called by OPAL immediately before the abstract interpretation of the
+     * Called immediately before the abstract interpretation of the
      * specified code is performed.
      *
      * If the tracer changes the `operandsArray` and/or `localsArray`, it is
      * the responsibility of the tracer to ensure that the data structures are still
      * valid afterwards.
-     * OPAL will not perform any checks.
      */
     def continuingInterpretation(
         strictfp: Boolean,
@@ -73,7 +70,7 @@ trait AITracer {
             memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]): Unit
 
     /**
-     * Always called by OPAL before an instruction is evaluated.
+     * Called before an instruction is evaluated.
      *
      * This enables the tracer to precisely log the behavior of the abstract
      * interpreter, but also enables the tracer to interrupt the evaluation
@@ -189,6 +186,15 @@ trait AITracer {
             returnAddress: PC,
             subroutineInstructions: List[PC]): Unit
 
+    /**
+     * Called when the evaluation of a subroutine terminated abruptly due to an unhandled
+     * exception.
+     *
+     * @param jumpToSubroutineId The subroutine that will be continued. The id is the pc
+     *      of the first instruction of the subroutine. It is 0 if it is the method
+     *      as such.
+     * @param terminatedSubroutinesCount The number of subroutines that are terminated.
+     */
     def abruptSubroutineTermination(
         domain: Domain)(
             sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
