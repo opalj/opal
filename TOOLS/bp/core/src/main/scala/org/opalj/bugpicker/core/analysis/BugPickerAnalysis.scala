@@ -32,13 +32,11 @@ package core
 package analysis
 
 import java.net.URL
-
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 import scala.collection.SortedMap
 import scala.util.control.ControlThrowable
 import scala.xml.Node
 import scala.xml.Unparsed
-
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
@@ -58,7 +56,7 @@ import org.opalj.br.instructions.LStoreInstruction
 import org.opalj.io.process
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
-
+import org.opalj.ai.analyses.cg.VTACallGraphKey
 
 /**
  * A static analysis that analyzes the data-flow to identify various issues in the
@@ -164,6 +162,11 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
         theProject.get(MethodReturnValuesKey)
         progressManagement.end(2)
 
+        progressManagement.start(3, "[Pre-Analysis] Creating the call graph")
+        val callGraph = theProject.get(VTACallGraphKey)
+        val callGraphEntryPoints = callGraph.entryPoints().toSet
+        progressManagement.end(3)
+
         //
         //
         // MAIN ANALYSIS
@@ -268,13 +271,11 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                 )
 
                 //
-                // FIND UNUSED METHODS
+                // CHECK IF THE METHOD IS USED
                 //
-                results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
-                        UnusedMethodsAnalysis.analyze(theProject, classFile, method, result)
-                    )
-                )
+                UnusedMethodsAnalysis.analyze(
+                    theProject, callGraph, callGraphEntryPoints,
+                    classFile, method) foreach { issue ⇒ results.add(issue) }
 
                 //
                 // FIND USELESS EXPRESSION EVALUATIONS
@@ -407,7 +408,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
 
 object BugPickerAnalysis {
 
-    val PRE_ANALYSES_COUNT = 2 // the FieldValues analysis + the MethodReturnValues analysis
+    val PRE_ANALYSES_COUNT = 3 // the FieldValues analysis + the MethodReturnValues analysis
 
     // we want to match expressions such as:
     // -maxEvalFactor=1

@@ -31,79 +31,79 @@ package bugpicker
 package core
 package analysis
 
-import org.opalj.ai.AIResult
-import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.bi.VisibilityModifier
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.analyses.cg.ComputedCallGraph
 
 /**
- * A static analysis of unused methods and constructors backed by callgraphs.
+ * Identifies unused methods and constructors based on the call graph.
  *
  * Currently using the VTACallGraphAlgorithm.
  *
  * @author Marco Jacobasch
+ * @author Michael Eichberg
  */
 object UnusedMethodsAnalysis {
 
     /**
-     * Analyze if the method is never called.
+     * Finds those methods that are never called.
      *
      * If any of the following conditions is true, it will assume the method as being called.
-     *
-     * - The method is an entry point of the call graph. See also [[org.opalj.ai.analysis.cg.CallGraphFactory.defaultEntryPointsForLibraries]].
-     * - The method is a static initializer.
-     * - The method is a private constructor in a final class.
-     *
-     * TODO: reevaluate private constructors, if entry points will include them.
-     *
+     * - The method is the target of a method call in the calculated call graph.
+     * - The method is a private default constructor in a final class. Such constructors
+     *      are usually defined to avoid instantiations of the respective class.
      */
     def analyze(
-        theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult): Seq[StandardIssue] = {
+        theProject: SomeProject,
+        callgraph: ComputedCallGraph, callgraphEntryPoints: Set[Method],
+        classFile: ClassFile, method: Method): Option[StandardIssue] = {
 
-        var results: Seq[StandardIssue] = Seq.empty
-        val callgraph = theProject.get(VTACallGraphKey)
-        val callgraphEntryPoints = callgraph.entryPoints().toSeq
-
-        val ignoreMethod = callgraphEntryPoints.contains(method) || (method.isConstructor && method.isPrivate && classFile.isFinal)
-
-        if (!ignoreMethod) {
-            val possibleCallers = callgraph.callGraph calledBy method
-            val methodNotCalled = possibleCallers.isEmpty
-
-            if (methodNotCalled) {
-                val description = methodOrConstructor(method)
-
-                // the unused method or constructor issue
-                val unusedMethodIssue = StandardIssue(
-                    theProject, classFile, Some(method), None,
-                    None,
-                    None,
-                    "",
-                    Some(description),
-                    Set(IssueCategory.Comprehensibility),
-                    Set(IssueKind.Unused),
-                    Seq(),
-                    Relevance.DefaultRelevance
+        def ignoreMethod(): Boolean = {
+            val ignoreIt =
+                callgraphEntryPoints.contains(method) || (
+                    // it is basically a default constructor ...
+                    method.isConstructor && method.isPrivate && method.parametersCount == 1 /*this*/ &&
+                    method.body.isDefined && method.body.get.instructions.size == 5 &&
+                    // ... which was (usually) defined to avoid instantiations of the
+                    // class (e.g., java.lang.Math)
+                    classFile.constructors.size == 1
                 )
-                results = results :+ unusedMethodIssue
-            }
+            ignoreIt
         }
 
-        results
+        val callers = callgraph.callGraph calledBy method
+        if (callers.isEmpty && !ignoreMethod) {
+            val description = methodOrConstructor(method)
+            // the unused method or constructor issue
+            Some(StandardIssue(
+                theProject, classFile, Some(method), None,
+                None,
+                None,
+                "unused method",
+                Some(description),
+                Set(IssueCategory.Comprehensibility),
+                Set(IssueKind.Unused),
+                Seq(),
+                Relevance.DefaultRelevance
+            ))
+        } else
+            None
     }
 
-    def methodOrConstructor(method: Method): String = method.isConstructor match {
-        case true ⇒ s"This ${access(method.accessFlags)} class will never be instantiated."
-        case _    ⇒ s"This ${access(method.accessFlags)} method will never be called at runtime."
+    def methodOrConstructor(method: Method): String = {
+        if (method.isConstructor)
+            s"the ${access(method.accessFlags)} constructor is not used"
+        else
+            s"the ${access(method.accessFlags)} method is not used"
     }
 
-    def access(flags: Int): String = VisibilityModifier.get(flags) match {
-        case Some(visiblity) ⇒ visiblity.javaName.getOrElse("unknown")
-        case _               ⇒ "default"
-    }
+    def access(flags: Int): String =
+        VisibilityModifier.get(flags) match {
+            case Some(visiblity) ⇒ visiblity.javaName.get
+            case _               ⇒ "/*default*/"
+        }
 
 }
 
