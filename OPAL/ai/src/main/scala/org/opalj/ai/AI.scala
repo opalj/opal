@@ -41,8 +41,10 @@ import org.opalj.br.instructions._
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode
  * that relies on OPAL's resolved representation ([[org.opalj.br]]) of Java bytecode.
  *
- * This framework basically traverses all instructions of a method in ''optimized'' order
- * and evaluates each instruction using a given (abstract) [[org.opalj.ai.Domain]].
+ * This framework basically traverses all instructions of a method in depth-first order
+ * until a join instruction is hit. This join instruction is then only analyzed if no
+ * further non-join instruction can be evaluated ([[org.opalj.br.Code.joinInstructions]]).
+ * Each instruction is then evaluated using a given (abstract) [[org.opalj.ai.Domain]].
  * The evaluation of a subroutine (Java code < 1.5) - in case of an unhandled
  * exception – is always first completed before the evaluation of the parent subroutine
  * is continued.
@@ -314,7 +316,6 @@ trait AI[D <: Domain] {
 
         // The following order must not change:
         // (The order is part of the contract of AI.)
-
         theDomain match {
             case d: TheAI[D] ⇒ d.setAI(this)
             case _           ⇒ /*nothing to do*/
@@ -352,9 +353,10 @@ trait AI[D <: Domain] {
     }
 
     /**
-     * Continues the interpretation of the given method (code) using the given domain.
+     * Continues the interpretation of/performs an abstract interpretation of
+     *  the given method (code) using the given domain.
      *
-     * @param strictfp `true` if strict semantics for floating point operations should
+     * @param strictfp `true` if ''strict'' semantics for floating point operations should
      *      be used; `false` otherwise.
      *
      * @param code The bytecode that will be interpreted using the given domain.
@@ -492,7 +494,8 @@ trait AI[D <: Domain] {
                     targetPC, isExceptionalControlFlow,
                     newOperands, newLocals)
 
-            // the number of subroutines that are abruptly terminated by the exception
+            // the number of subroutines that are abruptly terminated by an exception
+            // that is not handled by teh subroutine itself
             val abruptSubroutineTerminationCount: Int = {
                 if (isExceptionalControlFlow && memoryLayoutBeforeSubroutineCall.nonEmpty) {
                     val jumpToSubroutineId = belongsToSubroutine(targetPC)
@@ -530,9 +533,21 @@ trait AI[D <: Domain] {
              * Schedules the evaluation of the exception handler in the context of the
              * (parent) subroutine to which the handler belongs.
              *
-             * @param doSchedule If `false` the instruction will not be scheduled.
+             * @param doSchedule If `false` the instruction will not be scheduled if
+             *      it is not already scheduled. In this case we will basically just test
+             *      if the instruction was scheduled.
              *
-             * @return `true` if the target instruction was rescheduled.
+             * @return `true` if the target instruction was (re)scheduled.
+             *      Hence, if
+             *      - `doSchedule` is false and true is returned, then the
+             *          instruction was already scheduled.
+             *      - `doSchedule` is false and false is returned, then the target
+             *          instruction will not be executed.
+             *      - `doSchedule` is true and false is returned, then the target
+             *          instruction was newly scheduled.
+             *      - `doSchedule` is true and true is returned, then the target
+             *          instruction was already scheduled.
+
              */
             def handleAbruptSubroutineTermination(doSchedule: Boolean): Boolean = {
                 assert(abruptSubroutineTerminationCount > 0)
@@ -543,7 +558,7 @@ trait AI[D <: Domain] {
                 // we now know the number of subroutines that are terminated (at most
                 // all active real subroutines) now let's remove the elements of those
                 // subroutines from the worklist, schedule the instruction (if necessary)
-                // and re-add the header
+                // and re-add the child subroutines.
                 var header: List[PC] = Nil
                 var remainingWorklist: List[PC] = worklist
                 while (subroutinesToTerminate > 0) {
