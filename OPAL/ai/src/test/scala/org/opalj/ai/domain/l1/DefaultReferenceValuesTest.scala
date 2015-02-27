@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -223,13 +223,13 @@ class DefaultReferenceValuesTest extends FunSpec with Matchers with ParallelTest
             it("should be able to correctly handle the refinement of the nullness property of a multiple reference value that has a more precise bound than any reference value to a single value") {
 
                 val v0 = NullValue(111, 1)
-                val v1 = ObjectValue(222, Unknown, true, ObjectType("java/lang/Cloneable"), 2)
+                val v1 = ObjectValue(222, Unknown, false, ObjectType("java/lang/Cloneable"), 2)
                 val v2 = ObjectValue(222, No, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")), 2)
 
                 val mv1 =
                     MultipleReferenceValues(
                         SortedSet[DomainSingleOriginReferenceValue](v0, v1),
-                        Unknown, true, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
+                        Unknown, false, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
                         3)
 
                 val (refinedOperands, _) = mv1.refineIsNull(-1, No, List(mv1), Locals.empty)
