@@ -49,7 +49,6 @@ import org.opalj.ai.InterruptableAI
 import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.NoUpdate
 import org.opalj.ai.SomeUpdate
-import org.opalj.log.OPALLogger
 
 /**
  * A shallow analysis that tries to refine the return types of methods.
@@ -68,7 +67,6 @@ object MethodReturnValuesAnalysis {
         theProject: SomeProject,
         isInterrupted: () ⇒ Boolean,
         createDomain: (InterruptableAI[Domain], Method) ⇒ Domain with RecordReturnedValueInfrastructure): MethodReturnValueInformation = {
-        implicit val logContext = theProject.logContext
 
         val results = new ConcurrentHashMap[Method, Option[Domain#DomainValue]]
         val candidates = new AtomicInteger(0)
@@ -96,9 +94,6 @@ object MethodReturnValuesAnalysis {
             }
         }
 
-        OPALLogger.info(
-            "analysis result",
-            s"refined the return type of ${results.size} methods out of ${candidates.get} methods")
         AnyRefMap.empty[Method, Option[Domain#DomainValue]] ++ results.asScala
     }
 
