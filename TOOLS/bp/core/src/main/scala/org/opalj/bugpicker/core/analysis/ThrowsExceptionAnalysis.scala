@@ -129,6 +129,18 @@ object ThrowsExceptionAnalysis {
                     }
                     allExceptions.map(_.upperTypeBound.first().toJava).mkString(", ")
                 }
+
+                // If we have the case:
+                // "throw throwsException()", where throwsException always throws an
+                // exception then we don't want to report an issue.
+                val relevance = {
+                    val code = method.body.get
+                    val nextPC = code.pcOfNextInstruction(pc)
+                    if (nextPC < code.instructions.size && code.instructions(nextPC) == ATHROW)
+                        Relevance.CommonIdiom
+                    else
+                        Relevance.VeryHigh
+                }
                 StandardIssue(
                     theProject, classFile, Some(method), Some(pc),
                     Some(operands),
@@ -138,7 +150,7 @@ object ThrowsExceptionAnalysis {
                     Set(IssueCategory.Bug),
                     Set(IssueKind.ThrowsException),
                     Seq.empty,
-                    Relevance.VeryHigh
+                    relevance
                 )
             }
         }
