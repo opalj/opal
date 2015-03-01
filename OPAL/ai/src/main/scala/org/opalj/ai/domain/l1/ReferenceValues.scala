@@ -751,8 +751,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         assert(this.isNull.isNoOrUnknown)
         assert(!classHierarchy.isKnownToBeFinal(theUpperTypeBound) || isPrecise)
-        assert(!isPrecise || !classHierarchy.isInterface(theUpperTypeBound),
-            s"the type $theUpperTypeBound is an interface type and, hence, should be an upper type bound (not be precise)")
+        assert(
+            !isPrecise ||
+                !classHierarchy.isKnown(theUpperTypeBound) ||
+                !classHierarchy.isInterface(theUpperTypeBound),
+            s"the type $theUpperTypeBound is an interface type and, "+
+                "hence, should (only) be an upper type bound (not be precise)")
 
         override def updateT(
             t: Timestamp,
@@ -1049,7 +1053,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 )
             ),
             s"the upper type bound (isNull == $isNull) of ${values.mkString(",")} "+
-                s"== ${domain.upperTypeBound(values)} <: $upperTypeBound"
+                s"== ${domain.upperTypeBound(values)} which is a strict subtype of "+
+                s"the given bound $upperTypeBound"
         )
 
         def joinValue( // TODO rename addValue

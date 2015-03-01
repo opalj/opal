@@ -137,6 +137,9 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
     override def ClassValue(vo: ValueOrigin, value: Type): DomainObjectValue
 
     protected[l1] def simpleClassForNameCall(pc: PC, className: String): MethodCallResult = {
+        if (className.length() == 0)
+            return justThrows(ClassNotFoundException(pc))
+
         val classValue =
             try {
                 ReferenceType(className.replace('.', '/'))

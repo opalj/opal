@@ -32,7 +32,6 @@ package core
 package analysis
 
 import scala.language.existentials
-
 import java.net.URL
 import scala.xml.Node
 import scala.xml.UnprefixedAttribute
@@ -97,6 +96,7 @@ import org.opalj.br.instructions.GotoInstruction
 import org.opalj.br.instructions.ReturnInstructions
 import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.domain.ThrowNoPotentialExceptionsConfiguration
+import org.opalj.br.instructions.NEW
 
 /**
  * Implementation of an analysis to find code that is "dead".
@@ -104,6 +104,8 @@ import org.opalj.ai.domain.ThrowNoPotentialExceptionsConfiguration
  * @author Michael Eichberg
  */
 object DeadPathAnalysis {
+
+    final val AssertionError = ObjectType("java/lang/AssertionError")
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
@@ -150,9 +152,9 @@ object DeadPathAnalysis {
 
         /*
          *  A return/goto/athrow instruction is considered useless if the preceding
-        * instruction is a method call with a single target that _context-independently_
-        * always just throws (an) exception(s). This is common pattern found in the JDK.
-        */
+         * instruction is a method call with a single target that _context-independently_
+         * always just throws (an) exception(s). This is common pattern found in the JDK.
+         */
         // We want to suppress false warning as found in JDK 1.8.0_25
         //     javax.xml.bind.util.JAXBResult
         // when the method
@@ -197,11 +199,23 @@ object DeadPathAnalysis {
                 if !evaluatedInstructions.contains(nextPC)
 
                 allOperands = operandsArray(pc)
-                // TODO store the state of the subroutines to facilitate the identification of dead paths
+                // Possibility: Store the state of the subroutines to facilitate the
+                // identification of dead paths in subroutines...
                 if allOperands ne null // null if we are in a subroutine (java < 1.5)
             } {
                 // identify those dead edges that are pure technical artifacts
                 val isLikelyFalsePositive = requiredButIrrelevantSuccessor(pc, nextPC)
+
+                lazy val isProvenAssertion = {
+                    instructions(nextPC) match {
+                        case NEW(AssertionError) ⇒
+                            // TODO Test if a "getstatic thisType $assertionsDisabled" instruction
+                            // dominates this instruction
+                            true
+                        case _ ⇒
+                            false
+                    }
+                }
 
                 // identify those dead edges that are the result of common programming
                 // idioms; e.g.,
@@ -216,11 +230,11 @@ object DeadPathAnalysis {
                 //         HERE, THE DEFAULT CASE MAY EVEN FALL THROUGH!
                 // }
                 //
-                val isDefaultBranchOfSwitch =
+                lazy val isDefaultBranchOfSwitch =
                     instruction.isInstanceOf[CompoundConditionalBranchInstruction] &&
                         nextPC == pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset
 
-                val isLikelyIntendedDeadDefaultBranch = isDefaultBranchOfSwitch &&
+                lazy val isLikelyIntendedDeadDefaultBranch = isDefaultBranchOfSwitch &&
                     // this is the default branch of a switch instruction that is dead
                     body.alwaysResultsInException(
                         nextPC,
@@ -324,6 +338,8 @@ object DeadPathAnalysis {
                     hints,
                     if (isLikelyFalsePositive)
                         Relevance.TechnicalArtifact
+                    else if (isProvenAssertion)
+                        Relevance.ProvenAssertion
                     else if (isLikelyIntendedDeadDefaultBranch)
                         Relevance.CommonIdiom
                     else

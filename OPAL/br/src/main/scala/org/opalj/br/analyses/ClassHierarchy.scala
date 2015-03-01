@@ -1454,14 +1454,16 @@ class ClassHierarchy private (
         assert(upperTypeBoundsA.nonEmpty)
         assert(upperTypeBoundsB.nonEmpty)
 
-        if (upperTypeBoundsA == upperTypeBoundsB)
-            return upperTypeBoundsA
-
-        val allSupertypesOfA = allSupertypesOf(upperTypeBoundsA, reflexive)
-        val allSupertypesOfB = allSupertypesOf(upperTypeBoundsB, reflexive)
-        val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
-
-        leafTypes(commonSupertypes)
+        upperTypeBoundsA.compare(upperTypeBoundsB) match {
+            case UIDSet.StrictSubset   ⇒ upperTypeBoundsA
+            case UIDSet.Equal          ⇒ upperTypeBoundsA /*or upperTypeBoundsB*/
+            case UIDSet.StrictSuperset ⇒ upperTypeBoundsB
+            case UIDSet.Uncomparable ⇒
+                val allSupertypesOfA = allSupertypesOf(upperTypeBoundsA, reflexive)
+                val allSupertypesOfB = allSupertypesOf(upperTypeBoundsB, reflexive)
+                val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
+                leafTypes(commonSupertypes)
+        }
     }
 
     /**
@@ -1471,9 +1473,9 @@ class ClassHierarchy private (
      *
      * @param upperTypeBoundB A list (set) of `ObjectType`s that are not in an mutual
      *      inheritance relation.
-     * @return Returns (if reflexive is `true`)
-     *      `upperTypeBoundA` if it is a supertype of at least one type
-     *      of `upperTypeBoundB`. Returns `upperTypeBoundB` if `upperTypeBoundA` is
+     * @return (I) Returns (if reflexive is `true`) `upperTypeBoundA` if it is a supertype
+     *      of at least one type of `upperTypeBoundB`.
+     *      (II) Returns `upperTypeBoundB` if `upperTypeBoundA` is
      *      a subtype of all types of `upperTypeBoundB`. Otherwise a new upper type
      *      bound is calculated and returned.
      */
@@ -1481,6 +1483,9 @@ class ClassHierarchy private (
         upperTypeBoundA: ObjectType,
         upperTypeBoundB: UIDSet[ObjectType],
         reflexive: Boolean): UIDSet[ObjectType] = {
+
+        if (upperTypeBoundB.isEmpty)
+            return upperTypeBoundB;
 
         if (upperTypeBoundB.hasOneElement) {
             val upperTypeBound =
@@ -1492,17 +1497,19 @@ class ClassHierarchy private (
                 } else
                     joinObjectTypes(upperTypeBoundA, upperTypeBoundB.first(), reflexive)
 
-            return upperTypeBound
+            return upperTypeBound;
         }
 
-        if (upperTypeBoundB.isEmpty)
-            return upperTypeBoundB;
+        if (upperTypeBoundB contains (upperTypeBoundA))
+            // the upperTypeBoundB contains more than one type; hence, considering
+            // "reflexive" is no longer necessary
+            return UIDSet(upperTypeBoundA);
 
         if (isUnknown(upperTypeBoundA)) {
             OPALLogger.logOnce(Warn("project configuration",
                 "type unknown: "+upperTypeBoundA.toJava))
             // there is nothing that we can do...
-            return UIDSet(ObjectType.Object)
+            return UIDSet(ObjectType.Object);
         }
 
         val allSupertypesOfA = allSupertypes(upperTypeBoundA, reflexive)
@@ -1796,8 +1803,7 @@ class ClassHierarchy private (
             utbB
         else if (utbB.isEmpty)
             utbA
-        else if (utbA.hasOneElement &&
-            utbA.first.isArrayType) {
+        else if (utbA.hasOneElement && utbA.first.isArrayType) {
             if (utbB.hasOneElement) {
                 if (utbB.first.isArrayType) {
                     val joinedArrayType =
