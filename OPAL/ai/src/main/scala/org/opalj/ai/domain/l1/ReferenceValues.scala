@@ -1053,7 +1053,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 )
             ),
             s"the upper type bound (isNull == $isNull) of ${values.mkString(",")} "+
-                s"== ${domain.upperTypeBound(values)} <: $upperTypeBound"
+                s"== ${domain.upperTypeBound(values)} which is a strict subtype of "+
+                s"the given bound $upperTypeBound"
         )
 
         def joinValue( // TODO rename addValue
