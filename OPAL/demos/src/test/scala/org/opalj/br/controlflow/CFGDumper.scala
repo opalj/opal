@@ -20,14 +20,8 @@ object CFGDumper {
 
 		val jarFile: String = input("Which JAR-File? > ")
 
-		//                val outputDestination: String = "C:/Users/Erich Wittenbeck/Desktop/OPAL/MyTests/"+jarFile+"/"   // Für meinen Laptop
+		//   val outputDestination: String = "C:/Users/Erich Wittenbeck/Desktop/OPAL/MyTests/"+jarFile+"/"   // Für meinen Laptop
 		val outputDestination: String = "C:/Users/User/Desktop/OPALTest/Dumps/" + jarFile + "/" // Für meinen Desktop
-
-		//        val testJAR = "classfiles/"+jarFile+".jar"
-		//        val testFolder = TestSupport.locateTestResources(testJAR, "demo")
-		//        val testProject = Project(testFolder)
-
-		//        println("There are "+testProject.classFilesCount+" in this JAR")
 
 		val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
 
@@ -45,14 +39,14 @@ object CFGDumper {
 
 			// Dumpen als TXT-Datei
 			for (method ← methods) {
-				dumpTXT(classFile, method, outputDestination)
+				dumpTXT(method, outputDestination + classFile.fqn + "/TextDumps/")
 
 			}
 
 			// Bauen der CFGs und dumpen als Dot-Dateien
 			for (method ← methods if (method.name != "<init>")) {
 				
-				dumpDOT(classFile, method, outputDestination)
+				dumpDOT(method, outputDestination + classFile.fqn + "/DotDumps/")
 			}
 		}
 	}
@@ -64,10 +58,7 @@ object CFGDumper {
 
 	def printInstruction(pc: PC, inst: Instruction): Unit = println(pc + ": " + inst.toString(pc))
 
-	def dumpTXT(classFile: ClassFile, method: Method, outputDestination: String): Unit = {
-		//		val classFile: ClassFile = reader.ClassFile(jarFile, jarFileEntryName).head
-
-		//		val method = classFile.findMethod(methodName).get
+	def dumpTXT(method: Method, outputDestination: String): Unit = {
 
 		var byteCode: String = ""
 
@@ -79,7 +70,7 @@ object CFGDumper {
 			byteCode = byteCode + "From " + handler.startPC + " to " + handler.endPC + " target: " + handler.handlerPC + "; Catching: " + handler.catchType.getOrElse("None") + "\r\n"
 		}
 
-		val outputFileTXT = new File(outputDestination + "/" + classFile.fqn + "/TextDumps/", method.name + ".txt")
+		val outputFileTXT = new File(outputDestination, method.name + ".txt")
 
 		if (!outputFileTXT.exists())
 			outputFileTXT.getParentFile().mkdirs()
@@ -93,12 +84,12 @@ object CFGDumper {
 		}
 	}
 
-	def dumpDOT(classFile: ClassFile, method: Method, outputDestination: String): Unit = {
+	def dumpDOT(method: Method, outputDestination: String): Unit = {
 		val cfg = ControlFlowGraph(method)
 
 		val dotString = cfg.toDot
 
-		val outputFileDOT = new File(outputDestination + classFile.fqn + "/DotDumps/", method.name + ".dot")
+		val outputFileDOT = new File(outputDestination, method.name + ".dot")
 
 		if (!outputFileDOT.exists())
 			outputFileDOT.getParentFile().mkdirs()

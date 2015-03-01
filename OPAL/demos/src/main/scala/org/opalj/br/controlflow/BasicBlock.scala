@@ -74,12 +74,12 @@ case class BasicBlock(
         var blockLabel: String = ID+"\n"+"_____________________"+"\n"
 
         if (startPC == endPC) { // Sonderfall : 1 Instruktion
-            blockLabel = blockLabel + startPC+":\t"+code.instructions(startPC).toString(startPC)+"\n"
+            blockLabel = blockLabel + startPC+":\t"+code.instructions(startPC).toString(startPC).replaceAll("\"", "")+"\n"
         } else {
             val padding: String = if (code.instructions(startPC).indexOfNextInstruction(startPC, code) == endPC) { "" } else { "\t***\n" } // Sonderfall: 2 Instructions
 
-            blockLabel = blockLabel + startPC+":\t"+code.instructions(startPC).toString(startPC)+"\n"+
-                padding + endPC+":\t"+code.instructions(endPC).toString(endPC)+"\n"
+            blockLabel = blockLabel + startPC+":\t"+code.instructions(startPC).toString(startPC).replaceAll("\"", "")+"\n"+
+                padding + endPC+":\t"+code.instructions(endPC).toString(endPC).replaceAll("\"", "")+"\n"
         }
 
         var res = ID+" [shape=box, label=\""+blockLabel+"\"];\n"
