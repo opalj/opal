@@ -182,6 +182,20 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
 
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code): Unit = {
 
+            // ---------------------------------------------------------------------------
+            // Analyses that don't require an abstract interpretation
+            // ---------------------------------------------------------------------------
+
+            //
+            // CHECK IF THE METHOD IS USED
+            //
+            UnusedMethodsAnalysis.analyze(
+                theProject, callGraph, callGraphEntryPoints,
+                classFile, method) foreach { issue ⇒ results.add(issue) }
+
+            // ---------------------------------------------------------------------------
+            // Analyses that are dependent on the result of the abstract interpretation
+            // ---------------------------------------------------------------------------
             val analysisDomain =
                 new RootBugPickerAnalysisDomain(
                     theProject,
@@ -269,13 +283,6 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                         UselessComputationsAnalysis.analyze(theProject, classFile, method, result)
                     )
                 )
-
-                //
-                // CHECK IF THE METHOD IS USED
-                //
-                UnusedMethodsAnalysis.analyze(
-                    theProject, callGraph, callGraphEntryPoints,
-                    classFile, method) foreach { issue ⇒ results.add(issue) }
 
                 //
                 // FIND USELESS EXPRESSION EVALUATIONS
