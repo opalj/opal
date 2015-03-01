@@ -8,11 +8,20 @@ import org.scalatest.ParallelTestExecution
 import org.opalj.bi.TestSupport
 import org.opalj.br.analyses.Project
 import org.opalj.br.ClassFile
+import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.bi.reader.ClassFileReader
 import org.opalj.br.ObjectType
 
 @RunWith(classOf[JUnitRunner])
 class DeadCodeCFGJava8Test extends FunSpec with Matchers {
 
+	val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
+	val count = reader.ClassFile("C:/Users/User/Desktop/bup/classfiles/cfgtest8.jar", "BoringCode.class").head.methods.size
+	
+	
+//	println("huhu "+ count)
+	
     val testJAR = "classfiles/cfgtest8.jar"
     val testFolder = TestSupport.locateTestResources(testJAR, "demo")
     val testProject = Project(testFolder)

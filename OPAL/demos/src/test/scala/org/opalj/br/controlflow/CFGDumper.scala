@@ -5,93 +5,111 @@ import scala.io.StdIn
 import scala.collection.immutable.HashSet
 import org.opalj.bi.TestSupport
 import org.opalj.br.ClassFile
+import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.instructions._
 import org.opalj.br.PC
-import org.opalj.br.analyses._
+//import org.opalj.br.analyses._
+import org.opalj.br.reader.Java8FrameworkWithCaching
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.bi.reader.ClassFileReader
 
 object CFGDumper {
 
-    def main(args: Array[String]): Unit = {
+	def main(args: Array[String]): Unit = {
 
-        val jarFile: String = input("Which JAR-File? > ")
+		val jarFile: String = input("Which JAR-File? > ")
 
-                val outputDestination: String = "C:/Users/Erich Wittenbeck/Desktop/OPAL/MyTests/"+jarFile+"/"   // Für meinen Laptop
-//        val outputDestination: String = "C:/Users/HerrWittenbeck/Desktop/Darmstadt/doc/ss14/Thesis/OPAL/MyTests/"+jarFile+"/" // Für meinen Desktop
+		//                val outputDestination: String = "C:/Users/Erich Wittenbeck/Desktop/OPAL/MyTests/"+jarFile+"/"   // Für meinen Laptop
+		val outputDestination: String = "C:/Users/User/Desktop/OPALTest/Dumps/" + jarFile + "/" // Für meinen Desktop
 
-        val testJAR = "classfiles/"+jarFile+".jar"
-        val testFolder = TestSupport.locateTestResources(testJAR, "demo")
-        val testProject = Project(testFolder)
+		//        val testJAR = "classfiles/"+jarFile+".jar"
+		//        val testFolder = TestSupport.locateTestResources(testJAR, "demo")
+		//        val testProject = Project(testFolder)
 
-        println("There are "+testProject.classFilesCount+" in this JAR")
+		//        println("There are "+testProject.classFilesCount+" in this JAR")
 
-        while (true) {
+		val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
 
-            val jarFileEntryName: String = input("Which Class-File? > ")
+		while (true) {
 
-            if (jarFileEntryName == "exit")
-                return
+			val jarFileEntryName: String = input("Which Class-File? > ")
 
-            val classFile: ClassFile = testProject.classFile(ObjectType(jarFileEntryName)).get
+			if (jarFileEntryName == "exit")
+				return
 
-            val methods = classFile.methods
+			//            val classFile: ClassFile = testProject.classFile(ObjectType(jarFileEntryName)).get
+			val classFile: ClassFile = reader.ClassFile("C:/Users/User/Desktop/bup/classfiles/" + jarFile + ".jar", jarFileEntryName + ".class").head
 
-            for (method ← methods) {
+			val methods = classFile.methods
 
-                // Bytecode int TxT-Datei
+			// Dumpen als TXT-Datei
+			for (method ← methods) {
+				dumpTXT(classFile, method, outputDestination)
 
-                var byteCode: String = ""
+			}
 
-                def instructionString(pc: PC, inst: Instruction): Unit = byteCode = byteCode + pc+": "+inst.toString(pc)+" -- "+inst.runtimeExceptions.size+"\r\n"
+			// Bauen der CFGs und dumpen als Dot-Dateien
+			for (method ← methods if (method.name != "<init>")) {
+				
+				dumpDOT(classFile, method, outputDestination)
+			}
+		}
+	}
 
-                method.body.get.foreach(instructionString)
+	def input(prompt: String): String = {
+		print(prompt)
+		StdIn.readLine
+	}
 
-                for (handler ← method.body.get.exceptionHandlers) {
-                    byteCode = byteCode+"From "+handler.startPC+" to "+handler.endPC+" target: "+handler.handlerPC+"; Catching: "+handler.catchType.getOrElse("None")+"\r\n"
-                }
+	def printInstruction(pc: PC, inst: Instruction): Unit = println(pc + ": " + inst.toString(pc))
 
-                val outputFileTXT = new File(outputDestination + jarFileEntryName+"/TextDumps/", method.name+".txt")
+	def dumpTXT(classFile: ClassFile, method: Method, outputDestination: String): Unit = {
+		//		val classFile: ClassFile = reader.ClassFile(jarFile, jarFileEntryName).head
 
-                if (!outputFileTXT.exists())
-                    outputFileTXT.getParentFile().mkdirs()
+		//		val method = classFile.findMethod(methodName).get
 
-                try {
-                    val writer = new PrintWriter(outputFileTXT)
-                    writer.print(byteCode)
-                    writer.close
-                } catch {
-                    case e: IOException ⇒ {}
-                }
+		var byteCode: String = ""
 
-            }
+		def instructionString(pc: PC, inst: Instruction): Unit = byteCode = byteCode + pc + ": " + inst.toString(pc) + " -- " + inst.runtimeExceptions.size + "\r\n"
 
-            // Bauen der CFGs und dumpen als Dot-Dateien
-            for (method ← methods if(method.name != "<init>")) {
+		method.body.get.foreach(instructionString)
 
-                val cfg = ControlFlowGraph(method)
+		for (handler ← method.body.get.exceptionHandlers) {
+			byteCode = byteCode + "From " + handler.startPC + " to " + handler.endPC + " target: " + handler.handlerPC + "; Catching: " + handler.catchType.getOrElse("None") + "\r\n"
+		}
 
-                val dotString = cfg.toDot
+		val outputFileTXT = new File(outputDestination + "/" + classFile.fqn + "/TextDumps/", method.name + ".txt")
 
-                val outputFileDOT = new File(outputDestination + jarFileEntryName+"/DotDumps/", cfg.method.name+".dot")
+		if (!outputFileTXT.exists())
+			outputFileTXT.getParentFile().mkdirs()
 
-                if (!outputFileDOT.exists())
-                    outputFileDOT.getParentFile().mkdirs()
+		try {
+			val writer = new PrintWriter(outputFileTXT)
+			writer.print(byteCode)
+			writer.close
+		} catch {
+			case e: IOException ⇒ {}
+		}
+	}
 
-                try {
-                    val writer = new PrintWriter(outputFileDOT)
-                    writer.print(dotString)
-                    writer.close
-                } catch {
-                    case e: IOException ⇒ {}
-                }
-            }
-        }
-    }
+	def dumpDOT(classFile: ClassFile, method: Method, outputDestination: String): Unit = {
+		val cfg = ControlFlowGraph(method)
 
-    def input(prompt: String): String = {
-        print(prompt)
-        StdIn.readLine
-    }
+		val dotString = cfg.toDot
 
-    def printInstruction(pc: PC, inst: Instruction): Unit = println(pc+": "+inst.toString(pc))
+		val outputFileDOT = new File(outputDestination + classFile.fqn + "/DotDumps/", method.name + ".dot")
+
+		if (!outputFileDOT.exists())
+			outputFileDOT.getParentFile().mkdirs()
+
+		try {
+			val writer = new PrintWriter(outputFileDOT)
+			writer.print(dotString)
+			writer.close
+		} catch {
+			case e: IOException ⇒ {}
+		}
+	}
+
 }
