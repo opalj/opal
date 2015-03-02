@@ -63,7 +63,11 @@ object MethodReturnValuesKey extends ProjectInformationKey[MethodReturnValueInfo
                 new BaseMethodReturnValuesAnalysisDomain(
                     project, fieldValueInformation, ai, method)
         )
-        OPALLogger.info("progress", "successfully computed the method return value information")
+
+        OPALLogger.info(
+            "progress",
+            "computed the method return value information"+
+                s"refined the return type of ${result.size} methods")
         result
     }
 }
