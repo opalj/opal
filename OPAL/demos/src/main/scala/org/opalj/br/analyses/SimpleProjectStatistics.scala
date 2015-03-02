@@ -51,7 +51,16 @@ object SimpleProjectStatistics extends AnalysisExecutor with OneStepAnalysis[URL
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean) = {
 
-        // the following is highly inefficient,
+        // the following is highly inefficient
+
+        val classFilesDistribution =
+            project.allClassFiles.
+                groupBy(cf ⇒ org.opalj.bi.jdkVersion(cf.majorVersion)).toSeq.
+                sortWith((l, r) ⇒ l._1 < r._1).
+                map { e ⇒
+                    val (group, es) = e
+                    (group, es.size)
+                }
 
         val maxInstanceFieldsInAClass =
             project.allClassFiles.map(_.fields.filter(f ⇒ !f.isStatic).size).max
@@ -112,7 +121,8 @@ object SimpleProjectStatistics extends AnalysisExecutor with OneStepAnalysis[URL
             }
 
         BasicReport(
-            "maxInstanceFieldsInAClass: "+maxInstanceFieldsInAClass+"("+classWithMaxInstanceFields+")\n"+
+            classFilesDistribution.mkString("classFilesDistribution:\n\t", "\n\t", "\n")+
+                "maxInstanceFieldsInAClass: "+maxInstanceFieldsInAClass+"("+classWithMaxInstanceFields+")\n"+
                 "maxClassFieldsInAClass: "+maxClassFieldsInAClass+"("+classWithMaxClassFields+")\n"+
                 "maxMethodsInAClass: "+maxMethodsInAClass+"("+classWithMaxMethods+")\n"+
                 "longestMethodInAClass: "+longestMethodInAClass+"("+theLongestMethod+")\n"+
