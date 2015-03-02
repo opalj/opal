@@ -56,7 +56,7 @@ object SimpleProjectStatistics extends AnalysisExecutor with OneStepAnalysis[URL
         val classFilesDistribution =
             project.allClassFiles.
                 groupBy(cf ⇒ org.opalj.bi.jdkVersion(cf.majorVersion)).toSeq.
-                sortWi1th((l, r) ⇒ l._1 < r._1).
+                sortWith((l, r) ⇒ l._1 < r._1).
                 map { e ⇒
                     val (group, es) = e
                     (group, es.size)
