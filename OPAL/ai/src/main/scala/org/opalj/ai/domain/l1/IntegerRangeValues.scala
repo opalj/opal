@@ -729,10 +729,12 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                             result(newValue)
                         }
 
-                    case _ ⇒
+                    case _ /*AnIntegerValue*/ if rightLB > Int.MinValue ⇒
                         val maxDividend = Math.max(Math.abs(rightLB), Math.abs(rightUB))
                         val newValue = IntegerRange(-(maxDividend - 1), maxDividend - 1)
                         result(newValue)
+                    case _ /*AnIntegerValue*/ ⇒
+                        result(IntegerValue(origin = pc))
                 }
 
             case _ ⇒ // right is "AnIntegerValue"
