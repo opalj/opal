@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -33,6 +33,8 @@ import scala.xml.Node
 import scala.xml.Text
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
+import org.opalj.log.GlobalContext
+import org.opalj.log.OPALLogger
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -52,12 +54,13 @@ import scala.annotation.elidable.ASSERTION
 package object br {
 
     private[this] final val checkAssert: Boolean = {
+        implicit val logContext = GlobalContext
         try {
             scala.Predef.assert(false) // <= test whether assertions are turned on or off...
-            println("[info - Bytecode Representation] Production Build - Assertions are disabled")
+            OPALLogger.info("OPAL", "Bytecode Representation - Production Build")
         } catch {
             case ae: AssertionError ⇒
-                println("[info - Bytecode Representation] Development Build - Assertions are enabled")
+                OPALLogger.info("OPAL", "Bytecode Representation - Assertions are enabled - Development Build.")
         }
         true
     }

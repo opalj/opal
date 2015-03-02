@@ -31,6 +31,8 @@ package ai
 package domain
 package l2
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
 import org.opalj.br._
 import scala.util.control.ControlThrowable
 
@@ -187,8 +189,42 @@ trait PerformInvocations extends MethodCallsHandling {
         operands: Operands,
         fallback: () ⇒ MethodCallResult): MethodCallResult = {
 
+        assert(definingClass.methods.contains(method))
+        assert(
+            method.body.isDefined,
+            s"the method ${project.source(definingClass.thisType)}: "+
+                s"${method.toJava(definingClass)} does not have a body "+
+                "(is the project self-consistent?)")
+
         val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
         executionHandler.perform(pc, definingClass, method, operands, fallback)
+    }
+
+    protected[this] def testAndDoInvoke(
+        pc: PC,
+        definingClass: ClassFile,
+        method: Method,
+        operands: Operands,
+        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+
+        if (project.isLibraryType(definingClass.thisType))
+            return fallback();
+
+        if (method.isAbstract) {
+            OPALLogger.error(
+                "project configuration",
+                "the resolved method on a concrete object is abstract: "+
+                    method.toJava(definingClass))
+            fallback()
+        } else if (!method.isNative) {
+            if (!shouldInvocationBePerformed(definingClass, method) ||
+                isRecursive(definingClass, method, operands))
+                fallback()
+            else {
+                doInvoke(pc, definingClass, method, operands, fallback)
+            }
+        } else
+            fallback()
     }
 
     // -----------------------------------------------------------------------------------
@@ -199,7 +235,7 @@ trait PerformInvocations extends MethodCallsHandling {
 
     protected[this] def doInvokeNonVirtual(
         pc: PC,
-        declaringClass: ObjectType,
+        declaringClassType: ObjectType,
         methodName: String,
         methodDescriptor: MethodDescriptor,
         operands: Operands,
@@ -208,52 +244,41 @@ trait PerformInvocations extends MethodCallsHandling {
         val methodOption = try {
             classHierarchy.resolveMethodReference(
                 // the cast is safe since arrays do not have any static/special methods
-                declaringClass.asObjectType,
+                declaringClassType.asObjectType,
                 methodName,
                 methodDescriptor,
                 project)
         } catch {
             case ct: ControlThrowable ⇒ throw ct
             case e: AssertionError ⇒
-                println(
-                    Console.YELLOW + Console.RED_B+
-                        "[internal error] exception occured while resolving method reference: "+
-                        declaringClass.toJava+
-                        "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+
-                        ":\n[internal error] "+e.getMessage.replace("\n", "\n[internal error] ")+"\n"+
-                        Console.GREEN+"[internal error] continuing the analysis using the default method call handling strategy")
+                OPALLogger.error(
+                    "internal error - recoverable",
+                    "exception occured while resolving method reference: "+
+                        declaringClassType.toJava+
+                        "{ static "+methodDescriptor.toJava(methodName)+"}"+
+                        ": "+e.getMessage)
                 return fallback();
             case e: Throwable ⇒
-                println(
-                    Console.YELLOW + Console.RED_B+
-                        "[internal error] exception occured while resolving method reference: "+
-                        declaringClass.toJava+
-                        "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET+":\n"
+                OPALLogger.error(
+                    "internal error - recoverable",
+                    "exception occured while resolving method reference: "+
+                        declaringClassType.toJava+
+                        "{ static "+methodDescriptor.toJava(methodName)+"}",
+                    e
                 )
-
-                e.printStackTrace()
-                println(
-                    Console.GREEN+
-                        "[internal error] continuing the analysis using the default method call handling strategy")
                 return fallback();
         }
 
         methodOption match {
             case Some(method) ⇒
-                if (!method.isNative) {
-                    val classFile = project.classFile(method)
-                    if (!shouldInvocationBePerformed(classFile, method) ||
-                        isRecursive(classFile, method, operands))
-                        fallback()
-                    else
-                        doInvoke(pc, classFile, method, operands, fallback)
-                } else
-                    fallback()
+                val classFile = project.classFile(method)
+                testAndDoInvoke(pc, classFile, method, operands, fallback)
             case _ ⇒
-                println(
-                    Console.YELLOW+"[warn] method reference cannot be resolved: "+
-                        declaringClass.toJava+
-                        "{ static "+methodDescriptor.toJava(methodName)+"}"+Console.RESET)
+                OPALLogger.logOnce(Warn(
+                    "project configuration",
+                    "method reference cannot be resolved: "+
+                        declaringClassType.toJava+
+                        "{ static "+methodDescriptor.toJava(methodName)+"}"))
                 fallback()
         }
     }
@@ -269,11 +294,11 @@ trait PerformInvocations extends MethodCallsHandling {
         descriptor: MethodDescriptor,
         operands: Operands,
         fallback: () ⇒ MethodCallResult): MethodCallResult = {
-
-        typeOfValue( /*receiver = */ operands(descriptor.parametersCount)) match {
+        val receiver = operands(descriptor.parametersCount)
+        typeOfValue(receiver) match {
             case refValue: IsAReferenceValue if (
                 refValue.isPrecise &&
-                refValue.isNull.isNo &&
+                refValue.isNull.isNo && // TODO handle the case that null is unknown
                 refValue.upperTypeBound.hasOneElement &&
                 refValue.upperTypeBound.head.isObjectType) ⇒
                 val receiverClass = refValue.upperTypeBound.head.asObjectType

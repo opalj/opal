@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,24 +30,21 @@ package org.opalj
 package ai
 
 import org.opalj.br.Code
+import org.opalj.log.LogContext
 
 /**
  * An abstract interpreter that interrupts itself after the evaluation of
  * the given number of instructions or if the callback function `doInterrupt` returns
  * `false` or if the maximum allowed time is exceeded.
  *
- * @param maxEvaluationCount The maximum number of instructions after which the
- *      abstract interpretation is aborted. In general this number should be calculated
- *      based on the method's/project's properties. To calculate it based on the properties
- *      of a method, it is possible to use the predefined function
- *      [[InstructionCountBoundedAI#calculateMaxEvaluationCount]].
+ * @param maxEvaluationCount See [[InstructionCountBoundedAI.maxEvaluationCount]].
  *
  * @param maxEvaluationTimeInNS The maximum number of nanoseconds the abstract interpreter
- *      is allowed to run.
+ *      is allowed to run. It starts with the evaluation of the first instruction.
  *
  * @param doInterrupt This function is called by the abstract interpreter to check if
  *      the abstract interpretation should be aborted. Given that this function is called
- *      very often, it is important that it is efficient.
+ *      very often (before the evaluation of each instruction) , it is important that it is efficient.
  *
  * @author Michael Eichberg
  */
@@ -63,7 +60,7 @@ class BoundedInterruptableAI[D <: Domain](
         code: Code,
         maxEvaluationFactor: Double,
         maxEvaluationTimeInMS: Int,
-        doInterrupt: () ⇒ Boolean) =
+        doInterrupt: () ⇒ Boolean)(implicit logContext: LogContext) =
         this(
             InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),
             maxEvaluationTimeInMS * 1000000l,

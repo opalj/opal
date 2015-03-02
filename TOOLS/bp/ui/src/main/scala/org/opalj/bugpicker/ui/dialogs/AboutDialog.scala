@@ -31,8 +31,10 @@ package bugpicker
 package ui
 package dialogs
 
+import java.net.URL
+
 import org.opalj.bugpicker.ui.BugPicker
-import org.opalj.io.process
+import org.opalj.io.processSource
 
 import scalafx.Includes.eventClosureWrapperWithParam
 import scalafx.Includes.jfxActionEvent2sfx
@@ -52,9 +54,10 @@ import scalafx.stage.Stage
 class AboutDialog(owner: Stage, showUrl: String ⇒ Unit) extends DialogStage(owner) {
     self ⇒
 
-    val version = process(this.getClass.getResourceAsStream("/org/opalj/bugpicker/version.txt"))(
-        scala.io.Source.fromInputStream(_).mkString
-    )
+    val version = getClass.getResource("/org/opalj/bugpicker/version.txt") match {
+        case file: URL ⇒ processSource(scala.io.Source.fromURL(file))(_.mkString(""))
+        case _         ⇒ "Snapshot"
+    }
 
     title = "About BugPicker"
 

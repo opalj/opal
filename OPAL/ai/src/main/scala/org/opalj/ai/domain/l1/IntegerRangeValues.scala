@@ -330,7 +330,12 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                             Unknown
                     }
             case _ ⇒
-                Unknown
+                left match {
+                    case IntegerRange(_, Int.MinValue) ⇒
+                        Yes
+                    case _ ⇒
+                        Unknown
+                }
         }
     }
 
@@ -732,7 +737,7 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
 
             case _ ⇒ // right is "AnIntegerValue"
                 val newValue =
-                    if (left eq right) // "a value % itselft is always 0 unles the value is 0"
+                    if (left eq right) // "a value % itself is always 0 unless the value is 0"
                         IntegerValue(pc, 0)
                     else
                         IntegerValue(pc)

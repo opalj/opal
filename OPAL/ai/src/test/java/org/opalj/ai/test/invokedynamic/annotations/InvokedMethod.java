@@ -66,5 +66,6 @@ public @interface InvokedMethod {
 			CallGraphAlgorithm.CHA,
 			CallGraphAlgorithm.BasicVTA,
 			CallGraphAlgorithm.DefaultVTA,
-			CallGraphAlgorithm.ExtVTA  };
+			CallGraphAlgorithm.ExtVTA,
+			CallGraphAlgorithm.CFA   };
 }

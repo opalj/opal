@@ -74,8 +74,8 @@ class DefaultDomain(
         with domain.l1.NullPropertyRefinement
         with domain.l1.DefaultIntegerRangeValues
         with domain.l1.MaxArrayLengthRefinement
-        with domain.l1.ConstraintsBetweenIntegerValues
-        //with domain.l1.DefaultIntegerSetValues
+        //[CURRENTLY ONLY A WASTE OF RESOURCES] with domain.l1.ConstraintsBetweenIntegerValues
+        // with domain.l1.DefaultIntegerSetValues
         with domain.l1.DefaultLongSetValues
         with domain.l1.LongSetValuesShiftOperators
         with domain.l1.ConcretePrimitiveValuesConversions

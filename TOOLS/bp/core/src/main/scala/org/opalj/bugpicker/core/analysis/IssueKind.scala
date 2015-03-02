@@ -40,6 +40,9 @@ package analysis
  */
 object IssueKind {
 
+    final val AllKinds =
+        Set(ConstantComputation, DeadPath, ThrowsException, UnguardedUse, Unused)
+
     final val ConstantComputation = "constant computation"
 
     final val DeadPath = "dead path"

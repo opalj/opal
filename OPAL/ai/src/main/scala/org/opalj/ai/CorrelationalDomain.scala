@@ -34,7 +34,5 @@ package ai
  *
  * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
  */
-trait CorrelationalDomain
-    extends Domain
-    with CorrelationalDomainSupport
+trait CorrelationalDomain extends Domain with CorrelationalDomainSupport
 

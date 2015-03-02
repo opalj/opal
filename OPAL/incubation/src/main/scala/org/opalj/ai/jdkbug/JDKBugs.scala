@@ -106,8 +106,6 @@ object JDKTaintAnalysis
 
     override def description: String = "Finds unsafe Class.forName(...) calls."
 
-    println(System.getProperty("java.version"));
-
     val analysis = this
 
     val javaSecurityParameter = "-java.security="

@@ -33,10 +33,8 @@ package analyses
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.AnyRefMap
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.util.PerformanceEvaluation.time
@@ -96,7 +94,6 @@ object MethodReturnValuesAnalysis {
             }
         }
 
-        println(s"[info] refined the return type of ${results.size} methods out of ${candidates.get} methods")
         AnyRefMap.empty[Method, Option[Domain#DomainValue]] ++ results.asScala
     }
 

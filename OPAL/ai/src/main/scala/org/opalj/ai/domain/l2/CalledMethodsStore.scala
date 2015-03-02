@@ -31,22 +31,33 @@ package ai
 package domain
 package l2
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
+import scala.util.control.ControlThrowable
 
 /**
  *
  * ==Thread Safety==
  * A "CalledMethodsStore" is not thread-safe.
  *
+ * @param domain The domain that is used as the target domain for the adaptation of
+ *      the operand values to make them comparable. '''The domain object is not used
+ *      at construction time which enables the creation of the store along with/ as
+ *      part of the creation of "its" domain.
+ *
+ * @param frequentEvaluationWarningLevel Determines when we issue a frequent evaluation
+ *      warning because the same method is called with different parameters more than
+ *      `frequentEvaluationWarningLevel` times. The default is `10`.
+ *
  * @author Michael Eichberg
  */
-class CalledMethodsStore(val domain: ValuesFactory with ReferenceValuesDomain) {
-
-    /**
-     * Determines when we issue a frequent evaluation warning.
-     */
-    val frequentEvaluationWarningLevel = 10
+class CalledMethodsStore(
+        // domain MUST NOT BE USED at initialization time
+        val domain: ValuesFactory with ReferenceValuesDomain with TheProject,
+        val frequentEvaluationWarningLevel: Int = 10)(
+                implicit val logContext: LogContext) {
 
     private[this] val calledMethods =
         scala.collection.mutable.HashMap.empty[Method, List[domain.Operands]]
@@ -63,19 +74,27 @@ class CalledMethodsStore(val domain: ValuesFactory with ReferenceValuesDomain) {
                 false
             case Some(previousOperandsList) ⇒
                 for (previousOperands ← previousOperandsList) {
-                    import scala.util.control.Breaks.{ breakable, break }
-
-                    val previousOperandsIterator = previousOperands.iterator
-                    val operandsIterator = adaptedOperands.iterator
-                    breakable {
-                        while (previousOperandsIterator.hasNext) {
+                    try {
+                        val previousOperandsIterator = previousOperands.iterator
+                        val operandsIterator = adaptedOperands.iterator
+                        var abstractsOver = true
+                        while (previousOperandsIterator.hasNext && abstractsOver) {
                             val previousOperand = previousOperandsIterator.next
                             val operand = operandsIterator.next
-                            if (!previousOperand.abstractsOver(operand))
-                                break
+                            abstractsOver = previousOperand.abstractsOver(operand)
                         }
-                        // we completely abstract over a previous computation
-                        return true
+                        if (abstractsOver)
+                            // we completely abstract over a previous computation
+                            return true
+                    } catch {
+                        case ct: ControlThrowable ⇒ throw ct
+                        case t: Throwable ⇒
+                            OPALLogger.error(
+                                "internal error",
+                                s"incompatible operands lists: $previousOperands and $adaptedOperands",
+                                t)(
+                                    domain.logContext)
+                            throw t
                     }
                 }
                 val newOperandsList = adaptedOperands :: previousOperandsList
@@ -92,8 +111,9 @@ class CalledMethodsStore(val domain: ValuesFactory with ReferenceValuesDomain) {
         definingClass: ClassFile,
         method: Method,
         operandsSet: List[domain.Operands]): Unit = {
-        println(
-            "[info] the method "+
+        OPALLogger.warn(
+            "analysis configuration",
+            "the method "+
                 definingClass.thisType.toJava+
                 "{ "+method.toJava+" } "+
                 "is frequently evaluated using different operands ("+operandsSet.size+"): "+

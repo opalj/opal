@@ -201,13 +201,19 @@ trait StringValues
                         case _ ⇒ /* we can do nothing special */
                     }
                 }
+                // we don't know the precise value, but we still assume that the value
+                // is correctly initialized
+                updateAfterEvaluation(
+                    newStringValue,
+                    newStringValue.update())
             }
         }
         super.invokespecial(pc, declaringClass, name, methodDescriptor, operands)
     }
 
-    final override def StringValue(origin: ValueOrigin, value: String): DomainObjectValue =
+    final override def StringValue(origin: ValueOrigin, value: String): DomainObjectValue = {
         StringValue(origin, value, nextT())
+    }
 
     def StringValue(origin: ValueOrigin, value: String, t: Timestamp): DomainStringValue
 }
