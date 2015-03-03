@@ -17,6 +17,7 @@ import org.opalj.br.instructions.ControlTransferInstruction
 import org.opalj.br.instructions.UnconditionalBranchInstruction
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.GOTO_W
+import org.opalj.br.instructions.ATHROW
 import org.opalj.br.instructions.ConditionalBranchInstruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
@@ -73,7 +74,7 @@ object ControlFlowGraph {
         def isBeginningOfBlock(pc: PC): Boolean = (pc < codeLength) &&
             (if (BlocksByPC(pc) == null) false else (BlocksByPC(pc).startPC == pc))
 
-        def isReturnFromMethod(pc: PC): Boolean = instructions(pc).isInstanceOf[ReturnInstruction]
+        def isReturnFromMethod(pc: PC): Boolean = instructions(pc).isInstanceOf[ReturnInstruction] || instructions(pc) == ATHROW
 
         for (handler ← code.exceptionHandlers) {
             val handlerPC: PC = handler.handlerPC
