@@ -39,7 +39,7 @@ object ControlFlowGraph {
 
         //        println
         //        println
-        //        println("CFG for "+method.name)
+        //		  println("CFG for "+method.name)
         //        println
 
         val code: Code = method.body.get
@@ -104,7 +104,7 @@ object ControlFlowGraph {
                 BlocksByPC(currentPC) = currentBlock
             } else {
 
-                if (beginningOfBlock) { // Nachdenken über Relation der verschiedenen if-statements
+                if (beginningOfBlock) {
 
                     val nextBlock = BlocksByPC(currentPC)
 
@@ -187,7 +187,9 @@ object ControlFlowGraph {
                     val catchType = handler.catchType.getOrElse(None)
 
                     if (catchType == None || runtimeExceptions.contains(catchType)) {
-                        BlocksByPC(nextPC) = BasicBlock(nextPC)
+                        //						BlocksByPC(nextPC) = BasicBlock(nextPC) 
+
+                        BlocksByPC(nextPC) = if (!isBeginningOfBlock(nextPC)) BasicBlock(nextPC) else BlocksByPC(nextPC)
 
                         val catchBlock = catchBlocks(handler)
                         val handlerBlock = BlocksByPC(handler.handlerPC)
@@ -219,22 +221,22 @@ case class ControlFlowGraph(
         startBlock: StartBlock,
         endBlock: ExitBlock) {
 
-    val AllBlocks: HashSet[CFGBlock] = startBlock.returnAllBlocks(new HashSet[CFGBlock])
-    
-    def traverseWithFunction[T](f: CFGBlock => T): Unit = {
-    	traverseWithFunctionAndBlock(f)(startBlock, new HashSet[CFGBlock])
+    def AllBlocks: HashSet[CFGBlock] = startBlock.returnAllBlocks(new HashSet[CFGBlock])
+
+    def traverseWithFunction[T](f: CFGBlock ⇒ T): Unit = {
+        traverseWithFunctionAndBlock(f)(startBlock, new HashSet[CFGBlock])
     }
-    
-    private def traverseWithFunctionAndBlock[T](f: CFGBlock => T)(block: CFGBlock, visited: HashSet[CFGBlock]): Unit = {
-    	
-    	val newVisitedSet: HashSet[CFGBlock] = visited + block
-    	val successors = block match { case bb: BasicBlock => bb.successors ++ bb.catchBlockSuccessors; case _ => block.successors}
-    	
-    	f(block)
-    	
-    	for(successor <- successors if(!visited.contains(successor))){
-    		traverseWithFunctionAndBlock[T](f)(successor, newVisitedSet)
-    	}
+
+    private def traverseWithFunctionAndBlock[T](f: CFGBlock ⇒ T)(block: CFGBlock, visited: HashSet[CFGBlock]): Unit = {
+
+        val newVisitedSet: HashSet[CFGBlock] = visited + block
+        val successors = block match { case bb: BasicBlock ⇒ bb.successors ++ bb.catchBlockSuccessors; case _ ⇒ block.successors }
+
+        f(block)
+
+        for (successor ← successors if (!visited.contains(successor))) {
+            traverseWithFunctionAndBlock[T](f)(successor, newVisitedSet)
+        }
     }
 
     def toDot: String = {

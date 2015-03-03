@@ -1,7 +1,6 @@
 package org.opalj.br.controlflow
 
-//import java.net.URL
-//import java.io.File
+
 //import org.junit.runner.RunWith
 //import org.scalatest.junit.JUnitRunner
 //import org.scalatest.FunSpec
@@ -9,68 +8,67 @@ package org.opalj.br.controlflow
 //import org.scalatest.ParallelTestExecution
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomainWithCFG
+import org.opalj.br.instructions.ATHROW
 import org.opalj.collection.UShortSet
-//import org.opalj.br.analyses.Project
-//import scala.io.StdIn
 
 //@RunWith(classOf[JUnitRunner])
 object CFGSanityCheck /*extends FunSpec with Matchers */ {
 
-	def main(args: Array[String]): Unit = {
-		
-		val errorOutputDestination: String = "C:/Users/User/Desktop/OPALTest/SanityCheck/"
-		
-		val project = org.opalj.br.TestSupport.createJREProject
+    def main(args: Array[String]): Unit = {
 
-		println(project.methodsCount + " Methods in project")
+        val errorOutputDestination: String = "C:/Users/User/Desktop/OPALTest/SanityCheck/"
 
-		project.parForeachMethodWithBody()(m => {
+          val project = org.opalj.br.TestSupport.createJREProject
 
-			val (_, classFile, method) = m
+        println(project.methodsCount+" Methods in project")
 
-			val recordCFG = BaseAI(classFile, method, new DefaultDomainWithCFG(project, classFile, method))
+        project.parForeachMethodWithBody()(m ⇒ {
 
-			val cfg = ControlFlowGraph(method)
-			
-			var successes: Int = 0
+            val (_, classFile, method) = m
 
-			cfg.traverseWithFunction { block =>
-				{
-//					val code = method.body.get
+            val recordCFG = BaseAI(classFile, method, new DefaultDomainWithCFG(project, classFile, method))
 
-					block match {
-						case bb: BasicBlock => {
+            val cfg = ControlFlowGraph(method)
 
-							val regularSuccessors: UShortSet = recordCFG.domain.regularSuccessorsOf(bb.endPC)
+            val code = method.body.get
 
-							for (successorBlock <- bb.successors if (successorBlock.isInstanceOf[BasicBlock])) {
-								
-								val startPC = successorBlock.asInstanceOf[BasicBlock].startPC
-								
-								if(!regularSuccessors.contains(startPC)){
-									println("Error: Mismatch of the two CFGs at method "+method.name+" at Instruction #"+bb.endPC+" was not to be found in "+regularSuccessors)
-									println("So far, "+successes+" graphs were correct")
-									
-									CFGDumper.dumpTXT(method, errorOutputDestination)
-									CFGDumper.dumpDOT(method, errorOutputDestination)
-									
-									sys.exit
-								}
-								
-								successes += 1
-							}
+            for (block ← cfg.AllBlocks) {
+                block match {
+                    case bb: BasicBlock ⇒ {
 
-						}
-						case cb: CatchBlock => {}
-						case _ => {}
-					}
-				}
-			}
+                        val regularSuccessors: UShortSet = recordCFG.domain.regularSuccessorsOf(bb.endPC)
 
-		})
+                        var potentialSuccessors: UShortSet = org.opalj.collection.mutable.UShortSet.empty
 
-		println("Finish!")
+                        if (!(code.instructions(bb.endPC) == ATHROW)) {
 
-	}
+                            for (successorBlock ← bb.successors if (successorBlock.isInstanceOf[BasicBlock])) {
+
+                                potentialSuccessors = potentialSuccessors + successorBlock.asInstanceOf[BasicBlock].startPC
+
+                            }
+
+                            for (pc ← regularSuccessors) {
+                                if (!potentialSuccessors.contains(pc)) {
+                                    println("Error: Mismatch of the two CFGs at method "+method.name+" at Instruction #"+bb.endPC+": "+pc+" was not to be found in "+potentialSuccessors)
+
+                                    CFGDumper.dumpTXT(method, errorOutputDestination)
+                                    CFGDumper.dumpDOT(method, errorOutputDestination)
+
+                                    sys.exit
+                                }
+                            }
+                        }
+
+                    }
+                    case cb: CatchBlock ⇒ { /* Hier muss noch was passieren */ }
+                    case _              ⇒ { /*Start- und Exitblöcke*/ }
+                }
+            }
+        })
+
+        println("Finish! ")
+
+    }
 
 }
