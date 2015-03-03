@@ -91,6 +91,73 @@ package object util {
     }
 
     /**
+     * Inserts the given `pc` before `prefixEnd` in the list. If the list does not contain
+     * `prefixEnd`, `pc` is appended to the list.
+     */
+    @inline final def insertBefore(
+        worklist: List[PC],
+        pc: PC,
+        prefixEnd: PC): List[PC] = {
+
+        @tailrec def prepend(headWorklist: List[PC], tailWorklist: List[PC]): List[PC] = {
+            if (headWorklist.isEmpty)
+                tailWorklist
+            else
+                prepend(headWorklist.tail, headWorklist.head :: tailWorklist)
+        }
+
+        @tailrec def add(headWorklist: List[PC], tailWorklist: List[PC]): List[PC] = {
+            if (tailWorklist.isEmpty)
+                (pc :: headWorklist).reverse
+            else {
+                val nextPC = tailWorklist.head
+                if (nextPC == prefixEnd)
+                    prepend(headWorklist, pc :: tailWorklist)
+                else
+                    add(nextPC :: headWorklist, tailWorklist.tail)
+            }
+        }
+
+        add(Nil, worklist)
+    }
+
+    /**
+     * Inserts the given `pc` before `prefixEnd` in the list unless `pc` is already
+     * contained in the. If the list does not contain
+     * `prefixEnd`, `pc` is appended to the list. If the list already contains `pc`
+     * the original list is returned!
+     */
+    @inline final def insertBeforeIfNew(
+        worklist: List[PC],
+        pc: PC,
+        prefixEnd: PC): List[PC] = {
+
+        @tailrec def prepend(headWorklist: List[PC], tailWorklist: List[PC]): List[PC] = {
+            if (headWorklist.isEmpty)
+                tailWorklist
+            else
+                prepend(headWorklist.tail, headWorklist.head :: tailWorklist)
+        }
+
+        @tailrec def add(headWorklist: List[PC], tailWorklist: List[PC]): List[PC] = {
+            if (tailWorklist.isEmpty)
+                (pc :: headWorklist).reverse
+            else {
+                val nextPC = tailWorklist.head
+                if (nextPC == pc)
+                    return worklist; // unchanged
+                else if (nextPC == prefixEnd)
+                    prepend(headWorklist, pc :: tailWorklist)
+                else
+                    add(nextPC :: headWorklist, tailWorklist.tail)
+            }
+
+        }
+
+        add(Nil, worklist)
+    }
+
+    /**
      * Removes the first occurrence of the specified pc from the list.
      * If the pc is not found, the original list is returned. I.e., it is
      * possible to check whether the list is modified or not using

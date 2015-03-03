@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -32,12 +32,11 @@ package domain
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-
 import org.opalj.br.Code
 import org.opalj.br.MethodWithBody
+import org.opalj.log.GlobalContext
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
@@ -56,6 +55,8 @@ import org.opalj.br.MethodWithBody
 @RunWith(classOf[JUnitRunner])
 class DomainIndependenceTest extends FlatSpec with Matchers {
 
+    private[this] implicit val logContext = GlobalContext
+
     // We use this domain for the comparison of the values; it has the same
     // expressive power as the other domains.
     private object ValuesDomain
@@ -70,7 +71,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
     //
     // The following three domains are very basic domains that – given that the
     // same partial domains are used – should compute the same results.
-    // 
+    //
 
     private class Domain1(val code: Code)
         extends Domain
@@ -152,8 +153,14 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                                 lValue != null && rValue != null && {
                                     val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                                     val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
-                                    if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
-                                        return Some(Console.YELLOW_B+"the register value "+lVD+" does not correspond with "+rVD)
+                                    if (lVD.isInstanceOf[ValuesDomain.ReturnAddressValue] || rVD.isInstanceOf[ValuesDomain.ReturnAddressValue]) {
+                                        if ((lVD.isInstanceOf[ValuesDomain.ReturnAddressValue] && !rVD.isInstanceOf[ValuesDomain.ReturnAddressValue]) ||
+                                            (rVD.isInstanceOf[ValuesDomain.ReturnAddressValue] && !lVD.isInstanceOf[ValuesDomain.ReturnAddressValue]))
+                                            return Some(Console.BLUE_B+"the register value "+lVD+" does not correspond with "+rVD)
+                                        else
+                                            true
+                                    } else if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
+                                        return Some(Console.BLUE_B+"the register value "+lVD+" does not correspond with "+rVD)
                                     else
                                         true
                                 }
@@ -204,14 +211,14 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
                 val r1_2 = a1_2(classFile, method, new Domain1(body))
                 if (corresponds(r1, r1_2).nonEmpty) {
                     failed.incrementAndGet()
-                    println(
+                    info(
                         classFile.thisType.toJava+"{ "+
                             method.toJava+"(Instructions "+method.body.get.instructions.size+")} \n"+
                             Console.BLUE+"\t// the domain r1 is not deterministic (concurrency bug?)\n"+
                             Console.RESET
                     )
                 } else
-                    println(
+                    info(
                         classFile.thisType.toJava+"{ "+
                             method.toJava+"(Instructions "+method.body.get.instructions.size+")} \n"+
                             "\t// the results of r1 and r2 do not correspond\n"+
@@ -223,7 +230,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
 
             corresponds(r2, r3).foreach { m ⇒
                 failed.incrementAndGet()
-                println(
+                info(
                     classFile.thisType.toJava+"{ "+
                         method.toJava+"(Instructions "+method.body.get.instructions.size+")} \n"+
                         "\t// the results of r2 and r3 do not correspond\n"+

@@ -97,11 +97,18 @@ trait ConsoleTracer extends AITracer { tracer ⇒
             operands: domain.Operands,
             locals: domain.Locals): Unit = {
 
-        println(
-            pc + line(domain, pc)+":"+instruction.toString(pc)+" [\n"+
+        val os =
+            if (operands eq null)
+                "\toperands: not available (null);\n"
+            else
                 operands.map { o ⇒
                     correctIndent(o, printOIDs)
-                }.mkString("\toperands:\n\t\t", "\n\t\t", "\n\t;\n") +
+                }.mkString("\toperands:\n\t\t", "\n\t\t", "\n\t;\n")
+
+        val ls =
+            if (locals eq null)
+                "\tlocals: not available (null);\n"
+            else
                 locals.zipWithIndex.map { vi ⇒
                     val (v, i) = vi
                     i+":"+(
@@ -110,7 +117,9 @@ trait ConsoleTracer extends AITracer { tracer ⇒
                         else
                             correctIndent(v, printOIDs)
                     )
-                }.mkString("\tlocals:\n\t\t", "\n\t\t", "\n")+"\t]")
+                }.mkString("\tlocals:\n\t\t", "\n\t\t", "\n")
+
+        println(pc + line(domain, pc)+":"+instruction.toString(pc)+" [\n"+os + ls+"\t]")
     }
 
     override def continuingInterpretation(
@@ -121,7 +130,7 @@ trait ConsoleTracer extends AITracer { tracer ⇒
             alreadyEvaluated: List[PC],
             operandsArray: domain.OperandsArray,
             localsArray: domain.LocalsArray,
-            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]): Unit = {
+            memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]): Unit = {
 
         println(BLACK_B + WHITE+"Starting Code Analysis"+RESET)
         println("Number of registers:      "+code.maxLocals)
@@ -278,6 +287,20 @@ trait ConsoleTracer extends AITracer { tracer ⇒
                 ":RETURN FROM SUBROUTINE: target="+returnAddress+
                 " : RESETTING : "+subroutineInstructions.mkString(", ") +
                 RESET)
+    }
+
+    override def abruptSubroutineTermination(
+        domain: Domain)(
+            sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+            terminatedSubroutinesCount: Int,
+            oldWorklist: List[PC],
+            newWorklist: List[PC]): Unit = {
+        println(
+            RED_B + WHITE + sourcePC + line(domain, sourcePC)+
+                ":ABRUPT RETURN FROM SUBROUTINE: target="+targetPC+
+                " : number of terminated subroutines="+terminatedSubroutinesCount + RESET+
+                "\n"+RED_B + WHITE+"\t\told worklist: "+oldWorklist.mkString(",") + RESET+
+                "\n"+RED_B + WHITE+"\t\tnew worklist: "+newWorklist.mkString(",") + RESET)
     }
 
     /**

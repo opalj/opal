@@ -31,6 +31,7 @@ package br
 package reader
 
 import scala.util.parsing.combinator._
+import java.io.InvalidClassException
 
 // TODO [Improvement] consider making the signature parser abstract and use the factory pattern as in the case of all other major structures
 
@@ -57,15 +58,27 @@ object SignatureParser {
     class SignatureParsers private[SignatureParser] () extends RegexParsers {
 
         def parseClassSignature(signature: String): ClassSignature = {
-            parseAll(classSignatureParser, signature).get
+            val cs = parseAll(classSignatureParser, signature)
+            if (cs.isEmpty)
+                throw new InvalidClassException("the signature: \""+signature+"\" is invalid")
+            else
+                cs.get
         }
 
         def parseFieldTypeSignature(signature: String): FieldTypeSignature = {
-            parseAll(fieldTypeSignatureParser, signature).get
+            val fts = parseAll(fieldTypeSignatureParser, signature)
+            if (fts.isEmpty)
+                throw new InvalidClassException("the signature: \""+signature+"\" is invalid")
+            else
+                fts.get
         }
 
         def parseMethodTypeSignature(signature: String): MethodTypeSignature = {
-            parseAll(methodTypeSignatureParser, signature).get
+            val mts = parseAll(methodTypeSignatureParser, signature)
+            if (mts.isEmpty)
+                throw new InvalidClassException("the signature: \""+signature+"\" is invalid")
+            else
+                mts.get
         }
 
         //

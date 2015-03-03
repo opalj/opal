@@ -47,7 +47,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
             alreadyEvaluated: List[PC],
             operandsArray: domain.OperandsArray,
             localsArray: domain.LocalsArray,
-            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]): Unit = {
+            memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]): Unit = {
         tracers foreach { tracer ⇒
             tracer.continuingInterpretation(strictfp, code, domain)(
                 initialWorkList, alreadyEvaluated,
@@ -132,6 +132,20 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
             pc: Int, returnAddress: Int, subroutineInstructions: List[Int]): Unit = {
         tracers foreach { tracer ⇒
             tracer.returnFromSubroutine(domain)(pc, returnAddress, subroutineInstructions)
+        }
+    }
+
+    override def abruptSubroutineTermination(
+        domain: Domain)(
+            sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+            terminatedSubroutinesCount: Int,
+            oldWorklist: List[PC],
+            newWorklist: List[PC]): Unit = {
+        tracers foreach { tracer ⇒
+            tracer.abruptSubroutineTermination(domain)(
+                sourcePC, targetPC,
+                jumpToSubroutineId, terminatedSubroutinesCount,
+                oldWorklist, newWorklist)
         }
     }
 

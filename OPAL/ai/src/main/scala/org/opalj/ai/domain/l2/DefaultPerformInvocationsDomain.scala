@@ -29,38 +29,44 @@
 package org.opalj
 package ai
 package domain
+package l2
 
-import org.opalj.br.{ Method, Code }
+import org.opalj.br.{ ClassFile, Method }
+import org.opalj.br.analyses.Project
+import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
-/**
- * Provides information about the method that is currently analyzed
- *
- * ==Usage==
- * A domain that implements this trait usually defines a parameter that is set
- * at construction domain.
- *
- * E.g.,
- * {{{
- * class MyDomain{val method : Method} extends Domain with TheMethod
- * }}}
- *
- * ==Core Properties==
- *  - Defines the public interface.
- *  - Makes the analyzed [[org.opalj.br.Method]] (and its [[org.opalj.br.Code]]) available.
- *  - Thread safe.
- *
- * @author Michael Eichberg
- */
-trait TheMethod extends TheCode {
+class DefaultPerformInvocationsDomain[Source](
+    project: Project[Source],
+    classFile: ClassFile,
+    method: Method)
+        extends SharedDefaultDomain[Source](project, classFile, method)
+        with PerformInvocations {
 
-    /**
-     * Returns the method that is currently analyzed.
-     */
-    def method: Method
+    def isRecursive(classFile: ClassFile, method: Method, operands: Operands): Boolean =
+        false // {        this.method eq method &&    }
 
-    /**
-     * Returns the code block that is currently analyzed.
-     */
-    final /*override*/ val code: Code = method.body.get
+    def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean =
+        !method.returnType.isVoidType
+
+    def invokeExecutionHandler(
+        pc: PC,
+        classFile: ClassFile, method: Method, operands: Operands): InvokeExecutionHandler =
+        new InvokeExecutionHandler {
+            val domain =
+                new SharedDefaultDomain(
+                    project,
+                    project.classFile(method),
+                    method) with DefaultRecordMethodCallResults
+
+            def ai = BaseAI
+        }
 
 }
+
+class DefaultPerformInvocationsDomainWithCFG[Source](
+    project: Project[Source],
+    classFile: ClassFile,
+    method: Method)
+        extends DefaultPerformInvocationsDomain[Source](project, classFile, method)
+        with RecordCFG
+

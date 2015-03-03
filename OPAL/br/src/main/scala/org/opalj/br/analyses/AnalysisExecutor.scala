@@ -36,6 +36,8 @@ import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
 import org.opalj.io.OpeningFileFailedException
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalContext
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -112,13 +114,13 @@ trait AnalysisExecutor {
 
         // transform parameters input to allow parameters like -param="in put"
         // -param="the input" is transformed into -param=the input
-        val quotedParams = """(-[\w.]+="[\w-_:./\\ ]+")""".r
-        val unqoutedParams = """(-[\w.]+=[\w-_:./\\]+)|(-[\w]+(?: |$))""".r
+        val quotedParams = """(-[\w.]+="[\w-_:;./\\ ]+")""".r
+        val unqoutedParams = """(-[\w.]+=[\w-_:;./\\]+)|(-[\w]+(?: |$))""".r
         val input = unparsedArgs.mkString(" ")
         val args: Array[String] =
             (
                 quotedParams.findAllMatchIn(input).map { p ⇒
-                    val paramMatcher = """(-\w+=)"([\w-_:./\\ ]*)"""".r
+                    val paramMatcher = """(-\w+=)"([\w-_:;./\\ ]*)"""".r
                     val paramMatcher(kind, value) = p.matched
                     kind + value
                 } ++
@@ -221,10 +223,23 @@ trait AnalysisExecutor {
         println(result.consoleReport)
     }
 
+    protected def handleParsingExceptions(
+        project: SomeProject,
+        exceptions: Traversable[Throwable]): Unit = {
+        if (exceptions.isEmpty)
+            return ;
+
+        for (exception ← exceptions) {
+            import project.logContext
+            OPALLogger.error("creating project", "ignoring invalid class file", exception)
+        }
+    }
+
     def setupProject(
         cpFiles: Iterable[File],
         libcpFiles: Iterable[File]): Project[URL] = {
-        println("[info] Reading class files (found in):")
+
+        OPALLogger.info("creating project", "reading project class files")(GlobalContext)
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
         val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
         val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
@@ -233,43 +248,27 @@ trait AnalysisExecutor {
             reader.readClassFiles(
                 cpFiles,
                 Java8ClassFileReader.ClassFiles,
-                (file) ⇒ println("[info]\t"+file))
+                (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalContext)
+            )
 
         val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
-                println("[info] Reading library class files (found in):")
+                OPALLogger.info("creating project", "reading library class files")(GlobalContext)
                 reader.readClassFiles(
                     libcpFiles,
                     Java8LibraryClassFileReader.ClassFiles,
-                    (file) ⇒ println("[info]\t"+file))
+                    (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalContext))
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
         }
-        val allExceptions = exceptions1 ++ exceptions2
-        if (allExceptions.nonEmpty) {
-            Console.err.println("[error] While reading the class files the following exceptions occured:")
-            val out = new java.io.ByteArrayOutputStream
-            val pout = new java.io.PrintStream(out)
-            for (exception ← exceptions1 ++ exceptions2) {
-                Console.err.println(exception.getMessage())
-                pout.println("<<<<<<<<<<< EXCEPTION >>>>>>>>>>>")
-                exception.printStackTrace(pout)
-            }
-            pout.flush
-            val message = new String(out.toByteArray())
-            try {
-                io.writeAndOpen(message, "Exceptions", ".txt")
-            } catch {
-                case OpeningFileFailedException(file, _) ⇒
-                    Console.err.println("Details can be found in: "+file.toString)
-            }
-        }
-
         val project = Project(classFiles, libraryClassFiles)
-        print(
-            project.statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).toList.sorted.
-                mkString("[info] Project statistics:\n[info]\t", "\n[info]\t", "\n")
+        handleParsingExceptions(project, exceptions1 ++ exceptions2)
+
+        import project.logContext
+        OPALLogger.info("project",
+            project.statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).toList.sorted.reverse.
+                mkString("project statistics:\n\t", "\n\t", "\n")
         )
         project
     }

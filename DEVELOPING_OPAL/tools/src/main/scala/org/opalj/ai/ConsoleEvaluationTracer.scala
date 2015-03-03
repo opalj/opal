@@ -73,7 +73,7 @@ trait ConsoleEvaluationTracer extends AITracer {
             alreadyEvaluated: List[PC],
             operandsArray: domain.OperandsArray,
             localsArray: domain.LocalsArray,
-            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]): Unit = {
+            memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]): Unit = {
         /*EMPTY*/
     }
 
@@ -124,6 +124,13 @@ trait ConsoleEvaluationTracer extends AITracer {
         println(BOLD+"✓"+"(Resetting: "+subroutineInstructions.mkString(", ")+")"+RESET)
         printIndent
     }
+
+    def abruptSubroutineTermination(
+        domain: Domain)(
+            sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+            terminatedSubroutinesCount: Int,
+            oldWorklist: List[PC],
+            newWorklist: List[PC]): Unit = { /* EMPTY */ }
 
     override def ret(
         domain: Domain)(

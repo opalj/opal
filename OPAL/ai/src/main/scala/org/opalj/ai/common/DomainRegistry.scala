@@ -167,10 +167,18 @@ object DomainRegistry {
     )
 
     register(
-        "[l2.DefaultDomain] This abstract domain performs method invocations additionally to the features of the l1.DefaultDomain.",
+        "[l2.DefaultDomain] This abstract domain performs method invocations up to two levels deep additionally to the features of the l1.DefaultDomain.",
         classOf[domain.l2.DefaultDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.l2.DefaultDomain(project, classFile, method)
+        }
+    )
+
+    register(
+        "[l2.DefaultPerformInvocationsDomain] This abstract domain performs simple method invocations additionally to the features of the l1.DefaultDomain.",
+        classOf[domain.l2.DefaultPerformInvocationsDomain[_]],
+        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
+            new domain.l2.DefaultPerformInvocationsDomain(project, classFile, method)
         }
     )
 

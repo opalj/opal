@@ -33,7 +33,7 @@ import scala.util.control.ControlThrowable
 import scala.collection.BitSet
 
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.ai.util.{ removeFirstUnless, containsInPrefix }
+import org.opalj.ai.util.{ removeFirstUnless, containsInPrefix, insertBefore, insertBeforeIfNew }
 import org.opalj.br._
 import org.opalj.br.instructions._
 
@@ -42,7 +42,12 @@ import org.opalj.br.instructions._
  * that relies on OPAL's resolved representation ([[org.opalj.br]]) of Java bytecode.
  *
  * This framework basically traverses all instructions of a method in depth-first order
- * and evaluates each instruction using a given (abstract) [[org.opalj.ai.Domain]].
+ * until a join instruction is hit. This join instruction is then only analyzed if no
+ * further non-join instruction can be evaluated ([[org.opalj.br.Code.joinInstructions]]).
+ * Each instruction is then evaluated using a given (abstract) [[org.opalj.ai.Domain]].
+ * The evaluation of a subroutine (Java code < 1.5) - in case of an unhandled
+ * exception – is always first completed before the evaluation of the parent subroutine
+ * is continued.
  *
  * ==Interacting with OPAL's Abstract Interpreter==
  * The primary means how to make use of this framework is to perform
@@ -63,7 +68,7 @@ import org.opalj.br.instructions._
  * Creating new instances is extremely cheap as this class
  * does not have any significant associated state.
  *
- * Anyway, subclasses are not required to be thread-safe as well.
+ * Subclasses '''are not required to be thread-safe''' as well.
  *
  * @note
  *     OPAL does not make assumptions about the number of domain objects that
@@ -307,11 +312,10 @@ trait AI[D <: Domain] {
             joinInstructions: BitSet,
             theOperandsArray: theDomain.OperandsArray,
             theLocalsArray: theDomain.LocalsArray,
-            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): Unit = {
+            theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]): Unit = {
 
         // The following order must not change:
         // (The order is part of the contract of AI.)
-
         theDomain match {
             case d: TheAI[D] ⇒ d.setAI(this)
             case _           ⇒ /*nothing to do*/
@@ -337,7 +341,7 @@ trait AI[D <: Domain] {
             alreadyEvaluated: List[PC],
             theOperandsArray: theDomain.OperandsArray,
             theLocalsArray: theDomain.LocalsArray,
-            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
+            theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
         val joinInstructions = code.joinInstructions
 
         continueInterpretation(
@@ -349,9 +353,10 @@ trait AI[D <: Domain] {
     }
 
     /**
-     * Continues the interpretation of the given method (code) using the given domain.
+     * Continues the interpretation of/performs an abstract interpretation of
+     *  the given method (code) using the given domain.
      *
-     * @param strictfp `true` if strict semantics for floating point operations should
+     * @param strictfp `true` if ''strict'' semantics for floating point operations should
      *      be used; `false` otherwise.
      *
      * @param code The bytecode that will be interpreted using the given domain.
@@ -403,7 +408,7 @@ trait AI[D <: Domain] {
             alreadyEvaluated: List[PC],
             theOperandsArray: theDomain.OperandsArray,
             theLocalsArray: theDomain.LocalsArray,
-            theMemoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
+            theMemoryLayoutBeforeSubroutineCall: List[(PC, theDomain.OperandsArray, theDomain.LocalsArray)]): AIResult { val domain: theDomain.type } = {
 
         if (tracer.isDefined)
             tracer.get.continuingInterpretation(strictfp, code, theDomain)(
@@ -446,7 +451,7 @@ trait AI[D <: Domain] {
         /* 2 */ var localsArray = theLocalsArray
         /* 3 */ var worklist = initialWorkList
         /* 4 */ var evaluated = alreadyEvaluated
-        /* 5 */ var memoryLayoutBeforeSubroutineCall: List[(theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
+        /* 5 */ var memoryLayoutBeforeSubroutineCall: List[(PC /* the pc of the first instruction of the subroutine <=> the subroutine id */ , theDomain.OperandsArray, theDomain.LocalsArray)] = theMemoryLayoutBeforeSubroutineCall
 
         // -------------------------------------------------------------------------------
         //
@@ -455,11 +460,22 @@ trait AI[D <: Domain] {
         // -------------------------------------------------------------------------------
 
         /*
+         * The information to which subroutine an instruction belongs is only needed
+         * if a subroutine is ever abruptly terminated. In case of code generated by
+         * a Java 6 or newer compiler no subroutines are generated.
+         */
+        lazy val belongsToSubroutine = code.belongsToSubroutine()
+
+        /*
          * Updates the state of the abstract interpreter to make it possible to
-         * continue the abstract interpretation with the instruction
-         * at the given target (`targetPC`). Basically, the operand stack
-         * and the local variables are updated using the given ones and the
-         * target program counter is added to the `worklist`.
+         * continue (at some time in the future) the abstract interpretation with the
+         * instruction at the given target (`targetPC`).
+         *
+         * Basically, the operand stack and the local variables are updated using the
+         * given ones and the target program counter is added to the `worklist`.
+         *
+         * In case of an abrupt termination of a subroutine the operands and locals
+         * array of the catching method are also updated.
          */
         def gotoTarget(
             sourcePC: PC,
@@ -478,22 +494,141 @@ trait AI[D <: Domain] {
                     targetPC, isExceptionalControlFlow,
                     newOperands, newLocals)
 
+            // the number of subroutines that are abruptly terminated by an exception
+            // that is not handled by teh subroutine itself
+            val abruptSubroutineTerminationCount: Int = {
+                if (isExceptionalControlFlow && memoryLayoutBeforeSubroutineCall.nonEmpty) {
+                    val jumpToSubroutineId = belongsToSubroutine(targetPC)
+                    if (jumpToSubroutineId != memoryLayoutBeforeSubroutineCall.head._1) {
+                        var subroutinesToTerminate = 1
+                        val it = memoryLayoutBeforeSubroutineCall.iterator
+                        it.next()
+                        while (it.hasNext && it.next()._1 != jumpToSubroutineId) {
+                            subroutinesToTerminate += 1
+                        }
+                        subroutinesToTerminate
+                    } else {
+                        0
+                    }
+                } else {
+                    0
+                }
+            }
+
+            // When we have an abrupt termination of a subroutine, we have to make
+            // sure that we are actually scheduling the operation in the handling
+            // (sub)routine and use the handling subroutine's operands and locals array.
+            val (targetOperandsArray, targetLocalsArray) =
+                if (abruptSubroutineTerminationCount == 0)
+                    (operandsArray, localsArray)
+                else {
+                    val (_, operandsArray, localsArray) =
+                        memoryLayoutBeforeSubroutineCall(abruptSubroutineTerminationCount - 1)
+                    (operandsArray, localsArray)
+                }
+
+            /* Handles the case that a subroutine (jsr/ret) is abruptly terminated due
+             * to an exception.
+             *
+             * Schedules the evaluation of the exception handler in the context of the
+             * (parent) subroutine to which the handler belongs.
+             *
+             * @param doSchedule If `false` the instruction will not be scheduled if
+             *      it is not already scheduled. In this case we will basically just test
+             *      if the instruction was scheduled.
+             *
+             * @return `true` if the target instruction was (re)scheduled.
+             *      Hence, if
+             *      - `doSchedule` is false and true is returned, then the
+             *          instruction was already scheduled.
+             *      - `doSchedule` is false and false is returned, then the target
+             *          instruction will not be executed.
+             *      - `doSchedule` is true and false is returned, then the target
+             *          instruction was newly scheduled.
+             *      - `doSchedule` is true and true is returned, then the target
+             *          instruction was already scheduled.
+
+             */
+            def handleAbruptSubroutineTermination(doSchedule: Boolean): Boolean = {
+                assert(abruptSubroutineTerminationCount > 0)
+
+                val jumpToSubroutineId = belongsToSubroutine(targetPC)
+
+                var subroutinesToTerminate = abruptSubroutineTerminationCount
+                // we now know the number of subroutines that are terminated (at most
+                // all active real subroutines) now let's remove the elements of those
+                // subroutines from the worklist, schedule the instruction (if necessary)
+                // and re-add the child subroutines.
+                var header: List[PC] = Nil
+                var remainingWorklist: List[PC] = worklist
+                while (subroutinesToTerminate > 0) {
+                    val pc = remainingWorklist.head
+                    header = pc :: header
+                    remainingWorklist = remainingWorklist.tail
+                    if (pc == SUBROUTINE)
+                        subroutinesToTerminate -= 1
+                }
+
+                if (remainingWorklist.nonEmpty && remainingWorklist.head == targetPC) {
+                    // The instruction was already scheduled.
+                    if (tracer.isDefined) {
+                        tracer.get.abruptSubroutineTermination(theDomain)(
+                            sourcePC, targetPC, jumpToSubroutineId,
+                            abruptSubroutineTerminationCount,
+                            oldWorklist = worklist,
+                            newWorklist = worklist)
+                    }
+                    return true;
+                }
+
+                val filteredRemainingWorkList = removeFirstUnless(remainingWorklist, targetPC) { _ < 0 }
+                val rescheduled = filteredRemainingWorkList ne remainingWorklist
+                if (rescheduled || doSchedule)
+                    remainingWorklist = targetPC :: filteredRemainingWorkList
+                while (header.nonEmpty) {
+                    remainingWorklist = header.head :: remainingWorklist
+                    header = header.tail
+                }
+
+                if (tracer.isDefined) {
+                    tracer.get.abruptSubroutineTermination(theDomain)(
+                        sourcePC, targetPC, jumpToSubroutineId,
+                        abruptSubroutineTerminationCount,
+                        oldWorklist = worklist,
+                        newWorklist = remainingWorklist)
+                }
+
+                worklist = remainingWorklist
+
+                rescheduled
+            }
+
             // The worklist containing the PC is manipulated ...:
             // - here (by this method)
             // - by the JSR / RET instructions
             // - the main loop that processes the worklist
 
-            val currentOperands = operandsArray(targetPC)
+            val currentOperands = targetOperandsArray(targetPC)
             val wasJoinPerformed =
                 if (currentOperands == null) {
                     // we analyze the instruction for the first time
-                    operandsArray(targetPC) = operands
-                    localsArray(targetPC) = locals
-                    worklist = targetPC :: worklist
+                    targetOperandsArray(targetPC) = operands
+                    targetLocalsArray(targetPC) = locals
+                    if (abruptSubroutineTerminationCount > 0) {
+                        handleAbruptSubroutineTermination(doSchedule = true)
+                    } else if (worklist.nonEmpty && joinInstructions.contains(targetPC))
+                        worklist = insertBefore(worklist, targetPC, SUBROUTINE_START)
+                    else
+                        worklist = targetPC :: worklist
+
                     if (tracer.isDefined)
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
-                    /* no join: */ false
+
+                    /* join: */ false
+
                 } else if (!joinInstructions.contains(targetPC)) {
+                    assert(abruptSubroutineTerminationCount == 0)
+
                     // The instruction is not an instruction where multiple control-flow
                     // paths join; however, we may have a dangling computation.
                     // E.g., imagine the following code:
@@ -503,21 +638,25 @@ trait AI[D <: Domain] {
                     // 2:     if (UNDECIED) "A" else "B"
                     // 3: } while (i<5)
                     //
-                    // In this case it may happen that (we are doing depth-first evaluation)
+                    // In this case it may happen that (we are primarily doing
+                    // depth-first evaluation)
                     // we are reanalyzing the loop (1-3) before we analyze the second
                     // branch of the if (e.g., case "B"). However, the "pc" of the
                     // second branch is already scheduled and we don't want/need to
                     // reschedule it again.
-                    operandsArray(targetPC) = operands
-                    localsArray(targetPC) = locals
+                    targetOperandsArray(targetPC) = operands
+                    targetLocalsArray(targetPC) = locals
                     if (!containsInPrefix(worklist, targetPC, SUBROUTINE_START))
                         worklist = targetPC :: worklist
+
                     if (tracer.isDefined)
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
-                    /* no join: */ false
+
+                    /* join: */ false
+
                 } else {
-                    // we already evaluated the target instruction ...
-                    val currentLocals = localsArray(targetPC)
+                    // we already evaluated the target (join) instruction ...
+                    val currentLocals = targetLocalsArray(targetPC)
                     val mergeResult =
                         theDomain.join(
                             targetPC, currentOperands, currentLocals, operands, locals
@@ -534,56 +673,99 @@ trait AI[D <: Domain] {
                             }
 
                         case StructuralUpdate((updatedOperands, updatedLocals)) ⇒
-                            operandsArray(targetPC) = updatedOperands
-                            localsArray(targetPC) = updatedLocals
-                            // we want depth-first evaluation (, but we do not want to
-                            // reschedule instructions that do not belong to the current
-                            // evaluation context/(sub-)routine.)
-                            val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
-                            if (tracer.isDefined) {
-                                if (filteredList eq worklist)
-                                    // the instruction was not yet scheduled for another
-                                    // evaluation
-                                    tracer.get.flow(theDomain)(
-                                        sourcePC, targetPC, isExceptionalControlFlow)
-                                else {
+                            targetOperandsArray(targetPC) = updatedOperands
+                            targetLocalsArray(targetPC) = updatedLocals
+                            if (abruptSubroutineTerminationCount > 0) {
+                                if (handleAbruptSubroutineTermination(doSchedule = true)) {
                                     // the instruction was just moved to the beginning
-                                    tracer.get.rescheduled(theDomain)(
-                                        sourcePC, targetPC, isExceptionalControlFlow)
+                                    if (tracer.isDefined) {
+                                        tracer.get.rescheduled(theDomain)(
+                                            sourcePC, targetPC, isExceptionalControlFlow)
+                                    }
+                                } else {
+                                    if (tracer.isDefined) {
+                                        tracer.get.flow(theDomain)(
+                                            sourcePC, targetPC, isExceptionalControlFlow)
+                                    }
                                 }
+                            } else {
+                                // we want depth-first evaluation (, but we do not want to
+                                // reschedule instructions that do not belong to the current
+                                // evaluation context/(sub-)routine.)
+                                val updatedWorklist =
+                                    insertBeforeIfNew(
+                                        worklist, targetPC, SUBROUTINE_START)
+                                if (tracer.isDefined) {
+                                    if (updatedWorklist ne worklist)
+                                        // the instruction was not yet scheduled for
+                                        // another evaluation
+                                        tracer.get.flow(theDomain)(
+                                            sourcePC, targetPC, isExceptionalControlFlow)
+                                    else {
+                                        // the instruction was just moved to the beginning
+                                        tracer.get.rescheduled(theDomain)(
+                                            sourcePC, targetPC, isExceptionalControlFlow)
+                                    }
+                                }
+                                worklist = updatedWorklist
                             }
-                            worklist = targetPC :: filteredList
 
                         case MetaInformationUpdate((updatedOperands, updatedLocals)) ⇒
-                            operandsArray(targetPC) = updatedOperands
-                            localsArray(targetPC) = updatedLocals
-                            // we want depth-first evaluation (, but we do not want to
-                            // reschedule instructions that do not belong to the current
-                            // evaluation context/(sub-)routine.)
-                            val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
-                            if (filteredList ne worklist) {
-                                // the instruction was scheduled, but not as the next one
-                                // let's move the instruction to the beginning
-                                worklist = targetPC :: filteredList
+                            targetOperandsArray(targetPC) = updatedOperands
+                            targetLocalsArray(targetPC) = updatedLocals
 
-                                if (tracer.isDefined)
-                                    tracer.get.rescheduled(theDomain)(
-                                        sourcePC, targetPC, isExceptionalControlFlow)
+                            if (abruptSubroutineTerminationCount > 0) {
+                                if (handleAbruptSubroutineTermination(doSchedule = false)) {
+                                    if (tracer.isDefined) {
+                                        // the instruction was just moved to the beginning
+                                        tracer.get.rescheduled(theDomain)(
+                                            sourcePC, targetPC, isExceptionalControlFlow)
+                                    }
+                                } else {
+                                    if (tracer.isDefined) {
+                                        tracer.get.flow(theDomain)(
+                                            sourcePC, targetPC, isExceptionalControlFlow)
+                                    }
+                                }
                             } else {
-                                if (tracer.isDefined) {
-                                    tracer.get.noFlow(theDomain)(sourcePC, targetPC)
+
+                                // we want depth-first evaluation (, but we do not want to
+                                // reschedule instructions that do not belong to the current
+                                // evaluation context/(sub-)routine.)
+                                val filteredList = removeFirstUnless(worklist, targetPC) { _ < 0 }
+                                if (filteredList ne worklist) {
+                                    // the instruction was scheduled, but not as the next one...
+                                    // let's move the instruction to the beginning
+                                    worklist = targetPC :: filteredList
+
+                                    if (tracer.isDefined)
+                                        tracer.get.rescheduled(theDomain)(
+                                            sourcePC, targetPC, isExceptionalControlFlow)
+                                } else {
+                                    if (tracer.isDefined) {
+                                        tracer.get.noFlow(theDomain)(sourcePC, targetPC)
+                                    }
                                 }
                             }
                     }
-                    true
+
+                    /*join: */ true
                 }
 
             worklist =
                 theDomain.flow(
-                    sourcePC, targetPC, isExceptionalControlFlow, wasJoinPerformed,
+                    sourcePC, targetPC,
+                    isExceptionalControlFlow, abruptSubroutineTerminationCount,
+                    wasJoinPerformed,
                     worklist,
-                    operandsArray, localsArray,
+                    targetOperandsArray, targetLocalsArray,
                     tracer)
+
+            assert(
+                abruptSubroutineTerminationCount == 0 ||
+                    !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
+                "an exception handler that handles the abrupt termination of a subroutine "+
+                    "is scheduled to be executed as part of the abruptly terminated subroutine")
         }
 
         // THIS IS THE MAIN INTERPRETER LOOP
@@ -666,7 +848,8 @@ trait AI[D <: Domain] {
                         (retPC, operands, updatedLocals)
                     }
                     // clear all computations to make this subroutine callable again
-                    val (oldOperandsArray, oldLocalsArray) = memoryLayoutBeforeSubroutineCall.head
+                    val (_ /*subroutineId*/ , oldOperandsArray, oldLocalsArray) =
+                        memoryLayoutBeforeSubroutineCall.head
                     operandsArray = oldOperandsArray
                     localsArray = oldLocalsArray
                     memoryLayoutBeforeSubroutineCall = memoryLayoutBeforeSubroutineCall.tail
@@ -675,7 +858,8 @@ trait AI[D <: Domain] {
                         gotoTarget(
                             retPC, instructions(retPC),
                             operandsArray(retPC), localsArray(retPC),
-                            returnAddress, false, operands, updatedLocals)
+                            returnAddress, isExceptionalControlFlow = false,
+                            operands, updatedLocals)
                     }
 
                     // it may be possible that – after the return from a
@@ -731,11 +915,13 @@ trait AI[D <: Domain] {
                         case Yes ⇒
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                branchTarget, false, rest, locals)
+                                branchTarget, isExceptionalControlFlow = false,
+                                rest, locals)
                         case No ⇒
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                nextPC, false, rest, locals)
+                                nextPC, isExceptionalControlFlow = false,
+                                rest, locals)
                         case Unknown ⇒ {
                             {
                                 val (newOperands, newLocals) =
@@ -748,7 +934,8 @@ trait AI[D <: Domain] {
                                 }
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    branchTarget, false, newOperands, newLocals)
+                                    branchTarget, isExceptionalControlFlow = false,
+                                    newOperands, newLocals)
                             }
                             {
                                 val (newOperands, newLocals) =
@@ -761,7 +948,8 @@ trait AI[D <: Domain] {
                                 }
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    nextPC, false, newOperands, newLocals)
+                                    nextPC, isExceptionalControlFlow = false,
+                                    newOperands, newLocals)
                             }
                         }
                     }
@@ -787,11 +975,13 @@ trait AI[D <: Domain] {
                         case Yes ⇒
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                branchTarget, false, rest, locals)
+                                branchTarget, isExceptionalControlFlow = false,
+                                rest, locals)
                         case No ⇒
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                nextPC, false, rest, locals)
+                                nextPC, isExceptionalControlFlow = false,
+                                rest, locals)
                         case Unknown ⇒ {
                             {
                                 val (newOperands, newLocals) =
@@ -804,7 +994,8 @@ trait AI[D <: Domain] {
                                 }
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    branchTarget, false, newOperands, newLocals)
+                                    branchTarget, isExceptionalControlFlow = false,
+                                    newOperands, newLocals)
                             }
                             {
                                 val (newOperands, newLocals) =
@@ -817,7 +1008,8 @@ trait AI[D <: Domain] {
                                 }
                                 gotoTarget(
                                     pc, instruction, operands, locals,
-                                    nextPC, false, newOperands, newLocals)
+                                    nextPC, isExceptionalControlFlow = false,
+                                    newOperands, newLocals)
                             }
                         }
                     }
@@ -865,7 +1057,8 @@ trait AI[D <: Domain] {
 
                         gotoTarget(
                             pc, instruction, operands, locals,
-                            branchTarget, true, updatedOperands2, updatedLocals2)
+                            branchTarget, isExceptionalControlFlow = true,
+                            updatedOperands2, updatedLocals2)
                     }
 
                     val isHandled = code.handlersFor(pc) exists { eh ⇒
@@ -942,7 +1135,8 @@ trait AI[D <: Domain] {
                     newLocals: Locals = locals): Unit = {
                     gotoTarget(
                         pc, instruction, operands, locals,
-                        pcOfNextInstruction, false, newOperands, newLocals)
+                        pcOfNextInstruction, isExceptionalControlFlow = false,
+                        newOperands, newLocals)
                 }
 
                 def computationWithException(
@@ -1014,13 +1208,15 @@ trait AI[D <: Domain] {
                         val branchtarget = pc + offset
                         gotoTarget(
                             pc, instruction, operands, locals,
-                            branchtarget, false, operands, locals)
+                            branchtarget, isExceptionalControlFlow = false,
+                            operands, locals)
 
                     // Fundamental idea: we treat a "jump to subroutine" similar to
-                    // the call of a method. I.e., we make sure the operand
+                    // the call of a method. I.e., we make sure that the operand
                     // stack and the registers are empty for all instructions that
-                    // potentially belong to the subroutine by clearing all information
-                    // when the exploration of all paths of the subroutine is finished
+                    // potentially belong to the subroutine.
+                    // Basically, we clear all information when the exploration of
+                    // all paths of the subroutine is finished
                     // and before we return from the subroutine.
                     // Semantics (from the JVM Spec):
                     // - The instruction following each jsr(_w) instruction may be
@@ -1030,19 +1226,23 @@ trait AI[D <: Domain] {
                     //      present in the subroutine call chain. (Subroutines can be
                     //      nested when using try-finally constructs from within a
                     //      finally clause.)
+                    //      HOWEVER, if a subroutine is terminated by a thrown exception
+                    //      it may be the case that we call the same subroutine again
+                    //      even though it appears as if the subroutine was not finished.
                     // - Each instance of type return address can be returned to at most
                     //      once.
                     case 168 /*jsr*/
                         | 201 /*jsr_w*/ ⇒
                         val returnTarget = pcOfNextInstruction
+                        val branchTarget = pc + as[JSRInstruction](instruction).branchoffset
                         evaluated = SUBROUTINE_START :: evaluated
                         memoryLayoutBeforeSubroutineCall =
-                            (operandsArray.clone, localsArray.clone) :: memoryLayoutBeforeSubroutineCall
+                            (branchTarget, operandsArray.clone, localsArray.clone) ::
+                                memoryLayoutBeforeSubroutineCall
 
-                        val branchtarget = pc + as[JSRInstruction](instruction).branchoffset
                         // let's check if we can eagerly fetch the information where the
                         // return address is stored!
-                        instructions(branchtarget) match {
+                        instructions(branchTarget) match {
                             case AStoreInstruction(lvIndex) ⇒
                                 worklist =
                                     SUBROUTINE_START ::
@@ -1061,12 +1261,13 @@ trait AI[D <: Domain] {
                             theDomain.ReturnAddressValue(returnTarget) :: operands
                         gotoTarget(
                             pc, instruction, operands, locals,
-                            branchtarget, false, newOperands, locals)
+                            branchTarget, isExceptionalControlFlow = false,
+                            newOperands, locals)
 
                         if (tracer.isDefined) {
                             tracer.get.jumpToSubroutine(
                                 theDomain)(
-                                    pc, branchtarget, memoryLayoutBeforeSubroutineCall.size)
+                                    pc, branchTarget, memoryLayoutBeforeSubroutineCall.size)
                         }
 
                     case 169 /*ret*/ ⇒
@@ -1160,7 +1361,8 @@ trait AI[D <: Domain] {
                             // that just had a defaultBranch (glorified "goto")
                             gotoTarget(
                                 pc, instruction, operands, locals,
-                                pc + switch.defaultOffset, isExceptionalControlFlow = false,
+                                pc + switch.defaultOffset,
+                                isExceptionalControlFlow = false,
                                 remainingOperands, locals)
                         } else {
                             var branchToDefaultRequired = false

@@ -29,6 +29,9 @@
 package org.opalj
 package ai
 
+import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
+import org.opalj.log.Warn
 import org.opalj.br.Code
 
 /**
@@ -42,7 +45,8 @@ import org.opalj.br.Code
  *
  * @param maxEvaluationCount Determines the maximum number of instructions that should
  *      be interpreted. If the interpretation did not finish before that, the abstract
- *      interpretation is aborted.
+ *      interpretation is aborted. An aborted abstract interpretation can be continued
+ *      later on using the `continueInterpretation` method of the [[AIAborted]] object.
  *      In general, it makes sense to determine this value based on the complexity of
  *      the code as it is done by [[InstructionCountBoundedAI.calculateMaxEvaluationCount]].
  *
@@ -50,23 +54,22 @@ import org.opalj.br.Code
  */
 class InstructionCountBoundedAI[D <: Domain](val maxEvaluationCount: Int) extends AI[D] {
 
-    assert(maxEvaluationCount > 0)
-
     /**
      * @param maxEvaluationFactor Determines the maximum number of instruction evaluations
      *      before the evaluation of the method is automatically interrupted.
      */
-    def this(code: Code, maxEvaluationFactor: Double = 1.5d) = {
+    def this(code: Code, maxEvaluationFactor: Double = 1.5d)(implicit logContext: LogContext) = {
 
         this(InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor))
     }
+
+    assert(maxEvaluationCount > 0)
 
     private[this] val evaluationCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
     def currentEvaluationCount: Int = evaluationCount.get
 
     override def isInterrupted = {
-
         var count = evaluationCount.get()
         var newCount = count + 1
         while (count < maxEvaluationCount &&
@@ -92,37 +95,50 @@ object InstructionCountBoundedAI {
      */
     def calculateMaxEvaluationCount(
         code: Code,
-        maxEvaluationFactor: Double): Int = {
-        val min = code.instructions.size.toDouble
+        maxEvaluationFactor: Double)(
+            implicit logContext: LogContext): Int = {
+        // If this method is just a convenience wrapper we want to ensure that
+        // we can still analyze the called methods if we also analyze the called
+        // methods.
+        val instructionsSize = Math.max(code.instructions.size, 100).toDouble
         // this is roughly the number of instructions * ~2
-        var upperBound: Double = min
+        var upperBound: Double = instructionsSize
 
         // to accommodate for the reduced complexity of long methods
-        upperBound = upperBound * Math.min(48, Math.pow(65535 / upperBound, 2d / 3d))
+        upperBound = upperBound * Math.min(48, Math.pow(65535d / upperBound, 2d / 3d))
 
         // exception handling usually leads to a large number of evaluations
         upperBound = upperBound * Math.log(code.exceptionHandlers.size + 2 * Math.E)
 
         // to accommodate for analysis specific factors
-        upperBound = (upperBound * maxEvaluationFactor)
-        if (upperBound < 0.0) {
+        upperBound = (
+            upperBound * maxEvaluationFactor +
+            // we want to guarantee a certain minimum length if we raise the
+            // evaluation factor
+            (maxEvaluationFactor * 250.0d)
+        )
+        if (upperBound == java.lang.Double.POSITIVE_INFINITY ||
+            upperBound >= Int.MaxValue.toDouble) {
             upperBound = Int.MaxValue
-            println(Console.YELLOW+"[warn] effectively unbounded evaluation"+
-                "; instructions size="+code.instructions.size+
-                "; exception handlers="+code.exceptionHandlers.size+
-                "; maxEvaluationFactor="+maxEvaluationFactor + Console.RESET)
+            OPALLogger.warn(
+                "analysis configuration",
+                "effectively unbounded evaluation"+
+                    "; instructions size="+code.instructions.size+
+                    "; exception handlers="+code.exceptionHandlers.size+
+                    "; maxEvaluationFactor="+maxEvaluationFactor)
         }
 
-        if (upperBound > 65535.0 /*Max Length*/ * 10.0) {
-            println(Console.YELLOW+
-                "[warn] evaluation (up to: "+upperBound.toInt+
-                " instructions) may take execessively long"+
-                "; instructions size="+code.instructions.size+
-                "; exception handlers="+code.exceptionHandlers.size+
-                "; maxEvaluationFactor="+maxEvaluationFactor + Console.RESET)
+        if (upperBound > 1000000.0d) {
+            OPALLogger.warn(
+                "analysis configuration",
+                "evaluation (up to: "+upperBound.toInt+
+                    " instructions) may take execessively long"+
+                    "; instructions size="+code.instructions.size+
+                    "; exception handlers="+code.exceptionHandlers.size+
+                    "; maxEvaluationFactor="+maxEvaluationFactor)
         }
 
-        Math.max(min, upperBound).toInt
+        Math.max(instructionsSize, upperBound).toInt
     }
 
 }

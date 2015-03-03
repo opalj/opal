@@ -161,7 +161,8 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     def createCalledMethodsStore(
-        theProject: Project[java.net.URL]): CalledMethodsStore { def warningIssued: Boolean } =
+        theProject: Project[java.net.URL]): CalledMethodsStore { def warningIssued: Boolean } = {
+        implicit val logContext = theProject.logContext
         new CalledMethodsStore(new BaseDomain(theProject) with ValuesCoordinatingDomain) {
 
             var warningIssued = false
@@ -174,6 +175,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
                 warningIssued = true
             }
         }
+    }
 
     abstract class InvocationDomain(project: Project[java.net.URL], val method: Method)
             extends BaseDomain(project) with Domain

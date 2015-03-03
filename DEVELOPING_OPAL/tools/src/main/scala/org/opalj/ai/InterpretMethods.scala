@@ -33,12 +33,11 @@ package debug
 import java.io.File
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import scala.util.control.ControlThrowable
-
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.ai.common.XHTML
+import org.opalj.log.LogContext
 
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using
@@ -89,6 +88,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
         project: Project[Source],
         parameters: Seq[String] = List.empty,
         initProgressManagement: (Int) ⇒ ProgressManagement) = {
+        implicit val logContext = project.logContext
 
         val verbose = parameters.size > 0 &&
             (parameters(0) == "-verbose=true" ||
@@ -99,13 +99,15 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
                     project,
                     Class.forName(parameters.head.substring(8)).asInstanceOf[Class[_ <: Domain]],
                     verbose,
-                    initProgressManagement)
+                    initProgressManagement,
+                    6d)
             } else {
                 InterpretMethodsAnalysis.interpret(
                     project,
                     classOf[domain.l0.BaseDomain[java.net.URL]],
                     verbose,
-                    initProgressManagement)
+                    initProgressManagement,
+                    6d)
 
             }
         BasicReport(
@@ -126,7 +128,8 @@ object InterpretMethodsAnalysis {
         domainClass: Class[_ <: Domain],
         beVerbose: Boolean,
         initProgressManagement: (Int) ⇒ ProgressManagement,
-        maxEvaluationFactor: Double = 3d): (String, Option[File]) = {
+        maxEvaluationFactor: Double = 3d)(
+            implicit logContext: LogContext): (String, Option[File]) = {
 
         // TODO Add support for reporting the progress and to interrupt the analysis.
 

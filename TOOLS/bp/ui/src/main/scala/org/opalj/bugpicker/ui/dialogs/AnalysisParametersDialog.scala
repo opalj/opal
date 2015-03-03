@@ -112,7 +112,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                     }
                 }, 2, 2)
 
-                add(new Label("Maximum cardinality of integer ranges:"), 0, 3)
+                add(new Label("Maximum length of call chain:"), 0, 3)
                 add(maxCallChainLengthField, 1, 3)
                 add(new Button {
                     text = "Default"

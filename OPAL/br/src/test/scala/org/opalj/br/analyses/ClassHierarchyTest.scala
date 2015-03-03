@@ -36,9 +36,9 @@ import org.scalatest.FlatSpec
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Matchers
 import org.opalj.bi.TestSupport.locateTestResources
-
 import reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.log.GlobalContext
 
 /**
  * Basic tests of the class hierarchy.
@@ -65,7 +65,7 @@ class ClassHierarchyTest
         ClassHierarchy(
             Traversable.empty,
             List(() ⇒ getClass.getResourceAsStream("JavaLangClassHierarchy.ths"))
-        )
+        )(GlobalContext)
 
     val Object = ObjectType.Object
     val Throwable = ObjectType.Throwable
@@ -92,9 +92,9 @@ class ClassHierarchyTest
     behavior of "the default ClassHierarchy"
 
     it should "be upwards closed (complete)" in {
-        if (preInitCH.rootTypes.size != 4) {
+        if (preInitCH.rootTypes.size != 1) {
             fail(
-                "The default class hierarchy has unexpected root types (expected: java/lang/Object and java/security and sun/reflect related classes): "+
+                "The default class hierarchy has unexpected root types: "+
                     preInitCH.rootTypes.mkString(", "))
         }
     }
@@ -294,7 +294,7 @@ class ClassHierarchyTest
         ClassHierarchy(
             Traversable.empty,
             List(() ⇒ getClass.getResourceAsStream("ApacheANT1.7.1.ClassHierarchy.ths"))
-        )
+        )(GlobalContext)
 
     it should "be possible to get all supertypes, even if not all information is available" in {
 

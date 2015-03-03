@@ -102,7 +102,7 @@ object UselessComputationsAnalysis {
                 theProject, classFile, Some(method),
                 Some(pc),
                 Some(result.operandsArray(pc)), Some(result.localsArray(pc)),
-                "the expression always evalutes to the same value",
+                "the expression always evaluates to the same value",
                 Some(message),
                 Set(IssueCategory.Comprehensibility, IssueCategory.Performance),
                 Set(IssueKind.ConstantComputation),

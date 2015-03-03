@@ -37,20 +37,39 @@ import org.opalj.br.ClassFile
 /**
  * Enables to perform invocations.
  *
+ * ==Example==
+ * (PerformInvocationsWithRecursionDetection is in particular used by BugPicker's domain.)
+ *
  * @author Michael Eichberg
  */
 trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
     callingDomain: ValuesFactory with ReferenceValuesDomain with ClassHierarchy with Configuration with TheProject with TheCode ⇒
 
+    /**
+     * The `CalledMethodsStore`, stores (method,concrete parameters) pairs to
+     * make it possible to detect (and prevent) recursive calls.
+     *
+     * The `CalledMethodsStore` does not store the results.
+     */
     val calledMethodsStore: CalledMethodsStore
 
+    /**
+     * @inheritdoc
+     *
+     * @return The result of calling [[CalledMethodsStore.isRecursive]].
+     */
     def isRecursive(classFile: ClassFile, method: Method, operands: Operands): Boolean =
         calledMethodsStore.isRecursive(classFile, method, operands)
 
     trait InvokeExecutionHandler extends super.InvokeExecutionHandler {
 
         override val domain: Domain with MethodCallResults with PerformInvocationsWithRecursionDetection {
-            // we need to make sure that all instances use the same CalledMethodsStore
+
+            /*
+             * A reference to the calling domain's called method store.
+             */
+            // We are using the type system to ensure that all instances use the
+            // _same_ CalledMethodsStore
             val calledMethodsStore: callingDomain.calledMethodsStore.type
         }
 

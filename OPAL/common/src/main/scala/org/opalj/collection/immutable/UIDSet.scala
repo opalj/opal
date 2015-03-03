@@ -32,6 +32,8 @@ package immutable
 
 import scala.annotation.tailrec
 
+import UIDSet.Relation
+
 /**
  * An immutable, sorted set of elements of type `UID`.
  *
@@ -167,6 +169,26 @@ sealed trait UIDSet[+T <: UID] { thisSet ⇒
     }
 
     /**
+     * Compares this set with the given set.
+     */
+    def compare[X >: T <: UID](that: UIDSet[X]): Relation = {
+        val thisSize = this.size
+        val thatSize = that.size
+        if (thisSize < thatSize) {
+            if (this.forall { that.contains(_) })
+                return UIDSet.StrictSubset;
+        } else if (this.size == that.size) {
+            if (this == that)
+                return UIDSet.Equal;
+        } else /*this.size > that.size*/ {
+            if (that.forall { this.contains(_) })
+                return UIDSet.StrictSuperset;
+        }
+
+        UIDSet.Uncomparable
+    }
+
+    /**
      * Performs a fold left over all elements of this set.
      */
     def foldLeft[B](b: B)(op: (B, T) ⇒ B): B = {
@@ -246,6 +268,11 @@ object UIDSet0 extends UIDSet[Nothing] {
     override def filter[X >: Nothing](f: X ⇒ Boolean): this.type = this
 
     override def filterNot[X >: Nothing](f: X ⇒ Boolean): this.type = this
+
+    override def contains[X >: Nothing <: UID](o: X): Boolean = false
+
+    override def compare[X >: Nothing <: UID](that: UIDSet[X]): Relation =
+        if (that.isEmpty) UIDSet.Equal else UIDSet.StrictSubset
 
     override def foldLeft[B](b: B)(op: (B, Nothing) ⇒ B): B = b
 
@@ -671,6 +698,13 @@ private final class UIDArraySet[T <: UID](
  * @author Michael Eichberg
  */
 object UIDSet {
+
+    sealed trait Relation
+
+    final object StrictSubset extends Relation
+    final object Equal extends Relation
+    final object StrictSuperset extends Relation
+    final object Uncomparable extends Relation
 
     /**
      * Returns an empty [[UIDSet]].

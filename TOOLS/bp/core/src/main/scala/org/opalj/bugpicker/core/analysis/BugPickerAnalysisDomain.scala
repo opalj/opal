@@ -61,8 +61,8 @@ trait BaseBugPickerAnalysisDomain
         with domain.la.RefinedTypeLevelInvokeInstructions
         with domain.SpecialMethodsHandling
         with domain.l1.DefaultIntegerRangeValues
-        //with domain.l1.DefaultIntegerSetValues
-        with domain.l1.ConstraintsBetweenIntegerValues
+        // with domain.l1.DefaultIntegerSetValues
+        // [CURRENTLY ONLY A WASTE OF RESOURCES] with domain.l1.ConstraintsBetweenIntegerValues
         with domain.l1.DefaultLongSetValues
         with domain.l1.LongSetValuesShiftOperators
         with domain.l0.DefaultTypeLevelFloatValues
@@ -79,6 +79,18 @@ trait BaseBugPickerAnalysisDomain
     // hence, we have to mix in this domain AFTER the PerformInvocations domain!
     this: domain.l1.DefaultClassValuesBinding ⇒
 }
+
+class FallbackBugPickerAnalysisDomain(
+    val project: Project[URL],
+    val fieldValueInformation: FieldValueInformation,
+    val methodReturnValueInformation: MethodReturnValueInformation,
+    val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+    val method: Method,
+    override val maxCardinalityOfIntegerRanges: Long)
+        extends BaseBugPickerAnalysisDomain
+        with domain.l1.DefaultClassValuesBinding
+        with domain.RecordCFG
+        with domain.l1.RecordAllThrownExceptions
 
 trait BasePerformInvocationBugPickerAnalysisDomain
         extends BaseBugPickerAnalysisDomain
@@ -104,12 +116,12 @@ trait BasePerformInvocationBugPickerAnalysisDomain
  * @author Michael Eichberg
  */
 class RootBugPickerAnalysisDomain(
-    override val project: Project[URL],
+    val project: Project[URL],
     val fieldValueInformation: FieldValueInformation,
     val methodReturnValueInformation: MethodReturnValueInformation,
     val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
     val classFile: ClassFile,
-    override val method: Method,
+    val method: Method,
     override val maxCardinalityOfIntegerRanges: Long,
     val maxCallChainLength: Int)
         extends BasePerformInvocationBugPickerAnalysisDomain
@@ -129,7 +141,7 @@ class RootBugPickerAnalysisDomain(
     lazy val calledMethodsStore: CalledMethodsStore = {
         val store = new CalledMethodsStore(this, /*Frequent Evaluation Warning=*/ 256)
         val operands =
-            localsArray(0).foldRight(List.empty[DomainValue])((l, n) ⇒
+            localsArray(0).foldLeft(List.empty[DomainValue])((l, n) ⇒
                 if (n ne null) n :: l else l
             )
         // we want to add this method to avoid useless recursions;
@@ -142,7 +154,9 @@ class RootBugPickerAnalysisDomain(
         pc: PC,
         definingClass: ClassFile,
         method: Method,
-        operands: Operands): InvokeExecutionHandler =
+        operands: Operands): InvokeExecutionHandler = {
+        assert(method ne null)
+
         new InvokeExecutionHandler {
 
             override val domain =
@@ -154,23 +168,23 @@ class RootBugPickerAnalysisDomain(
                     cache,
                     method,
                     maxCardinalityOfIntegerRanges,
-                    maxCallChainLength, currentCallChainLength = 1) {
+                    maxCallChainLength, currentCallChainLength + 1) {
                     val calledMethodsStore: RootBugPickerAnalysisDomain.this.calledMethodsStore.type =
                         RootBugPickerAnalysisDomain.this.calledMethodsStore
                 }
 
             def ai: AI[_ >: this.domain.type] = callingDomain.ai
         }
-
+    }
 }
 
 abstract class InvocationBugPickerAnalysisDomain(
     val ai: AI[BaseBugPickerAnalysisDomain],
-    override val project: Project[URL],
+    val project: Project[URL],
     val fieldValueInformation: FieldValueInformation,
     val methodReturnValueInformation: MethodReturnValueInformation,
     val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    override val method: Method,
+    val method: Method,
     override val maxCardinalityOfIntegerRanges: Long,
     val maxCallChainLength: Int = 0,
     val currentCallChainLength: Int)
@@ -185,7 +199,9 @@ abstract class InvocationBugPickerAnalysisDomain(
         pc: PC,
         definingClass: ClassFile,
         method: Method,
-        operands: Operands): InvokeExecutionHandler =
+        operands: Operands): InvokeExecutionHandler = {
+        assert(method ne null)
+
         new InvokeExecutionHandler {
 
             override val domain =
@@ -197,24 +213,13 @@ abstract class InvocationBugPickerAnalysisDomain(
                     cache,
                     method,
                     maxCardinalityOfIntegerRanges,
-                    maxCallChainLength, currentCallChainLength = 1) {
+                    maxCallChainLength, currentCallChainLength + 1) {
                     val calledMethodsStore: InvocationBugPickerAnalysisDomain.this.calledMethodsStore.type =
                         InvocationBugPickerAnalysisDomain.this.calledMethodsStore
                 }
 
             def ai: AI[_ >: this.domain.type] = callingDomain.ai
         }
-
+    }
 }
 
-class FallbackBugPickerAnalysisDomain(
-    override val project: Project[URL],
-    val fieldValueInformation: FieldValueInformation,
-    val methodReturnValueInformation: MethodReturnValueInformation,
-    val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    override val method: Method,
-    override val maxCardinalityOfIntegerRanges: Long)
-        extends BaseBugPickerAnalysisDomain
-        with domain.l1.DefaultClassValuesBinding
-        with domain.RecordCFG
-        with domain.l1.RecordAllThrownExceptions
