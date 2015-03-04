@@ -123,7 +123,7 @@ class DefaultDomain[Source](
         project: Project[Source],
         classFile: ClassFile,
         method: Method) {
-        this(project, classFile, method, 1)
+        this(project, classFile, method, 2)
     }
 
     // it has to be lazy, because we need the "MemoryLayout" which is set by the
