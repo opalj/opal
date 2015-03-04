@@ -35,6 +35,8 @@ import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
 import org.opalj.log.GlobalContext
 import org.opalj.log.OPALLogger
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -172,10 +174,10 @@ package object br {
     /**
      * Creates an (X)HTML5 representation of the given type that Java type declarations.
      */
-    def typeToXHTML(t: Type, abbr: Boolean = true): Node = {
+    def typeToXHTML(t: Type, abbreviateTypes: Boolean = true): Node = {
         t match {
             case ot: ObjectType ⇒
-                if (abbr)
+                if (abbreviateTypes)
                     <abbr class="type object_type" title={ ot.toJava }>
                         { ot.simpleName }
                     </abbr>
@@ -192,23 +194,50 @@ package object br {
         }
     }
 
+    def typeToXHTML(accessFlags: Int, t: Type, abbreviateTypes: Boolean): Node = {
+
+        val signature = typeToXHTML(t, abbreviateTypes)
+
+        <span class="type_signature_with_access_flags">
+            <span class="access_flags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.CLASS) }</span>
+            { signature }
+        </span>
+    }
+
     /**
      * Creates an (X)HTML5 representation that resembles Java source code method signature.
      */
-    def methodToXHTML(name: String, descriptor: MethodDescriptor, abbr: Boolean = true): Node = {
+    def methodToXHTML(
+        name: String,
+        descriptor: MethodDescriptor,
+        abbreviateTypes: Boolean = true): Node = {
 
         val parameterTypes =
             if (descriptor.parametersCount == 0)
                 List(Text(""))
             else {
-                val parameterTypes = descriptor.parameterTypes.map(typeToXHTML(_, abbr))
+                val parameterTypes = descriptor.parameterTypes.map(typeToXHTML(_, abbreviateTypes))
                 parameterTypes.tail.foldLeft(List(parameterTypes.head))((c, r) ⇒ r :: Text(", ") :: c).reverse
             }
 
         <span class="method_signature">
-            <span class="method_return_type">{ typeToXHTML(descriptor.returnType, abbr) }</span>
+            <span class="method_return_type">{ typeToXHTML(descriptor.returnType, abbreviateTypes) }</span>
             <span class="method_name">{ name }</span>
             <span class="method_parameters">({ parameterTypes })</span>
+        </span>
+    }
+
+    def methodToXHTML(
+        accessFlags: Int,
+        name: String,
+        descriptor: MethodDescriptor,
+        abbreviateTypes: Boolean): Node = {
+
+        val signature = methodToXHTML(name, descriptor, abbreviateTypes)
+
+        <span class="method_signature_with_access_flags">
+            <span class="access_flags">{ AccessFlags.toString(accessFlags, AccessFlagsContexts.METHOD) }</span>
+            { signature }
         </span>
     }
 
