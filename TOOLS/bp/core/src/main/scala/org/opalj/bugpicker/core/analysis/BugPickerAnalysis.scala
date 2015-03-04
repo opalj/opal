@@ -422,7 +422,7 @@ object BugPickerAnalysis {
     // -maxEvalFactor=20
     // -maxEvalFactor=1.25
     // -maxEvalFactor=10.5
-    final val maxEvalFactorPattern = """-maxEvalFactor=(\d+(?:.\d+)?)""".r
+    final val maxEvalFactorPattern = """-maxEvalFactor=(\d+(?:.\d+)?|Infinity)""".r
     final val defaultMaxEvalFactor = 1.75d
 
     final val maxEvalTimePattern = """-maxEvalTime=(\d+)""".r
