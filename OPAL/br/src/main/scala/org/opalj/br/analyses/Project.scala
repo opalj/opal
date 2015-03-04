@@ -556,6 +556,11 @@ object Project {
         Project.apply[URL](Java8ClassFileReader.ClassFiles(file), Traversable.empty)
     }
 
+    def apply[Source](
+        projectClassFilesWithSources: Traversable[(ClassFile, Source)]): Project[Source] = {
+        Project.apply[Source](projectClassFilesWithSources, Traversable.empty)
+    }
+
     def apply(projectFile: File, libraryFile: File): Project[URL] = {
         Project.apply[URL](
             Java8ClassFileReader.ClassFiles(projectFile),

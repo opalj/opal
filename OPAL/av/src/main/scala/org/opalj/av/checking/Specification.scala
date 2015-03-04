@@ -604,6 +604,8 @@ object Specification {
         if (file.isDirectory)
             throw SpecificationError("the specified jar file is a directory: "+jarName)
 
+        println(s"Loading project JAR: $jarName")
+
         Project.Java8ClassFileReader.ClassFiles(file)
     }
 
@@ -628,6 +630,8 @@ object Specification {
             throw SpecificationError("cannot read the specified JAR: "+jarName)
         if (file.isDirectory)
             throw SpecificationError("the specified jar file is a directory: "+jarName)
+
+        println(s"Loading library JAR: $jarName")
 
         Project.Java8LibraryClassFileReader.ClassFiles(file)
     }
@@ -659,21 +663,25 @@ object Specification {
     }
 
     /**
-     * Returns the path to the given JAR from the given list of paths.
+     * Returns a list of paths that matches the given
+     * regular expression from the given list of paths.
      */
-    def PathToJAR(paths: Iterable[String], jarName: String): String = {
-        paths.collectFirst {
-            case p if (p.endsWith(jarName)) ⇒ p
-        }.getOrElse {
-            throw SpecificationError(s"cannot find a path to the specified JAR: $jarName.")
+    def PathToJARs(paths: Iterable[String], jarName: Regex): Iterable[String] = {
+        val matchedPaths = paths.collect {
+            case p @ (jarName(m)) ⇒ p
         }
+        if (matchedPaths.isEmpty) {
+            throw SpecificationError(s"no path is matched by: $jarName.")
+        }
+        matchedPaths
     }
 
     /**
-     * Returns a list of paths to the given JARs from the given list of paths.
+     * Returns a list of paths that match the given list of
+     * regular expressions from the given list of paths.
      */
-    def PathToJARs(paths: Iterable[String], jarNames: Iterable[String]): Iterable[String] = {
-        jarNames.foldLeft(Set.empty[String])((c, n) ⇒ c + PathToJAR(paths, n))
+    def PathToJARs(paths: Iterable[String], jarNames: Iterable[Regex]): Iterable[String] = {
+        jarNames.foldLeft(Set.empty[String])((c, n) ⇒ c ++ PathToJARs(paths, n))
     }
 }
 

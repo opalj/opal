@@ -97,6 +97,9 @@ object InstructionCountBoundedAI {
         code: Code,
         maxEvaluationFactor: Double)(
             implicit logContext: LogContext): Int = {
+        if (maxEvaluationFactor == Double.PositiveInfinity)
+            return Int.MaxValue
+
         // If this method is just a convenience wrapper we want to ensure that
         // we can still analyze the called methods if we also analyze the called
         // methods.
