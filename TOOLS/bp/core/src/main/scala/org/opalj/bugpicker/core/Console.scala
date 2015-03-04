@@ -181,11 +181,11 @@ object Console extends AnalysisExecutor { analysis ⇒
     final val issueKindsPattern = """-kinds=([\w, ]+)""".r
 
     final override val analysisSpecificParametersDescription: String =
-        """[-maxEvalFactor=<DoubleValue [0.1,100)=1.75> determines the maximum effort that the analysis
-            |               will spend when analyzing a specific method. The effort is always relative
-            |               to the size of the method. For the vast majority of methods a value
-            |               between 0.5 and 1.5 is sufficient to completely analyze the method using
-            |               the default settings.
+        """[-maxEvalFactor=<DoubleValue {[0.1,100),Infinity}=1.75> determines the maximum effort that
+            |               the analysis will spend when analyzing a specific method. The effort is
+            |               always relative to the size of the method. For the vast majority of methods
+            |               a value between 0.5 and 1.5 is sufficient to completely analyze a single
+            |               method using the default settings.
             |               A value greater than 1.5 can already lead to very long evaluation times.
             |               If the threshold is exceeded the analysis of the method is aborted and no
             |               result can be drawn.]
@@ -224,7 +224,8 @@ object Console extends AnalysisExecutor { analysis ⇒
                 case BugPickerAnalysis.maxEvalFactorPattern(d) ⇒
                     try {
                         val factor = java.lang.Double.parseDouble(d).toDouble
-                        factor >= 0.1d && factor < 100.0d
+                        (factor >= 0.1d && factor < 100.0d) ||
+                            factor == Double.PositiveInfinity
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }

@@ -66,7 +66,7 @@ object MethodReturnValuesKey extends ProjectInformationKey[MethodReturnValueInfo
 
         OPALLogger.info(
             "progress",
-            "computed the method return value information"+
+            "computed the method return value information; "+
                 s"refined the return type of ${result.size} methods")
         result
     }
