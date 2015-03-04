@@ -30,12 +30,11 @@ package org.opalj.av
 package checking
 
 import org.junit.runner.RunWith
-
 import org.opalj.av.checking.Specification._
 import org.opalj.bi.TestSupport.locateTestResources
-
 import org.scalatest._
 import org.scalatest.junit.JUnitRunner
+import scala.util.matching.Regex
 
 /**
  * Systematic tests created to check the behavior of the Specification package.
@@ -52,25 +51,30 @@ class ClasspathFileTest extends FlatSpec with Matchers with BeforeAndAfterAll {
     val validClassPath = Classpath("OPAL/av/src/test/resources/ValidClasspathFile.txt", ':')
     val invalidClassPath = Classpath("OPAL/av/src/test/resources/InvalidClasspathFile.txt")
 
-    it should "return the expected path to the given JAR" in {
-        val scalatestJAR: String = PathToJAR(validClassPath, "scalatest_2.11-2.1.7.jar")
-        scalatestJAR should be(
+    it should "return the expected list of paths that match the given regular expression" in {
+        val scalatestJAR: Iterable[String] = PathToJARs(validClassPath, """.*(scalatest_2.11-2.1.7.jar)""".r)
+        val expectedListOfPaths1 = List[String](
             "/Users/Testuser/.m2/repository/org/scalatest/scalatest_2.11/2.1.7/scalatest_2.11-2.1.7.jar"
         )
+        scalatestJAR.toList should equal(expectedListOfPaths1)
 
-        val scalaLibraryJAR: String = PathToJAR(validClassPath, "scala-library-2.11.0.jar")
-        scalaLibraryJAR should be(
+        val scalaLibraryJAR: Iterable[String] = PathToJARs(validClassPath, """.*(scala-library-2.11.0.jar)""".r)
+        val expectedListOfPaths2 = List[String](
             "/Users/Testuser/.m2/repository/org/scala-lang/scala-library/2.11.0/scala-library-2.11.0.jar"
         )
+        scalaLibraryJAR.toList should equal(expectedListOfPaths2)
     }
 
-    it should "throw a specification error if the path to the given JAR couldn't be found" in {
-        intercept[SpecificationError] { PathToJAR(validClassPath, "scalatest.jar") }
-        intercept[SpecificationError] { PathToJAR(invalidClassPath, "scalatest_2.11-2.1.7.jar") }
+    it should "throw a specification error if path couldn't be found" in {
+        intercept[SpecificationError] { PathToJARs(validClassPath, """.*(scalatest.jar)""".r) }
+        intercept[SpecificationError] { PathToJARs(invalidClassPath, """.*(scalatest_2.11-2.1.7.jar)""".r) }
     }
 
-    it should "return the expected list of paths to the given JARs" in {
-        val listOfJARs = List[String]("scalatest_2.11-2.1.7.jar", "scala-library-2.11.0.jar", "scala-xml_2.11-1.0.1.jar")
+    it should "return the expected list of paths that match the given list of regular expressions" in {
+        val listOfJARs = List[Regex](
+            """.*(scalatest_2.11-.*.jar)""".r,
+            """.*(scala-library-.*.jar)""".r,
+            """.*(scala-xml_2.11-.*.jar)""".r)
         val listOfPaths: Iterable[String] = PathToJARs(validClassPath, listOfJARs)
 
         val expectedListOfPaths = List[String](
@@ -84,12 +88,18 @@ class ClasspathFileTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     it should "throw a specification error if the path to one of the given JARs couldn't be found" in {
         intercept[SpecificationError] {
-            val listOfJARs = List[String]("scalatest_2.11-2.1.7.jar", "scala-library-2.11.0.jar", "scala.jar")
+            val listOfJARs = List[Regex](
+                """.*(scalatest_2.11-.*.jar)""".r,
+                """.*(scala-library-.*.jar)""".r,
+                """.*(scala.jar)""".r)
             PathToJARs(validClassPath, listOfJARs)
         }
 
         intercept[SpecificationError] {
-            val listOfJARs = List[String]("scalatest_2.11-2.1.7.jar", "scala-library-2.11.0.jar", "scala-xml_2.11-1.0.1.jar")
+            val listOfJARs = List[Regex](
+                """.*(scalatest_2.11-3.*.jar)""".r,
+                """.*(scala-library-.*.jar)""".r,
+                """.*(scala-xml_2.11-.*.jar)""".r)
             PathToJARs(invalidClassPath, listOfJARs)
         }
     }
