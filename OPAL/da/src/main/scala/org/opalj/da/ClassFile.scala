@@ -56,16 +56,7 @@ case class ClassFile(
         methods: Methods,
         attributes: Attributes) {
 
-    def jdkVersion: String = {
-        // 52 == 8; ... 50 == 6
-        if (major_version >= 49) {
-            "Java "+(major_version - 44)
-        } else if (major_version > 45) {
-            "Java 2 Platform version 1."+(major_version - 44)
-        } else {
-            "JDK 1.1 (JDK 1.0.2)"
-        }
-    }
+    def jdkVersion: String = org.opalj.bi.jdkVersion(major_version)
 
     private[this] implicit val cp = constant_pool
 
