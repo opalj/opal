@@ -271,7 +271,7 @@ trait XHTMLTracer extends AITracer {
             alreadyEvaluated: List[PC],
             operandsArray: domain.OperandsArray,
             localsArray: domain.LocalsArray,
-            memoryLayoutBeforeSubroutineCall: List[(domain.OperandsArray, domain.LocalsArray)]): Unit = {
+            memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]): Unit = {
         if ((this.code eq code) || (this.code == null))
             this.code = code
         else
@@ -352,6 +352,13 @@ trait XHTMLTracer extends AITracer {
             pc: PC,
             returnAddress: PC,
             subroutineInstructions: List[PC]): Unit = { /*ignored*/ }
+
+    def abruptSubroutineTermination(
+        domain: Domain)(
+            sourcePC: PC, targetPC: PC, jumpToSubroutineId: Int,
+            terminatedSubroutinesCount: Int,
+            oldWorklist: List[PC],
+            newWorklist: List[PC]): Unit = { /*ignored*/ }
 
     /**
      * Called when a ret instruction is encountered.

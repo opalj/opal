@@ -69,6 +69,10 @@ final case class Relevance(value: Int) extends AnyVal {
         else
             "[info]"
     }
+
+    def asEclipseConsoleString: String = {
+        s"[relevance=$value]"
+    }
 }
 
 object Relevance {
@@ -78,7 +82,8 @@ object Relevance {
     final val DefaultRelevance = Relevance(50)
     final val Low = Relevance(30)
     final val VeryLow = Relevance(10)
-    final val CommonIdiom = Relevance(2)
+    final val CommonIdiom = Relevance(3)
+    final val ProvenAssertion = Relevance(2)
     final val OfNoRelevance = Relevance(1)
     final val TechnicalArtifact = OfNoRelevance
 

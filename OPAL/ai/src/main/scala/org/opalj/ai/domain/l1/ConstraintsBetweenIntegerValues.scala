@@ -175,6 +175,7 @@ trait ConstraintsBetweenIntegerValues
         currentPC: PC,
         successorPC: PC,
         isExceptionalControlFlow: Boolean,
+        abruptSubroutineTerminationCount: Int,
         wasJoinPerformed: Boolean,
         worklist: List[PC],
         operandsArray: OperandsArray,
@@ -234,7 +235,8 @@ trait ConstraintsBetweenIntegerValues
 
         super.flow(
             currentPC, successorPC,
-            isExceptionalControlFlow, wasJoinPerformed,
+            isExceptionalControlFlow, abruptSubroutineTerminationCount,
+            wasJoinPerformed,
             worklist,
             operandsArray, localsArray,
             tracer)
@@ -251,6 +253,7 @@ trait ConstraintsBetweenIntegerValues
 
         oldValue match {
             case iv: IntegerLikeValue ⇒ updatedValues.put(oldValue, newValue)
+            case _                    ⇒ /*nothing special to do*/
         }
 
         super.updateMemoryLayout(oldValue, newValue, operands, locals)

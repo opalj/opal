@@ -166,8 +166,10 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
     /**
      * Creates a new IntegerRange value with the given bounds.
      */
-    final def IntegerRange(pc: PC, lb: Int, ub: Int): DomainValue = {
-        IntegerRange(lb, ub)
+    final def IntegerRange(
+        origin: ValueOrigin,
+        lowerBound: Int, upperBound: Int): DomainValue = {
+        IntegerRange(lowerBound, upperBound)
     }
 
     object IntegerRange {
@@ -328,7 +330,12 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                             Unknown
                     }
             case _ ⇒
-                Unknown
+                left match {
+                    case IntegerRange(_, Int.MinValue) ⇒
+                        Yes
+                    case _ ⇒
+                        Unknown
+                }
         }
     }
 
@@ -722,15 +729,17 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                             result(newValue)
                         }
 
-                    case _ ⇒
+                    case _ /*AnIntegerValue*/ if rightLB > Int.MinValue ⇒
                         val maxDividend = Math.max(Math.abs(rightLB), Math.abs(rightUB))
                         val newValue = IntegerRange(-(maxDividend - 1), maxDividend - 1)
                         result(newValue)
+                    case _ /*AnIntegerValue*/ ⇒
+                        result(IntegerValue(origin = pc))
                 }
 
             case _ ⇒ // right is "AnIntegerValue"
                 val newValue =
-                    if (left eq right) // "a value % itselft is always 0 unles the value is 0"
+                    if (left eq right) // "a value % itself is always 0 unless the value is 0"
                         IntegerValue(pc, 0)
                     else
                         IntegerValue(pc)

@@ -285,22 +285,22 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
             case _                                        ⇒ IntegerValue(origin = pc)
         }
 
-    override def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
+    override def ishl(pc: PC, value: DomainValue, shift: DomainValue): DomainValue =
+        intValues(value, shift) { (v1, v2) ⇒
             IntegerValue(pc, v1 << v2)
         } {
             IntegerValue(origin = pc)
         }
 
-    override def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
+    override def ishr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue =
+        intValues(value, shift) { (v1, v2) ⇒
             IntegerValue(pc, v1 >> v2)
         } {
             IntegerValue(origin = pc)
         }
 
-    override def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue =
-        intValues(value1, value2) { (v1, v2) ⇒
+    override def iushr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue =
+        intValues(value, shift) { (v1, v2) ⇒
             IntegerValue(pc, v1 >>> v2)
         } {
             IntegerValue(origin = pc)

@@ -1464,6 +1464,30 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 }
             }
 
+            it("[Int.MinValue,0] % AnIntegerValue => AnIntegerValue + Exception") {
+                val v1 = IntegerRange(Int.MinValue, 0)
+                val v2 = AnIntegerValue()
+
+                val result = irem(SomePC, v1, v2)
+                result.result shouldBe an[AnIntegerValue]
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                }
+            }
+
+            it("AnIntegerValue % [Int.MinValue,0]=> AnIntegerValue + Exception") {
+                val v1 = AnIntegerValue()
+                val v2 = IntegerRange(Int.MinValue, 0)
+
+                val result = irem(SomePC, v1, v2)
+                result.result shouldBe an[AnIntegerValue]
+                result.exceptions match {
+                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
+                    case v ⇒ fail(s"expected ArithmeticException; found $v")
+                }
+            }
+
             it("(the dividend is known, but the divisor is 0) [0,3] % [0,0] => Exception") {
                 val v1 = IntegerRange(0, 3)
                 val v2 = IntegerRange(0, 0)
@@ -3078,6 +3102,12 @@ class DefaultIntegerRangesTest extends FunSpec with Matchers with ParallelTestEx
                 it("a specific (but unknown) value compared (<=) with itself should be Yes") {
                     val p = AnIntegerValue
                     intIsLessThanOrEqualTo(IrrelevantPC, p, p) should be(Yes)
+                }
+                it("comparison(<=) of anInt with IntMin") {
+                    val v1 = AnIntegerValue
+                    val v2 = IntegerRange(Int.MinValue, Int.MinValue)
+                    intIsLessThanOrEqualTo(IrrelevantPC, v1, v2) should be(Unknown)
+                    intIsLessThanOrEqualTo(IrrelevantPC, v2, v1) should be(Yes)
                 }
             }
 

@@ -135,10 +135,18 @@ object DomainRegistry {
     )
 
     register(
-        "[l1.DefaultIntegerValuesDomain] A classical abstract domain that tracks reference values at the type level and tracks int/long values using ranges/sets.",
-        classOf[domain.l1.DefaultIntegerValuesDomain[_]],
+        "[l1.DefaultIntervalValuesDomain] A classical abstract domain that uses intervals to represent the values of variables.",
+        classOf[domain.l1.DefaultIntervalValuesDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
-            new domain.l1.DefaultIntegerValuesDomain(project, classFile, method)
+            new domain.l1.DefaultIntervalValuesDomain(project, classFile, method)
+        }
+    )
+
+    register(
+        "[l1.DefaultSetValuesDomain] A classical abstract domain that represents reference values at the type level and represents int/long values using sets.",
+        classOf[domain.l1.DefaultSetValuesDomain[_]],
+        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
+            new domain.l1.DefaultSetValuesDomain(project, classFile, method)
         }
     )
 
@@ -159,10 +167,18 @@ object DomainRegistry {
     )
 
     register(
-        "[l2.DefaultDomain] This abstract domain performs method invocations additionally to the features of the l1.DefaultDomain.",
+        "[l2.DefaultDomain] This abstract domain performs method invocations up to two levels deep additionally to the features of the l1.DefaultDomain.",
         classOf[domain.l2.DefaultDomain[_]],
         (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
             new domain.l2.DefaultDomain(project, classFile, method)
+        }
+    )
+
+    register(
+        "[l2.DefaultPerformInvocationsDomain] This abstract domain performs simple method invocations additionally to the features of the l1.DefaultDomain.",
+        classOf[domain.l2.DefaultPerformInvocationsDomain[_]],
+        (project: SomeProject, classFile: ClassFile, method: Method) ⇒ {
+            new domain.l2.DefaultPerformInvocationsDomain(project, classFile, method)
         }
     )
 

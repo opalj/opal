@@ -278,7 +278,7 @@ ol.exception_table {
 	line-height: 1.5em;
 }
 
-div.cp_ref {
+div.cp_ref, div.attributes_ref {
 	margin-left:1em;
 }
 

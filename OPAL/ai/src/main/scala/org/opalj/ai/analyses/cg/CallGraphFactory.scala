@@ -31,10 +31,10 @@ package ai
 package analyses
 package cg
 
+import org.opalj.log.OPALLogger
 import org.opalj.br._
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
-
 import org.opalj.concurrent.ThreadPoolN
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
@@ -45,6 +45,8 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
  */
 object CallGraphFactory {
 
+    @volatile var debug: Boolean = false
+
     /**
      * Returns a list of all entry points that is well suited if we want to
      * analyze a library/framework.
@@ -54,8 +56,12 @@ object CallGraphFactory {
      *  - every non-private static method,
      *  - every non-private constructor,
      *  - every non-private method,
-     *  - every private method related to Serialization, if the respective
-     *    declaring class is a subtype of java.io.Serializable.
+     *  - every private method (including a default constructor) related to
+     *    Serialization, if the respective declaring class is a subtype of
+     *    java.io.Serializable,
+     *  // TODO ...
+     *  - No entry points:
+     *    public instance methods of a class that provides no way to create an instance of it (e.g., java.lang.Math)
      */
     def defaultEntryPointsForLibraries(project: SomeProject): Iterable[Method] = {
         val classHierarchy = project.classHierarchy
@@ -85,6 +91,8 @@ object CallGraphFactory {
         theProject: SomeProject,
         findEntryPoints: () ⇒ Iterable[Method],
         configuration: CallGraphAlgorithmConfiguration): ComputedCallGraph = {
+        implicit val logContext = theProject.logContext
+
         val entryPoints = findEntryPoints()
         if (entryPoints.isEmpty)
             return ComputedCallGraph.empty(theProject)
@@ -166,11 +174,19 @@ object CallGraphFactory {
         val builder = new CallGraphBuilder(theProject)
         var exceptions = List.empty[CallGraphConstructionException]
         var unresolvedMethodCalls = List.empty[UnresolvedMethodCall]
+        var analyzedMethods = 0
         while (futuresCount > 0) {
             // 1. GET NEXT RESULT
             val (callSite @ (_ /*method*/ , callEdges), moreUnresolvedMethodCalls, exception) =
                 completionService.take().get()
             futuresCount -= 1
+            analyzedMethods += 1
+
+            if (debug && (analyzedMethods % 1000 == 0)) {
+                OPALLogger.info(
+                    "progress - call graph",
+                    s"analyzed: $analyzedMethods methods")
+            }
 
             // 2. ENQUE NEXT METHODS
             if (callEdges.nonEmpty) {
@@ -195,7 +211,10 @@ object CallGraphFactory {
         }
 
         // TODO use log
-        println("[info] finished analzying the bytecode, constructing the final call graph")
+        if (debug)
+            OPALLogger.info(
+                "progress - call graph",
+                "finished analzying the bytecode, constructing the final call graph")
 
         ComputedCallGraph(
             builder.buildCallGraph,

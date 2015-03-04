@@ -72,8 +72,18 @@ final class Method private (
     val attributes: Attributes)
         extends ClassMember with scala.math.Ordered[Method] {
 
+    final override def isMethod = true
+
+    final override def asMethod = this
+
+    final def asVirtualMethod(declaringClassFile: ClassFile): VirtualMethod =
+        asVirtualMethod(declaringClassFile.thisType)
+
+    def asVirtualMethod(declaringClassType: ObjectType): VirtualMethod =
+        VirtualMethod(declaringClassType, name, descriptor)
+
     /**
-     * Returns true if this method and the given method have the same signature.
+     * Returns `true` if this method and the given method have the same signature.
      *
      * @param ignoreReturnType If `false` (default), then the return type is taken
      *      into consideration. This models the behavior of the JVM w.r.t. method
@@ -87,13 +97,16 @@ final class Method private (
     }
 
     /**
-     * Returns true if this methods signature corresponds the given name and descriptor.
+     * Returns `true` if this method has the given name and descriptor.
      *
      * @param ignoreReturnType If `false` (default), then the return type is taken
      *      into consideration. This models the behavior of the JVM w.r.t. method
      *      dispatch.
      */
-    def hasSameSignature(name: String, descriptor: MethodDescriptor, ignoreReturnType: Boolean): Boolean = {
+    def hasSameSignature(
+        name: String,
+        descriptor: MethodDescriptor,
+        ignoreReturnType: Boolean): Boolean = {
         this.name == name && {
             if (ignoreReturnType)
                 this.descriptor.equalParameters(descriptor)
@@ -103,22 +116,13 @@ final class Method private (
     }
 
     /**
-     * Returns true if this methods signature corresponds the given name and descriptor.
-     * The return type is not taken into consideration.
+     * Returns `true` if this method has the given name and descriptor.
+     *
+     * @note When matching the descriptor the return type is also taken into consideration.
      */
     def hasSameSignature(name: String, descriptor: MethodDescriptor): Boolean = {
         this.hasSameSignature(name, descriptor, false)
     }
-
-    final override def isMethod = true
-
-    final override def asMethod = this
-
-    final def asVirtualMethod(declaringClassFile: ClassFile): VirtualMethod =
-        asVirtualMethod(declaringClassFile.thisType)
-
-    def asVirtualMethod(declaringClassType: ObjectType): VirtualMethod =
-        VirtualMethod(declaringClassType, name, descriptor)
 
     def runtimeVisibleParameterAnnotations: ParameterAnnotations =
         (attributes collectFirst {
@@ -138,6 +142,13 @@ final class Method private (
 
     def parameterAnnotations: ParameterAnnotations =
         runtimeVisibleParameterAnnotations ++ runtimeInvisibleParameterAnnotations
+
+    /**
+     * If this method represents a method of an annotation that defines a default
+     * value then this value is returned.
+     */
+    def annotationDefault: Option[ElementValue] =
+        attributes collectFirst { case ev: ElementValue ⇒ ev }
 
     // This is directly supported due to its need for the resolution of signature
     // polymorphic methods.
@@ -231,7 +242,9 @@ object Method {
         import MethodDescriptor.JustReturnsObject
         import MethodDescriptor.NoArgsAndReturnVoid
 
-        (method.name == "readObjectNoData" && method.descriptor == NoArgsAndReturnVoid) ||
+        /*The default constructor is used by the deserialization process*/
+        (method.name == "<init>" && method.descriptor == NoArgsAndReturnVoid) ||
+            (method.name == "readObjectNoData" && method.descriptor == NoArgsAndReturnVoid) ||
             (method.name == "readObject" && method.descriptor == readObjectDescriptor) ||
             (method.name == "writeObject" && method.descriptor == writeObjectDescriptor) ||
             (method.name == "readResolve" && method.descriptor == JustReturnsObject) ||

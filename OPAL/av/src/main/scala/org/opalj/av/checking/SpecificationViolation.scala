@@ -55,16 +55,14 @@ import org.opalj.de._
  */
 sealed trait SpecificationViolation {
 
-    override def toString(): String = {
-        toString(useAnsiColors = false)
-    }
+    final override def toString(): String = toString(useAnsiColors = false)
 
     def toString(useAnsiColors: Boolean): String
 
 }
 
 /**
- * Used to report deviations between the specified and the implemented dependencies.
+ * Used to report deviations between the specified/expected and the implemented dependencies.
  *
  * @author Michael Eichberg
  * @author Marco Torsello

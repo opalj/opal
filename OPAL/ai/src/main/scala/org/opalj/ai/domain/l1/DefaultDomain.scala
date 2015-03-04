@@ -51,7 +51,6 @@ class DefaultConfigurableDomain[I, Source](
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        // [NOT YET NEEDED] with PerInstructionPostProcessing
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelFieldAccessInstructions
@@ -64,7 +63,7 @@ class DefaultConfigurableDomain[I, Source](
         with l1.MaxArrayLengthRefinement // OPTIONAL
         with l1.NullPropertyRefinement // OPTIONAL
         with l1.DefaultIntegerRangeValues
-        with l1.ConstraintsBetweenIntegerValues
+        // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
         with l1.DefaultLongValues
         with l1.LongValuesShiftOperators
         with l1.ConcretePrimitiveValuesConversions {

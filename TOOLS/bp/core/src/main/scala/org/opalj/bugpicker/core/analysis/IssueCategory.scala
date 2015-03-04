@@ -34,17 +34,23 @@ package analysis
 /**
  * Collection of predefined issue
  * categories where
- * each category describes '''the (quality) property of your software that is
- * affected ''' by this issue.
+ * each category describes '''the (quality) property of the software that is
+ * affected ''' by the issue.
  *
  * @author Michael Eichberg
  */
 object IssueCategory {
 
+    final val AllCategories =
+        Set(Bug, Flawed, Performance, Comprehensibility)
+
+    // Correctness
     final val Bug = "bug"
 
+    // Correctness
     final val Flawed = "flawed"
 
+    // Efficiency
     final val Performance = "performance"
 
     final val Comprehensibility = "comprehensibility"

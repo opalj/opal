@@ -70,6 +70,10 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
     type DomainClassValue <: ClassValue with DomainObjectValue
     val DomainClassValue: ClassTag[DomainClassValue]
 
+    /**
+     * All class values that represent the same type are actually represented by the
+     * class (object) value at runtime.
+     */
     protected class ClassValue(origin: ValueOrigin, val value: Type, t: Timestamp)
             extends SObjectValue(origin, No, true, ObjectType.Class, t) {
         this: DomainClassValue ⇒
@@ -81,10 +85,9 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             other match {
                 case that: ClassValue ⇒
                     if (this.value eq that.value)
-                        if (this.t == that.t)
-                            NoUpdate
-                        else
-                            MetaInformationUpdate(ClassValue(origin, value))
+                        // Recall: all instances are the same; i.e.,
+                        // String.class "is reference equal to" Class.forName("java.lang.String")
+                        NoUpdate
                     else
                         StructuralUpdate(ObjectValue(origin, No, true, ObjectType.Class, nextT()))
                 case _ ⇒
@@ -100,7 +103,9 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             }
         }
 
-        override def adapt(target: TargetDomain, targetOrigin: ValueOrigin): target.DomainValue =
+        override def adapt(
+            target: TargetDomain,
+            targetOrigin: ValueOrigin): target.DomainValue =
             target.ClassValue(targetOrigin, this.value)
 
         override def abstractsOver(other: DomainValue): Boolean = {
@@ -125,13 +130,16 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
         override def hashCode: Int = super.hashCode + 71 * value.hashCode
 
         override def toString(): String =
-            s"Class(origin$origin;t=$t;value=${value.toJava})"
+            s"Class<${value.toJava}>(origin$origin;t=$t)"
     }
 
     // Needs to be implemented since the default implementation does not make sense here
     override def ClassValue(vo: ValueOrigin, value: Type): DomainObjectValue
 
     protected[l1] def simpleClassForNameCall(pc: PC, className: String): MethodCallResult = {
+        if (className.length() == 0)
+            return justThrows(ClassNotFoundException(pc))
+
         val classValue =
             try {
                 ReferenceType(className.replace('.', '/'))

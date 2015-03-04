@@ -29,6 +29,8 @@
 package org.opalj
 
 import scala.language.existentials
+import org.opalj.log.GlobalContext
+import org.opalj.log.OPALLogger
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
@@ -62,29 +64,15 @@ import scala.annotation.elidable.ASSERTION
  */
 package object ai {
 
-    private[this] final val checkAssert: Boolean = {
+    {
+        implicit val logContext = GlobalContext
         try {
             scala.Predef.assert(false) // <= test whether assertions are turned on or off...
-            println("[info - Abstract Interpretation Framework] Production Build - Assertions are disabled")
+            OPALLogger.info("OPAL", "Abstract Interpretation Framework - Production Build")
         } catch {
             case ae: AssertionError ⇒
-                println("[info - Abstract Interpretation Framework] Development Build - Assertions are enabled.")
+                OPALLogger.info("OPAL", "Abstract Interpretation Framework - Assertions are enabled - Development Build.")
         }
-        true
-    }
-
-    // "override" Scala Predef's corresponding assert method
-    @elidable(ASSERTION)
-    def assert(assertion: Boolean): Unit = {
-        if (checkAssert && !assertion)
-            throw new java.lang.AssertionError("assertion failed")
-    }
-
-    // "override" Scala Predef's corresponding assert method
-    @elidable(ASSERTION) @inline
-    final def assert(assertion: Boolean, message: ⇒ Any): Unit = {
-        if (checkAssert && !assertion)
-            throw new java.lang.AssertionError("assertion failed: "+message)
     }
 
     /**

@@ -39,6 +39,12 @@ import org.opalj.br.ObjectType.Object
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.graphs.Node
+import org.opalj.log.OPALLogger
+import org.opalj.log.Warn
+import org.opalj.log.Error
+import org.opalj.log.GlobalContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -75,7 +81,8 @@ class ClassHierarchy private (
         // TODO use a UIDSet for storing the class hierarchy!
         private[this] val superinterfaceTypesMap: Array[Set[ObjectType]],
         private[this] val subclassTypesMap: Array[Set[ObjectType]],
-        private[this] val subinterfaceTypesMap: Array[Set[ObjectType]]) {
+        private[this] val subinterfaceTypesMap: Array[Set[ObjectType]],
+        implicit val logContext: LogContext) {
 
     assert(knownTypesMap.length == superclassTypeMap.length)
     assert(knownTypesMap.length == interfaceTypesMap.length)
@@ -109,31 +116,27 @@ class ClassHierarchy private (
     private[this] def validateClassHierarchy(): Unit = {
         val rootTypes = this.rootTypes
         if (rootTypes.tail.nonEmpty)
-            // TODO Use a Log...
-            println(
-                "[warn] missing supertype information for: "+
+            OPALLogger.log(Warn("project configuration",
+                "missing supertype information for: "+
                     rootTypes.filterNot(_ eq ObjectType.Object).
-                    map(_.toJava).mkString(", ")
-            )
+                    map(_.toJava).mkString(", ")))
 
         isKnownToBeFinalMap.zipWithIndex foreach { e ⇒
             val (isFinal, index) = e
             if (isFinal) {
                 if (subclassTypesMap(index) != null && subclassTypesMap(index).nonEmpty) {
-                    println(
-                        "[warn - project configuration] "+
-                            s"the final type ${knownTypesMap(index).toJava} "+
+                    OPALLogger.log(Warn("project configuration ",
+                        s"the final type ${knownTypesMap(index).toJava} "+
                             "has subclasses: "+subclassTypesMap(index)+
-                            "; resetting the \"is final\" property.")
+                            "; resetting the \"is final\" property."))
                     isKnownToBeFinalMap(index) = false
                 }
 
                 if (subinterfaceTypesMap(index) != null && subinterfaceTypesMap(index).nonEmpty) {
-                    println(
-                        "[warn - project configuration] "+
-                            s"the final type ${knownTypesMap(index).toJava} "+
+                    OPALLogger.log(Warn("project configuration] ",
+                        s"the final type ${knownTypesMap(index).toJava} "+
                             "has subinterfaces: "+subclassTypesMap(index)+
-                            "; resetting the \"is final\" property.")
+                            "; resetting the \"is final\" property."))
                     isKnownToBeFinalMap(index) = false
                 }
             }
@@ -1077,9 +1080,10 @@ class ClassHierarchy private (
         project: SomeProject): Option[Method] = {
 
         // TODO [Java8] Support Extension Methods!
-        assume(
+        assert(
             !isInterface(receiverType),
-            s"${receiverType.toJava} is classified as an interface; ${project.classFile(receiverType).map(_.toString).getOrElse("<precise information missing>")}")
+            s"${receiverType.toJava} is classified as an interface (looking up ${methodDescriptor.toJava(methodName)}); "+
+                project.classFile(receiverType).map(_.toString).getOrElse("<precise information missing>"))
 
         @tailrec def lookupMethodDefinition(receiverType: ObjectType): Option[Method] = {
             val classFileOption = project.classFile(receiverType)
@@ -1368,9 +1372,15 @@ class ClassHierarchy private (
         reflexive: Boolean): scala.collection.Set[ObjectType] = {
         val allSupertypesOf = scala.collection.mutable.HashSet.empty[ObjectType]
         types foreach { (t: ObjectType) ⇒
-            if (!allSupertypesOf.contains(t) && isKnown(t))
-                allSupertypesOf ++= allSupertypes(t, reflexive)
+            if (!allSupertypesOf.contains(t))
+                if (isKnown(t))
+                    allSupertypesOf ++= allSupertypes(t, reflexive)
+                else if (reflexive)
+                    // the project's class hierarchy is obviously not complete
+                    // however, we do as much as we can...
+                    allSupertypesOf += t
         }
+
         allSupertypesOf
     }
 
@@ -1441,13 +1451,19 @@ class ClassHierarchy private (
         upperTypeBoundsB: UIDSet[ObjectType],
         reflexive: Boolean): UIDSet[ObjectType] = {
 
-        if (upperTypeBoundsA == upperTypeBoundsB)
-            return upperTypeBoundsA
+        assert(upperTypeBoundsA.nonEmpty)
+        assert(upperTypeBoundsB.nonEmpty)
 
-        val allSupertypesOfA = allSupertypesOf(upperTypeBoundsA, reflexive)
-        val allSupertypesOfB = allSupertypesOf(upperTypeBoundsB, reflexive)
-        val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
-        leafTypes(commonSupertypes)
+        upperTypeBoundsA.compare(upperTypeBoundsB) match {
+            case UIDSet.StrictSubset   ⇒ upperTypeBoundsA
+            case UIDSet.Equal          ⇒ upperTypeBoundsA /*or upperTypeBoundsB*/
+            case UIDSet.StrictSuperset ⇒ upperTypeBoundsB
+            case UIDSet.Uncomparable ⇒
+                val allSupertypesOfA = allSupertypesOf(upperTypeBoundsA, reflexive)
+                val allSupertypesOfB = allSupertypesOf(upperTypeBoundsB, reflexive)
+                val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
+                leafTypes(commonSupertypes)
+        }
     }
 
     /**
@@ -1457,9 +1473,9 @@ class ClassHierarchy private (
      *
      * @param upperTypeBoundB A list (set) of `ObjectType`s that are not in an mutual
      *      inheritance relation.
-     * @return Returns (if reflexive is `true`)
-     *      `upperTypeBoundA` if it is a supertype of at least one type
-     *      of `upperTypeBoundB`. Returns `upperTypeBoundB` if `upperTypeBoundA` is
+     * @return (I) Returns (if reflexive is `true`) `upperTypeBoundA` if it is a supertype
+     *      of at least one type of `upperTypeBoundB`.
+     *      (II) Returns `upperTypeBoundB` if `upperTypeBoundA` is
      *      a subtype of all types of `upperTypeBoundB`. Otherwise a new upper type
      *      bound is calculated and returned.
      */
@@ -1467,6 +1483,9 @@ class ClassHierarchy private (
         upperTypeBoundA: ObjectType,
         upperTypeBoundB: UIDSet[ObjectType],
         reflexive: Boolean): UIDSet[ObjectType] = {
+
+        if (upperTypeBoundB.isEmpty)
+            return upperTypeBoundB;
 
         if (upperTypeBoundB.hasOneElement) {
             val upperTypeBound =
@@ -1478,16 +1497,19 @@ class ClassHierarchy private (
                 } else
                     joinObjectTypes(upperTypeBoundA, upperTypeBoundB.first(), reflexive)
 
-            return upperTypeBound
+            return upperTypeBound;
         }
 
-        if (upperTypeBoundB.isEmpty)
-            return upperTypeBoundB;
+        if (upperTypeBoundB contains (upperTypeBoundA))
+            // the upperTypeBoundB contains more than one type; hence, considering
+            // "reflexive" is no longer necessary
+            return UIDSet(upperTypeBoundA);
 
         if (isUnknown(upperTypeBoundA)) {
-            println(s"[warn] type unknown: ${upperTypeBoundA.toJava}")
+            OPALLogger.logOnce(Warn("project configuration",
+                "type unknown: "+upperTypeBoundA.toJava))
             // there is nothing that we can do...
-            return UIDSet(ObjectType.Object)
+            return UIDSet(ObjectType.Object);
         }
 
         val allSupertypesOfA = allSupertypes(upperTypeBoundA, reflexive)
@@ -1701,7 +1723,7 @@ class ClassHierarchy private (
             }
         } else if (thisUTBDim > thatUTBDim) {
             if (thatUpperTypeBound.elementType.isBaseType) {
-                if (thisUTBDim == 1)
+                if (thatUTBDim == 1)
                     Right(SerializableAndCloneable)
                 else
                     Left(ArrayType(thatUTBDim - 1, ObjectType.Object))
@@ -1781,8 +1803,7 @@ class ClassHierarchy private (
             utbB
         else if (utbB.isEmpty)
             utbA
-        else if (utbA.hasOneElement &&
-            utbA.first.isArrayType) {
+        else if (utbA.hasOneElement && utbA.first.isArrayType) {
             if (utbB.hasOneElement) {
                 if (utbB.first.isArrayType) {
                     val joinedArrayType =
@@ -1838,7 +1859,8 @@ object ClassHierarchy {
      *
      * This class hierarchy is primarily useful for testing purposes.
      */
-    def preInitializedClassHierarchy: ClassHierarchy = apply(Traversable.empty)
+    def preInitializedClassHierarchy: ClassHierarchy =
+        apply(classFiles = Traversable.empty)(logContext = GlobalContext)
 
     /**
      * Creates the class hierarchy by analyzing the given class files, the predefined
@@ -1870,7 +1892,8 @@ object ClassHierarchy {
             () ⇒ { getClass.getResourceAsStream("ClassHierarchyJLS.ths") },
             () ⇒ { getClass.getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
             () ⇒ { getClass.getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
-        )): ClassHierarchy = {
+        ))(
+            implicit logContext: LogContext): ClassHierarchy = {
 
         import scala.collection.mutable.HashSet
         import scala.collection.mutable.HashMap
@@ -1880,10 +1903,10 @@ object ClassHierarchy {
             val in = createInputStream()
             processSource(new scala.io.BufferedSource(in)) { source ⇒
                 if (source == null) {
-                    import Console._
-                    err.println(BOLD+"Loading the predefined class hierarchy failed."+RESET)
-                    err.println("Make sure that all resources are found in the correct folders.")
-                    err.println("Try to rebuild the project using"+BOLD + BLUE+"sbt copy-resources"+RESET+".")
+                    OPALLogger.log(Error("project configuration",
+                        "Loading the predefined class hierarchy failed.\n"+
+                            "Make sure that all resources are found in the correct folders.\n"+
+                            "Try to rebuild the project using \"sbt copy-resources\"."))
                     return Iterator.empty
                 }
 
@@ -2008,15 +2031,17 @@ object ClassHierarchy {
 
         classFiles foreach { processClassFile }
 
-        val classHierarchy = new ClassHierarchy(
-            knownTypesMap,
-            interfaceTypesMap,
-            superclassTypeMap,
-            isKnownToBeFinalMap,
-            superinterfaceTypesMap,
-            subclassTypesMap,
-            subinterfaceTypesMap
-        )
+        val classHierarchy =
+            new ClassHierarchy(
+                knownTypesMap,
+                interfaceTypesMap,
+                superclassTypeMap,
+                isKnownToBeFinalMap,
+                superinterfaceTypesMap,
+                subclassTypesMap,
+                subinterfaceTypesMap,
+                logContext
+            )
         classHierarchy
     }
 }

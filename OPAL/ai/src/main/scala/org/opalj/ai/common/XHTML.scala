@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -116,7 +116,7 @@ object XHTML {
      * `timeInMillisBetweenDumps`. If a dump is suppressed a short message is
      * printed on the console.
      *
-     * @param f The funcation that performs the validation of the results.
+     * @param f The function that performs the validation of the results.
      */
     def dumpOnFailureDuringValidation[T](
         classFile: Option[ClassFile],
@@ -335,6 +335,7 @@ object XHTML {
             localsArray: TheLocalsArray[domain.Locals])(
                 implicit ids: Option[AnyRef ⇒ Int]): Array[Node] = {
 
+        val belongsToSubroutine = code.belongsToSubroutine()
         val indexedExceptionHandlers = indexExceptionHandlers(code)
         val joinInstructions = code.joinInstructions
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
@@ -343,6 +344,7 @@ object XHTML {
             if (exceptionHandlers.size > 0) exceptionHandlers = "⚡: "+exceptionHandlers
             dumpInstruction(
                 pc, code.lineNumber(pc), instruction, joinInstructions.contains(pc),
+                belongsToSubroutine(pc),
                 Some(exceptionHandlers),
                 domain,
                 operandsOnly)(
@@ -355,6 +357,7 @@ object XHTML {
         lineNumber: Option[Int],
         instruction: Instruction,
         isJoinInstruction: Boolean,
+        subroutineId: Int,
         exceptionHandlers: Option[String],
         domain: Domain,
         operandsOnly: Boolean)(
@@ -362,11 +365,14 @@ object XHTML {
             locals: domain.Locals)(
                 implicit ids: Option[AnyRef ⇒ Int]): Node = {
 
-        val pcAsXHTML = Unparsed(
-            (if (isJoinInstruction) "⇶ " else "") +
-                pc.toString +
-                exceptionHandlers.map("<br>"+_).getOrElse("") +
-                lineNumber.map("<br><i>l="+_+"</i>").getOrElse(""))
+        val pcAsXHTML =
+            Unparsed(
+                (if (isJoinInstruction) "⇶ " else "") +
+                    pc.toString +
+                    exceptionHandlers.map("<br>"+_).getOrElse("") +
+                    lineNumber.map("<br><i>l="+_+"</i>").getOrElse("") +
+                    (if (subroutineId != 0) "<br><b>⥂="+subroutineId+"</b>" else "")
+            )
 
         val properties =
             htmlify(domain.properties(pc, valueToString).getOrElse("<None>"))

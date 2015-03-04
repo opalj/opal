@@ -333,5 +333,5 @@ private object ProjectTest {
     val DeprecatedByAnnotation = ObjectType("attributes/DeprecatedByAnnotation")
 
     val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-    val opalProject = Project(ClassFiles(opal))
+    val opalProject = Project(ClassFiles(opal), Traversable.empty)
 }

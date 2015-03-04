@@ -28,6 +28,9 @@
  */
 package ai;
 
+import callgraph.base.AbstractBase;
+import callgraph.base.ConcreteBase;
+
 /**
  * Methods that create, initialize and update arrays.
  * 
@@ -99,6 +102,106 @@ public class MethodsWithArrays {
                 new Object() };
 
         return newObjectArray4Elements;
+    }
+
+    public static Object[] differentTypesInOneArrayInitialization() {
+        Object newDifferentTypesInArray[] = { 1, 2.0f, 3.0d, true, 'A' };
+
+        return newDifferentTypesInArray;
+    }
+
+    public static Object[] setArrayNull(Object array[]) {
+        if (array != null) {
+            array = null;
+        }
+
+        return array;
+    }
+
+    public static AbstractBase[] branchInits(boolean initAsPrimitiveInt) {
+        AbstractBase array[] = null;
+
+        if (initAsPrimitiveInt) {
+            array = new ConcreteBase[4];
+            array[0] = new ConcreteBase("initAsPrimitiveInt_true", 1);
+            array[1] = new ConcreteBase("initAsPrimitiveInt_true", 2);
+            array[2] = new ConcreteBase("initAsPrimitiveInt_true", 3);
+            array[3] = new ConcreteBase("initAsPrimitiveInt_true", 4);
+        } else {
+            array = new ConcreteBase[2];
+            array[0] = new ConcreteBase("initAsPrimitiveInt_true", 1);
+            array[1] = new ConcreteBase("initAsPrimitiveInt_true", 1);
+        }
+
+        return array;
+    }
+
+    public static AbstractBase[] branchInitsWithSwitch(char v) {
+        AbstractBase array[] = null;
+
+        switch (v) {
+        case 'A':
+            array = new ConcreteBase[3];
+            array[0] = new ConcreteBase("A", 1);
+            array[1] = new ConcreteBase("A", 10);
+            ;
+            array[2] = new ConcreteBase("A", 100);
+            ;
+            break;
+
+        case 'B':
+            int arrayLength = 4;
+            array = new ConcreteBase[arrayLength];
+            for (byte i = 0; i < arrayLength; i++) {
+                array[i] = new ConcreteBase("B", i);
+                ;
+            }
+            break;
+        case 'C':
+            array = new ConcreteBase[2];
+            array[0] = new ConcreteBase("C", 1451456);
+            array[1] = array[0];
+            break;
+
+        case 'E':
+            array = new ConcreteBase[1];
+            array[0] = new ConcreteBase("E", 4);
+            break;
+
+        default:
+            array = new ConcreteBase[0];
+            break;
+        }
+
+        return array;
+    }
+
+    public static int[] setValInBranch(boolean v) {
+        int array[] = new int[2];
+
+        if (v) {
+            array[1] = 1;
+        } else {
+            array[1] = 2;
+        }
+
+        return array;
+    }
+
+    public static int[] setValInForAndBranch(boolean v) {
+        byte arraylength = 4;
+        int array[] = new int[arraylength];
+
+        for (byte i = 0; i < arraylength; i++) {
+            if (v) {
+                int mod = i % 2;
+                array[mod] = 4;
+            } else {
+                array[i] = i;
+            }
+        }
+
+        return array;
     }
 
     public static byte byteArrays(byte[] values) {
@@ -241,20 +344,7 @@ public class MethodsWithArrays {
             theArray = new java.io.Serializable[1];
         else if (!(theArray instanceof java.io.Serializable[]))
             theArray = new java.io.Serializable[1];
-        doIt(a);
-        return theArray;
-    }
-
-    public static Object localArrayCreation() throws Exception {
-        int aUnchangedValue = 1;
-        int[] arr = null;
-        for (int i = 0; i < 1; i++) {
-            arr = new int[] { aUnchangedValue };
-            if ("".isEmpty()) { // Enforce a branch
-                ;
-            }
-        }
-        return arr;
+        return a;
     }
 
     public static void main(String[] args) {
@@ -278,7 +368,4 @@ public class MethodsWithArrays {
         out.println(o instanceof int[]);// false
     }
 
-    static void doIt(Object o) {
-        /* empty */
-    }
 }

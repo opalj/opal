@@ -74,6 +74,8 @@ class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARA
                 assert(!(classFile.thisType.fqn eq null))
 
                 for (MethodWithBody(body) ← classFile.methods.par) {
+                    body.belongsToSubroutine() should not be (null)
+
                     testedMethods.set(true)
                     var isomorphicCount = 0
                     var notIsomorphicCount = 0

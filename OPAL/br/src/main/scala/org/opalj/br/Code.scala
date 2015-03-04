@@ -30,9 +30,9 @@ package org.opalj
 package br
 
 import scala.collection.BitSet
-
 import org.opalj.br.instructions._
 import scala.annotation.tailrec
+import scala.collection.mutable.Queue
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -100,6 +100,110 @@ final class Code private (
     }
 
     /**
+     * Calculates for each instruction to which subroutine the respective instruction
+     * belongs to – if any. This information is required to, e.g., identify the subroutine
+     * contexts that need to be reset in case of an exception in a subroutine.
+     *
+     * @return For each instruction (with a specific pc) the pc of the first instruction
+     *      of the subroutine it belongs to is returned. The pc 0 identifies the instruction
+     *      as belonging to the core method. The pc -1 identifies the instruction as
+     *      dead by compilation.
+     */
+    def belongsToSubroutine(): Array[Int] = {
+        val subroutineIds = new Array[Int](instructions.length)
+        java.util.Arrays.fill(subroutineIds, -1) // <= all instructions belong to "no routine"
+
+        val nextSubroutines = Queue[PC](0)
+
+        def propagate(subroutineId: Int, subroutinePC: PC): Unit = {
+
+            val nextPCs = Queue[PC](subroutinePC)
+            while (nextPCs.nonEmpty) {
+                val pc = nextPCs.dequeue
+                if (subroutineIds(pc) == -1) {
+                    subroutineIds(pc) = subroutineId
+                    val instruction = instructions(pc)
+
+                    (instruction.opcode: @scala.annotation.switch) match {
+                        case ATHROW.opcode                                    ⇒
+                        /*Nothing do to. (Will be handled when we deal with exceptions)*/
+
+                        case /* xReturn: */ 176 | 175 | 174 | 172 | 173 | 177 ⇒
+                        /*Nothing to do. (no successor!)*/
+
+                        case RET.opcode                                       ⇒
+                        /*Nothing to do; handled by JSR*/
+                        case JSR.opcode | JSR_W.opcode ⇒
+                            val jsrInstr = instruction.asInstanceOf[JSRInstruction]
+                            nextSubroutines.enqueue(pc + jsrInstr.branchoffset)
+                            nextPCs.enqueue(pcOfNextInstruction(pc))
+
+                        case GOTO.opcode | GOTO_W.opcode ⇒
+                            val bInstr = instruction.asInstanceOf[UnconditionalBranchInstruction]
+                            nextPCs.enqueue(pc + bInstr.branchoffset)
+
+                        case /*IFs:*/ 165 | 166 | 198 | 199 |
+                            159 | 160 | 161 | 162 | 163 | 164 |
+                            153 | 154 | 155 | 156 | 157 | 158 ⇒
+                            val bInstr = instruction.asInstanceOf[SimpleConditionalBranchInstruction]
+                            nextPCs.enqueue(pc + bInstr.branchoffset)
+                            nextPCs.enqueue(pcOfNextInstruction(pc))
+
+                        case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
+                            val sInstr = instruction.asInstanceOf[CompoundConditionalBranchInstruction]
+                            nextPCs.enqueue(pc + sInstr.defaultOffset)
+                            sInstr.jumpOffsets foreach { jumpOffset ⇒
+                                nextPCs.enqueue(pc + jumpOffset)
+                            }
+
+                        case _ ⇒
+                            nextPCs.enqueue(pcOfNextInstruction(pc))
+                    }
+                }
+            }
+        }
+
+        var remainingExceptionHandlers = exceptionHandlers
+
+        while (nextSubroutines.nonEmpty) {
+            val subroutineId = nextSubroutines.dequeue()
+            propagate(subroutineId, subroutineId)
+
+            // all handlers that handle exceptions related to one of the instructions
+            // belonging to this subroutine belong to this subroutine (unless the handler
+            // is already associated with a previous subroutine!)
+            @inline def belongsToCurrentSubroutine(
+                startPC: PC,
+                endPC: PC,
+                handlerPC: PC): Boolean = {
+                var currentPC = startPC
+                while (currentPC < endPC) {
+                    if (subroutineIds(currentPC) != -1) {
+                        propagate(subroutineId, handlerPC)
+                        // we are done
+                        return true;
+                    } else {
+                        currentPC = pcOfNextInstruction(currentPC)
+                    }
+                }
+
+                false
+            }
+
+            remainingExceptionHandlers =
+                for {
+                    eh @ ExceptionHandler(startPC, endPC, handlerPC, _) ← remainingExceptionHandlers
+                    if subroutineIds(handlerPC) == -1 // we did not already analyze the handler
+                    if !belongsToCurrentSubroutine(startPC, endPC, handlerPC)
+                } yield {
+                    eh
+                }
+        }
+
+        subroutineIds
+    }
+
+    /**
      * Returns the set of all program counters where two or more control flow
      * paths joins.
      *
@@ -135,22 +239,25 @@ final class Code private (
 
                 case RET.opcode    ⇒ /*Nothing to do; handled by JSR*/
                 case JSR.opcode | JSR_W.opcode ⇒
-                    runtimeSuccessor(pc + instruction.asInstanceOf[JSRInstruction].branchoffset)
+                    val jsrInstr = instruction.asInstanceOf[JSRInstruction]
+                    runtimeSuccessor(pc + jsrInstr.branchoffset)
                     runtimeSuccessor(nextPC)
 
                 case GOTO.opcode | GOTO_W.opcode ⇒
-                    runtimeSuccessor(pc + instruction.asInstanceOf[UnconditionalBranchInstruction].branchoffset)
+                    val bInstr = instruction.asInstanceOf[UnconditionalBranchInstruction]
+                    runtimeSuccessor(pc + bInstr.branchoffset)
 
                 case /*IFs:*/ 165 | 166 | 198 | 199 |
                     159 | 160 | 161 | 162 | 163 | 164 |
                     153 | 154 | 155 | 156 | 157 | 158 ⇒
-                    runtimeSuccessor(pc + instruction.asInstanceOf[SimpleConditionalBranchInstruction].branchoffset)
+                    val bInstr = instruction.asInstanceOf[SimpleConditionalBranchInstruction]
+                    runtimeSuccessor(pc + bInstr.branchoffset)
                     runtimeSuccessor(nextPC)
 
                 case TABLESWITCH.opcode | LOOKUPSWITCH.opcode ⇒
-                    val switchInstruction = instruction.asInstanceOf[CompoundConditionalBranchInstruction]
-                    runtimeSuccessor(pc + switchInstruction.defaultOffset)
-                    switchInstruction.jumpOffsets foreach { jumpOffset ⇒
+                    val sInstr = instruction.asInstanceOf[CompoundConditionalBranchInstruction]
+                    runtimeSuccessor(pc + sInstr.defaultOffset)
+                    sInstr.jumpOffsets foreach { jumpOffset ⇒
                         runtimeSuccessor(pc + jumpOffset)
                     }
 

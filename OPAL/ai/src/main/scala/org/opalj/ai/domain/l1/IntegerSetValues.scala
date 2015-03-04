@@ -105,7 +105,9 @@ trait IntegerSetValues
      * with the given bounds of the IntegerRange, as long as they don't
      * exceed maxCardinalityOfIntegerSets.
      */
-    def IntegerRange(origin: ValueOrigin, lowerBound: Int, upperBound: Int): DomainValue = {
+    def IntegerRange(
+        origin: ValueOrigin,
+        lowerBound: Int, upperBound: Int): DomainValue = {
         assert(lowerBound <= upperBound)
 
         if (upperBound.toLong - lowerBound.toLong <= maxCardinalityOfIntegerSets)
@@ -448,8 +450,8 @@ trait IntegerSetValues
     // BINARY EXPRESSIONS
     //
 
-    /*override*/ def iadd(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
-        (left, right) match {
+    /*override*/ def iadd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        (value1, value2) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 val results =
                     for (leftValue ← leftValues; rightValue ← rightValues) yield {
@@ -487,14 +489,14 @@ trait IntegerSetValues
         }
     }
 
-    /*override*/ def imul(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
-        left match {
+    /*override*/ def imul(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        value1 match {
             case (IntegerSet(leftValues)) ⇒
                 if (leftValues.size == 1 && leftValues.head == 0)
-                    left
+                    value1
                 else if (leftValues.size == 1 && leftValues.head == 1)
-                    right
-                else right match {
+                    value2
+                else value2 match {
                     case (IntegerSet(rightValues)) ⇒
                         val results =
                             for (leftValue ← leftValues; rightValue ← rightValues) yield {
@@ -509,12 +511,12 @@ trait IntegerSetValues
 
                 }
             case _ ⇒
-                right match {
+                value2 match {
                     case (IntegerSet(rightValues)) ⇒
                         if (rightValues.size == 1 && rightValues.head == 0)
-                            right
+                            value2
                         else if (rightValues.size == 1 && rightValues.head == 1)
-                            left
+                            value1
                         else
                             IntegerValue(origin = pc)
                     case _ ⇒
@@ -626,14 +628,14 @@ trait IntegerSetValues
         }
     }
 
-    /*override*/ def iand(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
-        left match {
+    /*override*/ def iand(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        value1 match {
             case (IntegerSet(leftValues)) ⇒
                 if (leftValues.size == 1 && leftValues.head == -1)
-                    right
+                    value2
                 else if (leftValues.size == 1 && leftValues.head == 0)
-                    left
-                else right match {
+                    value1
+                else value2 match {
                     case (IntegerSet(rightValues)) ⇒
                         val results =
                             for (leftValue ← leftValues; rightValue ← rightValues) yield {
@@ -648,12 +650,12 @@ trait IntegerSetValues
 
                 }
             case _ ⇒
-                right match {
+                value2 match {
                     case (IntegerSet(rightValues)) ⇒
                         if (rightValues.size == 1 && rightValues.head == -1)
-                            left
+                            value1
                         else if (rightValues.size == 1 && rightValues.head == 0)
-                            right
+                            value2
                         else
                             IntegerValue(origin = pc)
                     case _ ⇒
@@ -662,14 +664,14 @@ trait IntegerSetValues
         }
     }
 
-    /*override*/ def ior(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
-        left match {
+    /*override*/ def ior(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
+        value1 match {
             case (IntegerSet(leftValues)) ⇒
                 if (leftValues.size == 1 && leftValues.head == -1)
-                    left
+                    value1
                 else if (leftValues.size == 1 && leftValues.head == 0)
-                    right
-                else right match {
+                    value2
+                else value2 match {
                     case (IntegerSet(rightValues)) ⇒
                         val results =
                             for (leftValue ← leftValues; rightValue ← rightValues) yield {
@@ -683,12 +685,12 @@ trait IntegerSetValues
                         IntegerValue(origin = pc)
                 }
             case _ ⇒
-                right match {
+                value2 match {
                     case (IntegerSet(rightValues)) ⇒
                         if (rightValues.size == 1 && rightValues.head == -1)
-                            right
+                            value2
                         else if (rightValues.size == 1 && rightValues.head == 0)
-                            left
+                            value1
                         else
                             IntegerValue(origin = pc)
                     case _ ⇒ IntegerValue(origin = pc)
@@ -696,8 +698,8 @@ trait IntegerSetValues
         }
     }
 
-    /*override*/ def ishl(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
+    /*override*/ def ishl(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
+        (value, shift) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue << rightValue
@@ -712,8 +714,8 @@ trait IntegerSetValues
         }
     }
 
-    /*override*/ def ishr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
+    /*override*/ def ishr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
+        (value, shift) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue >> rightValue
@@ -728,8 +730,8 @@ trait IntegerSetValues
         }
     }
 
-    /*override*/ def iushr(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
-        (value1, value2) match {
+    /*override*/ def iushr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
+        (value, shift) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) ⇒
                 val results =
                     for (leftValue ← leftValues; rightValue ← rightValues) yield {

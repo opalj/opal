@@ -33,7 +33,7 @@ package l2
 
 import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.Project
-import org.opalj.ai.domain.l0.RecordMethodCallResults
+import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
 /**
  * This domain uses the l1 and l2 level ''stable'' domains.
@@ -57,7 +57,6 @@ class SharedDefaultDomain[Source](
         with ThrowAllPotentialExceptionsConfiguration
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
-        // [NOT YET NEEDED] with PerInstructionPostProcessing
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelFieldAccessInstructions
@@ -68,43 +67,79 @@ class SharedDefaultDomain[Source](
         with l1.MaxArrayLengthRefinement // OPTIONAL
         with l1.NullPropertyRefinement // OPTIONAL
         with l1.DefaultIntegerRangeValues
-        with l1.ConstraintsBetweenIntegerValues
+        // [CURRENTLY ONLY A WASTE OF RESOURCES] with l1.ConstraintsBetweenIntegerValues
         with l1.DefaultLongValues
         with l1.LongValuesShiftOperators
-        with l1.ConcretePrimitiveValuesConversions
+        with l1.ConcretePrimitiveValuesConversions {
 
-class DefaultDomain[Source](
+    override def toString: String = super.toString()+"("+method.toJava(classFile)+")"
+
+}
+
+abstract class BasePerformInvocationsDomain[Source](
     project: Project[Source],
     classFile: ClassFile,
-    method: Method)
+    method: Method,
+    val maxCallChainLength: Int)
         extends SharedDefaultDomain[Source](project, classFile, method)
-        with PerformInvocations {
-
-    def isRecursive(classFile: ClassFile, method: Method, operands: Operands): Boolean =
-        false // {        this.method eq method &&    }
+        with PerformInvocationsWithRecursionDetection {
+    callingDomain ⇒
 
     def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean =
-        !method.returnType.isVoidType
+        maxCallChainLength > 0 && !method.returnType.isVoidType
 
     def invokeExecutionHandler(
         pc: PC,
         classFile: ClassFile, method: Method, operands: Operands): InvokeExecutionHandler =
+
         new InvokeExecutionHandler {
             val domain =
-                new SharedDefaultDomain(
+                new BasePerformInvocationsDomain(
                     project,
                     project.classFile(method),
-                    method) with RecordMethodCallResults
+                    method,
+                    maxCallChainLength - 1) with DefaultRecordMethodCallResults {
+
+                    // we need to qualify the (singleton) type
+                    val calledMethodsStore: callingDomain.calledMethodsStore.type =
+                        callingDomain.calledMethodsStore
+                }
 
             def ai = BaseAI
         }
-
 }
 
-class DefaultDomainWithCFG[Source](
+class DefaultDomain[Source](
     project: Project[Source],
     classFile: ClassFile,
-    method: Method)
-        extends DefaultDomain[Source](project, classFile, method)
+    method: Method,
+    maxCallChainLength: Int)
+        extends BasePerformInvocationsDomain[Source](project, classFile, method, maxCallChainLength)
         with RecordCFG
+        with TheMemoryLayout {
+    callingDomain ⇒
+
+    def this(
+        project: Project[Source],
+        classFile: ClassFile,
+        method: Method) {
+        this(project, classFile, method, 1)
+    }
+
+    // it has to be lazy, because we need the "MemoryLayout" which is set by the
+    // abstract interpreter before the first evaluation of an instruction (and,
+    // hence, before the first usage of the CalledMethodsStore by the AI)
+    lazy val calledMethodsStore = {
+        val store = new CalledMethodsStore(this, /*Frequent Evaluation Warning=*/ 256)
+        val operands =
+            localsArray(0).foldLeft(List.empty[DomainValue])((l, n) ⇒
+                if (n ne null) n :: l else l
+            )
+        // we want to add this method to avoid useless (self-) recursions;
+        // it is (at this moment) definitively not recursive...
+        store.isRecursive(classFile, method, operands)
+        store
+    }
+
+}
 
