@@ -143,6 +143,10 @@ object OPALLogger extends OPALLogger {
             ctx.id = -2
         }
 
+    def logger(ctx: LogContext): OPALLogger = this.synchronized { loggers(ctx.id) }
+
+    def globalLogger(): OPALLogger = this.synchronized(loggers(GlobalContext.id))
+
     // stores the next context id - access must be explicitly synchronized!
     private[log] var nextId: Int = 0
 
@@ -241,8 +245,10 @@ class ConsoleOPALLogger(val ansiColored: Boolean = true) extends OPALLogger {
         val existingCounter = messages.putIfAbsent(message, counter)
         if (existingCounter != null)
             existingCounter.incrementAndGet()
-        else
+        else {
             counter.incrementAndGet()
+            log(message)
+        }
     }
 }
 

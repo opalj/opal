@@ -262,7 +262,10 @@ trait AnalysisExecutor {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
         }
-        val project = Project(classFiles, libraryClassFiles)
+        val project = Project(
+            classFiles,
+            libraryClassFiles,
+            projectLogger = OPALLogger.globalLogger)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
         import project.logContext
