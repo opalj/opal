@@ -1,4 +1,4 @@
-package org.opalj.br.controlflow
+package org.opalj.br.cfg
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner

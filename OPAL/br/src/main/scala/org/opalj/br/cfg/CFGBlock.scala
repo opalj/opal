@@ -1,4 +1,4 @@
-package org.opalj.br.controlflow
+package org.opalj.br.cfg
 
 import scala.collection.immutable.HashSet
 import org.opalj.br.Code

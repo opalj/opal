@@ -1,10 +1,14 @@
-package org.opalj.br.analyses
+package org.opalj.br.cfg.analyses
 
 import java.net.URL
 import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.br.controlflow._
+import org.opalj.br.cfg._
 import org.opalj.util.PerformanceEvaluation.ns2sec
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 //import org.opalj.br.TestSupport
 
 object ControlFlowGraphBuilder

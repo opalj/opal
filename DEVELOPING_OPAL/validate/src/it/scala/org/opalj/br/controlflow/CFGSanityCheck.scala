@@ -7,6 +7,7 @@ package org.opalj.br.controlflow
 //import org.scalatest.ParallelTestExecution
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomainWithCFG
+import org.opalj.br.cfg.CFGDumper;
 //import org.opalj.br.instructions.ATHROW
 import org.opalj.collection.UShortSet
 //import org.opalj.br.analyses.Project

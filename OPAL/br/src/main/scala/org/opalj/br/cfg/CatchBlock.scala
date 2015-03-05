@@ -1,4 +1,4 @@
-package org.opalj.br.controlflow
+package org.opalj.br.cfg
 
 import org.opalj.br.Code
 import org.opalj.br.PC

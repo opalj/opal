@@ -1,4 +1,4 @@
-package org.opalj.br.controlflow
+package org.opalj.br.cfg
 
 import java.io._
 import scala.io.StdIn
