@@ -126,6 +126,13 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
             }.getOrElse(
                 BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges
             )
+        val maxCardinalityOfLongSets: Int =
+            parameters.collectFirst {
+                case BugPickerAnalysis.maxCardinalityOfLongSetsPattern(i) ⇒
+                    java.lang.Integer.parseInt(i)
+            }.getOrElse(
+                BugPickerAnalysis.defaultMaxCardinalityOfLongSets
+            )
         val maxCallChainLength: Int =
             parameters.collectFirst {
                 case BugPickerAnalysis.maxCallChainLengthPattern(i) ⇒
@@ -144,6 +151,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                     s"\tmaxEvalFactor=$maxEvalFactor"+"\n"+
                     s"\tmaxEvalTime=${maxEvalTime}ms"+"\n"+
                     s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges"+"\n"+
+                    s"\tmaxCardinalityOfLongSets=$maxCardinalityOfLongSets"+"\n"+
                     s"\tmaxCallChainLength=$maxCallChainLength"+"\n"+
                     "Overview:"+"\n"+
                     s"\tclassFiles=$classFilesCount")
@@ -203,7 +211,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                     fieldValueInformation, methodReturnValueInformation,
                     cache,
                     classFile, method,
-                    maxCardinalityOfIntegerRanges, maxCallChainLength)
+                    maxCardinalityOfIntegerRanges,
+                    maxCardinalityOfLongSets, maxCallChainLength)
             val ai0 =
                 new BoundedInterruptableAI[analysisDomain.type](
                     body,
@@ -225,7 +234,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                             fieldValueInformation, methodReturnValueInformation,
                             cache,
                             method,
-                            maxCardinalityOfIntegerRanges)
+                            maxCardinalityOfIntegerRanges,
+                            maxCardinalityOfLongSets)
 
                     val ai1 =
                         new BoundedInterruptableAI[fallbackAnalysisDomain.type](
@@ -422,7 +432,7 @@ object BugPickerAnalysis {
     // -maxEvalFactor=20
     // -maxEvalFactor=1.25
     // -maxEvalFactor=10.5
-    final val maxEvalFactorPattern = """-maxEvalFactor=(\d+(?:.\d+)?)""".r
+    final val maxEvalFactorPattern = """-maxEvalFactor=(\d+(?:.\d+)?|Infinity)""".r
     final val defaultMaxEvalFactor = 1.75d
 
     final val maxEvalTimePattern = """-maxEvalTime=(\d+)""".r
@@ -433,7 +443,11 @@ object BugPickerAnalysis {
 
     final val maxCardinalityOfIntegerRangesPattern =
         """-maxCardinalityOfIntegerRanges=(\d+)""".r
-    final val defaultMaxCardinalityOfIntegerRanges = 16
+    final val defaultMaxCardinalityOfIntegerRanges = 16l
+
+    final val maxCardinalityOfLongSetsPattern =
+        """-maxCardinalityOfLongSets=(\d+)""".r
+    final val defaultMaxCardinalityOfLongSets = 5
 
     lazy val reportCSS: String =
         process(this.getClass.getResourceAsStream("report.css"))(

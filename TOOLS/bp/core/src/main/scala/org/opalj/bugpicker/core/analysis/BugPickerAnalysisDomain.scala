@@ -86,7 +86,8 @@ class FallbackBugPickerAnalysisDomain(
     val methodReturnValueInformation: MethodReturnValueInformation,
     val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
     val method: Method,
-    override val maxCardinalityOfIntegerRanges: Long)
+    override val maxCardinalityOfIntegerRanges: Long,
+    override val maxCardinalityOfLongSets: Int)
         extends BaseBugPickerAnalysisDomain
         with domain.l1.DefaultClassValuesBinding
         with domain.RecordCFG
@@ -123,6 +124,7 @@ class RootBugPickerAnalysisDomain(
     val classFile: ClassFile,
     val method: Method,
     override val maxCardinalityOfIntegerRanges: Long,
+    override val maxCardinalityOfLongSets: Int,
     val maxCallChainLength: Int)
         extends BasePerformInvocationBugPickerAnalysisDomain
         with TheAI[BaseBugPickerAnalysisDomain]
@@ -168,6 +170,7 @@ class RootBugPickerAnalysisDomain(
                     cache,
                     method,
                     maxCardinalityOfIntegerRanges,
+                    maxCardinalityOfLongSets,
                     maxCallChainLength, currentCallChainLength + 1) {
                     val calledMethodsStore: RootBugPickerAnalysisDomain.this.calledMethodsStore.type =
                         RootBugPickerAnalysisDomain.this.calledMethodsStore
@@ -186,6 +189,7 @@ abstract class InvocationBugPickerAnalysisDomain(
     val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
     val method: Method,
     override val maxCardinalityOfIntegerRanges: Long,
+    override val maxCardinalityOfLongSets: Int,
     val maxCallChainLength: Int = 0,
     val currentCallChainLength: Int)
         extends BasePerformInvocationBugPickerAnalysisDomain
@@ -213,6 +217,7 @@ abstract class InvocationBugPickerAnalysisDomain(
                     cache,
                     method,
                     maxCardinalityOfIntegerRanges,
+                    maxCardinalityOfLongSets,
                     maxCallChainLength, currentCallChainLength + 1) {
                     val calledMethodsStore: InvocationBugPickerAnalysisDomain.this.calledMethodsStore.type =
                         InvocationBugPickerAnalysisDomain.this.calledMethodsStore

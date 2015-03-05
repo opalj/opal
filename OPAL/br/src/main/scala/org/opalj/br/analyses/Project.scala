@@ -50,6 +50,7 @@ import org.opalj.concurrent.parForeachArrayElement
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
+import org.opalj.log.ConsoleOPALLogger
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -115,7 +116,9 @@ class Project[Source] private (
     def extend(
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
         libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
-        Project.extend[Source](this, projectClassFilesWithSources, libraryClassFilesWithSources)
+        Project.extend[Source](
+            this,
+            projectClassFilesWithSources, libraryClassFilesWithSources)
     }
 
     def extend(otherProject: Project[Source]): Project[Source] = {
@@ -553,20 +556,51 @@ object Project {
      * files, all class files will be loaded and a project will be returned.
      */
     def apply(file: File): Project[URL] = {
-        Project.apply[URL](Java8ClassFileReader.ClassFiles(file), Traversable.empty)
+        Project.apply(file, OPALLogger.globalLogger())
     }
 
-    def apply(projectFile: File, libraryFile: File): Project[URL] = {
+    def apply(
+        file: File,
+        projectLogger: OPALLogger): Project[URL] = {
         Project.apply[URL](
-            Java8ClassFileReader.ClassFiles(projectFile),
-            Java8LibraryClassFileReader.ClassFiles(libraryFile)
+            Java8ClassFileReader.ClassFiles(file),
+            projectLogger = projectLogger)
+    }
+
+    def apply[Source](
+        projectClassFilesWithSources: Traversable[(ClassFile, Source)]): Project[Source] = {
+        Project.apply[Source](
+            projectClassFilesWithSources,
+            projectLogger = OPALLogger.globalLogger()
         )
     }
 
-    def apply(projectFiles: Array[File], libraryFiles: Array[File]): Project[URL] = {
+    def apply[Source](
+        projectClassFilesWithSources: Traversable[(ClassFile, Source)],
+        projectLogger: OPALLogger): Project[Source] = {
+        Project.apply[Source](
+            projectClassFilesWithSources, Traversable.empty,
+            projectLogger = projectLogger
+        )
+    }
+
+    def apply(
+        projectFile: File,
+        libraryFile: File): Project[URL] = {
+        Project.apply(
+            Java8ClassFileReader.ClassFiles(projectFile),
+            Java8LibraryClassFileReader.ClassFiles(libraryFile),
+            projectLogger = OPALLogger.globalLogger()
+        )
+    }
+
+    def apply(
+        projectFiles: Array[File],
+        libraryFiles: Array[File]): Project[URL] = {
         Project.apply[URL](
             Java8ClassFileReader.AllClassFiles(projectFiles),
-            Java8LibraryClassFileReader.AllClassFiles(libraryFiles)
+            Java8LibraryClassFileReader.AllClassFiles(libraryFiles),
+            projectLogger = OPALLogger.globalLogger()
         )
     }
 
@@ -585,7 +619,8 @@ object Project {
 
         apply(
             project.projectClassFilesWithSources ++ projectClassFilesWithSources,
-            project.libraryClassFilesWithSources ++ libraryClassFilesWithSources
+            project.libraryClassFilesWithSources ++ libraryClassFilesWithSources,
+            projectLogger = OPALLogger.logger(project.logContext)
         )
     }
 
@@ -593,6 +628,16 @@ object Project {
         logContext: LogContext,
         ex: InconsistentProjectException): Unit = {
         OPALLogger.log(Warn("project configuration", ex.message))(logContext)
+    }
+
+    def apply[Source](
+        projectClassFilesWithSources: Traversable[(ClassFile, Source)],
+        libraryClassFilesWithSources: Traversable[(ClassFile, Source)]): Project[Source] = {
+        Project.apply[Source](
+            projectClassFilesWithSources,
+            libraryClassFilesWithSources,
+            projectLogger = OPALLogger.globalLogger()
+        )
     }
 
     /**
@@ -626,6 +671,7 @@ object Project {
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
         libraryClassFilesWithSources: Traversable[(ClassFile, Source)],
         virtualClassFiles: Traversable[ClassFile] = Traversable.empty,
+        projectLogger: OPALLogger,
         handleInconsistentProject: (LogContext, InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
 
         implicit val logContext = new LogContext {
@@ -636,7 +682,7 @@ object Project {
                 "project context:"+startTime.toString().drop(6)
 
         }
-        OPALLogger.register(logContext)
+        OPALLogger.register(logContext, projectLogger)
 
         try {
             import scala.collection.mutable.{ Set, Map }

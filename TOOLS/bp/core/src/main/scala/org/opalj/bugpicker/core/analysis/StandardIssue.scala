@@ -210,7 +210,9 @@ case class StandardIssue(
         var infoNodes: List[Node] =
             List(
                 <dt>class</dt>,
-                <dd class="declaring_class" data-class={ classFile.fqn }>{ typeToXHTML(classFile.thisType) }</dd>
+                <dd class="declaring_class" data-class={ classFile.fqn }>
+                    { typeToXHTML(classFile.accessFlags, classFile.thisType, true) }
+                </dd>
             )
 
         if (method.isDefined) {
@@ -219,7 +221,7 @@ case class StandardIssue(
                 <dt>method</dt>
             var dd =
                 <dd class="method" data-class={ classFile.fqn }>
-                    { methodToXHTML(method.name, method.descriptor) }
+                    { methodToXHTML(method.accessFlags, method.name, method.descriptor, true) }
                 </dd>
             if (methodId.isDefined)
                 dd = dd % (new UnprefixedAttribute(

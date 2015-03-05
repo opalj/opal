@@ -34,12 +34,14 @@ package analysis
 case class AnalysisParameters(
         maxEvalTime: Int = BugPickerAnalysis.defaultMaxEvalTime,
         maxEvalFactor: Double = BugPickerAnalysis.defaultMaxEvalFactor,
-        maxCardinalityOfIntegerRanges: Int = BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges,
+        maxCardinalityOfIntegerRanges: Long = BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges,
+        maxCardinalityOfLongSets: Int = BugPickerAnalysis.defaultMaxCardinalityOfLongSets,
         maxCallChainLength: Int = BugPickerAnalysis.defaultMaxCallChainLength) {
 
     def toStringParameters: Seq[String] = Seq(
         s"-maxEvalFactor=$maxEvalFactor",
         s"maxEvalTime=$maxEvalTime",
         s"-maxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges",
+        s"-maxCardinalityOfLongSets=$maxCardinalityOfLongSets",
         s"-maxCallChainLength=$maxCallChainLength")
 }

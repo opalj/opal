@@ -297,6 +297,7 @@ object BugPicker {
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR = "maxEvalFactor"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME = "maxEvalTime"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES = "maxCardinalityOfIntegerRanges"
+    final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS = "maxCardinalityOfLongSets"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH = "maxCallChainLength"
     final val PREFERENCES_KEY_WINDOW_SIZE = "windowSize"
 
@@ -321,9 +322,12 @@ object BugPicker {
         val maxEvalTime = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
             BugPickerAnalysis.defaultMaxEvalTime)
-        val maxCardinalityOfIntegerRanges = PREFERENCES.getInt(
+        val maxCardinalityOfIntegerRanges = PREFERENCES.getLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
             BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges)
+        val maxCardinalityOfLongSets = PREFERENCES.getInt(
+            PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS,
+            BugPickerAnalysis.defaultMaxCardinalityOfLongSets)
         val maxCallChainLength = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH,
             BugPickerAnalysis.defaultMaxCallChainLength)
@@ -331,6 +335,7 @@ object BugPicker {
             maxEvalTime,
             maxEvalFactor,
             maxCardinalityOfIntegerRanges,
+            maxCardinalityOfLongSets,
             maxCallChainLength)
     }
 
@@ -341,9 +346,12 @@ object BugPicker {
         PREFERENCES.putDouble(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
             parameters.maxEvalFactor)
-        PREFERENCES.putInt(
+        PREFERENCES.putLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
             parameters.maxCardinalityOfIntegerRanges)
+        PREFERENCES.putInt(
+            PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS,
+            parameters.maxCardinalityOfLongSets)
         PREFERENCES.putInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH,
             parameters.maxCallChainLength)
