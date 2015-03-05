@@ -1,4 +1,4 @@
-package org.opalj.br.controlflow
+package org.opalj.br.cfg
 
 //import org.junit.runner.RunWith
 //import org.scalatest.junit.JUnitRunner
@@ -7,11 +7,7 @@ package org.opalj.br.controlflow
 //import org.scalatest.ParallelTestExecution
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomainWithCFG
-import org.opalj.br.cfg.CFGDumper;
-//import org.opalj.br.instructions.ATHROW
 import org.opalj.collection.UShortSet
-//import org.opalj.br.analyses.Project
-//import java.io.File
 
 //@RunWith(classOf[JUnitRunner])
 object CFGSanityCheck /*extends FunSpec with Matchers */ {
@@ -21,7 +17,6 @@ object CFGSanityCheck /*extends FunSpec with Matchers */ {
 		val errorOutputDestination: String = "C:/Users/User/Desktop/OPALTest/SanityCheck/"
 
 		val project = org.opalj.br.TestSupport.createJREProject
-//	    val project = Project(new File("C:/Program Files/Java/jdk1.8.0_31"))
 
 		println(project.methodsCount + " Methods in project")
 
