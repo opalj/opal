@@ -311,7 +311,7 @@ case class Code(instructions: Array[Byte]) {
                 case 163 ⇒ ifToString("if_icmpgt", pc)
                 case 164 ⇒ ifToString("if_icmple", pc)
                 case 153 ⇒ ifToString("ifeq", pc)
-                case 154 ⇒ ifToString("ifeq", pc)
+                case 154 ⇒ ifToString("ifne", pc)
                 case 155 ⇒ ifToString("iflt", pc)
                 case 156 ⇒ ifToString("ifge", pc)
                 case 157 ⇒ ifToString("ifgt", pc)
