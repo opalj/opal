@@ -77,6 +77,11 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
         alignment = Pos.BASELINE_RIGHT
     }
 
+    val maxCardinalityOfLongSetsField = new TextField {
+        hgrow = Priority.ALWAYS
+        alignment = Pos.BASELINE_RIGHT
+    }
+
     val maxCallChainLengthField = new TextField {
         hgrow = Priority.ALWAYS
         alignment = Pos.BASELINE_RIGHT
@@ -112,14 +117,23 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                     }
                 }, 2, 2)
 
-                add(new Label("Maximum length of call chain:"), 0, 3)
-                add(maxCallChainLengthField, 1, 3)
+                add(new Label("Maximum cardinality of long sets:"), 0, 3)
+                add(maxCardinalityOfLongSetsField, 1, 3)
+                add(new Button {
+                    text = "Default"
+                    onAction = { e: ActionEvent ⇒
+                        maxCardinalityOfLongSetsField.text = BugPickerAnalysis.defaultMaxCardinalityOfLongSets.toString
+                    }
+                }, 2, 3)
+
+                add(new Label("Maximum length of call chain:"), 0, 4)
+                add(maxCallChainLengthField, 1, 4)
                 add(new Button {
                     text = "Default"
                     onAction = { e: ActionEvent ⇒
                         maxCallChainLengthField.text = BugPickerAnalysis.defaultMaxCallChainLength.toString
                     }
-                }, 2, 3)
+                }, 2, 4)
 
                 children foreach (c ⇒ GridPane.setMargin(c, Insets(10)))
 
@@ -136,6 +150,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                             maxEvalFactorField.text = BugPickerAnalysis.defaultMaxEvalFactor.toString
                             maxEvalTimeField.text = BugPickerAnalysis.defaultMaxEvalTime.toString
                             maxCardinalityOfIntegerRangesField.text = BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges.toString
+                            maxCardinalityOfLongSetsField.text = BugPickerAnalysis.defaultMaxCardinalityOfLongSets.toString
                             maxCallChainLengthField.text = BugPickerAnalysis.defaultMaxCallChainLength.toString
                         }
                     },
@@ -177,11 +192,22 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                 }
                             }
                             val maxCardinalityOfIntegerRanges = try {
-                                maxCardinalityOfIntegerRangesField.text().toInt
+                                maxCardinalityOfIntegerRangesField.text().toLong
                             } catch {
                                 case _: Exception | _: Error ⇒ {
                                     DialogStage.showMessage("Error",
                                         "You entered an illegal value for the maximum cardinality of integer ranges!",
+                                        theStage)
+                                    interrupt = true
+                                    Long.MinValue
+                                }
+                            }
+                            val maxCardinalityOfLongSets = try {
+                                maxCardinalityOfLongSetsField.text().toInt
+                            } catch {
+                                case _: Exception | _: Error ⇒ {
+                                    DialogStage.showMessage("Error",
+                                        "You entered an illegal value for the maximum cardinality of long sets!",
                                         theStage)
                                     interrupt = true
                                     Int.MinValue
@@ -204,6 +230,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                                     maxEvalTime = maxEvalTime,
                                     maxEvalFactor = maxEvalFactor,
                                     maxCardinalityOfIntegerRanges = maxCardinalityOfIntegerRanges,
+                                    maxCardinalityOfLongSets = maxCardinalityOfLongSets,
                                     maxCallChainLength = maxCallChainLength))
                                 close()
                             }
@@ -219,6 +246,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
         maxEvalFactorField.text = parameters.maxEvalFactor.toString
         maxEvalTimeField.text = parameters.maxEvalTime.toString
         maxCardinalityOfIntegerRangesField.text = parameters.maxCardinalityOfIntegerRanges.toString
+        maxCardinalityOfLongSetsField.text = parameters.maxCardinalityOfLongSets.toString
         maxCallChainLengthField.text = parameters.maxCallChainLength.toString
         showAndWait()
         this.parameters
