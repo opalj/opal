@@ -30,3 +30,9 @@
 	-fx-font-size: 14px;
 	-fx-font-family: sans-serif;
 }
+
+#clearItems {
+	-fx-border-color: #a9a9a9;
+	-fx-border-width: 2 0 0 0;
+	-fx-border-style : solid;
+}
