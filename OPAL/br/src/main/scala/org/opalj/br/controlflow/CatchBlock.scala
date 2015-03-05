@@ -6,9 +6,9 @@ import org.opalj.br.ExceptionHandler
 
 case class CatchBlock(handler: ExceptionHandler) extends CFGBlock {
 
-    val startPC: PC = handler.startPC
-    val endPC: PC = handler.endPC
-    val handlerPC: PC = handler.handlerPC
+    final def startPC: PC = handler.startPC
+    final def endPC: PC = handler.endPC
+    final def handlerPC: PC = handler.handlerPC
 
     def toDot(code: Code): String = {
         var res: String = ID+" [shape=box, label=\""+ID+"\"];\n"

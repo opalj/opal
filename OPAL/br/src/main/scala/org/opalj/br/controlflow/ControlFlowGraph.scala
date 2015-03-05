@@ -14,13 +14,9 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.{ ClassFile, Method, ObjectType }
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ControlTransferInstruction
-import org.opalj.br.instructions.UnconditionalBranchInstruction
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.GOTO_W
 import org.opalj.br.instructions.ATHROW
-import org.opalj.br.instructions.ConditionalBranchInstruction
-import org.opalj.br.instructions.SimpleConditionalBranchInstruction
-import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import org.opalj.br.instructions.LOOKUPSWITCH
 import org.opalj.br.instructions.TABLESWITCH
 import org.opalj.br.instructions.ReturnInstruction
