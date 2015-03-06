@@ -37,6 +37,7 @@ import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
+import scala.reflect.ClassTag
 
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
@@ -349,6 +350,47 @@ package object ai {
         }
 
         parameters
+    }
+
+    /**
+     * Maps the operands to the target domain while ensuring that two operands that
+     * are identical are identical afterwards.
+     */
+    def mapOperands(
+        theOperands: Operands[_ <: ValuesDomain#DomainValue],
+        targetDomain: ValuesDomain with ValuesFactory): Array[targetDomain.DomainValue] = {
+
+        import org.opalj.collection.mutable.Locals
+        implicit val domainValue = targetDomain.DomainValue
+
+        val operandsCount = theOperands.size
+        val adaptedOperands = new Array[targetDomain.DomainValue](operandsCount)
+        val processedOperands = new Array[Object](operandsCount)
+        var remainingOperands = theOperands
+        var i = 0
+        def getIndex(operand: Object): Int = {
+            var ii = 0
+            while (ii < i) {
+                if (processedOperands(i) eq operand)
+                    return i;
+                ii += 1
+            }
+            -1 // not found
+        }
+
+        while (remainingOperands.nonEmpty) {
+            val nextOperand = remainingOperands.head
+            val previousOperandIndex = getIndex(nextOperand)
+            if (previousOperandIndex == -1)
+                adaptedOperands(i) = nextOperand.adapt(targetDomain, i)
+            else
+                adaptedOperands(i) = adaptedOperands(previousOperandIndex)
+
+            i += 1
+            remainingOperands = remainingOperands.tail
+        }
+
+        adaptedOperands
     }
 
     /**
