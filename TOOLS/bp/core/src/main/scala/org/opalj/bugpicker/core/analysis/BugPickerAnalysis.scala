@@ -57,6 +57,7 @@ import org.opalj.io.process
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.analyses.cg.VTACallGraphKey
+import org.opalj.ai.common.XHTML
 
 /**
  * A static analysis that analyzes the data-flow to identify various issues in the
@@ -204,15 +205,20 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
             // ---------------------------------------------------------------------------
             // Analyses that are dependent on the result of the abstract interpretation
             // ---------------------------------------------------------------------------
+            val debug =
+                classFile.thisType.toJava == "com.jaspersoft.ireport.designer.tools.FieldPatternDialog" &&
+                    method.name == "updateSample"
+
             val analysisDomain =
                 new RootBugPickerAnalysisDomain(
                     theProject,
                     // Map.empty, Map.empty,
                     fieldValueInformation, methodReturnValueInformation,
                     cache,
-                    classFile, method,
                     maxCardinalityOfIntegerRanges,
-                    maxCardinalityOfLongSets, maxCallChainLength)
+                    maxCardinalityOfLongSets, maxCallChainLength,
+                    classFile, method,
+                    debug)
             val ai0 =
                 new BoundedInterruptableAI[analysisDomain.type](
                     body,
@@ -233,9 +239,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                             theProject,
                             fieldValueInformation, methodReturnValueInformation,
                             cache,
-                            method,
-                            maxCardinalityOfIntegerRanges,
-                            maxCardinalityOfLongSets)
+                            maxCardinalityOfIntegerRanges, maxCardinalityOfLongSets,
+                            method)
 
                     val ai1 =
                         new BoundedInterruptableAI[fallbackAnalysisDomain.type](
@@ -261,6 +266,23 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
             }
 
             if (!result.wasAborted) {
+
+                if (debug) {
+                    org.opalj.io.writeAndOpen(XHTML.dump(
+                        Some(classFile),
+                        Some(method),
+                        method.body.get,
+                        Some(
+                            "Created: "+(new java.util.Date).toString+"<br>"+
+                                "Domain: "+result.domain.getClass.getName+"<br>"+
+                                XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
+                        result.domain)(
+                            result.operandsArray,
+                            result.localsArray),
+                        "AIResult",
+                        ".html"
+                    )
+                }
 
                 //
                 // FIND DEAD CODE

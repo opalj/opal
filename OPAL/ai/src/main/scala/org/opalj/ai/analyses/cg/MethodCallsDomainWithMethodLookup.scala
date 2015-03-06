@@ -33,7 +33,7 @@ package cg
 
 import scala.util.control.ControlThrowable
 
-import org.opalj.log.Info
+import org.opalj.log.Warn
 import org.opalj.log.OPALLogger
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -152,7 +152,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling with Callees
                     else
                         fallback()
                 case _ ⇒
-                    OPALLogger.logOnce(Info(
+                    OPALLogger.logOnce(Warn(
                         "project configuration",
                         "method reference cannot be resolved: "+
                             declaringClassType.toJava+

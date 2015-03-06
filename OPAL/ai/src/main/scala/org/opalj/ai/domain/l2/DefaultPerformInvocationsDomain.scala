@@ -35,6 +35,9 @@ import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.DefaultRecordMethodCallResults
 
+/**
+ * Performs a simple invocation of the immediately called methods.
+ */
 class DefaultPerformInvocationsDomain[Source](
     project: Project[Source],
     classFile: ClassFile,
@@ -42,24 +45,18 @@ class DefaultPerformInvocationsDomain[Source](
         extends SharedDefaultDomain[Source](project, classFile, method)
         with PerformInvocations {
 
-    def isRecursive(classFile: ClassFile, method: Method, operands: Operands): Boolean =
-        false // {        this.method eq method &&    }
-
     def shouldInvocationBePerformed(classFile: ClassFile, method: Method): Boolean =
         !method.returnType.isVoidType
 
-    def invokeExecutionHandler(
-        pc: PC,
-        classFile: ClassFile, method: Method, operands: Operands): InvokeExecutionHandler =
-        new InvokeExecutionHandler {
-            val domain =
-                new SharedDefaultDomain(
-                    project,
-                    project.classFile(method),
-                    method) with DefaultRecordMethodCallResults
+    type CalledMethodDomain = SharedDefaultDomain[Source] with DefaultRecordMethodCallResults
 
-            def ai = BaseAI
-        }
+    def calledMethodDomain(classFile: ClassFile, method: Method) =
+        new SharedDefaultDomain(
+            project,
+            project.classFile(method),
+            method) with DefaultRecordMethodCallResults
+
+    def calledMethodAI = BaseAI
 
 }
 
