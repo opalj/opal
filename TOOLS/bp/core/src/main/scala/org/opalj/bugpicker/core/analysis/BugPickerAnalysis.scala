@@ -190,6 +190,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](theProject)
 
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code): Unit = {
+            // USED DURING DEVELEOPMENT; e.g., if we see a specific method.
+            val debug = false
 
             // ---------------------------------------------------------------------------
             // Analyses that don't require an abstract interpretation
@@ -205,9 +207,6 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
             // ---------------------------------------------------------------------------
             // Analyses that are dependent on the result of the abstract interpretation
             // ---------------------------------------------------------------------------
-            val debug =
-                classFile.thisType.toJava == "com.jaspersoft.ireport.designer.tools.FieldPatternDialog" &&
-                    method.name == "updateSample"
 
             val analysisDomain =
                 new RootBugPickerAnalysisDomain(
