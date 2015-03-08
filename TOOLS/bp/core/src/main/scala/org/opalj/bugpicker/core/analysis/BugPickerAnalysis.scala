@@ -457,7 +457,7 @@ object BugPickerAnalysis {
     final val defaultMaxEvalFactor = 1.75d
 
     final val maxEvalTimePattern = """-maxEvalTime=(\d+)""".r
-    final val defaultMaxEvalTime = 10000
+    final val defaultMaxEvalTime = 10000 // in ms => 10secs.
 
     final val maxCallChainLengthPattern = """-maxCallChainLength=(\d)""".r
     final val defaultMaxCallChainLength = 0
