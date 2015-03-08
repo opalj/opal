@@ -38,9 +38,10 @@ import org.opalj.br.ClassFile
 import scala.util.control.ControlThrowable
 
 /**
+ * Stores information about how methods were called.
  *
  * ==Thread Safety==
- * A "CalledMethodsStore" is not thread-safe.
+ * "CalledMethodsStore" are immutable.
  *
  * @param domain The domain that is used as the target domain for the adaptation of
  *      the operand values to make them comparable. '''The domain object is not used
@@ -53,25 +54,35 @@ import scala.util.control.ControlThrowable
  *
  * @author Michael Eichberg
  */
-class CalledMethodsStore(
-        // domain MUST NOT BE USED at initialization time
-        val domain: ValuesFactory with ReferenceValuesDomain with TheProject,
-        val frequentEvaluationWarningLevel: Int = 10)(
-                implicit val logContext: LogContext) {
+trait CalledMethodsStore { rootStore ⇒
+    // domain MUST NOT BE USED at initialization time
+    implicit val logContext: LogContext
 
-    private[this] val calledMethods =
-        scala.collection.mutable.HashMap.empty[Method, List[domain.Operands]]
+    val domain: CalledMethodsStore.BaseDomain
 
-    def isRecursive(
+    val frequentEvaluationWarningLevel: Int
+
+    val calledMethods: Map[Method, List[Array[domain.DomainValue]]]
+
+    def updated(
+        method: Method,
+        operands: List[Array[domain.DomainValue]]): CalledMethodsStore { val domain: rootStore.domain.type } = {
+        new CalledMethodsStore {
+            val domain: rootStore.domain.type = rootStore.domain
+            val frequentEvaluationWarningLevel = rootStore.frequentEvaluationWarningLevel
+            val calledMethods = rootStore.calledMethods.updated(method, operands)
+            implicit val logContext = rootStore.logContext
+        }
+    }
+
+    def testOrElseUpdated(
         definingClass: ClassFile,
         method: Method,
-        operands: ValuesDomain#Operands): Boolean = {
+        operands: ValuesDomain#Operands): Option[CalledMethodsStore { val domain: rootStore.domain.type }] = {
 
-        val adaptedOperands = operands.map(_.adapt(domain, -1))
+        val adaptedOperands = mapOperands(operands, domain)
         calledMethods.get(method) match {
-            case None ⇒
-                calledMethods.update(method, List(adaptedOperands))
-                false
+            case None ⇒ Some(updated(method, List(adaptedOperands)))
             case Some(previousOperandsList) ⇒
                 for (previousOperands ← previousOperandsList) {
                     try {
@@ -84,8 +95,8 @@ class CalledMethodsStore(
                             abstractsOver = previousOperand.abstractsOver(operand)
                         }
                         if (abstractsOver)
-                            // we completely abstract over a previous computation
-                            return true
+                            // a previous computation completely abstracts over this computation
+                            return None;
                     } catch {
                         case ct: ControlThrowable ⇒ throw ct
                         case t: Throwable ⇒
@@ -102,16 +113,15 @@ class CalledMethodsStore(
                 if (((previousOperandsList.size + 1) % frequentEvaluationWarningLevel) == 0)
                     frequentEvalution(definingClass, method, newOperandsList)
 
-                calledMethods.update(method, newOperandsList)
-                false
+                Some(updated(method, newOperandsList))
         }
     }
 
     def frequentEvalution(
         definingClass: ClassFile,
         method: Method,
-        operandsSet: List[domain.Operands]): Unit = {
-        OPALLogger.warn(
+        operandsSet: List[Array[domain.DomainValue]]): Unit = {
+        OPALLogger.info(
             "analysis configuration",
             "the method "+
                 definingClass.thisType.toJava+
@@ -119,6 +129,37 @@ class CalledMethodsStore(
                 "is frequently evaluated using different operands ("+operandsSet.size+"): "+
                 operandsSet.map(_.mkString("[", ",", "]")).mkString("( ", " ; ", " )")
         )
+    }
+}
+
+object CalledMethodsStore {
+
+    type BaseDomain = ValuesFactory with ReferenceValuesDomain with TheProject
+
+    def empty(
+        theDomain: BaseDomain,
+        theFrequentEvaluationWarningLevel: Int = 10)(
+            implicit theLogContext: LogContext): CalledMethodsStore { val domain: theDomain.type } = {
+        new CalledMethodsStore {
+            val domain: theDomain.type = theDomain
+            val frequentEvaluationWarningLevel = theFrequentEvaluationWarningLevel
+            val calledMethods = Map.empty[Method, List[Array[theDomain.DomainValue]]]
+            implicit val logContext = theLogContext
+        }
+    }
+
+    def apply(
+        theDomain: BaseDomain,
+        theFrequentEvaluationWarningLevel: Int = 10)(
+            method: Method,
+            operands: Array[theDomain.DomainValue])(
+                implicit theLogContext: LogContext): CalledMethodsStore { val domain: theDomain.type } = {
+        new CalledMethodsStore {
+            val domain: theDomain.type = theDomain
+            val frequentEvaluationWarningLevel = theFrequentEvaluationWarningLevel
+            val calledMethods = Map[Method, List[Array[theDomain.DomainValue]]]((method, List(operands)))
+            implicit val logContext = theLogContext
+        }
     }
 }
 

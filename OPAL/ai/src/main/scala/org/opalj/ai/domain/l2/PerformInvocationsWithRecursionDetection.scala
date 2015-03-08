@@ -42,37 +42,50 @@ import org.opalj.br.ClassFile
  *
  * @author Michael Eichberg
  */
-trait PerformInvocationsWithRecursionDetection extends PerformInvocations {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with ClassHierarchy with Configuration with TheProject with TheCode ⇒
+trait PerformInvocationsWithRecursionDetection extends PerformInvocations with TheMemoryLayout {
+    callingDomain: ValuesFactory with ReferenceValuesDomain with ClassHierarchy with Configuration with TheProject with TheMethod ⇒
 
-    /**
-     * The `CalledMethodsStore`, stores (method,concrete parameters) pairs to
-     * make it possible to detect (and prevent) recursive calls.
-     *
-     * The `CalledMethodsStore` does not store the results.
-     */
-    val calledMethodsStore: CalledMethodsStore
+    override type CalledMethodDomain <: TargetDomain with ChildPerformInvocationsWithRecursionDetection with MethodCallResults
 
-    /**
-     * @inheritdoc
-     *
-     * @return The result of calling [[CalledMethodsStore.isRecursive]].
-     */
-    def isRecursive(classFile: ClassFile, method: Method, operands: Operands): Boolean =
-        calledMethodsStore.isRecursive(classFile, method, operands)
+    val coordinatingDomain: CalledMethodsStore.BaseDomain
 
-    trait InvokeExecutionHandler extends super.InvokeExecutionHandler {
+    def frequentEvaluationWarningLevel: Int
 
-        override val domain: Domain with MethodCallResults with PerformInvocationsWithRecursionDetection {
+    def calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type }
 
-            /*
-             * A reference to the calling domain's called method store.
-             */
-            // We are using the type system to ensure that all instances use the
-            // _same_ CalledMethodsStore
-            val calledMethodsStore: callingDomain.calledMethodsStore.type
+    // The childCalledMethodsStore is valid for one invocation only and is set by
+    // doInvoke...
+    private[l2] var childCalledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = null
+
+    override protected[this] def doInvoke(
+        pc: PC,
+        definingClass: ClassFile,
+        method: Method,
+        operands: Operands,
+        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+
+        callingDomain.calledMethodsStore.testOrElseUpdated(definingClass, method, operands) match {
+            case Some(newCalledMethodsStore) ⇒
+                childCalledMethodsStore = newCalledMethodsStore
+                super.doInvoke(pc, definingClass, method, operands, fallback)
+            case None ⇒
+                fallback();
         }
-
     }
+}
+
+trait ChildPerformInvocationsWithRecursionDetection extends PerformInvocationsWithRecursionDetection {
+    callingDomain: ValuesFactory with ReferenceValuesDomain with ClassHierarchy with Configuration with TheProject with TheMethod ⇒
+
+    val callerDomain: PerformInvocationsWithRecursionDetection
+
+    final override val coordinatingDomain: callerDomain.coordinatingDomain.type = callerDomain.coordinatingDomain
+
+    def frequentEvaluationWarningLevel: Int = callerDomain.frequentEvaluationWarningLevel
+
+    final def calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = {
+        callerDomain.childCalledMethodsStore
+    }
+
 }
 
