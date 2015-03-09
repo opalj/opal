@@ -270,7 +270,7 @@ case class ControlFlowGraph(
 	private def findCorrespondingBlocks(): Unit = {
 		val code: Code = method.body.get
 		
-		for (handler <- code.exceptionHandlers if (handler.catchType.getOrElse(None) == None)) {
+		for (handler <- code.exceptionHandlers if (handler.catchType.getOrElse(None) == None && !catchBlocks(handler).predecessors.isEmpty) ) {
 
 			val finallyCatchBlock: CatchBlock = catchBlocks(handler)
 
@@ -279,8 +279,9 @@ case class ControlFlowGraph(
 			var immediatePredecessor: BasicBlock = null
 
 			for (predecessor <- finallyCatchBlock.predecessors.asInstanceOf[List[BasicBlock]]) {
-				if (immediatePredecessor == null || immediatePredecessor.startPC < predecessor.startPC)
+				if (immediatePredecessor == null || immediatePredecessor.startPC < predecessor.startPC){
 					immediatePredecessor = predecessor
+				}
 			}
 
 			var immediateCorrespondant: BasicBlock = immediatePredecessor.successors(0).asInstanceOf[BasicBlock]
@@ -303,6 +304,8 @@ case class ControlFlowGraph(
 			while (!workqueueFinally.isEmpty) {
 				val bbfin = workqueueFinally.dequeue
 				val bbreg = workqueueRegular.dequeue
+				
+//				println("processing: "+bbfin+", "+bbreg) // Für Debuggen
 
 				// Create corrispondance between the two BasicBlocks
 				associateBasicBlocks(bbfin, bbreg)
@@ -316,8 +319,8 @@ case class ControlFlowGraph(
 				
 				var index: Int = 0
 				
-				val finsuccessors = bbfin.successors
-				val regsuccessors = bbreg.successors
+				val finsuccessors = bbfin.successors.filter { block => block.isInstanceOf[BasicBlock] }.asInstanceOf[List[BasicBlock]]
+				val regsuccessors = bbreg.successors.filter { block => block.isInstanceOf[BasicBlock] }.asInstanceOf[List[BasicBlock]]
 				
 				// Iterate over both Lists in parallel
 				
@@ -325,21 +328,22 @@ case class ControlFlowGraph(
 					val finsucc = finsuccessors(index)
 					val regsucc = regsuccessors(index)
 					
-					val isToBeProcessedFurther: Boolean = finsucc.predecessors.forall { block =>
+					val isToBeProcessedFurther: Boolean = finsucc.predecessors.filter { block => !block.successors.contains(finsucc) }.forall { block =>
 						{
 							block match{
 								case bb: BasicBlock => {
-									(dominationSetFinally contains bb) &&
-									!(visited contains bb)
+									(dominationSetFinally contains bb)
 								}
 								case _ => {false}
 							}
 						}
 					}
 					
-					if(isToBeProcessedFurther){
-						workqueueFinally.enqueue(finsucc.asInstanceOf[BasicBlock])
-						workqueueRegular.enqueue(regsucc.asInstanceOf[BasicBlock])
+//					println(isToBeProcessedFurther+"; "+(!(visited contains finsucc/*.asInstanceOf[BasicBlock]*/))) // Für Debuggen
+					
+					if(isToBeProcessedFurther && !(visited contains finsucc/*.asInstanceOf[BasicBlock]*/)){
+						workqueueFinally.enqueue(finsucc/*.asInstanceOf[BasicBlock]*/)
+						workqueueRegular.enqueue(regsucc/*.asInstanceOf[BasicBlock]*/)
 					}
 					
 					index += 1
