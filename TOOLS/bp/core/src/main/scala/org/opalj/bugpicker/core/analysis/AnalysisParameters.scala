@@ -40,7 +40,7 @@ case class AnalysisParameters(
 
     def toStringParameters: Seq[String] = Seq(
         s"-maxEvalFactor=$maxEvalFactor",
-        s"maxEvalTime=$maxEvalTime",
+        s"-maxEvalTime=$maxEvalTime",
         s"-maxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges",
         s"-maxCardinalityOfLongSets=$maxCardinalityOfLongSets",
         s"-maxCallChainLength=$maxCallChainLength")
