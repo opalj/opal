@@ -8,8 +8,6 @@ import org.scalatest.ParallelTestExecution
 import org.opalj.bi.TestSupport
 import org.opalj.br.analyses.Project
 import org.opalj.br.ClassFile
-import org.opalj.br.reader.Java8FrameworkWithCaching
-import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.bi.reader.ClassFileReader
 import org.opalj.br.ObjectType
 

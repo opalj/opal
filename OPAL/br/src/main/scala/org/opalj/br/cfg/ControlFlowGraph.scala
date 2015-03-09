@@ -8,12 +8,14 @@ import scala.collection.SortedMap
 import scala.collection.immutable.HashMap
 import scala.collection.immutable.HashSet
 import scala.collection.immutable.TreeMap
+import scala.collection.mutable.Queue
 import org.opalj.br.PC
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.analyses.Project
 import org.opalj.br.{ ClassFile, Method, ObjectType }
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ControlTransferInstruction
+import org.opalj.br.instructions.UnconditionalBranchInstruction
 import org.opalj.br.instructions.GOTO
 import org.opalj.br.instructions.GOTO_W
 import org.opalj.br.instructions.ATHROW
@@ -24,238 +26,325 @@ import org.opalj.br.instructions.JSR
 import org.opalj.br.instructions.RET
 import org.opalj.br.Code
 import org.opalj.br.ExceptionHandler
+import org.opalj.br.instructions.UnconditionalBranch
 
 object ControlFlowGraph {
 
-    def connectBlocks(predecessor: CFGBlock, successor: CFGBlock): Unit = {
-        predecessor.addSucc(successor)
-        successor.addPred(predecessor)
-    }
+	def connectBlocks(predecessor: CFGBlock, successor: CFGBlock): Unit = {
+		predecessor.addSucc(successor)
+		successor.addPred(predecessor)
+	}
 
-    def apply(method: Method): ControlFlowGraph = {
+	def apply(method: Method): ControlFlowGraph = {
 
-        //        println
-        //        println
-        //		  println("CFG for "+method.name)
-        //        println
+		//        println
+		//        println
+		//		  println("CFG for "+method.name)
+		//        println
 
-        val code: Code = method.body.get
+		val code: Code = method.body.get
 
-        val instructions: Array[Instruction] = code.instructions
+		val instructions: Array[Instruction] = code.instructions
 
-        val codeLength: Int = instructions.length
+		val codeLength: Int = instructions.length
 
-        val previousPCs: Array[PC] = new Array[PC](codeLength + 1)
+		val previousPCs: Array[PC] = new Array[PC](codeLength + 1)
 
-        val BlocksByPC = new Array[BasicBlock](codeLength + 1)
+		val BlocksByPC = new Array[BasicBlock](codeLength + 1)
 
-        var catchBlocks: Map[ExceptionHandler, CatchBlock] = new HashMap[ExceptionHandler, CatchBlock]
+		var catchBlocks: Map[ExceptionHandler, CatchBlock] = new HashMap[ExceptionHandler, CatchBlock]
 
-        var exitPoints: Set[BasicBlock] = new HashSet[BasicBlock]
+		var exitPoints: Set[BasicBlock] = new HashSet[BasicBlock]
 
-        val startBlock = new StartBlock
+		val startBlock = new StartBlock
 
-        var currentBlock: BasicBlock = new BasicBlock(0)
+		var currentBlock: BasicBlock = new BasicBlock(0)
 
-        connectBlocks(startBlock, currentBlock)
+		connectBlocks(startBlock, currentBlock)
 
-        BlocksByPC(0) = currentBlock
+		BlocksByPC(0) = currentBlock
 
-        var currentPC: PC = instructions(0).indexOfNextInstruction(0, code)
+		var currentPC: PC = instructions(0).indexOfNextInstruction(0, code)
 
-        var nextPC: PC = 0;
+		var nextPC: PC = 0;
 
-        def isControlTransfer(pc: PC): Boolean = instructions(pc).isInstanceOf[ControlTransferInstruction]
+		def isControlTransfer(pc: PC): Boolean = instructions(pc).isInstanceOf[ControlTransferInstruction]
 
-        def isBeginningOfBlock(pc: PC): Boolean = (pc < codeLength) &&
-            (if (BlocksByPC(pc) == null) false else (BlocksByPC(pc).startPC == pc))
+		def isBeginningOfBlock(pc: PC): Boolean = (pc < codeLength) &&
+			(if (BlocksByPC(pc) == null) false else (BlocksByPC(pc).startPC == pc))
 
-        def isReturnFromMethod(pc: PC): Boolean = instructions(pc).isInstanceOf[ReturnInstruction] || instructions(pc) == ATHROW
+		def isReturnFromMethod(pc: PC): Boolean = instructions(pc).isInstanceOf[ReturnInstruction] || instructions(pc) == ATHROW
 
-        for (handler ← code.exceptionHandlers) {
-            val handlerPC: PC = handler.handlerPC
+		for (handler ← code.exceptionHandlers) {
+			val handlerPC: PC = handler.handlerPC
 
-            BlocksByPC(handlerPC) = if (!isBeginningOfBlock(handlerPC)) new BasicBlock(handlerPC) else BlocksByPC(handlerPC)
+			BlocksByPC(handlerPC) = if (!isBeginningOfBlock(handlerPC)) new BasicBlock(handlerPC) else BlocksByPC(handlerPC)
 
-            val catchBlock: CatchBlock = new CatchBlock(handler)
+			val catchBlock: CatchBlock = new CatchBlock(handler)
 
-            catchBlocks = catchBlocks + ((handler, catchBlock))
-        }
+			catchBlocks = catchBlocks + ((handler, catchBlock))
+		}
 
-        while (0 < currentPC && currentPC < codeLength) {
+		while (0 < currentPC && currentPC < codeLength) {
 
-            if (instructions(currentPC).isInstanceOf[JSR] ||
-                instructions(currentPC).isInstanceOf[RET])
-                throw new BytecodeProcessingFailedException("JSR/RET not yet processed")
+			if (instructions(currentPC).isInstanceOf[JSR] ||
+				instructions(currentPC).isInstanceOf[RET])
+				throw new BytecodeProcessingFailedException("JSR/RET not yet processed")
 
-            val controlFlow: Boolean = isControlTransfer(currentPC)
-            val beginningOfBlock: Boolean = isBeginningOfBlock(currentPC)
-            val returnFromMethod: Boolean = isReturnFromMethod(currentPC)
+			val controlFlow: Boolean = isControlTransfer(currentPC)
+			val beginningOfBlock: Boolean = isBeginningOfBlock(currentPC)
+			val returnFromMethod: Boolean = isReturnFromMethod(currentPC)
 
-            nextPC = code.pcOfNextInstruction(currentPC)
-            previousPCs(nextPC) = currentPC
+			nextPC = code.pcOfNextInstruction(currentPC)
+			previousPCs(nextPC) = currentPC
 
-            if (!(controlFlow || beginningOfBlock || returnFromMethod)) {
-                currentBlock.addPC(currentPC)
+			if (!(controlFlow || beginningOfBlock || returnFromMethod)) {
+				currentBlock.addPC(currentPC)
 
-                BlocksByPC(currentPC) = currentBlock
-            } else {
+				BlocksByPC(currentPC) = currentBlock
+			} else {
 
-                if (beginningOfBlock) {
+				if (beginningOfBlock) {
 
-                    val nextBlock = BlocksByPC(currentPC)
+					val nextBlock = BlocksByPC(currentPC)
 
-                    if (!(isControlTransfer(currentBlock.endPC) || isReturnFromMethod(currentBlock.endPC))) { // in Hilfmethode packen
-                        connectBlocks(currentBlock, nextBlock)
-                    }
+					if (!(isControlTransfer(currentBlock.endPC) || isReturnFromMethod(currentBlock.endPC))) { // in Hilfmethode packen
+						connectBlocks(currentBlock, nextBlock)
+					}
 
-                    currentBlock = nextBlock
-                }
-                if (controlFlow) {
+					currentBlock = nextBlock
+				}
+				if (controlFlow) {
 
-                    if (!beginningOfBlock) {
-                        currentBlock.addPC(currentPC)
-                    }
+					if (!beginningOfBlock) {
+						currentBlock.addPC(currentPC)
+					}
 
-                    BlocksByPC(currentPC) = currentBlock
+					BlocksByPC(currentPC) = currentBlock
 
-                    (instructions(currentPC).opcode: @scala.annotation.switch) match {
+					(instructions(currentPC).opcode: @scala.annotation.switch) match {
 
-                        case GOTO.opcode | GOTO_W.opcode ⇒ {
-                            if (!isBeginningOfBlock(nextPC) && (nextPC < BlocksByPC.length)) { // Bugquelle? Was ist nextPC?
-                                val nextBlock = new BasicBlock((nextPC))
-                                BlocksByPC(nextPC) = nextBlock
-                            }
-                        }
-                        case _ ⇒ {}
-                    }
+						case GOTO.opcode | GOTO_W.opcode ⇒ {
+							if (!isBeginningOfBlock(nextPC) && (nextPC < BlocksByPC.length)) { // Bugquelle? Was ist nextPC?
+								val nextBlock = new BasicBlock((nextPC))
+								BlocksByPC(nextPC) = nextBlock
+							}
+						}
+						case _ ⇒ {}
+					}
 
-                    for (pc ← instructions(currentPC).nextInstructions(currentPC, code)) {
+					for (pc ← instructions(currentPC).nextInstructions(currentPC, code)) {
 
-                        if (pc < currentPC) {
+						if (pc < currentPC) {
 
-                            if (!isBeginningOfBlock(pc)) {
+							if (!isBeginningOfBlock(pc)) {
 
-                                val blockToBeSplit: BasicBlock = BlocksByPC(pc)
+								val blockToBeSplit: BasicBlock = BlocksByPC(pc)
 
-                                BlocksByPC(pc) = blockToBeSplit.split(currentBlock, pc, previousPCs(pc))
+								BlocksByPC(pc) = blockToBeSplit.split(currentBlock, pc, previousPCs(pc))
 
-                                BlocksByPC(pc).foreach(instructionPC ⇒ { BlocksByPC(instructionPC) = BlocksByPC(pc) })(code)
+								BlocksByPC(pc).foreach(instructionPC ⇒ { BlocksByPC(instructionPC) = BlocksByPC(pc) })(code)
 
-                                if (currentBlock == (blockToBeSplit)) {
-                                    currentBlock = BlocksByPC(pc)
-                                }
+								if (currentBlock == (blockToBeSplit)) {
+									currentBlock = BlocksByPC(pc)
+								}
 
-                                connectBlocks(currentBlock, BlocksByPC(pc))
-                            } else {
-                                connectBlocks(currentBlock, BlocksByPC(pc))
-                            }
-                        } else {
+								connectBlocks(currentBlock, BlocksByPC(pc))
+							} else {
+								connectBlocks(currentBlock, BlocksByPC(pc))
+							}
+						} else {
 
-                            if (isBeginningOfBlock(pc)) {
-                                connectBlocks(currentBlock, BlocksByPC(pc))
-                            } else {
-                                BlocksByPC(pc) = new BasicBlock(pc)
-                                connectBlocks(currentBlock, BlocksByPC(pc))
-                            }
-                        }
-                    }
-                }
-                if (returnFromMethod) {
+							if (isBeginningOfBlock(pc)) {
+								connectBlocks(currentBlock, BlocksByPC(pc))
+							} else {
+								BlocksByPC(pc) = new BasicBlock(pc)
+								connectBlocks(currentBlock, BlocksByPC(pc))
+							}
+						}
+					}
+				}
+				if (returnFromMethod) {
 
-                    if (!beginningOfBlock) {
-                        currentBlock.addPC(currentPC)
-                        BlocksByPC(currentPC) = currentBlock
-                    }
+					if (!beginningOfBlock) {
+						currentBlock.addPC(currentPC)
+						BlocksByPC(currentPC) = currentBlock
+					}
 
-                    if (nextPC < codeLength && nextPC >= 0)
-                        if (!isBeginningOfBlock(nextPC))
-                            BlocksByPC(nextPC) = BasicBlock(nextPC)
+					if (nextPC < codeLength && nextPC >= 0)
+						if (!isBeginningOfBlock(nextPC))
+							BlocksByPC(nextPC) = BasicBlock(nextPC)
 
-                    exitPoints = exitPoints + currentBlock
+					exitPoints = exitPoints + currentBlock
 
-                }
-            }
+				}
+			}
 
-            val runtimeExceptions = instructions(currentPC).runtimeExceptions
+			val runtimeExceptions = instructions(currentPC).runtimeExceptions
 
-            if (runtimeExceptions.nonEmpty) {
-                for (handler ← code.handlersFor(currentPC)) {
-                    val catchType = handler.catchType.getOrElse(None)
+			if (runtimeExceptions.nonEmpty) {
+				for (handler ← code.handlersFor(currentPC)) {
+					val catchType = handler.catchType.getOrElse(None)
 
-                    if (catchType == None || runtimeExceptions.contains(catchType)) {
-                        //						BlocksByPC(nextPC) = BasicBlock(nextPC) 
+					if (catchType == None || runtimeExceptions.contains(catchType)) {
+						//						BlocksByPC(nextPC) = BasicBlock(nextPC) 
 
-                        BlocksByPC(nextPC) = if (!isBeginningOfBlock(nextPC)) BasicBlock(nextPC) else BlocksByPC(nextPC)
+						BlocksByPC(nextPC) = if (!isBeginningOfBlock(nextPC)) BasicBlock(nextPC) else BlocksByPC(nextPC)
 
-                        val catchBlock = catchBlocks(handler)
-                        val handlerBlock = BlocksByPC(handler.handlerPC)
+						val catchBlock = catchBlocks(handler)
+						val handlerBlock = BlocksByPC(handler.handlerPC)
 
-                        connectBlocks(currentBlock, catchBlock)
+						connectBlocks(currentBlock, catchBlock)
 
-                        if (catchBlock.predecessors.tail.isEmpty)
-                            connectBlocks(catchBlock, handlerBlock)
-                    }
-                }
-            }
+						if (catchBlock.predecessors.tail.isEmpty)
+							connectBlocks(catchBlock, handlerBlock)
+					}
+				}
+			}
 
-            currentPC = nextPC
+			currentPC = nextPC
 
-        }
+		}
 
-        val exitBlock = new ExitBlock
+		val exitBlock = new ExitBlock
 
-        for (block ← exitPoints) {
-            connectBlocks(block, exitBlock)
-        }
+		for (block ← exitPoints) {
+			connectBlocks(block, exitBlock)
+		}
 
-        new ControlFlowGraph(method, startBlock, exitBlock)
-    }
+		new ControlFlowGraph(method, startBlock, exitBlock, BlocksByPC, catchBlocks)
+	}
 }
 
 case class ControlFlowGraph(
-        method: Method,
-        startBlock: StartBlock,
-        endBlock: ExitBlock) {
+	method: Method,
+	startBlock: StartBlock,
+	endBlock: ExitBlock,
+	blocksByPC: Array[BasicBlock],
+	catchBlocks: Map[ExceptionHandler, CatchBlock]) {
 
-    def AllBlocks: HashSet[CFGBlock] = startBlock.returnAllBlocks(new HashSet[CFGBlock])
+	private var correspondingBlocks: Map[BasicBlock, BasicBlock] = new HashMap[BasicBlock, BasicBlock].empty
 
-    def traverseWithFunction[T](f: CFGBlock ⇒ T): Unit = {
-        traverseWithFunctionAndBlock(f)(startBlock, new HashSet[CFGBlock])
-    }
+	def AllBlocks: HashSet[CFGBlock] = startBlock.returnAllBlocks(new HashSet[CFGBlock])
 
-    private def traverseWithFunctionAndBlock[T](f: CFGBlock ⇒ T)(block: CFGBlock, visited: HashSet[CFGBlock]): Unit = {
+	def toDot: String = {
 
-        val newVisitedSet: HashSet[CFGBlock] = visited + block
-        val successors = block match { case bb: BasicBlock ⇒ bb.successors ++ bb.catchBlockSuccessors; case _ ⇒ block.successors }
+		var bbIndex: Int = 0; var cbIndex: Int = 0;
 
-        f(block)
+		for (block ← AllBlocks)
+			block match {
+				case bb: BasicBlock ⇒ { bb.ID = "bb" + bbIndex; bbIndex += 1 }
+				case cb: CatchBlock ⇒ { cb.ID = "cb" + cbIndex; cbIndex += 1 }
+				case sb: StartBlock ⇒ { sb.ID = "start" }
+				case eb: ExitBlock ⇒ { eb.ID = "exit" }
+			}
 
-        for (successor ← successors if (!visited.contains(successor))) {
-            traverseWithFunctionAndBlock[T](f)(successor, newVisitedSet)
-        }
-    }
+		var dotString: String = "digraph{\ncompound=true;\n"
 
-    def toDot: String = {
+		for (block ← AllBlocks) {
+			dotString += block.toDot(method.body.get)
+		}
 
-        var bbIndex: Int = 0; var cbIndex: Int = 0;
+		dotString = dotString + "}"
 
-        for (block ← AllBlocks)
-            block match {
-                case bb: BasicBlock ⇒ { bb.ID = "bb"+bbIndex; bbIndex += 1 }
-                case cb: CatchBlock ⇒ { cb.ID = "cb"+cbIndex; cbIndex += 1 }
-                case sb: StartBlock ⇒ { sb.ID = "start" }
-                case eb: ExitBlock  ⇒ { eb.ID = "exit" }
-            }
+		dotString
+	}
+	
+	def findCorrespondingBlockForPC(pc: PC): Option[BasicBlock] = {
+		if(correspondingBlocks.isEmpty)
+			findCorrespondingBlocks
+		
+		if(correspondingBlocks contains blocksByPC(pc)){
+			new Some(correspondingBlocks(blocksByPC(pc)))
+		}else
+			None
+	}
 
-        var dotString: String = "digraph{\ncompound=true;\n"
+	private def associateBasicBlocks(bbx: BasicBlock, bby: BasicBlock): Unit = {
+		if (!(correspondingBlocks.contains(bbx) || correspondingBlocks.contains(bby))) {
+			correspondingBlocks = correspondingBlocks + ((bbx, bby))
+			correspondingBlocks = correspondingBlocks + ((bby, bbx))
+		}
+	}
 
-        for (block ← AllBlocks) {
-            dotString += block.toDot(method.body.get)
-        }
+	private def findCorrespondingBlocks(): Unit = {
+		val code: Code = method.body.get
+		
+		for (handler <- code.exceptionHandlers if (handler.catchType.getOrElse(None) == None)) {
 
-        dotString = dotString+"}"
+			val finallyCatchBlock: CatchBlock = catchBlocks(handler)
 
-        dotString
-    }
+			// Find immediate successor of finallyCatchBlock
+
+			var immediatePredecessor: BasicBlock = null
+
+			for (predecessor <- finallyCatchBlock.predecessors.asInstanceOf[List[BasicBlock]]) {
+				if (immediatePredecessor == null || immediatePredecessor.startPC < predecessor.startPC)
+					immediatePredecessor = predecessor
+			}
+
+			var immediateCorrespondant: BasicBlock = immediatePredecessor.successors(0).asInstanceOf[BasicBlock]
+
+			// In case the (regular) successor of the immediate Predecessor of the CatchBlock is control flow, placed by the compiler,
+			// choose the next Block in the CFG instead
+			if (code.instructions(immediateCorrespondant.endPC).isInstanceOf[UnconditionalBranchInstruction])
+				immediateCorrespondant = immediateCorrespondant.successors(0).asInstanceOf[BasicBlock]
+
+			var dominationSetFinally: Set[BasicBlock] = HashSet()
+
+			var dominationSetRegular: Set[BasicBlock] = HashSet()
+			
+			var visited: Set[BasicBlock] = HashSet()
+
+			val workqueueFinally: Queue[BasicBlock] = Queue(finallyCatchBlock.successors(0).asInstanceOf[BasicBlock])
+
+			val workqueueRegular: Queue[BasicBlock] = Queue(immediateCorrespondant)
+
+			while (!workqueueFinally.isEmpty) {
+				val bbfin = workqueueFinally.dequeue
+				val bbreg = workqueueRegular.dequeue
+
+				// Create corrispondance between the two BasicBlocks
+				associateBasicBlocks(bbfin, bbreg)
+				
+				dominationSetFinally = dominationSetFinally + (bbfin)
+				dominationSetRegular = dominationSetRegular + (bbreg)
+				visited = visited + (bbfin, bbreg)
+				
+				
+				// Find out, which Blocks will have to be put in the queues next
+				
+				var index: Int = 0
+				
+				val finsuccessors = bbfin.successors
+				val regsuccessors = bbreg.successors
+				
+				// Iterate over both Lists in parallel
+				
+				while(index < finsuccessors.size){
+					val finsucc = finsuccessors(index)
+					val regsucc = regsuccessors(index)
+					
+					val isToBeProcessedFurther: Boolean = finsucc.predecessors.forall { block =>
+						{
+							block match{
+								case bb: BasicBlock => {
+									(dominationSetFinally contains bb) &&
+									!(visited contains bb)
+								}
+								case _ => {false}
+							}
+						}
+					}
+					
+					if(isToBeProcessedFurther){
+						workqueueFinally.enqueue(finsucc.asInstanceOf[BasicBlock])
+						workqueueRegular.enqueue(regsucc.asInstanceOf[BasicBlock])
+					}
+					
+					index += 1
+				}
+			}
+		}
+	}
 }

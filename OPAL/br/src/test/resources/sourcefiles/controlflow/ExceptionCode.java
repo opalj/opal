@@ -120,4 +120,25 @@ public class ExceptionCode{
 			return res;
 		}
 	}
+	
+	void tryFinally(int input){
+		int x = 100;
+		
+		try{
+			x = x/input;
+		}finally{
+			int a = 1;
+			int b = 2;
+			
+			if(x*(a + b) > 50){
+				int d = 3;
+				int e = 4;
+			}else{
+				int f = 5;
+				int g = 6;
+			}
+		}
+		
+		return;
+	}
 }
