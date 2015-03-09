@@ -280,7 +280,7 @@ case class StandardIssue(
                 <dd> { locations }</dd>
             infoNodes = infoNodes ::: List(dt, dd)
         }
-
+        infoNodes = infoNodes ::: List(<dt>relevance</dt>, <dd> { relevance.value.toString } </dd>)
         val localVariablesAsXHTML = localVariablesToXHTML
         val summaryNode =
             if (localVariablesAsXHTML.isDefined)
