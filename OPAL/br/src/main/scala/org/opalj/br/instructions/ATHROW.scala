@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * Throw exception or error.
  *
@@ -67,7 +69,13 @@ case object ATHROW extends Instruction {
         modifiedByWide: Boolean): Int =
         currentPC + 1
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
-        code.handlerInstructionsFor(currentPC)
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
+        if (regularSuccessorsOnly)
+            UShortSet.empty
+        else
+            code.handlerInstructionsFor(currentPC)
 
 }

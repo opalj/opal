@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * An instruction that "invokes" something. This can be, e.g., the invocation of a method
  * or – using `invokedynamic` – the read of a field value.
@@ -61,9 +63,16 @@ abstract class InvocationInstruction extends Instruction with ConstantLengthInst
      * exceptions may be thrown we make the safe assumption that any handler
      * is a potential successor!
      */
-    final def nextInstructions(currentPC: PC, code: Code): PCs = {
-        val exceptionHandlerPCs = code.handlerInstructionsFor(currentPC)
-        exceptionHandlerPCs + indexOfNextInstruction(currentPC, code)
-    }
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
+        if (regularSuccessorsOnly)
+            UShortSet(indexOfNextInstruction(currentPC, code))
+        else {
+
+            val exceptionHandlerPCs = code.handlerInstructionsFor(currentPC)
+            exceptionHandlerPCs + indexOfNextInstruction(currentPC, code)
+        }
 }
 
