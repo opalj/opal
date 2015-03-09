@@ -104,7 +104,7 @@ object Console extends AnalysisExecutor { analysis ⇒
             var htmlReport: String = null
             def getHTMLReport = {
                 if (htmlReport eq null)
-                    htmlReport = BugPickerAnalysis.resultsAsXHTML(issues).toString
+                    htmlReport = BugPickerAnalysis.resultsAsXHTML(parameters, issues).toString
                 htmlReport
             }
             parameters.collectFirst { case HTMLFileOutputNameMatcher(name) ⇒ name } match {

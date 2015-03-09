@@ -59,9 +59,13 @@ input#relevance {
 	-moz-transform: translate(0px,6px);
 }
 
-div#analysis_results {
+div#analysis_parameters {
 	padding: 0em;
 	margin-top: 3em;
+}
+
+div#analysis_results {
+	padding: 0em;
 }
 
 div.an_issue{
@@ -109,4 +113,15 @@ details.locals {
 	padding:0;
 	background-color: rgba(174, 177, 255, 0.24);
 	border: 1px solid rgb(172, 172, 205);
+}
+
+details#analysis_parameters_summary summary {
+	background-color: rgb(223, 151, 75);
+}
+
+details#analysis_parameters_summary ul {
+	background-color: rgb(247, 224, 197);
+	padding-top: 0.3em;
+	padding-bottom: 0.3em;
+	margin: 0;
 }
