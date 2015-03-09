@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * Get length of array.
  *
@@ -61,8 +63,14 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction {
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
-        Instruction.nextInstructionOrExceptionHandler(
-            this, currentPC, code, ObjectType.NullPointerException)
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
+        if (regularSuccessorsOnly)
+            UShortSet(indexOfNextInstruction(currentPC, code))
+        else
+            Instruction.nextInstructionOrExceptionHandler(
+                this, currentPC, code, ObjectType.NullPointerException)
 
 }

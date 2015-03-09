@@ -62,6 +62,9 @@ case object WIDE extends Instruction with ConstantLengthInstruction {
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 }

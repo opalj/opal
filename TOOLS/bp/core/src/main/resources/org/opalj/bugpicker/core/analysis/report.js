@@ -26,17 +26,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-function updateRelevance(value){
+function updateRelevance(minimumRelevance){
 	document.querySelectorAll("*[data-relevance]").forEach(
 		function(e){
-			if (e.dataset.relevance < value)
+			if (e.dataset.relevance < minimumRelevance)
 				e.classList.add("hide-relevance");
 			else
 				e.classList.remove("hide-relevance");
 		}
 	)
 	hideEmptyPackages();
-	updateNumberOfIssues();
+	updateNumberOfIssues(minimumRelevance);
 }
 
 function hideEmptyPackages() {
@@ -56,7 +56,9 @@ function hideEmptyPackages() {
 	)
 }
 
-function updateNumberOfIssues(){
+function updateNumberOfIssues(minimumRelevance){
+	if (minimumRelevance === undefined)
+		minimumRelevance = document.getElementById('relevance').value
 	var current = 0;
 	document.querySelectorAll(".an_issue").forEach(
 		function(e){
@@ -64,7 +66,8 @@ function updateNumberOfIssues(){
 				current++;
 		}
 	)
-	document.querySelector("#issues_displayed").innerHTML = current;
+	document.querySelector("#issues_displayed").innerHTML = 
+		" [Relevance ≥ "+minimumRelevance+"] " + current;
 }
 
 function openAllPackages(){

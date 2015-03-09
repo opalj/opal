@@ -109,7 +109,7 @@ object DeadPathAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain with Callees }): Seq[StandardIssue] = {
+        result: AIResult { val domain: Domain with Callees with RecordCFG }): Seq[StandardIssue] = {
 
         import result.domain
         import result.operandsArray
@@ -118,6 +118,8 @@ object DeadPathAnalysis {
         val body = result.code
         val instructions = body.instructions
         import result.joinInstructions
+        import result.domain.regularSuccessorsOf
+        import result.domain.exceptionHandlerSuccessorsOf
 
         /*
          * Helper function to identify methods that will always throw an exception if
@@ -195,8 +197,8 @@ object DeadPathAnalysis {
                 }
 
                 // test if one or all of the successors are dead
-                (nextPC: PC) ← instruction.nextInstructions(pc, body)
-                if !evaluatedInstructions.contains(nextPC)
+                (nextPC: PC) ← instruction.nextInstructions(pc, body, regularSuccessorsOnly = true)
+                if !regularSuccessorsOf(pc).contains(nextPC)
 
                 allOperands = operandsArray(pc)
                 // Possibility: Store the state of the subroutines to facilitate the
@@ -320,12 +322,17 @@ object DeadPathAnalysis {
                             (pc, s"the return value of $instr is ${operandsArray(instr.indexOfNextInstruction(pc, body)).head}")
                     }
 
+                val isJustDeadPath = evaluatedInstructions.contains(nextPC)
+
                 issues ::= StandardIssue(
                     theProject, classFile, Some(method), Some(pc),
                     Some(operands), Some(result.localsArray(pc)),
-                    s"the successor instruction pc=$nextPC$line is dead",
+                    if (isJustDeadPath)
+                        s"the path to instruction pc=$nextPC$line is never taken"
+                    else
+                        s"the successor instruction pc=$nextPC$line is dead",
                     Some(
-                        "The evaluation of the instruction never leads to the evaluation of the given subsequent instruction."+(
+                        "The evaluation of the instruction never directly leads to the evaluation of the given subsequent instruction."+(
                             if (isLikelyFalsePositive)
                                 "\n(This seems to be a technical artifact that cannot be avoided; i.e., there is probably nothing to fix!)"
                             else if (isLikelyIntendedDeadDefaultBranch)
@@ -342,6 +349,8 @@ object DeadPathAnalysis {
                         Relevance.ProvenAssertion
                     else if (isLikelyIntendedDeadDefaultBranch)
                         Relevance.CommonIdiom
+                    else if (isJustDeadPath)
+                        Relevance.UselessDefensiveProgramming
                     else
                         Relevance.OfUtmostRelevance
                 )

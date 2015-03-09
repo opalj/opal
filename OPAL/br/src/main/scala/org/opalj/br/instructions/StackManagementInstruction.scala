@@ -46,7 +46,10 @@ abstract class StackManagementInstruction
 
     final def length: Int = 1
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {

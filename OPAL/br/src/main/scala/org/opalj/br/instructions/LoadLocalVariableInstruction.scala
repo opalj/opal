@@ -52,7 +52,10 @@ abstract class LoadLocalVariableInstruction extends Instruction {
 
     final def runtimeExceptions: List[ObjectType] = Nil
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0

@@ -190,6 +190,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](theProject)
 
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code): Unit = {
+            // USED DURING DEVELEOPMENT; e.g., if we see a specific method.
+            val debug = false
 
             // ---------------------------------------------------------------------------
             // Analyses that don't require an abstract interpretation
@@ -205,9 +207,6 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
             // ---------------------------------------------------------------------------
             // Analyses that are dependent on the result of the abstract interpretation
             // ---------------------------------------------------------------------------
-            val debug =
-                classFile.thisType.toJava == "com.jaspersoft.ireport.designer.tools.FieldPatternDialog" &&
-                    method.name == "updateSample"
 
             val analysisDomain =
                 new RootBugPickerAnalysisDomain(
@@ -458,7 +457,7 @@ object BugPickerAnalysis {
     final val defaultMaxEvalFactor = 1.75d
 
     final val maxEvalTimePattern = """-maxEvalTime=(\d+)""".r
-    final val defaultMaxEvalTime = 10000
+    final val defaultMaxEvalTime = 10000 // in ms => 10secs.
 
     final val maxCallChainLengthPattern = """-maxCallChainLength=(\d)""".r
     final val defaultMaxCallChainLength = 0
@@ -481,14 +480,14 @@ object BugPickerAnalysis {
             scala.io.Source.fromInputStream(_).mkString
         )
 
-    def resultsAsXHTML(methodsWithDeadCode: Iterable[Issue]): Node = {
-        val methodWithDeadCodeCount = methodsWithDeadCode.size
+    def resultsAsXHTML(parameters: Seq[String], methodsWithIssues: Iterable[Issue]): Node = {
+        val methodWithIssuesCount = methodsWithIssues.size
 
         val issuesNode: Iterable[Node] = {
             import scala.collection.SortedMap
             val groupedMessages =
                 SortedMap.empty[String, List[Issue]] ++
-                    methodsWithDeadCode.groupBy(dc ⇒ dc.classFile.thisType.packageName)
+                    methodsWithIssues.groupBy(dc ⇒ dc.classFile.thisType.packageName)
             val result =
                 (for { (pkg, mdc) ← groupedMessages } yield {
                     <details class="package_summary">
@@ -510,7 +509,7 @@ object BugPickerAnalysis {
             <body>
                 <div id="analysis_controls">
                     <div>
-                        <span>Number of issues currently displayed: <span id="issues_displayed"> { methodWithDeadCodeCount } </span> (Total issues: { methodWithDeadCodeCount })</span>
+                        <span>Number of issues currently displayed: <span id="issues_displayed"> { methodWithIssuesCount } </span> (Total issues: { methodWithIssuesCount })</span>
                     </div>
                     <div>
                         Suppress issues with an estimated
@@ -531,6 +530,19 @@ object BugPickerAnalysis {
                     <div>
                         Show all Packages:<a class="onclick" onclick="openAllPackages()">+</a><a class="onclick" onclick="closeAllPackages()">-</a>
                     </div>
+                </div>
+                <div id="analysis_parameters">
+                    <details id="analysis_parameters_summary">
+                        <summary>Parameters</summary>
+                        <ul>
+                            {
+                                parameters.filterNot(p ⇒
+                                    p.startsWith("-debug") ||
+                                        p.startsWith("-html") || p.startsWith("-eclipse")
+                                ).map(p ⇒ <li>{ p }</li>)
+                            }
+                        </ul>
+                    </details>
                 </div>
                 <div id="analysis_results">
                     { issuesNode }

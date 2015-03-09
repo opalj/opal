@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * An instruction to create a new array.
  *
@@ -47,9 +49,15 @@ abstract class CreateNewArrayInstruction
     final def runtimeExceptions: List[ObjectType] =
         CreateNewArrayInstruction.runtimeExceptions
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
-        Instruction.nextInstructionOrExceptionHandlers(
-            this, currentPC, code, CreateNewArrayInstruction.runtimeExceptionsAndErrors)
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
+        if (regularSuccessorsOnly)
+            UShortSet(indexOfNextInstruction(currentPC, code))
+        else
+            Instruction.nextInstructionOrExceptionHandlers(
+                this, currentPC, code, CreateNewArrayInstruction.runtimeExceptionsAndErrors)
 
 }
 
