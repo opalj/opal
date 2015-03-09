@@ -106,14 +106,14 @@ class CFACallGraphDomain[Source](
     def shouldInvocationBePerformed(
         definingClass: ClassFile,
         method: Method): Boolean =
-        // we only call methods where we have a chance that the return value
-        // actually depends on the calling context and may directly affect
-        // subsequent calls (i.e., if the return value is a primitive value
-        // then we are not interested.) The return value of methods where the
-        // return value does not depend on the calling context should
-        // be precise based on the results of the pre-analyses.
-        calledMethods.size < k && !calledMethods.contains(method) &&
-            method.descriptor.parametersCount > 0 &&
+        (method ne this.method) &&
+            // we only call methods where we have a chance that the return value
+            // actually depends on the calling context and may directly affect
+            // subsequent calls (i.e., if the return value is a primitive value
+            // then we are not interested.) The return value of methods where the
+            // return value does not depend on the calling context should
+            // be precise based on the results of the pre-analyses.
+            calledMethods.size < k && !calledMethods.contains(method) &&
             !method.returnType.isVoidType &&
             (
                 !method.returnType.isObjectType ||
