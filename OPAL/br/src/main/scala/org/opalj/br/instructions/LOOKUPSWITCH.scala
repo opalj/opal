@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * Access jump table by key match and jump.
  *
@@ -63,8 +65,8 @@ case class LOOKUPSWITCH(
     def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int =
         currentPC + 1 + (3 - (currentPC % 4)) + 8 + npairs.size * 8
 
-    def nextInstructions(currentPC: PC, code: Code): PCs = {
-        var pcs = collection.mutable.UShortSet(currentPC + defaultOffset)
+    def nextInstructions(currentPC: PC, code: Code, regularSuccessorsOnly: Boolean): PCs = {
+        var pcs = UShortSet(currentPC + defaultOffset)
         npairs foreach { npair ⇒
             val (_, offset) = npair
             pcs = (currentPC + offset) +≈: pcs

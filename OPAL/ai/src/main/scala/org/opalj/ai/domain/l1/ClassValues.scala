@@ -130,7 +130,7 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
         override def hashCode: Int = super.hashCode + 71 * value.hashCode
 
         override def toString(): String =
-            s"Class<${value.toJava}>(origin$origin;t=$t)"
+            s"Class<${value.toJava}>[@$origin;t=$t]"
     }
 
     // Needs to be implemented since the default implementation does not make sense here

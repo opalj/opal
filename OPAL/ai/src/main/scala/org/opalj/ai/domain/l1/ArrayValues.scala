@@ -235,9 +235,8 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
         override def hashCode: Int = origin * 79 + upperTypeBound.hashCode
 
         override def toString() = {
-            val valuesAsString = values.mkString("(", ",", ")")
-            s"${theUpperTypeBound.toJava}(origin=$origin;size=${values.size}="+
-                valuesAsString
+            val valuesAsString = values.mkString("«", ", ", "»")
+            s"${theUpperTypeBound.toJava}[@$origin;length=${values.size};$valuesAsString]"
         }
     }
 
