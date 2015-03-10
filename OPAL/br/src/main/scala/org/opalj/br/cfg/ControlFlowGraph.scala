@@ -223,7 +223,9 @@ case class ControlFlowGraph(
 	blocksByPC: Array[BasicBlock],
 	catchBlocks: Map[ExceptionHandler, CatchBlock]) {
 
-	private var correspondingBlocks: Map[BasicBlock, BasicBlock] = new HashMap[BasicBlock, BasicBlock].empty
+	private var finallyToRegularBlock: Map[BasicBlock, BasicBlock] = new HashMap[BasicBlock, BasicBlock].empty
+	
+	private var regularToFinallyBlocks: Map[BasicBlock, Set[BasicBlock]] = new HashMap[BasicBlock, HashSet[BasicBlock]].empty
 
 	def AllBlocks: HashSet[CFGBlock] = startBlock.returnAllBlocks(new HashSet[CFGBlock])
 
@@ -250,24 +252,32 @@ case class ControlFlowGraph(
 		dotString
 	}
 	
-	def findCorrespondingBlockForPC(pc: PC): Option[BasicBlock] = {
-		if(correspondingBlocks.isEmpty)
-			findCorrespondingBlocks
+	def findCorrespondingBlockForPC(pc: PC): Set[BasicBlock] = {
+		val bb = blocksByPC(pc)
 		
-		if(correspondingBlocks contains blocksByPC(pc)){
-			new Some(correspondingBlocks(blocksByPC(pc)))
+		if(finallyToRegularBlock.isEmpty)
+			findfinallyToRegularBlock
+		
+		if(finallyToRegularBlock contains bb){
+			HashSet(finallyToRegularBlock(bb))
+		}else if(regularToFinallyBlocks contains bb){
+			regularToFinallyBlocks(bb)
 		}else
-			None
+			HashSet.empty
 	}
 
-	private def associateBasicBlocks(bbx: BasicBlock, bby: BasicBlock): Unit = {
-		if (!(correspondingBlocks.contains(bbx) || correspondingBlocks.contains(bby))) {
-			correspondingBlocks = correspondingBlocks + ((bbx, bby))
-			correspondingBlocks = correspondingBlocks + ((bby, bbx))
+	private def associateBasicBlocks(bbfin: BasicBlock, bbreg: BasicBlock): Unit = {
+		finallyToRegularBlock = finallyToRegularBlock +((bbfin, bbreg))
+		
+		if(regularToFinallyBlocks contains bbreg){
+			val newSet = regularToFinallyBlocks(bbreg) + (bbfin)
+			regularToFinallyBlocks = regularToFinallyBlocks +((bbreg, newSet))
+		}else{
+			regularToFinallyBlocks = regularToFinallyBlocks +((bbreg, HashSet(bbfin)))
 		}
 	}
 
-	private def findCorrespondingBlocks(): Unit = {
+	private def findfinallyToRegularBlock(): Unit = {
 		val code: Code = method.body.get
 		
 		for (handler <- code.exceptionHandlers if (handler.catchType.getOrElse(None) == None && !catchBlocks(handler).predecessors.isEmpty) ) {
@@ -284,19 +294,27 @@ case class ControlFlowGraph(
 				}
 			}
 
+			// The first BasicBlock in the regular execution path, which corresponds to the first Block
+			// in the finally handler.
 			var immediateCorrespondant: BasicBlock = immediatePredecessor.successors(0).asInstanceOf[BasicBlock]
 
-			// In case the (regular) successor of the immediate Predecessor of the CatchBlock is control flow, placed by the compiler,
-			// choose the next Block in the CFG instead
+			// In case the (regular) successor of the immediate Predecessor of the CatchBlock is control flow, instead of an actual correspondant,
+			// choose the next Block in the execution path instead
 			if (code.instructions(immediateCorrespondant.endPC).isInstanceOf[UnconditionalBranchInstruction])
 				immediateCorrespondant = immediateCorrespondant.successors(0).asInstanceOf[BasicBlock]
 
+			//contains all BasicBlocks, dominated by finallyCatchBlock
 			var dominationSetFinally: Set[BasicBlock] = HashSet()
 
+			//contains all BasicBlock, dominated by immediateCorrespondant
 			var dominationSetRegular: Set[BasicBlock] = HashSet()
 			
+			//all BasicBlocks, that have already been processed. Prevents infinite looping
 			var visited: Set[BasicBlock] = HashSet()
-
+			
+			
+			// Workqueues for iterative, breadth-first (sub-)graph-traversal, one for Blocks in finally handler,
+			// the other for Blocks in the regular path
 			val workqueueFinally: Queue[BasicBlock] = Queue(finallyCatchBlock.successors(0).asInstanceOf[BasicBlock])
 
 			val workqueueRegular: Queue[BasicBlock] = Queue(immediateCorrespondant)

@@ -9,6 +9,7 @@ import org.opalj.bi.TestSupport
 import org.opalj.br.analyses.Project
 import org.opalj.br.ObjectType
 
+import scala.collection.immutable.HashSet
 
 @RunWith(classOf[JUnitRunner])
 class CFGCorrespondanceTest extends FunSpec with Matchers  {
@@ -26,42 +27,51 @@ class CFGCorrespondanceTest extends FunSpec with Matchers  {
 			
 			val tryFinallyCFG = ControlFlowGraph(testClass.findMethod("tryFinally").get)
 			
-			var block = tryFinallyCFG.findCorrespondingBlockForPC(42).get
+			var block = tryFinallyCFG.findCorrespondingBlockForPC(42)
 			
-			block should be(BasicBlock(6))
+			block should be(HashSet(BasicBlock(6)))
 			
-			block = tryFinallyCFG.findCorrespondingBlockForPC(71).get
+			block = tryFinallyCFG.findCorrespondingBlockForPC(71)
 			
-			block should be(BasicBlock(32))
+			block should be(HashSet(BasicBlock(32)))
 			
-			block = tryFinallyCFG.findCorrespondingBlockForPC(62).get
+			block = tryFinallyCFG.findCorrespondingBlockForPC(62)
 			
-			block should be(BasicBlock(23))
+			block should be(HashSet(BasicBlock(23)))
 			
-			block = tryFinallyCFG.findCorrespondingBlockForPC(78).get
+			block = tryFinallyCFG.findCorrespondingBlockForPC(78)
 			
-			block should be(BasicBlock(39))
+			block should be(HashSet(BasicBlock(39)))
 		}
 		
 		it("also with loops"){
 			val testCFG = ControlFlowGraph(testClass.findMethod("loopExceptionWithCatchReturn").get)
 			
-			var block = testCFG.findCorrespondingBlockForPC(63).get
+			var block = testCFG.findCorrespondingBlockForPC(63)
 			
-			block should be(BasicBlock(5))
+			block should be(HashSet(BasicBlock(5)))
 			
-			block = testCFG.findCorrespondingBlockForPC(68).get
+			block = testCFG.findCorrespondingBlockForPC(68)
 			
-			block should be(BasicBlock(9))
+			block should be(HashSet(BasicBlock(9)))
 			
-			block = testCFG.findCorrespondingBlockForPC(75).get
+			block = testCFG.findCorrespondingBlockForPC(75)
 			
-			block should be(BasicBlock(16))
+			block should be(HashSet(BasicBlock(16)))
 			
-			block = testCFG.findCorrespondingBlockForPC(88).get
+			block = testCFG.findCorrespondingBlockForPC(88)
 			
-			block should be(BasicBlock(29))
+			block should be(HashSet(BasicBlock(29)))
 			
+		}
+		
+		it("with multiple handlers for one regular execution path"){
+			
+			val testCFG = ControlFlowGraph(testClass.findMethod("highlyNestedFinally").get)
+			
+			val blocks = testCFG.findCorrespondingBlockForPC(30)
+			
+			blocks should be(HashSet(BasicBlock(59), BasicBlock(85), BasicBlock(105), BasicBlock(119)))
 		}
 	}
 }
