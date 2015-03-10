@@ -275,7 +275,7 @@ case class ControlFlowGraph(
 		results
 	}
 	
-	def findCorrespondingBlocksForPC(pc: PC): Set[BasicBlock] = {
+	private def findCorrespondingBlocksForPC(pc: PC): Set[BasicBlock] = {
 		val bb = blocksByPC(pc)
 		
 		if(finallyToRegularBlock.isEmpty)
