@@ -9,6 +9,7 @@ import scala.collection.immutable.HashMap
 import scala.collection.immutable.HashSet
 import scala.collection.immutable.TreeMap
 import scala.collection.mutable.Queue
+import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.PC
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.analyses.Project
@@ -187,7 +188,6 @@ object ControlFlowGraph {
 					val catchType = handler.catchType.getOrElse(None)
 
 					if (catchType == None || runtimeExceptions.contains(catchType)) {
-						//						BlocksByPC(nextPC) = BasicBlock(nextPC) 
 
 						BlocksByPC(nextPC) = if (!isBeginningOfBlock(nextPC)) BasicBlock(nextPC) else BlocksByPC(nextPC)
 
@@ -252,7 +252,30 @@ case class ControlFlowGraph(
 		dotString
 	}
 	
-	def findCorrespondingBlockForPC(pc: PC): Set[BasicBlock] = {
+	def correspondingPCsTo(pc: PC): UShortSet = {
+		
+		var results = UShortSet.empty // holds all the correspondants of 'pc'
+		val block = blocksByPC(pc) // the block for which the corresponding PCs are to be computed
+		val correspondingBlocks = findCorrespondingBlocksForPC(pc) // the correspondants of 'block'
+		val code = method.body.get // the code of which this CFG is based upon
+		val index = block.indexOfPC(pc, code) // the index of the PC/Instruction that 'pc' has within block
+		
+		def instruction(pc: PC): Instruction = code.instructions(pc)
+		
+		for(correspondant <- correspondingBlocks){
+			val corrPCs = correspondant.programCounters(code) // the correspondant's list of PCs
+			
+			if(corrPCs.size == block.indexOfPC(block.endPC, code)+1){ // check wether 'block' and 'correspondant' have same size
+				if(instruction(pc).mnemonic == instruction(corrPCs(index)).mnemonic){ // check if the instructions that are indexed by 'index' in both blocks are the same type
+					results = results + corrPCs(index) // if yes to both: add the PC to the resulting UShortSet
+				}
+			}
+		}
+		
+		results
+	}
+	
+	def findCorrespondingBlocksForPC(pc: PC): Set[BasicBlock] = {
 		val bb = blocksByPC(pc)
 		
 		if(finallyToRegularBlock.isEmpty)
@@ -322,8 +345,6 @@ case class ControlFlowGraph(
 			while (!workqueueFinally.isEmpty) {
 				val bbfin = workqueueFinally.dequeue
 				val bbreg = workqueueRegular.dequeue
-				
-//				println("processing: "+bbfin+", "+bbreg) // Für Debuggen
 
 				// Create corrispondance between the two BasicBlocks
 				associateBasicBlocks(bbfin, bbreg)
@@ -357,11 +378,9 @@ case class ControlFlowGraph(
 						}
 					}
 					
-//					println(isToBeProcessedFurther+"; "+(!(visited contains finsucc/*.asInstanceOf[BasicBlock]*/))) // Für Debuggen
-					
-					if(isToBeProcessedFurther && !(visited contains finsucc/*.asInstanceOf[BasicBlock]*/)){
-						workqueueFinally.enqueue(finsucc/*.asInstanceOf[BasicBlock]*/)
-						workqueueRegular.enqueue(regsucc/*.asInstanceOf[BasicBlock]*/)
+					if(isToBeProcessedFurther && !(visited contains finsucc)){
+						workqueueFinally.enqueue(finsucc)
+						workqueueRegular.enqueue(regsucc)
 					}
 					
 					index += 1

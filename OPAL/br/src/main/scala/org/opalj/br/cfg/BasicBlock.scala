@@ -32,6 +32,19 @@ case class BasicBlock(
 
         res
     }
+    
+    def indexOfPC(pc: PC, code: Code): Int = {
+    	var res = 0
+    	var currentPC = startPC
+    	
+    	while(currentPC < pc){
+    		currentPC = code.pcOfNextInstruction(currentPC)
+    		res += 1
+    	}
+    	
+    	res
+    }
+    
     def split(block: BasicBlock, newBlockStartPC: PC, oldBlockEndPC: PC): BasicBlock = {
 
         val newBlock = new BasicBlock(newBlockStartPC)
