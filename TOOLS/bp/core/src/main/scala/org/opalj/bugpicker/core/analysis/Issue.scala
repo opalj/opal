@@ -120,9 +120,9 @@ trait Issue {
                             // SPECIAL HANDLING IF THE VALUE IS AN INTEGER RANGE VALUE
                             localValue.isInstanceOf[IntegerRangeValues#IntegerRange]) {
                             val range = localValue.asInstanceOf[IntegerRangeValues#IntegerRange]
-                            if (range.lowerBound == 0 && range.upperBound == 0)
+                            if ( /*range.lowerBound == 0 &&*/ range.upperBound == 0)
                                 Text("false")
-                            else if (range.lowerBound == 1 && range.upperBound == 1)
+                            else if (range.lowerBound == 1 /* && range.upperBound == 1*/ )
                                 Text("true")
                             else
                                 Text("true or false")
@@ -203,7 +203,7 @@ trait Issue {
     /**
      * An (x)HTML5 representation of the bug report, well suited for browser output.
      */
-    def asXHTML: Node
+    def asXHTML(basicInfoOnly: Boolean): Node
 
     /**
      * A representation of this bug report well suited for console output.

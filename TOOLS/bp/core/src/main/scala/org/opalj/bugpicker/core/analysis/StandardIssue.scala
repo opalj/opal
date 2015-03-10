@@ -107,7 +107,7 @@ case class StandardIssue(
             ))
     }
 
-    def asXHTML: Node = {
+    def asXHTML(basicInfoOnly: Boolean): Node = {
 
         val methodId: Option[String] =
             method.map { method ⇒ method.name + method.descriptor.toJVMDescriptor }
@@ -245,20 +245,22 @@ case class StandardIssue(
             var locations = List.empty[Node]
 
             // Path information...
-            otherPCs.reverse.foreach { info ⇒
-                val (pc, message) = info
-                val lineNode =
-                    line(pc).map(ln ⇒
-                        <span class="line_number">line={ createLineNode(pc, ln) }</span>
-                    ).getOrElse(Text(""))
+            if (!basicInfoOnly) {
+                otherPCs.reverse.foreach { info ⇒
+                    val (pc, message) = info
+                    val lineNode =
+                        line(pc).map(ln ⇒
+                            <span class="line_number">line={ createLineNode(pc, ln) }</span>
+                        ).getOrElse(Text(""))
 
-                locations ::=
-                    <div class="issue_additional_info">
-                        <span class="program_counter">pc={ createPCNode(pc) }</span>
-                        { lineNode }
-                        <br/>
-                        { message }
-                    </div>
+                    locations ::=
+                        <div class="issue_additional_info">
+                            <span class="program_counter">pc={ createPCNode(pc) }</span>
+                            { lineNode }
+                            <br/>
+                            { message }
+                        </div>
+                }
             }
 
             // The primary message...
@@ -281,7 +283,7 @@ case class StandardIssue(
             infoNodes = infoNodes ::: List(dt, dd)
         }
         infoNodes = infoNodes ::: List(<dt>relevance</dt>, <dd> { relevance.value.toString } </dd>)
-        val localVariablesAsXHTML = localVariablesToXHTML
+        val localVariablesAsXHTML = if (basicInfoOnly) None else localVariablesToXHTML
         val summaryNode =
             if (localVariablesAsXHTML.isDefined)
                 <dt class="issue">summary</dt>
@@ -354,7 +356,7 @@ object StandardIssue {
             return Iterable.empty;
 
         if (issues.tail.isEmpty)
-            return Iterable(issues.head);
+            return issues;
 
         val sortedIssues = issues.sorted(IssueOrdering)
         val foldedIssues =
