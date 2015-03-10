@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -47,14 +47,16 @@ class InitProgressManagement(
         stepCount: Double,
         progStage: Stage) extends Function1[Int, ProgressManagement] {
 
-    override def apply(x: Int): ProgressManagement = new ProgressManagement {
+    override def apply(x: Int): ProgressManagement = new ProgressManagement { pm ⇒
 
-        final def progress(step: Int, evt: EventType.Value, msg: Option[String]): Unit = evt match {
+        final private[this] val finishedSteps = new java.util.concurrent.atomic.AtomicInteger(0)
+
+        final def progress(stepID: Int, evt: EventType.Value, msg: Option[String]): Unit = evt match {
             case EventType.Start ⇒ {
                 Platform.runLater(new Runnable() {
                     override def run(): Unit = {
-                        progressListView.items() += step.toString+": "+msg.get
-                        progressListItems += ((step.toString, msg.get))
+                        progressListView.items() += stepID.toString+": "+msg.get
+                        progressListItems += ((stepID.toString, msg.get))
                         progressListView.scrollTo(progressListView.getItems.size() - 1)
                     }
                 })
@@ -62,11 +64,12 @@ class InitProgressManagement(
             case EventType.End ⇒ {
                 Platform.runLater(new Runnable() {
                     override def run(): Unit = {
-                        progressListView.items() -= step.toString+": "+progressListItems.get(step.toString).get
-                        progressListItems.remove(step.toString)
-                        val prog = step.toDouble / stepCount
+                        progressListView.items() -= stepID.toString+": "+progressListItems.get(stepID.toString).get
+                        progressListItems.remove(stepID.toString)
+                        val finishedSteps = pm.finishedSteps.incrementAndGet()
+                        val prog = finishedSteps / stepCount
                         theProgress.synchronized(if (prog > theProgress()) theProgress() = prog)
-                        if (theProgress() == 1)
+                        if (finishedSteps == stepCount)
                             progStage.close
                     }
                 })

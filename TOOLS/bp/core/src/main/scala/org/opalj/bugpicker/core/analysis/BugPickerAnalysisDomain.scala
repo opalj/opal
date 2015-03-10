@@ -167,14 +167,16 @@ trait BasePerformInvocationBugPickerAnalysisDomain
         definingClass: ClassFile,
         calledMethod: Method): Boolean = {
         val result =
-            maxCallChainLength > currentCallChainLength &&
-                !calledMethod.returnType.isVoidType &&
-                (
-                    calledMethod.isPublic || calledMethod.isProtected ||
-                    // for (package) private methods we already have calculated
-                    // summaries; invoking them again doesn't make sense
-                    calledMethod.parametersCount > 0
-                )
+            maxCallChainLength > currentCallChainLength  &&
+                //!calledMethod.returnType.isVoidType &&
+                //                (
+                //                    (calledMethod.isStatic && calledMethod.parametersCount > 0) ||
+                //                    (
+                //                        !calledMethod.isStatic &&
+                //                        (calledMethod.parametersCount > 1 ||
+                !(calledMethod.isPrivate && calledMethod.parametersCount == 1)
+        //                    )
+        //                )
         if (debug) {
             val i = if (result) " invokes " else " does not invoke "
             println(s"[$currentCallChainLength]"+

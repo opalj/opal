@@ -58,6 +58,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.ai.common.XHTML
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * A static analysis that analyzes the data-flow to identify various issues in the
@@ -432,13 +433,15 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                     } finally {
                         progressManagement.end(stepId)
                     }
-
                 }
-            StandardIssue.fold(
-                scala.collection.JavaConversions.collectionAsScalaIterable(results).toSeq
-            )
+            val rawIssues = scala.collection.JavaConversions.collectionAsScalaIterable(results).toSeq
+            OPALLogger.info("analysis progress", s"post processing ${rawIssues.size} issues")
+            StandardIssue.fold(rawIssues)
         } { t ⇒ analysisTime = t }
 
+        OPALLogger.info("analysis progress",
+            s"the analysis took ${PerformanceEvaluation.ns2sec(analysisTime)} seconds "+
+                s"and found ${identifiedIssues.size} unique issues")
         import scala.collection.JavaConverters._
         (analysisTime, identifiedIssues, exceptions.asScala)
     }
@@ -481,7 +484,8 @@ object BugPickerAnalysis {
         )
 
     def resultsAsXHTML(parameters: Seq[String], methodsWithIssues: Iterable[Issue]): Node = {
-        val methodWithIssuesCount = methodsWithIssues.size
+        val methodsWithIssuesCount = methodsWithIssues.size
+        val basicInfoOnly = methodsWithIssuesCount > 5000
 
         val issuesNode: Iterable[Node] = {
             import scala.collection.SortedMap
@@ -492,10 +496,18 @@ object BugPickerAnalysis {
                 (for { (pkg, mdc) ← groupedMessages } yield {
                     <details class="package_summary">
                         <summary class="package_summary">{ pkg.replace('/', '.') }</summary>
-                        { mdc.toSeq.sorted(IssueOrdering).map(_.asXHTML) }
+                        { mdc.toSeq.sorted(IssueOrdering).map(_.asXHTML(basicInfoOnly)) }
                     </details>
                 })
-            result
+            result.seq
+        }
+
+        val totalIssues = {
+            val is = s"(Total issues: $methodsWithIssuesCount)"
+            if (basicInfoOnly)
+                is+"(Due to the number of issues an abbreviated report is shown.)"
+            else
+                is
         }
 
         <html xmlns="http://www.w3.org/1999/xhtml">
@@ -509,7 +521,7 @@ object BugPickerAnalysis {
             <body>
                 <div id="analysis_controls">
                     <div>
-                        <span>Number of issues currently displayed: <span id="issues_displayed"> { methodWithIssuesCount } </span> (Total issues: { methodWithIssuesCount })</span>
+                        <span>Number of issues currently displayed:<span id="issues_displayed"> { methodsWithIssuesCount } </span>{ totalIssues }</span>
                     </div>
                     <div>
                         Suppress issues with an estimated
