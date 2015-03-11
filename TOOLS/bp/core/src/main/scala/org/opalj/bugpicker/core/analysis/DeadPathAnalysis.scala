@@ -120,6 +120,7 @@ object DeadPathAnalysis {
         import result.joinInstructions
         import result.domain.regularSuccessorsOf
         import result.domain.exceptionHandlerSuccessorsOf
+        import result.domain.hasMultipleRegularPredecessors
 
         /*
          * Helper function to identify methods that will always throw an exception if
@@ -222,6 +223,7 @@ object DeadPathAnalysis {
                 // identify those dead edges that are the result of common programming
                 // idioms; e.g.,
                 // switch(v){
+                // ...
                 // default:
                 //   1: throw new XYZError(...);
                 //   2: throw new IllegalStateException(...);
@@ -235,6 +237,9 @@ object DeadPathAnalysis {
                 lazy val isDefaultBranchOfSwitch =
                     instruction.isInstanceOf[CompoundConditionalBranchInstruction] &&
                         nextPC == pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset
+
+                lazy val isNonExistingDefaultBranchOfSwitch = isDefaultBranchOfSwitch &&
+                    hasMultipleRegularPredecessors(pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset)
 
                 lazy val isLikelyIntendedDeadDefaultBranch = isDefaultBranchOfSwitch &&
                     // this is the default branch of a switch instruction that is dead
@@ -343,7 +348,7 @@ object DeadPathAnalysis {
                     Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
                     Set(IssueKind.DeadPath),
                     hints,
-                    if (isLikelyFalsePositive)
+                    if (isLikelyFalsePositive || isNonExistingDefaultBranchOfSwitch)
                         Relevance.TechnicalArtifact
                     else if (isProvenAssertion)
                         Relevance.ProvenAssertion

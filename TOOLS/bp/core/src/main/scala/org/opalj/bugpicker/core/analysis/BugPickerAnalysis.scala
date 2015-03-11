@@ -485,7 +485,7 @@ object BugPickerAnalysis {
 
     def resultsAsXHTML(parameters: Seq[String], methodsWithIssues: Iterable[Issue]): Node = {
         val methodsWithIssuesCount = methodsWithIssues.size
-        val basicInfoOnly = methodsWithIssuesCount > 5000
+        val basicInfoOnly = methodsWithIssuesCount > 10000
 
         val issuesNode: Iterable[Node] = {
             import scala.collection.SortedMap

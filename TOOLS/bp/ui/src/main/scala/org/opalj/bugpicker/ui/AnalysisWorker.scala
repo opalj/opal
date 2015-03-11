@@ -31,10 +31,8 @@ package bugpicker
 package ui
 
 import java.net.URL
-
 import scala.io.Source
 import scala.xml.{ Node ⇒ xmlNode }
-
 import org.opalj.io.process
 import org.opalj.ai.common.XHTML
 import org.opalj.br.analyses.ProgressManagement
@@ -42,11 +40,11 @@ import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.Issue
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
-
 import javafx.concurrent.{ Service ⇒ jService }
 import javafx.concurrent.{ Task ⇒ jTask }
 import scalafx.beans.property.ObjectProperty
 import scalafx.concurrent.Service
+import org.opalj.log.OPALLogger
 
 class AnalysisWorker(
     doc: ObjectProperty[xmlNode],
@@ -74,8 +72,19 @@ class AnalysisWorker(
 
             val newHead = <head>{ (report \ "head" \ "_") }{ stylesNode }</head>
 
-            new scala.xml.Elem(report.prefix, report.label, report.attributes, report.scope, false,
-                (newHead ++ (report \ "body"): _*))
+            val assembledReport =
+                new scala.xml.Elem(
+                    report.prefix,
+                    report.label,
+                    report.attributes,
+                    report.scope,
+                    false,
+                    (newHead ++ (report \ "body"): _*))
+
+            OPALLogger.info(
+                "analysis progress", "assembled the final report")(project.logContext)
+
+            assembledReport
         }
     }
 })

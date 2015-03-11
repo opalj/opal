@@ -105,6 +105,27 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
         regularSuccessorsOf(pc) ++ exceptionHandlerSuccessorsOf(pc)
 
     /**
+     * Returns `true` if the instruction with the given pc has multiple predecessors.
+     *
+     * @note This function calculates the respective information on demand by traversing
+     * the successors.
+     */
+    def hasMultipleRegularPredecessors(pc: PC): Boolean = {
+        var predecessors = 0
+        var i = domain.code.instructions.size - 1
+        while (i >= 0) {
+            val successors = regularSuccessors(i)
+            if ((successors ne null) && successors.contains(pc)) {
+                predecessors += 1
+                if (predecessors > 1)
+                    return true;
+            }
+            i -= 1
+        }
+        false
+    }
+
+    /**
      * @inheritdoc
      *
      * @note This method is called by the abstract interpretation framework.
