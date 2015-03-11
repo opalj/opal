@@ -67,7 +67,7 @@ function updateNumberOfIssues(minimumRelevance){
 		}
 	)
 	document.querySelector("#issues_displayed").innerHTML = 
-		" [Relevance ≥ "+minimumRelevance+"] " + current;
+		" [Relevance &ge; "+minimumRelevance+"] " + current;
 }
 
 function openAllPackages(){
