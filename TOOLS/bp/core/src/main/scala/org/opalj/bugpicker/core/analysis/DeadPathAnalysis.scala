@@ -97,6 +97,7 @@ import org.opalj.br.instructions.ReturnInstructions
 import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.domain.ThrowNoPotentialExceptionsConfiguration
 import org.opalj.br.instructions.NEW
+import org.opalj.br.cfg.ControlFlowGraph
 
 /**
  * Implementation of an analysis to find code that is "dead".
@@ -179,6 +180,8 @@ object DeadPathAnalysis {
 
         val deadCodeIssues: Seq[StandardIssue] = {
 
+            lazy val cfg = ControlFlowGraph(method)
+
             var issues = List.empty[StandardIssue]
             for {
                 pc ← body.programCounters
@@ -208,6 +211,20 @@ object DeadPathAnalysis {
             } {
                 // identify those dead edges that are pure technical artifacts
                 val isLikelyFalsePositive = requiredButIrrelevantSuccessor(pc, nextPC)
+
+                def isFinallyRelated: Boolean = classFile.majorVersion >= 50 && // older compilers are using jsr/ret
+                    body.exceptionHandlers.nonEmpty && {
+                        val correspondingPCs = cfg.correspondingPCsTo(pc)
+                        if (correspondingPCs.isEmpty) {
+                            false
+                        } else {
+                            correspondingPCs.exists { cPC ⇒
+                                // we have a jump to the seemingly dead instruction
+                                regularSuccessorsOf(cPC).contains(cPC + (nextPC - pc))
+                            }
+                        }
+                    }
+                //                def isFinallyRelated: Boolean = false
 
                 lazy val isProvenAssertion = {
                     instructions(nextPC) match {
@@ -338,7 +355,9 @@ object DeadPathAnalysis {
                         s"the successor instruction pc=$nextPC$line is dead",
                     Some(
                         "The evaluation of the instruction never directly leads to the evaluation of the given subsequent instruction."+(
-                            if (isLikelyFalsePositive)
+                            if (isLikelyFalsePositive ||
+                                isNonExistingDefaultBranchOfSwitch ||
+                                isFinallyRelated)
                                 "\n(This seems to be a technical artifact that cannot be avoided; i.e., there is probably nothing to fix!)"
                             else if (isLikelyIntendedDeadDefaultBranch)
                                 "\n(This seems to be a deliberately dead default branch of a switch instruction; i.e., there is probably nothing to fix!)"
@@ -348,7 +367,9 @@ object DeadPathAnalysis {
                     Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
                     Set(IssueKind.DeadPath),
                     hints,
-                    if (isLikelyFalsePositive || isNonExistingDefaultBranchOfSwitch)
+                    if (isLikelyFalsePositive ||
+                        isNonExistingDefaultBranchOfSwitch ||
+                        isFinallyRelated)
                         Relevance.TechnicalArtifact
                     else if (isProvenAssertion)
                         Relevance.ProvenAssertion
