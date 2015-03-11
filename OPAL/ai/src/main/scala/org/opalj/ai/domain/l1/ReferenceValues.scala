@@ -566,7 +566,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         override def hashCode: Int = origin
 
-        override def toString() = s"null(origin=$origin;t=$t)"
+        override def toString() = s"null[@$origin;t=$t]"
     }
 
     trait NonNullSingleOriginReferenceValue extends SingleOriginReferenceValue {
@@ -609,6 +609,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             else
                 return StructuralUpdate(
                     doPeformJoinWithNonNullValueWithSameOrigin(that, that.t));
+        }
+
+        def toString(upperTypeBound: String) = {
+            var description = upperTypeBound
+            if (!isPrecise) description = "_ <: "+description
+            if (isNull.isUnknown) description = "{"+description+", null}"
+            description += "[@"+origin + s";t=$t]"
+            description
         }
     }
 
@@ -720,14 +728,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 isNull.hashCode()) * 79 +
                 upperTypeBound.hashCode()
 
-        override def toString() = {
-            var description = theUpperTypeBound.toJava+"(origin="+origin
-            description += ";isNull="+isNull
-            if (!isPrecise) description += ";isUpperBound"
+        override def toString(): String = toString(theUpperTypeBound.toJava)
 
-            description += s";t=$t)"
-            description
-        }
     }
 
     trait ObjectValue extends super.ObjectValue with NonNullSingleOriginReferenceValue {
@@ -873,14 +875,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 isNull.hashCode()) * 79 +
                 origin
 
-        override def toString() = {
-            var description = theUpperTypeBound.toJava+"(origin="+origin
-            description += ";isNull="+isNull
-            if (!isPrecise) description += ";isUpperBound"
-            description += s";t=$t)"
-            description
-        }
-
+        override def toString(): String = toString(theUpperTypeBound.toJava)
     }
 
     protected class MObjectValue(
@@ -989,8 +984,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 origin
 
         override def toString() = {
-            upperTypeBound.map(_.toJava).mkString(" with ") +
-                s"(origin=$origin;isNull=$isNull;isUpperBound;t=$t)"
+            toString(upperTypeBound.map(_.toJava).mkString(" with "))
         }
     }
 
@@ -1687,12 +1681,16 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override def toString() = {
-            var s = values.mkString("OneOf["+values.size+"](", ", ", ")")
-            val lutb = upperTypeBound
-            if (lutb.nonEmpty)
-                s += lutb.map(_.toJava).mkString(";lutb=", " with ", "")
-            if (!isPrecise) s += ";isUpperBound"
-            s += s";isNull=$isNull;t=$t"
+            var s =
+                if (isNull.isYes) {
+                    "null"
+                } else {
+                    var ss = upperTypeBound.map(_.toJava).mkString(" with ")
+                    if (!isPrecise) ss = "_ <: "+ss
+                    if (isNull.isUnknown) ss = "{"+ss+", null}"
+                    ss
+                }
+            s = s+"[t="+t+";"+values.mkString("values=«", ", ", "»")+"]"
             s
         }
     }

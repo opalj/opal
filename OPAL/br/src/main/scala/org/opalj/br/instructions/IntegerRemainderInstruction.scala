@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * An instruction that the remainder of an integer values (long or in).
  *
@@ -40,8 +42,14 @@ abstract class IntegerRemainderInstruction extends RemainderInstruction {
     final def runtimeExceptions: List[ObjectType] =
         ArithmeticInstruction.runtimeExceptions
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
-        Instruction.nextInstructionOrExceptionHandler(
-            this, currentPC, code, ObjectType.ArithmeticException)
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
+        if (regularSuccessorsOnly)
+            UShortSet(indexOfNextInstruction(currentPC, code))
+        else
+            Instruction.nextInstructionOrExceptionHandler(
+                this, currentPC, code, ObjectType.ArithmeticException)
 
 }

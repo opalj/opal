@@ -46,138 +46,103 @@ trait PerformInvocations extends MethodCallsHandling {
     callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
 
     /**
-     * Identifies recursive calls.
-     *
-     * @note This function can simply always return `false`, if the domain that is used
-     *      for analyzing the called method does not follow method invocations (does
-     *      not perform invocations.) I.e., the domain used for analyzing a called method
-     *      can be ''any'' domain; in particular a domain that does not perform
-     *      invocations.
+     * If `true` the exceptions thrown by the called method are will be used
+     * during the evaluation of the calling method.
      */
-    def isRecursive(
-        definingClass: ClassFile,
-        method: Method,
-        operands: Operands): Boolean
+    def useExceptionsThrownByCalledMethod: Boolean = false
 
-    def shouldInvocationBePerformed(
-        definingClass: ClassFile,
-        method: Method): Boolean
+    type CalledMethodDomain <: TargetDomain with MethodCallResults
 
     /**
-     * Encapsulates the information required to perform the invocation of the target
-     * method.
+     * The domain that will be used to perform the abstract interpretation of the
+     * called method.
+     *
+     * In general, explicit support is required to identify recursive calls
+     * if the domain also follows method invocations,
      */
-    trait InvokeExecutionHandler {
+    protected[this] def calledMethodDomain(classFile: ClassFile, method: Method): CalledMethodDomain
 
-        /**
-         * If `true` the exceptions thrown by the called method are returned by this
-         * method.
-         */
-        val propagateExceptionsThrownByCalledMethod: Boolean = false
+    /**
+     *  The abstract interpreter that will be used for the abstract interpretation.
+     */
+    def calledMethodAI: AI[_ >: CalledMethodDomain]
 
-        /**
-         * The domain that will be used to perform the abstract interpretation of the
-         * called method.
-         *
-         * In general, explicit support is required to identify recursive calls
-         * if the domain also follows method invocations,
-         */
-        val domain: TargetDomain with MethodCallResults
+    protected[this] def doInvoke(
+        method: Method,
+        calledMethodDomain: CalledMethodDomain)(
+            parameters: calledMethodDomain.Locals): AIResult { val domain: calledMethodDomain.type } = {
+        val noOperands = List.empty[calledMethodDomain.DomainValue]
+        val isStrict = method.isStrict
+        val code = method.body.get
+        calledMethodAI.performInterpretation(
+            isStrict, code, calledMethodDomain)(
+                noOperands, parameters)
+    }
 
-        /**
-         *  The abstract interpreter that will be used for the abstract interpretation.
-         */
-        def ai: AI[_ >: domain.type]
+    /**
+     * Converts the results (`DomainValue`s) of the evaluation of the called
+     * method into the calling domain.
+     *
+     * If the returned value is one of the parameters (determined using reference
+     * identity), then the parameter is mapped back to the original operand.
+     */
+    protected[this] def transformResult(
+        callerPC: PC,
+        calledMethod: Method,
+        originalOperands: callingDomain.Operands,
+        calledMethodDomain: CalledMethodDomain)(
+            passedParameters: calledMethodDomain.Locals,
+            result: AIResult { val domain: calledMethodDomain.type }): MethodCallResult = {
 
-        def perform(
-            pc: PC,
-            definingClass: ClassFile,
-            method: Method,
-            operands: callingDomain.Operands,
-            fallback: () ⇒ MethodCallResult): MethodCallResult = {
-
-            val noOperands = List.empty[domain.DomainValue]
-            val parameters = mapOperandsToParameters(operands, method, domain)
-            val aiResult =
-                ai.performInterpretation(
-                    method.isStrict, method.body.get, domain)(
-                        noOperands, parameters)
-
-            if (aiResult.wasAborted)
-                return fallback();
-
-            transformResult(pc, method, operands, parameters, aiResult)
-        }
-
-        /**
-         * Converts the results (`DomainValue`s) of the evaluation of the called
-         * method into the calling domain.
-         *
-         * If the returned value is one of the parameters (determined using reference
-         * identity), then the parameter is mapped back to the original operand.
-         */
-        protected[this] def transformResult(
-            callerPC: PC,
-            calledMethod: Method,
-            originalOperands: callingDomain.Operands,
-            passedParameters: domain.Locals,
-            result: AIResult { val domain: InvokeExecutionHandler.this.domain.type }): MethodCallResult = {
-
-            if (propagateExceptionsThrownByCalledMethod) {
-                val domain = result.domain
-                val thrownExceptions = domain.thrownExceptions(callingDomain, callerPC)
-                if (!domain.returnedNormally) {
-                    // The method must have returned with an exception or not at all...
-                    if (thrownExceptions.nonEmpty)
-                        ThrowsException(thrownExceptions)
-                    else
-                        ComputationFailed
-                } else {
-                    if (calledMethod.descriptor.returnType eq VoidType) {
-                        if (thrownExceptions.nonEmpty) {
-                            ComputationWithSideEffectOrException(thrownExceptions)
-                        } else {
-                            ComputationWithSideEffectOnly
-                        }
+        if (useExceptionsThrownByCalledMethod) {
+            val domain = result.domain
+            val thrownExceptions = domain.thrownExceptions(callingDomain, callerPC)
+            if (!domain.returnedNormally) {
+                // The method must have returned with an exception or not at all...
+                if (thrownExceptions.nonEmpty)
+                    ThrowsException(thrownExceptions)
+                else
+                    ComputationFailed
+            } else {
+                if (calledMethod.descriptor.returnType eq VoidType) {
+                    if (thrownExceptions.nonEmpty) {
+                        ComputationWithSideEffectOrException(thrownExceptions)
                     } else {
-                        val returnedValue =
-                            domain.returnedValueRemapped(
-                                callingDomain, callerPC)(
-                                    originalOperands, passedParameters)
-                        if (thrownExceptions.nonEmpty) {
-                            ComputedValueOrException(returnedValue.get, thrownExceptions)
-                        } else {
-                            ComputedValue(returnedValue.get)
-                        }
+                        ComputationWithSideEffectOnly
+                    }
+                } else {
+                    val returnedValue =
+                        domain.returnedValueRemapped(
+                            callingDomain, callerPC)(
+                                originalOperands, passedParameters)
+                    if (thrownExceptions.nonEmpty) {
+                        ComputedValueOrException(returnedValue.get, thrownExceptions)
+                    } else {
+                        ComputedValue(returnedValue.get)
                     }
                 }
+            }
+        } else {
+            val returnedValue =
+                calledMethodDomain.returnedValueRemapped(
+                    callingDomain, callerPC)(
+                        originalOperands, passedParameters)
+            val exceptions = callingDomain.getPotentialExceptions(callerPC)
+
+            if (calledMethod.descriptor.returnType eq VoidType) {
+                MethodCallResult(exceptions)
+            } else if (returnedValue.isEmpty /*the method always throws an exception*/ ) {
+                ThrowsException(exceptions)
             } else {
-                val returnedValue =
-                    domain.returnedValueRemapped(
-                        callingDomain, callerPC)(
-                            originalOperands, passedParameters)
-                if (calledMethod.descriptor.returnType eq VoidType) {
-                    MethodCallResult(callingDomain.getPotentialExceptions(callerPC))
-                } else if (returnedValue.isEmpty /*the method always */ ) {
-                    ThrowsException(callingDomain.getPotentialExceptions(callerPC))
-                } else {
-                    MethodCallResult(
-                        returnedValue.get,
-                        callingDomain.getPotentialExceptions(callerPC))
-                }
+                MethodCallResult(returnedValue.get, exceptions)
             }
         }
     }
 
     /**
-     * Returns (most often creates) the [[InvokeExecutionHandler]] that will be
-     * used to perform the abstract interpretation of the called method.
+     * Returns `true` is a potential target.
      */
-    def invokeExecutionHandler(
-        pc: PC,
-        definingClass: ClassFile,
-        method: Method,
-        operands: Operands): InvokeExecutionHandler
+    def shouldInvocationBePerformed(definingClass: ClassFile, method: Method): Boolean
 
     /**
      * Performs the invocation of the given method using the given operands.
@@ -195,9 +160,14 @@ trait PerformInvocations extends MethodCallsHandling {
             s"the method ${project.source(definingClass.thisType)}: "+
                 s"${method.toJava(definingClass)} does not have a body "+
                 "(is the project self-consistent?)")
+        val calledMethodDomain = this.calledMethodDomain(definingClass, method)
+        val parameters = mapOperandsToParameters(operands, method, calledMethodDomain)
+        val aiResult = doInvoke(method, calledMethodDomain)(parameters)
 
-        val executionHandler = invokeExecutionHandler(pc, definingClass, method, operands)
-        executionHandler.perform(pc, definingClass, method, operands, fallback)
+        if (aiResult.wasAborted)
+            fallback();
+        else
+            transformResult(pc, method, operands, calledMethodDomain)(parameters, aiResult)
     }
 
     protected[this] def testAndDoInvoke(
@@ -217,8 +187,7 @@ trait PerformInvocations extends MethodCallsHandling {
                     method.toJava(definingClass))
             fallback()
         } else if (!method.isNative) {
-            if (!shouldInvocationBePerformed(definingClass, method) ||
-                isRecursive(definingClass, method, operands))
+            if (!shouldInvocationBePerformed(definingClass, method))
                 fallback()
             else {
                 doInvoke(pc, definingClass, method, operands, fallback)

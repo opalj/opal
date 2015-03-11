@@ -46,7 +46,10 @@ abstract class NumericConversionInstruction
 
     final def length: Int = 1
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
         UShortSet(indexOfNextInstruction(currentPC, code))
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1

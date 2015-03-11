@@ -41,6 +41,7 @@ import scalafx.geometry.Pos
 import scalafx.scene.Scene
 import scalafx.scene.control.Button
 import scalafx.scene.control.ListView
+import scalafx.scene.control.TextArea
 import scalafx.scene.control.TitledPane
 import scalafx.scene.input.KeyCode
 import scalafx.scene.input.KeyEvent
@@ -52,11 +53,13 @@ import scalafx.stage.FileChooser
 import scalafx.stage.Modality
 import scalafx.stage.Stage
 import scalafx.stage.StageStyle
+import scalafx.stage.WindowEvent
 import scalafx.scene.layout.BorderPane
 import scalafx.scene.control.SelectionMode
 import scalafx.scene.control.ScrollPane
 
-class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
+class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[LoadedFiles]) extends Stage {
+    theStage ⇒
 
     private final val buttonWidth = 200
     private final val buttonMargin = Insets(5)
@@ -69,6 +72,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
     val libs = ListBuffer[File]() ++ preferences.map(_.libraries).getOrElse(Seq.empty)
 
     var cancelled = false
+    val nameTextArea = new TextArea {
+        text = preferences.map(_.projectName).getOrElse("")
+        prefWidth = 778
+    }
     val jarListview = new ListView[String] {
         items() ++= jars.map(_.toString)
         hgrow = Priority.ALWAYS
@@ -99,6 +106,18 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
                     prefWidth = 778
                     content = Seq(
                         new TitledPane {
+                            text = "Choose a project name"
+                            collapsible = true
+                            padding = boxPadding
+                            margin = boxMargin
+                            maxHeight = 70
+
+                            content = new HBox {
+                                content = Seq(
+                                    nameTextArea)
+                            }
+                        },
+                        new TitledPane {
                             text = "Select project files and directories"
                             collapsible = true
                             padding = boxPadding
@@ -125,6 +144,9 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
                                                         new FileChooser.ExtensionFilter("Class Files", "*.class"))
                                                     val file = fcb.showOpenDialog(scene().getWindow())
                                                     if (file != null) {
+                                                        if (jars.isEmpty && nameTextArea.text == "") {
+                                                            nameTextArea.text = file.toString()
+                                                        }
                                                         jars += file
                                                         jarListview.items.get.add(file.toString())
                                                     }
@@ -143,6 +165,9 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
                                                     }
                                                     val file = dc.showDialog(scene().window())
                                                     if (file != null) {
+                                                        if (jars.isEmpty && nameTextArea.text == "") {
+                                                            nameTextArea.text = file.toString()
+                                                        }
                                                         jars += file
                                                         jarListview.items() += file.toString()
                                                     }
@@ -347,6 +372,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
                         margin = buttonMargin
                         minWidth = 80
                         onAction = { e: ActionEvent ⇒
+                            nameTextArea.clear()
                             jars.clear()
                             jarListview.items().clear()
                             libs.clear()
@@ -371,7 +397,19 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
                         margin = buttonMargin
                         defaultButton = true
                         minWidth = 80
-                        onAction = { e: ActionEvent ⇒ self.close() }
+                        onAction = { e: ActionEvent ⇒
+                            if (nameTextArea.text.value == "") {
+                                DialogStage.showMessage("Error",
+                                    "You have not specified a name for the project!",
+                                    theStage)
+                            } else if (nameAlreadyExists) {
+                                DialogStage.showMessage("Error", "The name you have specified for the project already exists. Choose another one!", theStage)
+                            } else if (jars.isEmpty) {
+                                DialogStage.showMessage("Error", "You have not specified any classes to be analyzed!", theStage)
+                            } else {
+                                self.close()
+                            }
+                        }
                     }
                 )
 
@@ -382,11 +420,32 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
         filterEvent(KeyEvent.KeyPressed) { e: KeyEvent ⇒
             if (e.code.equals(KeyCode.ESCAPE)) {
                 cancelled = true
-                close()
+                self.close()
             } else if (e.code.equals(KeyCode.ENTER)) {
-                close()
+                if (nameTextArea.text.value == "") {
+                    DialogStage.showMessage("Error",
+                        "You have not specified a name for the project!",
+                        theStage)
+                } else if (nameAlreadyExists) {
+                    DialogStage.showMessage("Error", "The name you have specified for the project already exists. Choose another one!", theStage)
+                } else if (jars.isEmpty) {
+                    DialogStage.showMessage("Error", "You have not specified any classes to be analyzed!", theStage)
+                } else {
+                    self.close()
+                }
             }
         }
+    }
+
+    theStage.onCloseRequest = { e: WindowEvent ⇒
+        cancelled = true
+    }
+
+    def nameAlreadyExists: Boolean = {
+        recentProjects.exists(p ⇒ p.projectName == nameTextArea.text.value &&
+            // this guarantees that identical projects are still loaded
+            !(p.projectFiles == jars && p.projectSources == sources &&
+                p.libraries == libs))
     }
 
     def show(owner: Stage): Option[LoadedFiles] = {
@@ -399,6 +458,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
             None
         } else {
             Some(LoadedFiles(
+                projectName = nameTextArea.text.value,
                 projectFiles = jars,
                 projectSources = sources,
                 libraries = libs))
@@ -407,6 +467,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles]) extends Stage {
 }
 
 case class LoadedFiles(
+    projectName: String = "",
     projectFiles: Seq[File] = Seq.empty,
     projectSources: Seq[File] = Seq.empty,
     libraries: Seq[File] = Seq.empty)

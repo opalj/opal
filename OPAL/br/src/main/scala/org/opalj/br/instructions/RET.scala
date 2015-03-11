@@ -45,7 +45,10 @@ case class RET(lvIndex: Int)
 
     final def length: Int = 2
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
         throw new UnsupportedOperationException(
             "to determine the next instruction that will be executed "+
                 "a data-/control-flow analysis needs to be executed; "+

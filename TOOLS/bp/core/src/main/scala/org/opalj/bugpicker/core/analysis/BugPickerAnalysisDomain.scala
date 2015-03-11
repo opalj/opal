@@ -45,10 +45,21 @@ import org.opalj.ai.domain.la.PerformInvocationsWithBasicVirtualMethodCallResolu
 import org.opalj.ai.domain.l2.PerformInvocationsWithRecursionDetection
 import org.opalj.br.ClassFile
 import org.opalj.ai.AI
+import org.opalj.ai.mapOperands
 import org.opalj.ai.TheAI
 import org.opalj.ai.domain.l2.CalledMethodsStore
 import org.opalj.ai.TheMemoryLayout
+import org.opalj.ai.common.XHTML
+import org.opalj.br.ReferenceType
+import org.opalj.br.MethodDescriptor
+import org.opalj.ai.domain.l2.ChildPerformInvocationsWithRecursionDetection
+import org.opalj.ai.AIResult
+import org.opalj.ai.domain.l2.CalledMethodsStore
 
+/**
+ * The base domain that is shared by all domains that are used to perform abstract
+ * interpretations of methods.
+ */
 trait BaseBugPickerAnalysisDomain
         extends CorrelationalDomain
         with domain.TheProject
@@ -68,35 +79,85 @@ trait BaseBugPickerAnalysisDomain
         with domain.l0.DefaultTypeLevelFloatValues
         with domain.l0.DefaultTypeLevelDoubleValues
         with domain.l1.ConcretePrimitiveValuesConversions
-        //with domain.l1.DefaultReferenceValuesBinding
-        //with domain.l1.DefaultStringValuesBinding
+        //with domain.l1.DefaultReferenceValuesBinding [implicitly mixed in via StringValuesBinding]
+        //with domain.l1.DefaultStringValuesBinding [implicitly mixed in via ClassValuesBinding]
         with domain.l1.NullPropertyRefinement
         with domain.l1.MaxArrayLengthRefinement
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization {
-    // we wan to get the special treatment of calls on "Class" objects
+    // We want to get the special treatment of calls on "Class" objects
     // and do not want to perform invocations in this case;
     // hence, we have to mix in this domain AFTER the PerformInvocations domain!
     this: domain.l1.DefaultClassValuesBinding ⇒
 }
 
+/**
+ * This is the fall back domain that is used to perform an abstract interpretation of
+ * a method without invoking called methods.
+ */
 class FallbackBugPickerAnalysisDomain(
     val project: Project[URL],
     val fieldValueInformation: FieldValueInformation,
     val methodReturnValueInformation: MethodReturnValueInformation,
     val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    val method: Method,
-    override val maxCardinalityOfIntegerRanges: Long)
+    override val maxCardinalityOfIntegerRanges: Long,
+    override val maxCardinalityOfLongSets: Int,
+    val /*current*/ method: Method)
         extends BaseBugPickerAnalysisDomain
         with domain.l1.DefaultClassValuesBinding
-        with domain.RecordCFG
         with domain.l1.RecordAllThrownExceptions
+        with domain.RecordCFG
 
+/**
+ * The base domain that is shared by all domains that are used to perform abstract
+ * interpretations of methods where call methods are potentially called.
+ */
 trait BasePerformInvocationBugPickerAnalysisDomain
         extends BaseBugPickerAnalysisDomain
-        with PerformInvocationsWithBasicVirtualMethodCallResolution
         with PerformInvocationsWithRecursionDetection
-        with domain.l1.DefaultClassValuesBinding {
+        with PerformInvocationsWithBasicVirtualMethodCallResolution
+        with domain.l1.DefaultClassValuesBinding { callingDomain ⇒
+
+    def debug: Boolean
+
+    type CalledMethodDomain = InvocationBugPickerAnalysisDomain
+
+    override protected[this] def doInvoke(
+        method: Method,
+        calledMethodDomain: CalledMethodDomain)(
+            parameters: calledMethodDomain.Locals): AIResult { val domain: calledMethodDomain.type } = {
+        val result = super.doInvoke(method, calledMethodDomain)(parameters)
+        if (debug) {
+            org.opalj.io.writeAndOpen(XHTML.dump(
+                Some(project.classFile(method)),
+                Some(method),
+                method.body.get,
+                Some(
+                    "Created: "+(new java.util.Date).toString+"<br>"+
+                        "Domain: "+result.domain.getClass.getName+"<br>"+
+                        XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
+                result.domain)(
+                    result.operandsArray,
+                    result.localsArray),
+                "AIResult",
+                ".html"
+            )
+        }
+        result
+    }
+
+    override def doInvoke(
+        pc: PC,
+        definingClass: ClassFile,
+        method: Method,
+        operands: callingDomain.Operands,
+        fallback: () ⇒ MethodCallResult): MethodCallResult = {
+        val result = super.doInvoke(pc, definingClass, method, operands, fallback)
+        if (debug) {
+            println("the result of calling "+method.toJava(definingClass)+" is "+result)
+        }
+        result
+    }
 
     val maxCallChainLength: Int
 
@@ -104,10 +165,80 @@ trait BasePerformInvocationBugPickerAnalysisDomain
 
     def shouldInvocationBePerformed(
         definingClass: ClassFile,
-        method: Method): Boolean =
-        maxCallChainLength > currentCallChainLength &&
-            !method.returnType.isVoidType &&
-            method.parametersCount > 0
+        calledMethod: Method): Boolean = {
+        val result =
+            maxCallChainLength > currentCallChainLength  &&
+                //!calledMethod.returnType.isVoidType &&
+                //                (
+                //                    (calledMethod.isStatic && calledMethod.parametersCount > 0) ||
+                //                    (
+                //                        !calledMethod.isStatic &&
+                //                        (calledMethod.parametersCount > 1 ||
+                !(calledMethod.isPrivate && calledMethod.parametersCount == 1)
+        //                    )
+        //                )
+        if (debug) {
+            val i = if (result) " invokes " else " does not invoke "
+            println(s"[$currentCallChainLength]"+
+                method.toJava(project.classFile(method)) +
+                i +
+                calledMethod.toJava(definingClass))
+        }
+        result
+    }
+
+    abstract override def invokevirtual(
+        pc: PC,
+        declaringClass: ReferenceType,
+        name: String,
+        descriptor: MethodDescriptor,
+        operands: Operands): MethodCallResult = {
+
+        val result = super.invokevirtual(pc, declaringClass, name, descriptor, operands)
+        if (debug) {
+
+            println(s"[$currentCallChainLength] call result of "+
+                declaringClass.toJava+" "+descriptor.toJava(name) + result)
+        }
+        result
+    }
+}
+
+class InvocationBugPickerAnalysisDomain(
+    val project: Project[URL],
+    val fieldValueInformation: FieldValueInformation,
+    val methodReturnValueInformation: MethodReturnValueInformation,
+    val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
+    override val maxCardinalityOfIntegerRanges: Long,
+    override val maxCardinalityOfLongSets: Int,
+    val maxCallChainLength: Int,
+    val callerDomain: BasePerformInvocationBugPickerAnalysisDomain,
+    val /*current*/ method: Method,
+    val currentCallChainLength: Int,
+    val debug: Boolean)
+        extends BasePerformInvocationBugPickerAnalysisDomain
+        with domain.RecordMethodCallResults
+        with domain.RecordLastReturnedValues
+        with domain.RecordAllThrownExceptions
+        with ChildPerformInvocationsWithRecursionDetection {
+    callingDomain ⇒
+
+    override def calledMethodDomain(classFile: ClassFile, method: Method) =
+        new InvocationBugPickerAnalysisDomain(
+            project,
+            fieldValueInformation,
+            methodReturnValueInformation,
+            cache,
+            maxCardinalityOfIntegerRanges,
+            maxCardinalityOfLongSets,
+            maxCallChainLength,
+            callingDomain,
+            method, currentCallChainLength + 1,
+            debug) {
+        }
+
+    def calledMethodAI = callerDomain.calledMethodAI
+
 }
 
 /**
@@ -120,106 +251,50 @@ class RootBugPickerAnalysisDomain(
     val fieldValueInformation: FieldValueInformation,
     val methodReturnValueInformation: MethodReturnValueInformation,
     val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    val classFile: ClassFile,
-    val method: Method,
     override val maxCardinalityOfIntegerRanges: Long,
-    val maxCallChainLength: Int)
+    override val maxCardinalityOfLongSets: Int,
+    val maxCallChainLength: Int,
+    val classFile: ClassFile,
+    val /*current*/ method: Method,
+    val debug: Boolean,
+    val frequentEvaluationWarningLevel: Int = 256)
         extends BasePerformInvocationBugPickerAnalysisDomain
         with TheAI[BaseBugPickerAnalysisDomain]
         with TheMemoryLayout // required to extract the initial operands
         // the following two are required to detect instructions that always throw
         // an exception (such as div by zero, a failing checkcast, a method call that
         // always fails etc.)
-        with domain.RecordCFG
-        with domain.l1.RecordAllThrownExceptions {
-    callingDomain ⇒
+        with domain.l1.RecordAllThrownExceptions
+        with domain.RecordCFG { callingDomain ⇒
 
     final def currentCallChainLength: Int = 0
+    final def calledMethodAI = ai
+    final val coordinatingDomain = this
 
-    // the called methods store is always only required at analysis time, at this point
+    // The called methods store is always only required at analysis time, at this point
     // in time the initial operands are available!
-    lazy val calledMethodsStore: CalledMethodsStore = {
-        val store = new CalledMethodsStore(this, /*Frequent Evaluation Warning=*/ 256)
+    lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = {
         val operands =
             localsArray(0).foldLeft(List.empty[DomainValue])((l, n) ⇒
                 if (n ne null) n :: l else l
             )
-        // we want to add this method to avoid useless recursions;
-        // it is (at this moment) definitively not recursive...
-        store.isRecursive(classFile, method, operands)
-        store
+        CalledMethodsStore(coordinatingDomain, frequentEvaluationWarningLevel)(
+            method, mapOperands(operands, coordinatingDomain))
     }
 
-    def invokeExecutionHandler(
-        pc: PC,
-        definingClass: ClassFile,
-        method: Method,
-        operands: Operands): InvokeExecutionHandler = {
-        assert(method ne null)
+    override def calledMethodDomain(classFile: ClassFile, method: Method) =
+        new InvocationBugPickerAnalysisDomain(
+            project,
+            fieldValueInformation,
+            methodReturnValueInformation,
+            cache,
+            maxCardinalityOfIntegerRanges,
+            maxCardinalityOfLongSets,
+            maxCallChainLength,
+            callingDomain,
+            method,
+            currentCallChainLength + 1,
+            debug)
 
-        new InvokeExecutionHandler {
-
-            override val domain =
-                new InvocationBugPickerAnalysisDomain(
-                    callingDomain.ai,
-                    project,
-                    fieldValueInformation,
-                    methodReturnValueInformation,
-                    cache,
-                    method,
-                    maxCardinalityOfIntegerRanges,
-                    maxCallChainLength, currentCallChainLength + 1) {
-                    val calledMethodsStore: RootBugPickerAnalysisDomain.this.calledMethodsStore.type =
-                        RootBugPickerAnalysisDomain.this.calledMethodsStore
-                }
-
-            def ai: AI[_ >: this.domain.type] = callingDomain.ai
-        }
-    }
-}
-
-abstract class InvocationBugPickerAnalysisDomain(
-    val ai: AI[BaseBugPickerAnalysisDomain],
-    val project: Project[URL],
-    val fieldValueInformation: FieldValueInformation,
-    val methodReturnValueInformation: MethodReturnValueInformation,
-    val cache: CallGraphCache[MethodSignature, scala.collection.Set[Method]],
-    val method: Method,
-    override val maxCardinalityOfIntegerRanges: Long,
-    val maxCallChainLength: Int = 0,
-    val currentCallChainLength: Int)
-        extends BasePerformInvocationBugPickerAnalysisDomain
-        with domain.RecordMethodCallResults
-        with domain.RecordLastReturnedValues
-        with domain.RecordAllThrownExceptions
-        with PerformInvocationsWithBasicVirtualMethodCallResolution {
-    callingDomain ⇒
-
-    def invokeExecutionHandler(
-        pc: PC,
-        definingClass: ClassFile,
-        method: Method,
-        operands: Operands): InvokeExecutionHandler = {
-        assert(method ne null)
-
-        new InvokeExecutionHandler {
-
-            override val domain =
-                new InvocationBugPickerAnalysisDomain(
-                    callingDomain.ai,
-                    project,
-                    fieldValueInformation,
-                    methodReturnValueInformation,
-                    cache,
-                    method,
-                    maxCardinalityOfIntegerRanges,
-                    maxCallChainLength, currentCallChainLength + 1) {
-                    val calledMethodsStore: InvocationBugPickerAnalysisDomain.this.calledMethodsStore.type =
-                        InvocationBugPickerAnalysisDomain.this.calledMethodsStore
-                }
-
-            def ai: AI[_ >: this.domain.type] = callingDomain.ai
-        }
-    }
 }
 

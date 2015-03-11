@@ -88,6 +88,7 @@ class BugPicker extends Application {
 
     var project: Project[URL] = null
     var sources: Seq[File] = Seq.empty
+    var recentProjects: Seq[LoadedFiles] = BugPicker.loadRecentProjectsFromPreferences().getOrElse(Seq.empty)
 
     override def start(jStage: javafx.stage.Stage): Unit = {
         val stage: Stage = jStage
@@ -135,12 +136,26 @@ class BugPicker extends Application {
 
         val aboutDialog = new AboutDialog(stage, showURL)
 
-        def loadProjectAction(): ActionEvent ⇒ Unit = { e: ActionEvent ⇒
+        lazy val recentProjectsMenu = new Menu {
+            text = "_Open Recent"
+            mnemonicParsing = true
+            accelerator = KeyCombination("Shortcut+O")
+            items = createRecentProjectsMenu()
+            if (items.isEmpty) {
+                disable = true
+            }
+        }
+
+        def loadProjectAction(): Unit = {
             val preferences = BugPicker.loadFilesFromPreferences()
-            val dia = new LoadProjectDialog(preferences)
+            val dia = new LoadProjectDialog(preferences, recentProjects)
             val results = dia.show(stage)
             if (results.isDefined && !results.get.projectFiles.isEmpty) {
                 BugPicker.storeFilesToPreferences(results.get)
+                recentProjects = updateRecentProjects(results.get)
+                BugPicker.storeRecentProjectsToPreferences(recentProjects)
+                recentProjectsMenu.items = createRecentProjectsMenu()
+                recentProjectsMenu.disable = false;
                 sourceView.engine.loadContent("")
                 byteView.engine.loadContent("")
                 reportView.engine.loadContent(Messages.LOADING_STARTED)
@@ -165,17 +180,18 @@ class BugPicker extends Application {
             new MenuBar {
                 menus = Seq(
                     new Menu {
-                        text = "_File"
+                        text = "_Project"
                         mnemonicParsing = true
                         items = Seq(
                             new MenuItem {
-                                text = "L_oad"
+                                text = "_New Project"
                                 mnemonicParsing = true
-                                accelerator = KeyCombination("Shortcut+O")
-                                onAction = loadProjectAction()
+                                accelerator = KeyCombination("Shortcut+N")
+                                onAction = { e: ActionEvent ⇒ loadProjectAction() }
                             },
+                            recentProjectsMenu,
                             new MenuItem {
-                                text = "_Project info"
+                                text = "Project _Info"
                                 mnemonicParsing = true
                                 accelerator = KeyCombination("Shortcut+I")
                                 onAction = { e: ActionEvent ⇒ ProjectInfoDialog.show(stage, project, sources) }
@@ -238,6 +254,64 @@ class BugPicker extends Application {
             }
         }
 
+        def createRecentProjectsMenu(): Seq[MenuItem] = {
+
+            if (!recentProjects.isEmpty) {
+                var i = 0
+                (for (p ← recentProjects) yield {
+                    i = i + 1
+                    new MenuItem {
+                        text = p.projectName
+                        mnemonicParsing = true
+                        if (i < 10) {
+                            accelerator = KeyCombination(s"Shortcut+$i")
+                        }
+                        onAction = { e: ActionEvent ⇒
+                            {
+                                BugPicker.storeFilesToPreferences(p)
+                                loadProjectAction()
+                            }
+                        }
+                    }
+                }) ++ Seq(
+                    new MenuItem {
+                        text = "Clear Items"
+                        mnemonicParsing = true
+                        accelerator = KeyCombination("Shortcut+0")
+                        id = "clearItems"
+                        onAction = { e: ActionEvent ⇒
+                            {
+                                recentProjects = Seq.empty
+                                BugPicker.deleteRecentProjectsFromPreferences()
+                                recentProjectsMenu.items = Seq.empty
+                                recentProjectsMenu.disable = true;
+                            }
+                        }
+                    })
+            } else {
+                Seq.empty
+            }
+        }
+
+        def updateRecentProjects(lastProject: LoadedFiles): Seq[LoadedFiles] = {
+            if (!recentProjects.contains(lastProject)) {
+                if (recentProjects.size < BugPicker.MAX_PREFERENCES_SIZE) {
+                    // lastProject is most recent project, enough space for one more
+                    lastProject +: recentProjects
+                } else {
+                    // lastProject is most recent project, drop least recent project
+                    lastProject +: recentProjects.init
+                }
+            } else {
+                // lastProject isn't already most recent project, bring it to front
+                if (recentProjects.head != lastProject) {
+                    lastProject +: recentProjects.filter(_ != lastProject)
+                } else {
+                    recentProjects
+                }
+            }
+        }
+
         stage.title = "BugPicker"
 
         stage.scene = new Scene {
@@ -291,20 +365,31 @@ object BugPicker {
 
     final val PREFERENCES_KEY = "/org/opalj/bugpicker"
     final val PREFERENCES = Preferences.userRoot().node(PREFERENCES_KEY)
-    final val PREFERENCES_KEY_CLASSES = "classes"
-    final val PREFERENCES_KEY_LIBS = "libs"
-    final val PREFERENCES_KEY_SOURCES = "sources"
+    final val PREFERENCES_KEY_CURRENT_PROJECT_NAME = "name"
+    final val PREFERENCES_KEY_CURRENT_PROJECT_CLASSES = "classes"
+    final val PREFERENCES_KEY_CURRENT_PROJECT_LIBS = "libs"
+    final val PREFERENCES_KEY_CURRENT_PROJECT_SOURCES = "sources"
+    final val RECENT_PROJECT = "recentProject_"
+    final val PREFERENCES_KEY_RECENT_PROJECT_NAME = "name_"
+    final val PREFERENCES_KEY_RECENT_PROJECT_CLASSES = "classes_"
+    final val PREFERENCES_KEY_RECENT_PROJECT_LIBS = "libs_"
+    final val PREFERENCES_KEY_RECENT_PROJECT_SOURCES = "sources_"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR = "maxEvalFactor"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME = "maxEvalTime"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES = "maxCardinalityOfIntegerRanges"
+    final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS = "maxCardinalityOfLongSets"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH = "maxCallChainLength"
     final val PREFERENCES_KEY_WINDOW_SIZE = "windowSize"
 
     final val defaultAppCSSURL = getClass.getResource("/org/opalj/bugpicker/ui/app.css").toExternalForm
 
+    final val MAX_PREFERENCES_SIZE = 9
+
     def loadWindowSizeFromPreferences(): Option[Rectangle2D] = {
         val prefValue = PREFERENCES.get(PREFERENCES_KEY_WINDOW_SIZE, "")
-        if (prefValue.isEmpty()) return None
+        if (prefValue.isEmpty()) {
+            return None
+        }
         val Array(w, h, x, y) = prefValue.split(";")
         Some(new Rectangle2D(x.toDouble, y.toDouble, w.toDouble, h.toDouble))
     }
@@ -321,9 +406,12 @@ object BugPicker {
         val maxEvalTime = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
             BugPickerAnalysis.defaultMaxEvalTime)
-        val maxCardinalityOfIntegerRanges = PREFERENCES.getInt(
+        val maxCardinalityOfIntegerRanges = PREFERENCES.getLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
             BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges)
+        val maxCardinalityOfLongSets = PREFERENCES.getInt(
+            PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS,
+            BugPickerAnalysis.defaultMaxCardinalityOfLongSets)
         val maxCallChainLength = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH,
             BugPickerAnalysis.defaultMaxCallChainLength)
@@ -331,6 +419,7 @@ object BugPicker {
             maxEvalTime,
             maxEvalFactor,
             maxCardinalityOfIntegerRanges,
+            maxCardinalityOfLongSets,
             maxCallChainLength)
     }
 
@@ -341,9 +430,12 @@ object BugPicker {
         PREFERENCES.putDouble(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
             parameters.maxEvalFactor)
-        PREFERENCES.putInt(
+        PREFERENCES.putLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
             parameters.maxCardinalityOfIntegerRanges)
+        PREFERENCES.putInt(
+            PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS,
+            parameters.maxCardinalityOfLongSets)
         PREFERENCES.putInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH,
             parameters.maxCallChainLength)
@@ -353,21 +445,72 @@ object BugPicker {
         def filesToPref(key: String, files: Seq[File]) =
             PREFERENCES.put(key, files.mkString(File.pathSeparator))
 
-        filesToPref(PREFERENCES_KEY_CLASSES, loadedFiles.projectFiles)
-        filesToPref(PREFERENCES_KEY_SOURCES, loadedFiles.projectSources)
-        filesToPref(PREFERENCES_KEY_LIBS, loadedFiles.libraries)
+        PREFERENCES.put(PREFERENCES_KEY_CURRENT_PROJECT_NAME, loadedFiles.projectName)
+        filesToPref(PREFERENCES_KEY_CURRENT_PROJECT_CLASSES, loadedFiles.projectFiles)
+        filesToPref(PREFERENCES_KEY_CURRENT_PROJECT_SOURCES, loadedFiles.projectSources)
+        filesToPref(PREFERENCES_KEY_CURRENT_PROJECT_LIBS, loadedFiles.libraries)
     }
 
     def loadFilesFromPreferences(): Option[LoadedFiles] = {
         def prefAsFiles(key: String): Seq[File] =
             PREFERENCES.get(key, "").split(File.pathSeparator).filterNot(_.isEmpty).map(new File(_))
 
-        if (!PREFERENCES.nodeExists(""))
+        if (!PREFERENCES.nodeExists("")) {
             return None
-        val classes = prefAsFiles(PREFERENCES_KEY_CLASSES)
-        val libs = prefAsFiles(PREFERENCES_KEY_LIBS)
-        val sources = prefAsFiles(PREFERENCES_KEY_SOURCES)
-        Some(LoadedFiles(projectFiles = classes, projectSources = sources, libraries = libs))
+        }
+        val name = PREFERENCES.get(PREFERENCES_KEY_CURRENT_PROJECT_NAME, "")
+        val classes = prefAsFiles(PREFERENCES_KEY_CURRENT_PROJECT_CLASSES)
+        val libs = prefAsFiles(PREFERENCES_KEY_CURRENT_PROJECT_LIBS)
+        val sources = prefAsFiles(PREFERENCES_KEY_CURRENT_PROJECT_SOURCES)
+        Some(LoadedFiles(projectName = name, projectFiles = classes, projectSources = sources, libraries = libs))
+    }
+
+    def storeRecentProjectsToPreferences(recentProjects: Seq[LoadedFiles]): Unit = {
+        def filesToPref(key: String, files: Seq[File], node: Preferences) =
+            node.put(key, files.mkString(File.pathSeparator))
+
+        var i = 0
+
+        for (loadedFiles ← recentProjects) {
+            i = i + 1
+            val PREFERENCES_RECENT_PROJECT = PREFERENCES.node(s"$RECENT_PROJECT$i")
+            PREFERENCES_RECENT_PROJECT.put(s"$PREFERENCES_KEY_RECENT_PROJECT_NAME$i", loadedFiles.projectName)
+            filesToPref(s"$PREFERENCES_KEY_RECENT_PROJECT_CLASSES$i", loadedFiles.projectFiles, PREFERENCES_RECENT_PROJECT)
+            filesToPref(s"$PREFERENCES_KEY_RECENT_PROJECT_SOURCES$i", loadedFiles.projectSources, PREFERENCES_RECENT_PROJECT)
+            filesToPref(s"$PREFERENCES_KEY_RECENT_PROJECT_LIBS$i", loadedFiles.libraries, PREFERENCES_RECENT_PROJECT)
+        }
+    }
+
+    def deleteRecentProjectsFromPreferences(): Unit = {
+
+        for (i ← 1 to PREFERENCES.childrenNames().size) {
+            val PREFERENCES_RECENT_PROJECT = PREFERENCES.node(s"$RECENT_PROJECT$i")
+            PREFERENCES_RECENT_PROJECT.clear()
+            PREFERENCES_RECENT_PROJECT.removeNode()
+        }
+    }
+
+    def loadRecentProjectsFromPreferences(): Option[Seq[LoadedFiles]] = {
+        def prefAsFiles(key: String, node: Preferences): Seq[File] =
+            node.get(key, "").split(File.pathSeparator).filterNot(_.isEmpty).map(new File(_))
+
+        if (!PREFERENCES.nodeExists("")) {
+            return None
+        }
+        val result = for (i ← 1 to PREFERENCES.childrenNames().size) yield {
+            if (!PREFERENCES.nodeExists(s"$RECENT_PROJECT$i"))
+                return None
+            else {
+                val PREFERENCES_RECENT_PROJECT = PREFERENCES.node(s"$RECENT_PROJECT$i")
+                val name = PREFERENCES_RECENT_PROJECT.get(s"$PREFERENCES_KEY_RECENT_PROJECT_NAME$i", "")
+                val classes = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_CLASSES$i", PREFERENCES_RECENT_PROJECT)
+                val libs = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_LIBS$i", PREFERENCES_RECENT_PROJECT)
+                val sources = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_SOURCES$i", PREFERENCES_RECENT_PROJECT)
+
+                LoadedFiles(projectName = name, projectFiles = classes, projectSources = sources, libraries = libs)
+            }
+        }
+        Some(result)
     }
 
     def main(args: Array[String]): Unit = {

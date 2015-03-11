@@ -126,9 +126,9 @@ trait StringValues
 
         override def toString(): String = {
             if (value eq null)
-                s"""String(origin=$origin;value=<initialization incomplete>;t=$t)"""
+                s"""String(<initialization incomplete>)[@$origin;t=$t]"""
             else
-                s"""String(origin=$origin;value="$value";t=$t)"""
+                s"""String("$value")[@$origin;t=$t]"""
         }
 
     }

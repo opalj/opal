@@ -264,20 +264,15 @@ object PerformInvocationsTestFixture {
             project: Project[java.net.URL],
             method: Method): InvocationDomain
 
-        def invokeExecutionHandler(
-            pc: PC,
-            definingClass: ClassFile,
-            method: Method,
-            operands: Operands): InvokeExecutionHandler =
-            new InvokeExecutionHandler {
+        override val useExceptionsThrownByCalledMethod = true
 
-                override val propagateExceptionsThrownByCalledMethod = true
+        type CalledMethodDomain = Domain with MethodCallResults
 
-                val domain: Domain with MethodCallResults =
-                    createInvocationDomain(project, method)
+        def calledMethodDomain(classFiel: ClassFile, method: Method): Domain with MethodCallResults =
+            createInvocationDomain(project, method)
 
-                def ai: AI[_ >: domain.type] = BaseAI
-            }
+        def calledMethodAI = BaseAI
+
     }
 
     class LiInvocationDomain(project: Project[java.net.URL], method: Method)

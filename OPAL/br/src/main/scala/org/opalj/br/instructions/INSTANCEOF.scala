@@ -30,6 +30,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.collection.mutable.UShortSet
+
 /**
  * Determine if object is of given type.
  *
@@ -64,8 +66,11 @@ case class INSTANCEOF(
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
-        collection.mutable.UShortSet(indexOfNextInstruction(currentPC, code))
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
+        UShortSet(indexOfNextInstruction(currentPC, code))
 
     override def toString: String = "INSTANCEOF("+referenceType.toJava+")"
 }

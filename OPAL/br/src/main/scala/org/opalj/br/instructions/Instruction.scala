@@ -84,7 +84,16 @@ trait Instruction {
      * @return The absolute addresses of '''all instructions''' that may be executed next
      *      at runtime.
      */
-    def nextInstructions(currentPC: PC, code: Code): PCs
+    final def nextInstructions(currentPC: PC, code: Code): PCs =
+        nextInstructions(currentPC, code, regularSuccessorsOnly = false)
+
+    /**
+     * Returns the pcs of the instructions that may be executed next at runtime.
+     *
+     * @return The absolute addresses of '''all instructions''' that may be executed next
+     *      at runtime.
+     */
+    def nextInstructions(currentPC: PC, code: Code, regularSuccessorsOnly: Boolean): PCs
 
     /**
      * Determines if this instructions is isomorphic to the given instruction.
