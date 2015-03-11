@@ -1,3 +1,31 @@
+/* BSD 2-Clause License:
+ * Copyright (c) 2009 - 2015
+ * Software Technology Group
+ * Department of Computer Science
+ * Technische Universität Darmstadt
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 package org.opalj.br.cfg
 
 import org.junit.runner.RunWith
@@ -11,9 +39,13 @@ import org.opalj.br.ClassFile
 import org.opalj.bi.reader.ClassFileReader
 import org.opalj.br.ObjectType
 
+/**
+ *
+ * @author Erich Wittenbeck
+ */
 @RunWith(classOf[JUnitRunner])
 class DeadCodeCFGJava8Test extends FunSpec with Matchers {
-	
+
     val testJAR = "classfiles/cfgtest8.jar"
     val testFolder = TestSupport.locateTestResources(testJAR, "br")
     val testProject = Project(testFolder)
@@ -22,7 +54,7 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
 
         val testClass = testProject.classFile(ObjectType("BoringCode")).get
 
-        it("Testing a most simple method without any controll flow in it") {
+        it("should create a valid CFG for a most simple method without any controll flow in it") {
 
             val singleBlockCFG = ControlFlowGraph(testClass.findMethod("singleBlock").get)
             val BlockList = singleBlockCFG.AllBlocks
@@ -91,24 +123,24 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
                                 bb.predecessors(0) should be(bb.predecessors(0))
-                                bb.successors(0) should be(BasicBlock(14))
+                                bb.successors(0) should be(new BasicBlock(14))
                             }
                             case 32 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.predecessors(0) should be(BasicBlock(14))
-                                bb.successors(0) should be(BasicBlock(5))
+                                bb.predecessors(0) should be(new BasicBlock(14))
+                                bb.successors(0) should be(new BasicBlock(5))
                             }
                             case 11 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.predecessors(0) should be(BasicBlock(5))
-                                bb.successors(0) should be(BasicBlock(14))
+                                bb.predecessors(0) should be(new BasicBlock(5))
+                                bb.successors(0) should be(new BasicBlock(14))
                             }
                             case 38 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.successors(0) should be(ExitBlock())
+                                bb.successors(0) should be(new ExitBlock())
                             }
                             case 5 ⇒ {
                                 bb.predecessors.size should be(2)
@@ -143,13 +175,13 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
                             case 9 | 39 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.successors(0) should be(ExitBlock())
+                                bb.successors(0) should be(new ExitBlock())
                             }
                             case 30 | 22 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.predecessors(0) should be(BasicBlock(16))
-                                bb.successors(0) should be(BasicBlock(11))
+                                bb.predecessors(0) should be(new BasicBlock(16))
+                                bb.successors(0) should be(new BasicBlock(11))
                             }
                             case _ ⇒ {}
                         }
@@ -176,12 +208,12 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
                             case 0 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.successors(0) should be(BasicBlock(8))
+                                bb.successors(0) should be(new BasicBlock(8))
                             }
                             case 8 ⇒ {
                                 bb.predecessors.size should be(2)
                                 bb.successors.size should be(1)
-                                bb.successors(0) should be(BasicBlock(8))
+                                bb.successors(0) should be(new BasicBlock(8))
                             }
                             case _ ⇒ {}
                         }
@@ -214,8 +246,8 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
                             case 20 | 22 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.predecessors(0) should be(BasicBlock(0))
-                                bb.successors(0) should be(ExitBlock())
+                                bb.predecessors(0) should be(new BasicBlock(0))
+                                bb.successors(0) should be(new ExitBlock())
                             }
                         }
                     }
@@ -245,19 +277,19 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
                             case 28 | 34 | 41 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.predecessors(0) should be(BasicBlock(0))
-                                bb.successors(0) should be(BasicBlock(45))
+                                bb.predecessors(0) should be(new BasicBlock(0))
+                                bb.successors(0) should be(new BasicBlock(45))
                             }
                             case 45 ⇒ {
                                 bb.predecessors.size should be(4)
                                 bb.successors.size should be(1)
-                                bb.successors(0) should be(ExitBlock())
+                                bb.successors(0) should be(new ExitBlock())
                             }
                         }
                     }
                     case eb: ExitBlock ⇒ {
                         eb.predecessors.size should be(1)
-                        eb.predecessors(0) should be(BasicBlock(45))
+                        eb.predecessors(0) should be(new BasicBlock(45))
                     }
                     case _ ⇒ {}
                 }
@@ -283,35 +315,35 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
                             case 44 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.successors(0) should be(BasicBlock(47))
+                                bb.successors(0) should be(new BasicBlock(47))
                             }
                             case 47 ⇒ {
-                                bb.successors(0) should be(BasicBlock(51))
-                                
+                                bb.successors(0) should be(new BasicBlock(51))
+
                                 bb.predecessors.size should be(2)
                                 bb.successors.size should be(1)
-                                bb.predecessors(0) should be(BasicBlock(0))
+                                bb.predecessors(1) should be(new BasicBlock(0))
                             }
                             case 51 ⇒ {
-                                bb.successors(0) should be(BasicBlock(56))
-                                
+                                bb.successors(0) should be(new BasicBlock(56))
+
                                 bb.predecessors.size should be(2)
                                 bb.successors.size should be(1)
-                                bb.predecessors(0) should be(BasicBlock(0))
+                                bb.predecessors(1) should be(new BasicBlock(0))
                             }
                             case 56 ⇒ {
-                                bb.successors(0) should be(BasicBlock(58))
-                                
+                                bb.successors(0) should be(new BasicBlock(58))
+
                                 bb.predecessors.size should be(2)
                                 bb.successors.size should be(1)
-                                bb.predecessors(0) should be(BasicBlock(0))
+                                bb.predecessors(1) should be(new BasicBlock(0))
                             }
                             case 58 ⇒ {
-                                bb.successors(0) should be(ExitBlock())
-                                
+                                bb.successors(0) should be(new ExitBlock())
+
                                 bb.predecessors.size should be(2)
                                 bb.successors.size should be(1)
-                                bb.predecessors(0) should be(BasicBlock(0))
+                                bb.predecessors(1) should be(new BasicBlock(0))
                             }
                         }
                     }
@@ -338,11 +370,11 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
                             }
                             case 36 | 54 | 48 ⇒ {
                                 bb.predecessors.size should be(1)
-                                bb.predecessors(0) should be(BasicBlock(0))
+                                bb.predecessors(0) should be(new BasicBlock(0))
                             }
                             case 39 | 42 | 58 ⇒ {
                                 bb.predecessors.size should be(2)
-                                bb.predecessors(0) should be(BasicBlock(0))
+                                bb.predecessors(1) should be(new BasicBlock(0))
                             }
                             case 60 ⇒ {
                                 bb.predecessors.size should be(3)
@@ -351,7 +383,7 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
                     }
                     case eb: ExitBlock ⇒ {
                         eb.predecessors.size should be(1)
-                        eb.predecessors(0) should be(BasicBlock(60))
+                        eb.predecessors(0) should be(new BasicBlock(60))
                     }
                     case sb: StartBlock ⇒ {
 
@@ -380,27 +412,27 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
                         numberOfCatchBlocks += 1
                         cb.predecessors.size should be(1)
                         cb.successors.size should be(1)
-                        cb.predecessors(0) should be(BasicBlock(0))
-                        cb.successors(0) should be(BasicBlock(29))
+                        cb.predecessors(0) should be(new BasicBlock(0))
+                        cb.successors(0) should be(new BasicBlock(29))
                     }
                     case bb: BasicBlock ⇒ {
                         bb.startPC match {
                             case 0 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.predecessors(0) should be(StartBlock())
-                                bb.successors(0) should be(BasicBlock(25))
+                                bb.predecessors(0) should be(new StartBlock())
+                                bb.successors(0) should be(new BasicBlock(25))
                             }
                             case 25 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.predecessors(0) should be(BasicBlock(0))
-                                bb.successors(0) should be(BasicBlock(33))
+                                bb.predecessors(0) should be(new BasicBlock(0))
+                                bb.successors(0) should be(new BasicBlock(33))
                             }
                             case 29 | 33 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
-                                bb.successors(0) should be(ExitBlock())
+                                bb.successors(0) should be(new ExitBlock())
                             }
                         }
                     }
@@ -445,7 +477,7 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
                             }
                             case 27 ⇒ {
                                 bb.predecessors.size should be(1)
-                                bb.predecessors(0) should be(BasicBlock(26))
+                                bb.predecessors(0) should be(new BasicBlock(26))
                             }
                             case 42 ⇒ {
 
@@ -538,7 +570,7 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
                             case 0 ⇒ {
                                 bb.catchBlockSuccessors.size should be(2)
                             }
-                            case  8 | 20 ⇒ {
+                            case 8 | 20 ⇒ {
                                 bb.predecessors.size should be(1)
                                 bb.successors.size should be(1)
                                 bb.catchBlockSuccessors.size should be(1)
@@ -610,7 +642,7 @@ class DeadCodeCFGJava8Test extends FunSpec with Matchers {
             BlockList.size should be(23)
 
             var numberOfCatchBlocks: Int = 0
-            
+
             for (block ← BlockList) {
                 block match {
                     case cb: CatchBlock ⇒ {
