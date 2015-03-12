@@ -374,7 +374,8 @@ object DeadPathAnalysis {
 
                 val isJustDeadPath = evaluatedInstructions.contains(nextPC)
                 val isTechnicalArtifact =
-                    isLikelyFalsePositive ||
+                        method.isSynthetic || method.isBridge ||
+                        isLikelyFalsePositive ||
                         isNonExistingDefaultBranchOfSwitch ||
                         isRelatedToCompilationOfFinally
                 issues ::= StandardIssue(
