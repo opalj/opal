@@ -126,6 +126,26 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
     }
 
     /**
+     * Test if the instruction with the given pc is a potential predecessor of the
+     * given successor instruction.
+     */
+    def isRegularPredecessorOf(pc: PC, successorPC: PC): Boolean = {
+        var visitedSuccessors = UShortSet(pc)
+        var successorsToVisit = regularSuccessorsOf(pc)
+        while (successorsToVisit.nonEmpty) {
+            if (successorsToVisit.contains(successorPC))
+                return true;
+
+            visitedSuccessors = visitedSuccessors ++ successorsToVisit
+            successorsToVisit =
+                successorsToVisit.foldLeft(UShortSet.empty) { (l, r) ⇒
+                    l ++ (regularSuccessorsOf(r).filter { pc ⇒ !visitedSuccessors.contains(pc) })
+                }
+        }
+        false
+    }
+
+    /**
      * @inheritdoc
      *
      * @note This method is called by the abstract interpretation framework.

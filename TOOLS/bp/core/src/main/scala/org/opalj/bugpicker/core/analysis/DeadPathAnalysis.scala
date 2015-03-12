@@ -97,6 +97,7 @@ import org.opalj.br.instructions.ReturnInstructions
 import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.domain.ThrowNoPotentialExceptionsConfiguration
 import org.opalj.br.instructions.NEW
+import org.opalj.br.cfg.ControlFlowGraph
 
 /**
  * Implementation of an analysis to find code that is "dead".
@@ -115,12 +116,13 @@ object DeadPathAnalysis {
         import result.operandsArray
         import result.localsArray
         val evaluatedInstructions = result.evaluatedInstructions
-        val body = result.code
+        implicit val body = result.code
         val instructions = body.instructions
         import result.joinInstructions
         import result.domain.regularSuccessorsOf
         import result.domain.exceptionHandlerSuccessorsOf
         import result.domain.hasMultipleRegularPredecessors
+        import result.domain.isRegularPredecessorOf
 
         /*
          * Helper function to identify methods that will always throw an exception if
@@ -208,6 +210,49 @@ object DeadPathAnalysis {
             } {
                 // identify those dead edges that are pure technical artifacts
                 val isLikelyFalsePositive = requiredButIrrelevantSuccessor(pc, nextPC)
+
+                def isRelatedToCompilationOfFinally: Boolean =
+                    classFile.majorVersion >= 50 /* older compilers are using jsr/ret */ &&
+                        body.exceptionHandlers.exists(_.catchType.isEmpty) /* there is no finally */ && {
+                            val pcIsOnExceptionalControlFlowPaths =
+                                body.exceptionHandlers.filter { eh ⇒
+                                    eh.catchType.isEmpty &&
+                                        isRegularPredecessorOf(eh.handlerPC, pc)
+                                }
+
+                            // find matching instruction
+                            val cPCs =
+                                body.programCounters.filter { cPC ⇒
+                                    cPC != pc && instructions(pc).isIsomorphic(pc, cPC)
+                                }.filterNot { cPC ⇒
+                                    def cPCIsOnExceptionalControlFlowPaths =
+                                        body.exceptionHandlers.filter { eh ⇒
+                                            eh.catchType.isEmpty && isRegularPredecessorOf(eh.handlerPC, cPC)
+                                        }
+
+                                    (
+                                        // check the the instructions are not in a pre-/
+                                        // successor relation
+                                        isRegularPredecessorOf(pc, cPC) ||
+                                        isRegularPredecessorOf(cPC, pc)
+                                    ) || (
+                                            // they are not successors of the same exception handlers
+                                            (pcIsOnExceptionalControlFlowPaths.nonEmpty ||
+                                                cPCIsOnExceptionalControlFlowPaths.nonEmpty) &&
+                                                (pcIsOnExceptionalControlFlowPaths intersect cPCIsOnExceptionalControlFlowPaths).nonEmpty
+                                        )
+                                }.toList
+                            // check if at least one instruction is dominated by a "finally"
+                            // exception handler
+                            // ???
+
+                            println(method.toJava(classFile) + s" - correspondence - $pc(ehs=$pcIsOnExceptionalControlFlowPaths) => $cPCs; pc>cPCs===${cPCs.exists(cPC ⇒ isRegularPredecessorOf(pc, cPC))}; cPC>pc===${cPCs.exists(cPC ⇒ isRegularPredecessorOf(cPC, pc))}")
+
+                            // check if - taken together – all successor are visited
+                            cPCs.exists { cPC ⇒
+                                regularSuccessorsOf(cPC).contains(cPC + (nextPC - pc))
+                            }
+                        }
 
                 lazy val isProvenAssertion = {
                     instructions(nextPC) match {
@@ -328,7 +373,10 @@ object DeadPathAnalysis {
                     }
 
                 val isJustDeadPath = evaluatedInstructions.contains(nextPC)
-
+                val isTechnicalArtifact =
+                    isLikelyFalsePositive ||
+                        isNonExistingDefaultBranchOfSwitch ||
+                        isRelatedToCompilationOfFinally
                 issues ::= StandardIssue(
                     theProject, classFile, Some(method), Some(pc),
                     Some(operands), Some(result.localsArray(pc)),
@@ -338,7 +386,7 @@ object DeadPathAnalysis {
                         s"the successor instruction pc=$nextPC$line is dead",
                     Some(
                         "The evaluation of the instruction never directly leads to the evaluation of the given subsequent instruction."+(
-                            if (isLikelyFalsePositive)
+                            if (isTechnicalArtifact)
                                 "\n(This seems to be a technical artifact that cannot be avoided; i.e., there is probably nothing to fix!)"
                             else if (isLikelyIntendedDeadDefaultBranch)
                                 "\n(This seems to be a deliberately dead default branch of a switch instruction; i.e., there is probably nothing to fix!)"
@@ -348,7 +396,7 @@ object DeadPathAnalysis {
                     Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
                     Set(IssueKind.DeadPath),
                     hints,
-                    if (isLikelyFalsePositive || isNonExistingDefaultBranchOfSwitch)
+                    if (isTechnicalArtifact)
                         Relevance.TechnicalArtifact
                     else if (isProvenAssertion)
                         Relevance.ProvenAssertion
