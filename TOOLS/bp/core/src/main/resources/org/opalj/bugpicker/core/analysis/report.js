@@ -68,6 +68,19 @@ function updateNumberOfIssues(minimumRelevance){
 	)
 	document.querySelector("#issues_displayed").innerHTML = 
 		" [Relevance &ge; "+minimumRelevance+"] " + current;
+	
+	// update within package summary:
+	var packages = document.querySelectorAll("details.package_summary");
+	packages.forEach(function(e){
+		var issues = e.querySelectorAll(".issue_visible:not(.hide-relevance)");
+		var text = e.querySelector("summary.package_summary");
+		var textNode = text.querySelector("span.package_issues");
+		if (textNode == undefined) {
+			text.innerHTML = text.innerHTML + "<span class=\"package_issues\"> </span>";
+			textNode = text.querySelector("span.package_issues");
+		}
+		textNode.innerHTML = " (Issues: " + issues.length + ")";
+	});
 }
 
 function openAllPackages(){
