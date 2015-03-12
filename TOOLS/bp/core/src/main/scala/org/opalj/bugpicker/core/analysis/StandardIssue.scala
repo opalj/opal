@@ -282,7 +282,7 @@ case class StandardIssue(
                 <dd> { locations }</dd>
             infoNodes = infoNodes ::: List(dt, dd)
         }
-        infoNodes = infoNodes ::: List(<dt>relevance</dt>, <dd> { relevance.value.toString } </dd>)
+        infoNodes = infoNodes ::: List(<dt>relevance</dt>, <dd> { relevance.value.toString + s" (${Relevance.toCategoryName(relevance)})" } </dd>)
         val localVariablesAsXHTML = if (basicInfoOnly) None else localVariablesToXHTML
         val summaryNode =
             if (localVariablesAsXHTML.isDefined)
