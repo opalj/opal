@@ -57,11 +57,12 @@ object CallGraphFactory {
      *  - every non-private constructor,
      *  - every non-private method,
      *  - every private method (including a default constructor) related to
-     *    Serialization, if the respective declaring class is a subtype of
-     *    java.io.Serializable,
+     *    Serialization, even if the respective declaring class is not a current subtype
+     *    of     java.io.Serializable but maybe a subtype later on.
      *  // TODO ...
      *  - No entry points:
-     *    public instance methods of a class that provides no way to create an instance of it (e.g., java.lang.Math)
+     *    - public instance methods of a class that provides no way to create an instance of it (e.g., java.lang.Math)
+     *    - methods of a "private object" that is never instantiated (dead objects...)
      */
     def defaultEntryPointsForLibraries(project: SomeProject): Iterable[Method] = {
         val classHierarchy = project.classHierarchy
@@ -71,9 +72,13 @@ object CallGraphFactory {
             if (!method.isPrivate ||
                 ( // the method is private, but...
                     Method.isObjectSerializationRelated(method) &&
-                    classHierarchy.isSubtypeOf(
-                        classFile.thisType,
-                        ObjectType.Serializable).isYesOrUnknown))
+                    (
+                        !classFile.isFinal /*we may inherit from Serializable later on...*/ ||
+                        classHierarchy.isSubtypeOf(
+                            classFile.thisType,
+                            ObjectType.Serializable).isYesOrUnknown
+                    )
+                ))
                 methods.add(method)
         }
         import scala.collection.JavaConverters._

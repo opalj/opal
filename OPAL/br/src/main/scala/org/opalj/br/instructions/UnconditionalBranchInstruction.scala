@@ -54,7 +54,10 @@ abstract class UnconditionalBranchInstruction
 
     final def indexOfWrittenLocal: Int = throw new UnsupportedOperationException()
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
         UShortSet(currentPC + branchoffset)
 
     override def toString(currentPC: Int) =

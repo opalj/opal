@@ -57,6 +57,8 @@ import org.opalj.io.process
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.analyses.cg.VTACallGraphKey
+import org.opalj.ai.common.XHTML
+import org.opalj.util.PerformanceEvaluation
 
 /**
  * A static analysis that analyzes the data-flow to identify various issues in the
@@ -189,6 +191,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](theProject)
 
         def analyzeMethod(classFile: ClassFile, method: Method, body: Code): Unit = {
+            // USED DURING DEVELEOPMENT; e.g., if we see a specific method.
+            val debug = false
 
             // ---------------------------------------------------------------------------
             // Analyses that don't require an abstract interpretation
@@ -204,15 +208,17 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
             // ---------------------------------------------------------------------------
             // Analyses that are dependent on the result of the abstract interpretation
             // ---------------------------------------------------------------------------
+
             val analysisDomain =
                 new RootBugPickerAnalysisDomain(
                     theProject,
                     // Map.empty, Map.empty,
                     fieldValueInformation, methodReturnValueInformation,
                     cache,
-                    classFile, method,
                     maxCardinalityOfIntegerRanges,
-                    maxCardinalityOfLongSets, maxCallChainLength)
+                    maxCardinalityOfLongSets, maxCallChainLength,
+                    classFile, method,
+                    debug)
             val ai0 =
                 new BoundedInterruptableAI[analysisDomain.type](
                     body,
@@ -233,9 +239,8 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                             theProject,
                             fieldValueInformation, methodReturnValueInformation,
                             cache,
-                            method,
-                            maxCardinalityOfIntegerRanges,
-                            maxCardinalityOfLongSets)
+                            maxCardinalityOfIntegerRanges, maxCardinalityOfLongSets,
+                            method)
 
                     val ai1 =
                         new BoundedInterruptableAI[fallbackAnalysisDomain.type](
@@ -261,6 +266,23 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
             }
 
             if (!result.wasAborted) {
+
+                if (debug) {
+                    org.opalj.io.writeAndOpen(XHTML.dump(
+                        Some(classFile),
+                        Some(method),
+                        method.body.get,
+                        Some(
+                            "Created: "+(new java.util.Date).toString+"<br>"+
+                                "Domain: "+result.domain.getClass.getName+"<br>"+
+                                XHTML.evaluatedInstructionsToXHTML(result.evaluated)),
+                        result.domain)(
+                            result.operandsArray,
+                            result.localsArray),
+                        "AIResult",
+                        ".html"
+                    )
+                }
 
                 //
                 // FIND DEAD CODE
@@ -411,13 +433,15 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                     } finally {
                         progressManagement.end(stepId)
                     }
-
                 }
-            StandardIssue.fold(
-                scala.collection.JavaConversions.collectionAsScalaIterable(results).toSeq
-            )
+            val rawIssues = scala.collection.JavaConversions.collectionAsScalaIterable(results).toSeq
+            OPALLogger.info("analysis progress", s"post processing ${rawIssues.size} issues")
+            StandardIssue.fold(rawIssues)
         } { t ⇒ analysisTime = t }
 
+        OPALLogger.info("analysis progress",
+            s"the analysis took ${PerformanceEvaluation.ns2sec(analysisTime)} seconds "+
+                s"and found ${identifiedIssues.size} unique issues")
         import scala.collection.JavaConverters._
         (analysisTime, identifiedIssues, exceptions.asScala)
     }
@@ -436,7 +460,7 @@ object BugPickerAnalysis {
     final val defaultMaxEvalFactor = 1.75d
 
     final val maxEvalTimePattern = """-maxEvalTime=(\d+)""".r
-    final val defaultMaxEvalTime = 10000
+    final val defaultMaxEvalTime = 10000 // in ms => 10secs.
 
     final val maxCallChainLengthPattern = """-maxCallChainLength=(\d)""".r
     final val defaultMaxCallChainLength = 0
@@ -459,22 +483,31 @@ object BugPickerAnalysis {
             scala.io.Source.fromInputStream(_).mkString
         )
 
-    def resultsAsXHTML(methodsWithDeadCode: Iterable[Issue]): Node = {
-        val methodWithDeadCodeCount = methodsWithDeadCode.size
+    def resultsAsXHTML(parameters: Seq[String], methodsWithIssues: Iterable[Issue]): Node = {
+        val methodsWithIssuesCount = methodsWithIssues.size
+        val basicInfoOnly = methodsWithIssuesCount > 10000
 
         val issuesNode: Iterable[Node] = {
             import scala.collection.SortedMap
             val groupedMessages =
                 SortedMap.empty[String, List[Issue]] ++
-                    methodsWithDeadCode.groupBy(dc ⇒ dc.classFile.thisType.packageName)
+                    methodsWithIssues.groupBy(dc ⇒ dc.classFile.thisType.packageName)
             val result =
                 (for { (pkg, mdc) ← groupedMessages } yield {
                     <details class="package_summary">
                         <summary class="package_summary">{ pkg.replace('/', '.') }</summary>
-                        { mdc.toSeq.sorted(IssueOrdering).map(_.asXHTML) }
+                        { mdc.toSeq.sorted(IssueOrdering).map(_.asXHTML(basicInfoOnly)) }
                     </details>
                 })
-            result
+            result.seq
+        }
+
+        val totalIssues = {
+            val is = s"(Total issues: $methodsWithIssuesCount)"
+            if (basicInfoOnly)
+                is+"(Due to the number of issues an abbreviated report is shown.)"
+            else
+                is
         }
 
         <html xmlns="http://www.w3.org/1999/xhtml">
@@ -488,7 +521,7 @@ object BugPickerAnalysis {
             <body>
                 <div id="analysis_controls">
                     <div>
-                        <span>Number of issues currently displayed: <span id="issues_displayed"> { methodWithDeadCodeCount } </span> (Total issues: { methodWithDeadCodeCount })</span>
+                        <span>Number of issues currently displayed:<span id="issues_displayed"> { methodsWithIssuesCount } </span>{ totalIssues }</span>
                     </div>
                     <div>
                         Suppress issues with an estimated
@@ -509,6 +542,19 @@ object BugPickerAnalysis {
                     <div>
                         Show all Packages:<a class="onclick" onclick="openAllPackages()">+</a><a class="onclick" onclick="closeAllPackages()">-</a>
                     </div>
+                </div>
+                <div id="analysis_parameters">
+                    <details id="analysis_parameters_summary">
+                        <summary>Parameters</summary>
+                        <ul>
+                            {
+                                parameters.filterNot(p ⇒
+                                    p.startsWith("-debug") ||
+                                        p.startsWith("-html") || p.startsWith("-eclipse")
+                                ).map(p ⇒ <li>{ p }</li>)
+                            }
+                        </ul>
+                    </details>
                 </div>
                 <div id="analysis_results">
                     { issuesNode }

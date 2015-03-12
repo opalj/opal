@@ -112,7 +112,7 @@ class CFACallGraphDomain[Source](
         // then we are not interested.) The return value of methods where the
         // return value does not depend on the calling context should
         // be precise based on the results of the pre-analyses.
-        calledMethods.size < k &&
+        calledMethods.size < k && !calledMethods.contains(method) &&
             method.descriptor.parametersCount > 0 &&
             !method.returnType.isVoidType &&
             (
@@ -120,32 +120,20 @@ class CFACallGraphDomain[Source](
                 classHierarchy.hasSubtypes(method.returnType.asObjectType).isYes
             )
 
-    def isRecursive(
-        definingClass: ClassFile,
-        method: Method,
-        operands: Operands): Boolean =
-        // we are generally not interested in following recursive calls
-        calledMethods.contains(method)
+    type CalledMethodDomain = CFACallGraphDomain[Source]
 
-    def invokeExecutionHandler(
-        pc: PC,
-        definingClass: ClassFile,
-        method: Method,
-        operands: Operands): InvokeExecutionHandler =
-        new InvokeExecutionHandler {
+    override def calledMethodDomain(classFile: ClassFile, method: Method) =
+        new CFACallGraphDomain(
+            k,
+            project,
+            fieldValueInformation,
+            methodReturnValueInformation,
+            cache,
+            classFile,
+            method,
+            calledMethods + callingDomain.method)
 
-            override val domain = new CFACallGraphDomain(
-                k,
-                project,
-                fieldValueInformation,
-                methodReturnValueInformation,
-                cache,
-                classFile,
-                method,
-                calledMethods + callingDomain.method)
-
-            def ai: AI[_ >: this.domain.type] = BaseAI
-        }
+    def calledMethodAI: BaseAI.type = BaseAI
 
     override protected[this] def doInvoke(
         pc: PC,

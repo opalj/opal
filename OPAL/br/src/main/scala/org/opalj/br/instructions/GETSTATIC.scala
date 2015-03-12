@@ -54,8 +54,14 @@ case class GETSTATIC(
 
     final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
-        UShortSet(indexOfNextInstruction(currentPC, code))
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
+        if (regularSuccessorsOnly)
+            UShortSet(indexOfNextInstruction(currentPC, code))
+        else
+            UShortSet(indexOfNextInstruction(currentPC, code))
 
     override def toString =
         "get static "+declaringClass.toJava+"."+name+" : "+fieldType.toJava

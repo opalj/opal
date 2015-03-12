@@ -80,6 +80,7 @@ object Relevance {
     final val VeryHigh = Relevance(80)
     final val High = Relevance(70)
     final val DefaultRelevance = Relevance(50)
+    final val UselessDefensiveProgramming = Relevance(40)
     final val Low = Relevance(30)
     final val VeryLow = Relevance(10)
     final val CommonIdiom = Relevance(3)

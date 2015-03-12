@@ -104,7 +104,7 @@ object Console extends AnalysisExecutor { analysis ⇒
             var htmlReport: String = null
             def getHTMLReport = {
                 if (htmlReport eq null)
-                    htmlReport = BugPickerAnalysis.resultsAsXHTML(issues).toString
+                    htmlReport = BugPickerAnalysis.resultsAsXHTML(parameters, issues).toString
                 htmlReport
             }
             parameters.collectFirst { case HTMLFileOutputNameMatcher(name) ⇒ name } match {
@@ -191,7 +191,7 @@ object Console extends AnalysisExecutor { analysis ⇒
             |               result can be drawn.]
             |[-maxEvalTime=<IntValue [10,1000000]=10000> determines the time (in ms) that the analysis is allowed
             |               to take for one method before the analysis is terminated.]
-            |[-maxCardinalityOfIntegerRanges=<IntValue [1,1024]=16> basically determines for each integer
+            |[-maxCardinalityOfIntegerRanges=<LongValue [1,4294967295]=16> basically determines for each integer
             |               value how long the value is "precisely" tracked. Internally the analysis
             |               computes the range of values that an integer value may have at runtime. The
             |               maximum size/cardinality of this range is controlled by this setting. If
@@ -199,6 +199,13 @@ object Console extends AnalysisExecutor { analysis ⇒
             |               terminated.
             |               Increasing this value may significantly increase the analysis time and
             |               may require the increase of -maxEvalFactor.]
+            |[-maxCardinalityOfLongSets=<IntValue [1,1024]=16> basically determines for each long
+            |               value how long the value is "precisely" tracked.
+            |               The maximum size/cardinality of this set is controlled by this setting. If
+            |               the set's size is tool large the precise tracking of the respective value is
+            |               terminated.
+            |               Increasing this value may significantly increase the analysis time and
+            |               may require the increase of -maxEvalFactor.]            |
             |[-maxCallChainLength=<IntValue [0..9]=0> determines the maximum length of the call chain
             |               that is analyzed.
             |               If you increase this value by one it is typically also necessary
@@ -237,6 +244,13 @@ object Console extends AnalysisExecutor { analysis ⇒
                         case nfe: NumberFormatException ⇒ false
                     }
                 case BugPickerAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
+                    try {
+                        val cardinality = java.lang.Long.parseLong(i).toLong
+                        cardinality >= 1 && cardinality <= 4294967295l
+                    } catch {
+                        case nfe: NumberFormatException ⇒ false
+                    }
+                case BugPickerAnalysis.maxCardinalityOfLongSetsPattern(i) ⇒
                     try {
                         val cardinality = java.lang.Integer.parseInt(i).toInt
                         cardinality >= 1 && cardinality <= 1024

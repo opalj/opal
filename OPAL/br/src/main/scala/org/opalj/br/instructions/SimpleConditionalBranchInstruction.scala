@@ -30,7 +30,7 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.collection.mutable.{ UShortSet ⇒ MutableUShortSet }
+import org.opalj.collection.mutable.UShortSet
 
 /**
  * Common superclass of all instructions that perform a conditional jump.
@@ -56,8 +56,11 @@ abstract class SimpleConditionalBranchInstruction
 
     final def length: Int = 3
 
-    final def nextInstructions(currentPC: PC, code: Code): PCs =
-        MutableUShortSet(indexOfNextInstruction(currentPC, code), currentPC + branchoffset)
+    final def nextInstructions(
+        currentPC: PC,
+        code: Code,
+        regularSuccessorsOnly: Boolean): PCs =
+        UShortSet(indexOfNextInstruction(currentPC, code), currentPC + branchoffset)
 
     override def toString(currentPC: Int) =
         getClass.getSimpleName+
