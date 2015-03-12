@@ -76,7 +76,7 @@ object DialogStage {
                         margin = Insets(20)
                     }
                     bottom = new HBox {
-                        content = new Button {
+                        children = new Button {
                             text = "Close"
                             defaultButton = true
                             HBox.setMargin(this, Insets(10))
@@ -84,7 +84,7 @@ object DialogStage {
                                 theStage.close()
                             }
                         }
-                        alignment = Pos.CENTER
+                        alignment = Pos.Center
                     }
                 }
                 stylesheets += BugPicker.defaultAppCSSURL

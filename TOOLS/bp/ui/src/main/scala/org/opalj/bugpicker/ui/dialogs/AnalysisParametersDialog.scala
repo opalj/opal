@@ -63,28 +63,28 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
     width = 640
 
     val maxEvalFactorField = new TextField {
-        hgrow = Priority.ALWAYS
-        alignment = Pos.BASELINE_RIGHT
+        hgrow = Priority.Always
+        alignment = Pos.BaselineRight
     }
 
     val maxEvalTimeField = new TextField {
-        hgrow = Priority.ALWAYS
-        alignment = Pos.BASELINE_RIGHT
+        hgrow = Priority.Always
+        alignment = Pos.BaselineRight
     }
 
     val maxCardinalityOfIntegerRangesField = new TextField {
-        hgrow = Priority.ALWAYS
-        alignment = Pos.BASELINE_RIGHT
+        hgrow = Priority.Always
+        alignment = Pos.BaselineRight
     }
 
     val maxCardinalityOfLongSetsField = new TextField {
-        hgrow = Priority.ALWAYS
-        alignment = Pos.BASELINE_RIGHT
+        hgrow = Priority.Always
+        alignment = Pos.BaselineRight
     }
 
     val maxCallChainLengthField = new TextField {
-        hgrow = Priority.ALWAYS
-        alignment = Pos.BASELINE_RIGHT
+        hgrow = Priority.Always
+        alignment = Pos.BaselineRight
     }
 
     scene = new Scene {
@@ -140,7 +140,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                 style = "-fx-border-width: 0 0 1 0; -fx-border-color: #ccc;"
             }
             bottom = new HBox {
-                content = Seq(
+                children = Seq(
                     new Button {
                         text = "_Defaults"
                         mnemonicParsing = true
@@ -237,7 +237,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                         }
                     }
                 )
-                alignment = Pos.CENTER
+                alignment = Pos.Center
             }
         }
     }

@@ -317,14 +317,14 @@ class BugPicker extends Application {
         stage.scene = new Scene {
 
             root = new VBox {
-                vgrow = Priority.ALWAYS
-                hgrow = Priority.ALWAYS
-                content = Seq(
+                vgrow = Priority.Always
+                hgrow = Priority.Always
+                children = Seq(
                     createMenuBar(),
                     new SplitPane {
                         orientation = Orientation.VERTICAL
-                        vgrow = Priority.ALWAYS
-                        hgrow = Priority.ALWAYS
+                        vgrow = Priority.Always
+                        hgrow = Priority.Always
                         dividerPositions = 0.4
 
                         items ++= Seq(reportView, tabPane)

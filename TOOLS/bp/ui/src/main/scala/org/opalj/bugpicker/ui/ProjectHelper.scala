@@ -113,7 +113,7 @@ object ProjectHelper {
                             engine.loadContent(message)
                         }
                         bottom = new HBox {
-                            content = new Button {
+                            children = new Button {
                                 text = "Close"
                                 padding = Insets(5, 10, 5, 10)
                                 onAction = { e: ActionEvent ⇒

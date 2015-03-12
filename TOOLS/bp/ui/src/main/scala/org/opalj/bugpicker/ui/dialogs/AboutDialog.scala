@@ -65,12 +65,12 @@ class AboutDialog(owner: Stage, showUrl: String ⇒ Unit) extends DialogStage(ow
         root = new BorderPane {
             center = new VBox {
                 margin = Insets(20)
-                alignment = Pos.TOP_LEFT
-                content = Seq(
+                alignment = Pos.TopLeft
+                children = Seq(
                     new Label("BugPicker is powered by the OPAL (OPen AnaLysis) framework."),
                     new HBox {
-                        alignment = Pos.BASELINE_LEFT
-                        content = Seq(
+                        alignment = Pos.BaselineLeft
+                        children = Seq(
                             new Label("Visit "),
                             new Hyperlink {
                                 text = "the OPAL project"
@@ -91,13 +91,13 @@ class AboutDialog(owner: Stage, showUrl: String ⇒ Unit) extends DialogStage(ow
             }
 
             bottom = new HBox {
-                content = new Button {
+                children = new Button {
                     text = "Close"
                     defaultButton = true
                     HBox.setMargin(this, Insets(10))
                     onAction = { e: ActionEvent ⇒ close() }
                 }
-                alignment = Pos.CENTER
+                alignment = Pos.Center
             }
         }
         stylesheets += BugPicker.defaultAppCSSURL
