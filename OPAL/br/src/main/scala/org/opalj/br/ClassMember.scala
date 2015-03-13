@@ -60,7 +60,7 @@ trait ClassMember extends SourceElement {
 
     final def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
 
-    override def isSynthetic: Boolean =
+    final override def isSynthetic: Boolean =
         super.isSynthetic || (ACC_SYNTHETIC.mask & accessFlags) != 0
 
     final def isNonFinal: Boolean = !isFinal
