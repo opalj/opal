@@ -402,10 +402,14 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                 DialogStage.showMessage("Error",
                                     "You have not specified a name for the project!",
                                     theStage)
-                            } else if (nameAlreadyExists) {
-                                DialogStage.showMessage("Error", "The name you have specified for the project already exists. Choose another one!", theStage)
                             } else if (jars.isEmpty) {
                                 DialogStage.showMessage("Error", "You have not specified any classes to be analyzed!", theStage)
+                            } else if (nameAlreadyExists) {
+                                if (DialogStage.showMessageWithBinaryChoice(
+                                    "Warning",
+                                    "A project with the name \""+nameTextArea.text.value+"\" already exists. Do you want to replace it?",
+                                    "Cancel", "Replace", theStage))
+                                    self.close()
                             } else {
                                 self.close()
                             }
@@ -421,18 +425,6 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
             if (e.code.equals(KeyCode.ESCAPE)) {
                 cancelled = true
                 self.close()
-            } else if (e.code.equals(KeyCode.ENTER)) {
-                if (nameTextArea.text.value == "") {
-                    DialogStage.showMessage("Error",
-                        "You have not specified a name for the project!",
-                        theStage)
-                } else if (nameAlreadyExists) {
-                    DialogStage.showMessage("Error", "The name you have specified for the project already exists. Choose another one!", theStage)
-                } else if (jars.isEmpty) {
-                    DialogStage.showMessage("Error", "You have not specified any classes to be analyzed!", theStage)
-                } else {
-                    self.close()
-                }
             }
         }
     }
