@@ -363,18 +363,18 @@ object DeadPathAnalysis {
                         } ⇒
                             (pc, s"the value of $instr is ${operandsArray(instr.indexOfNextInstruction(pc)).head}")
 
-                        case (pc, instr @ MethodInvocationInstruction(_ /*declaringClassType*/ , _ /* name*/ , descriptor)) if !descriptor.returnType.isVoidType && {
+                        case (pc, instr @ MethodInvocationInstruction(declaringClassType ,  name , descriptor)) if !descriptor.returnType.isVoidType && {
                             val nextPC = instr.indexOfNextInstruction(pc, body)
                             val operands = operandsArray(nextPC)
                             operands != null &&
                                 operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
                         } ⇒
-                            (pc, s"the return value of $instr is ${operandsArray(instr.indexOfNextInstruction(pc, body)).head}")
+                            (pc, s"${operandsArray(instr.indexOfNextInstruction(pc, body)).head} ← ${declaringClassType.toJava}{{${descriptor.toJava(name)}}}")
                     }
 
                 val isJustDeadPath = evaluatedInstructions.contains(nextPC)
                 val isTechnicalArtifact =
-                        method.isSynthetic || method.isBridge ||
+                    method.isSynthetic || method.isBridge ||
                         isLikelyFalsePositive ||
                         isNonExistingDefaultBranchOfSwitch ||
                         isRelatedToCompilationOfFinally
@@ -382,13 +382,15 @@ object DeadPathAnalysis {
                     theProject, classFile, Some(method), Some(pc),
                     Some(operands), Some(result.localsArray(pc)),
                     if (isJustDeadPath)
-                        s"the path to instruction pc=$nextPC$line is never taken"
+                        s"[dead path] the direct successor instruction pc=$nextPC$line is never directly executed after this instruction"
                     else
-                        s"the successor instruction pc=$nextPC$line is dead",
+                        s"[dead code] the successor instruction pc=$nextPC$line is dead",
                     Some(
-                        "The evaluation of the instruction never directly leads to the evaluation of the given subsequent instruction."+(
+                        "The evaluation of the instruction never leads to the evaluation of the specified instruction."+(
                             if (isTechnicalArtifact)
-                                "\n(This seems to be a technical artifact that cannot be avoided; i.e., there is probably nothing to fix!)"
+                                "\n(This seems to be a technical artifact that cannot be avoided; i.e., there is nothing to fix.)"
+                            else if (isProvenAssertion)
+                                "\n(We seem to have proven that an assertion always holds (unless an exeption is throw).)"
                             else if (isLikelyIntendedDeadDefaultBranch)
                                 "\n(This seems to be a deliberately dead default branch of a switch instruction; i.e., there is probably nothing to fix!)"
                             else
