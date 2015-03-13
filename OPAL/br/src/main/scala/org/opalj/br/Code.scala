@@ -385,6 +385,14 @@ final class Code private (
         lineNumberTable.flatMap(_.lookupLineNumber(pc))
 
     /**
+     * Returns `Some(true)` if both pcs have the same line number. If line number information
+     * is not available `None` is returned.
+     */
+    def haveSameLineNumber(firstPC: PC, secondPC: PC): Option[Boolean] = {
+        lineNumber(firstPC).flatMap(firstLN ⇒ lineNumber(secondPC).map(_ == firstLN))
+    }
+
+    /**
      * Returns the smallest line number (if any).
      *
      * @note The line number associated with the first instruction (pc === 0) is
