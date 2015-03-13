@@ -57,8 +57,14 @@ final case class Relevance(value: Int) extends AnyVal {
      * then the color will be black.
      */
     def asHTMLColor = {
-        val rgbValue = 0 + (100 - value) * 2
-        s"rgb($rgbValue,$rgbValue,$rgbValue)"
+        if (value >= 80)
+            "rgb(135, 4, 10)"
+        else if (value >= 40)
+            "rgb(202, 136, 4)"
+        else {
+            val rgbValue = (0 + (100 - value) * 1.3).toInt
+            s"rgb($rgbValue,$rgbValue,$rgbValue)"
+        }
     }
 
     def asAnsiColoredString: String = {
