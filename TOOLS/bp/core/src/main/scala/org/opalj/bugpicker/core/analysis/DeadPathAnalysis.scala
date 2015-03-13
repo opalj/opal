@@ -100,7 +100,7 @@ import org.opalj.br.instructions.NEW
 import org.opalj.br.cfg.ControlFlowGraph
 
 /**
- * Implementation of an analysis to find code that is "dead".
+ * Identifies dead edges in code.
  *
  * @author Michael Eichberg
  */

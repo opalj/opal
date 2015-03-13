@@ -74,7 +74,7 @@ object CallGraphVisualization {
     def main(args: Array[String]): Unit = {
         if ((args.size < 3) || (args.size > 4)) {
             println("You have to specify:")
-            println("\t1) The algorithm to use (CHA, BasicVTA, DefaultVTA, ExtVTA, CFA).")
+            println("\t1) The algorithm to use (CHA, BasicVTA, DefaultVTA, ExtVTA, kCFA with k in {1,2,3,4,6}).")
             println("\t2) A jar/class file or a directory containing jar/class files.")
             println("\t3) A pattern that specifies which class/interface types should be included in the output.")
             println("\t4 - Optional) The number of seconds (max. 30) before the analysis starts (e.g., to attach a profiler).")
@@ -153,6 +153,8 @@ object CallGraphVisualization {
                             new DefaultVTACallGraphAlgorithmConfiguration(project)
                         case "ExtVTA" ⇒
                             new ExtVTACallGraphAlgorithmConfiguration(project)
+                        case "1CFA" ⇒
+                            new CFACallGraphAlgorithmConfiguration(project, 1)
                         case "2CFA" ⇒
                             new CFACallGraphAlgorithmConfiguration(project, 2)
                         case "CFA" | "3CFA" ⇒

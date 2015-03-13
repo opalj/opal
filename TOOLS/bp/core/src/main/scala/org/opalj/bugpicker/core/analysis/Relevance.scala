@@ -89,4 +89,20 @@ object Relevance {
     final val TechnicalArtifact = OfNoRelevance
 
     final val Undetermined = Relevance(0)
+
+    def toCategoryName(relevance: Relevance): String = {
+        val r = relevance.value
+        if (r >= 99) "of utmost relevance"
+        else if (r >= 80) "very high"
+        else if (r >= 70) "high"
+        else if (r >= 50) "moderate"
+        else if (r >= 40) "useless defensive programming"
+        else if (r >= 30) "low"
+        else if (r >= 10) "very low"
+        else if (r >= 3) "common programming idiom"
+        else if (r >= 2) "proven assertion"
+        else if (r >= 1) "technical artifact"
+        else "undetermined"
+
+    }
 }
