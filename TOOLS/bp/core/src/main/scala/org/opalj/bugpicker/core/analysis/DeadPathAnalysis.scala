@@ -74,6 +74,8 @@ import org.opalj.br.instructions.RET
 import org.opalj.br.instructions.ShiftInstruction
 import org.opalj.br.instructions.INSTANCEOF
 import org.opalj.br.instructions.ISTORE
+import org.opalj.br.instructions.IFNULL
+import org.opalj.br.instructions.IFNONNULL
 import org.opalj.br.instructions.IStoreInstruction
 import org.opalj.br.instructions.MethodCompletionInstruction
 import org.opalj.ai.AIResult
@@ -98,6 +100,9 @@ import org.opalj.ai.IsAReferenceValue
 import org.opalj.ai.domain.ThrowNoPotentialExceptionsConfiguration
 import org.opalj.br.instructions.NEW
 import org.opalj.br.cfg.ControlFlowGraph
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.ai.domain.Origin
+import org.opalj.br.ExceptionHandler
 
 /**
  * Identifies dead edges in code.
@@ -110,7 +115,9 @@ object DeadPathAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
-        result: AIResult { val domain: Domain with Callees with RecordCFG }): Seq[StandardIssue] = {
+        result: AIResult { val domain: Domain with Callees with RecordCFG with Origin }): Seq[StandardIssue] = {
+        if (method.isSynthetic)
+            return Seq.empty;
 
         import result.domain
         import result.operandsArray
@@ -123,35 +130,32 @@ object DeadPathAnalysis {
         import result.domain.exceptionHandlerSuccessorsOf
         import result.domain.hasMultipleRegularPredecessors
         import result.domain.isRegularPredecessorOf
+        import result.domain.hasRegularSuccessor
 
         /*
-         * Helper function to identify methods that will always throw an exception if
-         * executed.
+         * Helper function to test if a called method will always throw – independent
+         * of any data-flow - an exception if executed.
          */
         def isAlwaysExceptionThrowingMethodCall(pc: PC): Boolean = {
-            body.instructions(pc) match {
+            instructions(pc) match {
                 case MethodInvocationInstruction(receiver: ObjectType, name, descriptor) ⇒
                     val callees = domain.callees(receiver, name, descriptor)
+                    if (callees.size != 1)
+                        return false;
 
-                    if (callees.size == 1) {
-                        // we are only handling the special idiom where a
-                        // (static) private method is used to create and throw
-                        // a special exception object
-                        // ...
-                        // catch(Exception e) {
-                        //     /*return|athrow*/ handleException(e);
-                        // }
-                        val callee = callees.head
-                        callee.body match {
-                            case Some(code) ⇒
-                                !code.exists((pc, i) ⇒ ReturnInstruction.isReturnInstruction(i))
-                            case _ ⇒
-                                false
-                        }
-                    } else
-                        false
+                    // We are only handling the special idiom where the call site is
+                    // monomorphic and where the target method is used to create and throw
+                    // a special exception object
+                    // ...
+                    // catch(Exception e) {
+                    //     /*return|athrow*/ handleException(e);
+                    // }
+                    callees.head.body.map(code ⇒ !code.exists { (pc, i) ⇒
+                        ReturnInstruction.isReturnInstruction(i)
+                    }).getOrElse(false)
 
-                case _ ⇒ false
+                case _ ⇒
+                    false
             }
         }
 
@@ -165,8 +169,7 @@ object DeadPathAnalysis {
         // when the method
         //     assertFailed
         // is called and afterwards a jump is done to a non-dead instruction.
-        def requiredButIrrelevantSuccessor(currentPC: PC, nextPC: PC): Boolean = {
-
+        def requiredUselessJumpOrReturnFromMethod(currentPC: PC, nextPC: PC): Boolean = {
             val nextInstruction = body.instructions(nextPC)
             (
                 nextInstruction.isInstanceOf[ReturnInstruction] ||
@@ -179,239 +182,263 @@ object DeadPathAnalysis {
                     isAlwaysExceptionThrowingMethodCall(currentPC)
         }
 
-        val deadCodeIssues: Seq[StandardIssue] = {
-
-            var issues = List.empty[StandardIssue]
-            for {
-                pc ← body.programCounters
-
-                // test if the instruction was evaluated
-                if evaluatedInstructions.contains(pc)
-                instruction = instructions(pc)
-
-                if {
-                    val opcode = instruction.opcode
-                    // we don't know the next one, but the next one is not dead... (ever)
-                    // if we reach this one
-                    opcode != RET.opcode &&
-                        // We don't have an analysis in place that enables us to determine
-                        // the real successors
-                        opcode != ATHROW.opcode
+        def mostSpecificFinallyHandlerOfPC(pc: PC): Seq[ExceptionHandler] = {
+            val candidateHandlers =
+                body.exceptionHandlers.filter { eh ⇒
+                    eh.catchType.isEmpty && isRegularPredecessorOf(eh.handlerPC, pc)
                 }
-
-                // test if one or all of the successors are dead
-                (nextPC: PC) ← instruction.nextInstructions(pc, body, regularSuccessorsOnly = true)
-                if !regularSuccessorsOf(pc).contains(nextPC)
-
-                allOperands = operandsArray(pc)
-                // Possibility: Store the state of the subroutines to facilitate the
-                // identification of dead paths in subroutines...
-                if allOperands ne null // null if we are in a subroutine (java < 1.5)
-            } {
-                // identify those dead edges that are pure technical artifacts
-                val isLikelyFalsePositive = requiredButIrrelevantSuccessor(pc, nextPC)
-
-                def isRelatedToCompilationOfFinally: Boolean =
-                    classFile.majorVersion >= 50 /* older compilers are using jsr/ret */ &&
-                        body.exceptionHandlers.exists(_.catchType.isEmpty) /* there is no finally */ && {
-                            val pcIsOnExceptionalControlFlowPaths =
-                                body.exceptionHandlers.filter { eh ⇒
-                                    eh.catchType.isEmpty &&
-                                        isRegularPredecessorOf(eh.handlerPC, pc)
-                                }
-
-                            // find matching instruction
-                            val cPCs =
-                                body.programCounters.filter { cPC ⇒
-                                    cPC != pc && instructions(pc).isIsomorphic(pc, cPC)
-                                }.filterNot { cPC ⇒
-                                    def cPCIsOnExceptionalControlFlowPaths =
-                                        body.exceptionHandlers.filter { eh ⇒
-                                            eh.catchType.isEmpty && isRegularPredecessorOf(eh.handlerPC, cPC)
-                                        }
-
-                                    (
-                                        // check the the instructions are not in a pre-/
-                                        // successor relation
-                                        isRegularPredecessorOf(pc, cPC) ||
-                                        isRegularPredecessorOf(cPC, pc)
-                                    ) || (
-                                            // they are not successors of the same exception handlers
-                                            (pcIsOnExceptionalControlFlowPaths.nonEmpty ||
-                                                cPCIsOnExceptionalControlFlowPaths.nonEmpty) &&
-                                                (pcIsOnExceptionalControlFlowPaths intersect cPCIsOnExceptionalControlFlowPaths).nonEmpty
-                                        )
-                                }.toList
-                            // check if at least one instruction is dominated by a "finally"
-                            // exception handler
-                            // ???
-
-                            println(method.toJava(classFile) + s" - correspondence - $pc(ehs=$pcIsOnExceptionalControlFlowPaths) => $cPCs; pc>cPCs===${cPCs.exists(cPC ⇒ isRegularPredecessorOf(pc, cPC))}; cPC>pc===${cPCs.exists(cPC ⇒ isRegularPredecessorOf(cPC, pc))}")
-
-                            // check if - taken together – all successor are visited
-                            cPCs.exists { cPC ⇒
-                                regularSuccessorsOf(cPC).contains(cPC + (nextPC - pc))
-                            }
+            if (candidateHandlers.size > 1) {
+                //                println(s"${method.toJava(classFile)}: Found multiple candidate handlers for $pc: $candidateHandlers")
+                candidateHandlers.tail.foldLeft(List(candidateHandlers.head)) { (c, n) ⇒
+                    var mostSpecificHandlers: List[ExceptionHandler] = List.empty
+                    var addN = false
+                    c.foreach { c ⇒
+                        if (isRegularPredecessorOf(c.handlerPC, n.handlerPC)) {
+                            addN = true
+                        } else if (isRegularPredecessorOf(n.handlerPC, c.handlerPC)) {
+                            mostSpecificHandlers = c :: mostSpecificHandlers
+                        } else {
+                            mostSpecificHandlers = c :: mostSpecificHandlers
+                            addN = true
                         }
-
-                lazy val isProvenAssertion = {
-                    instructions(nextPC) match {
-                        case NEW(AssertionError) ⇒
-                            // TODO Test if a "getstatic thisType $assertionsDisabled" instruction
-                            // dominates this instruction
-                            true
-                        case _ ⇒
-                            false
                     }
+                    if (addN) {
+                        mostSpecificHandlers = n :: mostSpecificHandlers
+                    }
+                    mostSpecificHandlers
+                    //                    } else if (isRegularPredecessorOf(c.get.handlerPC, n.handlerPC)) {
+                    //                        Some(n)
+                    //                    } else if (isRegularPredecessorOf(n.handlerPC, c.get.handlerPC)) {
+                    //                        c
+                    //                    } else {
+                    //                        None
+                    //                    }
                 }
-
-                // identify those dead edges that are the result of common programming
-                // idioms; e.g.,
-                // switch(v){
-                // ...
-                // default:
-                //   1: throw new XYZError(...);
-                //   2: throw new IllegalStateException(...);
-                //   3: assert(false); // TODO !!!
-                //   4: stateError();
-                //         AN ALWAYS (PRIVATE AND/OR STATIC) EXCEPTION
-                //         THROWING METHOD
-                //         HERE, THE DEFAULT CASE MAY EVEN FALL THROUGH!
-                // }
-                //
-                lazy val isDefaultBranchOfSwitch =
-                    instruction.isInstanceOf[CompoundConditionalBranchInstruction] &&
-                        nextPC == pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset
-
-                lazy val isNonExistingDefaultBranchOfSwitch = isDefaultBranchOfSwitch &&
-                    hasMultipleRegularPredecessors(pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset)
-
-                lazy val isLikelyIntendedDeadDefaultBranch = isDefaultBranchOfSwitch &&
-                    // this is the default branch of a switch instruction that is dead
-                    body.alwaysResultsInException(
-                        nextPC,
-                        joinInstructions,
-                        (invocationPC) ⇒ {
-                            isAlwaysExceptionThrowingMethodCall(invocationPC)
-                        },
-                        (athrowPC) ⇒ {
-                            // Let's do a basic analysis to determine the type of
-                            // the thrown exception.
-                            // What we do next is basic a local data-flow analysis that
-                            // starts with the first instruction of the default branch
-                            // of the switch instruction and which uses
-                            // the most basic domain available.
-                            val codeLength = body.instructions.length
-                            class ZDomain extends { // we need the "early initializer
-                                val project: SomeProject = theProject
-                                val code: Code = body
-                            } with ZeroDomain with ThrowNoPotentialExceptionsConfiguration
-                            val zDomain = new ZDomain
-                            val zOperandsArray = new zDomain.OperandsArray(codeLength)
-                            val zInitialOperands =
-                                operandsArray(pc).tail.map(_.adapt(zDomain, Int.MinValue))
-                            zOperandsArray(nextPC) = zInitialOperands
-                            val zLocalsArray = new zDomain.LocalsArray(codeLength)
-                            zLocalsArray(nextPC) =
-                                localsArray(pc) map { l ⇒
-                                    if (l ne null)
-                                        l.adapt(zDomain, Int.MinValue)
-                                    else
-                                        null
-                                }
-                            BaseAI.continueInterpretation(
-                                result.strictfp,
-                                result.code,
-                                result.joinInstructions,
-                                zDomain)(
-                                    /*initialWorkList =*/ List(nextPC),
-                                    /*alreadyEvaluated =*/ List(),
-                                    zOperandsArray,
-                                    zLocalsArray,
-                                    List.empty
-                                )
-                            val exceptionValue = zOperandsArray(athrowPC).head
-                            val throwsError =
-                                (
-                                    zDomain.asReferenceValue(exceptionValue).
-                                    isValueSubtypeOf(ObjectType.Error).
-                                    isYesOrUnknown
-                                ) ||
-                                    zDomain.asReferenceValue(exceptionValue).
-                                    isValueSubtypeOf(ObjectType("java/lang/IllegalStateException")).
-                                    isYesOrUnknown
-
-                            throwsError
-                        }
-                    )
-
-                val poppedOperandsCount =
-                    instruction.numberOfPoppedOperands { index ⇒
-                        allOperands(index).computationalType.computationalTypeCategory
-                    }
-                val operands = allOperands.take(poppedOperandsCount)
-
-                val line = body.lineNumber(nextPC).map(l ⇒ s" (line=$l)").getOrElse("")
-
-                val hints =
-                    body.collectWithIndex {
-                        case (pc, instr @ FieldReadAccess(_ /*declaringClassType*/ , _ /* name*/ , fieldType)) if {
-                            val nextPC = instr.indexOfNextInstruction(pc)
-                            val operands = operandsArray(nextPC)
-                            operands != null &&
-                                operands.head.isMorePreciseThan(result.domain.TypedValue(pc, fieldType))
-                        } ⇒
-                            (pc, s"the value of $instr is ${operandsArray(instr.indexOfNextInstruction(pc)).head}")
-
-                        case (pc, instr @ MethodInvocationInstruction(_ /*declaringClassType*/ , _ /* name*/ , descriptor)) if !descriptor.returnType.isVoidType && {
-                            val nextPC = instr.indexOfNextInstruction(pc, body)
-                            val operands = operandsArray(nextPC)
-                            operands != null &&
-                                operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
-                        } ⇒
-                            (pc, s"the return value of $instr is ${operandsArray(instr.indexOfNextInstruction(pc, body)).head}")
-                    }
-
-                val isJustDeadPath = evaluatedInstructions.contains(nextPC)
-                val isTechnicalArtifact =
-                    isLikelyFalsePositive ||
-                        isNonExistingDefaultBranchOfSwitch ||
-                        isRelatedToCompilationOfFinally
-                issues ::= StandardIssue(
-                    theProject, classFile, Some(method), Some(pc),
-                    Some(operands), Some(result.localsArray(pc)),
-                    if (isJustDeadPath)
-                        s"the path to instruction pc=$nextPC$line is never taken"
-                    else
-                        s"the successor instruction pc=$nextPC$line is dead",
-                    Some(
-                        "The evaluation of the instruction never directly leads to the evaluation of the given subsequent instruction."+(
-                            if (isTechnicalArtifact)
-                                "\n(This seems to be a technical artifact that cannot be avoided; i.e., there is probably nothing to fix!)"
-                            else if (isLikelyIntendedDeadDefaultBranch)
-                                "\n(This seems to be a deliberately dead default branch of a switch instruction; i.e., there is probably nothing to fix!)"
-                            else
-                                ""
-                        )),
-                    Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
-                    Set(IssueKind.DeadPath),
-                    hints,
-                    if (isTechnicalArtifact)
-                        Relevance.TechnicalArtifact
-                    else if (isProvenAssertion)
-                        Relevance.ProvenAssertion
-                    else if (isLikelyIntendedDeadDefaultBranch)
-                        Relevance.CommonIdiom
-                    else if (isJustDeadPath)
-                        Relevance.UselessDefensiveProgramming
-                    else
-                        Relevance.OfUtmostRelevance
-                )
-            }
-            issues
+            } else
+                candidateHandlers
         }
 
-        deadCodeIssues.sortBy { _.line }
+        var issues = List.empty[StandardIssue]
+        for {
+            pc ← body.programCounters
+            if evaluatedInstructions.contains(pc)
+            instruction = instructions(pc)
+            opcode = instruction.opcode
+            // Let's filter those instructions for which we cannot statically determine
+            // the set of meaningful successors:
+            // (I) In case of RET we don't know the next one, but the next one
+            // is not dead... (ever) if we reach the RET instruction
+            if opcode != RET.opcode
+            // (II) We don't have an analysis in place that enables us to determine
+            // the meaningful set of successors.
+            if opcode != ATHROW.opcode
+
+            // Let's check if a path is not taken:
+            (nextPC: PC) ← instruction.nextInstructions(pc, body, regularSuccessorsOnly = true)
+            if !regularSuccessorsOf(pc).contains(nextPC)
+
+            // If we are in a subroutine, we don't have sufficient information
+            // to draw any conclusion; hence,
+            allOperands = operandsArray(pc)
+            if allOperands ne null // null if we are in a subroutine (java < 1.5)
+        } {
+            // identify those dead edges that are pure technical artifacts
+            val isLikelyFalsePositive = requiredUselessJumpOrReturnFromMethod(pc, nextPC)
+
+            def isRelatedToCompilationOfFinally: Boolean = {
+                // There has to be at least one finally statement.
+                if (!body.exceptionHandlers.exists(_.catchType.isEmpty))
+                    return false;
+
+                // All issues related to the compilation of finally manifest
+                // themselves in dead edges related to conditional branch instructions
+                if (!instruction.isInstanceOf[ConditionalBranchInstruction])
+                    return false;
+
+                // Let's determine the index of the local variable that is evaluated
+                val lvIndexOption = localsArray(pc).indexOf(allOperands.head)
+                if (lvIndexOption.isEmpty)
+                    return false;
+
+                // Let's find all other if instructions that also access the same
+                // local variable and which are not in a predecessor /successor relation
+                val finallyHandler = mostSpecificFinallyHandlerOfPC(pc)
+                val lvIndex = lvIndexOption.get
+                //                print(method.toJava(classFile) + s"$pc($lvIndex)(eh=$finallyHandler)")
+                val correspondingPCs = body.collectWithIndex {
+                    case (otherPC, cbi: ConditionalBranchInstruction) if otherPC != pc &&
+                        (operandsArray(otherPC) ne null) &&
+                        (operandsArray(otherPC).head eq localsArray(otherPC)(lvIndex)) &&
+                        body.haveSameLineNumber(pc, otherPC).getOrElse(true) &&
+                        //                        { print(s" ::[cand]$otherPC"); true } &&
+                        !isRegularPredecessorOf(pc, otherPC) &&
+                        !isRegularPredecessorOf(otherPC, pc) &&
+                        //                        { print(s" => is in no relation"); true } &&
+                        //                        { print(s" ::$otherPC(eh=${mostSpecificFinallyHandlerOfPC(otherPC)})"); true } &&
+                        (finallyHandler intersect mostSpecificFinallyHandlerOfPC(otherPC)).isEmpty ⇒
+                        (otherPC)
+                }
+                //                println(s" ===> $correspondingPCs")
+                correspondingPCs.nonEmpty
+            }
+
+            lazy val isProvenAssertion = {
+                instructions(nextPC) match {
+                    case NEW(AssertionError) ⇒ true
+                    case _                   ⇒ false
+                }
+            }
+
+            // identify those dead edges that are the result of common programming
+            // idioms; e.g.,
+            // switch(v){
+            // ...
+            // default:
+            //   1: throw new XYZError(...);
+            //   2: throw new IllegalStateException(...);
+            //   3: assert(false); // TODO !!!
+            //   4: stateError();
+            //         AN ALWAYS (PRIVATE AND/OR STATIC) EXCEPTION
+            //         THROWING METHOD
+            //         HERE, THE DEFAULT CASE MAY EVEN FALL THROUGH!
+            // }
+            //
+            lazy val isDefaultBranchOfSwitch =
+                instruction.isInstanceOf[CompoundConditionalBranchInstruction] &&
+                    nextPC == pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset
+
+            lazy val isNonExistingDefaultBranchOfSwitch = isDefaultBranchOfSwitch &&
+                hasMultipleRegularPredecessors(pc + instruction.asInstanceOf[CompoundConditionalBranchInstruction].defaultOffset)
+
+            lazy val isLikelyIntendedDeadDefaultBranch = isDefaultBranchOfSwitch &&
+                // this is the default branch of a switch instruction that is dead
+                body.alwaysResultsInException(
+                    nextPC,
+                    joinInstructions,
+                    (invocationPC) ⇒ {
+                        isAlwaysExceptionThrowingMethodCall(invocationPC)
+                    },
+                    (athrowPC) ⇒ {
+                        // Let's do a basic analysis to determine the type of
+                        // the thrown exception.
+                        // What we do next is basic a local data-flow analysis that
+                        // starts with the first instruction of the default branch
+                        // of the switch instruction and which uses
+                        // the most basic domain available.
+                        val codeLength = body.instructions.length
+                        class ZDomain extends { // we need the "early initializer
+                            val project: SomeProject = theProject
+                            val code: Code = body
+                        } with ZeroDomain with ThrowNoPotentialExceptionsConfiguration
+                        val zDomain = new ZDomain
+                        val zOperandsArray = new zDomain.OperandsArray(codeLength)
+                        val zInitialOperands =
+                            operandsArray(pc).tail.map(_.adapt(zDomain, Int.MinValue))
+                        zOperandsArray(nextPC) = zInitialOperands
+                        val zLocalsArray = new zDomain.LocalsArray(codeLength)
+                        zLocalsArray(nextPC) =
+                            localsArray(pc) map { l ⇒
+                                if (l ne null)
+                                    l.adapt(zDomain, Int.MinValue)
+                                else
+                                    null
+                            }
+                        BaseAI.continueInterpretation(
+                            result.strictfp,
+                            result.code,
+                            result.joinInstructions,
+                            zDomain)(
+                                /*initialWorkList =*/ List(nextPC),
+                                /*alreadyEvaluated =*/ List(),
+                                zOperandsArray,
+                                zLocalsArray,
+                                List.empty
+                            )
+                        val exceptionValue = zOperandsArray(athrowPC).head
+                        val throwsError =
+                            (
+                                zDomain.asReferenceValue(exceptionValue).
+                                isValueSubtypeOf(ObjectType.Error).
+                                isYesOrUnknown
+                            ) ||
+                                zDomain.asReferenceValue(exceptionValue).
+                                isValueSubtypeOf(ObjectType("java/lang/IllegalStateException")).
+                                isYesOrUnknown
+
+                        throwsError
+                    }
+                )
+
+            val poppedOperandsCount =
+                instruction.numberOfPoppedOperands { index ⇒
+                    allOperands(index).computationalType.computationalTypeCategory
+                }
+            val operands = allOperands.take(poppedOperandsCount)
+
+            val line = body.lineNumber(nextPC).map(l ⇒ s" (line=$l)").getOrElse("")
+
+            val hints =
+                body.collectWithIndex {
+                    case (pc, instr @ FieldReadAccess(_ /*declaringClassType*/ , _ /* name*/ , fieldType)) if {
+                        val nextPC = instr.indexOfNextInstruction(pc)
+                        val operands = operandsArray(nextPC)
+                        operands != null &&
+                            operands.head.isMorePreciseThan(result.domain.TypedValue(pc, fieldType))
+                    } ⇒
+                        (pc, s"${operandsArray(instr.indexOfNextInstruction(pc)).head} ← $instr")
+
+                    case (pc, instr @ MethodInvocationInstruction(declaringClassType, name, descriptor)) if !descriptor.returnType.isVoidType && {
+                        val nextPC = instr.indexOfNextInstruction(pc, body)
+                        val operands = operandsArray(nextPC)
+                        operands != null &&
+                            operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
+                    } ⇒
+                        val modifier = if (instr.isInstanceOf[INVOKESTATIC]) "static " else ""
+                        (
+                            pc,
+                            s"${operandsArray(instr.indexOfNextInstruction(pc, body)).head} ← ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
+                        )
+                }
+
+            val isJustDeadPath = evaluatedInstructions.contains(nextPC)
+            val isTechnicalArtifact =
+                isLikelyFalsePositive ||
+                    isNonExistingDefaultBranchOfSwitch ||
+                    isRelatedToCompilationOfFinally
+            issues ::= StandardIssue(
+                theProject, classFile, Some(method), Some(pc),
+                Some(operands), Some(result.localsArray(pc)),
+                if (isJustDeadPath)
+                    s"[dead path] the direct runtime successor instruction is never immediately executed after this instruction: pc=$nextPC$line"
+                else
+                    s"[dead code] the successor instruction is dead: pc=$nextPC$line",
+                Some(
+                    "The evaluation of the instruction never leads to the evaluation of the specified instruction."+(
+                        if (isTechnicalArtifact)
+                            "\n(This seems to be a technical artifact that cannot be avoided; i.e., there is nothing to fix.)"
+                        else if (isProvenAssertion)
+                            "\n(We seem to have proven that an assertion always holds (unless an exeption is throw).)"
+                        else if (isLikelyIntendedDeadDefaultBranch)
+                            "\n(This seems to be a deliberately dead default branch of a switch instruction; i.e., there is probably nothing to fix!)"
+                        else
+                            ""
+                    )),
+                Set(IssueCategory.Flawed, IssueCategory.Comprehensibility),
+                Set(IssueKind.DeadPath),
+                hints,
+                if (isTechnicalArtifact)
+                    Relevance.TechnicalArtifact
+                else if (isProvenAssertion)
+                    Relevance.ProvenAssertion
+                else if (isLikelyIntendedDeadDefaultBranch)
+                    Relevance.CommonIdiom
+                else if (isJustDeadPath)
+                    Relevance.UselessDefensiveProgramming
+                else
+                    Relevance.OfUtmostRelevance
+            )
+        }
+        issues.sortBy { _.line }
     }
 
 }

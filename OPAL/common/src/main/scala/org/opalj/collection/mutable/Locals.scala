@@ -111,6 +111,8 @@ sealed trait Locals[T >: Null <: AnyRef] {
         None
     }
 
+    def indexOf(other: Object): Option[Int]
+
     /**
      * Counts the number of '''non-null''' values that do not match the given given predicate;
      * the index of the first element that matches the predicate is returned. If
@@ -259,6 +261,8 @@ private[mutable] final object Locals0 extends Locals[Null] {
 
     final override val nonEmpty = false
 
+    override def indexOf(other: Object): Option[Int] = None
+
     override def apply(index: Int): Nothing =
         throw new IndexOutOfBoundsException("the vector has size 0")
 
@@ -326,6 +330,8 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
         v
     }
 
+    override def indexOf(other: Object): Option[Int] = if (v eq other) Some(0) else None
+
     override def set(index: Int, value: T): Unit = {
         // if (index != 0) throw new IndexOutOfBoundsException("invalid index("+index+")")
         this.v = value
@@ -371,6 +377,7 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
         else
             new Locals1(newV)
     }
+
 }
 
 private[mutable] final class Locals2[T >: Null <: AnyRef](
@@ -388,6 +395,9 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
         //   throw new IndexOutOfBoundsException("invalid index("+index+")")
         // }
     }
+
+    override def indexOf(other: Object): Option[Int] =
+        if (v0 eq other) Some(0) else if (v1 eq other) Some(1) else None
 
     override def set(index: Int, value: T): Unit = {
         (index: @scala.annotation.switch) match {
@@ -479,6 +489,12 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
                 throw new IndexOutOfBoundsException("invalid index("+index+")")
         }
     }
+
+    override def indexOf(other: Object): Option[Int] =
+        if (v0 eq other) Some(0)
+        else if (v1 eq other) Some(1)
+        else if (v2 eq other) Some(2)
+        else None
 
     override def set(index: Int, value: T): Unit = {
         (index: @scala.annotation.switch) match {
@@ -596,6 +612,13 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
                 throw new IndexOutOfBoundsException("invalid index("+index+")")
         }
     }
+
+    override def indexOf(other: Object): Option[Int] =
+        if (v0 eq other) Some(0)
+        else if (v1 eq other) Some(1)
+        else if (v2 eq other) Some(2)
+        else if (v3 eq other) Some(3)
+        else None
 
     override def set(index: Int, value: T): Unit = {
         (index: @scala.annotation.switch) match {
@@ -722,6 +745,9 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
         if (index < 2) vs1(index) else vs2(index - 2)
     }
 
+    override def indexOf(other: Object): Option[Int] =
+        vs1.indexOf(other).orElse(vs2.indexOf(other).map(_ + 2))
+
     override def set(index: Int, newValue: T): Unit = {
         if (index < 2) vs1.set(index, newValue) else vs2.set(index - 2, newValue)
     }
@@ -807,6 +833,9 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
         if (index < 3) vs1(index) else vs2(index - 3)
     }
 
+    override def indexOf(other: Object): Option[Int] =
+        vs1.indexOf(other).orElse(vs2.indexOf(other).map(_ + 3))
+
     override def set(index: Int, newValue: T): Unit = {
         if (index < 3) vs1.set(index, newValue) else vs2.set(index - 3, newValue)
     }
@@ -891,6 +920,9 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
     override def apply(index: Int): T = {
         if (index < 3) vs1(index) else vs2(index - 3)
     }
+
+    override def indexOf(other: Object): Option[Int] =
+        vs1.indexOf(other).orElse(vs2.indexOf(other).map(_ + 3))
 
     override def set(index: Int, newValue: T): Unit = {
         if (index < 3) vs1.set(index, newValue) else vs2.set(index - 3, newValue)
@@ -983,6 +1015,11 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
                 throw new IndexOutOfBoundsException("invalid index("+index+")")
         }
     }
+
+    override def indexOf(other: Object): Option[Int] =
+        vs1.indexOf(other).
+            orElse(vs2.indexOf(other).map(_ + 2)).
+            orElse(vs3.indexOf(other).map(_ + 5))
 
     override def set(index: Int, newValue: T): Unit = {
         (index: @scala.annotation.switch) match {
@@ -1103,6 +1140,11 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
         }
     }
 
+    override def indexOf(other: Object): Option[Int] =
+        vs1.indexOf(other).
+            orElse(vs2.indexOf(other).map(_ + 3)).
+            orElse(vs3.indexOf(other).map(_ + 6))
+
     override def set(index: Int, newValue: T): Unit = {
         (index: @scala.annotation.switch) match {
             case 0 | 1 | 2 ⇒ vs1.set(index, newValue)
@@ -1221,6 +1263,12 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
                 throw new IndexOutOfBoundsException("invalid index("+index+")")
         }
     }
+
+    override def indexOf(other: Object): Option[Int] =
+        vs1.indexOf(other).
+            orElse(vs2.indexOf(other).map(_ + 4)).
+            orElse(vs3.indexOf(other).map(_ + 7))
+
     override def set(index: Int, newValue: T): Unit = {
         (index: @scala.annotation.switch) match {
             case 0 | 1 | 2 | 3 ⇒ vs1.set(index, newValue)
@@ -1339,6 +1387,12 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
                 throw new IndexOutOfBoundsException("invalid index("+index+")")
         }
     }
+
+    override def indexOf(other: Object): Option[Int] =
+        vs1.indexOf(other).
+            orElse(vs2.indexOf(other).map(_ + 4)).
+            orElse(vs3.indexOf(other).map(_ + 7))
+
     override def set(index: Int, newValue: T): Unit = {
         (index: @scala.annotation.switch) match {
             case 0 | 1 | 2 | 3  ⇒ vs1.set(index, newValue)
@@ -1458,6 +1512,14 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
             vs11(index)
         else
             vs12_N(index - 11)
+
+    override def indexOf(other: Object): Option[Int] =
+        vs11.indexOf(other).orElse {
+            vs12_N.indexOf(other) match {
+                case -1 ⇒ None
+                case x  ⇒ Some(11 + x)
+            }
+        }
 
     override def set(index: Int, newValue: T): Unit = {
         if (index < 11) {
