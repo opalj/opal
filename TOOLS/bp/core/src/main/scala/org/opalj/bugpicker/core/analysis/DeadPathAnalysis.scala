@@ -188,7 +188,7 @@ object DeadPathAnalysis {
                     eh.catchType.isEmpty && isRegularPredecessorOf(eh.handlerPC, pc)
                 }
             if (candidateHandlers.size > 1) {
-                println(s"${method.toJava(classFile)}: Found multiple candidate handlers for $pc: $candidateHandlers")
+                //                println(s"${method.toJava(classFile)}: Found multiple candidate handlers for $pc: $candidateHandlers")
                 candidateHandlers.tail.foldLeft(List(candidateHandlers.head)) { (c, n) ⇒
                     var mostSpecificHandlers: List[ExceptionHandler] = List.empty
                     var addN = false
