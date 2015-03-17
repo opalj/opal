@@ -92,4 +92,43 @@ object DialogStage {
         }
         stage.showAndWait()
     }
+
+    def showMessageWithBinaryChoice(theTitle: String, message: String, buttonNegativeMessage: String, buttonPositiveMessage: String, owner: Window): Boolean = {
+        var choice: Boolean = false
+        val stage = new DialogStage(owner) {
+            theStage ⇒
+            title = theTitle
+            scene = new Scene {
+                root = new BorderPane {
+                    center = new Label {
+                        text = message
+                        margin = Insets(20)
+                    }
+                    bottom = new HBox {
+                        content = Seq(
+                            new Button {
+                                text = buttonNegativeMessage
+                                defaultButton = true
+                                HBox.setMargin(this, Insets(10))
+                                onAction = { e: ActionEvent ⇒
+                                    theStage.close()
+                                }
+                            },
+                            new Button {
+                                text = buttonPositiveMessage
+                                HBox.setMargin(this, Insets(10))
+                                onAction = { e: ActionEvent ⇒
+                                    choice = true
+                                    theStage.close()
+                                }
+                            })
+                        alignment = Pos.CENTER
+                    }
+                }
+                stylesheets += BugPicker.defaultAppCSSURL
+            }
+        }
+        stage.showAndWait()
+        choice
+    }
 }

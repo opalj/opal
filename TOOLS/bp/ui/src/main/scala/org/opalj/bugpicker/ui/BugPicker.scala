@@ -294,20 +294,24 @@ class BugPicker extends Application {
         }
 
         def updateRecentProjects(lastProject: LoadedFiles): Seq[LoadedFiles] = {
-            if (!recentProjects.contains(lastProject)) {
+            if (recentProjects.contains(lastProject)) {
+                // lastProject isn't already most recent project, bring it to front
+                if (recentProjects.head != lastProject) {
+                    lastProject +: recentProjects.filter(_ != lastProject)
+                } else {
+                    recentProjects
+                }
+            } else if (recentProjects.exists(_.projectName == lastProject.projectName)) {
+                // already existing project got updated, bring it to front
+                lastProject +: recentProjects.filter(
+                    _.projectName != lastProject.projectName)
+            } else {
                 if (recentProjects.size < BugPicker.MAX_PREFERENCES_SIZE) {
                     // lastProject is most recent project, enough space for one more
                     lastProject +: recentProjects
                 } else {
                     // lastProject is most recent project, drop least recent project
                     lastProject +: recentProjects.init
-                }
-            } else {
-                // lastProject isn't already most recent project, bring it to front
-                if (recentProjects.head != lastProject) {
-                    lastProject +: recentProjects.filter(_ != lastProject)
-                } else {
-                    recentProjects
                 }
             }
         }
