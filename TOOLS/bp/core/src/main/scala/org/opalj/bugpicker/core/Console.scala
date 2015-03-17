@@ -51,8 +51,8 @@ import org.opalj.log.OPALLogger
  */
 object Console extends AnalysisExecutor { analysis ⇒
 
-    val HTMLFileOutputNameMatcher = """-html=([\w\.\:/\\]+)""".r
-    val DebugFileOutputNameMatcher = """-debug=([\w\.\:/\\]+)""".r
+    val HTMLFileOutputNameMatcher = """-html=([\w-_\.\:/\\]+)""".r
+    val DebugFileOutputNameMatcher = """-debug=([\w-_\.\:/\\]+)""".r
 
     private final val bugPickerAnalysis = new BugPickerAnalysis
 
@@ -278,7 +278,11 @@ object Console extends AnalysisExecutor { analysis ⇒
                     outputFormatGiven = true; true
                 case "-debug"                      ⇒ true
                 case DebugFileOutputNameMatcher(_) ⇒ true
-                case _                             ⇒ false
+                case _ ⇒
+                    // TODO report the issue back to the calling method
+                    println("Unknown parameter: "+parameter)
+                    false
+
             }
         ) &&
             outputFormatGiven
