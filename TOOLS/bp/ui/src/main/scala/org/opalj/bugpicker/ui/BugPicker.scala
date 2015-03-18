@@ -84,6 +84,11 @@ import scalafx.stage.Screen.sfxScreen2jfx
 import scalafx.stage.Stage
 import scalafx.stage.WindowEvent
 
+/**
+ * @author Arne Lottmann
+ * @author Michael Eichberg
+ * @author David Becker
+ */
 class BugPicker extends Application {
 
     var project: Project[URL] = null
@@ -404,21 +409,22 @@ object BugPicker {
     }
 
     def loadParametersFromPreferences(): AnalysisParameters = {
+        import BugPickerAnalysis._
         val maxEvalFactor = PREFERENCES.getDouble(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
-            BugPickerAnalysis.defaultMaxEvalFactor)
+            DefaultMaxEvalFactor)
         val maxEvalTime = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
-            BugPickerAnalysis.defaultMaxEvalTime)
+            DefaultMaxEvalTime)
         val maxCardinalityOfIntegerRanges = PREFERENCES.getLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
-            BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges)
+            DefaultMaxCardinalityOfIntegerRanges)
         val maxCardinalityOfLongSets = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS,
-            BugPickerAnalysis.defaultMaxCardinalityOfLongSets)
+            DefaultMaxCardinalityOfLongSets)
         val maxCallChainLength = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH,
-            BugPickerAnalysis.defaultMaxCallChainLength)
+            DefaultMaxCallChainLength)
         new AnalysisParameters(
             maxEvalTime,
             maxEvalFactor,

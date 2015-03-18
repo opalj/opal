@@ -132,9 +132,9 @@ object DeadPathAnalysis {
         import result.domain.hasRegularSuccessor
 
         /*
-         * Helper function to test if a called method will always throw – independent
+         * Helper function to test if this code will always throw – independent
          * of any data-flow - an exception if executed.
-         */
+        */
         def isAlwaysExceptionThrowingMethodCall(pc: PC): Boolean = {
             instructions(pc) match {
                 case MethodInvocationInstruction(receiver: ObjectType, name, descriptor) ⇒
@@ -187,7 +187,6 @@ object DeadPathAnalysis {
                     eh.catchType.isEmpty && isRegularPredecessorOf(eh.handlerPC, pc)
                 }
             if (candidateHandlers.size > 1) {
-                //                println(s"${method.toJava(classFile)}: Found multiple candidate handlers for $pc: $candidateHandlers")
                 candidateHandlers.tail.foldLeft(List(candidateHandlers.head)) { (c, n) ⇒
                     var mostSpecificHandlers: List[ExceptionHandler] = List.empty
                     var addN = false
@@ -205,13 +204,6 @@ object DeadPathAnalysis {
                         mostSpecificHandlers = n :: mostSpecificHandlers
                     }
                     mostSpecificHandlers
-                    //                    } else if (isRegularPredecessorOf(c.get.handlerPC, n.handlerPC)) {
-                    //                        Some(n)
-                    //                    } else if (isRegularPredecessorOf(n.handlerPC, c.get.handlerPC)) {
-                    //                        c
-                    //                    } else {
-                    //                        None
-                    //                    }
                 }
             } else
                 candidateHandlers
@@ -269,15 +261,11 @@ object DeadPathAnalysis {
                         (operandsArray(otherPC) ne null) &&
                         (operandsArray(otherPC).head eq localsArray(otherPC)(lvIndex)) &&
                         body.haveSameLineNumber(pc, otherPC).getOrElse(true) &&
-                        //                        { print(s" ::[cand]$otherPC"); true } &&
                         !isRegularPredecessorOf(pc, otherPC) &&
                         !isRegularPredecessorOf(otherPC, pc) &&
-                        //                        { print(s" => is in no relation"); true } &&
-                        //                        { print(s" ::$otherPC(eh=${mostSpecificFinallyHandlerOfPC(otherPC)})"); true } &&
                         (finallyHandler intersect mostSpecificFinallyHandlerOfPC(otherPC)).isEmpty ⇒
                         (otherPC)
                 }
-                //                println(s" ===> $correspondingPCs")
                 correspondingPCs.nonEmpty
             }
 
@@ -288,14 +276,14 @@ object DeadPathAnalysis {
                 }
             }
 
-            // identify those dead edges that are the result of common programming
+            // Identify those dead edges that are the result of common programming
             // idioms; e.g.,
             // switch(v){
             // ...
             // default:
             //   1: throw new XYZError(...);
             //   2: throw new IllegalStateException(...);
-            //   3: assert(false); // TODO !!!
+            //   3: assert(false);
             //   4: stateError();
             //         AN ALWAYS (PRIVATE AND/OR STATIC) EXCEPTION
             //         THROWING METHOD

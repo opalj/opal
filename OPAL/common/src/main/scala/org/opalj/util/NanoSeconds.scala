@@ -27,40 +27,43 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
-
-import org.opalj.graphs.{ Node, toDot }
-import org.opalj.br.reader.Java8Framework.ClassFiles
+package util
 
 /**
- * Creates a `dot` (Graphviz) based representation of the class hierarchy
- * of the specified jar file(s).
+ * Represents a time span of `n` nanoseconds.
  *
  * @author Michael Eichberg
  */
-object ClassHierarchyVisualizer {
+class NanoSeconds(val timeSpan: Long) extends AnyVal {
 
-    def main(args: Array[String]): Unit = {
+    final def +(other: NanoSeconds): NanoSeconds =
+        new NanoSeconds(this.timeSpan + other.timeSpan)
 
-        if (!args.forall(_.endsWith(".jar"))) {
-            println("Usage: java …ClassHierarchy <JAR file>+")
-            println("(c) 2014 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
-            sys.exit(-1)
-        }
+    final def -(other: NanoSeconds): NanoSeconds =
+        new NanoSeconds(this.timeSpan - other.timeSpan)
 
-        val classHierarchy =
-            if (args.size == 0)
-                ClassHierarchy.preInitializedClassHierarchy
-            else {
-                val classFiles =
-                    (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
-                        cfs ++ ClassFiles(new java.io.File(filename))
-                    }
-                ClassHierarchy(classFiles.view.map(_._1))(org.opalj.log.GlobalContext)
-            }
+    /**
+     * Converts the specified number of nanoseconds into seconds.
+     */
+    final def toSeconds: Seconds = new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
 
-        val dotGraph = toDot(Set(classHierarchy.toGraph), "back")
-        org.opalj.io.writeAndOpen(dotGraph, "ClassHiearachy", ".dot")
-    }
+    override def toString: String = timeSpan+" ns"
+}
+/**
+ * Defines factory methods and constants related to time spans in [[NanoSeconds]].
+ *
+ * @author Michael Eichberg
+ */
+object NanoSeconds {
+
+    final val None: NanoSeconds = new NanoSeconds(0)
+
+    /**
+     * Converts the specified time span and converts it into seconds.
+     */
+    final def TimeSpan(
+        startTimeInNanoseconds: Long,
+        endTimeInNanoseconds: Long): NanoSeconds =
+        new NanoSeconds(endTimeInNanoseconds - startTimeInNanoseconds)
+
 }

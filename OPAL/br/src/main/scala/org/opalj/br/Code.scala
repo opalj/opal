@@ -86,7 +86,6 @@ final class Code private (
      * array.
      *
      * @note The result is not cached and recalculated on-demand.
-     *
      */
     def instructionsCount: Int = {
         var c = 0
@@ -104,7 +103,9 @@ final class Code private (
      * belongs to – if any. This information is required to, e.g., identify the subroutine
      * contexts that need to be reset in case of an exception in a subroutine.
      *
-     * @return For each instruction (with a specific pc) the pc of the first instruction
+     * @return Basically a map the maps the pc of each instruction to the id of the
+     *      subroutine.
+     *      For each instruction (with a specific pc) the pc of the first instruction
      *      of the subroutine it belongs to is returned. The pc 0 identifies the instruction
      *      as belonging to the core method. The pc -1 identifies the instruction as
      *      dead by compilation.

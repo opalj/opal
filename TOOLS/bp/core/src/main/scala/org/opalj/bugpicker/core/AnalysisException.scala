@@ -27,40 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
-
-import org.opalj.graphs.{ Node, toDot }
-import org.opalj.br.reader.Java8Framework.ClassFiles
+package bugpicker
+package core
 
 /**
- * Creates a `dot` (Graphviz) based representation of the class hierarchy
- * of the specified jar file(s).
+ * Exception raised while the anaylsis is executed.
  *
  * @author Michael Eichberg
  */
-object ClassHierarchyVisualizer {
-
-    def main(args: Array[String]): Unit = {
-
-        if (!args.forall(_.endsWith(".jar"))) {
-            println("Usage: java …ClassHierarchy <JAR file>+")
-            println("(c) 2014 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
-            sys.exit(-1)
-        }
-
-        val classHierarchy =
-            if (args.size == 0)
-                ClassHierarchy.preInitializedClassHierarchy
-            else {
-                val classFiles =
-                    (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
-                        cfs ++ ClassFiles(new java.io.File(filename))
-                    }
-                ClassHierarchy(classFiles.view.map(_._1))(org.opalj.log.GlobalContext)
-            }
-
-        val dotGraph = toDot(Set(classHierarchy.toGraph), "back")
-        org.opalj.io.writeAndOpen(dotGraph, "ClassHiearachy", ".dot")
-    }
-}
+case class AnalysisException(message: String, cause: Throwable)
+    extends RuntimeException(message, cause)

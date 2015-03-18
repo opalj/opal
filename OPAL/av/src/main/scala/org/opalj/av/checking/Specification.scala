@@ -38,11 +38,12 @@ import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
 import scala.Console.{ GREEN, RED, BLUE, RESET }
-import org.opalj.util.PerformanceEvaluation.{ ns2sec, time, run }
+import org.opalj.util.PerformanceEvaluation.{ time, run }
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.{ ClassHierarchy, Project }
 import org.opalj.de._
+import org.opalj.log.OPALLogger
 import org.opalj.io.processSource
 
 /**
@@ -62,15 +63,10 @@ import org.opalj.io.processSource
  * @author Samuel Beracasa
  * @author Marco Torsello
  */
-class Specification(
-        val project: Project[URL],
-        val useAnsiColors: Boolean) {
-
-    private[this] def ifUseAnsiColors(ansiEscapeSequence: String): String =
-        if (useAnsiColors) ansiEscapeSequence else ""
+class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
 
     def this(project: Project[URL]) {
-        this(project, false)
+        this(project, useAnsiColors = false)
     }
 
     def this(
@@ -79,15 +75,29 @@ class Specification(
         this(
             run {
                 Project(projectClassFilesWithSources = classFiles, Traversable.empty)
-            } { (executionTime, project) ⇒
-                println((if (useAnsiColors) GREEN else "")+
-                    "1. Reading "+
-                    project.classFilesCount+" class files took "+
-                    ns2sec(executionTime).toString+" seconds."+
-                    (if (useAnsiColors) RESET else ""))
+            } { (t, project) ⇒
+                import project.logContext
+                val logMessage = "1. reading "+project.classFilesCount+" class files took "+t
+                val message = if (useAnsiColors) GREEN + logMessage + RESET else logMessage
+                OPALLogger.progress(message)
                 project
             },
             useAnsiColors)
+    }
+
+    import project.logContext
+
+    private[this] def logProgress(logMessage: String): Unit = {
+        OPALLogger.progress(if (useAnsiColors) GREEN + logMessage + RESET else logMessage)
+    }
+
+    private[this] def logWarn(logMessage: String): Unit = {
+        val message = if (useAnsiColors) RED + logMessage + RESET else logMessage
+        OPALLogger.warn("project warn", message)
+    }
+
+    private[this] def logInfo(logMessage: String): Unit = {
+        OPALLogger.info("project info", logMessage)
     }
 
     @volatile
@@ -488,19 +498,13 @@ class Specification(
     }
 
     def analyze(): Set[SpecificationViolation] = {
-
-        import util.PerformanceEvaluation.{ ns2sec, time, run }
-
         val dependencyStore = time {
             project.get(DependencyStoreWithoutSelfDependenciesKey)
-        } { executionTime ⇒
-            println(ifUseAnsiColors(GREEN)+
-                "2.1. Preprocessing dependencies took "+
-                ns2sec(executionTime).toString+" seconds."+ifUseAnsiColors(RESET))
-        }
-        println("Dependencies between source elements: "+dependencyStore.dependencies.size)
-        println("Dependencies on primitive types: "+dependencyStore.dependenciesOnBaseTypes.size)
-        println("Dependencies on array types: "+dependencyStore.dependenciesOnArrayTypes.size)
+        } { t ⇒ logProgress("2.1. preprocessing dependencies took "+t) }
+
+        logInfo("Dependencies between source elements: "+dependencyStore.dependencies.size)
+        logInfo("Dependencies on primitive types: "+dependencyStore.dependenciesOnBaseTypes.size)
+        logInfo("Dependencies on array types: "+dependencyStore.dependenciesOnArrayTypes.size)
 
         time {
             for {
@@ -519,14 +523,10 @@ class Specification(
                             ((source, dType)))
                 }
             }
-        } { executionTime ⇒
-            println(ifUseAnsiColors(GREEN)+
-                "2.2. Postprocessing dependencies took "+
-                ns2sec(executionTime).toString+" seconds."+ifUseAnsiColors(RESET))
-        }
-        println("Number of source elements: "+allSourceElements.size)
-        println("Outgoing dependencies: "+theOutgoingDependencies.size)
-        println("Incoming dependencies: "+theIncomingDependencies.size)
+        } { t ⇒ logProgress("2.2. postprocessing dependencies took "+t) }
+        logInfo("Number of source elements: "+allSourceElements.size)
+        logInfo("Outgoing dependencies: "+theOutgoingDependencies.size)
+        logInfo("Incoming dependencies: "+theIncomingDependencies.size)
 
         // Calculate the extension of the ensembles
         //
@@ -538,11 +538,9 @@ class Specification(
                     sourceElementMatcher.synchronized {
                         val extension = sourceElementMatcher.extension(project)
                         if (extension.isEmpty && sourceElementMatcher != NoSourceElementsMatcher)
-                            println(ifUseAnsiColors(RED)+
-                                "   "+ensembleSymbol+" ("+extension.size+")"+
-                                ifUseAnsiColors(RESET))
+                            logWarn(s"   $ensembleSymbol (${extension.size})")
                         else
-                            println(s"   $ensembleSymbol (${extension.size})")
+                            logInfo(s"   $ensembleSymbol (${extension.size})")
 
                         Specification.this.synchronized {
                             matchedSourceElements ++= extension
@@ -554,30 +552,20 @@ class Specification(
 
             unmatchedSourceElements = allSourceElements -- matchedSourceElements
 
-            println("   => Matched source elements: "+matchedSourceElements.size)
-            println("   => Other source elements: "+unmatchedSourceElements.size)
-        } { executionTime ⇒
-            println(ifUseAnsiColors(GREEN)+
-                "3. Determing the extension of the ensembles finished in "+
-                ns2sec(executionTime).toString+" seconds."+ifUseAnsiColors(RESET))
-        }
+            logInfo("   => Matched source elements: "+matchedSourceElements.size)
+            logInfo("   => Other source elements: "+unmatchedSourceElements.size)
+        } { t ⇒ logProgress("3. determing the extension of the ensembles took "+t) }
 
         // Check all rules
         //
         time {
             val result =
-                for (architectureChecker ← architectureCheckers.par) yield {
-                    println("   Checking: "+architectureChecker)
-                    for (violation ← architectureChecker.violations) yield {
-                        violation
-                    }
+                for { architectureChecker ← architectureCheckers.par } yield {
+                    logProgress("   checking: "+architectureChecker)
+                    for (violation ← architectureChecker.violations) yield violation
                 }
             Set.empty ++ (result.filter(_.nonEmpty).flatten)
-        } { executionTime ⇒
-            println(ifUseAnsiColors(GREEN)+
-                "4. Checking the specified dependency constraints finished in "+
-                ns2sec(executionTime).toString+" seconds."+ifUseAnsiColors(RESET))
-        }
+        } { t ⇒ logProgress("4. checking the specified dependency constraints took "+t) }
     }
 
 }

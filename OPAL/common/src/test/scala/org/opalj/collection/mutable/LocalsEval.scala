@@ -32,10 +32,12 @@ package mutable
 
 import java.util.Random
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.NanoSeconds
 
+/**
+ * Evaluates the effectiveness of the locals data structure when compared with an array.
+ */
 object LocalsEval extends App {
-
-    import org.opalj.util.PerformanceEvaluation._
 
     val REPETITIONS = 10000000
     var lastAvg = 0.0d
@@ -54,7 +56,7 @@ object LocalsEval extends App {
     /////////
 
     def evalUsingLocals(elems: Int): Unit = {
-        var lastAvg = 0.0d
+        var lastAvg = 0l
         println(elems+" elments stored in vector")
         val data_v = time(e, eMax, minRuns, {
             var data: Locals[Integer] = Locals(elems)
@@ -70,11 +72,13 @@ object LocalsEval extends App {
                 i += 1
             }
             data
-        }) { (avg, t, ts) ⇒
-            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+        }) { (t, ts) ⇒
+            val sTs = ts.map(_.toSeconds).mkString(", ")
+            val avg = ts.map(_.timeSpan).sum / ts.size
             if (lastAvg != avg) {
                 lastAvg = avg
-                println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
+                val avgInSeconds = new NanoSeconds(lastAvg).toSeconds
+                println(s"Avg: $avgInSeconds; T: ${t.toSeconds}; Ts: $sTs")
             }
         }
 
@@ -82,7 +86,7 @@ object LocalsEval extends App {
     }
 
     def evalUsingArray(elems: Int): Unit = {
-        var lastAvg = 0.0d
+        var lastAvg = 0l
         println(elems+" elments stored in array")
         val data_a = time(e, eMax, minRuns, {
             var data = new Array[Integer](elems)
@@ -100,11 +104,12 @@ object LocalsEval extends App {
                 i += 1
             }
             data
-        }) { (avg, t, ts) ⇒
-            val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
+        }) { (t, ts) ⇒
+            val sTs = ts.mkString(", ")
+            val avg = ts.map(_.timeSpan).sum / ts.size
             if (lastAvg != avg) {
                 lastAvg = avg
-                println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
+                println(s"Avg: ${new NanoSeconds(avg).toSeconds}; T: $t; Ts: $sTs")
             }
         }
         println(data_a.mkString("Array(", " : ", ")"))
@@ -133,59 +138,4 @@ object LocalsEval extends App {
 
     println(Console.BLUE); evalUsingLocals(8); println(Console.RESET)
     evalUsingArray(8); println(Console.RESET)
-
-    /////////
-    /*
-    lastAvg = 0.0d
-    println("5 elments stored in array - last three are updated")
-    val data5_a_LAST4 = time(e, eMax, minRuns, {
-        var data = Array[Integer](0, 0, 0, 0, 0)
-        var i = 0
-        while (i < REPETITIONS) {
-            val index = r.nextInt(3) + 2
-            val value = r.nextInt(10)
-            var newData = new Array[Integer](5)
-            System.arraycopy(data, 0, newData, 0, 5)
-            val currentValue = data(index)
-            newData(index) = new Integer(currentValue + value)
-            data = newData
-            i += 1
-        }
-        data
-    }) { (avg, t, ts) ⇒
-        val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
-        if (lastAvg != avg) {
-            lastAvg = avg
-            println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
-        }
-    }
-    println(data5_a_LAST4(0)+" : "+data5_a_LAST4(1)+" : "+data5_a_LAST4(2)+" : "+data5_a_LAST4(3)+" : "+data5_a_LAST4(4))
-
-    /////////
-
-    lastAvg = 0.0d
-    println("5 elments stored in vector - last three are updated")
-    val data5_v_LAST4 = time(e, eMax, minRuns, {
-        var data: Locals[Integer] = Locals(IndexedSeq[Integer](0, 0, 0, 0, 0))
-        var i = 0
-        while (i < REPETITIONS) {
-            val index = r.nextInt(3) + 2
-            val value = r.nextInt(10)
-            val currentValue = data(index)
-            data = data.updated(
-                index,
-                if (currentValue == null)
-                    new Integer(value) else new Integer(currentValue + value))
-            i += 1
-        }
-        data
-    }) { (avg, t, ts) ⇒
-        val sTs = ts.map(t ⇒ f"${ns2sec(t)}%1.4f").mkString(", ")
-        if (lastAvg != avg) {
-            lastAvg = avg
-            println(f"Avg: ${ns2sec(avg.toLong)}%1.4f; T: ${ns2sec(t)}%1.4f; Ts: $sTs")
-        }
-    }
-    println(data5_v_LAST4(0)+" : "+data5_v_LAST4(1)+" : "+data5_v_LAST4(2)+" : "+data5_v_LAST4(3)+" : "+data5_v_LAST4(4))
-*/
 }

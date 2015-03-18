@@ -52,15 +52,13 @@ object MutabilityAssessment extends AnalysisExecutor with OneStepAnalysis[URL, B
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean): BasicReport = {
 
-        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
+        import org.opalj.util.PerformanceEvaluation.time
 
         var message = ""
         val result =
             time {
                 ImmutabilityAnalysis.doAnalyze(theProject, isInterrupted)
-            } { t ⇒
-                message += f"Analysis time: ${ns2sec(t)}%2.2f seconds. Result:\n"
-            }
+            } { t ⇒ message += s"Analysis time: $t\n" }
         val classesWithMutabilityRating = result //.filter(_._2 != Unknown)
         val classesPerMutabilityRating =
             classesWithMutabilityRating.groupBy(_._2). // grouped by mutability rating

@@ -31,8 +31,10 @@ package br
 
 import java.net.URL
 
-import instructions._
-import analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.br.instructions._
+import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project }
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.NanoSeconds
 
 /**
  * Counts the number of static and virtual method calls.
@@ -51,10 +53,9 @@ object VirtualAndStaticMethodCalls extends AnalysisExecutor with OneStepAnalysis
         parameters: Seq[String] = List.empty,
         isInterrupted: () ⇒ Boolean) = {
 
-        import util.PerformanceEvaluation.{ time, ns2sec }
         var staticCalls = 0
         var virtualCalls = 0
-        var executionTimeInSecs = 0d
+        var executionTime = NanoSeconds.None
         time {
             for {
                 classFile ← project.allClassFiles
@@ -66,10 +67,10 @@ object VirtualAndStaticMethodCalls extends AnalysisExecutor with OneStepAnalysis
                 else
                     staticCalls += 1
             }
-        } { executionTime ⇒ executionTimeInSecs = ns2sec(executionTime) }
+        } { t ⇒ executionTime = t }
 
         BasicReport(
-            "Total time: "+executionTimeInSecs+"\n"+
+            "Total time: "+executionTime.toSeconds+"\n"+
                 "Number of invokestatic/invokespecial instructions: "+staticCalls+"\n"+
                 "Number of invokeinterface/invokevirtual instructions: "+virtualCalls
         )

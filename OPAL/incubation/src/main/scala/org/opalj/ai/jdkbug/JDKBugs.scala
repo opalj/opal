@@ -356,7 +356,7 @@ trait TaintAnalysisDomain[Source]
     lazy val report = {
         postAnalysis();
         if (isRelevantValueReturned && callToClassForNameFound) {
-            val createdDot = toDot.generateDot(Set(callerNode))
+            val createdDot = toDot(Set(callerNode))
             TaintAnalysisDomain.numberOfReports.incrementAndGet()
             Some(createdDot)
         } else

@@ -27,20 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package graphs
 
 /**
  * Defines factory methods to generate specific representations of (multi-) graphs.
  *
  * @author Michael Eichberg
  */
-object toDot {
-
-    def apply(
-        nodes: Set[_ <: Node],
-        dir: String = "forward",
-        ranksep: String = "1.0"): String =
-        generateDot(nodes, dir, ranksep)
+package object graphs {
 
     /**
      * Generates a string that describes a (multi-)graph using the ".dot" file format
@@ -49,7 +42,7 @@ object toDot {
      *
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
-    def generateDot(
+    def toDot(
         nodes: Set[_ <: Node],
         dir: String = "forward",
         ranksep: String = "1.0"): String = {

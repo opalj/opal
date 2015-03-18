@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,6 +30,9 @@ package org.opalj
 package util
 
 import org.opalj.concurrent.Locking
+import scala.collection.mutable.Map
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalContext
 
 /**
  * Measures the execution time of some code.
@@ -41,9 +44,7 @@ import org.opalj.concurrent.Locking
  */
 class PerformanceEvaluation extends Locking {
 
-    import scala.collection.mutable.Map
-
-    private[this] val times: Map[Symbol, Long] = Map.empty
+    private[this] val timeSpans: Map[Symbol, NanoSeconds] = Map.empty
 
     /**
      * Times the execution of the given method / function literal / code block and
@@ -61,7 +62,7 @@ class PerformanceEvaluation extends Locking {
             f
         } finally {
             val endTime = System.nanoTime
-            withWriteLock { doUpdateTimes(s, endTime - startTime) }
+            withWriteLock { doUpdateTimes(s, new NanoSeconds(endTime - startTime)) }
         }
     }
 
@@ -72,15 +73,15 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `time` method takes care of the synchronization.
      */
-    protected[this] def doUpdateTimes(s: Symbol, duration: Long): Unit = {
-        val old = times.getOrElseUpdate(s, 0l)
-        times.update(s, old + duration)
+    protected[this] def doUpdateTimes(s: Symbol, timeSpan: NanoSeconds): Unit = {
+        val oldTimeSpan = timeSpans.getOrElseUpdate(s, NanoSeconds.None)
+        timeSpans.update(s, oldTimeSpan + timeSpan)
     }
 
     /**
      * Returns the overall time spent by computations with the given symbol.
      */
-    final def getTime(s: Symbol): Long = withReadLock { doGetTime(s) }
+    final def getTime(s: Symbol): NanoSeconds = withReadLock { doGetTime(s) }
 
     /**
      * Called by the `getTime(Symbol)` method.
@@ -88,8 +89,8 @@ class PerformanceEvaluation extends Locking {
      * ==Thread Safety==
      * The `getTime` method takes care of the synchronization.
      */
-    protected[this] def doGetTime(s: Symbol): Long = {
-        times.getOrElse(s, 0l)
+    protected[this] def doGetTime(s: Symbol): NanoSeconds = {
+        timeSpans.getOrElse(s, NanoSeconds.None)
     }
 
     /**
@@ -106,7 +107,7 @@ class PerformanceEvaluation extends Locking {
      * The `reset` method takes care of the synchronization.
      */
     protected[this] def doReset(s: Symbol): Unit = {
-        times.remove(s)
+        timeSpans.remove(s)
     }
 
     /**
@@ -124,7 +125,7 @@ class PerformanceEvaluation extends Locking {
      * The `resetAll` method takes care of the synchronization.
      */
     protected[this] def doResetAll(): Unit = {
-        times.clear()
+        timeSpans.clear()
     }
 
 }
@@ -146,22 +147,10 @@ object PerformanceEvaluation {
     }
 
     /**
-     * Converts the specified number of nanoseconds into seconds.
-     */
-    final def ns2sec(nanoseconds: Long): Double =
-        nanoseconds.toDouble / 1000.0d / 1000.0d / 1000.0d
-
-    /**
      * Converts the specified number of nanoseconds into milliseconds.
      */
     final def ns2ms(nanoseconds: Long): Double =
         nanoseconds.toDouble / 1000.0d / 1000.0d
-
-    /**
-     * Converts the specified time span and converts it into seconds.
-     */
-    final def asSec(startTimeInNanoseconds: Long, endTimeInNanoseconds: Long): Double =
-        ns2sec(endTimeInNanoseconds - startTimeInNanoseconds)
 
     /**
      * Measures the amount of memory that is used as a side-effect
@@ -184,14 +173,14 @@ object PerformanceEvaluation {
      * @param r A function that is passed the time (in nano seconds) that it
      *      took to evaluate `f`. `r` is called even if `f` fails with an exception.
      */
-    def time[T](f: ⇒ T)(r: Long ⇒ Unit): T = {
+    def time[T](f: ⇒ T)(r: NanoSeconds ⇒ Unit): T = {
         val startTime: Long = System.nanoTime
         val result =
             try {
                 f
             } finally {
                 val endTime: Long = System.nanoTime
-                r(endTime - startTime)
+                r(NanoSeconds.TimeSpan(startTime, endTime))
             }
         result
     }
@@ -248,10 +237,9 @@ object PerformanceEvaluation {
      * @param r A function that is called back whenever `f` was successfully evaluated.
      *      The signature is:
      *      {{{
-     *      def r(averageInNs:Double, lastExecutionTimeInNs : Long, consideredExecutionTimesInNs : Seq[Long]) : Unit
+     *      def r(consideredExecutionTimes : Seq[NanoSeconds]) : Unit
      *      }}}
-     *       1. The first parameter is the current average.
-     *       1. The second parameter is the last execution time of `f`.
+     *       1. The first parameter is the last execution time of `f`.
      *       1. The last parameter are the times of the evaluation of `f` that are taken
      *      into consideration when calculating the average.
      */
@@ -260,7 +248,7 @@ object PerformanceEvaluation {
         consideredRunsEpsilon: Int,
         minimalNumberOfRelevantRuns: Int,
         f: ⇒ T)(
-            r: (Double, Long, Seq[Long]) ⇒ Unit): T = {
+            r: (NanoSeconds, Seq[NanoSeconds]) ⇒ Unit): T = {
 
         require(minimalNumberOfRelevantRuns >= 3)
         require(consideredRunsEpsilon > epsilon)
@@ -271,40 +259,43 @@ object PerformanceEvaluation {
         val filterE = (consideredRunsEpsilon + 100).toDouble / 100.0d
 
         var runsSinceLastUpdate = 0
-        var times = List.empty[Long]
+        var times = List.empty[NanoSeconds]
         time { f } { t ⇒
             times = t :: times
-            if (t <= 199999) { // < 2 milliseconds
-                r(t.toDouble, t, times)
-                Console.err.println("The time required by the function is too small to get meaningful measurements.")
-                return result
+            if (t.timeSpan <= 199999) { // < 2 milliseconds
+                r(t, times)
+                OPALLogger.warn(
+                    "common",
+                    s"the time required by the function (${t.toString}) "+
+                        "is too small to get meaningful measurements.")(GlobalContext)
+
+                return result;
             }
         }
-        var avg: Double = times.head.toDouble
+        var avg: Double = times.head.timeSpan.toDouble
         do {
             time {
                 result = f
             } { t ⇒
-
-                if (t <= avg * filterE) {
+                if (t.timeSpan <= avg * filterE) {
                     // let's throw away all runs that are significantly slower than the last run
-                    times = t :: times.filter(_ <= t * filterE)
-                    avg = times.sum.toDouble / times.size.toDouble
+                    times = t :: times.filter(_.timeSpan <= t.timeSpan * filterE)
+                    avg = times.map(_.timeSpan).sum.toDouble / times.size.toDouble
                     runsSinceLastUpdate = 0
                 } else {
                     runsSinceLastUpdate += 1
                     if (runsSinceLastUpdate > minimalNumberOfRelevantRuns * 2) {
                         // for whatever reason the current average seems to be "too" slow
-                        // let's add the last run to rise the average 
+                        // let's add the last run to rise the average
                         times = t :: times
-                        avg = times.sum.toDouble / times.size.toDouble
+                        avg = times.map(_.timeSpan).sum.toDouble / times.size.toDouble
                         runsSinceLastUpdate = 0
                     }
                 }
-                r(avg, t, times)
+                r(t, times)
             }
         } while (times.size < minimalNumberOfRelevantRuns ||
-            Math.abs(avg - times.head) > avg * e)
+            Math.abs(avg - times.head.timeSpan) > avg * e)
 
         result
     }
@@ -312,14 +303,14 @@ object PerformanceEvaluation {
     /**
      * Times the execution of a given function `f`.
      *
-     * @param r A function that is passed the time (in nano seconds) that it
+     * @param r A function that is passed the time that it
      *      took to evaluate `f` and the result produced by `f`.
-     *      `r` is only called if `f` suceeds.
+     *      `r` is only called if `f` succeeds.
      */
-    def run[T, X](f: ⇒ T)(r: (Long, T) ⇒ X): X = {
+    def run[T, X](f: ⇒ T)(r: (NanoSeconds, T) ⇒ X): X = {
         val startTime: Long = System.nanoTime
         val result = f
         val endTime: Long = System.nanoTime
-        r(endTime - startTime, result)
+        r(NanoSeconds.TimeSpan(startTime, endTime), result)
     }
 }

@@ -51,6 +51,11 @@ import scalafx.scene.layout.HBox
 import scalafx.scene.layout.Priority
 import scalafx.stage.Stage
 
+/**
+ * @author Arne Lottmann
+ * @author Michael Eichberg
+ * @author David Becker
+ */
 class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
     theStage ⇒
 
@@ -87,6 +92,8 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
         alignment = Pos.BaselineRight
     }
 
+    import BugPickerAnalysis._
+
     scene = new Scene {
         root = new BorderPane {
             center = new GridPane {
@@ -95,7 +102,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                 add(new Button {
                     text = "Default"
                     onAction = { e: ActionEvent ⇒
-                        maxEvalFactorField.text = BugPickerAnalysis.defaultMaxEvalFactor.toString
+                        maxEvalFactorField.text = DefaultMaxEvalFactor.toString
                     }
                 }, 2, 0)
 
@@ -104,7 +111,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                 add(new Button {
                     text = "Default"
                     onAction = { e: ActionEvent ⇒
-                        maxEvalTimeField.text = BugPickerAnalysis.defaultMaxEvalTime.toString
+                        maxEvalTimeField.text = DefaultMaxEvalTime.toString
                     }
                 }, 2, 1)
 
@@ -113,7 +120,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                 add(new Button {
                     text = "Default"
                     onAction = { e: ActionEvent ⇒
-                        maxCardinalityOfIntegerRangesField.text = BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges.toString
+                        maxCardinalityOfIntegerRangesField.text = DefaultMaxCardinalityOfIntegerRanges.toString
                     }
                 }, 2, 2)
 
@@ -122,7 +129,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                 add(new Button {
                     text = "Default"
                     onAction = { e: ActionEvent ⇒
-                        maxCardinalityOfLongSetsField.text = BugPickerAnalysis.defaultMaxCardinalityOfLongSets.toString
+                        maxCardinalityOfLongSetsField.text = DefaultMaxCardinalityOfLongSets.toString
                     }
                 }, 2, 3)
 
@@ -131,7 +138,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                 add(new Button {
                     text = "Default"
                     onAction = { e: ActionEvent ⇒
-                        maxCallChainLengthField.text = BugPickerAnalysis.defaultMaxCallChainLength.toString
+                        maxCallChainLengthField.text = DefaultMaxCallChainLength.toString
                     }
                 }, 2, 4)
 
@@ -139,6 +146,7 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
 
                 style = "-fx-border-width: 0 0 1 0; -fx-border-color: #ccc;"
             }
+
             bottom = new HBox {
                 children = Seq(
                     new Button {
@@ -147,11 +155,11 @@ class AnalysisParametersDialog(owner: Stage) extends DialogStage(owner) {
                         minWidth = buttonMinWidth.toDouble
                         margin = buttonMargin
                         onAction = { e: ActionEvent ⇒
-                            maxEvalFactorField.text = BugPickerAnalysis.defaultMaxEvalFactor.toString
-                            maxEvalTimeField.text = BugPickerAnalysis.defaultMaxEvalTime.toString
-                            maxCardinalityOfIntegerRangesField.text = BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges.toString
-                            maxCardinalityOfLongSetsField.text = BugPickerAnalysis.defaultMaxCardinalityOfLongSets.toString
-                            maxCallChainLengthField.text = BugPickerAnalysis.defaultMaxCallChainLength.toString
+                            maxEvalFactorField.text = DefaultMaxEvalFactor.toString
+                            maxEvalTimeField.text = DefaultMaxEvalTime.toString
+                            maxCardinalityOfIntegerRangesField.text = DefaultMaxCardinalityOfIntegerRanges.toString
+                            maxCardinalityOfLongSetsField.text = DefaultMaxCardinalityOfLongSets.toString
+                            maxCallChainLengthField.text = DefaultMaxCallChainLength.toString
                         }
                     },
                     new Button {

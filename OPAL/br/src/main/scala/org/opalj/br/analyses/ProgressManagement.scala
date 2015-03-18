@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -30,13 +30,25 @@ package org.opalj
 package br
 package analyses
 
+import scala.util.control.ControlThrowable
+
 /**
- * Used by analyses to report progress. Typically an analysis is expected to report
- * progress every 250 to 2000 milliseconds. It should - however - check every ~100
+ * Enables the management of the progress of a long running computation.
+ * Typically a long running progress such as an analysis is expected to report
+ * progress every 250 to 2000 milliseconds. It should .- however -- check every ~100
  * milliseconds the interrupted status to enable a timely termination.
+ *
+ * This trait defines a call-back interface that is implemented by some class that
+ * runs an analysis and which passes an instance of it to some analysis to report
+ * progress.
  *
  * @note Implementations of this class must be thread safe if the analysis is multi-
  *      threaded.
+ * @note Implementations must handle the case where a step that was started later
+ *      finishes earlier than a previous step. In other words, even if the last step
+ *      has ended, that does not mean that the analysis as a whole has already finished.
+ *      Instead an implementation has to track how many steps have ended to determine
+ *      when the whole analysis has ended.
  *
  * @author Michael Eichberg
  * @author Arne Lottmann
@@ -46,9 +58,9 @@ trait ProgressManagement {
     /**
      * This method is called by the analysis to report progress.
      *
-     * The analysis is allowed to just report `End` events. However, if it
+     * An analysis is allowed to just report `End` events. However, if it
      * reports start events it must also report `End` events and it must use
-     * the same id to do so. This enables the correlation of the events. The analyis
+     * the same id to do so. This enables the correlation of the events. The analysis
      * must never report more than one `Start`/`End` event per step id.
      *
      * If the analysis is interrupted it may either signal (as the very last event)
@@ -64,15 +76,34 @@ trait ProgressManagement {
     final def start(step: Int, message: String): Unit =
         progress(step, EventType.Start, Some(message))
 
-    final def end(step: Int): Unit =
-        progress(step, EventType.End, None)
+    final def end(step: Int): Unit = progress(step, EventType.End, None)
 
-    final def end(step: Int, message: String): Unit =
-        progress(step, EventType.End, Some(message))
+    final def end(step: Int, message: String): Unit = end(step, Some(message))
+
+    final def end(step: Int, message: Option[String]): Unit =
+        progress(step, EventType.End, message)
+
+    final def step[T](
+        step: Int,
+        startMessage: String)(
+            f: ⇒ (T, Option[String])): T = {
+        start(step, startMessage)
+
+        try {
+            val (t, endMessage) = f
+            end(step, endMessage)
+            t
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct
+            case t: Throwable         ⇒ end(step, "failed: "+t.getMessage); throw t
+        }
+
+    }
 
     /**
      * This method is called by the analysis method
-     * to check whether the analysis should be aborted.
+     * to check whether the analysis should be aborted. The analysis will abort
+     * the computation if this method returns `true`.
      */
     def isInterrupted(): Boolean
 
@@ -86,14 +117,12 @@ trait ProgressManagement {
  */
 object ProgressManagement {
 
-    val None: (Int) ⇒ ProgressManagement = (maxSteps) ⇒ {
-        new ProgressManagement {
+    val None: (Int) ⇒ ProgressManagement = (maxSteps) ⇒ new ProgressManagement {
 
-            final def progress(step: Int, evt: Event, msg: Option[String]): Unit = {}
+        final def progress(step: Int, evt: Event, msg: Option[String]): Unit = {}
 
-            final def isInterrupted: Boolean = false
+        final def isInterrupted: Boolean = false
 
-        }
     }
 }
 
