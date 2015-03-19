@@ -30,30 +30,10 @@ package org.opalj
 package br
 
 /**
- * Java 7's `BootstrapMethods_attribute`.
+ * A marker trait to identify those constant pool values that can be arguments of boot
+ * strap methods.
  *
  * @author Michael Eichberg
  */
-case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute {
-
-    override def kindId: Int = BootstrapMethodTable.KindId
-
-}
-object BootstrapMethodTable {
-
-    final val KindId = 42
-
-}
-
-/**
- * Java 7's 'BootstrapMethod'.
- *
- * @author Michael Eichberg
- */
-case class BootstrapMethod(
-        methodHandle: MethodHandle,
-        bootstrapArguments: BootstrapArguments) {
-
-    def toJava: String = methodHandle.toJava
-}
+trait BootstrapArgument
 

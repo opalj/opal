@@ -29,6 +29,7 @@
 package org.opalj
 package br
 
+import java.util.Arrays.fill
 import scala.collection.BitSet
 import org.opalj.br.instructions._
 import scala.annotation.tailrec
@@ -42,12 +43,14 @@ import scala.collection.mutable.Queue
  *      This value is determined by the compiler and is not necessarily the minimum.
  *      However, in the vast majority of cases it is the minimum.
  * @param maxLocals The number of registers/local variables needed to execute the method.
+ *      As in case of `maxStack` this number is expected to be the minimum, but this is
+ *      not guaranteed.
  * @param instructions The instructions of this `Code` array/`Code` block. Since the code
  *      array is not completely filled (it contains `null` values) the preferred way
  *      to iterate over all instructions is to use for-comprehensions and pattern
  *      matching or to use one of the predefined methods [[foreach]], [[collect]],
- *      [[collectPair]], [[collectWithIndex]].
- *      The `Code` array must not be mutated!
+ *      [[collectPair]], [[collectWithIndex]], etc..
+ *      The `instructions` array must not be mutated!
  *
  * @author Michael Eichberg
  */
@@ -61,7 +64,7 @@ final class Code private (
         with CommonAttributes {
 
     /**
-     * Returns a new iterator to iterate over the program counters of the instructions
+     * Returns a iterator to iterate over the program counters of the instructions
      * of this `Code` block.
      *
      * @see See the method [[foreach]] for an alternative.
@@ -80,7 +83,7 @@ final class Code private (
         }
 
     /**
-     * Calculates the number of instructions. This operation has complexity O(n).
+     * Counts the number of instructions. This operation has complexity O(n).
      *
      * The number of instructions is always smaller or equal to the size of the code
      * array.
@@ -103,16 +106,16 @@ final class Code private (
      * belongs to – if any. This information is required to, e.g., identify the subroutine
      * contexts that need to be reset in case of an exception in a subroutine.
      *
-     * @return Basically a map the maps the pc of each instruction to the id of the
+     * @return Basically a map that maps the `pc` of each instruction to the id of the
      *      subroutine.
-     *      For each instruction (with a specific pc) the pc of the first instruction
+     *      For each instruction (with a specific `pc`) the `pc` of the first instruction
      *      of the subroutine it belongs to is returned. The pc 0 identifies the instruction
      *      as belonging to the core method. The pc -1 identifies the instruction as
      *      dead by compilation.
      */
     def belongsToSubroutine(): Array[Int] = {
         val subroutineIds = new Array[Int](instructions.length)
-        java.util.Arrays.fill(subroutineIds, -1) // <= all instructions belong to "no routine"
+        fill(subroutineIds, -1) // <= initially all instructions belong to "no routine"
 
         val nextSubroutines = Queue[PC](0)
 
@@ -187,7 +190,6 @@ final class Code private (
                         currentPC = pcOfNextInstruction(currentPC)
                     }
                 }
-
                 false
             }
 
