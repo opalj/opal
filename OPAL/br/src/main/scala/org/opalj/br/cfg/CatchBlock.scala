@@ -48,7 +48,7 @@ class CatchBlock(val handler: ExceptionHandler) extends CFGBlock {
         }
     }
 
-    override def hashCode(): Int = 973235 * 51 + handler.hashCode; // TODO This is questionable (how about the id field!)
+    override def hashCode(): Int = handler.hashCode * 51; // TODO This is questionable (how about the id field!)
 
     def toDot(code: Code): String = {
         var res: String = ID+" [shape=box, label=\""+ID+"\"];\n"

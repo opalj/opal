@@ -28,7 +28,6 @@
  */
 package org.opalj.br.cfg
 
-import scala.collection.immutable.HashSet
 import org.opalj.br.Code
 
 /**
@@ -42,15 +41,15 @@ trait CFGBlock {
 
     private[cfg] var successors: List[CFGBlock] = Nil
 
-    var ID: String = _
+    private[cfg] var ID: String = _
 
     // TODO [design] what is the purpose of these two methods (?)
-    def addPred(block: CFGBlock): Unit = predecessors = block :: predecessors
-    def addSucc(block: CFGBlock): Unit = successors = block :: successors
+    private[cfg] def addPred(block: CFGBlock): Unit = predecessors = block :: predecessors
+    private[cfg] def addSucc(block: CFGBlock): Unit = successors = block :: successors
 
     // TODO [rename] returnAllSuccessorBlocks (???)
-    def returnAllBlocks(visited: HashSet[CFGBlock]): HashSet[CFGBlock] = {
-        var res: HashSet[CFGBlock] = visited + this
+    def returnAllBlocks(visited: Set[CFGBlock]): Set[CFGBlock] = {
+        var res: Set[CFGBlock] = visited + this
         for (block ← successors if (!visited.contains(block)))
             res = res ++ block.returnAllBlocks(res)
         res

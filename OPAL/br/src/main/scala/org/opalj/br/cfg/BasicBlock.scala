@@ -38,33 +38,32 @@ import org.opalj.br.Code
  */
 class BasicBlock(val startPC: PC) extends CFGBlock {
 
-    var catchBlockSuccessors: List[CatchBlock] = Nil
+    private[cfg] var catchBlockSuccessors: List[CatchBlock] = Nil
 
-    var endPC: PC = startPC
+    private[cfg] var endPC: PC = startPC
 
-    def addPC(pc: PC): Unit = {
-        endPC = pc
-    }
+    private[cfg] def addPC(pc: PC): Unit = endPC = pc // TODO Rename: setEndPC
 
-    override def addSucc(block: CFGBlock): Unit = block match {
+    private[cfg] override def addSucc(block: CFGBlock): Unit = block match {
         case cb: CatchBlock ⇒ { catchBlockSuccessors = catchBlockSuccessors :+ cb }
         case _              ⇒ super.addSucc(block)
     }
 
-    def programCounters(code: Code): Seq[PC] = {
+    def programCounters(code: Code): Seq[PC] = { // TODO Return an iterator (this give the caller more opportunities!)
         var res: List[PC] = Nil
         var pc: PC = startPC
 
         while (pc <= endPC) {
-            res = res :+ pc
+            res = res :+ pc // this is expensive (as said: return an iterator)
             pc = code.pcOfNextInstruction(pc)
         }
 
         res
     }
 
+    // TODO add documentation
     def indexOfPC(pc: PC, code: Code): Int = {
-        var res = 0
+        var res = 0 // TODO rename: index
         var currentPC = startPC
 
         while (currentPC < pc) {
@@ -75,7 +74,10 @@ class BasicBlock(val startPC: PC) extends CFGBlock {
         res
     }
 
-    def split(block: BasicBlock, newBlockStartPC: PC, oldBlockEndPC: PC): BasicBlock = {
+    private[cfg] def split(
+        block: BasicBlock,
+        newBlockStartPC: PC,
+        oldBlockEndPC: PC): BasicBlock = {
 
         val newBlock = new BasicBlock(newBlockStartPC)
         newBlock.endPC = endPC
@@ -85,7 +87,11 @@ class BasicBlock(val startPC: PC) extends CFGBlock {
 
         for (successor ← newBlock.successors) {
             val oldBlock = this
-            successor.predecessors = successor.predecessors.map { c: CFGBlock ⇒ c match { case `oldBlock` ⇒ newBlock; case _ ⇒ c } }
+            successor.predecessors =
+                successor.predecessors.map {
+                    case `oldBlock` ⇒ newBlock
+                    case aBlock     ⇒ aBlock
+                }
         }
 
         successors = List(newBlock)
@@ -103,11 +109,11 @@ class BasicBlock(val startPC: PC) extends CFGBlock {
         }
     }
 
-    override def returnAllBlocks(visited: HashSet[CFGBlock]): HashSet[CFGBlock] = {
+    override def returnAllBlocks(visited: Set[CFGBlock]): Set[CFGBlock] = {
 
         var res = visited + this
         val worklist = (successors ++ catchBlockSuccessors)
-        for (block ← worklist if (!visited.contains(block)))
+        for (block ← worklist if !visited.contains(block))
             res = res ++ block.returnAllBlocks(res)
         res
     }
@@ -119,7 +125,7 @@ class BasicBlock(val startPC: PC) extends CFGBlock {
         }
     }
 
-    override def hashCode(): Int = 323125 * 13 + startPC; // TODO This is questionable (how about the id field!)
+    override def hashCode(): Int = startPC * 171; // TODO This is questionable (how about the id field!)
 
     def toDot(code: Code): String = {
 

@@ -36,7 +36,7 @@ import scala.collection.SortedMap
 import scala.collection.immutable.HashMap
 import scala.collection.immutable.HashSet
 import scala.collection.immutable.TreeMap
-import scala.collection.mutable.Queue
+import scala.collection.mutable
 import org.opalj.collection.mutable.UShortSet
 import org.opalj.br.PC
 import org.opalj.bytecode.BytecodeProcessingFailedException
@@ -62,7 +62,7 @@ import org.opalj.br.instructions.UnconditionalBranch
  */
 object ControlFlowGraph {
 
-    def connectBlocks(predecessor: CFGBlock, successor: CFGBlock): Unit = {
+    private[cfg] def connectBlocks(predecessor: CFGBlock, successor: CFGBlock): Unit = {
         predecessor.addSucc(successor)
         successor.addPred(predecessor)
     }
@@ -84,9 +84,9 @@ object ControlFlowGraph {
 
         val BlocksByPC = new Array[BasicBlock](codeLength + 1)
 
-        var catchBlocks: Map[ExceptionHandler, CatchBlock] = new HashMap[ExceptionHandler, CatchBlock]
+        val catchBlocks: mutable.Map[ExceptionHandler, CatchBlock] = new mutable.AnyRefMap[ExceptionHandler, CatchBlock](code.exceptionHandlers.size)
 
-        var exitPoints: Set[BasicBlock] = new HashSet[BasicBlock]
+        var exitPoints: mutable.Set[BasicBlock] = mutable.Set.empty[BasicBlock]
 
         val startBlock = new StartBlock
 
@@ -114,7 +114,7 @@ object ControlFlowGraph {
 
             val catchBlock: CatchBlock = new CatchBlock(handler)
 
-            catchBlocks = catchBlocks + ((handler, catchBlock))
+            catchBlocks += ((handler, catchBlock))
         }
 
         while (0 < currentPC && currentPC < codeLength) {
@@ -259,19 +259,19 @@ case class ControlFlowGraph(
         startBlock: StartBlock,
         endBlock: ExitBlock,
         blocksByPC: Array[BasicBlock],
-        catchBlocks: Map[ExceptionHandler, CatchBlock]) {
+        catchBlocks: scala.collection.Map[ExceptionHandler, CatchBlock]) {
 
-    private var finallyToRegularBlock: Map[BasicBlock, BasicBlock] = new HashMap[BasicBlock, BasicBlock].empty
+    private var finallyToRegularBlock: Map[BasicBlock, BasicBlock] = Map.empty[BasicBlock, BasicBlock]
 
-    private var regularToFinallyBlocks: Map[BasicBlock, Set[BasicBlock]] = new HashMap[BasicBlock, HashSet[BasicBlock]].empty
+    private var regularToFinallyBlocks: Map[BasicBlock, Set[BasicBlock]] = Map.empty[BasicBlock, HashSet[BasicBlock]]
 
-    def AllBlocks: HashSet[CFGBlock] = startBlock.returnAllBlocks(new HashSet[CFGBlock])
+    def allBlocks: scala.collection.Set[CFGBlock] = startBlock.returnAllBlocks(new HashSet[CFGBlock])
 
     def toDot: String = {
 
         var bbIndex: Int = 0; var cbIndex: Int = 0;
 
-        for (block ← AllBlocks)
+        for (block ← allBlocks)
             block match {
                 case bb: BasicBlock ⇒ { bb.ID = "bb"+bbIndex; bbIndex += 1 }
                 case cb: CatchBlock ⇒ { cb.ID = "cb"+cbIndex; cbIndex += 1 }
@@ -281,7 +281,7 @@ case class ControlFlowGraph(
 
         var dotString: String = "digraph{\ncompound=true;\n"
 
-        for (block ← AllBlocks) {
+        for (block ← allBlocks) {
             dotString += block.toDot(method.body.get)
         }
 
@@ -375,9 +375,9 @@ case class ControlFlowGraph(
 
             // Workqueues for iterative, breadth-first (sub-)graph-traversal, one for Blocks in finally handler,
             // the other for Blocks in the regular path
-            val workqueueFinally: Queue[BasicBlock] = Queue(finallyCatchBlock.successors(0).asInstanceOf[BasicBlock])
+            val workqueueFinally: mutable.Queue[BasicBlock] = mutable.Queue(finallyCatchBlock.successors(0).asInstanceOf[BasicBlock])
 
-            val workqueueRegular: Queue[BasicBlock] = Queue(immediateCorrespondant)
+            val workqueueRegular: mutable.Queue[BasicBlock] = mutable.Queue(immediateCorrespondant)
 
             while (!workqueueFinally.isEmpty) {
                 val bbfin = workqueueFinally.dequeue
@@ -392,13 +392,12 @@ case class ControlFlowGraph(
 
                 // Find out, which Blocks will have to be put in the queues next
 
-                var index: Int = 0
-
                 val finsuccessors = bbfin.successors.filter { block ⇒ block.isInstanceOf[BasicBlock] }.asInstanceOf[List[BasicBlock]]
                 val regsuccessors = bbreg.successors.filter { block ⇒ block.isInstanceOf[BasicBlock] }.asInstanceOf[List[BasicBlock]]
 
                 // Iterate over both Lists in parallel
 
+                var index: Int = 0
                 while (index < finsuccessors.size) {
                     val finsucc = finsuccessors(index)
                     val regsucc = regsuccessors(index)
