@@ -35,7 +35,7 @@ import org.opalj.ai.analyses.MutabilityRating.Unknown
 import org.opalj.ai.analyses.ImmutabilityAnalysis
 import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 
 /**
@@ -43,9 +43,7 @@ import org.opalj.br.analyses.Project
  *
  * @author Andre Pacak
  */
-object MutabilityAssessment extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object MutabilityAssessment extends DefaultOneStepAnalysis {
 
     override def doAnalyze(
         theProject: Project[URL],

@@ -134,7 +134,7 @@ object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
             } yield {
                 RefinedReturnType(classFile, method, domain.returnedValue)
             }
-        } { t ⇒ println(s"Analysis time: $t") }
+        } { ns ⇒ println(s"the analysis took ${ns.toSeconds}") }
 
         BasicReport(
             methodsWithRefinedReturnTypes.mkString(
