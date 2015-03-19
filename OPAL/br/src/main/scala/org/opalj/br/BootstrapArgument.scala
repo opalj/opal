@@ -26,30 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package immutability;
-
-import immutability.helperclasses.ImmutableClass;
-import immutability.annotations.Immutable;
+package org.opalj
+package br
 
 /**
- * An immutable class which contains an immutable object and an inner class which has a
- * method that returns the object
+ * A marker trait to identify those constant pool values that can be arguments of boot
+ * strap methods.
  *
- * @author Andre Pacak
+ * @author Michael Eichberg
  */
-@Immutable("the field of the enclosing class, which gets returned by a method of the inner class, is immutable (a downcast is not possible(!))")
-public class NonStaticInnerClassReturnImmutableObject {
+trait BootstrapArgument
 
-    private final ImmutableClass object;
-
-    public NonStaticInnerClassReturnImmutableObject() {
-        this.object = new ImmutableClass();
-    }
-
-    public class InnerClass {
-
-        public ImmutableClass getObject() {
-            return object;
-        }
-    }
-}

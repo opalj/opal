@@ -45,6 +45,6 @@ object DependencyStoreKey extends ProjectInformationKey[DependencyStore] {
     override protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = Nil
 
     override protected def compute(project: SomeProject): DependencyStore = {
-        DependencyStore(project.allClassFiles)
+        DependencyStore(project.allClassFiles)(project.logContext)
     }
 }

@@ -29,9 +29,11 @@
 package org.opalj
 package ai
 
+import scala.language.existentials
+
 import java.net.URL
 
-import org.opalj.br.analyses.{ OneStepAnalysis, AnalysisExecutor, BasicReport, Project, SomeProject }
+import org.opalj.br.analyses.{ DefaultOneStepAnalysis, BasicReport, Project, SomeProject }
 import org.opalj.br.Method
 import org.opalj.br.{ ReferenceType, ObjectType, IntegerType }
 import org.opalj.ai.analyses.cg.ComputedCallGraph
@@ -43,7 +45,7 @@ import org.opalj.ai.analyses.cg.VTACallGraphKey
  *
  * @author Michael Eichberg
  */
-object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
+object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(
         override val project: Project[java.net.URL],
@@ -69,94 +71,92 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
         override def maxCardinalityOfIntegerRanges: Long = 128l
     }
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    override def title: String =
+        "Calls of native Methods with Bounded Integer Values"
 
-        override def title: String =
-            "Calls of native Methods with Bounded Integer Values"
+    override def description: String =
+        "Identifies calls of native methods with bounded integer parameters."
 
-        override def description: String =
-            "Identifies calls of native methods with bounded integer parameters."
+    override def doAnalyze(
+        theProject: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
+        println("Calculating CallGraph")
+        val ComputedCallGraph(callGraph, /*we don't care about unresolved methods etc. */ _, _) =
+            theProject.get(VTACallGraphKey)
 
-        override def doAnalyze(
-            theProject: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            println("Calculating CallGraph")
-            val ComputedCallGraph(callGraph, /*we don't care about unresolved methods etc. */ _, _) =
-                theProject.get(VTACallGraphKey)
+        println("Identify native methods with integer parameters")
+        val calledNativeMethods: scala.collection.parallel.ParIterable[Method] =
+            (theProject.allClassFiles.par.map { classFile ⇒
+                classFile.methods.filter { m ⇒
+                    m.isNative &&
+                        m.descriptor.parameterTypes.exists(_.isIntegerType) &&
+                        /*We want to make some comparisons*/ callGraph.calledBy(m).size > 0 &&
+                        // let's forget about System.arraycopy... causes too much
+                        // noise/completely dominates the results
+                        // E.g., typical use case: System.arraycopy(A,0,B,0,...)
+                        !(m.name == "arraycopy" && classFile.thisType == ObjectType("java/lang/System"))
+                }
+            }).flatten
+        println(
+            calledNativeMethods.map(_.toJava).toList.sorted.
+                mkString("Called Native Methods ("+calledNativeMethods.size+"):\n", "\n", ""))
 
-            println("Identify native methods with integer parameters")
-            val calledNativeMethods: scala.collection.parallel.ParIterable[Method] =
-                (theProject.allClassFiles.par.map { classFile ⇒
-                    classFile.methods.filter { m ⇒
-                        m.isNative &&
-                            m.descriptor.parameterTypes.exists(_.isIntegerType) &&
-                            /*We want to make some comparisons*/ callGraph.calledBy(m).size > 0 &&
-                            // let's forget about System.arraycopy... causes too much
-                            // noise/completely dominates the results
-                            // E.g., typical use case: System.arraycopy(A,0,B,0,...)
-                            !(m.name == "arraycopy" && classFile.thisType == ObjectType("java/lang/System"))
-                    }
-                }).flatten
-            println(
-                calledNativeMethods.map(_.toJava).toList.sorted.
-                    mkString("Called Native Methods ("+calledNativeMethods.size+"):\n", "\n", ""))
+        val mutex = new Object
+        var results: List[NativeCallWithBoundedMethodParameter] = Nil
+        def addResult(r: NativeCallWithBoundedMethodParameter): Unit = {
+            mutex.synchronized { results = r :: results }
+        }
+        val unboundedCalls = new java.util.concurrent.atomic.AtomicInteger(0)
 
-            val mutex = new Object
-            var results: List[NativeCallWithBoundedMethodParameter] = Nil
-            def addResult(r: NativeCallWithBoundedMethodParameter): Unit = {
-                mutex.synchronized { results = r :: results }
+        for {
+            nativeMethod ← calledNativeMethods //<= ParIterable
+            // - The last argument to the method is the top-most stack value.
+            // - For this analysis, we don't care whether we call a native instance
+            //   or native static method
+            parametersCount = nativeMethod.parameterTypes.size
+            parameterIndexes = nativeMethod.parameterTypes.zipWithIndex.collect {
+                case (IntegerType /*| _: ReferenceType*/ , index) ⇒ index
             }
-            val unboundedCalls = new java.util.concurrent.atomic.AtomicInteger(0)
-
+            // For the stack we don't distinguish between computational type
+            // one and two category values; hence, no complex mapping is required.
+            stackIndexes = parameterIndexes.map((parametersCount - 1) - _)
+            (caller, callerPCs) ← callGraph.calledBy(nativeMethod)
+            domain = new AnalysisDomain(theProject, caller)
+            callerClassFile = theProject.classFile(caller)
+            result = BaseAI(callerClassFile, caller, domain)
+        } {
+            val pcs: Seq[UShort] = callerPCs.toSeq
             for {
-                nativeMethod ← calledNativeMethods //<= ParIterable
-                // - The last argument to the method is the top-most stack value.
-                // - For this analysis, we don't care whether we call a native instance
-                //   or native static method
-                parametersCount = nativeMethod.parameterTypes.size
-                parameterIndexes = nativeMethod.parameterTypes.zipWithIndex.collect {
-                    case (IntegerType /*| _: ReferenceType*/ , index) ⇒ index
-                }
-                // For the stack we don't distinguish between computational type
-                // one and two category values; hence, no complex mapping is required.
-                stackIndexes = parameterIndexes.map((parametersCount - 1) - _)
-                (caller, callerPCs) ← callGraph.calledBy(nativeMethod)
-                domain = new AnalysisDomain(theProject, caller)
-                callerClassFile = theProject.classFile(caller)
-                result = BaseAI(callerClassFile, caller, domain)
+                pc ← pcs
+                operands = result.operandsArray(pc)
+                if operands != null //<= this is practically the only place where a null check is necessary
+                stackIndex ← stackIndexes
             } {
-                val pcs: Seq[UShort] = callerPCs.toSeq
-                for {
-                    pc ← pcs
-                    operands = result.operandsArray(pc)
-                    if operands != null //<= this is practically the only place where a null check is necessary
-                    stackIndex ← stackIndexes
-                } {
-                    operands(stackIndex) match {
-                        case result.domain.IntegerRange(lb, ub) ⇒
-                            addResult(
-                                NativeCallWithBoundedMethodParameter(
-                                    theProject,
-                                    nativeMethod,
-                                    parametersCount - stackIndex,
-                                    caller,
-                                    pc,
-                                    lb,
-                                    ub))
-                        case _ ⇒
-                            unboundedCalls.incrementAndGet()
-                    }
+                operands(stackIndex) match {
+                    case result.domain.IntegerRange(lb, ub) ⇒
+                        addResult(
+                            NativeCallWithBoundedMethodParameter(
+                                theProject,
+                                nativeMethod,
+                                parametersCount - stackIndex,
+                                caller,
+                                pc,
+                                lb,
+                                ub))
+                    case _ ⇒
+                        unboundedCalls.incrementAndGet()
                 }
             }
+        }
 
-            BasicReport(
-                "Unbounded calls: "+unboundedCalls.get+"\n"+
-                    results.sortWith((l, r) ⇒ theProject.classFile(l.caller).thisType.id < theProject.classFile(r.caller).thisType.id).
-                    mkString("Bounded calls:\n", "\n\n", "\n")
-            )
+        BasicReport(
+            "Unbounded calls: "+unboundedCalls.get+"\n"+
+                results.sortWith((l, r) ⇒ theProject.classFile(l.caller).thisType.id < theProject.classFile(r.caller).thisType.id).
+                mkString("Bounded calls:\n", "\n\n", "\n")
+        )
 
-            /* For Java 8, this analysis will, e.g., report the following:
+        /* For Java 8, this analysis will, e.g., report the following:
              *
              * 430    public int More ...deflate(byte[] b, int off, int len, int flush) {
              * 431        if (b == null) {
@@ -184,11 +184,9 @@ object CallsOfNativeMethodsWithBoundedValues extends AnalysisExecutor {
              * The method java.util.zip.Deflater{ int deflate(byte[],int,int,int) } calls in line 442 the native method java.util.zip.Deflater{ int deflateBytes(long,byte[],int,int,int) } and passes in as the 3. parameter a bounded value: [0,2147483647].
              *
              */
-        }
+
     }
 }
-
-import scala.language.existentials
 
 case class NativeCallWithBoundedMethodParameter(
         project: SomeProject,
@@ -211,6 +209,5 @@ case class NativeCallWithBoundedMethodParameter(
             " and passes in as the "+parameterIndex+
             ". parameter a bounded value: ["+lowerBound+","+upperBound+"]."
     }
-
 }
 

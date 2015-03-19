@@ -33,6 +33,8 @@ import java.net.URL
 
 import scala.collection.JavaConversions._
 
+import java.util.concurrent.ConcurrentLinkedQueue
+
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.BasicReport
@@ -71,7 +73,7 @@ object UselessComputationsMinimal extends DefaultOneStepAnalysis {
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean) = {
 
-        val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
+        val results = new ConcurrentLinkedQueue[String]()
         theProject.parForeachMethodWithBody(isInterrupted) { m ⇒
             val (_ /*source*/ , classFile, method) = m
             val result = BaseAI(classFile, method, new AnalysisDomain(theProject, method))

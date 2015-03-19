@@ -255,7 +255,6 @@ object DeadPathAnalysis {
                 // local variable and which are not in a predecessor /successor relation
                 val finallyHandler = mostSpecificFinallyHandlerOfPC(pc)
                 val lvIndex = lvIndexOption.get
-                //                print(method.toJava(classFile) + s"$pc($lvIndex)(eh=$finallyHandler)")
                 val correspondingPCs = body.collectWithIndex {
                     case (otherPC, cbi: ConditionalBranchInstruction) if otherPC != pc &&
                         (operandsArray(otherPC) ne null) &&

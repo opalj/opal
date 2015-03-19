@@ -37,9 +37,7 @@ import org.opalj.ai._
 /**
  * @author Michael Eichberg
  */
-object IdentifyResourcesAnalysis extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
 
     override def description: String =
         "Identifies java.io.File object instantiations using constant strings."
@@ -51,25 +49,22 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor with OneStepAnalysis[U
         // Step 1
         // Find all methods that create "java.io.File(<String>)" objects.
         val callSites =
-            (
-                for {
-                    cf ← theProject.allProjectClassFiles.par
-                    m @ MethodWithBody(body) ← cf.methods
-                } yield {
-                    val pcs = for {
-                        pc ← body.collectWithIndex {
-                            case (
-                                pc,
-                                INVOKESPECIAL(
-                                    ObjectType("java/io/File"),
-                                    "<init>",
-                                    SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
-                                ) ⇒ pc
-                        }
-                    } yield pc
-                    (cf, m, pcs)
-                }
-            ).filter(_._3.size > 0)
+            (for {
+                cf ← theProject.allProjectClassFiles.par
+                m @ MethodWithBody(body) ← cf.methods
+            } yield {
+                val pcs =
+                    body.collectWithIndex {
+                        case (
+                            pc,
+                            INVOKESPECIAL(
+                                ObjectType("java/io/File"),
+                                "<init>",
+                                SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
+                            ) ⇒ pc
+                    }
+                (cf, m, pcs)
+            }).filter(_._3.size > 0)
 
         // Step 2
         // Perform a simple abstract interpretation to check if there is some

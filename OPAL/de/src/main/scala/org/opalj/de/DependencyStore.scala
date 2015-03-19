@@ -30,12 +30,12 @@ package org.opalj
 package de
 
 import scala.collection.Map
-
 import scala.collection.Set
-
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br._
 import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Stores extracted dependencies.
@@ -56,21 +56,28 @@ object DependencyStore {
 
     def apply[Source](
         classFiles: Traversable[ClassFile],
-        createDependencyExtractor: (DependencyProcessor) ⇒ DependencyExtractor)(): DependencyStore = {
+        createDependencyExtractor: (DependencyProcessor) ⇒ DependencyExtractor)(
+            implicit logContext: LogContext): DependencyStore = {
 
         val dc = time {
             val dc = new DependencyCollectingDependencyProcessor(Some(classFiles.size * 10))
             val de = createDependencyExtractor(dc)
             classFiles.par.foreach { de.process(_) }
             dc
-        } { t ⇒ println(s"[info] Collecting dependencies took ${t.toSeconds}") }
+        } { ns ⇒
+            OPALLogger.info("progress", "collecting dependencies took "+ns.toSeconds)
+        }
 
         time {
             dc.toStore
-        } { t ⇒ println(s"[info] Creating the dependencies store took ${t.toSeconds}") }
+        } { ns ⇒
+            OPALLogger.info("progress", "creating the dependencies store took "+ns.toSeconds)
+        }
     }
 
-    def apply[Source](classFiles: Traversable[ClassFile]): DependencyStore = {
+    def apply[Source](
+        classFiles: Traversable[ClassFile])(
+            implicit logContext: LogContext): DependencyStore = {
         val createDependencyExtractor = (dp) ⇒ new DependencyExtractor(dp)
         apply(classFiles, createDependencyExtractor)
     }

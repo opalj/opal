@@ -33,16 +33,17 @@ package analyses
 import java.net.URL
 
 /**
- * Some statistics about the analyzed project (created for Entwicklertag 2015 in Frankfurt).
+ * Demonstrates how to collect some statistics about the analyzed project
+ * (created for Entwicklertag 2015 in Frankfurt).
  *
  * @author Michael Eichberg
  */
 object SimpleProjectStatistics extends DefaultOneStepAnalysis {
 
-    override def title: String = "Project Statistics"
+    override def title: String = "Collects Project Statistics"
 
     override def description: String =
-        "Statistics about a project."
+        "Collects basic size metrics about a project."
 
     override def doAnalyze(
         project: Project[URL],

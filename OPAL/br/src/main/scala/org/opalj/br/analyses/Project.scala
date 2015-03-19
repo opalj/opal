@@ -111,7 +111,7 @@ class Project[Source] private (
         "the project is inconsistent; some classes in the library are also listed as project types"
     )
 
-    OPALLogger.debug("project", "created ("+logContext+")")
+    OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
 
     def extend(
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],

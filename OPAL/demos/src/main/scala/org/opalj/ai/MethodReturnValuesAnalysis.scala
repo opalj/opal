@@ -36,9 +36,8 @@ import java.net.URL
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.MethodSignature
@@ -56,11 +55,7 @@ import org.opalj.ai.analyses.cg.CallGraphCache
  *
  * @author Michael Eichberg
  */
-object MethodReturnValuesAnalysis
-        extends AnalysisExecutor
-        with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
 
     override def title: String = TheMethodReturValuesAnalysis.title
 

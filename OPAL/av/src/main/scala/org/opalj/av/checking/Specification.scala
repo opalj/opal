@@ -38,6 +38,7 @@ import scala.collection.immutable.SortedSet
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.{ Map ⇒ MutableMap, HashSet }
 import scala.Console.{ GREEN, RED, BLUE, RESET }
+import scala.io.Source
 import org.opalj.util.PerformanceEvaluation.{ time, run }
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -45,6 +46,7 @@ import org.opalj.br.analyses.{ ClassHierarchy, Project }
 import org.opalj.de._
 import org.opalj.log.OPALLogger
 import org.opalj.io.processSource
+import org.opalj.log.GlobalContext
 
 /**
  * A specification of a project's architectural constraints.
@@ -77,7 +79,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
                 Project(projectClassFilesWithSources = classFiles, Traversable.empty)
             } { (t, project) ⇒
                 import project.logContext
-                val logMessage = "1. reading "+project.classFilesCount+" class files took "+t
+                val logMessage = "1. reading "+project.classFilesCount+" class files took "+t.toSeconds
                 val message = if (useAnsiColors) GREEN + logMessage + RESET else logMessage
                 OPALLogger.progress(message)
                 project
@@ -500,7 +502,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
     def analyze(): Set[SpecificationViolation] = {
         val dependencyStore = time {
             project.get(DependencyStoreWithoutSelfDependenciesKey)
-        } { t ⇒ logProgress("2.1. preprocessing dependencies took "+t) }
+        } { ns ⇒ logProgress("2.1. preprocessing dependencies took "+ns.toSeconds) }
 
         logInfo("Dependencies between source elements: "+dependencyStore.dependencies.size)
         logInfo("Dependencies on primitive types: "+dependencyStore.dependenciesOnBaseTypes.size)
@@ -523,7 +525,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
                             ((source, dType)))
                 }
             }
-        } { t ⇒ logProgress("2.2. postprocessing dependencies took "+t) }
+        } { ns ⇒ logProgress("2.2. postprocessing dependencies took "+ns.toSeconds) }
         logInfo("Number of source elements: "+allSourceElements.size)
         logInfo("Outgoing dependencies: "+theOutgoingDependencies.size)
         logInfo("Incoming dependencies: "+theIncomingDependencies.size)
@@ -554,7 +556,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
 
             logInfo("   => Matched source elements: "+matchedSourceElements.size)
             logInfo("   => Other source elements: "+unmatchedSourceElements.size)
-        } { t ⇒ logProgress("3. determing the extension of the ensembles took "+t) }
+        } { ns ⇒
+            logProgress("3. determing the extension of the ensembles took "+ns.toSeconds)
+        }
 
         // Check all rules
         //
@@ -565,7 +569,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) {
                     for (violation ← architectureChecker.violations) yield violation
                 }
             Set.empty ++ (result.filter(_.nonEmpty).flatten)
-        } { t ⇒ logProgress("4. checking the specified dependency constraints took "+t) }
+        } { ns ⇒
+            logProgress("4. checking the specified dependency constraints took "+ns.toSeconds)
+        }
     }
 
 }
@@ -592,7 +598,7 @@ object Specification {
         if (file.isDirectory)
             throw SpecificationError("the specified jar file is a directory: "+jarName)
 
-        println(s"Loading project JAR: $jarName")
+        OPALLogger.info("creating project", s"loading $jarName")(GlobalContext)
 
         Project.Java8ClassFileReader.ClassFiles(file)
     }
@@ -619,7 +625,7 @@ object Specification {
         if (file.isDirectory)
             throw SpecificationError("the specified jar file is a directory: "+jarName)
 
-        println(s"Loading library JAR: $jarName")
+        OPALLogger.info("creating project", s"loading library $jarName")(GlobalContext)
 
         Project.Java8LibraryClassFileReader.ClassFiles(file)
     }
@@ -645,7 +651,7 @@ object Specification {
     def Classpath(
         fileName: String,
         pathSeparatorChar: Char = java.io.File.pathSeparatorChar): Iterable[String] = {
-        processSource(scala.io.Source.fromFile(new java.io.File(fileName))) { s ⇒
+        processSource(Source.fromFile(new java.io.File(fileName))) { s ⇒
             s.getLines().map(_.split(pathSeparatorChar)).flatten.toSet
         }
     }

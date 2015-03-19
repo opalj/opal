@@ -39,9 +39,8 @@ import scala.language.existentials
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
-import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKEINTERFACE
@@ -56,9 +55,7 @@ import org.opalj.br.instructions.NEW
  * @author Marco Jacobasch
  * @author Michael Eichberg
  */
-object InfiniteRecursions extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object InfiniteRecursions extends DefaultOneStepAnalysis {
 
     override def title: String =
         "infinite recursions analysis"
@@ -71,7 +68,7 @@ object InfiniteRecursions extends AnalysisExecutor with OneStepAnalysis[URL, Bas
         parameters: Seq[String] = List.empty,
         isInterrupted: () ⇒ Boolean) = {
 
-        // TODO read from parameter
+        // In a real application we should take this from a parameter
         val maxRecursionDepth = 3
 
         val result =
