@@ -55,6 +55,18 @@ class CodeAttributeTest
 
     import CodeAttributeTest._
 
+    behavior of "the \"Code\" attribute handlersFor method"
+
+    it should "only report the most specific handler and not all handers" in {
+
+        nestedCatch.handlersFor(5) should be(Iterable(nestedCatch.exceptionHandlers(0)))
+        nestedCatch.handlersFor(14) should be(Iterable(nestedCatch.exceptionHandlers(1)))
+        nestedCatch.handlersFor(10) should be(Iterable(nestedCatch.exceptionHandlers(2)))
+
+        // the last instruction
+        nestedCatch.handlersFor(37) should be(empty)
+    }
+
     behavior of "the \"Code\" attribute's collect method"
 
     it should "be able to correctly collect all matching instructions" in {
@@ -216,9 +228,15 @@ private object CodeAttributeTest {
 
     val project =
         Project(
-            ClassFiles(locateTestResources("classfiles/Code.jar", "bi")),
+            ClassFiles(locateTestResources("classfiles/Code.jar", "bi")) ++
+                ClassFiles(locateTestResources("classfiles/cfgtest8.jar", "br")),
             Traversable.empty
         )
+
+    val nestedCatch =
+        project.
+            classFile(ObjectType("controlflow/ExceptionCode")).get.
+            methods.find(_.name == "nestedCatch").get.body.get
 
     val boundedBufferClass = ObjectType("code/BoundedBuffer")
     val immutbleListClass = ObjectType("code/ImmutableList")

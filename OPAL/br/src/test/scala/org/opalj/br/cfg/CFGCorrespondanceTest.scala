@@ -51,11 +51,11 @@ class CFGCorrespondanceTest extends FunSpec with Matchers {
     val testFolder = TestSupport.locateTestResources(testJAR, "br")
     val testProject = Project(testFolder)
 
-    val testClass = testProject.classFile(ObjectType("ExceptionCode")).get
+    val testClass = testProject.classFile(ObjectType("controlflow/ExceptionCode")).get
 
     describe("Testing Correspondances on the PC-Level") {
 
-        it("with only an if-clause in the finally-handler") {
+        ignore("with only an if-clause in the finally-handler") {
 
             val testCFG = ControlFlowGraph(testClass.findMethod("tryFinally").get)
 
@@ -76,9 +76,13 @@ class CFGCorrespondanceTest extends FunSpec with Matchers {
             pcs should be(UShortSet(37))
         }
 
-        it("also with loops") {
+        ignore("also with loops") {
 
-            val testCFG = ControlFlowGraph(testClass.findMethod("loopExceptionWithCatchReturn").get)
+            val method = testClass.findMethod("loopExceptionWithCatchReturn").get
+            // just to make sure the code has the expected shape..
+            assert(method.body.get.instructions(85) ne null)
+
+            val testCFG = ControlFlowGraph(method)
 
             var pcs = testCFG.correspondingPCsTo(85)
 
