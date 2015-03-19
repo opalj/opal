@@ -29,8 +29,8 @@
 package org.opalj
 package de
 
-import br.analyses.SomeProject
-import br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.ProjectInformationKey
 
 /**
  * Key that can be used to get a `DependencyStore` that contains all dependencies.
@@ -45,6 +45,6 @@ object DependencyStoreKey extends ProjectInformationKey[DependencyStore] {
     override protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = Nil
 
     override protected def compute(project: SomeProject): DependencyStore = {
-        DependencyStore.initialize(project.allClassFiles)
+        DependencyStore(project.allClassFiles)
     }
 }

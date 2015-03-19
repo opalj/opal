@@ -37,9 +37,7 @@ import java.net.URL
  *
  * @author Michael Eichberg
  */
-object SimpleProjectStatistics extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object SimpleProjectStatistics extends DefaultOneStepAnalysis {
 
     override def title: String = "Project Statistics"
 

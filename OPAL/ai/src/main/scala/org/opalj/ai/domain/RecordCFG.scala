@@ -78,6 +78,24 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
         if (s != null) s else UShortSet.empty
     }
 
+    def hasRegularSuccessor(pc: PC, regularSuccessorsOnly: Boolean, p: PC ⇒ Boolean): Boolean = {
+        var visitedSuccessors = UShortSet(pc)
+        var successorsToVisit = successorsOf(pc, regularSuccessorsOnly)
+        while (successorsToVisit.nonEmpty) {
+            if (successorsToVisit.exists { succPC ⇒ p(succPC) })
+                return true;
+
+            visitedSuccessors = visitedSuccessors ++ successorsToVisit
+            successorsToVisit =
+                successorsToVisit.foldLeft(UShortSet.empty) { (l, r) ⇒
+                    l ++ (successorsOf(r, regularSuccessorsOnly).filter { pc ⇒
+                        !visitedSuccessors.contains(pc)
+                    })
+                }
+        }
+        false
+    }
+
     /**
      * Returns the program counter(s) of the instruction(s) that is(are) executed next if
      * the evaluation of this instruction may raise an exception.
@@ -103,6 +121,12 @@ trait RecordCFG extends CoreDomainFunctionality { domain: TheCode ⇒
      */
     def allSuccessorsOf(pc: PC): PCs =
         regularSuccessorsOf(pc) ++ exceptionHandlerSuccessorsOf(pc)
+
+    def successorsOf(pc: PC, regularSuccessorOnly: Boolean): PCs =
+        if (regularSuccessorOnly)
+            regularSuccessorsOf(pc)
+        else
+            allSuccessorsOf(pc)
 
     /**
      * Returns `true` if the instruction with the given pc has multiple predecessors.

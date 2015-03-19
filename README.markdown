@@ -29,12 +29,12 @@ OPAL consists of several projects which are found in the folder OPAL:
 The following applies to the "Master" branch.
 
 OPAL uses SBT as its build tool and working with OPAL is particularly easy using the SBT console.
-Make sure that you have Java 7 or 8, Scala 2.11.4 and SBT 0.13.7 installed and running. Download a recent snapshot of OPAL or clone the repository.
+Make sure that you have Java 7 or 8, Scala 2.11.5 and SBT 0.13.7 installed and running. Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder. 
 
 * Call ` sbt clean copyResources test:compile it:compile unidoc`. This compiles all projects (including tests) and generates the project-wide ScalaDoc documentation.
 * [Optional - but highly recommended] Edit your `.sbtconfig` file and specify the two system properties (`JAVA_OPTS`): `-Dorg.opalj.threads.CPUBoundTasks=8
--Dorg.opalj.threads.IOBoundTasks=48` - set the values to appropriate values for your machine (CPUBoundTasks === "Number of real CPUs (Cores)", IOBoundTasks === Number of (hyperthreaded) cores * 2 or *3 
+-Dorg.opalj.threads.IOBoundTasks=48` - set the values to appropriate values for your machine (CPUBoundTasks === "Number of real CPUs (Cores)", IOBoundTasks === Number of (hyperthreaded) cores * 1 .5
 * Call `sbt test` to run the unit tests and to test that everything works as expected. Please note, that some tests generate some additional (colored) output. However, as long as all tests succeed without an error, everything is OK. *If `sbt test` fails it may be due to insufficient memory. In this case it is necessary to edit your `.sbtconfig` file and to specify that you want to use more memory (`-Xmx3072M`).*
 * Call `sbt it:test` to run the integration test suite. Executing this test suite will take several minutes (your .sbtconfig file needs to be changed accordingly).
 * If you want to contribute to OPAL and want to develop your analyses using Eclipse, call `sbt eclipse` to create the project structure. Afterwards, you can directly import the projects into Eclipse.

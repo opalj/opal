@@ -52,6 +52,11 @@ import scalafx.scene.control.TabPane
 import scalafx.scene.web.WebView
 import scalafx.stage.Stage
 
+/**
+ * @author Arne Lottmann
+ * @author Michael Eichberg
+ * @author David Becker
+ */
 object AnalysisRunner extends BugPickerAnalysis {
 
     def runAnalysis(
@@ -72,7 +77,7 @@ object AnalysisRunner extends BugPickerAnalysis {
         }
         val progressListItems = scala.collection.mutable.HashMap[String, String]()
         val theProgress = DoubleProperty(0)
-        val stepCount = project.projectClassFilesCount + BugPickerAnalysis.PRE_ANALYSES_COUNT
+        val stepCount = project.projectClassFilesCount + BugPickerAnalysis.PreAnalysesCount
 
         val progStage =
             new ProgressManagementDialog(

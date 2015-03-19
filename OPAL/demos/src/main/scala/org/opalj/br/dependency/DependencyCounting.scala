@@ -59,9 +59,7 @@ object DependencyCounting extends AnalysisExecutor with OneStepAnalysis[URL, Bas
             // process the class files in parallel to speed up the collection process
             project.allClassFiles.par foreach (extractor.process)
             counter
-        } { t ⇒
-            println(f"[info] Time to count the dependencies: ${ns2sec(t)}%2.2f secs.")
-        }
+        } { t ⇒ println(s"[info] Time to count the dependencies: $t") }
 
         BasicReport(
             (f"Number of inter source-element dependencies: ${counter.currentDependencyCount}%,9d%n") +

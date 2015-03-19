@@ -32,8 +32,8 @@ package graphs
 import scala.collection.Map
 
 /**
- * Represents a mutable node of a directed graph. This class basically serves as a small
- * adapter class for some arbitrary node.
+ * Represents a mutable node of a directed graph.
+ * This class serves as a base implementation of the [[MutableNode]] trait.
  *
  * ==Thread Safety==
  * This class is thread-safe. It is possible to add multiple child nodes concurrently.

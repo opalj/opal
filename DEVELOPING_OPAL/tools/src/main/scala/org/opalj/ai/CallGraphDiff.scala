@@ -37,7 +37,6 @@ import scala.Console.BOLD
 import scala.Console.CYAN
 import scala.Console.RED
 import scala.Console.RESET
-import org.opalj.util.PerformanceEvaluation.ns2sec
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.analyses.MethodReturnValuesKey
 import org.opalj.br.ClassFile
@@ -101,7 +100,7 @@ object CallGraphDiff extends AnalysisExecutor with OneStepAnalysis[URL, BasicRep
                 entryPoints,
                 new CHACallGraphAlgorithmConfiguration(project)
             )
-        } { t ⇒ println("creating the less precise call graph took: "+ns2sec(t)) }
+        } { t ⇒ println("creating the less precise call graph took "+t) }
 
         if (isInterrupted())
             return null;
@@ -120,7 +119,7 @@ object CallGraphDiff extends AnalysisExecutor with OneStepAnalysis[URL, BasicRep
                             classFile, method //, 4
                         )
                 })
-        } { t ⇒ println("creating the more precise call graph took: "+ns2sec(t)) }
+        } { ns ⇒ println("creating the more precise call graph took "+ns.toSeconds) }
 
         if (isInterrupted())
             return null;

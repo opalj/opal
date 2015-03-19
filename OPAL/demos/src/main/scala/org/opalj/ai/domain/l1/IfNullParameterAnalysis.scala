@@ -50,9 +50,8 @@ import org.opalj.ai.domain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
@@ -81,11 +80,7 @@ import org.opalj.util.PerformanceEvaluation.time
  *
  * @author Michael Eichberg
  */
-object IfNullParameterAnalysis
-        extends OneStepAnalysis[URL, BasicReport]
-        with AnalysisExecutor {
-
-    val analysis = this
+object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
 
     override def title: String =
         "Identifies methods that are sensitive to parameters that are \"null\""
@@ -98,7 +93,6 @@ object IfNullParameterAnalysis
         theProject: Project[URL],
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean) = {
-        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
         // Explicitly specifies that all reference values are not null.
         def setToNonNull(
@@ -180,7 +174,7 @@ object IfNullParameterAnalysis
                     result ++ d2ThrownExceptions
                 )
             }
-        } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
+        } { t ⇒ println("Analysis time "+t.toSeconds) }
 
         val methodsWithDifferences = methodsWithDifferentExceptions.filter(_._3.nonEmpty).seq.toSeq
         BasicReport(

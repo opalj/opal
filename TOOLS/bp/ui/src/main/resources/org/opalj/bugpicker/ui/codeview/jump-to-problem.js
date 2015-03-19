@@ -75,7 +75,8 @@ function jumpToProblemInBytecode(methodId, pc) {
 
 // Functions to scroll to points in source code
 function jumpToLineInSourceCode(line) {
-	var lineElement = document.getElementById('line' + (line - 5));
+	var adjustedLine = Math.max(1,line - 3);
+	var lineElement = document.getElementById('line' + adjustedLine);
 	if (lineElement != undefined) {
 		lineElement.scrollIntoView();
 	} else {

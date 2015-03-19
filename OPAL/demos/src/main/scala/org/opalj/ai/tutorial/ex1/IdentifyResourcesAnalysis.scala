@@ -33,6 +33,7 @@ import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
 import org.opalj.ai._
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * @author Michael Eichberg
@@ -72,7 +73,6 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
             theProject: Project[URL],
             parameters: Seq[String],
             isInterrupted: () ⇒ Boolean) = {
-            import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
             // Step 1
             // Find all methods that create "java.io.File(<String>)" objects.
@@ -96,7 +96,7 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
                         (cf, m, pcs)
                     }
                 ).filter(_._3.size > 0)
-            } { t ⇒ println(f"Finding candidates took: ${ns2sec(t)}%2.2f seconds.") }
+            } { t ⇒ println(s"Finding candidates took: ${t.toSeconds}") }
 
             // Step 2
             // Perform a simple abstract interpretation to check if there is some
@@ -109,7 +109,7 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
                         case (pc, result.domain.StringValue(value) :: _) ⇒ (pc, value)
                     }
                 } yield (cf, m, pc, value)
-            } { t ⇒ println(f"Performing the abstract interpretations took: ${ns2sec(t)}%2.2f seconds.") }
+            } { t ⇒ println(f"Performing the abstract interpretations took ${t.toSeconds}") }
 
             def callSiteToString(callSite: (ClassFile, Method, PC, String)): String = {
                 val (cf, m, pc, v) = callSite

@@ -27,40 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package analyses
+package bugpicker
+package core
 
-import org.opalj.graphs.{ Node, toDot }
-import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.util.NanoSeconds
 
 /**
- * Creates a `dot` (Graphviz) based representation of the class hierarchy
- * of the specified jar file(s).
+ * Common constants and helper methods used by the BugPicker.
  *
  * @author Michael Eichberg
  */
-object ClassHierarchyVisualizer {
+package object analysis {
 
-    def main(args: Array[String]): Unit = {
+    type BugPickerResults = (NanoSeconds, Iterable[Issue], Iterable[AnalysisException])
 
-        if (!args.forall(_.endsWith(".jar"))) {
-            println("Usage: java …ClassHierarchy <JAR file>+")
-            println("(c) 2014 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
-            sys.exit(-1)
-        }
-
-        val classHierarchy =
-            if (args.size == 0)
-                ClassHierarchy.preInitializedClassHierarchy
-            else {
-                val classFiles =
-                    (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
-                        cfs ++ ClassFiles(new java.io.File(filename))
-                    }
-                ClassHierarchy(classFiles.view.map(_._1))(org.opalj.log.GlobalContext)
-            }
-
-        val dotGraph = toDot(Set(classHierarchy.toGraph), "back")
-        org.opalj.io.writeAndOpen(dotGraph, "ClassHiearachy", ".dot")
-    }
 }

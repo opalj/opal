@@ -32,8 +32,8 @@ package graphs
 import scala.collection.Map
 
 /**
- * Represents a mutable node of a directed graph. This class basically serves as a small
- * adapter class for some arbitrary node.
+ * Common interface of all mutable nodes of a directed graph.
+ * This class basically serves as a small adapter class for some arbitrary node.
  *
  * @see The demo project for example usages.
  *
