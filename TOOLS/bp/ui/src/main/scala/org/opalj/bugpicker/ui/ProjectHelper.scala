@@ -30,57 +30,43 @@ package org.opalj
 package bugpicker
 package ui
 
-import java.io.File
-import java.net.URL
-
 import scala.collection.JavaConversions
-import scala.language.implicitConversions
-
+import java.io.File
 import org.opalj.br.analyses.Project
+import java.net.URL
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
 import org.opalj.br.ClassFile
-import org.opalj.bugpicker.ui.dialogs.DialogStage
-import org.opalj.bugpicker.ui.dialogs.LoadedFiles
-import org.opalj.log.Error
-import org.opalj.log.Level
-import org.opalj.log.LogContext
-import org.opalj.log.LogMessage
-import org.opalj.log.OPALLogger
-
-import scalafx.application.Platform
-import scalafx.event.ActionEvent
-import scalafx.geometry.Insets
 import scalafx.Includes._
-import scalafx.scene.control.Button
-import scalafx.scene.control.Label
-import scalafx.scene.control.TextArea
+import scalafx.stage.Stage
 import scalafx.scene.layout.BorderPane
 import scalafx.scene.layout.HBox
-import scalafx.scene.Scene
+import scalafx.scene.control.Button
+import scalafx.scene.control.Label
+import scalafx.geometry.Insets
 import scalafx.scene.web.WebView
-import scalafx.stage.Stage
+import scalafx.event.ActionEvent
+import scala.language.implicitConversions
+import scalafx.scene.Scene
+import org.opalj.bugpicker.ui.dialogs.DialogStage
+import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 
 object ProjectHelper {
 
-    def setupProject(
-        loadedFiles: LoadedFiles,
-        parentStage: Stage,
-        consoleTextArea: TextArea): (Project[URL], Seq[File]) = {
+    def setupProject(loadedFiles: LoadedFiles, parentStage: Stage): (Project[URL], Seq[File]) = {
 
         val files = loadedFiles.projectFiles
         val sources = loadedFiles.projectSources
         val libs = loadedFiles.libraries
-        val project = setupProject(files, libs, parentStage, consoleTextArea)
+        val project = setupProject(files, libs, parentStage)
         (project, sources)
     }
 
     def setupProject(
         cpFiles: Iterable[File],
         libcpFiles: Iterable[File],
-        parentStage: Stage,
-        consoleTextArea: TextArea): Project[URL] = {
+        parentStage: Stage): Project[URL] = {
         println("[info] Reading class files (found in):")
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
         val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
@@ -141,35 +127,6 @@ object ProjectHelper {
             dialog.showAndWait()
         }
 
-        Project(classFiles, libraryClassFiles, projectLogger = new BugPickerOPALLogger(true, consoleTextArea))
-    }
-}
-
-class BugPickerOPALLogger(val ansiColored: Boolean = true, val tc: TextArea) extends OPALLogger {
-
-    import java.util.concurrent.ConcurrentHashMap
-    import java.util.concurrent.atomic.AtomicInteger
-
-    private[this] val messages = new ConcurrentHashMap[LogMessage, AtomicInteger]()
-
-    def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        val stream = if (message.level == Error) Console.err else Console.out
-        stream.println(message.toConsoleOutput(ansiColored))
-        Platform.runLater(new Runnable() {
-            def run = {
-                tc.text.value = tc.text.value + message.toConsoleOutput(false)+"\n"
-            }
-        })
-    }
-
-    def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        val counter = new AtomicInteger(0)
-        val existingCounter = messages.putIfAbsent(message, counter)
-        if (existingCounter != null)
-            existingCounter.incrementAndGet()
-        else {
-            counter.incrementAndGet()
-            log(message)
-        }
+        Project(classFiles, libraryClassFiles)
     }
 }

@@ -118,9 +118,8 @@ object AnalysisRunner extends BugPickerAnalysis {
                     new AddClickListenersOnLoadListener(
                         project, sources, reportView, byteView, sourceView,
                         { view ⇒
-                            if (view == sourceView) tabPane.selectionModel().select(1)
-                            else if (view == byteView) tabPane.selectionModel().select(2)
-                            else tabPane.selectionModel().select(0)
+                            if (view == sourceView) tabPane.selectionModel().select(0)
+                            else if (view == byteView) tabPane.selectionModel().select(1)
                         }
                     )
                     byteView.engine.loadContent(Messages.ANALYSIS_FINISHED)

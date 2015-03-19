@@ -71,7 +71,6 @@ import scalafx.scene.control.SplitPane
 import scalafx.scene.control.Tab
 import scalafx.scene.control.TabPane
 import scalafx.scene.control.TabPane.sfxTabPane2jfx
-import scalafx.scene.control.TextArea
 import scalafx.scene.input.KeyCode
 import scalafx.scene.input.KeyCode.sfxEnum2jfx
 import scalafx.scene.input.KeyCodeCombination
@@ -105,20 +104,11 @@ class BugPicker extends Application {
         val byteView: WebView = new WebView {
             contextMenuEnabled = false
         }
-        val consoleTextArea: TextArea = new TextArea {
-            text = ""
-            wrapText = true
-        }
         val reportView: WebView = new WebView {
             contextMenuEnabled = false
             engine.loadContent(Messages.APP_STARTED)
         }
         val tabPane: TabPane = new TabPane {
-            this += new Tab {
-                text = "Console"
-                content = consoleTextArea
-                closable = false
-            }
             this += new Tab {
                 text = "Source code"
                 content = sourceView
@@ -154,6 +144,7 @@ class BugPicker extends Application {
         lazy val recentProjectsMenu = new Menu {
             text = "_Open Recent"
             mnemonicParsing = true
+            accelerator = KeyCombination("Shortcut+O")
             items = createRecentProjectsMenu()
             if (items.isEmpty) {
                 disable = true
@@ -172,16 +163,15 @@ class BugPicker extends Application {
                 recentProjectsMenu.disable = false;
                 sourceView.engine.loadContent("")
                 byteView.engine.loadContent("")
-                consoleTextArea.text = ""
                 reportView.engine.loadContent(Messages.LOADING_STARTED)
                 Service {
                     Task[Unit] {
-                        val projectAndSources = ProjectHelper.setupProject(results.get, stage, consoleTextArea)
+                        val projectAndSources = ProjectHelper.setupProject(results.get, stage)
                         project = projectAndSources._1
                         sources = projectAndSources._2
                         Platform.runLater {
-                            tabPane.tabs(1).disable = sources.isEmpty
-                            tabPane.selectionModel().select(0)
+                            tabPane.tabs(0).disable = sources.isEmpty
+                            if (sources.isEmpty) tabPane.selectionModel().select(1)
                             reportView.engine.loadContent(Messages.LOADING_FINISHED)
                         }
                     }
