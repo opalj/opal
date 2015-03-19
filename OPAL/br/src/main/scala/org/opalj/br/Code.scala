@@ -300,35 +300,75 @@ final class Code private (
             val instruction = instructions(pc)
             if (p(pc, instruction))
                 return true;
+
             pc = pcOfNextInstruction(pc)
         }
         false
     }
 
     /**
-     * Returns a view of all handlers (exception and finally handlers) (if any) for the
-     * instruction with the given program counter (`pc`).
+     * Returns a view of all handlers (exception and finally handlers) for the
+     * instruction with the given program counter (`pc`) that may catch an exception.
+     *
+     * In case of multiple exception handlers that are identical (in particular
+     * in case of the finally handlers) only the first one is returned as that
+     * one is the one that will be used by the JVM at runtime.
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def handlersFor(pc: PC): Iterable[ExceptionHandler] =
-        exceptionHandlers.view.filter { handler ⇒
-            handler.startPC <= pc && handler.endPC > pc
+    def handlersFor(pc: PC): Iterable[ExceptionHandler] = {
+
+        var handledExceptions = Set.empty[ObjectType]
+        def isNotYetHandled(exception: ObjectType): Boolean = {
+            if (handledExceptions.contains(exception))
+                false
+            else {
+                handledExceptions += exception
+                true
+            }
         }
+
+        var finallyHandlerAlreadyFound = false
+        def isFirstFinallyHandler(): Boolean = {
+            if (finallyHandlerAlreadyFound)
+                false
+            else {
+                finallyHandlerAlreadyFound = true
+                true
+            }
+        }
+
+        exceptionHandlers.view.filter { handler ⇒
+            handler.startPC <= pc && handler.endPC > pc &&
+                handler.catchType.map(isNotYetHandled(_)).getOrElse(isFirstFinallyHandler())
+        }
+    }
 
     /**
      * Returns a view of all potential exception handlers (if any) for the
-     * instruction with the given program counter (`pc`). `Finally` handlers are
-     * ignored.
+     * instruction with the given program counter (`pc`). `Finally` handlers
+     * (`catchType == None`) are ignored.
      *
      * @param pc The program counter of an instruction of this `Code` array.
      */
-    def exceptionHandlersFor(pc: PC): Iterator[ExceptionHandler] =
-        exceptionHandlers.iterator.filter { handler ⇒
-            handler.catchType.isDefined &&
-                handler.startPC <= pc &&
-                handler.endPC > pc
+    def exceptionHandlersFor(pc: PC): Iterator[ExceptionHandler] = {
+        var handledExceptions = Set.empty[ObjectType]
+        def isNotYetHandled(exception: ObjectType): Boolean = {
+            if (handledExceptions.contains(exception))
+                false
+            else {
+                handledExceptions += exception
+                true
+            }
         }
+
+        exceptionHandlers.iterator.filter { handler ⇒
+            val catchType = handler.catchType
+            catchType.isDefined &&
+                handler.startPC <= pc && handler.endPC > pc &&
+                isNotYetHandled(catchType.get)
+        }
+    }
 
     /**
      * The set of pc of those instructions that may handle an exception if the evaluation
