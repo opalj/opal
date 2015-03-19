@@ -30,7 +30,6 @@ package immutability;
 
 import immutability.helperclasses.ImmutableClass;
 import immutability.annotations.Immutable;
-import immutability.annotations.Mutable;
 
 /**
  * An immutable class which contains an immutable object and an inner class which has a
