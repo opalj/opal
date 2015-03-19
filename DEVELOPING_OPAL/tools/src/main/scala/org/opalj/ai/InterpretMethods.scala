@@ -134,7 +134,7 @@ object InterpretMethodsAnalysis {
         // TODO Add support for reporting the progress and to interrupt the analysis.
 
         import Console.{ BOLD, RED, YELLOW, GREEN, RESET }
-        import org.opalj.util.PerformanceEvaluation.ns2sec
+
         val performanceEvaluationContext = new org.opalj.util.PerformanceEvaluation
         import performanceEvaluationContext.{ time, getTime }
         val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
@@ -239,18 +239,17 @@ object InterpretMethodsAnalysis {
             (
                 "During the interpretation of "+
                 methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes (real time: "+ns2sec(getTime('OVERALL))+
-                "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
-                "secs.)"+collectedExceptions.size+" exceptions occured.",
+                project.classFilesCount+" classes (real time: "+getTime('OVERALL)+
+                ", ai (∑CPU Times): "+getTime('AI)+
+                ")"+collectedExceptions.size+" exceptions occured.",
                 Some(file)
             )
         } else {
             (
                 "No exceptions occured during the interpretation of "+
                 methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                project.classFilesCount+" classes (real time: "+ns2sec(getTime('OVERALL))+
-                "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
-                "secs.)",
+                project.classFilesCount+" classes (real time: "+getTime('OVERALL)+
+                "secs., ai (∑CPU Times): "+getTime('AI)+")",
                 None
             )
         }

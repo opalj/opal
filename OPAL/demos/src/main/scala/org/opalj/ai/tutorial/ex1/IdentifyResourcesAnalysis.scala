@@ -33,11 +33,12 @@ import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.instructions._
 import org.opalj.ai._
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * @author Michael Eichberg
  */
-object IdentifyResourcesAnalysis extends AnalysisExecutor {
+object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(
         override val project: Project[URL],
@@ -61,70 +62,63 @@ object IdentifyResourcesAnalysis extends AnalysisExecutor {
             with domain.TheMethod
             with domain.ProjectBasedClassHierarchy
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    override def title: String = "Creation of Resources Using Constant Strings"
 
-        override def title: String = "Creation of Resources Using Constant Strings"
+    override def description: String =
+        "Identifies java.io.File object instantiations using constant strings."
 
-        override def description: String =
-            "Identifies java.io.File object instantiations using constant strings."
+    override def doAnalyze(
+        theProject: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
 
-        override def doAnalyze(
-            theProject: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
-
-            // Step 1
-            // Find all methods that create "java.io.File(<String>)" objects.
-            val callSites = time {
-                (
-                    for {
-                        cf ← theProject.allClassFiles.par
-                        m @ MethodWithBody(body) ← cf.methods
-                    } yield {
-                        val pcs = for {
-                            pc ← body.collectWithIndex {
-                                case (
-                                    pc,
-                                    INVOKESPECIAL(
-                                        ObjectType("java/io/File"),
-                                        "<init>",
-                                        SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
-                                    ) ⇒ pc
-                            }
-                        } yield pc
-                        (cf, m, pcs)
+        // Step 1
+        // Find all methods that create "java.io.File(<String>)" objects.
+        val callSites = time {
+            (for {
+                cf ← theProject.allClassFiles.par
+                m @ MethodWithBody(body) ← cf.methods
+            } yield {
+                val pcs =
+                    body.collectWithIndex {
+                        case (
+                            pc,
+                            INVOKESPECIAL(
+                                ObjectType("java/io/File"),
+                                "<init>",
+                                SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
+                            ) ⇒ pc
                     }
-                ).filter(_._3.size > 0)
-            } { t ⇒ println(f"Finding candidates took: ${ns2sec(t)}%2.2f seconds.") }
 
-            // Step 2
-            // Perform a simple abstract interpretation to check if there is some
-            // method that pass a constant string to a method
-            val callSitesWithConstantStringParameter = time {
-                for {
-                    (cf, m, pcs) ← callSites
-                    result = BaseAI(cf, m, new AnalysisDomain(theProject, m))
-                    (pc, value) ← pcs.map(pc ⇒ (pc, result.operandsArray(pc))).collect {
-                        case (pc, result.domain.StringValue(value) :: _) ⇒ (pc, value)
-                    }
-                } yield (cf, m, pc, value)
-            } { t ⇒ println(f"Performing the abstract interpretations took: ${ns2sec(t)}%2.2f seconds.") }
+                (cf, m, pcs)
+            }).filter(_._3.size > 0)
+        } { ns ⇒ println(s"Finding candidates took: ${ns.toSeconds}") }
 
-            def callSiteToString(callSite: (ClassFile, Method, PC, String)): String = {
-                val (cf, m, pc, v) = callSite
-                cf.thisType.toJava+
-                    "{ "+m.toJava+
-                    "{"+pc+": \""+v+"\" } }"
-            }
+        // Step 2
+        // Perform a simple abstract interpretation to check if there is some
+        // method that pass a constant string to a method
+        val callSitesWithConstantStringParameter = time {
+            for {
+                (cf, m, pcs) ← callSites
+                result = BaseAI(cf, m, new AnalysisDomain(theProject, m))
+                (pc, value) ← pcs.map(pc ⇒ (pc, result.operandsArray(pc))).collect {
+                    case (pc, result.domain.StringValue(value) :: _) ⇒ (pc, value)
+                }
+            } yield (cf, m, pc, value)
+        } { ns ⇒ println(s"Performing the abstract interpretations took ${ns.toSeconds}") }
 
-            BasicReport(
-                if (callSitesWithConstantStringParameter.isEmpty)
-                    "Only found "+callSites.size+" candidates."
-                else
-                    callSitesWithConstantStringParameter.map(callSiteToString(_)).
-                        mkString("Methods:\n", "\n", ".\n"))
+        def callSiteToString(callSite: (ClassFile, Method, PC, String)): String = {
+            val (cf, m, pc, v) = callSite
+            cf.thisType.toJava+"{ "+m.toJava+"{"+pc+": \""+v+"\" } }"
         }
+
+        BasicReport(
+            if (callSitesWithConstantStringParameter.isEmpty)
+                "Only found "+callSites.size+" candidates."
+            else
+                callSitesWithConstantStringParameter.map(callSiteToString(_)).
+                    mkString("Methods:\n", "\n", ".\n"))
     }
+
 }
 

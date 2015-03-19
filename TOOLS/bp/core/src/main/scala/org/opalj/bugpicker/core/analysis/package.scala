@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,24 +22,23 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
+package bugpicker
+package core
+
+import org.opalj.util.NanoSeconds
 
 /**
- * Exception that is thrown when an analysis of a method's implementation has failed.
- *
- * @param message The message that describes the reason.
- * @param code The code block for which the analysis failed.
- * @param pc The program counter of the last instruction that was tried to analyze.
+ * Common constants and helper methods used by the BugPicker.
  *
  * @author Michael Eichberg
  */
-case class AnalysisFailedException(
-    message: String,
-    code: Code,
-    pc: PC) extends RuntimeException(message)
+package object analysis {
 
+    type BugPickerResults = (NanoSeconds, Iterable[Issue], Iterable[AnalysisException])
+
+}

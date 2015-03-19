@@ -63,7 +63,6 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
         project: Project[URL],
         maxEvaluationFactor: Double): Unit = {
 
-        import org.opalj.util.PerformanceEvaluation.ns2sec
         val performanceEvaluationContext = new org.opalj.util.PerformanceEvaluation
         import performanceEvaluationContext.{ time, getTime }
         val methodsCount = new java.util.concurrent.atomic.AtomicInteger(0)
@@ -145,9 +144,9 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
                 projectName+": "+
                     "During the interpretation of "+
                     methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                    project.classFilesCount+" classes (real time: "+ns2sec(getTime('OVERALL))+
-                    "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
-                    "secs.)"+collectedExceptions.size+
+                    project.classFilesCount+" classes (real time: "+getTime('OVERALL)+
+                    ", ai (∑CPU Times): "+getTime('AI)+
+                    ")"+collectedExceptions.size+
                     " exceptions occured (details: "+file.toString+")."
             )
         } else {
@@ -155,9 +154,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec wit
                 projectName+": "+
                     "No exceptions occured during the interpretation of "+
                     methodsCount.get+" methods (of "+project.methodsCount+") in "+
-                    project.classFilesCount+" classes (real time: "+ns2sec(getTime('OVERALL))+
-                    "secs., ai (∑CPU Times): "+ns2sec(getTime('AI))+
-                    "secs.)"
+                    project.classFilesCount+" classes (real time: "+getTime('OVERALL)+
+                    ", ai (∑CPU Times): "+getTime('AI)+")"
             )
         }
     }

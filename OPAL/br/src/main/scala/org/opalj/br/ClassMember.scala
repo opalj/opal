@@ -35,6 +35,7 @@ import bi.ACC_PROTECTED
 import bi.ACC_PRIVATE
 import bi.ACC_STATIC
 import bi.VisibilityModifier
+import org.opalj.bi.ACC_SYNTHETIC
 
 /**
  * Abstractions over the common properties of class members (Methods and Fields).
@@ -45,21 +46,24 @@ trait ClassMember extends SourceElement {
 
     protected def accessFlags: Int
 
-    def isPublic: Boolean = (ACC_PUBLIC.mask & accessFlags) != 0
+    final def isPublic: Boolean = (ACC_PUBLIC.mask & accessFlags) != 0
 
-    def isProtected: Boolean = (ACC_PROTECTED.mask & accessFlags) != 0
+    final def isProtected: Boolean = (ACC_PROTECTED.mask & accessFlags) != 0
 
-    def isPrivate: Boolean = (ACC_PRIVATE.mask & accessFlags) != 0
+    final def isPrivate: Boolean = (ACC_PRIVATE.mask & accessFlags) != 0
 
-    def hasDefaultVisibility: Boolean = (VisibilityModifier.mask & accessFlags) == 0
+    final def hasDefaultVisibility: Boolean = (VisibilityModifier.mask & accessFlags) == 0
 
-    def isPackagePrivate = hasDefaultVisibility
+    final def isPackagePrivate = hasDefaultVisibility
 
-    def isStatic: Boolean = (ACC_STATIC.mask & accessFlags) != 0
+    final def isStatic: Boolean = (ACC_STATIC.mask & accessFlags) != 0
 
-    def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
+    final def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
 
-    def isNonFinal: Boolean = !isFinal
+    final override def isSynthetic: Boolean =
+        super.isSynthetic || (ACC_SYNTHETIC.mask & accessFlags) != 0
+
+    final def isNonFinal: Boolean = !isFinal
 
     def name: String
 }

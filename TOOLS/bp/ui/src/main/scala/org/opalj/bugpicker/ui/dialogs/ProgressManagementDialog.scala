@@ -93,15 +93,15 @@ class ProgressManagementDialog(
     scene = new Scene {
         root = new BorderPane {
             top = new HBox {
-                content = new ProgressBar {
+                children = new ProgressBar {
                     progress <== theProgress
                     margin = Insets(5)
-                    HBox.setHgrow(this, Priority.ALWAYS)
+                    HBox.setHgrow(this, Priority.Always)
                     prefWidth <== theStage.width - 20
                     prefHeight = 30
                 }
-                alignment = Pos.CENTER
-                hgrow = Priority.ALWAYS
+                alignment = Pos.Center
+                hgrow = Priority.Always
             }
             center = progressListView
             bottom = new Button {
@@ -110,7 +110,7 @@ class ProgressManagementDialog(
                 minWidth = 80
                 defaultButton = true
                 onAction = { e: ActionEvent ⇒ cancelAnalysisAndCloseWindow() }
-                BorderPane.setAlignment(this, Pos.CENTER)
+                BorderPane.setAlignment(this, Pos.Center)
                 BorderPane.setMargin(this, Insets(10))
             }
         }

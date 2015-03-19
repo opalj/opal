@@ -84,6 +84,11 @@ import scalafx.stage.Screen.sfxScreen2jfx
 import scalafx.stage.Stage
 import scalafx.stage.WindowEvent
 
+/**
+ * @author Arne Lottmann
+ * @author Michael Eichberg
+ * @author David Becker
+ */
 class BugPicker extends Application {
 
     var project: Project[URL] = null
@@ -294,20 +299,24 @@ class BugPicker extends Application {
         }
 
         def updateRecentProjects(lastProject: LoadedFiles): Seq[LoadedFiles] = {
-            if (!recentProjects.contains(lastProject)) {
+            if (recentProjects.contains(lastProject)) {
+                // lastProject isn't already most recent project, bring it to front
+                if (recentProjects.head != lastProject) {
+                    lastProject +: recentProjects.filter(_ != lastProject)
+                } else {
+                    recentProjects
+                }
+            } else if (recentProjects.exists(_.projectName == lastProject.projectName)) {
+                // already existing project got updated, bring it to front
+                lastProject +: recentProjects.filter(
+                    _.projectName != lastProject.projectName)
+            } else {
                 if (recentProjects.size < BugPicker.MAX_PREFERENCES_SIZE) {
                     // lastProject is most recent project, enough space for one more
                     lastProject +: recentProjects
                 } else {
                     // lastProject is most recent project, drop least recent project
                     lastProject +: recentProjects.init
-                }
-            } else {
-                // lastProject isn't already most recent project, bring it to front
-                if (recentProjects.head != lastProject) {
-                    lastProject +: recentProjects.filter(_ != lastProject)
-                } else {
-                    recentProjects
                 }
             }
         }
@@ -317,14 +326,14 @@ class BugPicker extends Application {
         stage.scene = new Scene {
 
             root = new VBox {
-                vgrow = Priority.ALWAYS
-                hgrow = Priority.ALWAYS
-                content = Seq(
+                vgrow = Priority.Always
+                hgrow = Priority.Always
+                children = Seq(
                     createMenuBar(),
                     new SplitPane {
                         orientation = Orientation.VERTICAL
-                        vgrow = Priority.ALWAYS
-                        hgrow = Priority.ALWAYS
+                        vgrow = Priority.Always
+                        hgrow = Priority.Always
                         dividerPositions = 0.4
 
                         items ++= Seq(reportView, tabPane)
@@ -400,21 +409,22 @@ object BugPicker {
     }
 
     def loadParametersFromPreferences(): AnalysisParameters = {
+        import BugPickerAnalysis._
         val maxEvalFactor = PREFERENCES.getDouble(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR,
-            BugPickerAnalysis.defaultMaxEvalFactor)
+            DefaultMaxEvalFactor)
         val maxEvalTime = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME,
-            BugPickerAnalysis.defaultMaxEvalTime)
+            DefaultMaxEvalTime)
         val maxCardinalityOfIntegerRanges = PREFERENCES.getLong(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES,
-            BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges)
+            DefaultMaxCardinalityOfIntegerRanges)
         val maxCardinalityOfLongSets = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS,
-            BugPickerAnalysis.defaultMaxCardinalityOfLongSets)
+            DefaultMaxCardinalityOfLongSets)
         val maxCallChainLength = PREFERENCES.getInt(
             PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH,
-            BugPickerAnalysis.defaultMaxCallChainLength)
+            DefaultMaxCallChainLength)
         new AnalysisParameters(
             maxEvalTime,
             maxEvalFactor,

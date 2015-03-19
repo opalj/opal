@@ -36,9 +36,8 @@ import java.net.URL
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
-import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheMethodReturValuesAnalysis }
@@ -61,11 +60,7 @@ import org.opalj.ai.domain.Origins
  *
  * @author Michael Eichberg
  */
-object MethodsThatAlwaysReturnAPassedParameter
-        extends AnalysisExecutor
-        with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object MethodsThatAlwaysReturnAPassedParameter extends DefaultOneStepAnalysis {
 
     override def title: String =
         "identify methods that always return a given parameter"

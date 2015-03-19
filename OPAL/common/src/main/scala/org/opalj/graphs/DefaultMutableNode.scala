@@ -31,6 +31,14 @@ package graphs
 
 import scala.collection.Map
 
+/**
+ * Default implementation of a mutable node of a graph.
+ *
+ * ==Thread Safety==
+ * This is class is '''thread-safe'''.
+ *
+ * @author Michael Eichberg
+ */
 class DefaultMutableNode[I](
     theIdentifier: I,
     identifierToString: I ⇒ String,

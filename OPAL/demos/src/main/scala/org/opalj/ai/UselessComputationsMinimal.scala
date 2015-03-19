@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,11 +31,14 @@ package ai
 
 import java.net.URL
 
+import scala.collection.JavaConversions._
+
+import java.util.concurrent.ConcurrentLinkedQueue
+
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
-import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IFICMPInstruction
 
@@ -44,11 +47,7 @@ import org.opalj.br.instructions.IFICMPInstruction
  *
  * @author Michael Eichberg
  */
-object UselessComputationsMinimal
-        extends AnalysisExecutor
-        with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object UselessComputationsMinimal extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(val project: Project[URL], val method: Method)
         extends CorrelationalDomain
@@ -74,7 +73,7 @@ object UselessComputationsMinimal
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean) = {
 
-        val results = new java.util.concurrent.ConcurrentLinkedQueue[String]()
+        val results = new ConcurrentLinkedQueue[String]()
         theProject.parForeachMethodWithBody(isInterrupted) { m ⇒
             val (_ /*source*/ , classFile, method) = m
             val result = BaseAI(classFile, method, new AnalysisDomain(theProject, method))
@@ -89,7 +88,6 @@ object UselessComputationsMinimal
                     results.add(result)
             }
         }
-        import scala.collection.JavaConversions._
 
         BasicReport(results.mkString(s"${results.size} Useless computations:\n", "\n", "\n"))
     }

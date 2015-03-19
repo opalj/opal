@@ -28,39 +28,39 @@
  */
 package org.opalj
 package br
-package analyses
+package reader
 
-import org.opalj.graphs.{ Node, toDot }
-import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.bi.reader.AttributesReader
+import org.opalj.bi.reader.SkipUnknown_attributeReader
 
 /**
- * Creates a `dot` (Graphviz) based representation of the class hierarchy
- * of the specified jar file(s).
+ * Default class file binding where all private fields and methods are not represented.
  *
  * @author Michael Eichberg
  */
-object ClassHierarchyVisualizer {
+trait LibraryClassFileBinding extends ClassFileBinding {
+    this: ConstantPoolBinding with MethodsBinding with FieldsBinding with AttributeBinding ⇒
 
-    def main(args: Array[String]): Unit = {
-
-        if (!args.forall(_.endsWith(".jar"))) {
-            println("Usage: java …ClassHierarchy <JAR file>+")
-            println("(c) 2014 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
-            sys.exit(-1)
-        }
-
-        val classHierarchy =
-            if (args.size == 0)
-                ClassHierarchy.preInitializedClassHierarchy
-            else {
-                val classFiles =
-                    (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
-                        cfs ++ ClassFiles(new java.io.File(filename))
-                    }
-                ClassHierarchy(classFiles.view.map(_._1))(org.opalj.log.GlobalContext)
-            }
-
-        val dotGraph = toDot(Set(classHierarchy.toGraph), "back")
-        org.opalj.io.writeAndOpen(dotGraph, "ClassHiearachy", ".dot")
+    override def ClassFile(
+        cp: Constant_Pool,
+        minor_version: Int, major_version: Int,
+        access_flags: Int,
+        this_class_index: Constant_Pool_Index,
+        super_class_index: Constant_Pool_Index,
+        interfaces: IndexedSeq[Constant_Pool_Index],
+        fields: Fields,
+        methods: Methods,
+        attributes: Attributes): ClassFile = {
+        super.ClassFile(
+            cp,
+            minor_version, major_version,
+            access_flags,
+            this_class_index,
+            super_class_index,
+            interfaces,
+            fields.filter { f ⇒ !f.isPrivate },
+            methods.filter { m ⇒ !m.isPrivate },
+            attributes)
     }
 }
+

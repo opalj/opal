@@ -33,10 +33,17 @@ package analysis
 
 import java.net.URL
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
+import scala.collection.JavaConversions
 import scala.collection.SortedMap
 import scala.util.control.ControlThrowable
 import scala.xml.Node
 import scala.xml.Unparsed
+import scala.io.Source
+import java.lang.Double.parseDouble
+import java.lang.Long.parseLong
+import java.lang.Integer.parseInt
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentLinkedQueue
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
@@ -58,90 +65,79 @@ import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.ai.analyses.cg.VTACallGraphKey
 import org.opalj.ai.common.XHTML
-import org.opalj.util.PerformanceEvaluation
+import org.opalj.util.NanoSeconds
 
 /**
- * A static analysis that analyzes the data-flow to identify various issues in the
- * source code of projects.
+ * Wrapper around several analyses that analyze the control- and data-flow to identify
+ * various issues in the source code of projects.
  *
  * ==Precision==
- * The analysis is complete; i.e., every reported case is a true case. However, given
+ * The analyses are designed such that they do not report false positives to facilitate
+ * usage of the BugPicker. However, given
  * that we analyze Java bytecode, some findings may be the result of the compilation
  * scheme employed by the compiler and, hence, cannot be resolved at the
- * sourcecode level. This is in particular true for finally blocks in Java programs. In
+ * source code level. This is in particular true for finally blocks in Java programs. In
  * this case compilers typically include the same block two (or more) times in the code.
+ * Furthermore, Java reflection and reflection-like mechanisms are also a source of
+ * false positives.
  *
+ * @author Michael Eichberg
  */
-class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[AnalysisException])] {
+class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
-    import BugPickerAnalysis.PRE_ANALYSES_COUNT
+    import BugPickerAnalysis._
 
-    override def title: String =
-        "Dead/Useless/Buggy Code Identification"
+    override def title: String = "BugPicker"
 
-    override def description: String =
-        "Identifies dead/useless/buggy code by analyzing expressions."
+    override def description: String = "Finds bugs in Java (byte) code."
 
     /**
-     * Executes the analysis of the projects concrete methods.
+     * Executes the analysis of the project's concrete methods.
      *
-     * @param parameters
-     *      Either an empty sequence or a sequence that contains one or more of
-     *      the following parameters:
-     *      - a string that matches the following pattern: `-maxEvalFactor=(\d+(?:.\d+)?)`; e.g.,
-     *      `-maxEvalFactor=0.5` or `-maxEvalFactor=1.5`. A value below 0.05 is usually
-     *      not useable.
-     *      - a string that matches the following pattern: `-maxEvalTime=(\d+)`.
-     *      - a string that matches the following pattern: `-maxCardinalityOfIntegerRanges=(\d+)`.
+     * @param parameters A list of (optional) parameters. The parameters that are
+     *      matched are defined by:
+     *      [[MaxEvalFactorPattern]], [[MaxEvalTimePattern]],
+     *      [[MaxCardinalityOfIntegerRangesPattern]], [[MaxCardinalityOfLonsSetsPattern]],
+     *      [[MaxCallChainLengthPattern]], and "`-debug`".
+     *
      */
     override def analyze(
         theProject: Project[URL],
         parameters: Seq[String],
-        initProgressManagement: (Int) ⇒ ProgressManagement): (Long, Iterable[Issue], Iterable[AnalysisException]) = {
+        initProgressManagement: (Int) ⇒ ProgressManagement): BugPickerResults = {
 
         implicit val logContext = theProject.logContext
 
         // related to managing the analysis progress
         val classFilesCount = theProject.projectClassFilesCount
 
-        val progressManagement =
-            initProgressManagement(PRE_ANALYSES_COUNT + classFilesCount)
+        val progressManagement = initProgressManagement(PreAnalysesCount + classFilesCount)
+        import progressManagement.step
 
         val maxEvalFactor: Double =
-            parameters.collectFirst {
-                case BugPickerAnalysis.maxEvalFactorPattern(d) ⇒
-                    java.lang.Double.parseDouble(d).toDouble
-            }.getOrElse(
-                BugPickerAnalysis.defaultMaxEvalFactor
-            )
+            parameters.
+                collectFirst { case MaxEvalFactorPattern(d) ⇒ parseDouble(d).toDouble }.
+                getOrElse(DefaultMaxEvalFactor)
+
         val maxEvalTime: Int =
-            parameters.collectFirst {
-                case BugPickerAnalysis.maxEvalTimePattern(l) ⇒
-                    java.lang.Integer.parseInt(l).toInt
-            }.getOrElse(
-                BugPickerAnalysis.defaultMaxEvalTime
-            )
+            parameters.
+                collectFirst { case MaxEvalTimePattern(l) ⇒ parseInt(l).toInt }.
+                getOrElse(DefaultMaxEvalTime)
+
         val maxCardinalityOfIntegerRanges: Long =
-            parameters.collectFirst {
-                case BugPickerAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
-                    java.lang.Long.parseLong(i)
-            }.getOrElse(
-                BugPickerAnalysis.defaultMaxCardinalityOfIntegerRanges
-            )
+            parameters.
+                collectFirst { case MaxCardinalityOfIntegerRangesPattern(i) ⇒ parseLong(i) }.
+                getOrElse(DefaultMaxCardinalityOfIntegerRanges)
+
         val maxCardinalityOfLongSets: Int =
-            parameters.collectFirst {
-                case BugPickerAnalysis.maxCardinalityOfLongSetsPattern(i) ⇒
-                    java.lang.Integer.parseInt(i)
-            }.getOrElse(
-                BugPickerAnalysis.defaultMaxCardinalityOfLongSets
-            )
+            parameters.
+                collectFirst { case MaxCardinalityOfLongSetsPattern(i) ⇒ parseInt(i) }.
+                getOrElse(DefaultMaxCardinalityOfLongSets)
+
         val maxCallChainLength: Int =
-            parameters.collectFirst {
-                case BugPickerAnalysis.maxCallChainLengthPattern(i) ⇒
-                    java.lang.Integer.parseInt(i)
-            }.getOrElse(
-                BugPickerAnalysis.defaultMaxCallChainLength
-            )
+            parameters.
+                collectFirst { case MaxCallChainLengthPattern(i) ⇒ parseInt(i) }.
+                getOrElse(DefaultMaxCallChainLength)
 
         val debug = parameters.contains("-debug")
         if (debug) {
@@ -154,28 +150,27 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                     s"\tmaxEvalTime=${maxEvalTime}ms"+"\n"+
                     s"\tmaxCardinalityOfIntegerRanges=$maxCardinalityOfIntegerRanges"+"\n"+
                     s"\tmaxCardinalityOfLongSets=$maxCardinalityOfLongSets"+"\n"+
-                    s"\tmaxCallChainLength=$maxCallChainLength"+"\n"+
-                    "Overview:"+"\n"+
-                    s"\tclassFiles=$classFilesCount")
+                    s"\tmaxCallChainLength=$maxCallChainLength")
         }
 
         //
         //
-        // DO PREANALYSES
+        // PREANALYSES
         //
         //
-        progressManagement.start(1, "[Pre-Analysis] Analyzing field declarations to derive more precise field value information")
-        theProject.get(FieldValuesKey)
-        progressManagement.end(1)
 
-        progressManagement.start(2, "[Pre-Analysis] Analyzing methods to get more precise return type information")
-        theProject.get(MethodReturnValuesKey)
-        progressManagement.end(2)
+        step(1, "[Pre-Analysis] Analyzing field declarations to derive more precise field value information") {
+            (theProject.get(FieldValuesKey), None)
+        }
 
-        progressManagement.start(3, "[Pre-Analysis] Creating the call graph")
-        val callGraph = theProject.get(VTACallGraphKey)
+        step(2, "[Pre-Analysis] Analyzing methods to get more precise return type information") {
+            (theProject.get(MethodReturnValuesKey), None)
+        }
+
+        val callGraph = step(3, "[Pre-Analysis] Creating the call graph") {
+            (theProject.get(VTACallGraphKey), None)
+        }
         val callGraphEntryPoints = callGraph.entryPoints().toSet
-        progressManagement.end(3)
 
         //
         //
@@ -185,7 +180,7 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
 
         val doInterrupt: () ⇒ Boolean = progressManagement.isInterrupted
 
-        val results = new java.util.concurrent.ConcurrentLinkedQueue[StandardIssue]()
+        val results = new ConcurrentLinkedQueue[StandardIssue]()
         val fieldValueInformation = theProject.get(FieldValuesKey)
         val methodReturnValueInformation = theProject.get(MethodReturnValuesKey)
         val cache = new CallGraphCache[MethodSignature, scala.collection.Set[Method]](theProject)
@@ -288,10 +283,14 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
                 // FIND DEAD CODE
                 //
                 results.addAll(
-                    scala.collection.JavaConversions.asJavaCollection(
+                    JavaConversions.asJavaCollection(
                         DeadPathAnalysis.analyze(theProject, classFile, method, result)
                     )
                 )
+
+                //
+                // FIND SUSPICIOUS CODE
+                //
                 results.addAll(
                     scala.collection.JavaConversions.asJavaCollection(
                         GuardedAndUnguardedAccessAnalysis.analyze(theProject, classFile, method, result)
@@ -396,94 +395,104 @@ class BugPickerAnalysis extends Analysis[URL, (Long, Iterable[Issue], Iterable[A
             } /* else (doInterrupt === true) the analysis as such was interrupted*/
         }
 
-        val exceptions = new java.util.concurrent.LinkedBlockingQueue[AnalysisException]
-        var analysisTime: Long = 0l
+        val exceptions = new ConcurrentLinkedQueue[AnalysisException]
+        var analysisTime = NanoSeconds.None
         val identifiedIssues = time {
-            val stepIds = new java.util.concurrent.atomic.AtomicInteger(PRE_ANALYSES_COUNT + 1)
+            val stepIds = new AtomicInteger(PreAnalysesCount + 1)
 
-            theProject.parForeachProjectClassFile(
-                () ⇒ progressManagement.isInterrupted()
-            ) { classFile ⇒
-                    val stepId = stepIds.getAndIncrement()
-                    try {
-                        progressManagement.start(stepId, classFile.thisType.toJava)
-                        for (method @ MethodWithBody(body) ← classFile.methods) {
-                            try {
-                                analyzeMethod(classFile, method, body)
-                            } catch {
-                                case afe: InterpretationFailedException ⇒
-                                    val ms = method.fullyQualifiedSignature(classFile.thisType)
-                                    val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
-                                    val message =
-                                        s"the analysis of ${ms} "+
-                                            s"failed/was aborted after $steps steps"
-                                    exceptions add (AnalysisException(message, afe))
-                                case ct: ControlThrowable ⇒ throw ct
-                                case t: Throwable ⇒
-                                    val ms = method.fullyQualifiedSignature(classFile.thisType)
-                                    val message = s"the analysis of ${ms} failed"
-                                    exceptions add (AnalysisException(message, t))
-                            }
+            theProject.parForeachProjectClassFile(doInterrupt) { classFile ⇒
+                val stepId = stepIds.getAndIncrement()
+                try {
+                    progressManagement.start(stepId, classFile.thisType.toJava)
+                    for (method @ MethodWithBody(body) ← classFile.methods) {
+                        try {
+                            analyzeMethod(classFile, method, body)
+                        } catch {
+                            case afe: InterpretationFailedException ⇒
+                                val ms = method.fullyQualifiedSignature(classFile.thisType)
+                                val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
+                                val message =
+                                    s"the analysis of $ms "+
+                                        s"failed/was aborted after $steps steps"
+                                exceptions add (AnalysisException(message, afe))
+                            case ct: ControlThrowable ⇒ throw ct
+                            case t: Throwable ⇒
+                                val ms = method.fullyQualifiedSignature(classFile.thisType)
+                                val message = s"the analysis of ${ms} failed"
+                                exceptions add (AnalysisException(message, t))
                         }
-                    } catch {
-                        case t: Throwable ⇒
-                            OPALLogger.error(
-                                "internal error", s"evaluation step $stepId failed", t)
-                            throw t
-                    } finally {
-                        progressManagement.end(stepId)
                     }
+                } catch {
+                    case t: Throwable ⇒
+                        OPALLogger.error(
+                            "internal error", s"evaluation step $stepId failed", t)
+                        throw t
+                } finally {
+                    progressManagement.end(stepId)
                 }
-            val rawIssues = scala.collection.JavaConversions.collectionAsScalaIterable(results).toSeq
+            }
+            val rawIssues = JavaConversions.collectionAsScalaIterable(results).toSeq
             OPALLogger.info("analysis progress", s"post processing ${rawIssues.size} issues")
             StandardIssue.fold(rawIssues)
         } { t ⇒ analysisTime = t }
 
         OPALLogger.info("analysis progress",
-            s"the analysis took ${PerformanceEvaluation.ns2sec(analysisTime)} seconds "+
+            s"the analysis took ${analysisTime.toSeconds} seconds "+
                 s"and found ${identifiedIssues.size} unique issues")
         import scala.collection.JavaConverters._
         (analysisTime, identifiedIssues, exceptions.asScala)
     }
 }
-
+/**
+ * Common constants and helper methods related to the configuration of the BugPicker and
+ * generating reports.
+ *
+ * @author Michael Eichberg
+ */
 object BugPickerAnalysis {
 
-    val PRE_ANALYSES_COUNT = 3 // the FieldValues analysis + the MethodReturnValues analysis
+    final val PreAnalysesCount = 3 // FieldValues analysis + MethodReturnValues analysis + Callgraph
 
-    // we want to match expressions such as:
+    // We want to match expressions such as:
     // -maxEvalFactor=1
     // -maxEvalFactor=20
     // -maxEvalFactor=1.25
     // -maxEvalFactor=10.5
-    final val maxEvalFactorPattern = """-maxEvalFactor=(\d+(?:.\d+)?|Infinity)""".r
-    final val defaultMaxEvalFactor = 1.75d
+    // -maxEvalFactor=Infinity
+    final val MaxEvalFactorPattern = """-maxEvalFactor=(\d+(?:.\d+)?|Infinity)""".r
+    final val DefaultMaxEvalFactor = 1.75d
 
-    final val maxEvalTimePattern = """-maxEvalTime=(\d+)""".r
-    final val defaultMaxEvalTime = 10000 // in ms => 10secs.
+    final val MaxEvalTimePattern = """-maxEvalTime=(\d+)""".r
+    final val DefaultMaxEvalTime = 10000 // in ms => 10secs.
 
-    final val maxCallChainLengthPattern = """-maxCallChainLength=(\d)""".r
-    final val defaultMaxCallChainLength = 0
+    final val MaxCallChainLengthPattern = """-maxCallChainLength=(\d)""".r
+    final val DefaultMaxCallChainLength = 1
 
-    final val maxCardinalityOfIntegerRangesPattern =
+    final val MaxCardinalityOfIntegerRangesPattern =
         """-maxCardinalityOfIntegerRanges=(\d+)""".r
-    final val defaultMaxCardinalityOfIntegerRanges = 16l
+    final val DefaultMaxCardinalityOfIntegerRanges = 16l
 
-    final val maxCardinalityOfLongSetsPattern =
+    final val MaxCardinalityOfLongSetsPattern =
         """-maxCardinalityOfLongSets=(\d+)""".r
-    final val defaultMaxCardinalityOfLongSets = 5
+    final val DefaultMaxCardinalityOfLongSets = 2
 
-    lazy val reportCSS: String =
+    /**
+     *
+     */
+    final lazy val ReportCSS: String =
         process(this.getClass.getResourceAsStream("report.css"))(
-            scala.io.Source.fromInputStream(_).mkString
+            Source.fromInputStream(_).mkString
         )
 
-    lazy val reportJS: String =
+    final lazy val ReportJS: String =
         process(this.getClass.getResourceAsStream("report.js"))(
-            scala.io.Source.fromInputStream(_).mkString
+            Source.fromInputStream(_).mkString
         )
 
-    def resultsAsXHTML(parameters: Seq[String], methodsWithIssues: Iterable[Issue]): Node = {
+    def resultsAsXHTML(
+        parameters: Seq[String],
+        methodsWithIssues: Iterable[Issue],
+        analysisTime: NanoSeconds): Node = {
         val methodsWithIssuesCount = methodsWithIssues.size
         val basicInfoOnly = methodsWithIssuesCount > 10000
 
@@ -513,10 +522,10 @@ object BugPickerAnalysis {
         <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
                 <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
-                <script type="text/javascript">{ Unparsed(htmlJS) }</script>
-                <script type="text/javascript">{ Unparsed(reportJS) }</script>
-                <style>{ Unparsed(htmlCSS) }</style>
-                <style>{ Unparsed(reportCSS) }</style>
+                <script type="text/javascript">{ Unparsed(HTMLJS) }</script>
+                <script type="text/javascript">{ Unparsed(ReportJS) }</script>
+                <style>{ Unparsed(HTMLCSS) }</style>
+                <style>{ Unparsed(ReportCSS) }</style>
             </head>
             <body>
                 <div id="analysis_controls">
@@ -569,5 +578,3 @@ object BugPickerAnalysis {
     }
 }
 
-case class AnalysisException(message: String, cause: Throwable)
-    extends RuntimeException(message, cause)

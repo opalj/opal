@@ -181,6 +181,13 @@ object OPALLogger extends OPALLogger {
     }
 
     /**
+     * Logs a message in the category "`progress`".
+     */
+    final def progress(message: String)(implicit ctx: LogContext): Unit = {
+        log(Info("progress", message))
+    }
+
+    /**
      * Log a warning. Warnings are typically related to incomplete project configurations
      * that may affect the overall precision of the analysis, but which are not rendering
      * the analysis meaningless.

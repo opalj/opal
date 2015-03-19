@@ -78,17 +78,17 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
     }
     val jarListview = new ListView[String] {
         items() ++= jars.map(_.toString)
-        hgrow = Priority.ALWAYS
+        hgrow = Priority.Always
         selectionModel().selectionMode = SelectionMode.MULTIPLE
     }
     val libsListview = new ListView[String] {
         items() ++= libs.map(_.toString)
-        hgrow = Priority.ALWAYS
+        hgrow = Priority.Always
         selectionModel().selectionMode = SelectionMode.MULTIPLE
     }
     val sourceListview = new ListView[String] {
         items() ++= sources.map(_.toString)
-        hgrow = Priority.ALWAYS
+        hgrow = Priority.Always
         selectionModel().selectionMode = SelectionMode.MULTIPLE
     }
 
@@ -104,7 +104,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
             center = new ScrollPane {
                 content = new VBox {
                     prefWidth = 778
-                    content = Seq(
+                    children = Seq(
                         new TitledPane {
                             text = "Choose a project name"
                             collapsible = true
@@ -113,7 +113,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                             maxHeight = 70
 
                             content = new HBox {
-                                content = Seq(
+                                children = Seq(
                                     nameTextArea)
                             }
                         },
@@ -125,10 +125,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                             maxHeight = 220
 
                             content = new HBox {
-                                content = Seq(
+                                children = Seq(
                                     jarListview,
                                     new VBox {
-                                        content = Seq(
+                                        children = Seq(
                                             new Button {
                                                 text = "Add _jar/class file"
                                                 mnemonicParsing = true
@@ -212,10 +212,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                             maxHeight = 220
 
                             content = new HBox {
-                                content = Seq(
+                                children = Seq(
                                     sourceListview,
                                     new VBox {
-                                        content = Seq(
+                                        children = Seq(
                                             new Button {
                                                 text = "Add direc_tory"
                                                 mnemonicParsing = true
@@ -272,10 +272,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                             maxHeight = 220
 
                             content = new HBox {
-                                content = Seq(
+                                children = Seq(
                                     libsListview,
                                     new VBox {
-                                        content = Seq(
+                                        children = Seq(
                                             new Button {
                                                 text = "Add j_ar/class file"
                                                 mnemonicParsing = true
@@ -361,11 +361,11 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                 }
             }
             bottom = new HBox {
-                alignment = Pos.CENTER
+                alignment = Pos.Center
                 padding = boxPadding
                 margin = boxMargin
 
-                content = Seq(
+                children = Seq(
                     new Button {
                         text = "C_lear"
                         mnemonicParsing = true
@@ -402,10 +402,14 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                 DialogStage.showMessage("Error",
                                     "You have not specified a name for the project!",
                                     theStage)
-                            } else if (nameAlreadyExists) {
-                                DialogStage.showMessage("Error", "The name you have specified for the project already exists. Choose another one!", theStage)
                             } else if (jars.isEmpty) {
                                 DialogStage.showMessage("Error", "You have not specified any classes to be analyzed!", theStage)
+                            } else if (nameAlreadyExists) {
+                                if (DialogStage.showMessageWithBinaryChoice(
+                                    "Warning",
+                                    "A project with the name \""+nameTextArea.text.value+"\" already exists. Do you want to replace it?",
+                                    "Cancel", "Replace", theStage))
+                                    self.close()
                             } else {
                                 self.close()
                             }
@@ -421,18 +425,6 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
             if (e.code.equals(KeyCode.ESCAPE)) {
                 cancelled = true
                 self.close()
-            } else if (e.code.equals(KeyCode.ENTER)) {
-                if (nameTextArea.text.value == "") {
-                    DialogStage.showMessage("Error",
-                        "You have not specified a name for the project!",
-                        theStage)
-                } else if (nameAlreadyExists) {
-                    DialogStage.showMessage("Error", "The name you have specified for the project already exists. Choose another one!", theStage)
-                } else if (jars.isEmpty) {
-                    DialogStage.showMessage("Error", "You have not specified any classes to be analyzed!", theStage)
-                } else {
-                    self.close()
-                }
             }
         }
     }

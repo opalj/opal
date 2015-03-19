@@ -35,6 +35,7 @@ import org.opalj.log.GlobalContext
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.util.NanoSeconds
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -68,11 +69,11 @@ object MoreCheckers {
         println("Usage: java …Main <JAR file containing class files>+")
     }
 
-    val results = scala.collection.mutable.Map[String, List[Long]]();
+    val results = scala.collection.mutable.Map[String, List[NanoSeconds]]();
 
-    def collect(id: String, time: Long): Unit = {
-        print(id+", "+time);
-        results.update(id, (time / 1000l) :: results.getOrElse(id, List()));
+    def collect(id: String, ns: NanoSeconds): Unit = {
+        print(id+", "+ns);
+        results.update(id, ns :: results.getOrElse(id, List()));
     }
 
     def main(args: Array[String]): Unit = {

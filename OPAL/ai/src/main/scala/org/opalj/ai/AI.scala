@@ -1514,6 +1514,7 @@ trait AI[D <: Domain] {
 
                     case 50 /*aaload*/ ⇒ {
                         val index :: arrayref :: rest = operands
+                        // TODO propagate constraints if the index may be invalid...
                         val computation = theDomain.aaload(pc, index, arrayref)
                         computationWithReturnValueAndExceptions(computation, rest)
                     }
