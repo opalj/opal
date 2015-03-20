@@ -437,7 +437,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         } { t ⇒ analysisTime = t }
 
         OPALLogger.info("analysis progress",
-            s"the analysis took ${analysisTime.toSeconds} seconds "+
+            s"the analysis took ${analysisTime.toSeconds} "+
                 s"and found ${identifiedIssues.size} unique issues")
         import scala.collection.JavaConverters._
         (analysisTime, identifiedIssues, exceptions.asScala)
