@@ -142,35 +142,9 @@ object ProjectHelper {
             dialog.showAndWait()
         }
 
-        Project(classFiles, libraryClassFiles, projectLogger = new BugPickerOPALLogger(true, consoleTextArea))
+        Project(
+            classFiles, libraryClassFiles,
+            projectLogger = new BugPickerOPALLogger(consoleTextArea))
     }
 }
 
-class BugPickerOPALLogger(val ansiColored: Boolean = true, val tc: TextInputControl) extends OPALLogger {
-
-    import java.util.concurrent.ConcurrentHashMap
-    import java.util.concurrent.atomic.AtomicInteger
-
-    private[this] val messages = new ConcurrentHashMap[LogMessage, AtomicInteger]()
-
-    def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        val stream = if (message.level == Error) Console.err else Console.out
-        stream.println(message.toConsoleOutput(ansiColored))
-        Platform.runLater(new Runnable() {
-            def run = {
-                tc.text = tc.text.value + message.toConsoleOutput(false)+"\n"
-            }
-        })
-    }
-
-    def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        val counter = new AtomicInteger(0)
-        val existingCounter = messages.putIfAbsent(message, counter)
-        if (existingCounter != null)
-            existingCounter.incrementAndGet()
-        else {
-            counter.incrementAndGet()
-            log(message)
-        }
-    }
-}
