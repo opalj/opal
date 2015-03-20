@@ -9,6 +9,8 @@ scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Abstract Interpretatio
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.3"
 
+libraryDependencies += "net.ceedubs" %% "ficus" % "1.1.2"
+
 ////////////////////// "run" Configuration
 
 fork in run := true
