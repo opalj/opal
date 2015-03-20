@@ -7,7 +7,7 @@ version := "0.0.1-SNAPSHOT"
 // standard compiler settings!
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Abstract Interpretation Framework")
 
-libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.1"
+libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.3"
 
 ////////////////////// "run" Configuration
 
