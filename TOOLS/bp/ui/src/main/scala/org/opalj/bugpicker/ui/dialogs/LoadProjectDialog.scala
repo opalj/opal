@@ -32,8 +32,11 @@ package ui
 package dialogs
 
 import java.io.File
+
 import scala.collection.mutable.ListBuffer
+
 import org.opalj.bugpicker.ui.BugPicker
+
 import scalafx.Includes._
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
@@ -41,7 +44,7 @@ import scalafx.geometry.Pos
 import scalafx.scene.Scene
 import scalafx.scene.control.Button
 import scalafx.scene.control.ListView
-import scalafx.scene.control.TextArea
+import scalafx.scene.control.TextField
 import scalafx.scene.control.TitledPane
 import scalafx.scene.input.KeyCode
 import scalafx.scene.input.KeyEvent
@@ -72,7 +75,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
     val libs = ListBuffer[File]() ++ preferences.map(_.libraries).getOrElse(Seq.empty)
 
     var cancelled = false
-    val nameTextArea = new TextArea {
+    val nameTextField = new TextField {
         text = preferences.map(_.projectName).getOrElse("")
         prefWidth = 778
     }
@@ -114,7 +117,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
 
                             content = new HBox {
                                 children = Seq(
-                                    nameTextArea)
+                                    nameTextField)
                             }
                         },
                         new TitledPane {
@@ -144,8 +147,8 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                         new FileChooser.ExtensionFilter("Class Files", "*.class"))
                                                     val file = fcb.showOpenDialog(scene().getWindow())
                                                     if (file != null) {
-                                                        if (jars.isEmpty && nameTextArea.text == "") {
-                                                            nameTextArea.text = file.toString()
+                                                        if (jars.isEmpty && nameTextField.text == "") {
+                                                            nameTextField.text = file.toString()
                                                         }
                                                         jars += file
                                                         jarListview.items.get.add(file.toString())
@@ -165,8 +168,8 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                     }
                                                     val file = dc.showDialog(scene().window())
                                                     if (file != null) {
-                                                        if (jars.isEmpty && nameTextArea.text == "") {
-                                                            nameTextArea.text = file.toString()
+                                                        if (jars.isEmpty && nameTextField.text == "") {
+                                                            nameTextField.text = file.toString()
                                                         }
                                                         jars += file
                                                         jarListview.items() += file.toString()
@@ -372,7 +375,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                         margin = buttonMargin
                         minWidth = 80
                         onAction = { e: ActionEvent ⇒
-                            nameTextArea.clear()
+                            nameTextField.clear()
                             jars.clear()
                             jarListview.items().clear()
                             libs.clear()
@@ -398,7 +401,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                         defaultButton = true
                         minWidth = 80
                         onAction = { e: ActionEvent ⇒
-                            if (nameTextArea.text.value == "") {
+                            if (nameTextField.text.value == "") {
                                 DialogStage.showMessage("Error",
                                     "You have not specified a name for the project!",
                                     theStage)
@@ -407,7 +410,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                             } else if (nameAlreadyExists) {
                                 if (DialogStage.showMessageWithBinaryChoice(
                                     "Warning",
-                                    "A project with the name \""+nameTextArea.text.value+"\" already exists. Do you want to replace it?",
+                                    "A project with the name \""+nameTextField.text.value+"\" already exists. Do you want to replace it?",
                                     "Cancel", "Replace", theStage))
                                     self.close()
                             } else {
@@ -434,7 +437,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
     }
 
     def nameAlreadyExists: Boolean = {
-        recentProjects.exists(p ⇒ p.projectName == nameTextArea.text.value &&
+        recentProjects.exists(p ⇒ p.projectName == nameTextField.text.value &&
             // this guarantees that identical projects are still loaded
             !(p.projectFiles == jars && p.projectSources == sources &&
                 p.libraries == libs))
@@ -450,7 +453,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
             None
         } else {
             Some(LoadedFiles(
-                projectName = nameTextArea.text.value,
+                projectName = nameTextField.text.value,
                 projectFiles = jars,
                 projectSources = sources,
                 libraries = libs))
