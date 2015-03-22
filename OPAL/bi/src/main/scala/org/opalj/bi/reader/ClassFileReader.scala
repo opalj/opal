@@ -39,8 +39,11 @@ import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.util.zip.{ ZipFile, ZipEntry }
 import java.net.URL
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipInputStream
 import org.opalj.concurrent.OPALExecutionContextTaskSupport
+import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.io.process
 import scala.concurrent.Await
@@ -224,9 +227,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     def ClassFile(in: DataInputStream): Seq[ClassFile] = {
         // magic
         val readMagic = in.readInt
-        require(
-            CLASS_FILE_MAGIC == readMagic,
-            "No Java class file ("+readMagic+"; expected 0xCAFEBABE).")
+        if (ClassFileMagic != readMagic)
+            throw BytecodeProcessingFailedException("the file does not start with 0xCAFEBABE")
 
         val minor_version = in.readUnsignedShort
         val major_version = in.readUnsignedShort
@@ -236,8 +238,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             major_version >= 45 && // at least JDK 1.1
             (major_version < 52 /* Java 7 = 51.0 */ ||
                 (major_version == 52 && minor_version == 0 /*Java 8 == 52.0*/ ))))
-            throw new BytecodeProcessingFailedException(
-                "Unsupported class file version: "+major_version+"."+minor_version+
+            throw BytecodeProcessingFailedException(
+                s"unsupported class file version: $major_version.$minor_version"+
                     " (Supported: 45(Java 1.1) <= version <= 52(Java 8))")
 
         val cp = Constant_Pool(in)
@@ -301,9 +303,9 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     }
 
     protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): Seq[ClassFile] = {
-        process(
-            new DataInputStream(new BufferedInputStream(jarFile.getInputStream(jarEntry)))
-        ) { in ⇒ ClassFile(in) }
+        process(jarFile.getInputStream(jarEntry)) { in ⇒
+            ClassFile(new DataInputStream(new BufferedInputStream(in)))
+        }
     }
 
     /**
@@ -315,13 +317,12 @@ trait ClassFileReader extends Constant_PoolAbstractions {
     @throws[java.io.IOException]("if the file is empty or the entry cannot be found")
     def ClassFile(jarFile: File, jarFileEntryName: String): Seq[ClassFile] = {
         if (jarFile.length() == 0)
-            throw new java.io.IOException("the file "+jarFile+" is empty")
+            throw new IOException("the file "+jarFile+" is empty");
 
-        process { new ZipFile(jarFile) } { zf ⇒
+        process(new ZipFile(jarFile)) { zf ⇒
             val jarEntry = zf.getEntry(jarFileEntryName)
             if (jarEntry == null)
-                throw new java.io.IOException(
-                    "the file "+jarFile+" does not contain "+jarFileEntryName)
+                throw new IOException(s"the file $jarFile does not contain $jarFileEntryName")
             ClassFile(zf, jarEntry)
         }
     }
@@ -349,11 +350,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         val mutex = new Object
         var classFiles: List[(ClassFile, URL)] = Nil
 
-        def addClassFile(cf: ClassFile, url: URL) = {
+        def addClassFile(cf: ClassFile, url: URL) =
             mutex.synchronized {
                 classFiles = (cf, url) :: classFiles
             }
-        }
 
         ClassFiles(jarFile, addClassFile, exceptionHandler)
         classFiles
@@ -377,12 +377,8 @@ trait ClassFileReader extends Constant_PoolAbstractions {
         classFileHandler: (ClassFile, URL) ⇒ Unit,
         exceptionHandler: (Exception) ⇒ Unit): Unit = {
         val jarFileURL = new File(jarFile.getName()).toURI().toURL().toExternalForm()
-        ClassFiles(
-            "jar:"+jarFileURL+"!/",
-            jarFile,
-            classFileHandler,
-            exceptionHandler
-        )
+        val jarFileName = "jar:"+jarFileURL+"!/"
+        ClassFiles(jarFileName, jarFile, classFileHandler, exceptionHandler)
     }
 
     private def ClassFiles(
@@ -393,14 +389,14 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
         import scala.collection.JavaConversions._
 
-        // first let's collect all inner Jar Entries, then do the processing
-        // otherwise (if the OPALExecutionContextTaskSupport uses a fixed
-        // sized thread pool) we may run out of threads... to process anything)
-        val innerJarEntries = new java.util.concurrent.ConcurrentLinkedQueue[ZipEntry]
+        // First let's collect all inner Jar Entries, then do the processing.
+        // Otherwise - if the OPALExecutionContextTaskSupport uses a fixed
+        // sized thread pool - we may run out of threads... to process anything
+        val innerJarEntries = new ConcurrentLinkedQueue[ZipEntry]
 
         val jarEntries = jarFile.entries.toArray
-        val nextEntryIndex = new java.util.concurrent.atomic.AtomicInteger(jarEntries.length - 1)
-        val parallelismLevel = org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
+        val nextEntryIndex = new AtomicInteger(jarEntries.length - 1)
+        val parallelismLevel = NumberOfThreadsForIOBoundTasks
         val futures: Array[Future[Unit]] = new Array(parallelismLevel)
         val futureIndexes = (0 until parallelismLevel)
         futureIndexes.foreach { fi ⇒
@@ -521,6 +517,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             def collectFiles(files: Array[File]): Unit = {
                 if (files eq null)
                     return ;
+
                 files.foreach { file ⇒
                     val filename = file.getName
                     if (file.isFile()) {
@@ -530,7 +527,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
                     } else if (file.isDirectory()) {
                         collectFiles(file.listFiles())
                     } else {
-                        throw new UnknownError(s"$file is neither a file nor a directory")
+                        throw new IOException(s"$file is neither a file nor a directory")
                     }
                 }
             }
@@ -543,7 +540,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             // 2.1 load - in parallel - all ".class" files
             if (classFiles.nonEmpty) {
                 import scala.collection.JavaConverters._
-                val theClassFiles = new java.util.concurrent.ConcurrentLinkedQueue[(ClassFile, URL)]
+                val theClassFiles = new ConcurrentLinkedQueue[(ClassFile, URL)]
                 val parClassFiles = classFiles.par
                 parClassFiles.tasksupport = OPALExecutionContextTaskSupport
                 parClassFiles.foreach { classFile ⇒
@@ -559,15 +556,15 @@ trait ClassFileReader extends Constant_PoolAbstractions {
             // 3. return all loaded class files
             allClassFiles
         } else {
-            throw new UnknownError(s"$file is neither a file nor a directory")
+            throw new IOException(s"$file is neither a file nor a directory")
         }
     }
 
     def AllClassFiles(
         files: Traversable[File],
-        exceptionHandler: (Exception) ⇒ Unit = ClassFileReader.defaultExceptionHandler): Seq[(ClassFile, URL)] = {
+        exceptionHandler: (Exception) ⇒ Unit = ClassFileReader.defaultExceptionHandler): Traversable[(ClassFile, URL)] = {
 
-        files.map(file ⇒ ClassFiles(file, exceptionHandler)).flatten.toSeq
+        files.map(file ⇒ ClassFiles(file, exceptionHandler)).flatten
     }
 }
 /**
@@ -576,6 +573,7 @@ trait ClassFileReader extends Constant_PoolAbstractions {
  * @author Michael Eichberg
  */
 object ClassFileReader {
-    final val defaultExceptionHandler: (Exception) ⇒ Unit = (e) ⇒
-        e.printStackTrace(Console.err)
+
+    final val defaultExceptionHandler: (Exception) ⇒ Unit =
+        (e) ⇒ e.printStackTrace(Console.err)
 }

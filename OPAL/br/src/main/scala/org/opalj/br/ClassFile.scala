@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -39,6 +39,8 @@ import bi.ACC_PUBLIC
 import bi.AccessFlagsContexts
 import bi.AccessFlags
 import scala.util.control.ControlThrowable
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalContext
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -160,6 +162,9 @@ final class ClassFile private (
      * class.
      */
     def nestedClasses(classFileRepository: ClassFileRepository): Seq[ObjectType] = {
+
+        import classFileRepository.logContext
+
         // From the Java __8__ specification:
         // - every inner class must have an inner class attribute (at least for itself)
         // - every class that has inner classes must have an innerclasses attribute
@@ -183,7 +188,7 @@ final class ClassFile private (
             innerClasses.filter(innerClass ⇒
                 // it does not describe this class:
                 (!isThisType(innerClass)) &&
-                    // it does not give information about an outer class:     
+                    // it does not give information about an outer class:
                     (!this.fqn.startsWith(innerClass.innerClassType.fqn)) &&
                     // it does not give information about some other inner class of this type:
                     (
@@ -196,20 +201,20 @@ final class ClassFile private (
         }
 
         // THE FOLLOWING CODE IS NECESSARY TO COPE WITH BYTECODE GENERATED
-        // BY OLD JAVA COMPILERS (IN PARTICULAR JAVA 1.1); 
-        // IT BASICALLY TRIES TO RECREATE THE INNER-OUTERCLASSES STRUCTURE 
+        // BY OLD JAVA COMPILERS (IN PARTICULAR JAVA 1.1);
+        // IT BASICALLY TRIES TO RECREATE THE INNER-OUTERCLASSES STRUCTURE
         if (isInnerType && outerClassType.isEmpty) {
             // let's try to find the outer class that refers to this class
             val thisFQN = thisType.fqn
             val innerTypeNameStartIndex = thisFQN.indexOf('$')
             if (innerTypeNameStartIndex == -1) {
-                println(
-                    Console.YELLOW+"[warn] the inner class "+thisType.toJava+
+                OPALLogger.warn(
+                    "processing bytecode",
+                    "the inner class "+thisType.toJava+
                         " does not use the standard naming schema"+
-                        "; the inner classes information may be incomplete"+
-                        Console.RESET
-                )
-                return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
+                        "; the inner classes information may be incomplete")
+
+                return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn));
             }
             val outerFQN = thisFQN.substring(0, innerTypeNameStartIndex)
             classFileRepository.classFile(ObjectType(outerFQN)) match {
@@ -222,12 +227,10 @@ final class ClassFile private (
                                 case Some(classFile) ⇒
                                     nestedTypes ++= classFile.nestedClasses(classFileRepository)
                                 case None ⇒
-                                    println(
-                                        Console.YELLOW+"[warn] project information incomplete; "+
-                                            "cannot get informaton about "+objectType.toJava+
-                                            "; the inner classes information may be incomplete"+
-                                            Console.RESET
-                                    )
+                                    OPALLogger.warn(
+                                        "project information",
+                                        "cannot get informaton about "+objectType.toJava+
+                                            "; the inner classes information may be incomplete")
                             }
                         }
                         nestedTypes
@@ -239,26 +242,25 @@ final class ClassFile private (
                     while (nestedClassesOfOuterClass.nonEmpty &&
                         !nestedClassesOfOuterClass.contains(thisType) &&
                         !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains(_))) {
-                        // We are still lacking sufficient information to make a decision 
+                        // We are still lacking sufficient information to make a decision
                         // which class is a nested class of which other class
                         // e.g. we might have the following situation:
-                        // class X { 
+                        // class X {
                         //  class Y {                                // X$Y
-                        //      void m(){ 
+                        //      void m(){
                         //          new Listener(){                  // X$Listener$1
-                        //              void event(){ 
+                        //              void event(){
                         //                  new Listener(){...}}}}}} // X$Listener$2
                         nestedClassesOfOuterClass = directNestedClasses(nestedClassesOfOuterClass).toSeq
                     }
                     val filteredNestedClasses = nestedClassesCandidates.filterNot(nestedClassesOfOuterClass.contains(_))
                     return filteredNestedClasses
                 case None ⇒
-                    println(
-                        Console.YELLOW+"[warn] project information incomplete; "+
-                            "cannot identify outer type of "+thisType.toJava+
-                            "; the inner classes information may be incomplete"+
-                            Console.RESET
-                    )
+                    OPALLogger.warn(
+                        "project information",
+                        "cannot identify outer type of "+thisType.toJava+
+                            "; the inner classes information may be incomplete")
+
                     return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn))
             }
 
@@ -279,8 +281,8 @@ final class ClassFile private (
     def foreachNestedClass(
         classFileRepository: ClassFileRepository,
         f: (ClassFile) ⇒ Unit): Unit = {
-        nestedClasses(classFileRepository).foreach { nestedType ⇒
-            classFileRepository.classFile(nestedType).map { nestedClassFile ⇒
+        nestedClasses(classFileRepository) foreach { nestedType ⇒
+            classFileRepository.classFile(nestedType) map { nestedClassFile ⇒
                 f(nestedClassFile)
                 nestedClassFile.foreachNestedClass(classFileRepository, f)
             }
@@ -387,21 +389,18 @@ final class ClassFile private (
         while (i < methodsCount) {
             val method = methods(i)
             val methodName = method.name
+
             if (methodName == "<clinit>" &&
                 method.descriptor == noArgsAndReturnVoidDescriptor &&
                 (majorVersion < 51 || method.isStatic))
-                return Some(method)
+                return Some(method);
+
             else if (methodName > "<clinit>")
-                return None
+                return None;
+
             i += 1
         }
         None
-        // OLD - DID NOT MAKE USE OF THE FACT THAT THE METHODS ARE SORTED:
-        // methods find { method ⇒
-        //  method.descriptor == MethodDescriptor.NoArgsAndReturnVoid &&
-        //  method.name == "<clinit>" &&
-        //  (majorVersion < 51 || method.isStatic)
-        // }
     }
 
     /**
@@ -412,7 +411,7 @@ final class ClassFile private (
     def findField(name: String): Option[Field] = {
         @tailrec @inline def findField(low: Int, high: Int): Option[Field] = {
             if (high < low)
-                return None
+                return None;
 
             val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 fields)
             val field = fields(mid)
@@ -439,7 +438,7 @@ final class ClassFile private (
     def findMethod(name: String): Option[Method] = {
         @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
             if (high < low)
-                return None
+                return None;
 
             val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
             val method = methods(mid)
@@ -466,7 +465,7 @@ final class ClassFile private (
 
         @tailrec @inline def findMethod(low: Int, high: Int): Option[Method] = {
             if (high < low)
-                return None
+                return None;
 
             val mid = (low + high) / 2 // <= will never overflow...(there are at most 65535 methods)
             val method = methods(mid)
@@ -515,7 +514,7 @@ final class ClassFile private (
             case ct: ControlThrowable ⇒ throw ct
             case e: Exception ⇒
                 throw new RuntimeException(
-                    "creating a string representation for "+thisType.toJava+" failed",
+                    s"creating a string representation for ${thisType.toJava} failed",
                     e)
         }
     }

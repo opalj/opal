@@ -34,7 +34,8 @@ package org.opalj
  *
  * OPAL's primary representation of Java byte code
  * is the [[org.opalj.br]] representation which is defined in the
- * respective package.
+ * respective package. A second representation that represents bytecode one-by-one
+ * is found in the [[org.opalj.da]] package.
  *
  * == This Package ==
  * Common constants and type definitions used across OPAL.
@@ -52,8 +53,12 @@ package object bi {
     /**
      * Every Java class file start with "0xCAFEBABE".
      */
-    final val CLASS_FILE_MAGIC = 0xCAFEBABE
+    final val ClassFileMagic = 0xCAFEBABE
 
+    /**
+     * Returns a textual representation of the Java version used to create the respective
+     * class file.
+     */
     def jdkVersion(majorVersion: Int): String = {
         // 52 == 8; ... 50 == 6
         if (majorVersion >= 49) {
