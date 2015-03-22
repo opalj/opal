@@ -51,6 +51,8 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.ConsoleOPALLogger
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.Config
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
