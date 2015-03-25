@@ -107,6 +107,7 @@ class BugPicker extends Application {
         }
         val consoleTextArea: TextArea = new TextArea {
             text = ""
+            editable = false
             wrapText = true
         }
         val reportView: WebView = new WebView {
