@@ -61,9 +61,9 @@ public class SameObject {
 	private void noArgumentsPrivate() {/*empty*/}
 	
 	@InvokedMethods({
-		@InvokedMethod(receiverType = SameObject.class, name = "noArgumentsPublic", isReflective = true, lineNumber = 71),
-		@InvokedMethod(receiverType = SameObject.class, name = "noArgumentsProtected", isReflective = true, lineNumber = 73),
-		@InvokedMethod(receiverType = SameObject.class, name = "noArgumentsPrivate", isReflective = true, lineNumber = 75)
+		@InvokedMethod(receiverType = "methodhandles/SameObject", name = "noArgumentsPublic", isReflective = true, line = 71),
+		@InvokedMethod(receiverType = "methodhandles/SameObject", name = "noArgumentsProtected", isReflective = true, line = 73),
+		@InvokedMethod(receiverType = "methodhandles/SameObject", name = "noArgumentsPrivate", isReflective = true, line = 75)
 	})
 	public void noArgumentsMethodHandles() throws Throwable {
 		MethodType voidType = MethodType.methodType(Void.class);
@@ -80,8 +80,8 @@ public class SameObject {
 	public int primitiveReturn(int i) { return i; }
 	
 	@InvokedMethods({
-		@InvokedMethod(receiverType = SameObject.class, name = "primitive", parameterTypes = { int.class }, isReflective = true, lineNumber = 89),
-		@InvokedMethod(receiverType = SameObject.class, name = "primitiveReturn", parameterTypes = { int.class }, returnType = int.class, isReflective = true, lineNumber = 92)
+		@InvokedMethod(receiverType = "methodhandles/SameObject", name = "primitive", parameterTypes = { int.class }, isReflective = true, line = 89),
+		@InvokedMethod(receiverType = "methodhandles/SameObject", name = "primitiveReturn", parameterTypes = { int.class }, returnType = int.class, isReflective = true, line = 92)
 	})
 	public void primitiveHandles() throws Throwable {
 		MethodType voidType = MethodType.methodType(Void.class, int.class);
@@ -97,8 +97,8 @@ public class SameObject {
 	public Object objectReturn(Object o) { return o; }
 	
 	@InvokedMethods({
-		@InvokedMethod(receiverType = SameObject.class, name = "object", parameterTypes = { Object.class }, isReflective = true, lineNumber = 106),
-		@InvokedMethod(receiverType = SameObject.class, name = "objectReturn", parameterTypes = { Object.class }, returnType = Object.class, isReflective = true, lineNumber = 109)
+		@InvokedMethod(receiverType = "methodhandles/SameObject", name = "object", parameterTypes = { Object.class }, isReflective = true, line = 106),
+		@InvokedMethod(receiverType = "methodhandles/SameObject", name = "objectReturn", parameterTypes = { Object.class }, returnType = Object.class, isReflective = true, line = 109)
 	})
 	public void objectHandles() throws Throwable {
 		MethodType voidType = MethodType.methodType(Void.class, Object.class);
@@ -114,8 +114,8 @@ public class SameObject {
 	public int[] arrayReturn(int[] array) { return array; }
 	
 	@InvokedMethods({
-		@InvokedMethod(receiverType = SameObject.class, name = "array", parameterTypes = { int[].class }, isReflective = true, lineNumber = 123),
-		@InvokedMethod(receiverType = SameObject.class, name = "arrayReturn", parameterTypes = { int[].class }, returnType = int[].class, isReflective = true, lineNumber = 126)
+		@InvokedMethod(receiverType = "methodhandles/SameObject", name = "array", parameterTypes = { int[].class }, isReflective = true, line = 123),
+		@InvokedMethod(receiverType = "methodhandles/SameObject", name = "arrayReturn", parameterTypes = { int[].class }, returnType = int[].class, isReflective = true, line = 126)
 	})
 	public void arrayHandles() throws Throwable {
 		MethodType voidType = MethodType.methodType(Void.class, int[].class);

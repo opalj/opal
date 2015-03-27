@@ -29,6 +29,7 @@
 package org.opalj.ai.test.invokedynamic.annotations;
 
 import java.lang.annotation.*;
+
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
@@ -42,7 +43,11 @@ import static java.lang.annotation.ElementType.*;
 @Target(METHOD)
 public @interface InvokedConstructor {
 
-    Class<?> receiverType();
+    /**
+     * The type name of the receiver using JVM notation (e.g.,
+     * "java/lang/Object").
+     */
+    String receiverType();
 
     Class<?>[] parameterTypes() default {};
 
