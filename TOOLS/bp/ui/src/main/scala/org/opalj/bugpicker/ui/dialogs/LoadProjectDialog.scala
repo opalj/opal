@@ -46,8 +46,11 @@ import scalafx.scene.control.Button
 import scalafx.scene.control.ListView
 import scalafx.scene.control.TextField
 import scalafx.scene.control.TitledPane
+import scalafx.scene.input.Dragboard
+import scalafx.scene.input.DragEvent
 import scalafx.scene.input.KeyCode
 import scalafx.scene.input.KeyEvent
+import scalafx.scene.input.TransferMode
 import scalafx.scene.layout.HBox
 import scalafx.scene.layout.Priority
 import scalafx.scene.layout.VBox
@@ -83,16 +86,22 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
         items() ++= jars.map(_.toString)
         hgrow = Priority.Always
         selectionModel().selectionMode = SelectionMode.MULTIPLE
-    }
-    val libsListview = new ListView[String] {
-        items() ++= libs.map(_.toString)
-        hgrow = Priority.Always
-        selectionModel().selectionMode = SelectionMode.MULTIPLE
+        onDragOver = onDragOverBehaviour
+        onDragDropped = onDragDroppedBehaviour(jars, this)
     }
     val sourceListview = new ListView[String] {
         items() ++= sources.map(_.toString)
         hgrow = Priority.Always
         selectionModel().selectionMode = SelectionMode.MULTIPLE
+        onDragOver = onDragOverBehaviour
+        onDragDropped = onDragDroppedBehaviour(sources, this, false)
+    }
+    val libsListview = new ListView[String] {
+        items() ++= libs.map(_.toString)
+        hgrow = Priority.Always
+        selectionModel().selectionMode = SelectionMode.MULTIPLE
+        onDragOver = onDragOverBehaviour
+        onDragDropped = onDragDroppedBehaviour(libs, this)
     }
 
     val self = this
@@ -144,9 +153,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                     }
                                                     fcb.extensionFilters.addAll(
                                                         new FileChooser.ExtensionFilter("Jar Files", "*.jar"),
-                                                        new FileChooser.ExtensionFilter("Class Files", "*.class"))
+                                                        new FileChooser.ExtensionFilter("Class Files", "*.class"),
+                                                        new FileChooser.ExtensionFilter("Zip Files", "*.zip"))
                                                     val file = fcb.showOpenDialog(scene().getWindow())
-                                                    if (file != null) {
+                                                    if (file != null && !jars.contains(file)) {
                                                         if (jars.isEmpty && nameTextField.text == "") {
                                                             nameTextField.text = file.toString()
                                                         }
@@ -167,7 +177,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                         title = "Select directory"
                                                     }
                                                     val file = dc.showDialog(scene().window())
-                                                    if (file != null) {
+                                                    if (file != null && !jars.contains(file)) {
                                                         if (jars.isEmpty && nameTextField.text == "") {
                                                             nameTextField.text = file.toString()
                                                         }
@@ -230,7 +240,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                         title = "Open Dialog"
                                                     }
                                                     val file = dc.showDialog(scene().window())
-                                                    if (file != null) {
+                                                    if (file != null && !sources.contains(file)) {
                                                         sources += file
                                                         sourceListview.items() += file.toString()
                                                     }
@@ -291,9 +301,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                     }
                                                     fcb.extensionFilters.addAll(
                                                         new FileChooser.ExtensionFilter("Jar Files", "*.jar"),
-                                                        new FileChooser.ExtensionFilter("Class Files", "*.class"))
+                                                        new FileChooser.ExtensionFilter("Class Files", "*.class"),
+                                                        new FileChooser.ExtensionFilter("Zip Files", "*.zip"))
                                                     val file = fcb.showOpenDialog(scene().getWindow())
-                                                    if (file != null) {
+                                                    if (file != null && !libs.contains(file)) {
                                                         libs += file
                                                         libsListview.items() += file.toString()
                                                     }
@@ -311,11 +322,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                         title = "Select directory"
                                                     }
                                                     val file = fcb.showDialog(scene().getWindow())
-                                                    if (file != null) {
+                                                    if (file != null && !libs.contains(file)) {
                                                         libs += file
                                                         libsListview.items() += file.toString()
                                                     }
-
                                                 }
                                             },
                                             new Button {
@@ -326,8 +336,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                 margin = buttonMargin
                                                 onAction = { e: ActionEvent ⇒
                                                     val jre = org.opalj.bytecode.JRELibraryFolder
-                                                    libs += jre
-                                                    libsListview.items() += jre.toString
+                                                    if (!libs.contains(jre)) {
+                                                        libs += jre
+                                                        libsListview.items() += jre.toString
+                                                    }
                                                 }
                                             },
                                             new Button {
@@ -419,7 +431,6 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                         }
                     }
                 )
-
             }
         }
         stylesheets += BugPicker.defaultAppCSSURL
@@ -434,6 +445,57 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
 
     theStage.onCloseRequest = { e: WindowEvent ⇒
         cancelled = true
+    }
+
+    def onDragOverBehaviour(): DragEvent ⇒ Unit = { e: DragEvent ⇒
+        val db: Dragboard = e.getDragboard()
+        if (db.hasFiles())
+            e.acceptTransferModes(TransferMode.COPY)
+        else
+            e.consume()
+    }
+
+    def onDragDroppedBehaviour(lb: ListBuffer[File], lv: ListView[String], acceptFiles: Boolean = true): DragEvent ⇒ Unit = { e: DragEvent ⇒
+        val db: Dragboard = e.getDragboard()
+        var success: Boolean = false
+        if (db.hasFiles()) {
+            success = true
+            var showWarningDialog: Boolean = false
+            val sb: StringBuilder = if (acceptFiles)
+                new StringBuilder("You can only drag and drop directories or files of type .jar/.zip/.class\n\n")
+            else
+                new StringBuilder("You can only drag and drop directories here.\n\n")
+            sb.append("Because of that restriction, the following files weren't added:\n\n")
+
+            for (file ← db.Files) {
+                if (!lb.contains(file)) {
+                    if (file.isDirectory()) {
+                        lb += file
+                        lv.items().add(file.toString())
+                    } else if (file.isFile()) {
+                        if (acceptFiles) {
+                            file.getName.split('.').drop(1).lastOption match {
+                                case Some("jar") | Some("zip") | Some("class") ⇒ {
+                                    lb += file
+                                    lv.items().add(file.toString())
+                                }
+                                case _ ⇒
+                                    showWarningDialog = true
+                                    sb.append(file.getName+"\n")
+                            }
+                        } else {
+                            showWarningDialog = true
+                            sb.append(file.getName+"\n")
+                        }
+                    }
+                }
+            }
+            if (showWarningDialog) {
+                DialogStage.showMessage("Warning", sb.mkString, theStage)
+            }
+        }
+        e.dropCompleted = success
+        e.consume
     }
 
     def nameAlreadyExists: Boolean = {
