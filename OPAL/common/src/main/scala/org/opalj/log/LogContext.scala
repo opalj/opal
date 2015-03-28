@@ -29,11 +29,13 @@
 package org.opalj
 package log
 
+import org.opalj.util.NanoSeconds
+
 /**
  * A log context associates log messages with a specific context and logger.
  * Using a log context
  * facilitates the suppression of recurring message in a specific context and also
- * makes it possible to direct message to different targets.
+ * makes it possible to direct messages to different targets.
  * Before using a `LogContext` it has to be registered with the [[OPALLogger$]].
  *
  * OPAL uses two primary log contexts:
@@ -49,8 +51,8 @@ package log
  * @note The registration of the `LogContext` with the `OPALLogger` does not prevent
  *      the garbage collection of the `LogContext` unless a logged message explicitly
  *      references its log context. This is – however – discouraged! If no message
- *      explicitly reference the log context it is then possible to unregister the log context
- *      in the `finalize` method that references the context.
+ *      explicitly reference the log context it is then possible to unregister the log
+ *      context in the `finalize` method that references the context.
  *
  * @author Michael Eichberg
  */
@@ -62,7 +64,33 @@ trait LogContext {
      * The unique id associated with this log context. Each log context gets a unique id
      * when it is registered with the OPALLogger. This id will not change afterwards.
      */
-    def logContextId: Int = id
+    final def logContextId: Int = id
+
+    def newInstance(): LogContext
+
+    /**
+     * Creates a new log context that is the successor of this context and which will
+     * automatically be associated with the same logger as this `LogContext`.
+     */
+    final def successor: LogContext = {
+        val newLogContext = newInstance();
+        val logger = OPALLogger.logger(this)
+        OPALLogger.register(newLogContext, logger)
+        newLogContext
+    }
+}
+
+case class DefaultLogContext private ( final val startTime: Long) extends LogContext {
+
+    def this() {
+        this(startTime = System.currentTimeMillis())
+    }
+
+    override def toString: String =
+        "project context:"+startTime.toString().drop(6)
+
+    override def newInstance: LogContext = new DefaultLogContext(this.startTime)
+
 }
 
 /**
@@ -76,4 +104,6 @@ case object GlobalContext extends LogContext {
         OPALLogger.globalContextCreated = true
         OPALLogger.register(this, OPALLogger.globalContextLogger)
     }
+
+    def newInstance: LogContext = throw new UnsupportedOperationException
 }

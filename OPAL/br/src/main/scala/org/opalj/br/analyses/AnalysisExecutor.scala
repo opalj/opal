@@ -264,8 +264,7 @@ trait AnalysisExecutor {
         }
         val project = Project(
             classFiles,
-            libraryClassFiles,
-            projectLogger = OPALLogger.globalLogger)
+            libraryClassFiles)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
         import project.logContext

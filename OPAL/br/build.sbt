@@ -9,5 +9,7 @@ scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Representatio
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3"
 
+libraryDependencies += "net.ceedubs" %% "ficus" % "1.1.2"
+
 //scalacOptions in Compile := Seq("-deprecation", "-feature", "-unchecked", "-Xlint", "-Xdisable-assertions")
 //scalacOptions in Compile += "-Xdisable-assertions"
