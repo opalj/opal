@@ -143,8 +143,8 @@ object ProjectHelper {
         }
 
         Project(
-            classFiles, libraryClassFiles,
-            projectLogger = new BugPickerOPALLogger(consoleTextArea))
+            classFiles, libraryClassFiles, virtualClassFiles = Traversable.empty)(
+                projectLogger = new BugPickerOPALLogger(consoleTextArea))
     }
 }
 

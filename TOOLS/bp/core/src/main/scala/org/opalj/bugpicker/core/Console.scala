@@ -84,14 +84,14 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
             |               the range is exceeded the precise tracking of the respective value is
             |               terminated.
             |               Increasing this value may significantly increase the analysis time and
-            |               may require the increase of -maxEvalFactor.]
+            |               may require the increase of maxEvalFactor.]
             |[-maxCardinalityOfLongSets=<IntValue [1,1024]=2> basically determines for each long
             |               value how long the value is "precisely" tracked.
             |               The maximum size/cardinality of this set is controlled by this setting. If
             |               the set's size is tool large the precise tracking of the respective value is
             |               terminated.
             |               Increasing this value may significantly increase the analysis time and
-            |               may require the increase of -maxEvalFactor.]            |
+            |               may require the increase of maxEvalFactor.]            |
             |[-maxCallChainLength=<IntValue [0..9]=1> determines the maximum length of the call chain
             |               that is analyzed.
             |               If you increase this value by one it is typically also necessary
