@@ -74,7 +74,7 @@ abstract class AbstractCallGraphTest extends FlatSpec with Matchers {
     val invokedConstructorAnnotation =
         ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedConstructor")
     val invokedConstructorsAnnotation =
-        ObjectType("org/opalj/ai/invokedynamic/annotations/InvokedConstructors")
+        ObjectType("org/opalj/ai/test/invokedynamic/annotations/InvokedConstructors")
 
     val accessedFieldAnnotation =
         ObjectType("org/opalj/ai/test/invokedynamic/annotations/AccessedField")
