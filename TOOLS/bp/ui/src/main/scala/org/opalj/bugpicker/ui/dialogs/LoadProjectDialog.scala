@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -455,43 +455,56 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
             e.consume()
     }
 
-    def onDragDroppedBehaviour(lb: ListBuffer[File], lv: ListView[String], acceptFiles: Boolean = true): DragEvent ⇒ Unit = { e: DragEvent ⇒
+    def onDragDroppedBehaviour(
+        lb: ListBuffer[File],
+        lv: ListView[String],
+        acceptFiles: Boolean = true): DragEvent ⇒ Unit = { e: DragEvent ⇒
         val db: Dragboard = e.getDragboard()
         var success: Boolean = false
         if (db.hasFiles()) {
             success = true
-            var showWarningDialog: Boolean = false
-            val sb: StringBuilder = if (acceptFiles)
-                new StringBuilder("You can only drag and drop directories or files of type .jar/.zip/.class\n\n")
-            else
-                new StringBuilder("You can only drag and drop directories here.\n\n")
-            sb.append("Because of that restriction, the following files weren't added:\n\n")
 
-            for (file ← db.Files) {
-                if (!lb.contains(file)) {
+            val illegalFiles =
+                (for {
+                    file ← db.Files
+                    if !lb.contains(file)
+                } yield {
                     if (file.isDirectory()) {
                         lb += file
                         lv.items().add(file.toString())
-                    } else if (file.isFile()) {
+                        None
+                    } else /*file.isFile() */ {
                         if (acceptFiles) {
-                            file.getName.split('.').drop(1).lastOption match {
+                            file.getName.split('.').lastOption match {
                                 case Some("jar") | Some("zip") | Some("class") ⇒ {
                                     lb += file
                                     lv.items().add(file.toString())
+                                    None
                                 }
                                 case _ ⇒
-                                    showWarningDialog = true
-                                    sb.append(file.getName+"\n")
+                                    Some(file)
                             }
                         } else {
-                            showWarningDialog = true
-                            sb.append(file.getName+"\n")
+                            Some(file)
                         }
                     }
-                }
-            }
-            if (showWarningDialog) {
-                DialogStage.showMessage("Warning", sb.mkString, theStage)
+                }).filter(_.isDefined).flatten
+            if (illegalFiles.nonEmpty) {
+                val msg =
+                    (if (acceptFiles)
+                        "You can only drag and drop directories or files of type .jar/.zip/.class\n\n"
+                    else
+                        "You can only drag and drop directories here.\n\n"
+                    )+
+                        "Because of that restriction, the following files weren't added:\n"+
+                        illegalFiles.take(10).mkString("    ", "    \n", "") +
+                        (if (illegalFiles.size > 10)
+                            "\n    ... (further files)."
+                        else
+                            "."
+                        )
+
+                DialogStage.showMessage("Warning", msg, theStage)
             }
         }
         e.dropCompleted = success
