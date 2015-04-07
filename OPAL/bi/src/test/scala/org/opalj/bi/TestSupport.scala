@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -51,18 +51,28 @@ object TestSupport {
      *      (Default: "core").
      */
     def locateTestResources(resourceName: String, subProjectFolder: String): File = {
+        val resourceFile = subProjectFolder+"/src/test/resources/"+resourceName
+
         { // if the current path is set to OPAL's root folder
-            val file = new File("OPAL/"+subProjectFolder+"/src/test/resources/"+resourceName)
+            val file = new File("OPAL/"+resourceFile)
             if (file.exists()) return file
         }
         { // if the current path is set to "<SUB-PROJECT>/<BIN>"
-            val file = new File("../../"+subProjectFolder+"src/test/resources/"+resourceName)
+            val file = new File("../../"+resourceFile)
             if (file.exists()) return file
         }
-
+        { // if the current path is set to "DEVELOPING_OPAL/<SUB-PROJECT>/<BIN>"
+            val file = new File("../../../OPAL/"+resourceFile)
+            if (file.exists()) return file
+        }
         {
             // if we are in the sub-project's root folder
-            val file = new File("../"+subProjectFolder+"/src/test/resources/"+resourceName)
+            val file = new File("../"+subProjectFolder + resourceFile)
+            if (file.exists()) return file
+        }
+        {
+            // if we are in a "developing opal" sub-project's root folder
+            val file = new File("../../OPAL/"+resourceFile)
             if (file.exists()) return file
         }
         {
