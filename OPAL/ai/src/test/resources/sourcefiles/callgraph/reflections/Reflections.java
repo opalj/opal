@@ -63,13 +63,13 @@ import org.opalj.ai.test.invokedynamic.annotations.InvokedMethod;
  */
 public class Reflections {
 
-    @InvokedConstructor(receiverType = ConcreteBase.class, line = 69)
+    @InvokedConstructor(receiverType = "callgraph/base/ConcreteBase", line = 69)
     @InvokedMethod(receiverType = "callgraph/base/ConcreteBase", name = "implementedMethod", line = 69)
     void callAfterCastingToInterface() {
         ((Base) new ConcreteBase()).implementedMethod();
     }
 
-    @InvokedConstructor(receiverType = SimpleBase.class, line = 76, isReflective = true)
+    @InvokedConstructor(receiverType = "callgraph/base/SimpleBase", line = 76, isReflective = true)
     @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 77)
     void callInstantiatedByReflection() throws InstantiationException,
             IllegalAccessException, ClassNotFoundException {
@@ -77,7 +77,7 @@ public class Reflections {
         instance.implementedMethod();
     }
 
-    @InvokedConstructor(receiverType = SimpleBase.class, line = 84)
+    @InvokedConstructor(receiverType = "callgraph/base/SimpleBase", line = 84)
     @InvokedMethod(receiverType = "callgraph/base/SimpleBase", name = "implementedMethod", line = 86, isReflective = true)
     void callMethodByReflection() throws NoSuchMethodException, SecurityException,
             IllegalAccessException, IllegalArgumentException, InvocationTargetException {

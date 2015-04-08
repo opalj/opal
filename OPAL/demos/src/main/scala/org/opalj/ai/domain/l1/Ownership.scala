@@ -49,14 +49,11 @@ import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.Field
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.util.PerformanceEvaluation.time
-
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.br.ArrayType
@@ -67,17 +64,14 @@ import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.MULTIANEWARRAY
 import org.opalj.br.instructions.AALOAD
 import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 
 /**
  * Find methods that return an internal (private) array to callers of the class.
  *
  * @author Michael Eichberg
  */
-object OwnershipAnalysis
-        extends OneStepAnalysis[URL, BasicReport]
-        with AnalysisExecutor {
-
-    val analysis = this
+object OwnershipAnalysis extends DefaultOneStepAnalysis {
 
     override def title: String =
         "basic ownership analysis for arrays"
@@ -89,7 +83,6 @@ object OwnershipAnalysis
         theProject: Project[URL],
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean) = {
-        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
         val Private___Not_Static = (AccessFlagsMatcher.NOT_STATIC && ACC_PRIVATE)
 
@@ -176,9 +169,7 @@ object OwnershipAnalysis
 
         BasicReport(
             classes.toList.sortWith((v1, v2) ⇒ v1._1 < v2._1).mkString(
-                "Class files with no ownership protection for arrays:\n\t",
-                "\n\t",
-                "\n"))
+                "Class files with no ownership protection for arrays:\n\t", "\n\t", "\n"))
 
     }
 

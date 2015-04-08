@@ -72,13 +72,13 @@ object ProjectInfoDialog {
                         engine.loadContent(html)
                     }
                     bottom = new HBox {
-                        content = new Button {
+                        children = new Button {
                             text = "Close"
                             defaultButton = true
                             onAction = { e: ActionEvent ⇒ theStage.close() }
                             HBox.setMargin(this, Insets(10))
                         }
-                        alignment = Pos.CENTER
+                        alignment = Pos.Center
                     }
                 }
                 stylesheets += BugPicker.defaultAppCSSURL

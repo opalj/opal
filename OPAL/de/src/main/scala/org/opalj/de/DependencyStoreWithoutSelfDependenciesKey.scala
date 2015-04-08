@@ -29,8 +29,8 @@
 package org.opalj
 package de
 
-import br.analyses.SomeProject
-import br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.ProjectInformationKey
 
 import scala.collection.Map
 import scala.collection.Set
@@ -49,13 +49,15 @@ object DependencyStoreWithoutSelfDependenciesKey extends ProjectInformationKey[D
     override protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef]] = Nil
 
     override protected def compute(project: SomeProject): DependencyStore = {
-        DependencyStore.initialize(
+        def createDependencyProcessor(dp: DependencyProcessor) = {
+            val baseProcessor = new DependencyProcessorDecorator(dp) with FilterSelfDependencies
+            new DependencyExtractor(baseProcessor)
+        }
+
+        DependencyStore(
             project.allClassFiles,
-            (dp: DependencyProcessor) ⇒
-                new DependencyExtractor(
-                    new DependencyProcessorDecorator(dp) with FilterSelfDependencies
-                )
-        )
+            createDependencyProcessor)(
+                project.logContext)
     }
 }
 

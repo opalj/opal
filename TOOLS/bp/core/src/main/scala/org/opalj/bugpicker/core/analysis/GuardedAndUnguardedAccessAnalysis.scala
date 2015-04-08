@@ -41,7 +41,6 @@ import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.collection.SortedMap
-import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project, SomeProject }
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.{ ClassFile, Method }
@@ -59,7 +58,6 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ConditionalBranchInstruction
 import org.opalj.br.instructions.SimpleConditionalBranchInstruction
 import org.opalj.br.instructions.CompoundConditionalBranchInstruction
-import org.opalj.br.AnalysisFailedException
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.br.instructions.ArithmeticInstruction
 import org.opalj.br.instructions.BinaryArithmeticInstruction

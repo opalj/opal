@@ -30,43 +30,58 @@ package org.opalj
 package bugpicker
 package ui
 
-import scala.collection.JavaConversions
 import java.io.File
-import org.opalj.br.analyses.Project
 import java.net.URL
+
+import scala.collection.JavaConversions
+import scala.language.implicitConversions
+
+import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
 import org.opalj.br.ClassFile
-import scalafx.Includes._
-import scalafx.stage.Stage
-import scalafx.scene.layout.BorderPane
-import scalafx.scene.layout.HBox
-import scalafx.scene.control.Button
-import scalafx.scene.control.Label
-import scalafx.geometry.Insets
-import scalafx.scene.web.WebView
-import scalafx.event.ActionEvent
-import scala.language.implicitConversions
-import scalafx.scene.Scene
 import org.opalj.bugpicker.ui.dialogs.DialogStage
 import org.opalj.bugpicker.ui.dialogs.LoadedFiles
+import org.opalj.log.Error
+import org.opalj.log.Level
+import org.opalj.log.LogContext
+import org.opalj.log.LogMessage
+import org.opalj.log.OPALLogger
+
+import scalafx.application.Platform
+import scalafx.event.ActionEvent
+import scalafx.geometry.Insets
+import scalafx.Includes._
+import scalafx.scene.control.Button
+import scalafx.scene.control.Label
+import scalafx.scene.control.TextArea
+import scalafx.scene.control.TextInputControl
+import scalafx.scene.layout.BorderPane
+import scalafx.scene.layout.HBox
+import scalafx.scene.Scene
+import scalafx.scene.web.WebView
+import scalafx.stage.Stage
 
 object ProjectHelper {
 
-    def setupProject(loadedFiles: LoadedFiles, parentStage: Stage): (Project[URL], Seq[File]) = {
+    def setupProject(
+        loadedFiles: LoadedFiles,
+        parentStage: Stage,
+        consoleTextArea: TextArea): (Project[URL], Seq[File]) = {
 
         val files = loadedFiles.projectFiles
         val sources = loadedFiles.projectSources
         val libs = loadedFiles.libraries
-        val project = setupProject(files, libs, parentStage)
+        val project = setupProject(files, libs, parentStage, consoleTextArea)
         (project, sources)
     }
 
     def setupProject(
         cpFiles: Iterable[File],
         libcpFiles: Iterable[File],
-        parentStage: Stage): Project[URL] = {
+        parentStage: Stage,
+        consoleTextArea: TextArea): Project[URL] = {
         println("[info] Reading class files (found in):")
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
         val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
@@ -113,7 +128,7 @@ object ProjectHelper {
                             engine.loadContent(message)
                         }
                         bottom = new HBox {
-                            content = new Button {
+                            children = new Button {
                                 text = "Close"
                                 padding = Insets(5, 10, 5, 10)
                                 onAction = { e: ActionEvent ⇒
@@ -127,6 +142,9 @@ object ProjectHelper {
             dialog.showAndWait()
         }
 
-        Project(classFiles, libraryClassFiles)
+        Project(
+            classFiles, libraryClassFiles, virtualClassFiles = Traversable.empty)(
+                projectLogger = new BugPickerOPALLogger(consoleTextArea))
     }
 }
+

@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -36,9 +36,8 @@ import java.net.URL
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.MethodSignature
@@ -56,11 +55,7 @@ import org.opalj.ai.analyses.cg.CallGraphCache
  *
  * @author Michael Eichberg
  */
-object MethodReturnValuesAnalysis
-        extends AnalysisExecutor
-        with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
 
     override def title: String = TheMethodReturValuesAnalysis.title
 
@@ -70,7 +65,6 @@ object MethodReturnValuesAnalysis
         theProject: Project[URL],
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean) = {
-        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
         var fieldValueInformation = theProject.get(FieldValuesKey)
 
@@ -81,7 +75,7 @@ object MethodReturnValuesAnalysis
                 )
             }
             TheMethodReturValuesAnalysis.doAnalyze(theProject, isInterrupted, createDomain)
-        } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
+        } { t ⇒ println(s"Analysis time: $t") }
         println("number of methods with refined returned types "+methodReturnValueInformation.size)
 
         var continueAnalysis = true
@@ -98,7 +92,7 @@ object MethodReturnValuesAnalysis
                     )
                 }
                 TheMethodReturValuesAnalysis.doAnalyze(theProject, isInterrupted, createDomain)
-            } { t ⇒ println(f"Method return values analysis time: ${ns2sec(t)}%2.2f seconds.") }
+            } { t ⇒ println(s"Method return values analysis time: $t") }
 
             val fvta = time {
                 def createDomain(project: SomeProject, classFile: ClassFile) = {
@@ -110,7 +104,7 @@ object MethodReturnValuesAnalysis
                     )
                 }
                 FieldValuesAnalysis.doAnalyze(theProject, createDomain, isInterrupted)
-            } { t ⇒ println(f"Field value information analysis time: ${ns2sec(t)}%2.2f seconds.") }
+            } { t ⇒ println(s"Field value information analysis time: $t.") }
 
             println("number of fields with refined types "+fieldValueInformation.size)
             println("number of methods with refined returned types "+methodReturnValueInformation.size)
@@ -134,9 +128,7 @@ object MethodReturnValuesAnalysis
 
         BasicReport(
             results.map(_.toString()).toSeq.sorted.mkString(
-                "Methods with refined return types ("+results.size+"): \n",
-                "\n",
-                "\n"))
+                "Methods with refined return types ("+results.size+"): \n", "\n", "\n"))
     }
 }
 

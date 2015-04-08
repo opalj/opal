@@ -30,6 +30,9 @@ package org.opalj
 package br
 package analyses
 
+import org.opalj.graphs.{ Node, toDot }
+import org.opalj.br.reader.Java8Framework.ClassFiles
+
 /**
  * Creates a `dot` (Graphviz) based representation of the class hierarchy
  * of the specified jar file(s).
@@ -39,10 +42,6 @@ package analyses
 object ClassHierarchyVisualizer {
 
     def main(args: Array[String]): Unit = {
-
-        import graphs.{ Node, toDot }
-
-        import reader.Java8Framework.ClassFiles
 
         if (!args.forall(_.endsWith(".jar"))) {
             println("Usage: java …ClassHierarchy <JAR file>+")
@@ -61,7 +60,7 @@ object ClassHierarchyVisualizer {
                 ClassHierarchy(classFiles.view.map(_._1))(org.opalj.log.GlobalContext)
             }
 
-        val dotGraph = toDot.generateDot(Set(classHierarchy.toGraph), "back")
+        val dotGraph = toDot(Set(classHierarchy.toGraph), "back")
         org.opalj.io.writeAndOpen(dotGraph, "ClassHiearachy", ".dot")
     }
 }

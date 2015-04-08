@@ -49,9 +49,9 @@ import org.opalj.ai.analyses.cg.CFACallGraphAlgorithmConfiguration
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.util.PerformanceEvaluation.asMB
 import org.opalj.util.PerformanceEvaluation.memory
-import org.opalj.util.PerformanceEvaluation.ns2sec
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.io.writeAndOpen
+import org.opalj.graphs.toDot
 
 /**
  * Visualizes call graphs using Graphviz.
@@ -129,7 +129,7 @@ object CallGraphVisualization {
                             mkString("Project statistics:\n\t", "\n\t", "")
                     )
                     project
-                } { t ⇒ println("Setting up the project took: "+ns2sec(t)) }
+                } { t ⇒ println("Setting up the project took "+t.toSeconds) }
             } { m ⇒ println("Required memory for base representation: "+asMB(m))+"\n" }
 
         val fqnFilter = args(2)
@@ -169,7 +169,7 @@ object CallGraphVisualization {
                     }
                     val entryPoints = () ⇒ defaultEntryPointsForLibraries(project)
                     CallGraphFactory.create(project, entryPoints, callGraphAlgorithmConfig)
-                } { t ⇒ println("Creating the call graph took: "+ns2sec(t)) }
+                } { t ⇒ println("Creating the call graph took: "+t) }
 
                 // Some statistics
                 val callGraph = computedCallGraph.callGraph
@@ -295,9 +295,7 @@ object CallGraphVisualization {
         }
 
         // Generate and show the graph
-        org.opalj.io.writeAndOpen(
-            org.opalj.graphs.toDot.generateDot(nodes),
-            callGraphAlgorithm+"CallGraph", ".dot")
+        writeAndOpen(toDot(nodes), callGraphAlgorithm+"CallGraph", ".dot")
         println("Callgraph:")
         println("Number of nodes: "+nodes.size)
         val edges = nodes.foldLeft(0) { (l, r) ⇒

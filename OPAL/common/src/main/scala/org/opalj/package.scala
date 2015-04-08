@@ -45,8 +45,10 @@ import org.opalj.log.OPALLogger
  *  - a library (`Common`) that defines functionality that is generally useful
  *    in the context of static analyses.
  *  - a library for parsing Java bytecode (`Bytecode Infrastructure`).
- *  - a library to create an in-memory representation of Java bytecode
+ *  - a library to create a one-to-one in-memory representation of Java bytecode
  *    (`Bytecode Disassembler`).
+ *  - a library to create a representation of Java bytecode that facilitates writing
+ *    simple static analyses.
  *  - a scalable, easily customizable framework for the abstract interpretation of
  *    Java bytecode.
  *  - a library to extract dependencies between code elements.
@@ -54,9 +56,10 @@ import org.opalj.log.OPALLogger
  * ==General Design Decisions==
  *
  * ===Thread Safety===
- * Unless explicitly noted, '''OPAL is thread safe'''. I.e., it is possible to read
- * and process class files concurrently without explicit synchronization on the
- * client side.
+ * Unless explicitly noted, '''OPAL is thread safe'''. I.e., the classes defined by
+ * OPAL can be considered to be thread safe unless otherwise stated.
+ * (For example, it is possible to read and process class files concurrently without
+ * explicit synchronization on the client side.)
  *
  * ===No `null` Values===
  * Unless explicitly noted, '''OPAL does not `null` values'''
@@ -76,8 +79,8 @@ import org.opalj.log.OPALLogger
  *
  * ===Assertions===
  * OPAL makes heavy use of Scala's '''Assertion Facility''' to facilitate writing correct
- * analysis. Hence, for production builds (after thorouhg testing(!)) it is
- * higly recommend to build OPAL again using `-Xdisable-assertions`.
+ * code. Hence, for production builds (after thorough testing(!)) it is
+ * highly recommend to build OPAL again using `-Xdisable-assertions`.
  *
  * @author Michael Eichberg
  */
@@ -100,7 +103,7 @@ package object opalj {
      * A simple type alias that can be used to communicate that the respective
      * value will/should only take values in the range of unsigned short values.
      */
-    type UShort = Int
+    final type UShort = Int
 
     /**
      * Iterates over a given array `a` and calls the given function `f` for

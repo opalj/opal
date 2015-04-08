@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.ThreadFactory
 import scala.concurrent.ExecutionContext
 import scala.collection.parallel.ExecutionContextTaskSupport
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
@@ -100,7 +101,8 @@ package object concurrent {
             val s = Integer.parseInt(maxIOBoundTasks)
             if (s < NumberOfThreadsForCPUBoundTasks)
                 throw new IllegalArgumentException(
-                    s"org.opalj.threads.IOBoundTasks===$s must be larger than org.opalj.threads.CPUBoundTasks===$NumberOfThreadsForCPUBoundTasks"
+                    s"org.opalj.threads.IOBoundTasks===$s must be larger than "+
+                        s"org.opalj.threads.CPUBoundTasks===$NumberOfThreadsForCPUBoundTasks"
                 )
             s
         } else {
@@ -147,7 +149,7 @@ package object concurrent {
     }
 
     /**
-     * Returns the singleton instance of the global Thread Pool used throughout OPAL.
+     * Returns the singleton instance of the global `ThreadPool` used throughout OPAL.
      */
     final val ThreadPool: ExecutorService = ThreadPoolN(NumberOfThreadsForIOBoundTasks)
 
@@ -199,7 +201,7 @@ package object concurrent {
         }
 
         val max = data.length
-        val index = new java.util.concurrent.atomic.AtomicInteger(0)
+        val index = new AtomicInteger(0)
         val futures = new Array[Future[Unit]](parallelizationLevel)
 
         // Start parallel execution

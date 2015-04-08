@@ -60,11 +60,17 @@ trait ClassMember extends SourceElement {
 
     final def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
 
+    /**
+     * `True` if the `Synthetic` access flag or attribute is used.
+     */
     final override def isSynthetic: Boolean =
         super.isSynthetic || (ACC_SYNTHETIC.mask & accessFlags) != 0
 
     final def isNonFinal: Boolean = !isFinal
 
+    /**
+     * The simple name of this class member (method or field).
+     */
     def name: String
 }
 /**

@@ -61,9 +61,9 @@ public class OtherClass {
 	private static void noArgumentsPrivate() {}
 	
 	@InvokedMethods({
-		@InvokedMethod(receiverType = SameClass.class, name = "noArgumentsPublic", isStatic = true, isReflective = true, lineNumber = 71),
-		@InvokedMethod(receiverType = SameClass.class, name = "noArgumentsProtected", isStatic = true, isReflective = true, lineNumber = 73),
-		@InvokedMethod(receiverType = SameClass.class, name = "noArgumentsPrivate", isStatic = true, isReflective = true, lineNumber = 75)
+		@InvokedMethod(receiverType = "methodhandles/SameClass", name = "noArgumentsPublic", isStatic = true, isReflective = true, line = 71),
+		@InvokedMethod(receiverType = "methodhandles/SameClass", name = "noArgumentsProtected", isStatic = true, isReflective = true, line = 73),
+		@InvokedMethod(receiverType = "methodhandles/SameClass", name = "noArgumentsPrivate", isStatic = true, isReflective = true, line = 75)
 	})
 	public void noArgumentsMethodHandles() throws Throwable {
 		MethodType voidType = MethodType.methodType(Void.class);
@@ -80,8 +80,8 @@ public class OtherClass {
 	public static int primitiveReturn(int i) { return i; }
 	
 	@InvokedMethods({
-		@InvokedMethod(receiverType = SameClass.class, name = "primitive", parameterTypes = { int.class }, isStatic = true, isReflective = true, lineNumber = 89),
-		@InvokedMethod(receiverType = SameClass.class, name = "primitiveReturn", parameterTypes = { int.class }, returnType = int.class, isStatic = true, isReflective = true, lineNumber = 92)
+		@InvokedMethod(receiverType = "methodhandles/SameClass", name = "primitive", parameterTypes = { int.class }, isStatic = true, isReflective = true, line = 89),
+		@InvokedMethod(receiverType = "methodhandles/SameClass", name = "primitiveReturn", parameterTypes = { int.class }, returnType = int.class, isStatic = true, isReflective = true, line = 92)
 	})
 	public static void primitiveHandles() throws Throwable {
 		MethodType voidType = MethodType.methodType(Void.class, int.class);
@@ -97,8 +97,8 @@ public class OtherClass {
 	public static Object objectReturn(Object o) { return o; }
 	
 	@InvokedMethods({
-		@InvokedMethod(receiverType = SameClass.class, name = "object", parameterTypes = { Object.class }, isStatic = true, isReflective = true, lineNumber = 106),
-		@InvokedMethod(receiverType = SameClass.class, name = "objectReturn", parameterTypes = { Object.class }, returnType = Object.class, isStatic = true, isReflective = true, lineNumber = 109)
+		@InvokedMethod(receiverType = "methodhandles/SameClass", name = "object", parameterTypes = { Object.class }, isStatic = true, isReflective = true, line = 106),
+		@InvokedMethod(receiverType = "methodhandles/SameClass", name = "objectReturn", parameterTypes = { Object.class }, returnType = Object.class, isStatic = true, isReflective = true, line = 109)
 	})
 	public static void objectHandles() throws Throwable {
 		MethodType voidType = MethodType.methodType(Void.class, Object.class);
@@ -114,8 +114,8 @@ public class OtherClass {
 	public static int[] arrayReturn(int[] array) { return array; }
 	
 	@InvokedMethods({
-		@InvokedMethod(receiverType = SameClass.class, name = "array", parameterTypes = { int[].class }, isStatic = true, isReflective = true, lineNumber = 123),
-		@InvokedMethod(receiverType = SameClass.class, name = "arrayReturn", parameterTypes = { int[].class }, returnType = int[].class, isStatic = true, isReflective = true, lineNumber = 126)
+		@InvokedMethod(receiverType = "methodhandles/SameClass", name = "array", parameterTypes = { int[].class }, isStatic = true, isReflective = true, line = 123),
+		@InvokedMethod(receiverType = "methodhandles/SameClass", name = "arrayReturn", parameterTypes = { int[].class }, returnType = int[].class, isStatic = true, isReflective = true, line = 126)
 	})
 	public static void arrayHandles() throws Throwable {
 		MethodType voidType = MethodType.methodType(Void.class, int[].class);

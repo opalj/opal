@@ -67,7 +67,7 @@ public class A implements Base {
 
     @Override
     @InvokedMethod(receiverType = "simpleCallgraph/B", name = "callOnConstructor", line = 72)
-    @InvokedConstructor(receiverType = B.class, line = 72)
+    @InvokedConstructor(receiverType = "simpleCallgraph/B", line = 72)
     public void callOnConstructor() {
         new B().callOnConstructor();
     }

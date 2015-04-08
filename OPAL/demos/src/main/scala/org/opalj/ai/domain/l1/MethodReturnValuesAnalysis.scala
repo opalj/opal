@@ -32,13 +32,11 @@ package domain
 package l1
 
 import java.net.URL
-
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.GREEN
 import scala.Console.RESET
 import scala.Iterable
-
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
@@ -47,9 +45,8 @@ import org.opalj.ai.domain
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
@@ -60,7 +57,7 @@ import org.opalj.util.PerformanceEvaluation.time
  *
  * @author Michael Eichberg
  */
-object MethodReturnValuesAnalysis extends AnalysisExecutor {
+object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
 
     class AnalysisDomain(
         override val project: Project[java.net.URL],
@@ -110,43 +107,40 @@ object MethodReturnValuesAnalysis extends AnalysisExecutor {
         }
     }
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    override def title: String =
+        "Derives Information About Returned Values"
 
-        override def title: String =
-            "Derives Information About Returned Values"
+    override def description: String =
+        "Identifies methods where we can – statically – derive more precise return type/value information."
 
-        override def description: String =
-            "Identifies methods where we can – statically – derive more precise return type/value information."
+    override def doAnalyze(
+        theProject: Project[URL],
+        parameters: Seq[String],
+        isInterrupted: () ⇒ Boolean) = {
 
-        override def doAnalyze(
-            theProject: Project[URL],
-            parameters: Seq[String],
-            isInterrupted: () ⇒ Boolean) = {
-            import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
+        val methodsWithRefinedReturnTypes = time {
+            for {
+                classFile ← theProject.allClassFiles.par
+                method ← classFile.methods
+                if method.body.isDefined
+                originalType = method.returnType
+                if method.returnType.isReferenceType
+                ai = new InterruptableAI[Domain]
+                domain = new AnalysisDomain(theProject, ai, method)
+                result = ai(classFile, method, domain)
+                if !result.wasAborted
+                if domain.returnedValue.isEmpty ||
+                    domain.returnedValue.get.asInstanceOf[IsAReferenceValue].upperTypeBound != UIDSet(originalType)
+            } yield {
+                RefinedReturnType(classFile, method, domain.returnedValue)
+            }
+        } { ns ⇒ println(s"the analysis took ${ns.toSeconds}") }
 
-            val methodsWithRefinedReturnTypes = time {
-                for {
-                    classFile ← theProject.allClassFiles.par
-                    method ← classFile.methods
-                    if method.body.isDefined
-                    originalType = method.returnType
-                    if method.returnType.isReferenceType
-                    ai = new InterruptableAI[Domain]
-                    domain = new AnalysisDomain(theProject, ai, method)
-                    result = ai(classFile, method, domain)
-                    if !result.wasAborted
-                    if domain.returnedValue.isEmpty ||
-                        domain.returnedValue.get.asInstanceOf[IsAReferenceValue].upperTypeBound != UIDSet(originalType)
-                } yield {
-                    RefinedReturnType(classFile, method, domain.returnedValue)
-                }
-            } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
-
-            BasicReport(
-                methodsWithRefinedReturnTypes.mkString(
-                    "Methods with refined return types ("+methodsWithRefinedReturnTypes.size+"): \n", "\n", "\n"))
-        }
+        BasicReport(
+            methodsWithRefinedReturnTypes.mkString(
+                "Methods with refined return types ("+methodsWithRefinedReturnTypes.size+"): \n", "\n", "\n"))
     }
+
 }
 
 case class RefinedReturnType(

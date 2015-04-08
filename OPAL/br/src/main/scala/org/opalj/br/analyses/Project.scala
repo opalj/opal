@@ -51,6 +51,9 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.ConsoleOPALLogger
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.Config
+import org.opalj.log.DefaultLogContext
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -102,8 +105,9 @@ class Project[Source] private (
     val libraryMethodsCount: Int,
     val libraryFieldsCount: Int,
     val codeSize: Long,
-    val classHierarchy: ClassHierarchy,
-    implicit val logContext: LogContext)
+    val classHierarchy: ClassHierarchy)(
+        implicit val logContext: LogContext,
+        implicit val config: Config)
         extends ClassFileRepository {
 
     assert(
@@ -111,14 +115,15 @@ class Project[Source] private (
         "the project is inconsistent; some classes in the library are also listed as project types"
     )
 
-    OPALLogger.debug("project", "created ("+logContext+")")
+    OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
 
     def extend(
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
         libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
         Project.extend[Source](
             this,
-            projectClassFilesWithSources, libraryClassFilesWithSources)
+            projectClassFilesWithSources,
+            libraryClassFilesWithSources)
     }
 
     def extend(otherProject: Project[Source]): Project[Source] = {
@@ -559,12 +564,8 @@ object Project {
         Project.apply(file, OPALLogger.globalLogger())
     }
 
-    def apply(
-        file: File,
-        projectLogger: OPALLogger): Project[URL] = {
-        Project.apply[URL](
-            Java8ClassFileReader.ClassFiles(file),
-            projectLogger = projectLogger)
+    def apply(file: File, projectLogger: OPALLogger): Project[URL] = {
+        apply(Java8ClassFileReader.ClassFiles(file), projectLogger = projectLogger)
     }
 
     def apply[Source](
@@ -579,29 +580,29 @@ object Project {
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
         projectLogger: OPALLogger): Project[Source] = {
         Project.apply[Source](
-            projectClassFilesWithSources, Traversable.empty,
-            projectLogger = projectLogger
-        )
+            projectClassFilesWithSources,
+            Traversable.empty,
+            virtualClassFiles = Traversable.empty)(
+                projectLogger = projectLogger
+            )
     }
 
     def apply(
         projectFile: File,
         libraryFile: File): Project[URL] = {
-        Project.apply(
+        apply(
             Java8ClassFileReader.ClassFiles(projectFile),
             Java8LibraryClassFileReader.ClassFiles(libraryFile),
-            projectLogger = OPALLogger.globalLogger()
-        )
+            virtualClassFiles = Traversable.empty)
     }
 
     def apply(
         projectFiles: Array[File],
         libraryFiles: Array[File]): Project[URL] = {
-        Project.apply[URL](
+        apply(
             Java8ClassFileReader.AllClassFiles(projectFiles),
             Java8LibraryClassFileReader.AllClassFiles(libraryFiles),
-            projectLogger = OPALLogger.globalLogger()
-        )
+            virtualClassFiles = Traversable.empty)
     }
 
     def extend(project: Project[URL], file: File): Project[URL] = {
@@ -620,14 +621,10 @@ object Project {
         apply(
             project.projectClassFilesWithSources ++ projectClassFilesWithSources,
             project.libraryClassFilesWithSources ++ libraryClassFilesWithSources,
-            projectLogger = OPALLogger.logger(project.logContext)
-        )
-    }
-
-    def defaultHandlerForInconsistentProject(
-        logContext: LogContext,
-        ex: InconsistentProjectException): Unit = {
-        OPALLogger.log(Warn("project configuration", ex.message))(logContext)
+            virtualClassFiles = Traversable.empty)(
+                config = project.config,
+                projectLogger = OPALLogger.logger(project.logContext.successor)
+            )
     }
 
     def apply[Source](
@@ -636,8 +633,15 @@ object Project {
         Project.apply[Source](
             projectClassFilesWithSources,
             libraryClassFilesWithSources,
-            projectLogger = OPALLogger.globalLogger()
-        )
+            virtualClassFiles = Traversable.empty)
+    }
+
+    type HandleInconsistenProject = (LogContext, InconsistentProjectException) ⇒ Unit
+
+    def defaultHandlerForInconsistentProject(
+        logContext: LogContext,
+        ex: InconsistentProjectException): Unit = {
+        OPALLogger.log(Warn("project configuration", ex.message))(logContext)
     }
 
     /**
@@ -671,17 +675,11 @@ object Project {
         projectClassFilesWithSources: Traversable[(ClassFile, Source)],
         libraryClassFilesWithSources: Traversable[(ClassFile, Source)],
         virtualClassFiles: Traversable[ClassFile] = Traversable.empty,
-        projectLogger: OPALLogger,
-        handleInconsistentProject: (LogContext, InconsistentProjectException) ⇒ Unit = defaultHandlerForInconsistentProject): Project[Source] = {
+        handleInconsistentProject: HandleInconsistenProject = defaultHandlerForInconsistentProject)(
+            implicit config: Config = ConfigFactory.load(),
+            projectLogger: OPALLogger = OPALLogger.globalLogger()): Project[Source] = {
 
-        implicit val logContext = new LogContext {
-
-            final val startTime = System.currentTimeMillis()
-
-            override def toString: String =
-                "project context:"+startTime.toString().drop(6)
-
-        }
+        implicit val logContext = new DefaultLogContext()
         OPALLogger.register(logContext, projectLogger)
 
         try {
@@ -801,9 +799,7 @@ object Project {
                 libraryMethodsCount,
                 libraryFieldsCount,
                 codeSize,
-                Await.result(classHierarchyFuture, Duration.Inf),
-                logContext
-            )
+                Await.result(classHierarchyFuture, Duration.Inf))
         } catch {
             case t: Throwable ⇒
                 OPALLogger.unregister(logContext)

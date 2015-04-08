@@ -33,11 +33,9 @@ package analyses
 import java.net.URL
 import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
 import org.opalj.br.MethodWithBody
 import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
 
 /**
  * A shallow analysis that identifies methods that do not perform virtual method
@@ -45,11 +43,7 @@ import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
  *
  * @author Michael Eichberg
  */
-object MethodsWithNoVirtualMethodCalls
-        extends AnalysisExecutor
-        with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object MethodsWithNoVirtualMethodCalls extends DefaultOneStepAnalysis {
 
     override def title: String = "identifies methods that perform no virtual method calls"
 
@@ -59,7 +53,6 @@ object MethodsWithNoVirtualMethodCalls
         theProject: Project[URL],
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean) = {
-        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
 
         val allMethods = new AtomicInteger(0)
 
@@ -73,7 +66,7 @@ object MethodsWithNoVirtualMethodCalls
                 } yield {
                     method.toJava(classFile)
                 }
-            } { t ⇒ println(f"Analysis time: ${ns2sec(t)}%2.2f seconds.") }
+            } { t ⇒ println(s"Analysis time: $t") }
 
         BasicReport(
             methodsWithoutVirtualMethodCalls.map(_.toString()).seq.toSeq.sorted.mkString(

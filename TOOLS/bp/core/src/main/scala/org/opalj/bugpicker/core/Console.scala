@@ -33,152 +33,38 @@ package core
 import java.net.URL
 import scala.collection.SortedMap
 import scala.xml.Node
-import org.opalj.util.PerformanceEvaluation.ns2sec
 import org.opalj.io.writeAndOpen
 import org.opalj.io.process
 import org.opalj.br.analyses.{ Analysis, AnalysisExecutor, BasicReport, Project }
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.common.XHTML
-import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
 import org.opalj.bugpicker.core.analysis.IssueKind
+import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
+import org.opalj.bugpicker.core.analysis.BugPickerAnalysis.resultsAsXHTML
 import org.opalj.log.OPALLogger
+import java.lang.Integer.parseInt
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.charset.StandardCharsets
+import java.io.File
 
 /**
- * A data-flow analysis that tries to identify dead code based on the evaluation
- * of branches following if instructions that are not followed.
+ * A simple wrapper around the BugPicker analysis to make it runnable using the
+ * command line.
  *
  * @author Michael Eichberg
  */
-object Console extends AnalysisExecutor { analysis ⇒
+object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
+    val analysis = this
 
-    val HTMLFileOutputNameMatcher = """-html=([\w\.\:/\\]+)""".r
-    val DebugFileOutputNameMatcher = """-debug=([\w\.\:/\\]+)""".r
+    final val HTMLFileOutputNameMatcher = """-html=([\w-_\.\:/\\]+)""".r
 
-    private final val bugPickerAnalysis = new BugPickerAnalysis
+    final val DebugFileOutputNameMatcher = """-debug=([\w-_\.\:/\\]+)""".r
 
-    val analysis = new Analysis[URL, BasicReport] {
+    final val MinRelevancePattern = """-minRelevance=(\d\d?)""".r
+    final val MinRelevance = 0
 
-        override def title: String = bugPickerAnalysis.title
-
-        override def description: String = bugPickerAnalysis.description
-
-        override def analyze(
-            theProject: Project[URL],
-            parameters: Seq[String],
-            initProgressManagement: (Int) ⇒ ProgressManagement) = {
-
-            val (analysisTime, issues0, exceptions) =
-                bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
-
-            //
-            // PREPARE THE GENERATION OF THE REPORT OF THE FOUND ISSUES
-            // (HTML/Eclipse)
-            //
-
-            // Filter the report
-            val minRelevance: Int =
-                parameters.collectFirst {
-                    case minRelevancePattern(i) ⇒ java.lang.Integer.parseInt(i)
-                }.getOrElse(
-                    Console.minRelevance
-                )
-            val issues1 = issues0.filter { i ⇒ i.relevance.value >= minRelevance }
-
-            val issues = parameters.collectFirst { case issueKindsPattern(ks) ⇒ ks } match {
-                case Some(ks) ⇒
-                    val relevantKinds = ks.split(',').toSet
-                    issues1.filter(issue ⇒ (issue.kind intersect (relevantKinds)).nonEmpty)
-                case None ⇒
-                    issues1
-            }
-
-            // Generate the report well suited for the eclipse console
-            //
-            if (parameters.contains("-eclipse")) {
-                val formattedIssues = issues.map { issue ⇒ issue.asEclipseConsoleString }
-                println(formattedIssues.toSeq.sorted.mkString("\n"))
-            }
-
-            // Generate the HTML report
-            //
-            var htmlReport: String = null
-            def getHTMLReport = {
-                if (htmlReport eq null)
-                    htmlReport = BugPickerAnalysis.resultsAsXHTML(parameters, issues).toString
-                htmlReport
-            }
-            parameters.collectFirst { case HTMLFileOutputNameMatcher(name) ⇒ name } match {
-                case Some(fileName) ⇒
-                    process { new java.io.FileOutputStream(fileName) } { fos ⇒
-                        fos.write(getHTMLReport.getBytes("UTF-8"))
-                    }
-                case _ ⇒ // Nothing to do
-            }
-            if (parameters.contains("-html")) {
-                writeAndOpen(getHTMLReport, "BugPickerAnalysisResults", ".html")
-            }
-
-            //
-            // PREPARE THE GENERATION OF THE REPORT OF THE OCCURED EXCEPTIONS
-            //
-            if (exceptions.nonEmpty) {
-                OPALLogger.error(
-                    "internal error",
-                    s"the analysis threw ${exceptions.size} exceptions")(
-                        theProject.logContext)
-                exceptions.foreach { e ⇒
-                    OPALLogger.error(
-                        "internal error", "the analysis failed", e)(theProject.logContext)
-                }
-
-                var exceptionsReport: Node = null
-                def getExceptionsReport = {
-                    if (exceptionsReport eq null) {
-                        val exceptionNodes =
-                            exceptions.take(10).map { e ⇒
-                                <p>{ XHTML.throwableToXHTML(e) }</p>
-                            }
-                        exceptionsReport =
-                            XHTML.createXHTML(
-                                Some(s"${exceptions.size}/${exceptionNodes.size} Thrown Exceptions"),
-                                <div>{ exceptionNodes }</div>
-                            )
-                    }
-                    exceptionsReport
-                }
-                parameters.collectFirst { case DebugFileOutputNameMatcher(name) ⇒ name } match {
-                    case Some(fileName) ⇒
-                        process { new java.io.FileOutputStream(fileName) } { fos ⇒
-                            fos.write(getExceptionsReport.toString.getBytes("UTF-8"))
-                        }
-                    case _ ⇒ // Nothing to do
-                }
-                if (parameters.contains("-debug")) {
-                    org.opalj.io.writeAndOpen(getExceptionsReport, "Exceptions", ".html")
-                }
-            }
-
-            //
-            // Print some statistics and "return"
-            //
-            val groupedIssues =
-                issues.groupBy(_.relevance).toList.
-                    sortWith((e1, e2) ⇒ e1._1.value < e2._1.value)
-            val groupedAndCountedIssues = groupedIssues.map(e ⇒ e._1+": "+e._2.size)
-
-            BasicReport(
-                groupedAndCountedIssues.mkString(
-                    s"Issues (∑${issues.size}):\n\t",
-                    "\n\t",
-                    f"\nIdentified in: ${ns2sec(analysisTime)}%2.2f seconds.\n")
-            )
-        }
-    }
-
-    final val minRelevancePattern = """-minRelevance=(\d\d?)""".r
-    final val minRelevance = 0
-
-    final val issueKindsPattern = """-kinds=([\w, ]+)""".r
+    final val IssueKindsPattern = """-kinds=([\w, ]+)""".r
 
     final override val analysisSpecificParametersDescription: String =
         """[-maxEvalFactor=<DoubleValue {[0.1,100),Infinity}=1.75> determines the maximum effort that
@@ -198,15 +84,15 @@ object Console extends AnalysisExecutor { analysis ⇒
             |               the range is exceeded the precise tracking of the respective value is
             |               terminated.
             |               Increasing this value may significantly increase the analysis time and
-            |               may require the increase of -maxEvalFactor.]
-            |[-maxCardinalityOfLongSets=<IntValue [1,1024]=16> basically determines for each long
+            |               may require the increase of maxEvalFactor.]
+            |[-maxCardinalityOfLongSets=<IntValue [1,1024]=2> basically determines for each long
             |               value how long the value is "precisely" tracked.
             |               The maximum size/cardinality of this set is controlled by this setting. If
             |               the set's size is tool large the precise tracking of the respective value is
             |               terminated.
             |               Increasing this value may significantly increase the analysis time and
-            |               may require the increase of -maxEvalFactor.]            |
-            |[-maxCallChainLength=<IntValue [0..9]=0> determines the maximum length of the call chain
+            |               may require the increase of maxEvalFactor.]            |
+            |[-maxCallChainLength=<IntValue [0..9]=1> determines the maximum length of the call chain
             |               that is analyzed.
             |               If you increase this value by one it is typically also necessary
             |               to also increase the maxEvalFactor by a factor of 2 to 3. Otherwise it
@@ -223,12 +109,127 @@ object Console extends AnalysisExecutor { analysis ⇒
             |               internal, recoverable exceptions are logged) the report is optionally
             |               written to the specified location.]""".stripMargin('|')
 
+    private final val bugPickerAnalysis = new BugPickerAnalysis
+
+    override def title: String = bugPickerAnalysis.title
+
+    override def description: String = bugPickerAnalysis.description
+
+    override def analyze(
+        theProject: Project[URL],
+        parameters: Seq[String],
+        initProgressManagement: (Int) ⇒ ProgressManagement) = {
+
+        import theProject.logContext
+
+        val (analysisTime, issues0, exceptions) =
+            bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
+
+        //
+        // PREPARE THE GENERATION OF THE REPORT OF THE FOUND ISSUES
+        // (HTML/Eclipse)
+        //
+
+        // Filter the report
+        val minRelevance: Int =
+            parameters.
+                collectFirst { case MinRelevancePattern(i) ⇒ parseInt(i) }.
+                getOrElse(MinRelevance)
+        val issues1 = issues0.filter { i ⇒ i.relevance.value >= minRelevance }
+
+        val issues = parameters.collectFirst { case IssueKindsPattern(ks) ⇒ ks } match {
+            case Some(ks) ⇒
+                val relevantKinds = ks.split(',').toSet
+                issues1.filter(issue ⇒ (issue.kind intersect (relevantKinds)).nonEmpty)
+            case None ⇒
+                issues1
+        }
+
+        // Generate the report well suited for the eclipse console
+        //
+        if (parameters.contains("-eclipse")) {
+            val formattedIssues = issues.map { issue ⇒ issue.asEclipseConsoleString }
+            println(formattedIssues.toSeq.sorted.mkString("\n"))
+        }
+
+        // Generate the HTML report
+        //
+        lazy val htmlReport = resultsAsXHTML(parameters, issues, analysisTime).toString
+        parameters.collectFirst { case HTMLFileOutputNameMatcher(name) ⇒ name } match {
+            case Some(fileName) ⇒
+                val file = new File(fileName).toPath
+                process { Files.newBufferedWriter(file, StandardCharsets.UTF_8) } { fos ⇒
+                    fos.write(htmlReport, 0, htmlReport.length)
+                }
+            case _ ⇒ // Nothing to do
+        }
+        if (parameters.contains("-html")) {
+            writeAndOpen(htmlReport, "BugPickerAnalysisResults", ".html")
+        }
+
+        //
+        // PREPARE THE GENERATION OF THE REPORT OF THE OCCURED EXCEPTIONS
+        //
+        if (exceptions.nonEmpty) {
+            OPALLogger.error(
+                "internal error",
+                s"the analysis threw ${exceptions.size} exceptions")
+            exceptions.foreach { e ⇒
+                OPALLogger.error(
+                    "internal error", "the analysis failed", e)
+            }
+
+            var exceptionsReport: Node = null
+            def getExceptionsReport = {
+                if (exceptionsReport eq null) {
+                    val exceptionNodes =
+                        exceptions.take(10).map { e ⇒
+                            <p>{ XHTML.throwableToXHTML(e) }</p>
+                        }
+                    exceptionsReport =
+                        XHTML.createXHTML(
+                            Some(s"${exceptions.size}/${exceptionNodes.size} Thrown Exceptions"),
+                            <div>{ exceptionNodes }</div>
+                        )
+                }
+                exceptionsReport
+            }
+            parameters.collectFirst { case DebugFileOutputNameMatcher(name) ⇒ name } match {
+                case Some(fileName) ⇒
+                    process { new java.io.FileOutputStream(fileName) } { fos ⇒
+                        fos.write(getExceptionsReport.toString.getBytes("UTF-8"))
+                    }
+                case _ ⇒ // Nothing to do
+            }
+            if (parameters.contains("-debug")) {
+                org.opalj.io.writeAndOpen(getExceptionsReport, "Exceptions", ".html")
+            }
+        }
+
+        //
+        // Print some statistics and "return"
+        //
+        val groupedIssues =
+            issues.groupBy(_.relevance).toList.
+                sortWith((e1, e2) ⇒ e1._1.value < e2._1.value)
+        val groupedAndCountedIssues = groupedIssues.map(e ⇒ e._1+": "+e._2.size)
+
+        BasicReport(
+            groupedAndCountedIssues.mkString(
+                s"Issues (∑${issues.size}):\n\t",
+                "\n\t",
+                s"\nIdentified in: ${analysisTime.toSeconds}.\n")
+        )
+    }
+
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean = {
         var outputFormatGiven = false
 
+        import org.opalj.bugpicker.core.analysis.BugPickerAnalysis._
+
         parameters.forall(parameter ⇒
             parameter match {
-                case BugPickerAnalysis.maxEvalFactorPattern(d) ⇒
+                case MaxEvalFactorPattern(d) ⇒
                     try {
                         val factor = java.lang.Double.parseDouble(d).toDouble
                         (factor >= 0.1d && factor < 100.0d) ||
@@ -236,37 +237,37 @@ object Console extends AnalysisExecutor { analysis ⇒
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }
-                case BugPickerAnalysis.maxEvalTimePattern(l) ⇒
+                case MaxEvalTimePattern(l) ⇒
                     try {
                         val maxTime = java.lang.Long.parseLong(l).toLong
                         maxTime >= 10 && maxTime <= 1000000
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }
-                case BugPickerAnalysis.maxCardinalityOfIntegerRangesPattern(i) ⇒
+                case MaxCardinalityOfIntegerRangesPattern(i) ⇒
                     try {
                         val cardinality = java.lang.Long.parseLong(i).toLong
                         cardinality >= 1 && cardinality <= 4294967295l
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }
-                case BugPickerAnalysis.maxCardinalityOfLongSetsPattern(i) ⇒
+                case MaxCardinalityOfLongSetsPattern(i) ⇒
                     try {
                         val cardinality = java.lang.Integer.parseInt(i).toInt
                         cardinality >= 1 && cardinality <= 1024
                     } catch {
                         case nfe: NumberFormatException ⇒ false
                     }
-                case BugPickerAnalysis.maxCallChainLengthPattern(_) ⇒
+                case MaxCallChainLengthPattern(_) ⇒
                     // the pattern ensures that the value is legal...
                     true
 
-                case issueKindsPattern(ks) ⇒
+                case IssueKindsPattern(ks) ⇒
                     val kinds = ks.split(',')
                     kinds.length > 0 &&
                         kinds.forall { k ⇒ IssueKind.AllKinds.contains(k) }
 
-                case minRelevancePattern(_) ⇒
+                case MinRelevancePattern(_) ⇒
                     // the pattern ensures that the value is legal...
                     true
 
@@ -278,11 +279,15 @@ object Console extends AnalysisExecutor { analysis ⇒
                     outputFormatGiven = true; true
                 case "-debug"                      ⇒ true
                 case DebugFileOutputNameMatcher(_) ⇒ true
-                case _                             ⇒ false
+                case _ ⇒
+                    // TODO report the issue back to the calling method
+                    println("Unknown parameter: "+parameter)
+                    false
+
             }
         ) &&
             outputFormatGiven
-    }
 
+    }
 }
 

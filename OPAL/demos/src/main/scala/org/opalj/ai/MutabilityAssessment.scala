@@ -35,7 +35,7 @@ import org.opalj.ai.analyses.MutabilityRating.Unknown
 import org.opalj.ai.analyses.ImmutabilityAnalysis
 import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 
 /**
@@ -43,24 +43,20 @@ import org.opalj.br.analyses.Project
  *
  * @author Andre Pacak
  */
-object MutabilityAssessment extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object MutabilityAssessment extends DefaultOneStepAnalysis {
 
     override def doAnalyze(
         theProject: Project[URL],
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean): BasicReport = {
 
-        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec }
+        import org.opalj.util.PerformanceEvaluation.time
 
         var message = ""
         val result =
             time {
                 ImmutabilityAnalysis.doAnalyze(theProject, isInterrupted)
-            } { t ⇒
-                message += f"Analysis time: ${ns2sec(t)}%2.2f seconds. Result:\n"
-            }
+            } { t ⇒ message += s"Analysis time: $t\n" }
         val classesWithMutabilityRating = result //.filter(_._2 != Unknown)
         val classesPerMutabilityRating =
             classesWithMutabilityRating.groupBy(_._2). // grouped by mutability rating

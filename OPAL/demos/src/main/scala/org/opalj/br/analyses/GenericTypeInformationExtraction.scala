@@ -33,22 +33,16 @@ package analyses
 import java.net.URL
 import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
 import org.opalj.br.MethodWithBody
 import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
-import org.opalj.ai.analyses.{ MethodReturnValuesAnalysis ⇒ TheAnalysis }
 
 /**
  * Demonstrates how to extract generic type information.
  *
  * @author Michael Eichberg
  */
-object GenericTypeInformationExtraction
-        extends AnalysisExecutor
-        with OneStepAnalysis[URL, BasicReport] {
-
-    val analysis = this
+object GenericTypeInformationExtraction extends DefaultOneStepAnalysis {
 
     override def title: String = "demonstrates how to extract generic type information associated with a class"
 

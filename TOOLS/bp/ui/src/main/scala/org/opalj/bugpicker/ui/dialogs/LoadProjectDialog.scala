@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -32,8 +32,11 @@ package ui
 package dialogs
 
 import java.io.File
+
 import scala.collection.mutable.ListBuffer
+
 import org.opalj.bugpicker.ui.BugPicker
+
 import scalafx.Includes._
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
@@ -41,10 +44,13 @@ import scalafx.geometry.Pos
 import scalafx.scene.Scene
 import scalafx.scene.control.Button
 import scalafx.scene.control.ListView
-import scalafx.scene.control.TextArea
+import scalafx.scene.control.TextField
 import scalafx.scene.control.TitledPane
+import scalafx.scene.input.Dragboard
+import scalafx.scene.input.DragEvent
 import scalafx.scene.input.KeyCode
 import scalafx.scene.input.KeyEvent
+import scalafx.scene.input.TransferMode
 import scalafx.scene.layout.HBox
 import scalafx.scene.layout.Priority
 import scalafx.scene.layout.VBox
@@ -72,24 +78,30 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
     val libs = ListBuffer[File]() ++ preferences.map(_.libraries).getOrElse(Seq.empty)
 
     var cancelled = false
-    val nameTextArea = new TextArea {
+    val nameTextField = new TextField {
         text = preferences.map(_.projectName).getOrElse("")
         prefWidth = 778
     }
     val jarListview = new ListView[String] {
         items() ++= jars.map(_.toString)
-        hgrow = Priority.ALWAYS
+        hgrow = Priority.Always
         selectionModel().selectionMode = SelectionMode.MULTIPLE
-    }
-    val libsListview = new ListView[String] {
-        items() ++= libs.map(_.toString)
-        hgrow = Priority.ALWAYS
-        selectionModel().selectionMode = SelectionMode.MULTIPLE
+        onDragOver = onDragOverBehaviour
+        onDragDropped = onDragDroppedBehaviour(jars, this)
     }
     val sourceListview = new ListView[String] {
         items() ++= sources.map(_.toString)
-        hgrow = Priority.ALWAYS
+        hgrow = Priority.Always
         selectionModel().selectionMode = SelectionMode.MULTIPLE
+        onDragOver = onDragOverBehaviour
+        onDragDropped = onDragDroppedBehaviour(sources, this, false)
+    }
+    val libsListview = new ListView[String] {
+        items() ++= libs.map(_.toString)
+        hgrow = Priority.Always
+        selectionModel().selectionMode = SelectionMode.MULTIPLE
+        onDragOver = onDragOverBehaviour
+        onDragDropped = onDragDroppedBehaviour(libs, this)
     }
 
     val self = this
@@ -104,7 +116,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
             center = new ScrollPane {
                 content = new VBox {
                     prefWidth = 778
-                    content = Seq(
+                    children = Seq(
                         new TitledPane {
                             text = "Choose a project name"
                             collapsible = true
@@ -113,8 +125,8 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                             maxHeight = 70
 
                             content = new HBox {
-                                content = Seq(
-                                    nameTextArea)
+                                children = Seq(
+                                    nameTextField)
                             }
                         },
                         new TitledPane {
@@ -125,10 +137,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                             maxHeight = 220
 
                             content = new HBox {
-                                content = Seq(
+                                children = Seq(
                                     jarListview,
                                     new VBox {
-                                        content = Seq(
+                                        children = Seq(
                                             new Button {
                                                 text = "Add _jar/class file"
                                                 mnemonicParsing = true
@@ -141,11 +153,12 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                     }
                                                     fcb.extensionFilters.addAll(
                                                         new FileChooser.ExtensionFilter("Jar Files", "*.jar"),
-                                                        new FileChooser.ExtensionFilter("Class Files", "*.class"))
+                                                        new FileChooser.ExtensionFilter("Class Files", "*.class"),
+                                                        new FileChooser.ExtensionFilter("Zip Files", "*.zip"))
                                                     val file = fcb.showOpenDialog(scene().getWindow())
-                                                    if (file != null) {
-                                                        if (jars.isEmpty && nameTextArea.text == "") {
-                                                            nameTextArea.text = file.toString()
+                                                    if (file != null && !jars.contains(file)) {
+                                                        if (jars.isEmpty && nameTextField.text == "") {
+                                                            nameTextField.text = file.toString()
                                                         }
                                                         jars += file
                                                         jarListview.items.get.add(file.toString())
@@ -164,9 +177,9 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                         title = "Select directory"
                                                     }
                                                     val file = dc.showDialog(scene().window())
-                                                    if (file != null) {
-                                                        if (jars.isEmpty && nameTextArea.text == "") {
-                                                            nameTextArea.text = file.toString()
+                                                    if (file != null && !jars.contains(file)) {
+                                                        if (jars.isEmpty && nameTextField.text == "") {
+                                                            nameTextField.text = file.toString()
                                                         }
                                                         jars += file
                                                         jarListview.items() += file.toString()
@@ -212,10 +225,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                             maxHeight = 220
 
                             content = new HBox {
-                                content = Seq(
+                                children = Seq(
                                     sourceListview,
                                     new VBox {
-                                        content = Seq(
+                                        children = Seq(
                                             new Button {
                                                 text = "Add direc_tory"
                                                 mnemonicParsing = true
@@ -227,7 +240,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                         title = "Open Dialog"
                                                     }
                                                     val file = dc.showDialog(scene().window())
-                                                    if (file != null) {
+                                                    if (file != null && !sources.contains(file)) {
                                                         sources += file
                                                         sourceListview.items() += file.toString()
                                                     }
@@ -272,10 +285,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                             maxHeight = 220
 
                             content = new HBox {
-                                content = Seq(
+                                children = Seq(
                                     libsListview,
                                     new VBox {
-                                        content = Seq(
+                                        children = Seq(
                                             new Button {
                                                 text = "Add j_ar/class file"
                                                 mnemonicParsing = true
@@ -288,9 +301,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                     }
                                                     fcb.extensionFilters.addAll(
                                                         new FileChooser.ExtensionFilter("Jar Files", "*.jar"),
-                                                        new FileChooser.ExtensionFilter("Class Files", "*.class"))
+                                                        new FileChooser.ExtensionFilter("Class Files", "*.class"),
+                                                        new FileChooser.ExtensionFilter("Zip Files", "*.zip"))
                                                     val file = fcb.showOpenDialog(scene().getWindow())
-                                                    if (file != null) {
+                                                    if (file != null && !libs.contains(file)) {
                                                         libs += file
                                                         libsListview.items() += file.toString()
                                                     }
@@ -308,11 +322,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                         title = "Select directory"
                                                     }
                                                     val file = fcb.showDialog(scene().getWindow())
-                                                    if (file != null) {
+                                                    if (file != null && !libs.contains(file)) {
                                                         libs += file
                                                         libsListview.items() += file.toString()
                                                     }
-
                                                 }
                                             },
                                             new Button {
@@ -323,8 +336,10 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                                                 margin = buttonMargin
                                                 onAction = { e: ActionEvent ⇒
                                                     val jre = org.opalj.bytecode.JRELibraryFolder
-                                                    libs += jre
-                                                    libsListview.items() += jre.toString
+                                                    if (!libs.contains(jre)) {
+                                                        libs += jre
+                                                        libsListview.items() += jre.toString
+                                                    }
                                                 }
                                             },
                                             new Button {
@@ -361,18 +376,18 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                 }
             }
             bottom = new HBox {
-                alignment = Pos.CENTER
+                alignment = Pos.Center
                 padding = boxPadding
                 margin = boxMargin
 
-                content = Seq(
+                children = Seq(
                     new Button {
                         text = "C_lear"
                         mnemonicParsing = true
                         margin = buttonMargin
                         minWidth = 80
                         onAction = { e: ActionEvent ⇒
-                            nameTextArea.clear()
+                            nameTextField.clear()
                             jars.clear()
                             jarListview.items().clear()
                             libs.clear()
@@ -398,21 +413,24 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
                         defaultButton = true
                         minWidth = 80
                         onAction = { e: ActionEvent ⇒
-                            if (nameTextArea.text.value == "") {
+                            if (nameTextField.text.value == "") {
                                 DialogStage.showMessage("Error",
                                     "You have not specified a name for the project!",
                                     theStage)
-                            } else if (nameAlreadyExists) {
-                                DialogStage.showMessage("Error", "The name you have specified for the project already exists. Choose another one!", theStage)
                             } else if (jars.isEmpty) {
                                 DialogStage.showMessage("Error", "You have not specified any classes to be analyzed!", theStage)
+                            } else if (nameAlreadyExists) {
+                                if (DialogStage.showMessageWithBinaryChoice(
+                                    "Warning",
+                                    "A project with the name \""+nameTextField.text.value+"\" already exists. Do you want to replace it?",
+                                    "Cancel", "Replace", theStage))
+                                    self.close()
                             } else {
                                 self.close()
                             }
                         }
                     }
                 )
-
             }
         }
         stylesheets += BugPicker.defaultAppCSSURL
@@ -421,18 +439,6 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
             if (e.code.equals(KeyCode.ESCAPE)) {
                 cancelled = true
                 self.close()
-            } else if (e.code.equals(KeyCode.ENTER)) {
-                if (nameTextArea.text.value == "") {
-                    DialogStage.showMessage("Error",
-                        "You have not specified a name for the project!",
-                        theStage)
-                } else if (nameAlreadyExists) {
-                    DialogStage.showMessage("Error", "The name you have specified for the project already exists. Choose another one!", theStage)
-                } else if (jars.isEmpty) {
-                    DialogStage.showMessage("Error", "You have not specified any classes to be analyzed!", theStage)
-                } else {
-                    self.close()
-                }
             }
         }
     }
@@ -441,8 +447,72 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
         cancelled = true
     }
 
+    def onDragOverBehaviour(): DragEvent ⇒ Unit = { e: DragEvent ⇒
+        val db: Dragboard = e.getDragboard()
+        if (db.hasFiles())
+            e.acceptTransferModes(TransferMode.COPY)
+        else
+            e.consume()
+    }
+
+    def onDragDroppedBehaviour(
+        lb: ListBuffer[File],
+        lv: ListView[String],
+        acceptFiles: Boolean = true): DragEvent ⇒ Unit = { e: DragEvent ⇒
+        val db: Dragboard = e.getDragboard()
+        var success: Boolean = false
+        if (db.hasFiles()) {
+            success = true
+
+            val illegalFiles =
+                (for {
+                    file ← db.Files
+                    if !lb.contains(file)
+                } yield {
+                    if (file.isDirectory()) {
+                        lb += file
+                        lv.items().add(file.toString())
+                        None
+                    } else /*file.isFile() */ {
+                        if (acceptFiles) {
+                            file.getName.split('.').lastOption match {
+                                case Some("jar") | Some("zip") | Some("class") ⇒ {
+                                    lb += file
+                                    lv.items().add(file.toString())
+                                    None
+                                }
+                                case _ ⇒
+                                    Some(file)
+                            }
+                        } else {
+                            Some(file)
+                        }
+                    }
+                }).filter(_.isDefined).flatten
+            if (illegalFiles.nonEmpty) {
+                val msg =
+                    (if (acceptFiles)
+                        "You can only drag and drop directories or files of type .jar/.zip/.class\n\n"
+                    else
+                        "You can only drag and drop directories here.\n\n"
+                    )+
+                        "Because of that restriction, the following files weren't added:\n"+
+                        illegalFiles.take(10).mkString("    ", "    \n", "") +
+                        (if (illegalFiles.size > 10)
+                            "\n    ... (further files)."
+                        else
+                            "."
+                        )
+
+                DialogStage.showMessage("Warning", msg, theStage)
+            }
+        }
+        e.dropCompleted = success
+        e.consume
+    }
+
     def nameAlreadyExists: Boolean = {
-        recentProjects.exists(p ⇒ p.projectName == nameTextArea.text.value &&
+        recentProjects.exists(p ⇒ p.projectName == nameTextField.text.value &&
             // this guarantees that identical projects are still loaded
             !(p.projectFiles == jars && p.projectSources == sources &&
                 p.libraries == libs))
@@ -458,7 +528,7 @@ class LoadProjectDialog(preferences: Option[LoadedFiles], recentProjects: Seq[Lo
             None
         } else {
             Some(LoadedFiles(
-                projectName = nameTextArea.text.value,
+                projectName = nameTextField.text.value,
                 projectFiles = jars,
                 projectSources = sources,
                 libraries = libs))

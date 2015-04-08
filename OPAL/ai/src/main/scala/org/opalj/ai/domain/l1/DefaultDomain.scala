@@ -35,7 +35,7 @@ import org.opalj.br.{ ClassFile, Method }
 import org.opalj.br.analyses.Project
 
 /**
- * This domain uses the l1 level ''stable'', partial domains.
+ * Configuration of a domain with an arbitrary id that uses the most capable `l1` domains.
  *
  * @author Michael Eichberg
  */
@@ -45,6 +45,7 @@ class DefaultConfigurableDomain[I, Source](
     val classFile: ClassFile,
     val method: Method)
         extends CorrelationalDomain
+        with DomainId
         with TheProject
         with TheMethod
         with DefaultDomainValueBinding
@@ -72,16 +73,22 @@ class DefaultConfigurableDomain[I, Source](
 
 }
 
+/**
+ * Default configuration of a domain that uses the most capable `l1` domains and
+ * which uses the method as the id.
+ */
 class DefaultDomain[Source](
     project: Project[Source],
     classFile: ClassFile,
     method: Method)
         extends DefaultConfigurableDomain[String, Source](
-            classFile.thisType.toJava+"{ "+method.toJava+"}",
-            project,
-            classFile,
-            method)
+            method.toJava(classFile),
+            project, classFile, method)
 
+/**
+ * Configuration of a domain that uses the most capable `l1` domains and
+ * which also records the abstract-interpretation time control flow graph.
+ */
 class DefaultDomainWithCFG[Source](
     project: Project[Source],
     classFile: ClassFile,

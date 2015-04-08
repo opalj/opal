@@ -35,6 +35,7 @@ import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.util.NanoSeconds
 
 /**
  * Basic field access information.
@@ -66,14 +67,14 @@ object FieldAccessInformationAnalysis
         parameters: Seq[String],
         isInterrupted: () ⇒ Boolean) = {
 
-        import org.opalj.util.PerformanceEvaluation.{ time, ns2sec, memory, asMB }
-        var executionTimeInSecs = 0d
+        import org.opalj.util.PerformanceEvaluation.{ time, memory, asMB }
+        var overallExecutionTime = NanoSeconds.None
         var memoryUsageInMB = ""
 
         val accessInformation = memory {
             time {
                 project.get(FieldAccessInformationKey)
-            } { executionTime ⇒ executionTimeInSecs = ns2sec(executionTime) }
+            } { t ⇒ overallExecutionTime += t }
         } { memoryUsage ⇒ memoryUsageInMB = asMB(memoryUsage) }
 
         if (parameters.nonEmpty) {
@@ -103,7 +104,10 @@ object FieldAccessInformationAnalysis
         } else {
             BasicReport(
                 accessInformation.statistics.mkString(
-                    s"determing field access information took $executionTimeInSecs secs. and required $memoryUsageInMB:\n", "\n", "\n"
+                    s"determing field access information took ${overallExecutionTime.toSeconds} "+
+                        s"and required $memoryUsageInMB:\n",
+                    "\n",
+                    "\n"
                 )
             )
         }
