@@ -1,7 +1,7 @@
 import sbt._
 import Keys._
 
-import sbtassembly.Plugin.AssemblyKeys._
+import sbtassembly.AssemblyPlugin.autoImport._
 
 import scoverage.ScoverageSbtPlugin
 
@@ -146,7 +146,6 @@ object OPALBuild extends Build {
 		base = file("OPAL/frb/cli"),
 		settings =
 			buildSettings ++
-			sbtassembly.Plugin.assemblySettings ++
 			Seq (
 				test in assembly := {},
 				jarName in assembly := "FindREALBugs-" + version.value+".jar",

@@ -8,7 +8,7 @@ licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licens
 
 version in ThisBuild := "1.2.0-SNAPSHOT"
 
-scalaVersion in ThisBuild := "2.11.5"
+scalaVersion in ThisBuild := "2.11.6"
 
 scalacOptions in ThisBuild ++= Seq(
 	"-deprecation", "-feature", "-unchecked", 
