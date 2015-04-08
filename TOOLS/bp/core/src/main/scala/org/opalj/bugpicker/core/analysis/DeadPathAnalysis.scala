@@ -54,7 +54,6 @@ import org.opalj.ai.collectPCWithOperands
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.domain
 import org.opalj.ai.domain.l0.ZeroDomain
-import org.opalj.br.AnalysisFailedException
 import org.opalj.br.ObjectType
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ComputationalTypeLong

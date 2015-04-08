@@ -230,32 +230,3 @@ object OPALLogger extends OPALLogger {
     }
 }
 
-/**
- * The console logger is a very basic logger that ignores the context.
- *
- * @author Michael
- */
-class ConsoleOPALLogger(val ansiColored: Boolean = true) extends OPALLogger {
-
-    import java.util.concurrent.ConcurrentHashMap
-    import java.util.concurrent.atomic.AtomicInteger
-
-    private[this] val messages = new ConcurrentHashMap[LogMessage, AtomicInteger]()
-
-    def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        val stream = if (message.level == Error) Console.err else Console.out
-        stream.println(message.toConsoleOutput(ansiColored))
-    }
-
-    def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit = {
-        val counter = new AtomicInteger(0)
-        val existingCounter = messages.putIfAbsent(message, counter)
-        if (existingCounter != null)
-            existingCounter.incrementAndGet()
-        else {
-            counter.incrementAndGet()
-            log(message)
-        }
-    }
-}
-

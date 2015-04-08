@@ -27,47 +27,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
+package log
+
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Implementation of a library for parsing Java bytecode and creating arbitrary
- * representations.
- *
- * OPAL's primary representation of Java byte code
- * is the [[org.opalj.br]] representation which is defined in the
- * respective package. A second representation that represents bytecode one-by-one
- * is found in the [[org.opalj.da]] package.
- *
- * == This Package ==
- * Common constants and type definitions used across OPAL.
+ * Basic implementation of the `OPALLogger` trait.
  *
  * @author Michael Eichberg
  */
-package object bi {
+abstract class AbstractOPALLogger extends OPALLogger {
 
-    type AccessFlagsContext = AccessFlagsContexts.Value
+    private[this] val messages = new ConcurrentHashMap[LogMessage, AtomicInteger]()
 
-    type AttributeParent = AttributesParent.Value
-
-    type ConstantPoolTag = ConstantPoolTags.Value
-
-    /**
-     * Every Java class file start with "0xCAFEBABE".
-     */
-    final val ClassFileMagic = 0xCAFEBABE
-
-    /**
-     * Returns a textual representation of the Java version used to create the respective
-     * class file.
-     */
-    def jdkVersion(majorVersion: Int): String = {
-        // 52 == 8; ... 50 == 6
-        if (majorVersion >= 49) {
-            "Java "+(majorVersion - 44)
-        } else if (majorVersion > 45) {
-            "Java 2 Platform version 1."+(majorVersion - 44)
-        } else {
-            "JDK 1.1 (JDK 1.0.2)"
+    final def logOnce(message: LogMessage)(implicit ctx: LogContext): Unit = {
+        val counter = new AtomicInteger(0)
+        val existingCounter = messages.putIfAbsent(message, counter)
+        if (existingCounter != null)
+            existingCounter.incrementAndGet()
+        else {
+            counter.incrementAndGet()
+            log(message)
         }
     }
-
 }
+

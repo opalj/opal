@@ -43,7 +43,7 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * significantly and just increases the analysis time.
  *
  * ==Constraint Propagation==
- * This domain performs constraint propagation (e.g.,
+ * This domain facilitates and performs constraint propagation (e.g.,
  * [[intEstablishValue]], [[intEstablishIsLessThan]],...).
  * Two integer (range) values (`ir1`,`ir2`) are reference equal (`eq` in Scala)
  * iff both represent the same runtime value.
@@ -107,19 +107,30 @@ import org.opalj.br.{ ComputationalType, ComputationalTypeInt }
  * @author Christos Votskos
  * @author David Becker
  */
-trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFactory with ConcreteIntegerValues {
+trait IntegerRangeValues
+        extends IntegerValuesDomain
+        with IntegerRangeValuesFactory
+        with ConcreteIntegerValues {
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
+
+    // -----------------------------------------------------------------------------------
+    //
+    // CONFIGURATION OPTIONS
+    //
+    // -----------------------------------------------------------------------------------
+
+    /**
+     * Determines the maximum number of values captured by an integer value range.
+     *
+     * This setting can be adapted at runtime.
+     */
+    protected def maxCardinalityOfIntegerRanges: Long = 16l
 
     // -----------------------------------------------------------------------------------
     //
     // REPRESENTATION OF INTEGER LIKE VALUES
     //
     // -----------------------------------------------------------------------------------
-
-    /**
-     * Determines the maximum number of values captured by an integer value range.
-     */
-    protected def maxCardinalityOfIntegerRanges: Long = 16l
 
     /**
      * Abstracts over all values with computational type `integer`.
@@ -150,8 +161,6 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
         val upperBound: Int // inclusive
     }
 
-    // IMPROVE [IntegerRangeValues] Add explicit support for `ConcreteIntegerValue`s
-
     /**
      * Creates a new IntegerRange value with the lower and upper bound set to the
      * given value.
@@ -172,6 +181,9 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
         IntegerRange(lowerBound, upperBound)
     }
 
+    /**
+     * Extractor for `IntegerRange` values.
+     */
     object IntegerRange {
         def unapply(v: IntegerRange): Option[(Int, Int)] =
             Some((v.lowerBound, v.upperBound))
@@ -1159,8 +1171,15 @@ trait IntegerRangeValues extends IntegerValuesDomain with IntegerRangeValuesFact
                 IntegerRange(Short.MinValue, Short.MaxValue)
         }
 }
+/**
+ * Defines common constants related to integer ranges.
+ */
 object IntegerRangeValues {
 
-    final val MaxCardinalityOfIntegerRanges = Int.MaxValue.toLong + (-(Int.MinValue).toLong)
+    /**
+     * The largest cardinality that makes sense.
+     */
+    final val AbsoluteMaxCardinalityOfIntegerRanges =
+        Int.MaxValue.toLong + (-(Int.MinValue).toLong)
 
 }

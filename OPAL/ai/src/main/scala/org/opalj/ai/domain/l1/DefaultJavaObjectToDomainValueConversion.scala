@@ -1,5 +1,5 @@
-/* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+/* License (BSD Style License):
+ * Copyright (c) 2009 - 2013
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -13,6 +13,10 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
+ *    prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -27,47 +31,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
+package ai
+package domain
+package l1
+
+import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
 
 /**
- * Implementation of a library for parsing Java bytecode and creating arbitrary
- * representations.
+ * Default implementation of the `AsDomainValue` trait.
  *
- * OPAL's primary representation of Java byte code
- * is the [[org.opalj.br]] representation which is defined in the
- * respective package. A second representation that represents bytecode one-by-one
- * is found in the [[org.opalj.da]] package.
- *
- * == This Package ==
- * Common constants and type definitions used across OPAL.
- *
+ * @author Frederik Buss-Joraschek
  * @author Michael Eichberg
  */
-package object bi {
-
-    type AccessFlagsContext = AccessFlagsContexts.Value
-
-    type AttributeParent = AttributesParent.Value
-
-    type ConstantPoolTag = ConstantPoolTags.Value
+trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
+    domain: ReferenceValuesDomain ⇒
 
     /**
-     * Every Java class file start with "0xCAFEBABE".
+     * Converts the given Java object to a corresponding
+     * `DomainValue`. By creating an `DomainValue` that represents an initialized
+     * (array/object) value.
      */
-    final val ClassFileMagic = 0xCAFEBABE
+    def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
+        if (value == null)
+            return NullValue(pc)
 
-    /**
-     * Returns a textual representation of the Java version used to create the respective
-     * class file.
-     */
-    def jdkVersion(majorVersion: Int): String = {
-        // 52 == 8; ... 50 == 6
-        if (majorVersion >= 49) {
-            "Java "+(majorVersion - 44)
-        } else if (majorVersion > 45) {
-            "Java 2 Platform version 1."+(majorVersion - 44)
-        } else {
-            "JDK 1.1 (JDK 1.0.2)"
+        val clazz = value.getClass
+        val fqnInBinaryNotation = clazz.getName.replace('.', '/')
+        if (clazz.isArray) {
+            val array: Array[_] = value.asInstanceOf[Array[_]]
+            InitializedArrayValue(
+                pc,
+                List(array.length),
+                FieldType(fqnInBinaryNotation).asArrayType)
+        } else /*if (!clazz.isPrimitive()) */ {
+            InitializedObjectValue(pc, ObjectType(fqnInBinaryNotation))
         }
     }
-
 }

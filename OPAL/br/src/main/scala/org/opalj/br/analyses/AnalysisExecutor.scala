@@ -88,8 +88,8 @@ trait AnalysisExecutor {
      * Checks if the (additional) parameters are understood by
      * the analysis.
      *
-     * This method **must be** overridden if the analysis defines additional
-     * parameters. A method that overrides this method should return false if it can't
+     * This method '''must be''' overridden if the analysis defines additional
+     * parameters. A method that overrides this method should `return` false if it can't
      * validate all arguments.
      * The default behavior is to check that there are no additional parameters.
      */
@@ -264,8 +264,7 @@ trait AnalysisExecutor {
         }
         val project = Project(
             classFiles,
-            libraryClassFiles,
-            projectLogger = OPALLogger.globalLogger)
+            libraryClassFiles)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
         import project.logContext

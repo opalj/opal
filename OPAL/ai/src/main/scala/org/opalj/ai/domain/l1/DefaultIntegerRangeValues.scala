@@ -42,17 +42,19 @@ trait DefaultIntegerRangeValues
     domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
 
     /**
+     * Represents a specific but unknown Integer value.
+     *
      * @note The functionality to propagate a constraint crucially depends on
-     *      the fact that two integer values that are no guaranteed to represent the
+     *      the fact that two integer values that are not guaranteed to represent the
      *      same runtime value are represented by two different instances
      *      of "AnIntegerValue"; otherwise, propagating the
      *      constraint that some value (after some kind of check) has to have a special
      *      value may affect unrelated values!
      */
-    class AnIntegerValue() extends super.AnIntegerValue {
+    class AnIntegerValue extends super.AnIntegerValue {
 
         override def doJoin(pc: PC, value: DomainValue): Update[DomainValue] = {
-            // We are not joining the "same" value!
+            // ...this method is only called if we are not joining the "same" value...
             MetaInformationUpdate(AnIntegerValue())
         }
 
@@ -62,7 +64,7 @@ trait DefaultIntegerRangeValues
         override def summarize(pc: PC): DomainValue = this
 
         override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
-            target.IntegerValue(pc)
+            target.IntegerValue(origin = pc)
 
         override def newInstance: AnIntegerValue = AnIntegerValue()
 
@@ -78,14 +80,26 @@ trait DefaultIntegerRangeValues
         override def toString: String = "an int"
     }
 
-    def AnIntegerValue() = new AnIntegerValue()
+    /**
+     * Factory method to create a new instance of [[AnIntegerValue]].
+     */
+    def AnIntegerValue(): AnIntegerValue = new AnIntegerValue()
 
-    class IntegerRange(val lowerBound: Int, val upperBound: Int) extends super.IntegerRange {
+    /**
+     * Represents a specific integer value in the range [`lowerBound`,`upperBound`].
+     */
+    class IntegerRange(
+            val lowerBound: Int,
+            val upperBound: Int) extends super.IntegerRange {
 
         assert(
             lowerBound <= upperBound,
-            s"the lower bound $lowerBound is not <= the upper bound $upperBound")
+            s"the lower bound $lowerBound is larger than the upper bound $upperBound")
 
+        /**
+         * Creates a new `IntegerRange` value that also represents the given value.
+         * A new integer value is always created.
+         */
         def update(newValue: Int): DomainValue = {
             val newLowerBound = if (lowerBound > newValue) newValue else lowerBound
             val newUpperBound = if (upperBound < newValue) newValue else upperBound
@@ -102,22 +116,20 @@ trait DefaultIntegerRangeValues
                     val newLowerBound = Math.min(thisLB, otherLB)
                     val newUpperBound = Math.max(thisUB, otherUB)
 
-                    if (newLowerBound == newUpperBound)
+                    if (newLowerBound == newUpperBound) {
                         // This is a "point-range" (a concrete value), hence there
                         // will be NO further constraints
                         NoUpdate
-
-                    else if (newLowerBound == thisLB && newUpperBound == thisUB)
+                    } else if (newLowerBound == thisLB && newUpperBound == thisUB) {
                         // This is NOT a "NoUpdate" since we have two values that may
                         // have the same range, but which can still be two different
                         // runtime values (they were not created at the same time!
                         MetaInformationUpdate(IntegerRange(newLowerBound, newUpperBound))
-
-                    else if (newUpperBound.toLong - newLowerBound.toLong > maxCardinalityOfIntegerRanges)
+                    } else if ((newUpperBound.toLong - newLowerBound.toLong) > maxCardinalityOfIntegerRanges) {
                         StructuralUpdate(AnIntegerValue())
-
-                    else
+                    } else {
                         StructuralUpdate(IntegerRange(newLowerBound, newUpperBound))
+                    }
             }
         }
 
@@ -135,12 +147,11 @@ trait DefaultIntegerRangeValues
         override def summarize(pc: PC): DomainValue = this
 
         override def adapt(target: TargetDomain, pc: PC): target.DomainValue =
-            if (target.isInstanceOf[IntegerRangeValues]) {
-                val thatDomain = target.asInstanceOf[DefaultIntegerRangeValues]
-                thatDomain.IntegerRange(this.lowerBound, this.upperBound).
-                    asInstanceOf[target.DomainValue]
-            } else {
-                target.IntegerValue(pc)
+            target match {
+                case irv: IntegerRangeValues ⇒
+                    irv.IntegerRange(lowerBound, upperBound).asInstanceOf[target.DomainValue]
+                case _ ⇒
+                    target.IntegerValue(pc)
             }
 
         override def newInstance: IntegerRange = IntegerRange(lowerBound, upperBound)

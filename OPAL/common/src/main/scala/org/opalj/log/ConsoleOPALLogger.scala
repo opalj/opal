@@ -27,47 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
+package log
 
 /**
- * Implementation of a library for parsing Java bytecode and creating arbitrary
- * representations.
+ * The console logger is a very basic logger that ignores the context.
  *
- * OPAL's primary representation of Java byte code
- * is the [[org.opalj.br]] representation which is defined in the
- * respective package. A second representation that represents bytecode one-by-one
- * is found in the [[org.opalj.da]] package.
- *
- * == This Package ==
- * Common constants and type definitions used across OPAL.
- *
- * @author Michael Eichberg
+ * @author Michael
  */
-package object bi {
+class ConsoleOPALLogger(val ansiColored: Boolean = true) extends AbstractOPALLogger {
 
-    type AccessFlagsContext = AccessFlagsContexts.Value
-
-    type AttributeParent = AttributesParent.Value
-
-    type ConstantPoolTag = ConstantPoolTags.Value
-
-    /**
-     * Every Java class file start with "0xCAFEBABE".
-     */
-    final val ClassFileMagic = 0xCAFEBABE
-
-    /**
-     * Returns a textual representation of the Java version used to create the respective
-     * class file.
-     */
-    def jdkVersion(majorVersion: Int): String = {
-        // 52 == 8; ... 50 == 6
-        if (majorVersion >= 49) {
-            "Java "+(majorVersion - 44)
-        } else if (majorVersion > 45) {
-            "Java 2 Platform version 1."+(majorVersion - 44)
-        } else {
-            "JDK 1.1 (JDK 1.0.2)"
-        }
+    def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
+        val stream = if (message.level == Error) Console.err else Console.out
+        stream.println(message.toConsoleOutput(ansiColored))
     }
 
 }
+
