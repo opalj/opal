@@ -54,12 +54,129 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
     // no further knowledge.
     // I.E., DO NOT: type DomainArrayValue <: ArrayValue with DomainSingleOriginReferenceValue
 
+    /**
+     * Represents some array that has been initialized and which has a certain size.
+     */
+    protected class InitializedArray(
+        origin: ValueOrigin,
+        theType: ArrayType,
+        override val length: Some[Int],
+        t: Timestamp)
+            extends super.ArrayValue(origin, isNull = No, isPrecise = true, theType, t) {
+        this: DomainArrayValue ⇒
+
+        def this(
+            origin: ValueOrigin,
+            theType: ArrayType,
+            length: Int,
+            t: Timestamp) = {
+            this(origin, theType, Some(length), t)
+        }
+        //
+        //        override def doJoinWithNonNullValueWithSameOrigin(
+        //            joinPC: PC,
+        //            other: DomainSingleOriginReferenceValue): Update[DomainSingleOriginReferenceValue] = {
+        //
+        //            other match {
+        //                case that: InitializedArray if this.length == that.length ⇒
+        //                    var update: UpdateType = NoUpdateType
+        //                    var isOther: Boolean = true
+        //                    val allValues = this.values.view.zip(that.values)
+        //                    val newValues =
+        //                        (allValues map { (v) ⇒
+        //                            val (v1, v2) = v
+        //                            if (v1 ne v2) {
+        //                                val joinResult = v1.join(joinPC, v2)
+        //                                joinResult match {
+        //                                    case NoUpdate ⇒
+        //                                        v1
+        //                                    case SomeUpdate(newValue) ⇒
+        //                                        if (v2 ne newValue) {
+        //                                            isOther = false
+        //                                        }
+        //                                        update = joinResult &: update
+        //                                        newValue
+        //                                }
+        //                            } else
+        //                                v1
+        //                        }).toArray // <= forces the evaluation - WHICH IS REQUIRED
+        //                    update match {
+        //                        case NoUpdateType ⇒ NoUpdate
+        //                        case _ ⇒
+        //                            if (isOther) {
+        //                                update(other)
+        //                            } else
+        //                                update(ArrayValue(origin, theType, newValues))
+        //                    }
+        //
+        //                case _ ⇒
+        //                    val answer = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
+        //                    if (answer == NoUpdate) {
+        //                        // => This array and the other array have a corresponding
+        //                        //    abstract representation (w.r.t. the next abstraction level!)
+        //                        //    but we still need to drop the concrete information
+        //                        StructuralUpdate(
+        //                            ArrayValue(origin, No, true, theUpperTypeBound, nextT)
+        //                        )
+        //                    } else {
+        //                        answer
+        //                    }
+        //            }
+        //        }
+        //
+        //        override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
+        //            target match {
+        //
+        //                case thatDomain: l1.ArrayValues ⇒
+        //                    val adaptedValues =
+        //                        values.map(_.adapt(target, vo).asInstanceOf[thatDomain.DomainValue])
+        //                    thatDomain.ArrayValue(
+        //                        vo, theUpperTypeBound, adaptedValues).
+        //                        asInstanceOf[target.DomainValue]
+        //
+        //                case thatDomain: l1.ReferenceValues ⇒
+        //                    thatDomain.ArrayValue(vo, No, true, theUpperTypeBound, thatDomain.nextT()).
+        //                        asInstanceOf[target.DomainValue]
+        //
+        //                case thatDomain: l0.TypeLevelReferenceValues ⇒
+        //                    thatDomain.InitializedArrayValue(vo, List(values.size), theUpperTypeBound).
+        //                        asInstanceOf[target.DomainValue]
+        //
+        //                case _ ⇒ super.adapt(target, vo)
+        //            }
+        //
+        //        override def equals(other: Any): Boolean = {
+        //            other match {
+        //                case that: ArrayValue ⇒ (
+        //                    (that eq this) ||
+        //                    (
+        //                        (that canEqual this) &&
+        //                        this.origin == that.origin &&
+        //                        (this.upperTypeBound eq that.upperTypeBound) &&
+        //                        this.values == that.values
+        //                    )
+        //                )
+        //                case _ ⇒ false
+        //            }
+        //        }
+        //
+        //        protected def canEqual(other: ArrayValue): Boolean = true
+        //
+        //        override def hashCode: Int = origin * 79 + upperTypeBound.hashCode
+        //
+        //        override def toString() = {
+        //            val valuesAsString = values.mkString("«", ", ", "»")
+        //            s"${theType.toJava}[@$origin;length=${values.size};$valuesAsString]"
+        //        }
+
+    }
+
     protected class ArrayValue(
         origin: ValueOrigin,
         theType: ArrayType,
         val values: Array[DomainValue],
         t: Timestamp)
-            extends super.ArrayValue(origin, No, true, theType, t) {
+            extends super.ArrayValue(origin, isNull = No, isPrecise = true, theType, t) {
         this: DomainArrayValue ⇒
 
         override def length: Some[Int] = Some(values.size)
@@ -111,7 +228,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
                         case _                                ⇒ domainValue
                     }
                 )
-                return ComputationWithSideEffectOrException(potentialExceptions)
+                return ComputationWithSideEffectOrException(potentialExceptions);
             }
 
             // If we reach this point none of the given exceptions is guaranteed to be thrown
@@ -236,7 +353,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
 
         override def toString() = {
             val valuesAsString = values.mkString("«", ", ", "»")
-            s"${theUpperTypeBound.toJava}[@$origin;length=${values.size};$valuesAsString]"
+            s"${theType.toJava}[@$origin;length=${values.size};$valuesAsString]"
         }
     }
 
