@@ -33,7 +33,6 @@ package br
  * @author Michael Eichberg
  * @author Andre Pacak
  */
-
 trait SignatureElement {
 
     def accept[T](sv: SignatureVisitor[T]): T
