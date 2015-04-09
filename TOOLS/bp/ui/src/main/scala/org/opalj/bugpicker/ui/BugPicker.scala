@@ -277,7 +277,10 @@ class BugPicker extends Application {
                 (for (p ← recentProjects) yield {
                     i = i + 1
                     new MenuItem {
-                        text = p.projectName
+                        text = p.projectName flatMap {
+                            case '_' ⇒ "__"
+                            case c   ⇒ s"$c"
+                        }
                         mnemonicParsing = true
                         if (i < 10) {
                             accelerator = KeyCombination(s"Shortcut+$i")
@@ -291,7 +294,7 @@ class BugPicker extends Application {
                     }
                 }) ++ Seq(
                     new MenuItem {
-                        text = "Clear Items"
+                        text = "_Clear Items"
                         mnemonicParsing = true
                         accelerator = KeyCombination("Shortcut+0")
                         id = "clearItems"
