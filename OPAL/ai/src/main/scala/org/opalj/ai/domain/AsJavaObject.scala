@@ -40,7 +40,7 @@ package domain
  * invocations.
  *
  * ==Limitation==
- * Using JavaObjectConversion will only work reasonably iff the respective class
+ * Using `AsJavaObject` will only work reasonably iff the respective class
  * is either in the classpath of the JVM or a class loader (initialized with the
  * project's classpath) is used.
  * The latter, however, does not work for classes on the bootclasspath (e.g.,

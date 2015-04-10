@@ -33,34 +33,20 @@
 package org.opalj
 package ai
 package domain
-package l1
-
-import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 
 /**
- * Mixed in by domain's that support the conversation of a `DomainValue` into
- * a respective Java object. This Java object can then be used to perform method
- * invocations.
+ * Mixed in by domain's that support the conversation of a Java Object into a
+ * `DomainValue` into.
  *
- * ==Limitation==
- * Using JavaObjectConversion will only work reasonably iff the respective class
- * is either in the classpath of the JVM or a class loader (initialized with the
- * project's classpath) is used.
- * The latter, however, does not work for classes on the bootclasspath (e.g.,
- * `java.lang.String`). In that case it is necessary to check that the code of the
- * analyzed application is compatible with the one on the class path.
- * '''To avoid accidental
- * imprecision in the analysis you should use this features only for stable classes
- * belonging to the core JDK (`java.lang...`.)'''
+ * @see [[l1.AsJavaObject]] for further information on limitations.
  *
  * @author Frederik Buss-Joraschek
  * @author Michael Eichberg
  */
-trait JavaObjectConversion extends AsJavaObject { domain: ReferenceValuesDomain ⇒
+trait AsDomainValue { domain: ReferenceValuesDomain ⇒
 
     /**
-     * Converts the given Java object (not a primitive value) to a corresponding
+     * Converts the given Java object to a corresponding
      * `DomainValue`. The conversion may be lossy.
      *
      * @note To convert primitive values to `DomainValue`s use the domain's
@@ -72,22 +58,7 @@ trait JavaObjectConversion extends AsJavaObject { domain: ReferenceValuesDomain 
      * 		creating the respective value. (This is in – in general – not the
      * 		instruction where the transformation is performed.)
      * @param value The object.
-     * @return A `DomainValue`.
+     * @return A `DomainReferenceValue`.
      */
-    def toDomainValue(pc: PC, value: Object): DomainReferenceValue = {
-        if (value == null)
-            return NullValue(pc)
-
-        val clazz = value.getClass
-        val fqnInBinaryNotation = clazz.getName.replace('.', '/')
-        if (clazz.isArray) {
-            val array: Array[_] = value.asInstanceOf[Array[_]]
-            InitializedArrayValue(
-                pc,
-                List(array.length),
-                FieldType(fqnInBinaryNotation).asArrayType)
-        } else /*if (!clazz.isPrimitive()) */ {
-            InitializedObjectValue(pc, ObjectType(fqnInBinaryNotation))
-        }
-    }
+    def toDomainValue(pc: PC, value: Object): DomainReferenceValue
 }
