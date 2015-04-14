@@ -1298,7 +1298,7 @@ class DefaultIntegerSetsTest extends FunSpec with Matchers with ParallelTestExec
 
                     // we don't know the size of the array
                     domain.allReturnedValues.head._2 abstractsOver (
-                        domain.InitializedArrayValue(2, List(10), ArrayType(IntegerType))) should be(true)
+                        domain.InitializedArrayValue(2, ArrayType(IntegerType), List(10))) should be(true)
 
                     // get the loop counter at the "icmple instruction" which controls the
                     // loops that initializes the array

@@ -717,8 +717,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         ObjectValue(pc, ObjectType.Class)
 
     override def InitializedArrayValue(
-        pc: PC, counts: List[Int],
-        arrayType: ArrayType): DomainArrayValue =
+        pc: PC,
+        arrayType: ArrayType,
+        counts: List[Int]): DomainArrayValue =
         ArrayValue(pc, arrayType)
 
     //
@@ -783,8 +784,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * array (non-null) with the size determined by count that is empty.
      *
      * ==Typical Usage==
-     * This factory method is (implicitly) used, e.g., by OPAL when a `newarray`
-     * instruction is found.
+     * This factory method is (implicitly) used, e.g., by OPAL when a
+     * `multianewarray` instruction is found.
      *
      * ==Summary==
      * The properties of the value are:
