@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -34,6 +34,30 @@ package org.opalj
  * @author Michael Eichberg
  */
 package object collection {
+
+    //
+    // Helpers related to Lists
+    //
+
+    def commonPrefix[T](l1: List[T], l2: List[T]): List[T] = {
+        if (l1 eq l2)
+            return l1;
+
+        var prefix = List.empty[T]
+        var l1Tail = l1
+        var l2Tail = l2
+        while (l1Tail.nonEmpty && l2Tail.nonEmpty && l1Tail.head == l2Tail.head) {
+            prefix ::= l1Tail.head
+            l1Tail = l1Tail.tail
+            l2Tail = l2Tail.tail
+        }
+        if (l1Tail.isEmpty)
+            l1
+        else if (l2Tail.isEmpty)
+            l2
+        else
+            prefix.reverse
+    }
 
     //
     // Helpers related to java.util.concurrent.ConcurrentHashMaps
