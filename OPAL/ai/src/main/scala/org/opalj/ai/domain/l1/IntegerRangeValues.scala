@@ -124,7 +124,7 @@ trait IntegerRangeValues
      *
      * This setting can be adapted at runtime.
      */
-    protected def maxCardinalityOfIntegerRanges: Long = 16l
+    def maxCardinalityOfIntegerRanges: Long = 16l
 
     // -----------------------------------------------------------------------------------
     //
@@ -159,6 +159,7 @@ trait IntegerRangeValues
         val lowerBound: Int // inclusive
 
         val upperBound: Int // inclusive
+
     }
 
     /**
