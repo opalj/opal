@@ -30,20 +30,30 @@ package org.opalj
 package bugpicker
 package ui
 
-import java.util.Date
-
-import org.opalj.log.Level
-
-import scalafx.beans.property.{ ObjectProperty, StringProperty }
+import scalafx.beans.property.StringProperty
 
 /**
  * Basic container for log messages that are displayed on the BugPicker UI.
  *
  * @author David Becker
  */
-class BugPickerLogMessage(_timestamp: String, _level: String, _category: String, _message: String) {
-    val timestamp = new StringProperty(this, "date", _timestamp)
-    val level = new StringProperty(this, "level", _level)
-    val category = new StringProperty(this, "category", _category)
-    val message = new StringProperty(this, "message", _message)
+class BugPickerLogMessage(
+    val timestamp: StringProperty,
+    val level: StringProperty,
+    val category: StringProperty,
+    val message: StringProperty)
+
+/**
+ * @author Michael Eichberg
+ */
+object BugPickerLogMessage {
+
+    def apply(timestamp: String, level: String, category: String, message: String): BugPickerLogMessage = {
+        new BugPickerLogMessage(
+            new StringProperty(this, "date", timestamp),
+            new StringProperty(this, "level", level),
+            new StringProperty(this, "category", category),
+            new StringProperty(this, "message", message))
+    }
 }
+
