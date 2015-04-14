@@ -52,7 +52,7 @@ class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
 
     describe("the generation of Proxy classes") {
 
-        val testProject = Project(locateTestResources("classfiles", "br"))
+        val testProject = Project(locateTestResources("classfiles/proxy.jar", "br"))
 
         val proxies: Iterable[(ClassFile, java.net.URL)] = testProject.methods.map { m ⇒
             val t = testProject.classFile(m).thisType
