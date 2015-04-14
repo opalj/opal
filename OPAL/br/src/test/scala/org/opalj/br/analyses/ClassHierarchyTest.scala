@@ -38,7 +38,7 @@ import org.scalatest.Matchers
 import org.opalj.bi.TestSupport.locateTestResources
 import reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 
 /**
  * Basic tests of the class hierarchy.
@@ -65,7 +65,7 @@ class ClassHierarchyTest
         ClassHierarchy(
             Traversable.empty,
             List(() ⇒ getClass.getResourceAsStream("JavaLangClassHierarchy.ths"))
-        )(GlobalContext)
+        )(GlobalLogContext)
 
     val Object = ObjectType.Object
     val Throwable = ObjectType.Throwable
@@ -294,7 +294,7 @@ class ClassHierarchyTest
         ClassHierarchy(
             Traversable.empty,
             List(() ⇒ getClass.getResourceAsStream("ApacheANT1.7.1.ClassHierarchy.ths"))
-        )(GlobalContext)
+        )(GlobalLogContext)
 
     it should "be possible to get all supertypes, even if not all information is available" in {
 

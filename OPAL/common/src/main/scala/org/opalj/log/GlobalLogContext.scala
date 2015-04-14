@@ -27,44 +27,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package domain
-
-import org.opalj.log.LogContext
-import org.opalj.br.analyses.SomeProject
+package log
 
 /**
- * Provides information about the underlying project.
- *
- * ==Usage==
- * If a (partial-) domain needs information about the project declare a corresponding
- * self-type dependency.
- * {{{
- * trait MyIntegerValuesDomain extends IntegerValues { this : TheProject =>
- * }}}
- *
- * ==Providing Information about a Project==
- * A domain that provides information about the currently analyzed project should inherit
- * from this trait and implement the respective method.
- *
- * ==Core Properties==
- *  - Defines the public interface.
- *  - Makes the analyzed [[org.opalj.br.analyses.Project]] available.
- *  - Thread safe.
- *
- * @note '''It is recommended that the domain that provides the project information
- *      does not use the `override` access flag.'''
- *      This way the compiler will issue a warning if two implementations are used
- *      to create a final domain.
+ * The global log context which should be used to log global messages.
  *
  * @author Michael Eichberg
  */
-trait TheProject extends ProjectBasedClassHierarchy with LogContextProvider {
+case object GlobalLogContext extends LogContext {
 
-    /**
-     * Returns the project that is currently analyzed.
-     */
-    def project: SomeProject
+    OPALLogger.globalContextMutex.synchronized {
+        OPALLogger.globalContextCreated = true
+        OPALLogger.register(this, OPALLogger.globalContextLogger)
+    }
 
-    implicit def logContext: LogContext = project.logContext
+    def newInstance: LogContext = throw new UnsupportedOperationException
 }

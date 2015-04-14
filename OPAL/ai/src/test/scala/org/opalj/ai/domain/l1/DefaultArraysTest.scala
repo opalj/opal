@@ -411,6 +411,7 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
 class DefaultArraysTestDomain(
     override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
         extends CorrelationalDomain
+        with GlobalLogContextProvider
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with l0.SimpleTypeLevelInvokeInstructions

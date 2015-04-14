@@ -41,7 +41,7 @@ import java.util.concurrent.ThreadPoolExecutor
 import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
 /**
@@ -52,7 +52,7 @@ import org.opalj.log.OPALLogger
  */
 package object concurrent {
 
-    private implicit def logContext = GlobalContext
+    private implicit def logContext = GlobalLogContext
 
     //
     // STEP 1
