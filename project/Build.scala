@@ -20,7 +20,7 @@ object OPALBuild extends Build {
 		Seq(EclipseKeys.configurations := Set(Compile, Test, IntegrationTest)) ++
 		Seq(libraryDependencies  ++= Seq(
 			"junit" % "junit" % "4.12" % "test,it",
-			"org.scalatest" %% "scalatest" % "2.2.1" % "test,it"))
+			"org.scalatest" %% "scalatest" % "2.2.4" % "test,it"))
 
 	def getScalariformPreferences(dir: File) = PreferencesImporterExporter.loadPreferences(
 		(file("Scalariform Formatter Preferences.properties").getPath))
