@@ -198,7 +198,7 @@ class BugPicker extends Application {
                 {
                     for (change ← changes)
                         change match {
-                            case Reorder(_, _, _) ⇒ {
+                            case _: Reorder ⇒ {
                                 // sortOrder changed, store it
                                 sortOrder.clear()
                                 sortOrder ++= tv.sortOrder
@@ -458,7 +458,7 @@ class BugPicker extends Application {
                 lastProject +: recentProjects.filter(
                     _.projectName != lastProject.projectName)
             } else {
-                if (recentProjects.size < BugPicker.MAX_PREFERENCES_SIZE) {
+                if (recentProjects.size < BugPicker.MAX_RECENT_PROJECTS) {
                     // lastProject is most recent project, enough space for one more
                     lastProject +: recentProjects
                 } else {
@@ -539,7 +539,7 @@ object BugPicker {
 
     final val defaultAppCSSURL = getClass.getResource("/org/opalj/bugpicker/ui/app.css").toExternalForm
 
-    final val MAX_PREFERENCES_SIZE = 9
+    final val MAX_RECENT_PROJECTS = 9
 
     def loadWindowSizeFromPreferences(): Option[Rectangle2D] = {
         val prefValue = PREFERENCES.get(PREFERENCES_KEY_WINDOW_SIZE, "")
