@@ -38,7 +38,7 @@ package domain
  * Mixed in by domain's that support the conversation of a Java Object into a
  * `DomainValue` into.
  *
- * @see [[l1.AsJavaObject]] for further information on limitations.
+ * @see [[AsJavaObject]] for further information on limitations.
  *
  * @author Frederik Buss-Joraschek
  * @author Michael Eichberg
@@ -52,7 +52,7 @@ trait AsDomainValue { domain: ReferenceValuesDomain ⇒
      * @note To convert primitive values to `DomainValue`s use the domain's
      * 		respective factory methods. I.e., this method deliberately does not perform any
      *   	(Un-)Boxing as it does not have the necessary information. For more
-     *    	information study the implementation of the [[ReflectiveInvoker]].
+     *    	information study the implementation of the [[l1.ReflectiveInvoker]].
      *
      * @param pc The program counter of the instruction that was responsible for
      * 		creating the respective value. (This is in – in general – not the

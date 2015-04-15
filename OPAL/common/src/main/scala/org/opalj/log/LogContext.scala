@@ -38,7 +38,7 @@ package log
  *
  * OPAL uses two primary log contexts:
  *
- *  1. The [[GlobalContext$]] which should be used for general
+ *  1. The [[GlobalLogContext$]] which should be used for general
  *      log messages related to OPAL, such as the number of threads used for
  *      computations.
  *

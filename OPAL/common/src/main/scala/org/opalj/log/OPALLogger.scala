@@ -85,8 +85,8 @@ trait OPALLogger {
  * }}}
  *
  * ==Initialization==
- * If the [[GlobalContext]] should not use the [[ConsoleOPALLogger]] then __the
- * logger has to be changed '''before the first usage of the [[GlobalContext]]'''__.
+ * If the [[GlobalLogContext]] should not use the [[ConsoleOPALLogger]] then __the
+ * logger has to be changed '''before the first usage of the [[GlobalLogContext]]'''__.
  *
  * ==Thread Safety==
  * Thread safe.
