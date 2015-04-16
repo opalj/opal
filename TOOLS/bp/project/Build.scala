@@ -50,7 +50,7 @@ object BugPickerBuild extends Build {
 				JFX.addJfxrtToClasspath := true
 			) ++
 			Seq(mainClass in (Compile, run) := Some("org.opalj.bugpicker.ui.BugPicker")) ++
-			Seq(libraryDependencies += "org.scalafx"  %% "scalafx"   % "2.2.76-R11") ++
+			Seq(libraryDependencies += "org.scalafx"  %% "scalafx"   % "8.0.40-R8") ++
 			Seq(
 				resourceGenerators in Compile <+= Def.task {
 					val versionFile = (baseDirectory in Compile).value / "target" / "scala-2.11" / "classes" / "org" / "opalj" / "bugpicker" / "version.txt"

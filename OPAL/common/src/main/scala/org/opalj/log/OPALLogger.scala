@@ -104,7 +104,7 @@ object OPALLogger extends OPALLogger {
     @volatile private[log] var globalContextLogger: OPALLogger =
         new ConsoleOPALLogger(ansiColored = true)
 
-    def initGloalContextLogger(logger: OPALLogger) = globalContextMutex.synchronized {
+    def initGlobalContextLogger(logger: OPALLogger) = globalContextMutex.synchronized {
         if (globalContextCreated)
             throw new RuntimeException(
                 "the global context is already created; the logger can no longer be changed")
