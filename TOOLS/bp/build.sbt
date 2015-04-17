@@ -16,7 +16,7 @@ scalacOptions in ThisBuild ++= Seq(
 
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - BugPicker")
 
-crossPaths in ThisBuild := false
+// [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
 
 fork in run := true
 

@@ -10,7 +10,7 @@ homepage in ThisBuild := Some(url("http://www.opal-project.de"))
 
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-crossPaths in ThisBuild := false
+// [for sbt 0.13.8 onwards] crossPaths in ThisBuild := false
 
 scalaVersion in ThisBuild := "2.11.6"
 
