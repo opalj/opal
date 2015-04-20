@@ -359,6 +359,9 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
          */
         /*ABSTRACT*/ def isAssignable(value: DomainValue): Answer
 
+        /**
+         * Called by the load method if the index is potentially valid.
+         */
         /*ABSTRACT*/ protected def doLoad(
             pc: PC,
             index: DomainValue,
@@ -375,12 +378,12 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
             val isIndexValid =
                 length.map((l: Int) ⇒ intIsSomeValueInRange(pc, index, 0, l - 1)).
-                    getOrElse(
+                    getOrElse {
                         if (intIsLessThan0(pc, index).isYes)
                             No
                         else
                             Unknown // the index may be too large...
-                    )
+                    }
             if (isIndexValid.isNo)
                 return justThrows(VMArrayIndexOutOfBoundsException(pc))
 
@@ -392,6 +395,10 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             doLoad(pc, index, thrownExceptions)
         }
 
+        /**
+         * Called by the store method if the value is potentially assignable and if
+         * the index is potentially valid.
+         */
         /*ABSTRACT*/ protected def doStore(
             pc: PC,
             value: DomainValue,
