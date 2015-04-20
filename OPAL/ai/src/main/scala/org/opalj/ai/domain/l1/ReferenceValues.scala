@@ -325,36 +325,20 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
             (
                 // OPERANDS
-                if (operands.nonEmpty) {
-                    var opsUpdated = false
-                    var newOps: Operands = Nil
-                    val opIt = operands.iterator
-                    while (opIt.hasNext) {
-                        val op = opIt.next
-                        val newOp = op match {
-                            case AReferenceValue(op) ⇒
-                                val newOp = refine(op)
-                                if (newOp.refineIf(refinements))
-                                    // RESTART REFINEMENT PROCESS!
-                                    return doPropagateRefinement(
-                                        refinements, operands, locals
-                                    ); // <====== early return from method
-
-                                if (newOp ne op) {
-                                    opsUpdated = true
-                                }
-                                newOp
-                            case _ ⇒
-                                op
-                        }
-                        newOps = newOp :: newOps
-                    }
-                    if (opsUpdated) newOps.reverse else operands
-                } else {
-                    operands
+                operands mapConserve {
+                    case AReferenceValue(op) ⇒
+                        val newOp = refine(op)
+                        if (newOp.refineIf(refinements))
+                            // RESTART REFINEMENT PROCESS!
+                            return doPropagateRefinement(
+                                refinements, operands, locals
+                            ); // <====== early return from method
+                        newOp
+                    case op ⇒
+                        op
                 },
                 // REGISTERS
-                locals.transform {
+                locals mapConserve {
                     case AReferenceValue(l) ⇒
                         val newL = refine(l)
                         if (newL.refineIf(refinements))
@@ -647,7 +631,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             var description = upperTypeBound
             if (!isPrecise) description = "_ <: "+description
             if (isNull.isUnknown) description = "{"+description+", null}"
-            description += "[@"+origin + s";t=$t]"
+            description += s"[@$origin;t=$t]"
             description
         }
     }
