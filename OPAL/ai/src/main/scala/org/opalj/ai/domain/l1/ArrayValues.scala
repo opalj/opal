@@ -43,10 +43,11 @@ import org.opalj.log.Warn
 import scala.reflect.ClassTag
 
 /**
- * Enables the tracking of various properties related to arrays. It in particular enables
- * the tracking of an array's concrete content in some specific cases or the tracking
- * of information about an array's elements at a higher level. In both cases only
- * arrays up to a specified size (cf. [[maxArraySize]]) are tracked.
+ * Enables the tracking of various properties related to arrays.
+ *
+ * This domain in particular enables the tracking of an array's concrete content in some
+ * specific cases or the tracking of information about an array's elements at a higher
+ * level. In both cases only arrays up to a specified size (cf. [[maxArraySize]]) are tracked.
  *
  * @note '''This domain does not require modeling the heap'''. This however, strictly limits
  *      the kind of arrays that can be tracked/the information about elements that
@@ -59,13 +60,14 @@ import scala.reflect.ClassTag
  *
  * @author Michael Eichberg
  */
-trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
+trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing with PostEvaluationMemoryManagement {
     domain: CorrelationalDomain with IntegerValuesDomain with ConcreteIntegerValues with TypedValuesFactory with Configuration with ClassHierarchy with LogContextProvider ⇒
 
     /**
      * Determines the maximum size of Integer ranges. The default value is 16.
      *
-     * This setting can dynamically be adapted at runtime.
+     * This setting can dynamically be adapted at runtime and will be considered
+     * for each new array that is created afterwards.
      */
     def maxArraySize: Int = 16
 
@@ -87,7 +89,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
      * '''This method is intended to be overwritten by subclasses to configure which
      * arrays will be reified.''' Depending on the analysis task, it is in general only
      * useful to track selected arrays (e.g, arrays of certain types of values
-     * or up to a specific length). For example, to facilitate the the resolution
+     * or up to a specific length). For example, to facilitate the resolution
      * of reflectively called methods, it might be interesting to track arrays
      * that contain string values.
      *
@@ -121,9 +123,15 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
     type DomainInitializedArrayValue <: InitializedArrayValue with DomainArrayValue
     val DomainInitializedArrayValue: ClassTag[DomainInitializedArrayValue]
 
+    type DomainConcreteArrayValue <: ConcreteArrayValue with DomainArrayValue
+    val DomainConcreteArrayValue: ClassTag[DomainConcreteArrayValue]
+
     /**
      * Represents some (multi-dimensional) array where the (initialized) dimensions have
      * the given size.
+     *
+     * @param lengths The list of the sizes of each initialized dimension.
+     *      Currently, at most two dimensions are supported.
      */
     // NOTE THAT WE CANNOT STORE SIZE INFORMATION ABOUT N-DIMENSIONAL ARRAYS WHERE N IS
     // LARGER THAN 2.
@@ -143,9 +151,11 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
             this(origin, theType, lengths = List(length), t)
         }
 
+        assert(length.size > 0, "uninitialized arrays are not supported")
         assert(
-            lengths.size >= 1 && lengths.size <= 2,
-            "tracking the concrete size of the nth Dimension - for n > 2 - of arrays is not supported")
+            lengths.size <= 2,
+            s"tracking the concrete size of the ${lengths.size}th Dimension of arrays"+
+                "is not supported (we are not modeling the heap)")
 
         override def length: Some[Int] = Some(lengths.head)
 
@@ -153,6 +163,67 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
             t: Timestamp,
             origin: ValueOrigin, isNull: Answer): DomainArrayValue = {
             InitializedArrayValue(origin, theUpperTypeBound, lengths, t)
+        }
+
+        /**
+         * Extends `super.doLoad` by returning an initialized array object value that
+         * reflects the size of the array.
+         *
+         * @note The returned array value always gets a new timestamp since the array
+         *      field may have been updated.
+         *      (It would be possible to use this array's timestamp if stores of
+         *      (sub-)arrays with a different timestamp would lead to an update of the
+         *      timestamp of this array.)
+         */
+        override def doLoad(
+            pc: PC,
+            index: DomainValue,
+            potentialExceptions: ExceptionValues): ArrayLoadResult = {
+            if (lengths.size > 1) {
+                val value =
+                    InitializedArrayValue(
+                        origin,
+                        theType.componentType.asArrayType,
+                        lengths.tail,
+                        nextT())
+                ComputedValueOrException(value, potentialExceptions)
+            } else {
+                super.doLoad(pc, index, potentialExceptions)
+            }
+        }
+
+        override def doStore(
+            pc: PC,
+            value: DomainValue,
+            index: DomainValue,
+            potentialExceptions: ExceptionValues): ArrayStoreResult = {
+
+            //println(s"$pc - $value - $index - $potentialExceptions")
+
+            if (lengths.size > 1) {
+                value match {
+                    // We don't have to consider the timestamp since every subarray
+                    // gets a new timestamp when it is extracted anyway.
+                    case DomainInitializedArrayValue(that) if (that.theUpperTypeBound eq this.theType.componentType) &&
+                        that.lengths.startsWith(this.lengths.tail) ⇒
+                        // well, our knowledge about the second dimension remains intact
+                        super.doStore(pc, value, index, potentialExceptions)
+                    case DomainConcreteArrayValue(that) if (that.theUpperTypeBound eq this.theType.componentType) &&
+                        that.length.get == this.lengths.tail.head ⇒
+                        // well, our knowledge about the second dimension remains intact
+                        super.doStore(pc, value, index, potentialExceptions)
+                    case _ ⇒
+                        // We are now storing some value in this array; this basically
+                        // invalidates our knowledge about the second dimension - unless
+                        // an exception is raised - in this case the array remains
+                        // unchanged; hence, we only have to schedule an update if no
+                        // exception is raised!
+                        updateAfterEvaluation(this, InitializedArrayValue(origin, theType, lengths.take(1), t))
+                        super.doStore(pc, value, index, potentialExceptions)
+                }
+            } else {
+                super.doStore(pc, value, index, potentialExceptions)
+            }
         }
 
         override def doJoinWithNonNullValueWithSameOrigin(
@@ -166,7 +237,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
                         if (this.t == that.t)
                             NoUpdate
                         else
-                            TimestampUpdate(that)
+                            TimestampUpdate(this.updateT(nextT()))
                     } else if (prefix eq that.lengths) {
                         StructuralUpdate(that.updateT(nextT()))
                     } else {
@@ -199,7 +270,8 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
             other match {
                 case that: InitializedArrayValue ⇒
                     (this.theUpperTypeBound eq that.theUpperTypeBound) &&
-                        this.lengths == that.lengths
+                        this.lengths.size <= that.lengths.size &&
+                        that.lengths.startsWith(this.lengths)
                 case that: ConcreteArrayValue ⇒
                     (that.theUpperTypeBound eq this.theUpperTypeBound) && {
                         this.lengths.head == that.length.get && (
@@ -218,16 +290,15 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
             target.InitializedArrayValue(vo, theType, lengths)
 
         override def equals(other: Any): Boolean = {
+
             other match {
-                case that: InitializedArrayValue ⇒ (
-                    (that eq this) ||
-                    (
+                case DomainInitializedArrayValue(that) ⇒
+                    (that eq this) || (
                         (that canEqual this) &&
                         this.origin == that.origin &&
-                        (this.upperTypeBound eq that.upperTypeBound) &&
-                        this.length == that.length
+                        (this.theUpperTypeBound eq that.theUpperTypeBound) &&
+                        this.lengths == that.lengths
                     )
-                )
                 case _ ⇒
                     false
             }
@@ -239,7 +310,9 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
         override def hashCode: Int = (origin * 31 + upperTypeBound.hashCode) * 31
 
         override def toString() = {
-            s"${theUpperTypeBound.toJava}[@$origin;length=${length.get};<unknown values>]"
+            val theType = theUpperTypeBound.toJava
+            val lengths = this.lengths.mkString("[", "][", "]")
+            s"$theType[@$origin;lengths=$lengths;t=$t]"
         }
 
     }
@@ -256,7 +329,7 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
         val values: Array[DomainValue],
         t: Timestamp)
             extends ArrayValue(origin, isNull = No, isPrecise = true, theType, t) {
-        this: DomainArrayValue ⇒
+        this: DomainConcreteArrayValue ⇒
 
         override def length: Some[Int] = Some(values.size)
 
@@ -413,12 +486,12 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: ConcreteArrayValue ⇒ (
+                case DomainConcreteArrayValue(that) ⇒ (
                     (that eq this) ||
                     (
                         (that canEqual this) &&
                         this.origin == that.origin &&
-                        (this.upperTypeBound eq that.upperTypeBound) &&
+                        (this.theUpperTypeBound eq that.theUpperTypeBound) &&
                         this.values == that.values
                     )
                 )
@@ -469,6 +542,21 @@ trait ArrayValues extends l1.ReferenceValues with PerInstructionPostProcessing {
         }
         ArrayValue(pc, arrayType, array)
 
+    }
+
+    override def NewArray(
+        origin: ValueOrigin,
+        counts: List[DomainValue],
+        arrayType: ArrayType): DomainArrayValue = {
+        var intCounts: List[Int] = Nil
+        counts.takeWhile { c ⇒
+            intValue(c) { intCount ⇒ intCounts ::= intCount; true } { false }
+        }
+        if (intCounts.nonEmpty) {
+            InitializedArrayValue(origin, arrayType, intCounts, nextT())
+        } else {
+            super.NewArray(origin, counts, arrayType)
+        }
     }
 
     //
