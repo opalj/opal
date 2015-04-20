@@ -39,6 +39,9 @@ package object collection {
     // Helpers related to Lists
     //
 
+    /**
+     * Returns `true` if l2 and l1 have a common prefix.
+     */
     def commonPrefix[T](l1: List[T], l2: List[T]): List[T] = {
         if (l1 eq l2)
             return l1;
