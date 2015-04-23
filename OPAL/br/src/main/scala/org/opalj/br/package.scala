@@ -33,7 +33,7 @@ import scala.xml.Node
 import scala.xml.Text
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
@@ -56,7 +56,7 @@ import org.opalj.bi.AccessFlagsContexts
 package object br {
 
     private[this] final val checkAssert: Boolean = {
-        implicit val logContext = GlobalContext
+        implicit val logContext = GlobalLogContext
         try {
             scala.Predef.assert(false) // <= test whether assertions are turned on or off...
             OPALLogger.info("OPAL", "Bytecode Representation - Production Build")

@@ -40,7 +40,6 @@ import bi.AccessFlagsContexts
 import bi.AccessFlags
 import scala.util.control.ControlThrowable
 import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalContext
 
 /**
  * Represents a single class file which either defines a class type or an interface type.

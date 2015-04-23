@@ -365,6 +365,67 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
             })
         }
 
+        it("should be able to analyze a simple 2-dimensional array initialization") {
+            evaluateMethod("a2DimensionalArray", domain ⇒ {
+                import domain._
+                val twoDimIntArray = ArrayType(ArrayType(IntegerType))
+                val operandsArray = domain.operandsArray
+
+                operandsArray(18).head should be(
+                    InitializedArrayValue(2, twoDimIntArray, List(2)))
+
+                operandsArray(31).head should be(
+                    InitializedArrayValue(2, twoDimIntArray, List(2, 2)))
+
+                operandsArray(35).head should be(
+                    InitializedArrayValue(2, twoDimIntArray, List(2)))
+
+            })
+        }
+
+        it("should be able to analyze a simple 3-dimensional array initialization") {
+            evaluateMethod("a3DimensionalArray", domain ⇒ {
+                import domain._
+                val threeDimIntArray = ArrayType(ArrayType(ArrayType(IntegerType)))
+                val operandsArray = domain.operandsArray
+
+                operandsArray(20).head should be(
+                    InitializedArrayValue(3, threeDimIntArray, List(2)))
+
+                operandsArray(36).head should be(
+                    InitializedArrayValue(3, threeDimIntArray, List(2, 2)))
+
+                operandsArray(40).head should be(
+                    InitializedArrayValue(3, threeDimIntArray, List(2)))
+
+            })
+        }
+
+        it("should be able to analyze a 3-dimensional array initialization with potential exceptions") {
+            evaluateMethod("a3DimensionalArrayWithPotentialExceptions", domain ⇒ {
+                import domain._
+                val threeDimIntArray = ArrayType(ArrayType(ArrayType(IntegerType)))
+                val operandsArray = domain.operandsArray
+
+                operandsArray(20).head should be(
+                    InitializedArrayValue(3, threeDimIntArray, List(2)))
+
+                operandsArray(28).head should be(
+                    InitializedArrayValue(3, threeDimIntArray, List(2, 2)))
+
+                operandsArray(32).head should be(
+                    InitializedArrayValue(3, threeDimIntArray, List(2, 2)))
+
+                operandsArray(48).head should be(
+                    InitializedArrayValue(3, threeDimIntArray, List(2)))
+
+                operandsArray(64).head should be(
+                    InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), List(2, 2)))
+
+                operandsArray(68).head should be(
+                    InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), List(2)))
+            })
+        }
     }
 
     describe("complex array operations") {
@@ -411,6 +472,7 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
 class DefaultArraysTestDomain(
     override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue)
         extends CorrelationalDomain
+        with GlobalLogContextProvider
         with DefaultDomainValueBinding
         with ThrowAllPotentialExceptionsConfiguration
         with l0.SimpleTypeLevelInvokeInstructions
@@ -426,7 +488,17 @@ class DefaultArraysTestDomain(
         with IgnoreSynchronization
         with PredefinedClassHierarchy
         with RecordLastReturnedValues
+        // THIS DOMAIN MUST NOT MIX IN ANY DOMAIN THAT "PRECISELY" MODELS MUTABLE OBJECTS
         with DefaultArrayValuesBinding
+        with TheMemoryLayout {
+
+    // we don't collect "precise" information w.r.t. the heap about the content of an
+    // array, hence we can track the contents
+    override protected def reifyArray(pc: PC, count: Int, arrayType: ArrayType): Boolean = {
+        super.reifyArray(pc, count, arrayType) ||
+            arrayType.componentType.isObjectType && count < maxArraySize
+    }
+}
 
 private object DefaultArraysTest {
     val classFiles = ClassFiles(locateTestResources("classfiles/ai.jar", "ai"))

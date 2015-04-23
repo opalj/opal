@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -174,26 +174,26 @@ class LocalsTest
         }
     }
 
-    it should ("return the same locals if the tranformation does not update a value") in {
+    it should ("return the same locals if the mapConserve does not update a value") in {
         for {
             size ← 1 to 25
         } {
             val v = Locals[Integer](size)
             for { i ← 0 until size } { v.set(i, i) }
 
-            (v eq v.transform(id ⇒ id)) should be(true)
+            (v eq v.mapConserve(id ⇒ id)) should be(true)
 
         }
     }
 
-    it should ("be able to transform the locals") in {
+    it should ("be able to map the locals") in {
         for {
             size ← 1 to 25
         } {
             val v = Locals[Integer](size)
             for { i ← 0 until size } { v.set(i, i) }
 
-            val newV = v.transform(_ + 100)
+            val newV = v.mapConserve(_ + 100)
 
             for { i ← 0 until size } {
                 newV(i) should be(i + 100)

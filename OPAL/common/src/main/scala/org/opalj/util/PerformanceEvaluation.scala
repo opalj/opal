@@ -32,7 +32,7 @@ package util
 import org.opalj.concurrent.Locking
 import scala.collection.mutable.Map
 import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 
 /**
  * Measures the execution time of some code.
@@ -267,7 +267,7 @@ object PerformanceEvaluation {
                 OPALLogger.warn(
                     "common",
                     s"the time required by the function (${t.toString}) "+
-                        "is too small to get meaningful measurements.")(GlobalContext)
+                        "is too small to get meaningful measurements.")(GlobalLogContext)
 
                 return result;
             }

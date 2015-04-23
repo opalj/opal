@@ -37,7 +37,7 @@ import org.opalj.br.reader.Java8FrameworkWithCaching
 import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
 import org.opalj.io.OpeningFileFailedException
 import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -239,7 +239,7 @@ trait AnalysisExecutor {
         cpFiles: Iterable[File],
         libcpFiles: Iterable[File]): Project[URL] = {
 
-        OPALLogger.info("creating project", "reading project class files")(GlobalContext)
+        OPALLogger.info("creating project", "reading project class files")(GlobalLogContext)
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
         val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
         val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
@@ -248,30 +248,26 @@ trait AnalysisExecutor {
             reader.readClassFiles(
                 cpFiles,
                 Java8ClassFileReader.ClassFiles,
-                (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalContext)
+                (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalLogContext)
             )
 
         val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
-                OPALLogger.info("creating project", "reading library class files")(GlobalContext)
+                OPALLogger.info("creating project", "reading library class files")(GlobalLogContext)
                 reader.readClassFiles(
                     libcpFiles,
                     Java8LibraryClassFileReader.ClassFiles,
-                    (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalContext))
+                    (file) ⇒ OPALLogger.info("creating project", "\tfile: "+file)(GlobalLogContext))
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
         }
-        val project = Project(
-            classFiles,
-            libraryClassFiles)
+        val project = Project(classFiles, libraryClassFiles)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
-        import project.logContext
         OPALLogger.info("project",
             project.statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).toList.sorted.reverse.
-                mkString("project statistics:\n\t", "\n\t", "\n")
-        )
+                mkString("project statistics:\n\t", "\n\t", "\n"))(project.logContext)
         project
     }
 }

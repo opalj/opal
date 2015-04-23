@@ -38,7 +38,7 @@ import org.opalj.br.instructions.Instruction
 
 /**
  * Provides the possibility to further update the memory layout (registers and operands)
- * after the evaluation of an instruction, but before any potential join is performed.
+ * after the execution of an instruction, but before any potential join is performed.
  *
  * If this domain is mixed in then the domain cannot be used to simultaneously analyze
  * multiple different methods at the same time.
@@ -48,17 +48,31 @@ import org.opalj.br.instructions.Instruction
 trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
 
     private[this] var oldValue: DomainValue = null
-    private[this] var newValue: DomainValue = null
+    private[this] var newValueAfterEvaluation: DomainValue = null
+    private[this] var newValueAfterException: DomainValue = null
 
-    protected def updateAfterEvaluation(oldValue: DomainValue, newValue: DomainValue): Unit = {
-        assert(oldValue ne newValue, "it doesn't make sense to update a value with itself")
+    protected def updateAfterExecution(
+        oldValue: DomainValue,
+        newValueAfterEvaluation: DomainValue,
+        newValueAfterException: DomainValue): Unit = {
+        assert(this.oldValue eq null, "another update is already registered")
+
         assert(oldValue ne null)
-        assert(newValue ne null)
-
-        assert(this.oldValue eq null)
+        assert((newValueAfterEvaluation ne null) || (newValueAfterException ne null))
+        assert(oldValue ne newValueAfterEvaluation, "it doesn't make sense to update a value with itself")
+        assert(oldValue ne newValueAfterException, "it doesn't make sense to update a value with itself")
 
         this.oldValue = oldValue
-        this.newValue = newValue
+        this.newValueAfterEvaluation = newValueAfterEvaluation
+        this.newValueAfterException = newValueAfterException
+    }
+
+    protected def updateAfterEvaluation(oldValue: DomainValue, newValue: DomainValue): Unit = {
+        updateAfterExecution(oldValue, newValue, null)
+    }
+
+    protected def updateAfterException(oldValue: DomainValue, newValue: DomainValue): Unit = {
+        updateAfterExecution(oldValue, null, newValue)
     }
 
     abstract override def afterEvaluation(
@@ -73,9 +87,13 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
         val oldValue = this.oldValue
         if (oldValue ne null) {
             val (operands1, locals1) =
-                updateMemoryLayout(oldValue, newValue, newOperands, newLocals)
+                if (isExceptionalControlFlow)
+                    updateMemoryLayout(oldValue, newValueAfterException, newOperands, newLocals)
+                else
+                    updateMemoryLayout(oldValue, newValueAfterEvaluation, newOperands, newLocals)
             this.oldValue = null
-            this.newValue = null
+            this.newValueAfterEvaluation = null
+            this.newValueAfterException = null
 
             super.afterEvaluation(
                 pc, instruction, oldOperands, oldLocals,

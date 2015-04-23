@@ -101,7 +101,7 @@ class CFACallGraphDomain[Source](
     callingDomain ⇒
 
     // we just want to be able to track "booleans"
-    override protected def maxCardinalityOfIntegerRanges: Long = 2l
+    override def maxCardinalityOfIntegerRanges: Long = 2l
 
     def shouldInvocationBePerformed(
         definingClass: ClassFile,

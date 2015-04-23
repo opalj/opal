@@ -53,11 +53,12 @@ class BugPickerOPALLogger(
     def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
         Platform.runLater(new Runnable() {
             def run: Unit = {
-                messages += new BugPickerLogMessage(
-                    BugPickerOPALLogger.df.format(new Date()),
-                    message.level.id,
-                    message.category.getOrElse(""),
-                    message.message)
+                messages +=
+                    BugPickerLogMessage(
+                        BugPickerOPALLogger.df.format(new Date()),
+                        message.level.id,
+                        message.category.getOrElse(""),
+                        message.message)
             }
         })
     }

@@ -85,8 +85,8 @@ trait OPALLogger {
  * }}}
  *
  * ==Initialization==
- * If the [[GlobalContext]] should not use the [[ConsoleOPALLogger]] then __the
- * logger has to be changed '''before the first usage of the [[GlobalContext]]'''__.
+ * If the [[GlobalLogContext]] should not use the [[ConsoleOPALLogger]] then __the
+ * logger has to be changed '''before the first usage of the [[GlobalLogContext]]'''__.
  *
  * ==Thread Safety==
  * Thread safe.
@@ -145,7 +145,7 @@ object OPALLogger extends OPALLogger {
 
     def logger(ctx: LogContext): OPALLogger = this.synchronized { loggers(ctx.id) }
 
-    def globalLogger(): OPALLogger = this.synchronized(loggers(GlobalContext.id))
+    def globalLogger(): OPALLogger = this.synchronized(loggers(GlobalLogContext.id))
 
     // stores the next context id - access must be explicitly synchronized!
     private[log] var nextId: Int = 0

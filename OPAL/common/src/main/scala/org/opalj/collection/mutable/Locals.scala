@@ -77,7 +77,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
      * Transforms the values of this locals array. If all values are the same as
      * before `this` is returned.
      */
-    /* ABSTRACT */ def transform(f: T ⇒ T): Locals[T]
+    /* ABSTRACT */ def mapConserve(f: T ⇒ T): Locals[T]
 
     /**
      * Returns `true` if all elements satisfy the given predicate, `false` otherwise.
@@ -289,7 +289,7 @@ private[mutable] final object Locals0 extends Locals[Null] {
         this.asInstanceOf[Locals[X]]
     }
 
-    override def transform(f: Null ⇒ Null) = this
+    override def mapConserve(f: Null ⇒ Null) = this
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -369,7 +369,7 @@ private[mutable] final class Locals1[T >: Null <: AnyRef](
         new Locals1[X](f(v))
     }
 
-    override def transform(f: T ⇒ T): Locals1[T] = {
+    override def mapConserve(f: T ⇒ T): Locals1[T] = {
         val thisV = v
         val newV = f(thisV)
         if (newV eq thisV)
@@ -457,7 +457,7 @@ private[mutable] final class Locals2[T >: Null <: AnyRef](
         new Locals2[X](f(v0), f(v1))
     }
 
-    override def transform(f: T ⇒ T): Locals2[T] = {
+    override def mapConserve(f: T ⇒ T): Locals2[T] = {
         val thisV0 = v0
         val newV0 = f(thisV0)
         val thisV1 = v1
@@ -576,7 +576,7 @@ private[mutable] final class Locals3[T >: Null <: AnyRef](
         new Locals3[X](f(v0), f(v1), f(v2))
     }
 
-    override def transform(f: T ⇒ T): Locals3[T] = {
+    override def mapConserve(f: T ⇒ T): Locals3[T] = {
         val thisV0 = v0
         val newV0 = f(thisV0)
         val thisV1 = v1
@@ -715,7 +715,7 @@ private[mutable] final class Locals4[T >: Null <: AnyRef](
         new Locals4[X](f(v0), f(v1), f(v2), f(v3))
     }
 
-    override def transform(f: T ⇒ T): Locals4[T] = {
+    override def mapConserve(f: T ⇒ T): Locals4[T] = {
         val thisV0 = v0
         val newV0 = f(thisV0)
         val thisV1 = v1
@@ -804,11 +804,11 @@ private[mutable] final class Locals5[T >: Null <: AnyRef](
         new Locals5[X](vs1.map(f), vs2.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals5[T] = {
+    override def mapConserve(f: T ⇒ T): Locals5[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2))
             this
         else
@@ -899,11 +899,11 @@ private[mutable] final class Locals6[T >: Null <: AnyRef](
         new Locals6[X](vs1.map(f), vs2.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals6[T] = {
+    override def mapConserve(f: T ⇒ T): Locals6[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2))
             this
         else
@@ -987,11 +987,11 @@ private[mutable] final class Locals7[T >: Null <: AnyRef](
         new Locals7[X](vs1.map(f), vs2.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals7[T] = {
+    override def mapConserve(f: T ⇒ T): Locals7[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2))
             this
         else
@@ -1109,13 +1109,13 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
         new Locals8[X](vs1.map(f), vs2.map(f), vs3.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals8[T] = {
+    override def mapConserve(f: T ⇒ T): Locals8[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         val thisVs3 = vs3
-        val newVs3 = thisVs3.transform(f)
+        val newVs3 = thisVs3.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2) && (newVs3 eq thisVs3))
             this
         else
@@ -1233,13 +1233,13 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
         new Locals9[X](vs1.map(f), vs2.map(f), vs3.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals9[T] = {
+    override def mapConserve(f: T ⇒ T): Locals9[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         val thisVs3 = vs3
-        val newVs3 = thisVs3.transform(f)
+        val newVs3 = thisVs3.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2) && (newVs3 eq thisVs3))
             this
         else
@@ -1357,13 +1357,13 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
         new Locals10[X](vs1.map(f), vs2.map(f), vs3.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals10[T] = {
+    override def mapConserve(f: T ⇒ T): Locals10[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         val thisVs3 = vs3
-        val newVs3 = thisVs3.transform(f)
+        val newVs3 = thisVs3.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2) && (newVs3 eq thisVs3))
             this
         else
@@ -1481,13 +1481,13 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
         new Locals11[X](vs1.map(f), vs2.map(f), vs3.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals11[T] = {
+    override def mapConserve(f: T ⇒ T): Locals11[T] = {
         val thisVs1 = vs1
-        val newVs1 = thisVs1.transform(f)
+        val newVs1 = thisVs1.mapConserve(f)
         val thisVs2 = vs2
-        val newVs2 = thisVs2.transform(f)
+        val newVs2 = thisVs2.mapConserve(f)
         val thisVs3 = vs3
-        val newVs3 = thisVs3.transform(f)
+        val newVs3 = thisVs3.mapConserve(f)
         if ((newVs1 eq thisVs1) && (newVs2 eq thisVs2) && (newVs3 eq thisVs3))
             this
         else
@@ -1620,9 +1620,9 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
         new Locals12_N[X](vs11.map(f), vs12_N.map(f))
     }
 
-    override def transform(f: T ⇒ T): Locals12_N[T] = {
+    override def mapConserve(f: T ⇒ T): Locals12_N[T] = {
         val thisVs11 = vs11
-        val newVs11 = thisVs11.transform(f)
+        val newVs11 = thisVs11.mapConserve(f)
         val thisVs12_N = vs12_N
         var vs12_Nupdated = false
         var newVs12_N = thisVs12_N map { v ⇒

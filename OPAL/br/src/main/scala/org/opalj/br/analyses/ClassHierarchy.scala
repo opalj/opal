@@ -42,7 +42,7 @@ import org.opalj.graphs.Node
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.log.Error
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
@@ -1860,7 +1860,7 @@ object ClassHierarchy {
      * This class hierarchy is primarily useful for testing purposes.
      */
     def preInitializedClassHierarchy: ClassHierarchy =
-        apply(classFiles = Traversable.empty)(logContext = GlobalContext)
+        apply(classFiles = Traversable.empty)(logContext = GlobalLogContext)
 
     /**
      * Creates the class hierarchy by analyzing the given class files, the predefined

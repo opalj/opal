@@ -76,7 +76,7 @@ trait StringValues
                             // "reference" to the "value", but we still need to
                             // create a MetaInformationUpdate to make sure that potential
                             // future reference comparisons are reevaluated if necessary.
-                            MetaInformationUpdate(that)
+                            TimestampUpdate(that)
                     } else {
                         // We have to drop the concrete information...
                         // Given that the values are different we are no longer able to
@@ -84,6 +84,7 @@ trait StringValues
                         val newValue = ObjectValue(origin, No, true, ObjectType.String, nextT())
                         StructuralUpdate(newValue)
                     }
+
                 case _ ⇒
                     val result = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
                     if (result.isStructuralUpdate) {

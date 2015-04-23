@@ -29,8 +29,6 @@
 package org.opalj
 package log
 
-import org.opalj.util.NanoSeconds
-
 /**
  * A log context associates log messages with a specific context and logger.
  * Using a log context
@@ -40,7 +38,7 @@ import org.opalj.util.NanoSeconds
  *
  * OPAL uses two primary log contexts:
  *
- *  1. The [[GlobalContext$]] which should be used for general
+ *  1. The [[GlobalLogContext$]] which should be used for general
  *      log messages related to OPAL, such as the number of threads used for
  *      computations.
  *
@@ -78,32 +76,4 @@ trait LogContext {
         OPALLogger.register(newLogContext, logger)
         newLogContext
     }
-}
-
-case class DefaultLogContext private ( final val startTime: Long) extends LogContext {
-
-    def this() {
-        this(startTime = System.currentTimeMillis())
-    }
-
-    override def toString: String =
-        "project context:"+startTime.toString().drop(6)
-
-    override def newInstance: LogContext = new DefaultLogContext(this.startTime)
-
-}
-
-/**
- * The global log context which should be used to log global messages.
- *
- * @author Michael Eichberg
- */
-case object GlobalContext extends LogContext {
-
-    OPALLogger.globalContextMutex.synchronized {
-        OPALLogger.globalContextCreated = true
-        OPALLogger.register(this, OPALLogger.globalContextLogger)
-    }
-
-    def newInstance: LogContext = throw new UnsupportedOperationException
 }

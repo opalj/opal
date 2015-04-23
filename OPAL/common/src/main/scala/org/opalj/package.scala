@@ -34,7 +34,7 @@ import scala.reflect.api.Trees
 import scala.reflect.macros.blackbox.Context
 import scala.annotation.elidable
 import scala.annotation.elidable.ASSERTION
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
 /**
@@ -87,7 +87,7 @@ import org.opalj.log.OPALLogger
 package object opalj {
 
     {
-        implicit val logContext = GlobalContext
+        implicit val logContext = GlobalLogContext
         try {
             scala.Predef.assert(false)
             OPALLogger.info("OPAL", "Common - Production Build")

@@ -62,7 +62,7 @@ import scalafx.stage.Stage
 
 object ProjectHelper {
 
-    private[this] implicit val logContext = org.opalj.log.GlobalContext
+    private[this] implicit val logContext = org.opalj.log.GlobalLogContext
 
     def setupProject(
         loadedFiles: LoadedFiles,
