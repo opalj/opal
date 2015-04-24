@@ -29,7 +29,7 @@
 package org.opalj
 
 import scala.language.existentials
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -66,7 +66,7 @@ import scala.reflect.ClassTag
 package object ai {
 
     {
-        implicit val logContext = GlobalContext
+        implicit val logContext = GlobalLogContext
         try {
             scala.Predef.assert(false) // <= test whether assertions are turned on or off...
             OPALLogger.info("OPAL", "Abstract Interpretation Framework - Production Build")

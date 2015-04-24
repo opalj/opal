@@ -30,23 +30,40 @@ package org.opalj
 package bugpicker
 package ui
 
+import java.text.SimpleDateFormat;
+import java.util.Date
+
 import org.opalj.log.LogContext
 import org.opalj.log.LogMessage
 import org.opalj.log.AbstractOPALLogger
 
 import scalafx.application.Platform
-import scalafx.scene.control.TextInputControl
+import scalafx.collections.ObservableBuffer
 
 /**
+ * The BugPicker logger is a logger that ignores the context and logs directly
+ * on the BugPicker UI.
+ *
  * @author David Becker
  */
-class BugPickerOPALLogger(val tc: TextInputControl) extends AbstractOPALLogger {
+class BugPickerOPALLogger(
+    val messages: ObservableBuffer[BugPickerLogMessage])
+        extends AbstractOPALLogger {
 
     def log(message: LogMessage)(implicit ctx: LogContext): Unit = {
         Platform.runLater(new Runnable() {
             def run: Unit = {
-                tc.text = tc.text.value + message.toConsoleOutput(false)+"\n"
+                messages +=
+                    BugPickerLogMessage(
+                        BugPickerOPALLogger.df.format(new Date()),
+                        message.level.id,
+                        message.category.getOrElse(""),
+                        message.message)
             }
         })
     }
+}
+
+object BugPickerOPALLogger {
+    final lazy val df = new SimpleDateFormat("HH:mm:ss:SSS")
 }

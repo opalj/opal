@@ -32,6 +32,7 @@ package ui
 
 import java.io.File
 import java.net.URL
+import java.util.Date
 import java.util.prefs.Preferences
 
 import org.opalj.br.analyses.Project
@@ -44,6 +45,8 @@ import org.opalj.bugpicker.ui.dialogs.HelpBrowser
 import org.opalj.bugpicker.ui.dialogs.LoadProjectDialog
 import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 import org.opalj.bugpicker.ui.dialogs.ProjectInfoDialog
+import org.opalj.log.Level
+import org.opalj.log.OPALLogger
 
 import javafx.application.Application
 import javafx.scene.control.SeparatorMenuItem
@@ -57,6 +60,9 @@ import scalafx.Includes.jfxTab2sfx
 import scalafx.Includes.jfxWindowEvent2sfx
 import scalafx.Includes.observableList2ObservableBuffer
 import scalafx.application.Platform
+import scalafx.beans.property.{ ObjectProperty, StringProperty }
+import scalafx.collections.ObservableBuffer
+import scalafx.collections.ObservableBuffer._
 import scalafx.concurrent.Service
 import scalafx.concurrent.Task
 import scalafx.concurrent.Task.sfxTask2jfx
@@ -69,6 +75,10 @@ import scalafx.scene.control.MenuBar
 import scalafx.scene.control.MenuItem
 import scalafx.scene.control.SplitPane
 import scalafx.scene.control.Tab
+import scalafx.scene.control.TableCell
+import scalafx.scene.control.TableColumn
+import scalafx.scene.control.TableColumn._
+import scalafx.scene.control.TableView
 import scalafx.scene.control.TabPane
 import scalafx.scene.control.TabPane.sfxTabPane2jfx
 import scalafx.scene.control.TextArea
@@ -78,6 +88,8 @@ import scalafx.scene.input.KeyCodeCombination
 import scalafx.scene.input.KeyCombination
 import scalafx.scene.layout.Priority
 import scalafx.scene.layout.VBox
+import scalafx.scene.paint.Color
+import scalafx.scene.text.Text
 import scalafx.scene.web.WebView
 import scalafx.scene.web.WebView.sfxWebView2jfx
 import scalafx.stage.Screen
@@ -105,19 +117,133 @@ class BugPicker extends Application {
         val byteView: WebView = new WebView {
             contextMenuEnabled = false
         }
-        val consoleTextArea: TextArea = new TextArea {
-            text = ""
-            editable = false
-            wrapText = true
-        }
         val reportView: WebView = new WebView {
             contextMenuEnabled = false
             engine.loadContent(Messages.APP_STARTED)
         }
+
+        def createLogMessagesTableView(
+            messages: ObservableBuffer[BugPickerLogMessage]): TableView[BugPickerLogMessage] = {
+            val timestampColumn = new TableColumn[BugPickerLogMessage, String] {
+                text = "Timestamp"
+                maxWidth = 100
+                resizable = false
+                cellValueFactory = { _.value.timestamp }
+            }
+            val levelColumn = new TableColumn[BugPickerLogMessage, String] {
+                text = "Level"
+                maxWidth = 75
+                resizable = false
+                cellValueFactory = { _.value.level }
+                cellFactory = { _ ⇒
+                    new TableCell[BugPickerLogMessage, String] {
+                        item.onChange { (_, _, newV) ⇒
+                            newV match {
+                                case "warn"  ⇒ textFill = Color.Blue
+                                case "error" ⇒ textFill = Color.Red
+                                case _       ⇒ textFill = Color.Black
+                            }
+                            text = newV
+                        }
+                    }
+                }
+            }
+            val categoryColumn = new TableColumn[BugPickerLogMessage, String] {
+                text = "Category"
+                maxWidth = 150
+                resizable = false
+                cellValueFactory = { _.value.category }
+            }
+            val messageColumn = new TableColumn[BugPickerLogMessage, String] {
+                text = "Message"
+                resizable = false
+                cellValueFactory = { _.value.message }
+                cellFactory = { _ ⇒
+                    val tc = new TableCell[BugPickerLogMessage, String]
+                    val text = new Text()
+                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(20))
+                    text.textProperty().bind(tc.itemProperty())
+                    tc.setGraphic(text)
+                    tc.wrapText = true
+                    tc
+                }
+            }
+            val logMessagesTableView = new TableView[BugPickerLogMessage](messages) {
+                columns ++= Seq(
+                    timestampColumn,
+                    levelColumn,
+                    categoryColumn,
+                    messageColumn)
+                editable = false
+            }
+            timestampColumn.prefWidthProperty().bind(
+                logMessagesTableView.widthProperty().multiply(0.17))
+            levelColumn.prefWidthProperty().bind(
+                logMessagesTableView.widthProperty().multiply(0.13))
+            categoryColumn.prefWidthProperty().bind(
+                logMessagesTableView.widthProperty().multiply(0.26))
+            messageColumn.prefWidthProperty().bind(
+                logMessagesTableView.widthProperty().subtract(
+                    timestampColumn.widthProperty()).subtract(
+                        levelColumn.widthProperty()).subtract(
+                            categoryColumn.widthProperty()))
+
+            logMessagesTableView
+        }
+
+        def logMessagesOnChangeBehaviour(
+            sortOrder: ObservableBuffer[javafx.scene.control.TableColumn[BugPickerLogMessage, _]],
+            tv: TableView[BugPickerLogMessage]): (ObservableBuffer[BugPickerLogMessage], Seq[Change]) ⇒ Unit = {
+            (_, changes) ⇒
+                {
+                    for (change ← changes)
+                        change match {
+                            case _: Reorder ⇒ {
+                                // sortOrder changed, store it
+                                sortOrder.clear()
+                                sortOrder ++= tv.sortOrder
+                            }
+                            case Add(pos, _) ⇒ {
+                                if (!sortOrder.isEmpty) {
+                                    // table was sorted before Add, retain sorting
+                                    tv.sortOrder.clear()
+                                    tv.sortOrder ++= sortOrder
+                                } else {
+                                    // table isn't sorted, scroll to new element
+                                    tv.scrollTo(pos)
+                                }
+                            }
+                            case _ ⇒ {
+                                if (!sortOrder.isEmpty) {
+                                    tv.sortOrder.clear()
+                                    tv.sortOrder ++= sortOrder
+                                }
+                            }
+                        }
+                }
+        }
+
+        val bugpickerLogMessages = ObservableBuffer[BugPickerLogMessage]()
+        val projectLogMessages = ObservableBuffer[BugPickerLogMessage]()
+        val bugpickerLogView: TableView[BugPickerLogMessage] = createLogMessagesTableView(bugpickerLogMessages)
+        val projectLogView: TableView[BugPickerLogMessage] = createLogMessagesTableView(projectLogMessages)
+        val bugpickerLogSortOrder = ObservableBuffer(bugpickerLogView.sortOrder)
+        val projectLogSortOrder = ObservableBuffer(projectLogView.sortOrder)
+        bugpickerLogMessages.onChange {
+            logMessagesOnChangeBehaviour(bugpickerLogSortOrder, bugpickerLogView)
+        }
+        projectLogMessages.onChange {
+            logMessagesOnChangeBehaviour(projectLogSortOrder, projectLogView)
+        }
         val tabPane: TabPane = new TabPane {
             this += new Tab {
-                text = "Console"
-                content = consoleTextArea
+                text = "BugPicker Log"
+                content = bugpickerLogView
+                closable = false
+            }
+            this += new Tab {
+                text = "Project Log"
+                content = projectLogView
                 closable = false
             }
             this += new Tab {
@@ -131,6 +257,8 @@ class BugPicker extends Application {
                 closable = false
             }
         }
+
+        OPALLogger.initGlobalContextLogger(new BugPickerOPALLogger(bugpickerLogMessages))
 
         def screenForStage(stage: Stage): Screen =
             Screen.screensForRectangle(stage.x(), stage.y(), stage.width(), stage.height()).head
@@ -173,16 +301,18 @@ class BugPicker extends Application {
                 recentProjectsMenu.disable = false;
                 sourceView.engine.loadContent("")
                 byteView.engine.loadContent("")
-                consoleTextArea.text = ""
+                bugpickerLogMessages.clear()
                 reportView.engine.loadContent(Messages.LOADING_STARTED)
                 Service {
                     Task[Unit] {
-                        val projectAndSources = ProjectHelper.setupProject(results.get, stage, consoleTextArea)
+                        val projectAndSources = ProjectHelper.setupProject(results.get, stage, projectLogMessages)
                         project = projectAndSources._1
                         sources = projectAndSources._2
                         Platform.runLater {
-                            tabPane.tabs(1).disable = sources.isEmpty
-                            tabPane.selectionModel().select(0)
+                            tabPane.tabs(2).disable = sources.isEmpty
+                            if (!tabPane.selectionModel().isSelected(1)) {
+                                tabPane.selectionModel().select(1)
+                            }
                             reportView.engine.loadContent(Messages.LOADING_FINISHED)
                         }
                     }
@@ -233,6 +363,9 @@ class BugPicker extends Application {
                                     val parameters = BugPicker.loadParametersFromPreferences()
                                     AnalysisRunner.runAnalysis(stage, project, sources, parameters,
                                         sourceView, byteView, reportView, tabPane)
+                                    if (!tabPane.selectionModel().isSelected(1)) {
+                                        tabPane.selectionModel().select(1)
+                                    }
                                 }
                             },
                             new MenuItem {
@@ -277,7 +410,10 @@ class BugPicker extends Application {
                 (for (p ← recentProjects) yield {
                     i = i + 1
                     new MenuItem {
-                        text = p.projectName
+                        text = p.projectName flatMap {
+                            case '_' ⇒ "__"
+                            case c   ⇒ s"$c"
+                        }
                         mnemonicParsing = true
                         if (i < 10) {
                             accelerator = KeyCombination(s"Shortcut+$i")
@@ -291,7 +427,7 @@ class BugPicker extends Application {
                     }
                 }) ++ Seq(
                     new MenuItem {
-                        text = "Clear Items"
+                        text = "_Clear Items"
                         mnemonicParsing = true
                         accelerator = KeyCombination("Shortcut+0")
                         id = "clearItems"
@@ -322,7 +458,7 @@ class BugPicker extends Application {
                 lastProject +: recentProjects.filter(
                     _.projectName != lastProject.projectName)
             } else {
-                if (recentProjects.size < BugPicker.MAX_PREFERENCES_SIZE) {
+                if (recentProjects.size < BugPicker.MAX_RECENT_PROJECTS) {
                     // lastProject is most recent project, enough space for one more
                     lastProject +: recentProjects
                 } else {
@@ -403,7 +539,7 @@ object BugPicker {
 
     final val defaultAppCSSURL = getClass.getResource("/org/opalj/bugpicker/ui/app.css").toExternalForm
 
-    final val MAX_PREFERENCES_SIZE = 9
+    final val MAX_RECENT_PROJECTS = 9
 
     def loadWindowSizeFromPreferences(): Option[Rectangle2D] = {
         val prefValue = PREFERENCES.get(PREFERENCES_KEY_WINDOW_SIZE, "")

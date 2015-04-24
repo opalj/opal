@@ -72,7 +72,7 @@ object UselessComputations extends DefaultOneStepAnalysis {
             with domain.l1.LongValuesShiftOperators
             with domain.ProjectBasedClassHierarchy {
 
-        override protected def maxCardinalityOfIntegerRanges: Long = 4l
+        override def maxCardinalityOfIntegerRanges: Long = 4l
     }
 
     override def title: String = "Useless Computations Identification"

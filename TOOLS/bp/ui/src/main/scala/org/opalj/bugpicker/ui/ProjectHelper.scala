@@ -43,13 +43,10 @@ import org.opalj.br.reader.Java8LibraryFrameworkWithCaching
 import org.opalj.br.ClassFile
 import org.opalj.bugpicker.ui.dialogs.DialogStage
 import org.opalj.bugpicker.ui.dialogs.LoadedFiles
-import org.opalj.log.Error
-import org.opalj.log.Level
-import org.opalj.log.LogContext
-import org.opalj.log.LogMessage
 import org.opalj.log.OPALLogger
 
 import scalafx.application.Platform
+import scalafx.collections.ObservableBuffer
 import scalafx.event.ActionEvent
 import scalafx.geometry.Insets
 import scalafx.Includes._
@@ -65,15 +62,17 @@ import scalafx.stage.Stage
 
 object ProjectHelper {
 
+    private[this] implicit val logContext = org.opalj.log.GlobalLogContext
+
     def setupProject(
         loadedFiles: LoadedFiles,
         parentStage: Stage,
-        consoleTextArea: TextArea): (Project[URL], Seq[File]) = {
+        projectLogMessages: ObservableBuffer[BugPickerLogMessage]): (Project[URL], Seq[File]) = {
 
         val files = loadedFiles.projectFiles
         val sources = loadedFiles.projectSources
         val libs = loadedFiles.libraries
-        val project = setupProject(files, libs, parentStage, consoleTextArea)
+        val project = setupProject(files, libs, parentStage, projectLogMessages)
         (project, sources)
     }
 
@@ -81,8 +80,8 @@ object ProjectHelper {
         cpFiles: Iterable[File],
         libcpFiles: Iterable[File],
         parentStage: Stage,
-        consoleTextArea: TextArea): Project[URL] = {
-        println("[info] Reading class files (found in):")
+        projectLogMessages: ObservableBuffer[BugPickerLogMessage]): Project[URL] = {
+        OPALLogger.info("creating project", "reading class files (found in):")
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
         val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
         val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
@@ -91,15 +90,15 @@ object ProjectHelper {
             br.reader.readClassFiles(
                 cpFiles,
                 Java8ClassFileReader.ClassFiles,
-                (file) ⇒ println("[info]\t"+file))
+                (file) ⇒ OPALLogger.info("creating project", file.toString))
 
         val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
-                println("[info] Reading library class files (found in):")
+                OPALLogger.info("creating project", "reading library class files (found in):")
                 br.reader.readClassFiles(
                     libcpFiles,
                     Java8LibraryClassFileReader.ClassFiles,
-                    (file) ⇒ println("[info]\t"+file))
+                    (file) ⇒ OPALLogger.info("creating project", file.toString))
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
@@ -144,7 +143,7 @@ object ProjectHelper {
 
         Project(
             classFiles, libraryClassFiles, virtualClassFiles = Traversable.empty)(
-                projectLogger = new BugPickerOPALLogger(consoleTextArea))
+                projectLogger = new BugPickerOPALLogger(projectLogMessages))
     }
 }
 

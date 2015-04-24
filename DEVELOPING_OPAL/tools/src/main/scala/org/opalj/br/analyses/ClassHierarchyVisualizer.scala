@@ -32,7 +32,7 @@ package analyses
 
 import org.opalj.graphs.{ Node, toDot }
 import org.opalj.br.reader.Java8Framework.ClassFiles
-
+import org.opalj.log.GlobalLogContext
 /**
  * Creates a `dot` (Graphviz) based representation of the class hierarchy
  * of the specified jar file(s).
@@ -57,7 +57,7 @@ object ClassHierarchyVisualizer {
                     (List.empty[(ClassFile, java.net.URL)] /: args) { (cfs, filename) ⇒
                         cfs ++ ClassFiles(new java.io.File(filename))
                     }
-                ClassHierarchy(classFiles.view.map(_._1))(org.opalj.log.GlobalContext)
+                ClassHierarchy(classFiles.view.map(_._1))(GlobalLogContext)
             }
 
         val dotGraph = toDot(Set(classHierarchy.toGraph), "back")

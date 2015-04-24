@@ -62,8 +62,8 @@ trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
             val array: Array[_] = value.asInstanceOf[Array[_]]
             InitializedArrayValue(
                 pc,
-                List(array.length),
-                FieldType(fqnInBinaryNotation).asArrayType)
+                FieldType(fqnInBinaryNotation).asArrayType,
+                List(array.length))
         } else /*if (!clazz.isPrimitive()) */ {
             InitializedObjectValue(pc, ObjectType(fqnInBinaryNotation))
         }

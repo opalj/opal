@@ -38,7 +38,7 @@ import org.scalatest.Matchers
 import org.opalj.graphs.toDot
 import org.opalj.collection.immutable.UIDSet
 import scala.language.implicitConversions
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 
 /**
  * @author Tobias Becker
@@ -52,7 +52,7 @@ class JoinUpperBoundsTest
         ClassHierarchy(
             Traversable.empty,
             List(() ⇒ this.getClass.getResourceAsStream("ClassHierachyUpperBounds.ths"))
-        )(GlobalContext)
+        )(GlobalLogContext)
 
     implicit def stringToUIDSetObjectType(str: String) = UIDSet(ObjectType(str))
 

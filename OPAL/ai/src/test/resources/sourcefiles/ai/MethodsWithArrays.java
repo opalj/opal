@@ -368,4 +368,50 @@ public class MethodsWithArrays {
         out.println(o instanceof int[]);// false
     }
 
+    private static void processIt(Object o) {
+        /* just a pseudo method */
+    }
+
+    public static void a3DimensionalArray(boolean b) {
+        int[][][] is = new int[2][2][2];
+        if (b) {
+            is[1] = new int[3][]; // now we just know that the outer array is of size 2
+            processIt(is); // PC: 20
+        } else {
+            is[0] = new int[2][2]; // the basic structure remains intact
+            processIt(is); // PC: 36
+        }
+        processIt(is); // PC: 40
+    }
+
+    public static void a3DimensionalArrayWithPotentialExceptions(boolean b, int index) {
+        int[][][] is = new int[2][2][2];
+        if (b) {
+            try {
+                is[index] = new int[3][]; // now we just know that the outer array is of size
+                // 2
+                processIt(is);
+            } catch (Throwable t) {
+                processIt(is); // "is" is unchanged!
+            } finally {
+                processIt(is); // "is" is unchanged if we are on an exception path
+            }
+        } else {
+            is[0] = new int[2][2]; // the basic structure remains intact
+            processIt(is);
+        }
+        processIt(is);
+    }
+
+    public static void a2DimensionalArray(boolean b) {
+        int[][] is = new int[2][2];
+        if (b) {
+            is[1] = new int[3]; // now the array is no longer a 2x2 array
+            processIt(is);
+        } else {
+            is[0] = new int[2]; // the basic structure remains intact
+            processIt(is);
+        }
+        processIt(is);
+    }
 }

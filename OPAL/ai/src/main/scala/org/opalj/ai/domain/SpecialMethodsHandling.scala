@@ -58,34 +58,32 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
         methodDescriptor: MethodDescriptor,
         operands: Operands): MethodCallResult = {
 
-        if ((declaringClassType eq ObjectType.System) &&
-            name == "arraycopy" &&
-            methodDescriptor == arraycopyDescriptor) {
+        if (!(
+            (declaringClassType eq ObjectType.System) &&
+            name == "arraycopy" && methodDescriptor == arraycopyDescriptor))
+            return super.invokestatic(pc, declaringClassType, name, methodDescriptor, operands);
 
-            val List(length, destPos, dest, sourcePos, source) = operands
-            val sourceIsNull = refIsNull(pc, source)
-            val destIsNull = refIsNull(pc, dest)
-            if (sourceIsNull.isYes || destIsNull.isYes) {
-                return justThrows(NullPointerException(pc));
-            }
-
-            var exceptions: List[ExceptionValue] = List.empty
-            if (sourceIsNull.isUnknown || destIsNull.isUnknown)
-                exceptions ::= NullPointerException(pc)
-
-            // IMPROVE The support for identifying ArrayStoreExceptions for System.arraycopy methods
-            exceptions ::= ArrayStoreException(pc)
-
-            exceptions ::= InitializedObjectValue(pc, ObjectType.IndexOutOfBoundsException)
-            if (intIsSomeValueInRange(pc, sourcePos, 0, Int.MaxValue).isNo ||
-                intIsSomeValueInRange(pc, destPos, 0, Int.MaxValue).isNo ||
-                intIsSomeValueInRange(pc, length, 0, Int.MaxValue).isNo)
-                return ThrowsException(exceptions);
-
-            return MethodCallResult(exceptions)
+        val List(length, destPos, dest, sourcePos, source) = operands
+        val sourceIsNull = refIsNull(pc, source)
+        val destIsNull = refIsNull(pc, dest)
+        if (sourceIsNull.isYes || destIsNull.isYes) {
+            return justThrows(NullPointerException(pc)); // <=== early return
         }
 
-        super.invokestatic(pc, declaringClassType, name, methodDescriptor, operands)
+        var exceptions: List[ExceptionValue] = List.empty
+        if (sourceIsNull.isUnknown || destIsNull.isUnknown)
+            exceptions ::= NullPointerException(pc)
+
+        // IMPROVE The support for identifying ArrayStoreExceptions for System.arraycopy methods
+        exceptions ::= ArrayStoreException(pc)
+
+        exceptions ::= InitializedObjectValue(pc, ObjectType.IndexOutOfBoundsException)
+        if (intIsSomeValueInRange(pc, sourcePos, 0, Int.MaxValue).isNo ||
+            intIsSomeValueInRange(pc, destPos, 0, Int.MaxValue).isNo ||
+            intIsSomeValueInRange(pc, length, 0, Int.MaxValue).isNo)
+            ThrowsException(exceptions);
+        else
+            MethodCallResult(exceptions)
     }
 }
 

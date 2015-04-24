@@ -65,21 +65,18 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         tracer: Option[AITracer]): List[PC] = {
 
         def doUpdate(updaters: List[DomainValueUpdater]): Unit = {
-            var isOperandUpdated = false
+            val oldOperands = operandsArray(successorPC)
             val newOperands =
-                operandsArray(successorPC) map { op ⇒
-                    var updatedOp = updaters.head(op)
-                    updatedOp = updaters.tail.foldLeft(updatedOp) { (updatedOp, updater) ⇒
+                oldOperands mapConserve { op ⇒
+                    updaters.tail.foldLeft(updaters.head(op)) { (updatedOp, updater) ⇒
                         updater(updatedOp)
                     }
-                    if (op ne updatedOp) isOperandUpdated = true
-                    updatedOp
                 }
-            if (isOperandUpdated)
+            if (newOperands ne oldOperands)
                 operandsArray(successorPC) = newOperands
 
             val locals: Locals = localsArray(successorPC)
-            localsArray(successorPC) = locals.transform { l ⇒
+            localsArray(successorPC) = locals.mapConserve { l ⇒
                 if (l ne null)
                     updaters.tail.foldLeft(updaters.head.apply(l))((c, u) ⇒ u.apply(c))
                 else

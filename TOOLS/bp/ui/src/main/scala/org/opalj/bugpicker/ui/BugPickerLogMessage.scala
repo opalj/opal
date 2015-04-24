@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,28 +22,38 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package ai;
+package org.opalj
+package bugpicker
+package ui
+
+import scalafx.beans.property.StringProperty
 
 /**
- * Just a very large number of methods related to reflection.
- * 
- * <b>This class is not meant to be (automatically) recompiled; it just serves
- * documentation purposes. The compiled class that is used by the tests is found in the
- * test-classfiles directory.</b>
- * 
+ * Basic container for log messages that are displayed on the BugPicker UI.
+ *
+ * @author David Becker
+ */
+class BugPickerLogMessage(
+    val timestamp: StringProperty,
+    val level: StringProperty,
+    val category: StringProperty,
+    val message: StringProperty)
+
+/**
  * @author Michael Eichberg
  */
-public class MethodsWithReflection {
+object BugPickerLogMessage {
 
-    public static Class<?> someClass1() throws ClassNotFoundException {
-        return Class.forName("ai.MethodsPlain");
-    }
-
-    public static Class<?> someClass2() {
-        return ai.MethodsPlain.class;
+    def apply(timestamp: String, level: String, category: String, message: String): BugPickerLogMessage = {
+        new BugPickerLogMessage(
+            new StringProperty(this, "date", timestamp),
+            new StringProperty(this, "level", level),
+            new StringProperty(this, "category", category),
+            new StringProperty(this, "message", message))
     }
 }
+

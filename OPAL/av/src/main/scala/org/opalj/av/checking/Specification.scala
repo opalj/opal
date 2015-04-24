@@ -46,7 +46,7 @@ import org.opalj.br.analyses.{ ClassHierarchy, Project }
 import org.opalj.de._
 import org.opalj.log.OPALLogger
 import org.opalj.io.processSource
-import org.opalj.log.GlobalContext
+import org.opalj.log.GlobalLogContext
 
 /**
  * A specification of a project's architectural constraints.
@@ -598,7 +598,7 @@ object Specification {
         if (file.isDirectory)
             throw SpecificationError("the specified jar file is a directory: "+jarName)
 
-        OPALLogger.info("creating project", s"loading $jarName")(GlobalContext)
+        OPALLogger.info("creating project", s"loading $jarName")(GlobalLogContext)
 
         Project.Java8ClassFileReader.ClassFiles(file)
     }
@@ -625,7 +625,7 @@ object Specification {
         if (file.isDirectory)
             throw SpecificationError("the specified jar file is a directory: "+jarName)
 
-        OPALLogger.info("creating project", s"loading library $jarName")(GlobalContext)
+        OPALLogger.info("creating project", s"loading library $jarName")(GlobalLogContext)
 
         Project.Java8LibraryClassFileReader.ClassFiles(file)
     }

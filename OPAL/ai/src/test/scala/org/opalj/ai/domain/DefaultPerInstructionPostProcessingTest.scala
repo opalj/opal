@@ -79,7 +79,7 @@ class DefaultPerInstructionPostProcessingTest
             with l0.TypeLevelPrimitiveValuesConversions
             with l0.TypeLevelLongValuesShiftOperators {
 
-        override protected def maxCardinalityOfIntegerRanges: Long = 16l
+        override def maxCardinalityOfIntegerRanges: Long = 16l
     }
 
     private def evaluateMethod(name: String)(f: DefaultRecordingDomain ⇒ Unit): Unit = {
