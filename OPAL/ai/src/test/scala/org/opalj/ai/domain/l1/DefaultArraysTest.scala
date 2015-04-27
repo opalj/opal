@@ -365,6 +365,19 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
             })
         }
 
+        it("should be able to analyze a simple 4-dimensional array initialization") {
+            evaluateMethod("a4DimensionalArray", domain ⇒ {
+                import domain._
+                val twoDimIntArray = ArrayType(ArrayType(IntegerType))
+                val fourDimIntArray = ArrayType(ArrayType(twoDimIntArray))
+                val operandsArray = domain.operandsArray
+
+                // we are just testing the dimensions of the array property
+                operandsArray(8).head should be(
+                    InitializedArrayValue(4, fourDimIntArray, List(2, 3)))
+            })
+        }
+
         it("should be able to analyze a simple 2-dimensional array initialization") {
             evaluateMethod("a2DimensionalArray", domain ⇒ {
                 import domain._
