@@ -78,7 +78,8 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
             evaluateMethod("simpleIntArrayInitializationWithLength4", domain ⇒ {
                 import domain._
 
-                val varray = allReturnedValues(21)
+                val returnIndex = 21
+                val varray = allReturnedValues(returnIndex)
 
                 allReturnedValues.size should be(1)
 
@@ -437,6 +438,52 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
 
                 operandsArray(68).head should be(
                     InitializedArrayValue(3, ArrayType(ArrayType(ArrayType(IntegerType))), List(2)))
+            })
+        }
+    }
+
+    describe("array accesses that lead to exceptions") {
+
+        it("if an index is out of bounds a corresponding exception should be thrown even if the store is potentially impossible") {
+            evaluateMethod("simpleByteArrayInitializationWithLength4", domain ⇒ {
+                import domain._
+
+                val returnIndex = 21
+
+                val varray = allReturnedValues(returnIndex)
+                val expectedException =
+                    ThrowsException(List(
+                        InitializedObjectValue(-100021, ObjectType.ArrayIndexOutOfBoundsException)
+                    ))
+
+                allReturnedValues.size should be(1)
+                arrayload(returnIndex, IntegerValue(returnIndex, 4), varray) should be(expectedException)
+                arrayload(returnIndex, IntegerValue(returnIndex, -1), varray) should be(expectedException)
+                arraystore(returnIndex, ByteValue(4), IntegerValue(returnIndex, 4), varray) should be(expectedException)
+                arraystore(returnIndex, ByteValue(4), IntegerValue(returnIndex, -1), varray) should be(expectedException)
+                arraystore(returnIndex, LongValue(4), IntegerValue(returnIndex, 4), varray) should be(expectedException)
+                arraystore(returnIndex, LongValue(4), IntegerValue(returnIndex, -1), varray) should be(expectedException)
+            })
+        }
+
+        it("should lead to an array store exception if the value cannot be stored in the array") {
+            evaluateMethod("simpleStringArrayInitializationWithLength4", domain ⇒ {
+                import domain._
+
+                val returnIndex = 26
+                val varray = allReturnedValues(returnIndex)
+                val expectedException =
+                    ThrowsException(List(InitializedObjectValue(-100026, ObjectType.ArrayStoreException)))
+
+                // make sure the class hierarchy is as expected
+                assert(domain.classHierarchy.isKnown(ObjectType.Class))
+                assert(domain.classHierarchy.isKnown(ObjectType.String))
+                assert(isSubtypeOf(ObjectType.Class, ObjectType.String) === No)
+                assert(isSubtypeOf(ObjectType.String, ObjectType.Class) === No)
+
+                val array = InitializedObjectValue(returnIndex, ObjectType.Class)
+                val index = IntegerValue(returnIndex, 3)
+                arraystore(returnIndex, array, index, varray) should be(expectedException)
             })
         }
     }
