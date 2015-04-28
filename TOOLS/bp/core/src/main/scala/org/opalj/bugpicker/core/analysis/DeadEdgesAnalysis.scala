@@ -107,7 +107,7 @@ import org.opalj.br.ExceptionHandler
  *
  * @author Michael Eichberg
  */
-object DeadPathAnalysis {
+object DeadEdgesAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
