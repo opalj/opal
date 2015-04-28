@@ -87,7 +87,8 @@ import org.opalj.br.instructions.INVOKEINTERFACE
 
 /**
  * Identifies accesses to local
- * reference variables that are once done in a guarded context
+ * reference variables that are once done in a guarded context w.r.t. its nullness
+ * property
  * (guarded by an if instruction) and that are also done in an unguarded context.
  *
  * This is only a very shallow (but always correct) analysis; if we would integrate

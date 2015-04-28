@@ -36,6 +36,7 @@ import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.analyses.cg.ComputedCallGraph
+import org.opalj.br.instructions.ReturnInstruction
 
 /**
  * Identifies unused methods and constructors based on the call graph.
@@ -52,8 +53,12 @@ object UnusedMethodsAnalysis {
      *
      * If any of the following conditions is true, it will assume the method as being called.
      * - The method is the target of a method call in the calculated call graph.
-     * - The method is a private default constructor in a final class. Such constructors
+     * - The method is a private (empty) default constructor in a final class. Such constructors
      *      are usually defined to avoid instantiations of the respective class.
+     * - The method is a private constructor in a final class that always throws an exception.
+     *      Such constructors are usually defined to avoid instantiations of the
+     *      respective class. E.g.
+     *      `private XXX(){throw new UnsupportedOperationException()`
      */
     def analyze(
         theProject: SomeProject,
@@ -65,7 +70,14 @@ object UnusedMethodsAnalysis {
                 callgraphEntryPoints.contains(method) || (
                     // it is basically a default constructor ...
                     method.isConstructor && method.isPrivate && method.parametersCount == 1 /*this*/ &&
-                    method.body.isDefined && method.body.get.instructions.size == 5 &&
+                    method.body.isDefined && {
+                        val body = method.body.get
+                        val instructions = body.instructions
+                        instructions.size == 5 /* <= default empty constructor */ ||
+                            !body.exists { (pc, i) ⇒ /* <= it just throws exceptions */
+                                ReturnInstruction.isReturnInstruction(i)
+                            }
+                    } &&
                     // ... which was (usually) defined to avoid instantiations of the
                     // class (e.g., java.lang.Math)
                     classFile.constructors.size == 1
