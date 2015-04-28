@@ -64,30 +64,42 @@ object UnusedMethodsAnalysis {
         theProject: SomeProject,
         callgraph: ComputedCallGraph, callgraphEntryPoints: Set[Method],
         classFile: ClassFile, method: Method): Option[StandardIssue] = {
+        if (callgraphEntryPoints.contains(method))
+            return None; // <=== early return
 
-        def ignoreMethod(): Boolean = {
-            val ignoreIt =
-                callgraphEntryPoints.contains(method) || (
-                    // it is basically a default constructor ...
-                    method.isConstructor && method.isPrivate && method.parametersCount == 1 /*this*/ &&
-                    method.body.isDefined && {
-                        val body = method.body.get
-                        val instructions = body.instructions
-                        instructions.size == 5 /* <= default empty constructor */ ||
-                            !body.exists { (pc, i) ⇒ /* <= it just throws exceptions */
-                                ReturnInstruction.isReturnInstruction(i)
-                            }
-                    } &&
-                    // ... which was (usually) defined to avoid instantiations of the
-                    // class (e.g., java.lang.Math)
-                    classFile.constructors.size == 1
-                )
-            ignoreIt
+        def rateMethod(): Relevance = {
+            // Let's check if it is a default constructor
+            // which was defined to avoid instantiations of the
+            // class (e.g., java.lang.Math)
+
+            import method._
+
+            val isDefaultConstructor = isConstructor && isPrivate && parametersCount == 1 /*this*/
+            if (!isDefaultConstructor)
+                return Relevance.DefaultRelevance; // <=== early return
+
+            val constructorsIterator = classFile.constructors
+            constructorsIterator.next // <= we have at least one constructor
+            if (constructorsIterator.hasNext)
+                // we have (among others) a default constructor that is not used
+                return Relevance.High; // <=== early return
+
+            val body = method.body.get
+            val instructions = body.instructions
+            if (instructions.size == 5 /* <= default empty constructor */ )
+                Relevance.TechnicalArtifact
+            else if (!body.exists { (pc, i) ⇒ /* <= it just throws exceptions */
+                ReturnInstruction.isReturnInstruction(i)
+            })
+                Relevance.CommonIdiom
+            else
+                Relevance.DefaultRelevance
         }
 
         val callers = callgraph.callGraph calledBy method
-        if (callers.isEmpty && !ignoreMethod) {
+        if (callers.isEmpty) {
             val description = methodOrConstructor(method)
+            val relevance: Relevance = rateMethod()
             // the unused method or constructor issue
             Some(StandardIssue(
                 theProject, classFile, Some(method), None,
@@ -98,24 +110,24 @@ object UnusedMethodsAnalysis {
                 Set(IssueCategory.Comprehensibility),
                 Set(IssueKind.Unused),
                 Seq(),
-                Relevance.DefaultRelevance
+                relevance
             ))
         } else
             None
     }
 
     def methodOrConstructor(method: Method): String = {
+        def access(flags: Int): String =
+            VisibilityModifier.get(flags) match {
+                case Some(visiblity) ⇒ visiblity.javaName.get
+                case _               ⇒ "/*default*/"
+            }
+
         if (method.isConstructor)
             s"the ${access(method.accessFlags)} constructor is not used"
         else
             s"the ${access(method.accessFlags)} method is not used"
     }
-
-    def access(flags: Int): String =
-        VisibilityModifier.get(flags) match {
-            case Some(visiblity) ⇒ visiblity.javaName.get
-            case _               ⇒ "/*default*/"
-        }
 
 }
 
