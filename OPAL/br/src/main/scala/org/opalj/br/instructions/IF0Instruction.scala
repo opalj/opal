@@ -38,6 +38,8 @@ package instructions
  */
 abstract class IF0Instruction extends SimpleConditionalBranchInstruction {
 
-    def operandCount = 1
+    final def operandCount = 1
+
+    def condition: RelationalOperator
 
 }
