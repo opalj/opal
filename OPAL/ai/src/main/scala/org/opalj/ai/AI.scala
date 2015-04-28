@@ -29,9 +29,10 @@
 package org.opalj
 package ai
 
+import scala.language.existentials
+
 import scala.util.control.ControlThrowable
 import scala.collection.BitSet
-
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.ai.util.{ removeFirstUnless, containsInPrefix, insertBefore, insertBeforeIfNew }
 import org.opalj.br._
@@ -46,7 +47,7 @@ import org.opalj.br.instructions._
  * further non-join instruction can be evaluated ([[org.opalj.br.Code.joinInstructions]]).
  * Each instruction is then evaluated using a given (abstract) [[org.opalj.ai.Domain]].
  * The evaluation of a subroutine (Java code < 1.5) - in case of an unhandled
- * exception – is always first completed before the evaluation of the parent subroutine
+ * exception – is always first completed before the evaluation of the parent (sub)routine
  * is continued.
  *
  * ==Interacting with OPAL's Abstract Interpreter==
@@ -65,10 +66,10 @@ import org.opalj.br.instructions._
  * However, if you want to be able to selectively abort the abstract interpretation
  * of some methods or want to selectively trace the interpretation of some methods, then
  * you should use multiple abstract interpreter instances.
- * Creating new instances is extremely cheap as this class
+ * Creating new instances is usually extremely cheap as this class
  * does not have any significant associated state.
  *
- * Subclasses '''are not required to be thread-safe''' as well.
+ * Subclasses '''are not required to be thread-safe and may have more complex state.'''
  *
  * @note
  *     OPAL does not make assumptions about the number of domain objects that
@@ -76,7 +77,7 @@ import org.opalj.br.instructions._
  *     of this class and the abstract interpretations are executed concurrently, then
  *     the domain has to be thread-safe.
  *     The latter is trivially the case when the domain object itself does not have
- *     any state.
+ *     any state; however, most domain objects have some state.
  *
  * ==Customizing the Abstract Interpretation Framework==
  * Customization of the abstract interpreter is done by creating new subclasses that
@@ -85,6 +86,8 @@ import org.opalj.br.instructions._
  * @author Michael Eichberg
  */
 trait AI[D <: Domain] {
+
+    type SomeLocals[V <: d.DomainValue forSome { val d: Domain }] = Option[IndexedSeq[V]]
 
     /**
      * Determines whether a running (or to be started) abstract interpretation
@@ -115,13 +118,13 @@ trait AI[D <: Domain] {
      * The tracer (default: `None`) that is called by OPAL while performing the abstract
      * interpretation of a method.
      *
-     * This method is called at different points  to report on the analysis progress (see
+     * This method is called at different points to report on the analysis progress (see
      * [[org.opalj.ai.AITracer]] for further details)
+     *
+     * It is possible to attach/detach a tracer at any time.
      *
      * '''To attach a tracer to the abstract interpreter override this
      * method in subclasses''' and return some tracer object.
-     *
-     * It is possible to attach/detach a tracer at any time.
      */
     def tracer: Option[AITracer] = None
 
@@ -161,7 +164,7 @@ trait AI[D <: Domain] {
      * used when analyzing a new method.
      *
      * Initially, only the registers that contain the method's parameters (including
-     * the self reference (`this`)) are used.  If no initial assignment is provided
+     * the self reference (`this`)) are used. If no initial assignment is provided
      * (`someLocals == None`) a valid assignment is automatically created using
      * the domain. See `perform(...)` for further details regarding the initial
      * register assignment.
@@ -181,7 +184,7 @@ trait AI[D <: Domain] {
         classFile: ClassFile,
         method: Method,
         domain: D)(
-            someLocals: Option[IndexedSeq[domain.DomainValue]] = None): domain.Locals = {
+            someLocals: SomeLocals[domain.DomainValue] = None): domain.Locals = {
 
         import domain.DomainValue
 
@@ -192,8 +195,9 @@ trait AI[D <: Domain] {
                 l.size >= (method.parameterTypes.size + (if (method.isStatic) 0 else 1)),
                 "the number of initial locals is less than the number of parameters"
             )
-            assert(l.size <= maxLocals,
-                "the number of initial locals is larger than max locals"
+            assert(
+                l.size <= maxLocals,
+                s"the number of initial locals ${l.size} is larger than max locals $maxLocals"
             )
 
             // ... the number of given locals is smaller than or equal to the number of
@@ -212,7 +216,7 @@ trait AI[D <: Domain] {
             var localVariableIndex = 0
 
             // Calculates the initial "PC" associated with a method's parameter.
-            def origin(localVariableIndex: Int) = -localVariableIndex - 1
+            @inline def origin(localVariableIndex: Int) = -localVariableIndex - 1
 
             if (!method.isStatic) {
                 val thisType = classFile.thisType
@@ -462,7 +466,8 @@ trait AI[D <: Domain] {
         /*
          * The information to which subroutine an instruction belongs is only needed
          * if a subroutine is ever abruptly terminated. In case of code generated by
-         * a Java 6 or newer compiler no subroutines are generated.
+         * a Java 6 or newer compiler no subroutines are generated. However,
+         * even the JDK 8 still contains a few classes that were compiled with Java 1.1!
          */
         lazy val belongsToSubroutine = code.belongsToSubroutine()
 
@@ -472,7 +477,7 @@ trait AI[D <: Domain] {
          * instruction at the given target (`targetPC`).
          *
          * Basically, the operand stack and the local variables are updated using the
-         * given ones and the target program counter is added to the `worklist`.
+         * given ones and the target program counter is added to the worklist.
          *
          * In case of an abrupt termination of a subroutine the operands and locals
          * array of the catching method are also updated.
@@ -494,8 +499,8 @@ trait AI[D <: Domain] {
                     targetPC, isExceptionalControlFlow,
                     newOperands, newLocals)
 
-            // the number of subroutines that are abruptly terminated by an exception
-            // that is not handled by teh subroutine itself
+            // Determine the number of subroutines that are abruptly terminated by
+            // an exception that is not handled by the subroutine itself.
             val abruptSubroutineTerminationCount: Int = {
                 if (isExceptionalControlFlow && memoryLayoutBeforeSubroutineCall.nonEmpty) {
                     val jumpToSubroutineId = belongsToSubroutine(targetPC)
@@ -547,7 +552,6 @@ trait AI[D <: Domain] {
              *          instruction was newly scheduled.
              *      - `doSchedule` is true and true is returned, then the target
              *          instruction was already scheduled.
-
              */
             def handleAbruptSubroutineTermination(doSchedule: Boolean): Boolean = {
                 assert(abruptSubroutineTerminationCount > 0)
@@ -555,7 +559,7 @@ trait AI[D <: Domain] {
                 val jumpToSubroutineId = belongsToSubroutine(targetPC)
 
                 var subroutinesToTerminate = abruptSubroutineTerminationCount
-                // we now know the number of subroutines that are terminated (at most
+                // We now know the number of subroutines that are terminated (at most
                 // all active real subroutines) now let's remove the elements of those
                 // subroutines from the worklist, schedule the instruction (if necessary)
                 // and re-add the child subroutines.
@@ -611,7 +615,7 @@ trait AI[D <: Domain] {
             val currentOperands = targetOperandsArray(targetPC)
             val wasJoinPerformed =
                 if (currentOperands == null) {
-                    // we analyze the instruction for the first time
+                    // We analyze the instruction for the first time.
                     targetOperandsArray(targetPC) = operands
                     targetLocalsArray(targetPC) = locals
                     if (abruptSubroutineTerminationCount > 0) {
@@ -627,8 +631,6 @@ trait AI[D <: Domain] {
                     /* join: */ false
 
                 } else if (!joinInstructions.contains(targetPC)) {
-                    assert(abruptSubroutineTerminationCount == 0)
-
                     // The instruction is not an instruction where multiple control-flow
                     // paths join; however, we may have a dangling computation.
                     // E.g., imagine the following code:
@@ -646,11 +648,13 @@ trait AI[D <: Domain] {
                     // reschedule it again.
                     targetOperandsArray(targetPC) = operands
                     targetLocalsArray(targetPC) = locals
-                    if (!containsInPrefix(worklist, targetPC, SUBROUTINE_START))
+                    if (!containsInPrefix(worklist, targetPC, SUBROUTINE_START)) {
                         worklist = targetPC :: worklist
+                    }
 
-                    if (tracer.isDefined)
+                    if (tracer.isDefined) {
                         tracer.get.flow(theDomain)(sourcePC, targetPC, isExceptionalControlFlow)
+                    }
 
                     /* join: */ false
 
@@ -808,12 +812,12 @@ trait AI[D <: Domain] {
                     worklist = worklist.tail // remove SUBROUTINE_START
                     var retPCs = Set.empty[PC]
                     while (worklist.head >= SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND) {
-                        // in case that a subroutine always throws a (non-caught) exception,
-                        // we will not have encountered a single ret instruction
+                        // In case that a subroutine always throws a (non-caught) exception,
+                        // we will not have encountered a single ret instruction.
                         retPCs += worklist.head
                         worklist = worklist.tail
                     }
-                    // we don't know the local variable in case that the subroutine
+                    // We don't know the local variable in case that the subroutine
                     // never returned normally and we were not able to fetch the
                     // information eagerly...
                     val lvIndex =
@@ -828,7 +832,7 @@ trait AI[D <: Domain] {
 
                     worklist = worklist.tail // remove SUBROUTINE_RETURN_TO_TARGET
                     val returnAddress = worklist.head
-                    worklist = worklist.tail.tail // let's remove the subroutine marker
+                    worklist = worklist.tail.tail // remove the subroutine marker
                     val targets = retPCs.map { retPC ⇒
                         if (tracer.isDefined) {
                             val subroutine = evaluated.tail.takeWhile(_ != SUBROUTINE_START)
@@ -838,16 +842,16 @@ trait AI[D <: Domain] {
                                 subroutine
                             )
                         }
-                        // reset the local variable that stores the return address
+                        // Reset the local variable that stores the return address
                         // to avoid conflicts on merge in case of a nested subroutine
-                        // that is evaluated in a loop
+                        // that is evaluated in a loop.
                         val operands = operandsArray(retPC)
                         val locals = localsArray(retPC)
                         val updatedLocals =
                             lvIndex.map(locals.updated(_, theDomain.Null)).getOrElse(locals)
                         (retPC, operands, updatedLocals)
                     }
-                    // clear all computations to make this subroutine callable again
+                    // Clear all computations to make this subroutine callable again.
                     val (_ /*subroutineId*/ , oldOperandsArray, oldLocalsArray) =
                         memoryLayoutBeforeSubroutineCall.head
                     operandsArray = oldOperandsArray
@@ -862,7 +866,7 @@ trait AI[D <: Domain] {
                             operands, updatedLocals)
                     }
 
-                    // it may be possible that – after the return from a
+                    // It may be possible that – after the return from a
                     // call to a subroutine – we have nothing further to do and
                     // the interpretation ends (in the bytecode there is at least
                     // one further instruction, but we may have evaluated that one
@@ -890,10 +894,11 @@ trait AI[D <: Domain] {
                 val operands = operandsArray(pc)
                 val locals = localsArray(pc)
 
-                if (tracer.isDefined)
+                if (tracer.isDefined) {
                     tracer.get.instructionEvalution(theDomain)(
                         pc, instruction, operands, locals
                     )
+                }
 
                 @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
 
@@ -1114,8 +1119,9 @@ trait AI[D <: Domain] {
                                     exceptionValues.map(_.asDomainValue(theDomain)))
                             }
 
-                        case TypeUnknown ⇒
-                            throw new AIException("type of the exception value is unknown")
+                        case exceptionValueType ⇒
+                            val error = s"unexpected type ($exceptionValueType) for exception"
+                            throw new AIException(error)
                     }
                 }
 
@@ -1194,6 +1200,7 @@ trait AI[D <: Domain] {
                         handleExceptions(computation.exceptions)
                 }
 
+                // Small helper method to make type casts shorter.
                 @inline def as[I <: Instruction](i: Instruction): I = i.asInstanceOf[I]
 
                 (instruction.opcode: @annotation.switch) match {
@@ -1265,15 +1272,14 @@ trait AI[D <: Domain] {
                             newOperands, locals)
 
                         if (tracer.isDefined) {
-                            tracer.get.jumpToSubroutine(
-                                theDomain)(
-                                    pc, branchTarget, memoryLayoutBeforeSubroutineCall.size)
+                            tracer.get.jumpToSubroutine(theDomain)(
+                                pc, branchTarget, memoryLayoutBeforeSubroutineCall.size)
                         }
 
                     case 169 /*ret*/ ⇒
                         val lvIndex = as[RET](instruction).lvIndex
                         // we now know the local variable that is used and
-                        // (one of) the ret instruction, we store this for later usage
+                        // (one of) the ret instruction(s), we store this for later usage
                         val oldWorklist = worklist
 
                         var subroutineWorklist = List.empty[PC] // after the next steps...
@@ -1285,13 +1291,13 @@ trait AI[D <: Domain] {
                         subroutineWorklist = subroutineWorklist.reverse // reestablish the correct order
                         tail = tail.tail // remove SUBROUTINE_START marker
 
-                        var dynamic_subroutine_information = List.empty[PC]
+                        var dynamicSubroutineInformation = List.empty[PC]
                         while (tail.head != SUBROUTINE_RETURN_TO_TARGET) {
-                            dynamic_subroutine_information = tail.head :: dynamic_subroutine_information
+                            dynamicSubroutineInformation = tail.head :: dynamicSubroutineInformation
                             tail = tail.tail
                         }
                         // let's check if we already know the used local variable
-                        if (dynamic_subroutine_information.isEmpty) {
+                        if (dynamicSubroutineInformation.isEmpty) {
                             // let's store the local variable
                             worklist =
                                 subroutineWorklist :::
@@ -1302,7 +1308,7 @@ trait AI[D <: Domain] {
                             // just let's store this ret instruction
                             worklist =
                                 subroutineWorklist :::
-                                    (SUBROUTINE_START :: pc :: dynamic_subroutine_information.reverse) :::
+                                    (SUBROUTINE_START :: pc :: dynamicSubroutineInformation.reverse) :::
                                     tail
                         }
 
@@ -1357,7 +1363,7 @@ trait AI[D <: Domain] {
                         val index = operands.head
                         val remainingOperands = operands.tail
                         if (switch.npairs.isEmpty) {
-                            // in the Java 7 JDK 45 we found a lookupswitch
+                            // in the Java 7 JDK 45 we actually found a lookupswitch
                             // that just had a defaultBranch (glorified "goto")
                             gotoTarget(
                                 pc, instruction, operands, locals,
@@ -2277,23 +2283,15 @@ trait AI[D <: Domain] {
                     case 196 /*wide*/ ⇒ fallThrough()
 
                     case opcode ⇒
-                        throw new BytecodeProcessingFailedException(
-                            s"unsupported opcode: $opcode"
-                        )
+                        val message = s"unknown opcode: $opcode"
+                        throw BytecodeProcessingFailedException(message)
                 }
 
                 theDomain.evaluationCompleted(
                     pc, worklist, evaluated, operandsArray, localsArray, tracer)
-            } catch {
-                case ct: ControlThrowable ⇒
-                    throw ct
 
-                case cause @ DomainException(message) ⇒
-                    throw InterpretationFailedException(
-                        cause, theDomain)(
-                            this,
-                            pc, worklist, evaluated,
-                            operandsArray, localsArray, memoryLayoutBeforeSubroutineCall)
+            } catch {
+                case ct: ControlThrowable ⇒ throw ct
 
                 case cause: Throwable ⇒
                     throw InterpretationFailedException(
@@ -2340,7 +2338,7 @@ private object AI {
  * @author Michael Eichberg
  */
 object CTC1 {
-    def unapply[D <: Domain](value: D#DomainValue): Boolean =
+    def unapply(value: Domain#DomainValue): Boolean =
         value.computationalType.category == 1
 }
 
@@ -2355,7 +2353,7 @@ object CTC1 {
  * @author Michael Eichberg
  */
 object CTC2 {
-    def unapply[D <: Domain](value: D#DomainValue): Boolean =
+    def unapply(value: Domain#DomainValue): Boolean =
         value.computationalType.category == 2
 }
 
