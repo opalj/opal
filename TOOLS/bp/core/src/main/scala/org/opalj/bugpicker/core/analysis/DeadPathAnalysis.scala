@@ -109,8 +109,6 @@ import org.opalj.br.ExceptionHandler
  */
 object DeadPathAnalysis {
 
-    final val AssertionError = ObjectType("java/lang/AssertionError")
-
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,
         result: AIResult { val domain: Domain with Callees with RecordCFG with Origin }): Seq[StandardIssue] = {
