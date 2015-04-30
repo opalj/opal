@@ -48,6 +48,7 @@ sealed trait InterpretationFailedException {
     val localsArray: domain.LocalsArray
     val memoryLayoutBeforeSubroutineCall: List[(PC, domain.OperandsArray, domain.LocalsArray)]
 }
+
 /**
  * Factory for [[InterpretationFailedException]]s.
  *

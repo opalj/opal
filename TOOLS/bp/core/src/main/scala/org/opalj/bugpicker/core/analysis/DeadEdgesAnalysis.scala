@@ -107,9 +107,7 @@ import org.opalj.br.ExceptionHandler
  *
  * @author Michael Eichberg
  */
-object DeadPathAnalysis {
-
-    final val AssertionError = ObjectType("java/lang/AssertionError")
+object DeadEdgesAnalysis {
 
     def analyze(
         theProject: SomeProject, classFile: ClassFile, method: Method,

@@ -54,7 +54,7 @@ trait Instruction {
      * The exceptions that may be thrown by the JVM at runtime if the execution of
      * this instruction fails.
      * I.e., these are neither exceptions that are explicitly created and then thrown
-     * by user code nor errors that my arise due to an invalid code base (e.g.
+     * by user code nor errors that may arise due to an invalid code base (e.g.
      * `LinkageError`s).
      */
     def runtimeExceptions: List[ObjectType]
@@ -101,16 +101,16 @@ trait Instruction {
      * Two instructions are isomporphic if they access the same operand and register
      * values and if the instructions have the same bytecode representation, except
      * of (A) (potential) padding bytes and (B) the branch offset of JSR(_W) instructions.
-     * In first case the branch offest are corrected by the number of padding bytes and
+     * In the first case the branch offsets are corrected by the number of padding bytes and
      * in the second case the absolute addresses are compared (i.e., whether both
      * instructions call the same subroutine.
      *
-     *  For example, an `aload_0` instruction is only
+     * For example, an `aload_0` instruction is only
      * isomorphic to another `aload_0` instruction and is not isomorphic to an `aload(0)`
      * instruction – though the runtime effect is the same. However, a [[LOOKUPSWITCH]]
      * ([[TABLESWITCH]]) instruction is considered isomorphic to another respective
      * instruction if the only difference is the number of padding bytes. Furthermore,
-     * two JSR(_W) instructions are isomorphic if and only if the jump to the same
+     * two JSR(_W) instructions are isomorphic if and only if they jump to the same
      * subroutine.
      *
      * @note The number of padding bytes is generally calculated by `(otherPC % 4) -
@@ -139,7 +139,7 @@ trait Instruction {
      *      values.
      *
      * @param ctg A function that returns the computational type category of
-     *          the value on the operand stack with a given index. The top value on
+     *          the value on the operand stack with a given index. E.g., The top value on
      *          the operand stack has index '0' and may occupy one (for category 1 values)
      *          or two stack slots (for category 2 values.)
      */
@@ -173,7 +173,7 @@ trait Instruction {
      * The index of the local (variable)/register that is read is returned. This
      * method is only defined if [[readsLocal]] returns `true`.
      */
-    @throws[UnsupportedOperationException]("thrown if no local variables are read")
+    @throws[UnsupportedOperationException]("thrown if no local variable is read")
     def indexOfReadLocal: Int
 
     /**

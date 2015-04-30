@@ -26,28 +26,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-package instructions
+package org.opalj.br
 
 /**
- * Branch if int comparison succeeds; succeeds if and only if value1 = value2.
- *
  * @author Michael Eichberg
  */
-case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction {
+package object quadruples {
 
-    final def opcode: Opcode = IF_ICMPEQ.opcode
+    type Stack = List[Var]
 
-    final def mnemonic: String = "if_icmpeq"
-
-    final def operator: String = "=="
-
-    final def condition: RelationalOperator = RelationalOperators.EQ
-
-}
-object IF_ICMPEQ {
-
-    final val opcode = 159
-
+    type ArithmeticOperator = ArithmeticOperators.Value
 }

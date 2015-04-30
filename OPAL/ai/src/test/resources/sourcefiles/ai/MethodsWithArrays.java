@@ -388,7 +388,8 @@ public class MethodsWithArrays {
         int[][][] is = new int[2][2][2];
         if (b) {
             try {
-                is[index] = new int[3][]; // now we just know that the outer array is of size
+                is[index] = new int[3][]; // now we just know that the outer array is of
+                                          // size
                 // 2
                 processIt(is);
             } catch (Throwable t) {
@@ -414,4 +415,31 @@ public class MethodsWithArrays {
         }
         processIt(is);
     }
+
+    public static void a4DimensionalArray(boolean b) {
+        int[][][][] is = new int[2][3][4][5];
+        if (b) {
+            is[1] = new int[3][6][9]; // now the array is no longer a 2x3x4x5 array
+            processIt(is);
+        } else {
+            is[0] = new int[3][4][5]; // the basic structure remains intact
+            processIt(is);
+        }
+        processIt(is);
+    }
+
+    public static void joinOf2DimensionalArrays(boolean b) {
+        int[][] start = new int[2][2];
+        int[][] is = null;
+        if (b) {
+            is = start;
+        } else {
+            is = new int[2][2]; // the basic structure remains intact
+        }
+        is[1] = new int[4]; // this may effect both: "start" or the array created in
+                            // the else branch
+        processIt(start); // we "just" know that start's first dimension is "2"
+        processIt(is); // we "just" know that is's first dimension is "2"
+    }
+
 }

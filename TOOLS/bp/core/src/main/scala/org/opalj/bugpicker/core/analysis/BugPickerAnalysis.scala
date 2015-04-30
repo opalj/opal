@@ -284,7 +284,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 //
                 results.addAll(
                     JavaConversions.asJavaCollection(
-                        DeadPathAnalysis.analyze(theProject, classFile, method, result)
+                        DeadEdgesAnalysis.analyze(theProject, classFile, method, result)
                     )
                 )
 
