@@ -84,11 +84,18 @@ import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.MONITORENTER
+import org.opalj.br.instructions.ARRAYLENGTH
+import org.opalj.br.instructions.AASTORE
+import org.opalj.br.instructions.AALOAD
+import org.opalj.br.instructions.IFNONNULL
+import org.opalj.br.instructions.NEW
+import org.opalj.br.instructions.IFNULL
 
 /**
  * Identifies accesses to local
- * reference variables that are once done in a guarded context
- * (guarded by an if instruction) and that are also done in an unguarded context.
+ * reference variables that are once done in a guarded context (w.r.t. its nullness
+ * property; guarded by an if instruction) and that are also done in an unguarded context.
  *
  * This is only a very shallow (but always correct) analysis; if we would integrate
  * the analysis with the evaluation process more precise results would be possible.
@@ -110,15 +117,31 @@ object GuardedAndUnguardedAccessAnalysis {
         var origins = Map.empty[ValueOrigin, PC]
         var timestamps = Map.empty[domain.Timestamp, PC]
 
+        // TODO We should also log those that are assertions related!
+
         body foreach { (pc, instr) ⇒
             if ((operandsArray(pc) ne null) && instr.isInstanceOf[IFXNullInstruction]) {
-                operandsArray(pc).head match {
-                    case domain.DomainSingleOriginReferenceValue(sov) ⇒
-                        origins += ((sov.origin, pc))
-                        timestamps += ((sov.t, pc))
-                    case domain.DomainMultipleReferenceValues(mov) ⇒
-                        timestamps += ((mov.t, pc))
-                }
+                import body.instructions
+                import body.pcOfNextInstruction
+                // let's check if the guard is related to an assert statement
+                val isAssertionRelated: Boolean =
+                    (instr match {
+                        case _: IFNONNULL         ⇒ Some(instructions(pcOfNextInstruction(pc)))
+                        case IFNULL(branchOffset) ⇒ Some(instructions(pc + branchOffset))
+                        case _                    ⇒ None
+                    }) match {
+                        case Some(NEW(AssertionError)) ⇒ true
+                        case _                         ⇒ false
+                    }
+
+                if (!isAssertionRelated)
+                    operandsArray(pc).head match {
+                        case domain.DomainSingleOriginReferenceValue(sov) ⇒
+                            origins += ((sov.origin, pc))
+                            timestamps += ((sov.t, pc))
+                        case domain.DomainMultipleReferenceValues(mov) ⇒
+                            timestamps += ((mov.t, pc))
+                    }
             }
         }
 
@@ -129,10 +152,19 @@ object GuardedAndUnguardedAccessAnalysis {
         val unguardedAccesses =
             for {
                 (pc, receiver: domain.ReferenceValue) ← body collectWithIndex {
-                    case (pc, i: GETFIELD) if operandsArray(pc) != null ⇒
+                    case (pc, ARRAYLENGTH | MONITORENTER) if operandsArray(pc) != null ⇒
                         (pc, operandsArray(pc).head)
 
-                    case (pc, i: PUTFIELD) if operandsArray(pc) != null ⇒
+                    case (pc, AASTORE) if operandsArray(pc) != null ⇒
+                        (pc, operandsArray(pc)(2))
+
+                    case (pc, AALOAD) if operandsArray(pc) != null ⇒
+                        (pc, operandsArray(pc)(1))
+
+                    case (pc, _: GETFIELD) if operandsArray(pc) != null ⇒
+                        (pc, operandsArray(pc).head)
+
+                    case (pc, _: PUTFIELD) if operandsArray(pc) != null ⇒
                         (pc, operandsArray(pc)(1))
 
                     case (pc, i: INVOKEVIRTUAL) if operandsArray(pc) != null ⇒

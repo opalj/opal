@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -31,23 +31,8 @@ package br
 package instructions
 
 /**
- * Branch if int comparison succeeds; succeeds if and only if value1 = value2.
+ * Pops the (two) top operand stack value(s).
  *
  * @author Michael Eichberg
  */
-case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction {
-
-    final def opcode: Opcode = IF_ICMPEQ.opcode
-
-    final def mnemonic: String = "if_icmpeq"
-
-    final def operator: String = "=="
-
-    final def condition: RelationalOperator = RelationalOperators.EQ
-
-}
-object IF_ICMPEQ {
-
-    final val opcode = 159
-
-}
+trait PopInstruction extends StackManagementInstruction

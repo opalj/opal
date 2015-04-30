@@ -48,19 +48,26 @@ trait DefaultArrayValuesBinding extends l1.DefaultReferenceValuesBinding with Ar
     final val DomainInitializedArrayValue: ClassTag[DomainInitializedArrayValue] = implicitly
 
     type DomainConcreteArrayValue = ConcreteArrayValue
-    val DomainConcreteArrayValue: ClassTag[DomainConcreteArrayValue] = implicitly
+    final val DomainConcreteArrayValue: ClassTag[DomainConcreteArrayValue] = implicitly
 
     //
     // FACTORY METHODS
     //
 
-    override def ArrayValue( // for ArrayValue
+    final override def ArrayValue(
         origin: ValueOrigin,
         theType: ArrayType,
         values: Array[DomainValue]): DomainConcreteArrayValue =
-        new ConcreteArrayValue(origin, theType, values, nextT())
+        ArrayValue(origin, theType, values, nextT())
 
-    override def InitializedArrayValue(
+    override def ArrayValue(
+        origin: ValueOrigin,
+        theType: ArrayType,
+        values: Array[DomainValue],
+        t: Timestamp): DomainConcreteArrayValue =
+        new ConcreteArrayValue(origin, theType, values, t)
+
+    final override def InitializedArrayValue(
         origin: ValueOrigin,
         arrayType: ArrayType,
         counts: List[Int]): DomainInitializedArrayValue =

@@ -28,26 +28,24 @@
  */
 package org.opalj
 package br
-package instructions
 
 /**
- * Branch if int comparison succeeds; succeeds if and only if value1 = value2.
+ * The standard relational operators used by if instructions as well as compare
+ * instructions.
  *
  * @author Michael Eichberg
  */
-case class IF_ICMPEQ(branchoffset: Int) extends IFICMPInstruction {
-
-    final def opcode: Opcode = IF_ICMPEQ.opcode
-
-    final def mnemonic: String = "if_icmpeq"
-
-    final def operator: String = "=="
-
-    final def condition: RelationalOperator = RelationalOperators.EQ
-
-}
-object IF_ICMPEQ {
-
-    final val opcode = 159
-
+object RelationalOperators extends Enumeration {
+    final val LT = Value("<")
+    final val < = LT
+    final val GT = Value(">")
+    final val > = GT
+    final val LE = Value("<=")
+    final val <= = LE
+    final val GE = Value(">=")
+    final val >= = GE
+    final val EQ = Value("==")
+    final val == = EQ
+    final val NE = Value("!=")
+    final val != = NE
 }

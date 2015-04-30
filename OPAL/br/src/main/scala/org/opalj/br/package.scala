@@ -81,6 +81,8 @@ package object br {
             throw new java.lang.AssertionError("assertion failed: "+message)
     }
 
+    type RelationalOperator = RelationalOperators.Value
+
     type Attributes = Seq[Attribute]
 
     type ElementValuePairs = IndexedSeq[ElementValuePair]
