@@ -52,25 +52,25 @@ var IssueFilter = function () {
 	 * @memberof IssueFilter
 	 */
 	var issuesDisplayNode;
-	
+
 	/**
 	 * All issues paired with their containing package.
 	 * @memberof IssueFilter
 	 */
 	var packagesWithIssues = [];
-	
+
 	/**
 	 * The filter functions.
 	 * @memberof IssueFilter
 	 */
 	var filterFuns = [];
-	
+
 	/**
 	 * The initialization functions of the filter. Will be called once, when DOMContentLoaded-Event is fired
 	 * @memberof IssueFilter
 	 */
 	var initFuns = [];
-	
+
 	/**
 	 * Indicates if the filter are already initialized.
 	 * @memberof IssueFilter
@@ -278,13 +278,23 @@ IssueFilter.register(
 function findTextInIssue(issue, text) {
 	var erg = false;
 	issue.querySelectorAll("dd:not(.issue_message)").forEach(function(dd) {
+		var attributeText = "";
+		var attributes = dd.attributes;
+		for (var i=0; i < attributes.length; i++) {
+			var attr = attributes[i];
+			var attrText = attr.value.toLowerCase().replace(/\//g, ".");
+			if (attr.name.startsWith("data-") && attrText.indexOf(text.toLowerCase()) >= 0) {
+				dd.classList.add("highlight_occurence");
+				erg = true;
+			}
+		}
 		if (issue.textContent.toLowerCase().indexOf(text.toLowerCase()) >= 0) {
 			var nodeIterator = document.createNodeIterator(dd, NodeFilter.SHOW_TEXT);
 			var currentNode;
 			while (currentNode = nodeIterator.nextNode()) {
 				if (currentNode.textContent.toLowerCase().indexOf(text.toLowerCase()) >= 0) {
 					erg = true;
-					currentNode.parentNode.classList.add("highlight_occurence");;
+					currentNode.parentNode.classList.add("highlight_occurence");
 				}
 			}
 		}
