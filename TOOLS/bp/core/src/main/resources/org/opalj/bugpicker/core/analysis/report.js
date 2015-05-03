@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -43,36 +43,44 @@ function log(something, loglevel) {
 }
 
 /**
- * Manages filter for the displayes Issues
+ * Manages the active filters for the displayed issues.
+ *
  * @namespace IssueFilter
+ * @author Tobias Becker
  */
 var IssueFilter = function () {
 	/**
-	 * The node that displays how many issues currently are displayed.
+	 * The node that displays how many issues are currently displayed.
+	 *
 	 * @memberof IssueFilter
 	 */
 	var issuesDisplayNode;
 
 	/**
 	 * All issues paired with their containing package.
+	 *
 	 * @memberof IssueFilter
 	 */
 	var packagesWithIssues = [];
 
 	/**
 	 * The filter functions.
+	 *
 	 * @memberof IssueFilter
 	 */
 	var filterFuns = [];
 
 	/**
-	 * The initialization functions of the filter. Will be called once, when DOMContentLoaded-Event is fired
+	 * The initialization functions of the filter. 
+	 * Will be called once, when DOMContentLoaded-Event is fired
+	 *
 	 * @memberof IssueFilter
 	 */
 	var initFuns = [];
 
 	/**
-	 * Indicates if the filter are already initialized.
+	 * Indicates if the filters are already initialized.
+	 *
 	 * @memberof IssueFilter
 	 */
 	var init = false;
@@ -96,10 +104,15 @@ var IssueFilter = function () {
 	document.addEventListener("DOMContentLoaded", initialize, false);
 
 	var object = {
+		
 		/**
 		 * Registers a new Filter.
-		 * @param {Function} Initialization function. Will be called when the DOMContentLoaded-Event is fired or instantly if it already fired.
-		 * @param {Function} The filter function. Will be passed a single issue and should return a boolean indicating if the issue should be displayed (true) or not (false)
+		 * @param {Function} Initialization function. 
+		 *        Will be called when the DOMContentLoaded-Event is fired or instantly if it already fired.
+		 * @param {Function} The filter function. 
+		 *        Will be passed a single issue and should return a boolean 
+		 *        indicating if the issue should be displayed (true) or not (false)
+		 *
 		 * @memberof IssueFilter
 		 * @inner
 		 */
@@ -118,8 +131,11 @@ var IssueFilter = function () {
 			 else
 				initFuns.push(initFun);
 		},
+		
 		/**
-		 * Updates the displayed issues by applying all filter additive. If an issue is considered to not be displayed by a filter, it will not be passed to the remaining filter.
+		 * Updates the displayed issues by applying all filters. 
+		 * If an issue is considered not to be displayed by a filter, it will not be passed to the remaining filters.
+		 *
 		 * @memberof IssueFilter
 		 * @inner
 		 */
@@ -168,8 +184,10 @@ var IssueFilter = function () {
 			log("[IssueFilter] Update ended. Took " + (endTime - startTime) + " milliseconds.");
 			log("[IssueFilter] Applied " + filterFuns.length + " Filter");
 		},
+		
 		/**
 		 * Convenience function to add the IssueFilter.update as an EventListener.
+		 *
 		 * @memberof IssueFilter
 		 * @inner
 		 */
@@ -192,6 +210,7 @@ var IssueFilter = function () {
 }();
 
 // Filter: relevance
+//
 var inputRelevance;
 IssueFilter.register(
 	function() {
@@ -204,7 +223,8 @@ IssueFilter.register(
 		return (issue.dataset.relevance >= inputRelevance.valueAsNumber);
 	});
 
- // Filter: data-kind & data-category
+// Filter: data-kind & data-category
+//
 function initDataFilter(dataType){
 	var allValues = [];
 	document.querySelectorAll("*[data-"+dataType+"]").forEach(
@@ -274,7 +294,7 @@ IssueFilter.register(
 	});
 
 // Filter: text search
-
+//
 function findTextInIssue(issue, text) {
 	var erg = false;
 	issue.querySelectorAll("dd:not(.issue_message)").forEach(function(dd) {
