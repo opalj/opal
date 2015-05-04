@@ -133,11 +133,23 @@ class Project[Source] private (
             otherProject.libraryClassFilesWithSources)
     }
 
-    val classFilesCount: Int = projectClassFilesCount + libraryClassFilesCount
+    /**
+     * The number of classes (including inner and annoymous classes as well as
+     * interfaces, annotations, etc.) defined in libraries and in the analyzed project.
+     */
+    final val classFilesCount: Int = projectClassFilesCount + libraryClassFilesCount
 
-    val methodsCount: Int = projectMethodsCount + libraryMethodsCount
+    /**
+     * The number of methods defined in libraries and in the analyzed project.
+     */
+    final val methodsCount: Int = projectMethodsCount + libraryMethodsCount
 
-    val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
+    /**
+     * The number of field defined in libraries and in the analyzed project.
+     */
+    final val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
+
+    def sourceElementsCount = fieldsCount + methodsCount + classFilesCount
 
     val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles
 
