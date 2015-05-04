@@ -35,7 +35,7 @@ package ai
 package domain
 
 /**
- * Mixed in by domain's that support the conversation of a Java Object into a
+ * Mixed in by domains that support the conversation of a Java Object into a
  * `DomainValue` into.
  *
  * @see [[AsJavaObject]] for further information on limitations.
