@@ -569,9 +569,6 @@ object BugPickerAnalysis {
                 <div id="analysis_results">
                     { issuesNode }
                 </div>
-                <script type="text/javascript">
-                    openAllPackages();
-                </script>
             </body>
         </html>
     }
