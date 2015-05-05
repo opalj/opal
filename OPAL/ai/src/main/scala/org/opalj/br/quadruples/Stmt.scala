@@ -34,7 +34,6 @@ import org.opalj.UShort
 /**
  * @author Michael Eichberg
  */
-//TESTCOMMENT
 sealed trait Stmt {
 
     /**
