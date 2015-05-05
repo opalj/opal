@@ -37,6 +37,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.br.instructions.ReturnInstruction
+import org.opalj.br.ObjectType
 
 /**
  * Identifies unused methods and constructors based on the call graph.
@@ -47,6 +48,11 @@ import org.opalj.br.instructions.ReturnInstruction
  * @author Michael Eichberg
  */
 object UnusedMethodsAnalysis {
+
+    /**
+     * PostConstruct and PreDestroy are indicating that these methods are actually called in a context of a Java EE container.
+     */
+    val commonIdiomAnnotations = Seq(ObjectType("javax/annotation/PostConstruct"), ObjectType("javax/annotation/PreDestroy"))
 
     /**
      * Finds those methods that are never called.
@@ -68,12 +74,19 @@ object UnusedMethodsAnalysis {
             return None; // <=== early return
 
         def rateMethod(): Relevance = {
-            // Let's check if it is a default constructor
-            // which was defined to avoid instantiations of the
-            // class (e.g., java.lang.Math)
 
             import method._
 
+            // Let's check if the method has annotations indicating a common idiom.
+            if (annotations.nonEmpty) {
+                val matchingCommonIdiomAnnotations = annotations.filter(f ⇒ commonIdiomAnnotations.contains(f.annotationType))
+                if (matchingCommonIdiomAnnotations.nonEmpty)
+                    return Relevance.CommonIdiom; // <=== early return
+            }
+
+            // Let's check if it is a default constructor
+            // which was defined to avoid instantiations of the
+            // class (e.g., java.lang.Math)
             val isDefaultConstructor = isConstructor && isPrivate && parametersCount == 1 /*this*/
             if (!isDefaultConstructor)
                 return Relevance.DefaultRelevance; // <=== early return
