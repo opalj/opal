@@ -118,6 +118,15 @@ object AsQuadruples {
                 )
                 schedule(pcOfNextInstruction(pc), stack.tail)
             }
+            
+            def unaryArithmeticOperation(operator: ArithmeticOperator): Unit = {
+              val value :: _ = stack
+              val cTpe = value.cTpe
+              statements(pc) = List(
+                  Assignment(pc, value, UnaryExpr(pc, cTpe, operator, value))
+              )
+              schedule(pcOfNextInstruction(pc), stack.tail)
+            }
 
             def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
 
@@ -202,7 +211,7 @@ object AsQuadruples {
                 case DDIV.opcode ⇒ arithmeticOperation(Divide)
                 case DCMPG.opcode ⇒ arithmeticOperation(Greater)
                 case DCMPL.opcode ⇒ arithmeticOperation(Greater)
-//                case DNEG.opcode ⇒ arithmeticOperation(Negate) /*unary*/
+                case DNEG.opcode ⇒ unaryArithmeticOperation(Subtract)
                 case DMUL.opcode ⇒ arithmeticOperation(Multiply)
                 case DREM.opcode ⇒ arithmeticOperation(Modulo)
                 case DSUB.opcode ⇒ arithmeticOperation(Subtract) 
@@ -211,7 +220,7 @@ object AsQuadruples {
                 case FDIV.opcode ⇒ arithmeticOperation(Divide)
                 case FCMPG.opcode ⇒ arithmeticOperation(Greater)
                 case FCMPL.opcode ⇒ arithmeticOperation(Greater)
-//                case FNEG.opcode ⇒ arithmeticOperation(Negate) /*unary*/
+                case FNEG.opcode ⇒ unaryArithmeticOperation(Subtract)
                 case FMUL.opcode ⇒ arithmeticOperation(Multiply)
                 case FREM.opcode ⇒ arithmeticOperation(Modulo)
                 case FSUB.opcode ⇒ arithmeticOperation(Subtract)
@@ -219,8 +228,8 @@ object AsQuadruples {
                 case IADD.opcode ⇒ arithmeticOperation(Add)
                 case IAND.opcode ⇒ arithmeticOperation(And)
                 case IDIV.opcode ⇒ arithmeticOperation(Divide)
-//                case IINC.opcode ⇒ arithmeticOperation(Increment) /*unary*/
-//                case INEG.opcode ⇒ arithmeticOperation(Negate) /*unary*/
+//                case IINC.opcode ⇒ arithmeticOperation(Increment) /*unary, doesn't use stack*/
+                case INEG.opcode ⇒ unaryArithmeticOperation(Subtract)
                 case IMUL.opcode ⇒ arithmeticOperation(Multiply)
                 case IOR.opcode ⇒ arithmeticOperation(Or)
                 case IREM.opcode ⇒ arithmeticOperation(Modulo)
@@ -234,7 +243,7 @@ object AsQuadruples {
                 case LAND.opcode ⇒ arithmeticOperation(And)
                 case LDIV.opcode ⇒ arithmeticOperation(Divide)
                 case LCMP.opcode ⇒ arithmeticOperation(Greater)
-//                case LNEG.opcode ⇒ arithmeticOperation(Negate) /*unary*/
+                case LNEG.opcode ⇒ unaryArithmeticOperation(Subtract)
                 case LMUL.opcode ⇒ arithmeticOperation(Multiply)
                 case LOR.opcode ⇒ arithmeticOperation(Or)
                 case LREM.opcode ⇒ arithmeticOperation(Modulo)
