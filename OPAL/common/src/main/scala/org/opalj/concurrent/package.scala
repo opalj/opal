@@ -54,6 +54,13 @@ package object concurrent {
 
     private implicit def logContext = GlobalLogContext
 
+    final val UncaughtExceptionHandler =
+        new Thread.UncaughtExceptionHandler {
+            def uncaughtException(t: Thread, e: Throwable): Unit = {
+                OPALLogger.error("internal error", "uncaught exception", e)
+            }
+        }
+
     //
     // STEP 1
     //
@@ -121,7 +128,7 @@ package object concurrent {
     //
     // STEP 3
     //
-    def ThreadPoolN(n: Int): ExecutorService = {
+    def ThreadPoolN(n: Int): ThreadPoolExecutor = {
         val group = new ThreadGroup(s"org.opalj.ThreadPool ${System.nanoTime()}")
         val tp =
             new ThreadPoolExecutor(
@@ -139,6 +146,7 @@ package object concurrent {
                         // we are using demon threads to make sure that these
                         // threads never prevent the JVM from regular termination
                         t.setDaemon(true)
+                        t.setUncaughtExceptionHandler(UncaughtExceptionHandler)
                         t
                     }
                 }
@@ -151,7 +159,7 @@ package object concurrent {
     /**
      * Returns the singleton instance of the global `ThreadPool` used throughout OPAL.
      */
-    final val ThreadPool: ExecutorService = ThreadPoolN(NumberOfThreadsForIOBoundTasks)
+    final val ThreadPool: ThreadPoolExecutor = ThreadPoolN(NumberOfThreadsForIOBoundTasks)
 
     //
     // STEP 4
