@@ -151,6 +151,8 @@ class Project[Source] private (
 
     def sourceElementsCount = fieldsCount + methodsCount + classFilesCount
 
+    def allSourceElements: Iterable[SourceElement] = methods() ++ fields() ++ allClassFiles
+
     val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles
 
     private[this] def doParForeachClassFile[T](
@@ -323,9 +325,9 @@ class Project[Source] private (
             libraryClassFiles.view.map(cf ⇒ (cf, sources(cf.thisType)))
     }
 
-    def methods: Iterable[Method] = methodToClassFile.keys
+    def methods(): Iterable[Method] = methodToClassFile.keys
 
-    def fields: Iterable[Field] = fieldToClassFile.keys
+    def fields(): Iterable[Field] = fieldToClassFile.keys
 
     def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = {
         projectClassFiles.view.map { classFile ⇒
