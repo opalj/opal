@@ -51,7 +51,7 @@ trait Property {
 
 /**
  * An object that identifies a specific category of properties. An element in
- * the [[PropertiesStore]] must be associated with at most one property per kind/key.
+ * the [[PropertyStore]] must be associated with at most one property per kind/key.
  *
  * To create a property key use the companion object's [[PropertyKey$.next]] method.
  *

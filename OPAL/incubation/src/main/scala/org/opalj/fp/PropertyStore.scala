@@ -357,7 +357,7 @@ case class Result(property: Property) extends PropertyComputationResult
  * If the property of any depending element is changed, the function is called again.
  * In general, the framework tries to wait on the completion of the computation of
  * the relevant properties of as many dependees as possible before the
- * [[PropertyComputationFunction]] is scheduled again.
+ * [[PropertyComputation]] is scheduled again.
  */
 case class IntermediateResult(
     property: Property,
