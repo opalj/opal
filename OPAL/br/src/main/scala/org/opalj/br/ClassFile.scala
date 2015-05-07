@@ -156,6 +156,17 @@ final class ClassFile private (
         attributes collectFirst { case InnerClassTable(ice) ⇒ ice }
 
     /**
+     * Returns `true` if this class file defines an anonymous inner class.
+     *
+     * This method relies on the inner classes attribute to identify anonymous inner
+     * classes.
+     */
+    def isAnonymousInnerClass: Boolean = isClassDeclaration &&
+        innerClasses.map(_.exists { i ⇒
+            i.innerClassType == thisType && { if (i.innerName.isEmpty) true else return false; }
+        }).getOrElse(false)
+
+    /**
      * Returns the set of all immediate nested classes of this class. I.e., returns those
      * nested classes that are not defined in the scope of a nested class of this
      * class.
