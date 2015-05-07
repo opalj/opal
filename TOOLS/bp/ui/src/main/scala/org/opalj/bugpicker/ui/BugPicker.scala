@@ -494,15 +494,20 @@ class BugPicker extends Application {
         stage.handleEvent(WindowEvent.WindowShown) { e: WindowEvent ⇒
             val storedSize = BugPicker.loadWindowSizeFromPreferences()
             if (storedSize.isDefined) {
-                val currentScreen = Screen.screensForRectangle(storedSize.get)(0)
-                val currentScreenSize = currentScreen.bounds
-                if (currentScreenSize.contains(storedSize.get)) {
-                    stage.width = storedSize.get.width
-                    stage.height = storedSize.get.height
-                    stage.x = storedSize.get.minX
-                    stage.y = storedSize.get.minY
+                val screens = Screen.screensForRectangle(storedSize.get)
+                if (screens.isEmpty) {
+                    maximizeOnCurrentScreen(stage)
                 } else {
-                    maximizeOnScreen(stage, currentScreen)
+                    val currentScreen = Screen.screensForRectangle(storedSize.get)(0)
+                    val currentScreenSize = currentScreen.bounds
+                    if (currentScreenSize.contains(storedSize.get)) {
+                        stage.width = storedSize.get.width
+                        stage.height = storedSize.get.height
+                        stage.x = storedSize.get.minX
+                        stage.y = storedSize.get.minY
+                    } else {
+                        maximizeOnScreen(stage, currentScreen)
+                    }
                 }
             } else {
                 maximizeOnCurrentScreen(stage)

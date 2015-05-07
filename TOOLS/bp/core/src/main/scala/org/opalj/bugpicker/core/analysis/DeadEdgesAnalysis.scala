@@ -101,6 +101,8 @@ import org.opalj.br.cfg.ControlFlowGraph
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.ai.domain.Origin
 import org.opalj.br.ExceptionHandler
+import org.opalj.br.instructions.POP
+import org.opalj.br.instructions.PopInstruction
 
 /**
  * Identifies dead edges in code.
@@ -156,7 +158,7 @@ object DeadEdgesAnalysis {
         }
 
         /*
-         *  A return/goto/athrow instruction is considered useless if the preceding
+         * A return/goto/athrow instruction is considered useless if the preceding
          * instruction is a method call with a single target that _context-independently_
          * always just throws (an) exception(s). This is common pattern found in the JDK.
          */
@@ -168,14 +170,15 @@ object DeadEdgesAnalysis {
         def requiredUselessJumpOrReturnFromMethod(currentPC: PC, nextPC: PC): Boolean = {
             val nextInstruction = body.instructions(nextPC)
             (
-                nextInstruction.isInstanceOf[ReturnInstruction] ||
-                nextInstruction == ATHROW ||
-                (
-                    nextInstruction.isInstanceOf[GotoInstruction] &&
-                    evaluatedInstructions.contains(body.nextNonGotoInstruction(nextPC))
-                )
+                nextInstruction.isInstanceOf[ReturnInstruction] || (
+                    nextInstruction.isInstanceOf[PopInstruction] &&
+                    body.instructions(body.pcOfNextInstruction(nextPC)).isInstanceOf[ReturnInstruction]
+                ) || nextInstruction == ATHROW || (
+                        nextInstruction.isInstanceOf[GotoInstruction] &&
+                        evaluatedInstructions.contains(body.nextNonGotoInstruction(nextPC))
+                    )
             ) &&
-                    isAlwaysExceptionThrowingMethodCall(currentPC)
+                        isAlwaysExceptionThrowingMethodCall(currentPC)
         }
 
         def mostSpecificFinallyHandlerOfPC(pc: PC): Seq[ExceptionHandler] = {

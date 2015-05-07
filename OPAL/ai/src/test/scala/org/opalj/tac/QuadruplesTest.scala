@@ -27,16 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package quadruples
+package tac
 
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
-import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
+import org.junit.runner.RunWith
+
+import org.opalj.br._
 import org.opalj.bi.TestSupport.locateTestResources
-import org.opalj.br.reader.Java8Framework
 import org.opalj.br.analyses.Project
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomain
@@ -89,7 +89,7 @@ class QuadruplesTest extends FunSpec with Matchers {
         }
 
         it("should correctly reflect mathematical operations (using AI results)") {
-            val domain = new ai.domain.l1.DefaultDomain(project, BoringCodeClassFile, SingleBlockMethod)
+            val domain = new DefaultDomain(project, BoringCodeClassFile, SingleBlockMethod)
             val aiResult = BaseAI(BoringCodeClassFile, SingleBlockMethod, domain)
             val statements = AsQuadruples(SingleBlockMethod, Some(aiResult))
             val javaLikeCode = ToJavaLike(statements)
@@ -104,7 +104,7 @@ class QuadruplesTest extends FunSpec with Matchers {
         }
 
         it("should have correct absoulte jump targets (using AI results)") {
-            val domain = new ai.domain.l1.DefaultDomain(project, BoringCodeClassFile, ConditionalTwoReturnsMethod)
+            val domain = new DefaultDomain(project, BoringCodeClassFile, ConditionalTwoReturnsMethod)
             val aiResult = BaseAI(BoringCodeClassFile, ConditionalTwoReturnsMethod, domain)
 
             val statements = AsQuadruples(ConditionalTwoReturnsMethod, Some(aiResult))

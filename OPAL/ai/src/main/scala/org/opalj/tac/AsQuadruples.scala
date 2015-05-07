@@ -26,23 +26,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
-package quadruples
+package org.opalj
+package tac
 
-import org.opalj.UShort
-import org.opalj.collection.mutable.Locals
 import scala.collection.mutable.BitSet
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.br.instructions._
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
-import com.sun.org.apache.bcel.internal.generic.ICONST
+
+import org.opalj.collection.mutable.Locals
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.br._
+import org.opalj.br.instructions._
 import org.opalj.ai.AIResult
 
 /**
  * Converts the bytecode of a method into a three address/quadruples representation.
  *
  * @author Michael Eichberg
+ * @author Roberts Kolosovs
  */
 object AsQuadruples {
 
@@ -53,7 +54,8 @@ object AsQuadruples {
      */
     def apply(method: Method, aiResult: Option[AIResult]): Array[Stmt] = {
 
-        import ArithmeticOperators._
+        import BinaryArithmeticOperators._
+        import UnaryArithmeticOperators._
 
         val code = method.body.get
         import code.pcOfNextInstruction
@@ -110,22 +112,28 @@ object AsQuadruples {
                 schedule(nextPC, newStack)
             }
 
-            def arithmeticOperation(operator: ArithmeticOperator): Unit = {
+            // Note:
+            // The computational type of the Binary Expression is determined using the
+            // first (left) value of the expression. This makes it possible to use
+            // this function for bit shift operations where value1 and
+            // value2 may have different computational types, but the resulting type
+            // is always determined by the type of value1.
+            def binaryArithmeticOperation(operator: BinaryArithmeticOperator): Unit = {
                 val value2 :: value1 :: _ = stack
-                val cTpe = value2 /*or value 1*/ .cTpe
+                val cTpe = value1.cTpe
                 statements(pc) = List(
-                    Assignment(pc, value1, ArithExpr(pc, cTpe, operator, value1, value2))
+                    Assignment(pc, value1, BinaryExpr(pc, cTpe, operator, value1, value2))
                 )
                 schedule(pcOfNextInstruction(pc), stack.tail)
             }
-            
-            def unaryArithmeticOperation(operator: ArithmeticOperator): Unit = {
-              val value :: _ = stack
-              val cTpe = value.cTpe
-              statements(pc) = List(
-                  Assignment(pc, value, UnaryExpr(pc, cTpe, operator, value))
-              )
-              schedule(pcOfNextInstruction(pc), stack.tail)
+
+            def prefixArithmeticOperation(operator: UnaryArithmeticOperator): Unit = {
+                val value :: _ = stack
+                val cTpe = value.cTpe
+                statements(pc) = List(
+                    Assignment(pc, value, PrefixExpr(pc, cTpe, operator, value))
+                )
+                schedule(pcOfNextInstruction(pc), stack.tail)
             }
 
             def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
@@ -207,51 +215,50 @@ object AsQuadruples {
                     )
                     schedule(pcOfNextInstruction(pc), newValue2 :: newValue1 :: rest)
 
-                case DADD.opcode ⇒ arithmeticOperation(Add)
-                case DDIV.opcode ⇒ arithmeticOperation(Divide)
-                case DCMPG.opcode ⇒ arithmeticOperation(Greater)
-                case DCMPL.opcode ⇒ arithmeticOperation(Greater)
-                case DNEG.opcode ⇒ unaryArithmeticOperation(Subtract)
-                case DMUL.opcode ⇒ arithmeticOperation(Multiply)
-                case DREM.opcode ⇒ arithmeticOperation(Modulo)
-                case DSUB.opcode ⇒ arithmeticOperation(Subtract) 
-                    
-                case FADD.opcode ⇒ arithmeticOperation(Add)
-                case FDIV.opcode ⇒ arithmeticOperation(Divide)
-                case FCMPG.opcode ⇒ arithmeticOperation(Greater)
-                case FCMPL.opcode ⇒ arithmeticOperation(Greater)
-                case FNEG.opcode ⇒ unaryArithmeticOperation(Subtract)
-                case FMUL.opcode ⇒ arithmeticOperation(Multiply)
-                case FREM.opcode ⇒ arithmeticOperation(Modulo)
-                case FSUB.opcode ⇒ arithmeticOperation(Subtract)
-                
-                case IADD.opcode ⇒ arithmeticOperation(Add)
-                case IAND.opcode ⇒ arithmeticOperation(And)
-                case IDIV.opcode ⇒ arithmeticOperation(Divide)
-//                case IINC.opcode ⇒ arithmeticOperation(Increment) /*unary, doesn't use stack*/
-                case INEG.opcode ⇒ unaryArithmeticOperation(Subtract)
-                case IMUL.opcode ⇒ arithmeticOperation(Multiply)
-                case IOR.opcode ⇒ arithmeticOperation(Or)
-                case IREM.opcode ⇒ arithmeticOperation(Modulo)
-                case ISHL.opcode ⇒ arithmeticOperation(LShift)
-                case ISHR.opcode ⇒ arithmeticOperation(RShift)
-                case ISUB.opcode ⇒ arithmeticOperation(Subtract)
-                case IUSHR.opcode ⇒ arithmeticOperation(RShiftLog)
-                case IXOR.opcode ⇒ arithmeticOperation(XOr)
-                
-                case LADD.opcode ⇒ arithmeticOperation(Add)
-                case LAND.opcode ⇒ arithmeticOperation(And)
-                case LDIV.opcode ⇒ arithmeticOperation(Divide)
-                case LCMP.opcode ⇒ arithmeticOperation(Greater)
-                case LNEG.opcode ⇒ unaryArithmeticOperation(Subtract)
-                case LMUL.opcode ⇒ arithmeticOperation(Multiply)
-                case LOR.opcode ⇒ arithmeticOperation(Or)
-                case LREM.opcode ⇒ arithmeticOperation(Modulo)
-                case LSHL.opcode ⇒ arithmeticOperation(LShift)
-                case LSHR.opcode ⇒ arithmeticOperation(RShift)
-                case LSUB.opcode ⇒ arithmeticOperation(Subtract)
-                case LUSHR.opcode ⇒ arithmeticOperation(RShiftLog)
-                case LXOR.opcode ⇒ arithmeticOperation(XOr)
+                case DADD.opcode  ⇒ binaryArithmeticOperation(Add)
+                case DDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
+                // FIXME case DCMPG.opcode ⇒ arithmeticOperation(Greater)
+                // FIXME case DCMPL.opcode ⇒ arithmeticOperation(Greater)
+                case DNEG.opcode  ⇒ prefixArithmeticOperation(Negate)
+                case DMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
+                case DREM.opcode  ⇒ binaryArithmeticOperation(Modulo)
+                case DSUB.opcode  ⇒ binaryArithmeticOperation(Subtract)
+
+                case FADD.opcode  ⇒ binaryArithmeticOperation(Add)
+                case FDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
+                // FIXME case FCMPG.opcode ⇒ arithmeticOperation(Greater)
+                // FIXME case FCMPL.opcode ⇒ arithmeticOperation(Greater)
+                case FNEG.opcode  ⇒ prefixArithmeticOperation(Negate)
+                case FMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
+                case FREM.opcode  ⇒ binaryArithmeticOperation(Modulo)
+                case FSUB.opcode  ⇒ binaryArithmeticOperation(Subtract)
+
+                case IADD.opcode  ⇒ binaryArithmeticOperation(Add)
+                case IAND.opcode  ⇒ binaryArithmeticOperation(And)
+                case IDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
+                // FIXME case IINC.opcode ⇒ arithmeticOperation(Increment) /*unary, doesn't use stack*/
+                case INEG.opcode  ⇒ prefixArithmeticOperation(Negate)
+                case IMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
+                case IOR.opcode   ⇒ binaryArithmeticOperation(Or)
+                case IREM.opcode  ⇒ binaryArithmeticOperation(Modulo)
+                case ISHL.opcode  ⇒ binaryArithmeticOperation(ShiftLeft)
+                case ISHR.opcode  ⇒ binaryArithmeticOperation(ShiftRight)
+                case ISUB.opcode  ⇒ binaryArithmeticOperation(Subtract)
+                case IUSHR.opcode ⇒ binaryArithmeticOperation(UnsignedShiftRight)
+                case IXOR.opcode  ⇒ binaryArithmeticOperation(XOr)
+
+                case LADD.opcode  ⇒ binaryArithmeticOperation(Add)
+                case LAND.opcode  ⇒ binaryArithmeticOperation(And)
+                case LDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
+                case LNEG.opcode  ⇒ prefixArithmeticOperation(Negate)
+                case LMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
+                case LOR.opcode   ⇒ binaryArithmeticOperation(Or)
+                case LREM.opcode  ⇒ binaryArithmeticOperation(Modulo)
+                case LSHL.opcode  ⇒ binaryArithmeticOperation(ShiftLeft)
+                case LSHR.opcode  ⇒ binaryArithmeticOperation(ShiftRight)
+                case LSUB.opcode  ⇒ binaryArithmeticOperation(Subtract)
+                case LUSHR.opcode ⇒ binaryArithmeticOperation(UnsignedShiftRight)
+                case LXOR.opcode  ⇒ binaryArithmeticOperation(XOr)
 
                 case ICONST_0.opcode | ICONST_1.opcode |
                     ICONST_2.opcode | ICONST_3.opcode |
@@ -310,26 +317,5 @@ object AsQuadruples {
         finalStatements.toArray
     }
 
-}
-
-/**
- * All arithmetic operators that always operate on two stack values of the same
- * computational type.
- *
- * (The shift operators related to shifting long values operate on two different values!)
- */
-object ArithmeticOperators extends Enumeration {
-    final val Add = Value("+")
-    final val Subtract = Value("-")
-    final val Multiply = Value("*")
-    final val Divide = Value("/")
-    final val Modulo = Value("%")
-    final val And = Value("&")
-    final val Or = Value("|")
-    final val LShift = Value("<<")
-    final val RShift = Value(">>")
-    final val RShiftLog = Value(">>>")
-    final val XOr = Value("^")
-    final val Greater = Value(">")
 }
 

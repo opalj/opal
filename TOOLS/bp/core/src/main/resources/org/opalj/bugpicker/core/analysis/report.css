@@ -53,6 +53,17 @@ div#analysis_controls:hover {
 	height: initial;
 }
 
+div#analysis_controls span#search_box {
+  position: absolute;
+  right: 50px;
+  top: 0px;
+  margin: 10px 20px;
+}
+
+.highlight_occurence {
+	background-color: rgba(255, 255, 0, 0.5);
+}
+
 input#relevance {
 	transform: translate(0px,6px);
 	-webkit-transform: translate(0px,6px);
@@ -79,10 +90,6 @@ div.an_issue{
 
 div.an_issue.issue_visible{
 	display: block;
-}
-
-div.an_issue.hide-relevance{
-	display: none !important;
 }
 
 .issue{

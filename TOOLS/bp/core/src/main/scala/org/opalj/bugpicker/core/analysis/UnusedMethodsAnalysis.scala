@@ -58,7 +58,7 @@ object UnusedMethodsAnalysis {
      * - The method is a private constructor in a final class that always throws an exception.
      *      Such constructors are usually defined to avoid instantiations of the
      *      respective class. E.g.
-     *      `private XXX(){throw new UnsupportedOperationException()`
+     *      `private XYZ(){throw new UnsupportedOperationException()`
      */
     def analyze(
         theProject: SomeProject,
@@ -68,12 +68,12 @@ object UnusedMethodsAnalysis {
             return None; // <=== early return
 
         def rateMethod(): Relevance = {
-            // Let's check if it is a default constructor
-            // which was defined to avoid instantiations of the
-            // class (e.g., java.lang.Math)
 
             import method._
 
+            // Let's check if it is a default constructor
+            // which was defined to avoid instantiations of the
+            // class (e.g., java.lang.Math)
             val isDefaultConstructor = isConstructor && isPrivate && parametersCount == 1 /*this*/
             if (!isDefaultConstructor)
                 return Relevance.DefaultRelevance; // <=== early return
