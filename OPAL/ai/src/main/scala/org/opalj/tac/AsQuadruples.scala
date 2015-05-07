@@ -27,17 +27,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package quadruples
+package tac
 
-import org.opalj.UShort
-import org.opalj.collection.mutable.Locals
 import scala.collection.mutable.BitSet
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.br.instructions._
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
-import com.sun.org.apache.bcel.internal.generic.ICONST
+
+import org.opalj.collection.mutable.Locals
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.br._
+import org.opalj.br.instructions._
 import org.opalj.ai.AIResult
 
 /**

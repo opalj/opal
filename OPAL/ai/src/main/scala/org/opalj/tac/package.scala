@@ -26,12 +26,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
+package org.opalj
 
 /**
  * @author Michael Eichberg
  */
-package object quadruples {
+package object tac {
 
     type Stack = List[Var]
 

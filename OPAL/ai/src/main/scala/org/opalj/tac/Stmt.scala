@@ -27,10 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-package quadruples
+package tac
 
-import org.opalj.UShort
+import org.opalj.br._
 
 /**
  * @author Michael Eichberg
@@ -48,7 +47,7 @@ sealed trait Stmt {
     /**
      * Remaps the indexes
      */
-    private[quadruples] def remapIndexes(pcToIndex: Array[Int]): Unit
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit
 }
 
 /**
@@ -59,9 +58,9 @@ case class If(
         left: Expr,
         condition: RelationalOperator,
         right: Expr,
-        private[quadruples] var target: Int) extends Stmt {
+        private[tac] var target: Int) extends Stmt {
 
-    private[quadruples] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         target = pcToIndex(target)
     }
 
@@ -70,9 +69,9 @@ case class If(
     def targetStmt: Int = target
 }
 
-case class Goto(pc: PC, private[quadruples] var target: UShort) extends Stmt {
+case class Goto(pc: PC, private[tac] var target: UShort) extends Stmt {
 
-    private[quadruples] def remapIndexes(pcToIndex: Array[Int]): Unit = {
+    private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {
         target = pcToIndex(target)
     }
 
@@ -87,7 +86,7 @@ sealed trait SimpleStmt extends Stmt {
     /**
      * Nothing to do.
      */
-    final private[quadruples] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
+    final private[tac] def remapIndexes(pcToIndex: Array[Int]): Unit = {}
 }
 
 case class Assignment(pc: PC, target: Var, source: Expr) extends SimpleStmt
