@@ -39,6 +39,7 @@ import com.sun.org.apache.bcel.internal.generic.ICONST
 
 /**
  * @author Michael Eichberg
+ * @author Roberts Kolosovs
  */
 object ToJavaLike {
 
@@ -51,9 +52,9 @@ object ToJavaLike {
             case LongConst(_, value)      ⇒ value.toString+"l"
             case FloatConst(_, value)     ⇒ value.toString
             case DoubleConst(_, value)    ⇒ value.toString+"d"
-            case ArithExpr(_, _ /*cTpe*/ , op, left, right) ⇒
+            case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
                 toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
-            case UnaryExpr(_, _, op, operand) ⇒
+            case PrefixExpr(_, _, op, operand) ⇒
                 op.toString()+" "+toJavaLikeExpr(operand)
         }
     }

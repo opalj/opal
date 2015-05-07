@@ -26,7 +26,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
+package org.opalj
+package br
 package quadruples
 
 import org.opalj.UShort
@@ -85,16 +86,19 @@ case class ClassConst(pc: PC, value: ObjectType) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
-case class ArithExpr(
+/**
+ * @param cTpe The computational type of the result of the binary expression.
+ */
+case class BinaryExpr(
     pc: PC,
     cTpe: ComputationalType,
-    op: ArithmeticOperator,
+    op: BinaryArithmeticOperator,
     left: Expr, right: Expr) extends Expr
-    
-case class UnaryExpr(
+
+case class PrefixExpr(
     pc: PC,
     cTpe: ComputationalType,
-    op: ArithmeticOperator,
+    op: UnaryArithmeticOperator,
     operand: Expr) extends Expr
 
 trait Var extends Expr {
@@ -112,6 +116,7 @@ trait Var extends Expr {
 }
 
 object Var {
+
     def unapply(variable: Var): Some[String] = Some(variable.name)
 
 }

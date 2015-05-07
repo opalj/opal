@@ -26,13 +26,37 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
+package org.opalj
 
 /**
+ * All standard binary arithmetic operators.
+ *
  * @author Michael Eichberg
  */
-package object quadruples {
+object BinaryArithmeticOperators extends Enumeration {
 
-    type Stack = List[Var]
+    final val Add = Value("+")
+    final val Subtract = Value("-")
+    final val Multiply = Value("*")
+    final val Divide = Value("/")
+    final val Modulo = Value("%")
+
+    final val And = Value("&")
+    final val Or = Value("|")
+    final val XOr = Value("^")
+
+    final val ShiftLeft = Value("<<")
+    final val ShiftRight = Value(">>")
+    final val UnsignedShiftRight = Value(">>>")
+}
+
+/**
+ * All standard unary arithmetic operators.
+ *
+ * @author Michael Eichberg
+ */
+object UnaryArithmeticOperators extends Enumeration {
+
+    final val Negate = Value("-")
 
 }

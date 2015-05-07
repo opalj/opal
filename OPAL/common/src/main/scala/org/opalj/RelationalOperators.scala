@@ -27,11 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
 
 /**
- * The standard relational operators used by if instructions as well as compare
- * instructions.
+ * The standard relational operators used by Java.
  *
  * @author Michael Eichberg
  */
