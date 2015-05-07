@@ -90,6 +90,12 @@ case class ArithExpr(
     cTpe: ComputationalType,
     op: ArithmeticOperator,
     left: Expr, right: Expr) extends Expr
+    
+case class UnaryExpr(
+    pc: PC,
+    cTpe: ComputationalType,
+    op: ArithmeticOperator,
+    operand: Expr) extends Expr
 
 trait Var extends Expr {
 

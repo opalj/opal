@@ -53,6 +53,8 @@ object ToJavaLike {
             case DoubleConst(_, value)    ⇒ value.toString+"d"
             case ArithExpr(_, _ /*cTpe*/ , op, left, right) ⇒
                 toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
+            case UnaryExpr(_, _, op, operand) ⇒
+                op.toString()+" "+toJavaLikeExpr(operand)
         }
     }
 
