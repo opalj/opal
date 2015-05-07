@@ -32,12 +32,30 @@ import scala.collection.mutable
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
- * Common type definitions and constants used by the fixpoint computations framework.
+ * The fixpoint computations framework is a general framework to perform fixpoint
+ * computations on a fixed set of entities. The framework in particular
+ * supports the development of static analyses. In this case, the fixpoint computations/
+ * static analyses are generally operating on the code and need to be executed until
+ * the computation has reached its fixpoint. A prime use case of the fixpoint framework
+ * are all those analyses that may interact with the results of other analyses.
+ *
+ * For example, an analysis that analyses all field write access to determine if we can
+ * refine a field's type (for the purpose of the analysis) can (reuse) the information
+ * about the return types of methods, which however may depend on the refined field types.
+ *
+ * However, this framework also greatly facilitates the implementation of static analyses
+ * that require fixpoint computations.
  *
  * @author Michael Eichberg
  */
 package object fp {
 
+    /**
+     * A property computation is a function that takes an entity and returns a
+     * result. The result maybe (a) the derived property, (b) a function that will compute
+     * the result once the information about some other entity is available or (c) an
+     * intermediate result (Anytime Algorithms).
+     */
     type PropertyComputation = (AnyRef) ⇒ PropertyComputationResult
 
     /**

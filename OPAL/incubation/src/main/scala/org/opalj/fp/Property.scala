@@ -30,6 +30,12 @@ package org.opalj.fp
 
 import java.util.concurrent.atomic.AtomicInteger
 
+/**
+ * An information associated with an entity. Each property belongs to exactly one
+ * property kind and each entity has at most one property per property kind.
+ *
+ * @author Michael Eichberg
+ */
 trait Property {
 
     /**
@@ -48,6 +54,8 @@ trait Property {
  * the [[PropertiesStore]] must be associated with at most one property per kind/key.
  *
  * To create a property key use the companion object's [[PropertyKey$.next]] method.
+ *
+ * @author Michael Eichberg
  */
 class PropertyKey private ( final val id: Int) extends AnyVal {
 
@@ -56,6 +64,8 @@ class PropertyKey private ( final val id: Int) extends AnyVal {
 
 /**
  * Factory to create [[PropertyKey]] objects.
+ *
+ * @author Michael Eichberg
  */
 object PropertyKey {
 
