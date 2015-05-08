@@ -662,7 +662,7 @@ object Project {
 
     /**
      * This default handler just "logs" inconsistent project exceptions at the
-     * [[Warn]] level.
+     * [[org.opalj.log.Warn]] level.
      */
     def defaultHandlerForInconsistentProjects(
         logContext: LogContext,
@@ -694,7 +694,7 @@ object Project {
      *
      * @param handleInconsistentProject A function that is called back if the project
      *      is not consistent. The default behavior
-     *      ([[defaultHandlerForInconsistentProject]]) is to write a warning
+     *      ([[defaultHandlerForInconsistentProjects]]) is to write a warning
      *      message to the console. Alternatively it is possible to throw the given
      *      exception to cancel the loading of the project (which is the only
      *      meaningful option for several advanced analyses.)

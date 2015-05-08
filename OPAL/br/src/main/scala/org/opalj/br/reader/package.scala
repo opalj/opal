@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,7 +22,7 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
@@ -31,6 +31,7 @@ package br
 
 import java.io.File
 import java.net.URL
+import scala.util.control.ControlThrowable
 
 /**
  * Defines convenience methods related to reading in class files.
@@ -38,6 +39,8 @@ import java.net.URL
  * @author Michael Eichberg
  */
 package object reader {
+
+    type Source = AnyRef
 
     /**
      * Reads in all class files found in the jar files or jar and class files in the
@@ -56,28 +59,27 @@ package object reader {
      */
     def read(
         args: Iterable[String],
-        classFilesReader: (File, (Exception) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)]): (Iterable[(ClassFile, URL)], List[Exception]) = {
+        classFilesReader: (File, (Source, Throwable) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)]): (Iterable[(ClassFile, URL)], List[Throwable]) = {
         readClassFiles(args.view.map(new File(_)), classFilesReader)
     }
 
     def readClassFiles(
         files: Iterable[File],
-        classFilesReader: (File, (Exception) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)],
-        perFile: File ⇒ Unit = (f: File) ⇒ { /*do nothing*/ }): (Iterable[(ClassFile, URL)], List[Exception]) = {
+        classFilesReader: (File, (Source, Throwable) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)],
+        perFile: File ⇒ Unit = (f: File) ⇒ { /*do nothing*/ }): (Iterable[(ClassFile, URL)], List[Throwable]) = {
         val exceptionsMutex = new Object
-        var exceptions: List[Exception] = Nil
-        def addException(e: Exception): Unit = {
+        var exceptions: List[Throwable] = Nil
+        def handleException(source: Source, e: Throwable): Unit = {
             exceptionsMutex.synchronized { exceptions = e :: exceptions }
         }
 
         val allClassFiles = for (file ← files.par) yield {
             try {
                 perFile(file)
-                classFilesReader(file, addException)
+                classFilesReader(file, handleException)
             } catch {
-                case e: Exception ⇒
-                    addException(new java.io.IOException("exception occured while processing: "+file, e))
-                    Iterable.empty
+                case ct: ControlThrowable ⇒ throw ct
+                case t: Throwable         ⇒ handleException(file, t); Iterable.empty
             }
         }
         (allClassFiles.flatten.seq, exceptions)
