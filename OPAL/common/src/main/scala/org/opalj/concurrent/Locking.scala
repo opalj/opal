@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,12 +22,14 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 package concurrent
+
+import java.util.concurrent.locks.ReentrantReadWriteLock
 
 /**
  * A basic facility to model shared and exclusive access to some functionality/data
@@ -41,34 +43,19 @@ package concurrent
  */
 trait Locking {
 
-    import java.util.concurrent.locks.ReentrantReadWriteLock
     private[this] val rwLock = new ReentrantReadWriteLock()
 
     /**
      * Acquires the write lock associated with this instance and then executes
      * the function `f`. Afterwards, the lock is released.
      */
-    def withWriteLock[B](f: ⇒ B): B = {
-        try {
-            rwLock.writeLock().lock()
-            f
-        } finally {
-            rwLock.writeLock().unlock()
-        }
-    }
+    def withWriteLock[B](f: ⇒ B): B = Locking.withWriteLock(rwLock)(f)
 
     /**
      * Acquires the read lock associated with this instance and then executes
      * the function `f`. Afterwards, the lock is released.
      */
-    def withReadLock[B](f: ⇒ B): B = {
-        try {
-            rwLock.readLock().lock()
-            f
-        } finally {
-            rwLock.readLock().unlock()
-        }
-    }
+    def withReadLock[B](f: ⇒ B): B = Locking.withReadLock(rwLock)(f)
 }
 /**
  * Factory for `Locking` objects.
@@ -80,5 +67,30 @@ object Locking {
      */
     def apply(): Locking = new Locking {}
 
+    /**
+     * Acquires the write lock associated with this instance and then executes
+     * the function `f`. Afterwards, the lock is released.
+     */
+    final def withWriteLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
+        try {
+            rwLock.writeLock().lock()
+            f
+        } finally {
+            rwLock.writeLock().unlock()
+        }
+    }
+
+    /**
+     * Acquires the read lock and then executes
+     * the function `f`. Afterwards, the lock is released.
+     */
+    final def withReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
+        try {
+            rwLock.readLock().lock()
+            f
+        } finally {
+            rwLock.readLock().unlock()
+        }
+    }
 }
 

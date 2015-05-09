@@ -26,14 +26,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
+package org.opalj
 
 /**
+ * The standard relational operators used by Java.
+ *
  * @author Michael Eichberg
  */
-package object quadruples {
-
-    type Stack = List[Var]
-
-    type ArithmeticOperator = ArithmeticOperators.Value
+object RelationalOperators extends Enumeration {
+    final val LT = Value("<")
+    final val < = LT
+    final val GT = Value(">")
+    final val > = GT
+    final val LE = Value("<=")
+    final val <= = LE
+    final val GE = Value(">=")
+    final val >= = GE
+    final val EQ = Value("==")
+    final val == = EQ
+    final val NE = Value("!=")
+    final val != = NE
 }

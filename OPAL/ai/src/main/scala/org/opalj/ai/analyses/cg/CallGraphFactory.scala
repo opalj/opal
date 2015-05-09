@@ -48,6 +48,20 @@ object CallGraphFactory {
     @volatile var debug: Boolean = false
 
     /**
+     * Annotations that are indicating that the code is generally only implicitly called.
+     * (E.g., by a container using Java reflection or using runtime generated classes.)
+     *
+     *  - `javax.annotation.PostConstruct` and `javax.annotation.PreDestroy`
+     *     are used by enterprise applications to tell the container that these methods
+     *     should be called at the respective points in time. Such annotations may be
+     *     used with private methods!
+     */
+    @volatile var annotationsIndicatingImplicitUsage = Seq(
+        ObjectType("javax/annotation/PostConstruct"),
+        ObjectType("javax/annotation/PreDestroy")
+    )
+
+    /**
      * Returns a list of all entry points that is well suited if we want to
      * analyze a library/framework.
      *
@@ -58,27 +72,41 @@ object CallGraphFactory {
      *  - every non-private method,
      *  - every private method (including a default constructor) related to
      *    Serialization, even if the respective declaring class is not a current subtype
-     *    of     java.io.Serializable but maybe a subtype later on.
-     *  // TODO ...
-     *  - No entry points:
-     *    - public instance methods of a class that provides no way to create an instance of it (e.g., java.lang.Math)
-     *    - methods of a "private object" that is never instantiated (dead objects...)
+     *    of java.io.Serializable but maybe a subtype later on.
+     *  - every private method that has an annotation that indicates that the method is
+     *    implicitly called (e.g., using Java Reflection.)
      */
     def defaultEntryPointsForLibraries(project: SomeProject): Iterable[Method] = {
+
+        /*  TODO Filter methods that are impossible entry points...
+     *  - No entry points:
+     *    - public instance methods of a class that provides no way to create an
+     *      instance of it (e.g., java.lang.Math)
+     *    - methods of a "private class" that is never instantiated (dead objects...)
+     *
+     */
         val classHierarchy = project.classHierarchy
         val methods = new java.util.concurrent.ConcurrentLinkedQueue[Method]
         project.parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { m ⇒
             val (_, classFile, method) = m
-            if (!method.isPrivate ||
-                ( // the method is private, but...
-                    Method.isObjectSerializationRelated(method) &&
+
+            val isNonPrivate = !method.isPrivate
+
+            @inline def isPotentiallySerializationRelated: Boolean = {
+                Method.isObjectSerializationRelated(method) &&
                     (
                         !classFile.isFinal /*we may inherit from Serializable later on...*/ ||
                         classHierarchy.isSubtypeOf(
                             classFile.thisType,
                             ObjectType.Serializable).isYesOrUnknown
                     )
-                ))
+            }
+
+            @inline def isImplicitlyUsed: Boolean = {
+                method.annotations.exists { annotationsIndicatingImplicitUsage.contains(_) }
+            }
+
+            if (isNonPrivate || isPotentiallySerializationRelated || isImplicitlyUsed)
                 methods.add(method)
         }
         import scala.collection.JavaConverters._

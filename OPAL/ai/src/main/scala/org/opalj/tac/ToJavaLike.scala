@@ -26,19 +26,19 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
-package quadruples
+package org.opalj
+package tac
 
-import org.opalj.UShort
-import org.opalj.collection.mutable.Locals
 import scala.collection.mutable.BitSet
-import org.opalj.bytecode.BytecodeProcessingFailedException
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
-import com.sun.org.apache.bcel.internal.generic.ICONST
+
+import org.opalj.collection.mutable.Locals
+import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
  * @author Michael Eichberg
+ * @author Roberts Kolosovs
  */
 object ToJavaLike {
 
@@ -51,8 +51,10 @@ object ToJavaLike {
             case LongConst(_, value)      ⇒ value.toString+"l"
             case FloatConst(_, value)     ⇒ value.toString
             case DoubleConst(_, value)    ⇒ value.toString+"d"
-            case ArithExpr(_, _ /*cTpe*/ , op, left, right) ⇒
+            case BinaryExpr(_, _ /*cTpe*/ , op, left, right) ⇒
                 toJavaLikeExpr(left)+" "+op.toString()+" "+toJavaLikeExpr(right)
+            case PrefixExpr(_, _, op, operand) ⇒
+                op.toString()+" "+toJavaLikeExpr(operand)
         }
     }
 

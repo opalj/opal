@@ -86,6 +86,12 @@ import org.opalj.log.OPALLogger
  */
 package object opalj {
 
+    type RelationalOperator = RelationalOperators.Value
+
+    type BinaryArithmeticOperator = BinaryArithmeticOperators.Value
+
+    type UnaryArithmeticOperator = UnaryArithmeticOperators.Value
+
     {
         implicit val logContext = GlobalLogContext
         try {

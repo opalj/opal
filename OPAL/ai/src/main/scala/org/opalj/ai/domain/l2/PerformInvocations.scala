@@ -33,6 +33,7 @@ package l2
 
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
+import org.opalj.log.Error
 import org.opalj.br._
 import scala.util.control.ControlThrowable
 
@@ -182,10 +183,10 @@ trait PerformInvocations extends MethodCallsHandling {
             return fallback();
 
         if (method.isAbstract) {
-            OPALLogger.error(
+            OPALLogger.logOnce(Error(
                 "project configuration",
                 "the resolved method on a concrete object is abstract: "+
-                    method.toJava(definingClass))
+                    method.toJava(definingClass)))
             fallback()
         } else if (!method.isNative) {
             if (!shouldInvocationBePerformed(definingClass, method))
@@ -224,12 +225,12 @@ trait PerformInvocations extends MethodCallsHandling {
                     throw ct;
 
                 case e: AssertionError ⇒
-                    OPALLogger.error(
+                    OPALLogger.logOnce(Error(
                         "internal error - recoverable",
                         "exception occured while resolving method reference: "+
                             declaringClassType.toJava+
                             "{ static "+methodDescriptor.toJava(methodName)+"}"+
-                            ": "+e.getMessage)
+                            ": "+e.getMessage))
                     return fallback();
 
                 case e: Throwable ⇒

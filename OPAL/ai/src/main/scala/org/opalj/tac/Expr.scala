@@ -26,17 +26,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.br
-package quadruples
+package org.opalj
+package tac
 
-import org.opalj.UShort
-import org.opalj.collection.mutable.Locals
 import scala.collection.mutable.BitSet
-import org.opalj.bytecode.BytecodeProcessingFailedException
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
-import com.sun.org.apache.bcel.internal.generic.ICONST
+import org.opalj.collection.mutable.Locals
+import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.ai.Domain
+import org.opalj.br._
 
 trait Expr {
     /**
@@ -85,11 +84,20 @@ case class ClassConst(pc: PC, value: ObjectType) extends Expr {
     final def cTpe = ComputationalTypeReference
 }
 
-case class ArithExpr(
+/**
+ * @param cTpe The computational type of the result of the binary expression.
+ */
+case class BinaryExpr(
     pc: PC,
     cTpe: ComputationalType,
-    op: ArithmeticOperator,
+    op: BinaryArithmeticOperator,
     left: Expr, right: Expr) extends Expr
+
+case class PrefixExpr(
+    pc: PC,
+    cTpe: ComputationalType,
+    op: UnaryArithmeticOperator,
+    operand: Expr) extends Expr
 
 trait Var extends Expr {
 
@@ -106,6 +114,7 @@ trait Var extends Expr {
 }
 
 object Var {
+
     def unapply(variable: Var): Some[String] = Some(variable.name)
 
 }
