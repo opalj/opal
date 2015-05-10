@@ -55,7 +55,7 @@ class BugPickerOPALLogger(
             def run: Unit = {
                 messages +=
                     BugPickerLogMessage(
-                        BugPickerOPALLogger.df.format(new Date()),
+                        BugPickerOPALLogger.DateFormatter.format(new Date()),
                         message.level.id,
                         message.category.getOrElse(""),
                         message.message)
@@ -64,6 +64,6 @@ class BugPickerOPALLogger(
     }
 }
 
-object BugPickerOPALLogger {
-    final lazy val df = new SimpleDateFormat("HH:mm:ss:SSS")
+private object BugPickerOPALLogger {
+    final val DateFormatter = new SimpleDateFormat("HH:mm:ss:SSS")
 }

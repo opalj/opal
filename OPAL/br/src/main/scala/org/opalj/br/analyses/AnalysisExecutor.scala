@@ -29,7 +29,7 @@
 package org.opalj
 package br
 package analyses
-
+import scala.util.control.ControlThrowable
 import java.net.URL
 import java.io.File
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -132,6 +132,10 @@ trait AnalysisExecutor {
             sys.exit(0)
         }
 
+        def showError(message: String): Unit = {
+            println(Console.RED+"[error] "+Console.RESET + message)
+        }
+
         //
         // 1. check arguments
         //
@@ -140,30 +144,26 @@ trait AnalysisExecutor {
         def verifyFile(filename: String): Option[File] = {
             val file = new File(filename)
 
-            def showError(message: String): Unit = {
-                println(Console.RED+"[error] "+Console.RESET + message)
-            }
-
             def workingDirectory: String = {
                 s"(working directory: ${System.getProperty("user.dir")})"
             }
 
             if (!file.exists) {
-                showError(s"File does not exist: $file $workingDirectory")
+                showError(s"File does not exist: $file $workingDirectory.")
                 None
             } else if (!file.canRead) {
-                showError(s"Cannot read: $file $workingDirectory")
+                showError(s"Cannot read: $file $workingDirectory.")
                 None
             } else if (!file.isDirectory() &&
                 !filename.endsWith(".jar") && !filename.endsWith(".class")) {
-                showError("Input file is neither a directory nor a class or JAR file: "+file)
+                showError(s"Input file is neither a directory nor a class or JAR file: $file.")
                 None
             } else
                 Some(file)
         }
 
         def verifyFiles(filenames: Array[String]): Seq[File] = {
-            filenames.toVector.map(verifyFile).flatten
+            filenames.toSeq.map(verifyFile).flatten
         }
 
         val (cp, args1) = {
@@ -178,9 +178,10 @@ trait AnalysisExecutor {
                     (cpParams.map(splitCPath).flatten, notCPArgs)
             }
         }
+        println(s"[info] The classpath is ${cp.mkString}")
         val cpFiles = verifyFiles(cp)
         if (cpFiles.isEmpty) {
-            println(Console.RED+"[error] Nothing to analyze."+Console.RESET)
+            showError("Nothing to analyze.")
             printUsage()
             sys.exit(1)
         }
@@ -212,7 +213,15 @@ trait AnalysisExecutor {
         //
         // 2. setup project context
         //
-        val project: Project[URL] = setupProject(cpFiles, libcpFiles)
+        val project: Project[URL] = try {
+            setupProject(cpFiles, libcpFiles)
+        } catch {
+            case ct: ControlThrowable ⇒ throw ct;
+            case t: Throwable ⇒
+                println(Console.RED+"[error] setting up the project failed:"+Console.RESET)
+                t.printStackTrace()
+                sys.exit(2)
+        }
 
         //
         // 3. execute analysis
