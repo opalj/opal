@@ -344,7 +344,7 @@ class BugPicker extends Application {
                 val fod = new FileChooser {
                     title = "Open Analysis"
                     extensionFilters ++= Seq(
-                        new FileChooser.ExtensionFilter("Bugpicker Analyis", "*" + BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION),
+                        new FileChooser.ExtensionFilter("Bugpicker Analyis", "*"+BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION),
                         new FileChooser.ExtensionFilter("All Files", "*.*")
                     )
                     initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
@@ -678,10 +678,10 @@ object BugPicker {
     final val defaultAppCSSURL = getClass.getResource("/org/opalj/bugpicker/ui/app.css").toExternalForm
 
     final val MAX_RECENT_PROJECTS = 9
-    
+
     final val MAX_RECENT_ANALYSES = 7
     final val BUGPICKER_ANALYSIS_FILE_EXTENSION = ".bpa"
-    
+
     def storeLastDirectoryToPreferences(file: File) = {
         BugPicker.PREFERENCES.put(BugPicker.PREFERENCES_KEY_LAST_DIRECTORY, file.getAbsolutePath)
     }
