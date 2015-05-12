@@ -433,6 +433,10 @@ class Project[Source] private (
         }
     }
 
+    /*
+     * This is a helper method only. TypeArguments are just a part of a Gerneric ClassTypeSignature. Hence, it make no
+     * sense to check subtype relation of incomplete information. 
+     */
     private def isSubtypeOfByTypeArgument(subtype: TypeArgument, supertype: TypeArgument): Answer = {
         (subtype, supertype) match {
             case (ElementType(et), ElementType(superEt))         ⇒ if (et eq superEt) Yes else No
@@ -463,6 +467,32 @@ class Project[Source] private (
         }
     }
 
+    /**
+     * Determines if the given class or interface type encoded in a ClassTypeSignature `subtype` is actually a subtype
+     * of the class or interface type encoded in the ClassTypeSinature of the `supertype`.
+     *
+     * This method can be used as a foundation for implementing the logic of the JVM's
+     * `instanceof` and `checkcast` instructions. But, in that case additional logic
+     * for handling `null` values and for considering the runtime type needs to be
+     * implemented by the caller of this method.
+     *
+     * @note This method rely in case of comparison of non generic types on
+     *       isSubtypeOf(`ObjectType`, `ObjectType`) of `Project` which
+     *        performs an upwards search only. E.g., given the following
+     *      type hierarchy:
+     *      `class D inherits from C`
+     *      `class E inherits from D`
+     *      and the query isSubtypeOf(D,E) the answer will be `Unknown` if `C` is
+     *      `Unknown` and `No` otherwise.
+     *
+     * @param subtype Any `ClassTypeSignature`.
+     * @param theSupertype Any `ClassTypeSignature`.
+     * @return `Yes` if `subtype` is a subtype of the given `supertype`. `No`
+     *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
+     *      not conclusive. The latter can happen if the class hierarchy is not
+     *      complete and hence precise information about a type's supertypes
+     *      is not available.
+     */
     def isSubtypeOf(subtype: ClassTypeSignature, supertype: ClassTypeSignature): Answer = {
         if (subtype.objectType eq supertype.objectType) {
             (subtype, supertype) match {
