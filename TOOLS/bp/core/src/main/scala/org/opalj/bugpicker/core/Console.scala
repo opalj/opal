@@ -226,13 +226,13 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         )
     }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
         var outputFormatGiven = false
 
         import org.opalj.bugpicker.core.analysis.BugPickerAnalysis._
 
-        if (!parameters.forall(parameter ⇒
-            parameter match {
+        val issues =
+            parameters.filterNot(parameter ⇒ parameter match {
                 case MaxEvalFactorPattern(d) ⇒
                     try {
                         val factor = java.lang.Double.parseDouble(d).toDouble
@@ -268,8 +268,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
                 case IssueKindsPattern(ks) ⇒
                     val kinds = ks.split(',')
-                    kinds.length > 0 &&
-                        kinds.forall { k ⇒ IssueKind.AllKinds.contains(k) }
+                    kinds.nonEmpty && kinds.forall { IssueKind.AllKinds.contains(_) }
 
                 case MinRelevancePattern(_) ⇒
                     // the pattern ensures that the value is legal...
@@ -283,20 +282,13 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
                     outputFormatGiven = true; true
                 case "-debug"                      ⇒ true
                 case DebugFileOutputNameMatcher(_) ⇒ true
-                case _ ⇒
-                    // TODO report the issue back to the calling method
-                    println("Unknown parameter: "+parameter)
-                    false
-
-            }
-        )) {
-            return false;
-        }
+                case _                             ⇒ false
+            })
 
         if (!outputFormatGiven)
             OPALLogger.warn("analysis configuration", "no output format specified")(GlobalLogContext)
 
-        true
+        issues.map("unknown or illegal parameter: "+_)
     }
 }
 

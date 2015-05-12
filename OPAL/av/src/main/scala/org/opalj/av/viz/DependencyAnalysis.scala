@@ -86,7 +86,7 @@ object DependencyAnalysis extends AnalysisExecutor {
         }
     }
 
-    override def checkAnalysisSpecificParameters(args: Seq[String]): Boolean = {
+    override def checkAnalysisSpecificParameters(args: Seq[String]): Traversable[String] = {
 
         val (mainPackage, parameters1) = readParameter("mp", args)
         this.mainPackage = mainPackage
@@ -100,7 +100,10 @@ object DependencyAnalysis extends AnalysisExecutor {
         val (filter, parameters4) = readParameter("filter", parameters3)
         this.filter = filter
 
-        parameters4.isEmpty
+        if (parameters4.isEmpty)
+            Traversable.empty
+        else
+            parameters4.map("unknown parameter: "+_)
     }
 
     override def analysisSpecificParametersDescription: String = ""+

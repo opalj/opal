@@ -58,9 +58,11 @@ object FieldAccessInformationAnalysis
     override def analysisSpecificParametersDescription: String =
         "[-field=\"<The field for which we want read/write access information (e.g., -field=\"java.util.HashMap entrySet\">\"]"
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Boolean =
-        parameters.isEmpty ||
-            (parameters.size == 1 && parameters.head.startsWith("-field="))
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] =
+        if (parameters.isEmpty || (parameters.size == 1 && parameters.head.startsWith("-field=")))
+            Seq.empty
+        else
+            Seq("unknown parameters: "+parameters.mkString(" "))
 
     def doAnalyze(
         project: Project[URL],
