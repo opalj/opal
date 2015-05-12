@@ -35,17 +35,24 @@ import java.net.URL
 import java.util.Date
 import java.util.prefs.Preferences
 
+import scala.xml.Node
+import scala.xml.dtd.DocType
+import scala.xml.dtd.IntDef
+import scala.xml.dtd.NoExternalID
+
 import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analysis.AnalysisParameters
 import org.opalj.bugpicker.core.analysis.BugPickerAnalysis
+import org.opalj.bugpicker.core.analysis.Issue
 import org.opalj.bugpicker.ui.dialogs.AboutDialog
 import org.opalj.bugpicker.ui.dialogs.AnalysisParametersDialog
 import org.opalj.bugpicker.ui.dialogs.DialogStage
+import org.opalj.bugpicker.ui.dialogs.DiffView
 import org.opalj.bugpicker.ui.dialogs.HelpBrowser
 import org.opalj.bugpicker.ui.dialogs.LoadProjectDialog
 import org.opalj.bugpicker.ui.dialogs.LoadedFiles
 import org.opalj.bugpicker.ui.dialogs.ProjectInfoDialog
-import org.opalj.log.Level
+import org.opalj.bugpicker.ui.dialogs.StoredAnalysis
 import org.opalj.log.OPALLogger
 
 import javafx.application.Application
@@ -60,9 +67,11 @@ import scalafx.Includes.jfxTab2sfx
 import scalafx.Includes.jfxWindowEvent2sfx
 import scalafx.Includes.observableList2ObservableBuffer
 import scalafx.application.Platform
-import scalafx.beans.property.{ ObjectProperty, StringProperty }
+import scalafx.beans.property.ObjectProperty
 import scalafx.collections.ObservableBuffer
-import scalafx.collections.ObservableBuffer._
+import scalafx.collections.ObservableBuffer.Add
+import scalafx.collections.ObservableBuffer.Change
+import scalafx.collections.ObservableBuffer.Reorder
 import scalafx.concurrent.Service
 import scalafx.concurrent.Task
 import scalafx.concurrent.Task.sfxTask2jfx
@@ -75,13 +84,14 @@ import scalafx.scene.control.MenuBar
 import scalafx.scene.control.MenuItem
 import scalafx.scene.control.SplitPane
 import scalafx.scene.control.Tab
-import scalafx.scene.control.TableCell
-import scalafx.scene.control.TableColumn
-import scalafx.scene.control.TableColumn._
-import scalafx.scene.control.TableView
 import scalafx.scene.control.TabPane
 import scalafx.scene.control.TabPane.sfxTabPane2jfx
-import scalafx.scene.control.TextArea
+import scalafx.scene.control.TableCell
+import scalafx.scene.control.TableCell.sfxTableCell2jfx
+import scalafx.scene.control.TableColumn
+import scalafx.scene.control.TableColumn.sfxTableColumn2jfx
+import scalafx.scene.control.TableView
+import scalafx.scene.control.TableView.sfxTableView2jfx
 import scalafx.scene.input.KeyCode
 import scalafx.scene.input.KeyCode.sfxEnum2jfx
 import scalafx.scene.input.KeyCodeCombination
@@ -90,8 +100,11 @@ import scalafx.scene.layout.Priority
 import scalafx.scene.layout.VBox
 import scalafx.scene.paint.Color
 import scalafx.scene.text.Text
+import scalafx.scene.text.Text.sfxText2jfx
 import scalafx.scene.web.WebView
 import scalafx.scene.web.WebView.sfxWebView2jfx
+import scalafx.stage.FileChooser
+import scalafx.stage.FileChooser.sfxFileChooser2jfx
 import scalafx.stage.Screen
 import scalafx.stage.Screen.sfxScreen2jfx
 import scalafx.stage.Stage
@@ -101,12 +114,15 @@ import scalafx.stage.WindowEvent
  * @author Arne Lottmann
  * @author Michael Eichberg
  * @author David Becker
+ * @author Tobias Becker
  */
 class BugPicker extends Application {
 
     var project: Project[URL] = null
     var sources: Seq[File] = Seq.empty
     var recentProjects: Seq[LoadedFiles] = BugPicker.loadRecentProjectsFromPreferences().getOrElse(Seq.empty)
+    var recentAnalyses: Seq[StoredAnalysis] = BugPicker.loadRecentlyUsedAnalyses
+    var currentAnalysis: Iterable[Node] = null
 
     override def start(jStage: javafx.stage.Stage): Unit = {
         val stage: Stage = jStage
@@ -289,6 +305,67 @@ class BugPicker extends Application {
             }
         }
 
+        lazy val storeCurrentAnalysis = new MenuItem {
+            text = "_Store Analysis"
+            mnemonicParsing = true
+            accelerator = KeyCombination("Shortcut+S")
+            disable = true
+            onAction = { e: ActionEvent ⇒
+                val name = recentProjects.head.projectName
+                val fsd = new FileChooser {
+                    title = "Save Analysis"
+                    extensionFilters ++= Seq(
+                        new FileChooser.ExtensionFilter("Bugpicker Analyis", "*"+BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION),
+                        new FileChooser.ExtensionFilter("All Files", "*.*")
+                    )
+                    initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
+                    initialFileName = name + BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION
+                }
+                val file = fsd.showSaveDialog(stage)
+                if (file != null) {
+                    BugPicker.storeLastDirectoryToPreferences(file.getParentFile)
+                    recentAnalyses = BugPicker.storeAnalysis(name, currentAnalysis, file)(recentAnalyses)
+                    recentAnalysisToDiffMenu.items = createRecentAnalysisMenu()
+                    recentAnalysisToDiffMenu.disable = false
+                }
+            }
+        }
+
+        lazy val recentAnalysisToDiffMenu = new Menu {
+            text = "Recent Diff"
+            items = createRecentAnalysisMenu()
+            disable = true
+        }
+
+        lazy val loadAnalysisToDiff = new MenuItem {
+            text = "Load Diff"
+            disable = true
+            onAction = { e: ActionEvent ⇒
+                val fod = new FileChooser {
+                    title = "Open Analysis"
+                    extensionFilters ++= Seq(
+                        new FileChooser.ExtensionFilter("Bugpicker Analyis", "*"+BugPicker.BUGPICKER_ANALYSIS_FILE_EXTENSION),
+                        new FileChooser.ExtensionFilter("All Files", "*.*")
+                    )
+                    initialDirectory = BugPicker.loadLastDirectoryFromPreferences()
+                }
+                val file = fod.showOpenDialog(stage)
+                if (file != null) {
+                    BugPicker.storeLastDirectoryToPreferences(file.getParentFile)
+                    val oldAnalysis = StoredAnalysis.readFromFile(file)
+                    if (oldAnalysis.isDefined) {
+                        val dv = new DiffView(currentAnalysis, oldAnalysis.get)
+                        recentAnalyses = BugPicker.updateRecentlyUsedAnalyses(oldAnalysis.get, recentAnalyses)
+                        recentAnalysisToDiffMenu.items = createRecentAnalysisMenu()
+                        recentAnalysisToDiffMenu.disable = false
+                        dv.show(stage)
+                    } else {
+                        DialogStage.showMessage("Error", "Not an BugPickerAnalysis-File.", stage)
+                    }
+                }
+            }
+        }
+
         def loadProjectAction(): Unit = {
             val preferences = BugPicker.loadFilesFromPreferences()
             val dia = new LoadProjectDialog(preferences, recentProjects)
@@ -361,8 +438,19 @@ class BugPicker extends Application {
                                 accelerator = KeyCombination("Shortcut+R")
                                 onAction = { e: ActionEvent ⇒
                                     val parameters = BugPicker.loadParametersFromPreferences()
+                                    storeCurrentAnalysis.disable = true
+                                    val issues = ObjectProperty(Iterable.empty[Issue])
+                                    issues.onChange((o, p, q) ⇒ {
+                                        currentAnalysis = issues().map(_.asXHTML(false))
+                                        if (currentAnalysis != null) {
+                                            storeCurrentAnalysis.disable = false
+                                            loadAnalysisToDiff.disable = false
+                                            if (!recentAnalysisToDiffMenu.items.isEmpty)
+                                                recentAnalysisToDiffMenu.disable = false
+                                        }
+                                    })
                                     AnalysisRunner.runAnalysis(stage, project, sources, parameters,
-                                        sourceView, byteView, reportView, tabPane)
+                                        issues, sourceView, byteView, reportView, tabPane)
                                     if (!tabPane.selectionModel().isSelected(1)) {
                                         tabPane.selectionModel().select(1)
                                     }
@@ -380,7 +468,11 @@ class BugPicker extends Application {
                                         BugPicker.storeParametersToPreferences(newParameters.get)
                                     }
                                 }
-                            }
+                            },
+                            new SeparatorMenuItem,
+                            storeCurrentAnalysis,
+                            loadAnalysisToDiff,
+                            recentAnalysisToDiffMenu
                         )
                     },
                     new Menu {
@@ -400,6 +492,42 @@ class BugPicker extends Application {
                             }
                         )
                     })
+            }
+        }
+
+        def createRecentAnalysisMenu(): Seq[MenuItem] = {
+
+            if (!recentAnalyses.isEmpty) {
+                (recentAnalyses.map { p ⇒
+                    new MenuItem {
+                        text = p.analysisName+" - "+p.analysisDate
+                        mnemonicParsing = true
+                        if (p == currentAnalysis)
+                            disable = true
+                        onAction = { e: ActionEvent ⇒
+                            {
+                                val dv = new DiffView(currentAnalysis, p)
+                                dv.show(stage)
+                            }
+                        }
+                    }
+                }) ++ Seq(
+                    new MenuItem {
+                        text = "Clear Analyses"
+                        mnemonicParsing = true
+                        id = "clearAnalyses"
+                        onAction = { e: ActionEvent ⇒
+                            {
+                                recentAnalyses = Seq.empty
+                                BugPicker.deleteAnalyses()
+                                // recentAnalysisMenu should now be empty, disable it
+                                recentAnalysisToDiffMenu.items = Seq.empty
+                                recentAnalysisToDiffMenu.disable = true;
+                            }
+                        }
+                    })
+            } else {
+                Seq.empty
             }
         }
 
@@ -498,7 +626,7 @@ class BugPicker extends Application {
                 if (screens.isEmpty) {
                     maximizeOnCurrentScreen(stage)
                 } else {
-                    val currentScreen = Screen.screensForRectangle(storedSize.get)(0)
+                    val currentScreen = screens(0)
                     val currentScreenSize = currentScreen.bounds
                     if (currentScreenSize.contains(storedSize.get)) {
                         stage.width = storedSize.get.width
@@ -535,16 +663,32 @@ object BugPicker {
     final val PREFERENCES_KEY_RECENT_PROJECT_CLASSES = "classes_"
     final val PREFERENCES_KEY_RECENT_PROJECT_LIBS = "libs_"
     final val PREFERENCES_KEY_RECENT_PROJECT_SOURCES = "sources_"
+    final val RECENT_ANALYSIS = "recentAnalysis_"
+    final val PREFERENCES_KEY_RECENT_ANALYSIS_NAME = "name"
+    final val PREFERENCES_KEY_RECENT_ANALYSIS_DATE = "date"
+    final val PREFERENCES_KEY_RECENT_ANALYSIS_FILE = "file"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_FACTOR = "maxEvalFactor"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_EVAL_TIME = "maxEvalTime"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_INTEGER_RANGES = "maxCardinalityOfIntegerRanges"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CARDINALITY_OF_LONG_SETS = "maxCardinalityOfLongSets"
     final val PREFERENCES_KEY_ANALYSIS_PARAMETER_MAX_CALL_CHAIN_LENGTH = "maxCallChainLength"
     final val PREFERENCES_KEY_WINDOW_SIZE = "windowSize"
+    final val PREFERENCES_KEY_LAST_DIRECTORY = "lastDirectory"
 
     final val defaultAppCSSURL = getClass.getResource("/org/opalj/bugpicker/ui/app.css").toExternalForm
 
     final val MAX_RECENT_PROJECTS = 9
+
+    final val MAX_RECENT_ANALYSES = 7
+    final val BUGPICKER_ANALYSIS_FILE_EXTENSION = ".bpa"
+
+    def storeLastDirectoryToPreferences(file: File) = {
+        BugPicker.PREFERENCES.put(BugPicker.PREFERENCES_KEY_LAST_DIRECTORY, file.getAbsolutePath)
+    }
+
+    def loadLastDirectoryFromPreferences(): File = {
+        new File(BugPicker.PREFERENCES.get(BugPicker.PREFERENCES_KEY_LAST_DIRECTORY, System.getProperty("user.home")))
+    }
 
     def loadWindowSizeFromPreferences(): Option[Rectangle2D] = {
         val prefValue = PREFERENCES.get(PREFERENCES_KEY_WINDOW_SIZE, "")
@@ -644,7 +788,6 @@ object BugPicker {
     }
 
     def deleteRecentProjectsFromPreferences(): Unit = {
-
         for (i ← 1 to PREFERENCES.childrenNames().size) {
             val PREFERENCES_RECENT_PROJECT = PREFERENCES.node(s"$RECENT_PROJECT$i")
             PREFERENCES_RECENT_PROJECT.clear()
@@ -659,20 +802,82 @@ object BugPicker {
         if (!PREFERENCES.nodeExists("")) {
             return None
         }
-        val result = for (i ← 1 to PREFERENCES.childrenNames().size) yield {
-            if (!PREFERENCES.nodeExists(s"$RECENT_PROJECT$i"))
-                return None
-            else {
-                val PREFERENCES_RECENT_PROJECT = PREFERENCES.node(s"$RECENT_PROJECT$i")
-                val name = PREFERENCES_RECENT_PROJECT.get(s"$PREFERENCES_KEY_RECENT_PROJECT_NAME$i", "")
-                val classes = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_CLASSES$i", PREFERENCES_RECENT_PROJECT)
-                val libs = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_LIBS$i", PREFERENCES_RECENT_PROJECT)
-                val sources = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_SOURCES$i", PREFERENCES_RECENT_PROJECT)
+        val result = for (i ← 1 to PREFERENCES.childrenNames().size; if PREFERENCES.nodeExists(s"$RECENT_PROJECT$i")) yield {
+            val PREFERENCES_RECENT_PROJECT = PREFERENCES.node(s"$RECENT_PROJECT$i")
+            val name = PREFERENCES_RECENT_PROJECT.get(s"$PREFERENCES_KEY_RECENT_PROJECT_NAME$i", "")
+            val classes = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_CLASSES$i", PREFERENCES_RECENT_PROJECT)
+            val libs = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_LIBS$i", PREFERENCES_RECENT_PROJECT)
+            val sources = prefAsFiles(s"$PREFERENCES_KEY_RECENT_PROJECT_SOURCES$i", PREFERENCES_RECENT_PROJECT)
 
-                LoadedFiles(projectName = name, projectFiles = classes, projectSources = sources, libraries = libs)
-            }
+            LoadedFiles(projectName = name, projectFiles = classes, projectSources = sources, libraries = libs)
         }
         Some(result)
+    }
+
+    def storeAnalysis(name: String, issues: Iterable[Node], file: File)(recentAnalyses: Seq[StoredAnalysis]): Seq[StoredAnalysis] = {
+        class PE(name: String, entdef: scala.xml.dtd.EntityDef) extends scala.xml.dtd.ParsedEntityDecl(name, entdef) {
+            override def toString: String = {
+                val sb = new StringBuilder()
+                return this.buildString(sb).toString
+            }
+        }
+        // 1. create new StoredAnalysis
+        val newStoredAnalysis = StoredAnalysis(name, file)
+
+        // 2. create XML-output and save it to file
+        val data =
+            <issues name={ newStoredAnalysis.analysisName } date={ newStoredAnalysis.analysisDate.getTime.toString }>
+                { issues }
+            </issues>
+        scala.xml.XML.save(file.getAbsolutePath, data, "UTF-8", true, DocType("issues", NoExternalID, Seq(new PE("nbsp", IntDef("&#160;")))))
+
+        // 3. update recently used analyses in Prefs
+        updateRecentlyUsedAnalyses(newStoredAnalysis, recentAnalyses)
+    }
+
+    def updateRecentlyUsedAnalyses(newAnalysis: StoredAnalysis, recentAnalyses: Seq[StoredAnalysis]) = {
+        val updatedAnalyses = ((newAnalysis +: recentAnalyses.filter(_ != newAnalysis)).take(BugPicker.MAX_RECENT_ANALYSES))
+
+        var i = 0
+        for (recentAnalysis ← updatedAnalyses) {
+            i = i + 1
+            val PREFERENCES_RECENT_ANALYSIS = PREFERENCES.node(s"$RECENT_ANALYSIS$i")
+            PREFERENCES_RECENT_ANALYSIS.put(s"$PREFERENCES_KEY_RECENT_ANALYSIS_NAME", recentAnalysis.analysisName)
+            PREFERENCES_RECENT_ANALYSIS.put(s"$PREFERENCES_KEY_RECENT_ANALYSIS_DATE", recentAnalysis.analysisDate.getTime.toString)
+            PREFERENCES_RECENT_ANALYSIS.put(s"$PREFERENCES_KEY_RECENT_ANALYSIS_FILE", recentAnalysis.analysisFile.getAbsolutePath)
+        }
+        updatedAnalyses
+    }
+
+    def loadRecentlyUsedAnalyses(): Seq[StoredAnalysis] = {
+        if (!PREFERENCES.nodeExists("")) {
+            return Seq.empty
+        }
+        var rua = Seq.empty[StoredAnalysis]
+        for (i ← 1 to PREFERENCES.childrenNames().size; if PREFERENCES.nodeExists(s"$RECENT_ANALYSIS$i")) {
+            val PREFERENCES_RECENT_ANALYSIS = PREFERENCES.node(s"$RECENT_ANALYSIS$i")
+            val path = PREFERENCES_RECENT_ANALYSIS.get(s"$PREFERENCES_KEY_RECENT_ANALYSIS_FILE", "")
+            val file = new File(path)
+            if (file.exists) {
+                val name = PREFERENCES_RECENT_ANALYSIS.get(s"$PREFERENCES_KEY_RECENT_ANALYSIS_NAME", "")
+                val date = PREFERENCES_RECENT_ANALYSIS.get(s"$PREFERENCES_KEY_RECENT_ANALYSIS_DATE", "")
+                val loadedAnalysis = StoredAnalysis(name, file, new Date(date.toLong))
+                rua = rua :+ loadedAnalysis
+            } else {
+                // file moved or deleted, remove from Prefs
+                PREFERENCES_RECENT_ANALYSIS.clear()
+                PREFERENCES_RECENT_ANALYSIS.removeNode()
+            }
+        }
+        rua
+    }
+
+    def deleteAnalyses(): Unit = {
+        for (i ← 1 to PREFERENCES.childrenNames().size; if PREFERENCES.nodeExists(s"$RECENT_ANALYSIS$i")) {
+            val PREFERENCES_RECENT_ANALYSIS = PREFERENCES.node(s"$RECENT_ANALYSIS$i")
+            PREFERENCES_RECENT_ANALYSIS.clear()
+            PREFERENCES_RECENT_ANALYSIS.removeNode()
+        }
     }
 
     def main(args: Array[String]): Unit = {

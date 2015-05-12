@@ -326,8 +326,10 @@ trait ClassFileReader extends Constant_PoolAbstractions {
 
         process(new ZipFile(jarFile)) { zf ⇒
             val jarEntry = zf.getEntry(jarFileEntryName)
-            if (jarEntry == null)
-                throw new IOException(s"the file $jarFile does not contain $jarFileEntryName")
+            if (jarEntry == null) {
+                val message = s"the file $jarFile does not contain $jarFileEntryName"
+                throw new IOException(message)
+            }
             ClassFile(zf, jarEntry)
         }
     }

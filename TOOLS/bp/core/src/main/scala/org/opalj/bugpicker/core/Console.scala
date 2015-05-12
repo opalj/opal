@@ -47,6 +47,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.charset.StandardCharsets
 import java.io.File
+import org.opalj.log.OPALLogger
+import org.opalj.log.GlobalLogContext
 
 /**
  * A simple wrapper around the BugPicker analysis to make it runnable using the
@@ -121,6 +123,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
         initProgressManagement: (Int) ⇒ ProgressManagement) = {
 
         import theProject.logContext
+
+        OPALLogger.info("analysis progress", "starting analysis")
 
         val (analysisTime, issues0, exceptions) =
             bugPickerAnalysis.analyze(theProject, parameters, initProgressManagement)
@@ -227,7 +231,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
 
         import org.opalj.bugpicker.core.analysis.BugPickerAnalysis._
 
-        parameters.forall(parameter ⇒
+        if (!parameters.forall(parameter ⇒
             parameter match {
                 case MaxEvalFactorPattern(d) ⇒
                     try {
@@ -285,9 +289,14 @@ object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
                     false
 
             }
-        ) &&
-            outputFormatGiven
+        )) {
+            return false;
+        }
 
+        if (!outputFormatGiven)
+            OPALLogger.warn("analysis configuration", "no output format specified")(GlobalLogContext)
+
+        true
     }
 }
 

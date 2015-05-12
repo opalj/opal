@@ -81,7 +81,7 @@ object ProjectHelper {
         libcpFiles: Iterable[File],
         parentStage: Stage,
         projectLogMessages: ObservableBuffer[BugPickerLogMessage]): Project[URL] = {
-        OPALLogger.info("creating project", "reading class files (found in):")
+        OPALLogger.info("creating project", "reading project class files")
         val cache: BytecodeInstructionsCache = new BytecodeInstructionsCache
         val Java8ClassFileReader = new Java8FrameworkWithCaching(cache)
         val Java8LibraryClassFileReader = new Java8LibraryFrameworkWithCaching(cache)
@@ -90,55 +90,32 @@ object ProjectHelper {
             br.reader.readClassFiles(
                 cpFiles,
                 Java8ClassFileReader.ClassFiles,
-                (file) ⇒ OPALLogger.info("creating project", file.toString))
+                (file) ⇒ OPALLogger.info(
+                    "creating project",
+                    "project class path member: "+file.toString))
 
         val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
-                OPALLogger.info("creating project", "reading library class files (found in):")
+                OPALLogger.info("creating project", "reading library class files")
                 br.reader.readClassFiles(
                     libcpFiles,
                     Java8LibraryClassFileReader.ClassFiles,
-                    (file) ⇒ OPALLogger.info("creating project", file.toString))
+                    (file) ⇒ OPALLogger.info(
+                        "creating project",
+                        "library class path member: "+file.toString))
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
             }
         }
+
         val allExceptions = exceptions1 ++ exceptions2
         if (allExceptions.nonEmpty) {
-            val out = new java.io.ByteArrayOutputStream
-            val pout = new java.io.PrintStream(out)
-            for (exception ← exceptions1 ++ exceptions2) {
-                pout.println(s"<h3>${exception.getMessage}</h3>")
-                exception.getStackTrace.foreach { ste ⇒
-                    pout.append(ste.toString).println("<br/>")
-                }
+            for (exception ← allExceptions) {
+                OPALLogger.error(
+                    "creating project",
+                    "an exception occured while creating project; the responsible class file is ignored",
+                    exception)
             }
-            pout.flush
-            val message = new String(out.toByteArray)
-            val dialog = new DialogStage(parentStage) {
-                title = "Error while reading project"
-                scene = new Scene {
-                    root = new BorderPane {
-                        top = new Label {
-                            text = "The following exceptions occurred while reading the specified files:"
-                        }
-                        center = new WebView {
-                            contextMenuEnabled = false
-                            engine.loadContent(message)
-                        }
-                        bottom = new HBox {
-                            children = new Button {
-                                text = "Close"
-                                padding = Insets(5, 10, 5, 10)
-                                onAction = { e: ActionEvent ⇒
-                                    close()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            dialog.showAndWait()
         }
 
         Project(
