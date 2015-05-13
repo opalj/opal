@@ -439,10 +439,11 @@ class Project[Source] private (
      */
     private def isSubtypeOfByTypeArgument(subtype: TypeArgument, supertype: TypeArgument): Answer = {
         (subtype, supertype) match {
-            case (ElementType(et), ElementType(superEt))         ⇒ if (et eq superEt) Yes else No
-            case (ElementType(et), ExtendedElementType(superEt)) ⇒ classHierarchy.isSubtypeOf(et, superEt)
-            case (ElementType(et), UpperElementType(superEt))    ⇒ classHierarchy.isSubtypeOf(superEt, et)
-            case (ElementContainerType(varInd, cts), ElementContainerType(supVarInd, supCts)) ⇒ (varInd, supVarInd) match {
+            case (VarianceFreeTypeArgument(et), VarianceFreeTypeArgument(superEt))         ⇒ if (et eq superEt) Yes else No
+            case (VarianceFreeTypeArgument(et), UpperTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(et, superEt)
+            case (VarianceFreeTypeArgument(et), LowerTypeBound(superEt))    ⇒ classHierarchy.isSubtypeOf(superEt, et)
+            case (_, Wildcard) ⇒ Yes
+            case (GenericTypeArgument(varInd, cts), GenericTypeArgument(supVarInd, supCts)) ⇒ (varInd, supVarInd) match {
                 case (None, None) ⇒ if (cts.objectType eq supCts.objectType) isSubtypeOf(cts, supCts) else No
                 case (None, Some(CovariantIndicator)) ⇒ isSubtypeOf(cts, supCts)
                 case (None, Some(ContravariantIndicator)) ⇒ isSubtypeOf(supCts, cts)
@@ -451,9 +452,8 @@ class Project[Source] private (
                 case _ ⇒ No
 
             }
-            case (ExtendedElementType(et), ExtendedElementType(superEt)) ⇒ classHierarchy.isSubtypeOf(et, superEt)
-            case (UpperElementType(et), UpperElementType(superEt)) ⇒ classHierarchy.isSubtypeOf(superEt, et)
-            case (_, Wildcard) ⇒ Yes
+            case (UpperTypeBound(et), UpperTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(et, superEt)
+            case (LowerTypeBound(et), LowerTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(superEt, et)
             case _ ⇒ No
         }
     }
@@ -471,10 +471,6 @@ class Project[Source] private (
      * Determines if the given class or interface type encoded in a ClassTypeSignature `subtype` is actually a subtype
      * of the class or interface type encoded in the ClassTypeSinature of the `supertype`.
      *
-     * This method can be used as a foundation for implementing the logic of the JVM's
-     * `instanceof` and `checkcast` instructions. But, in that case additional logic
-     * for handling `null` values and for considering the runtime type needs to be
-     * implemented by the caller of this method.
      *
      * @note This method rely in case of comparison of non generic types on
      *       isSubtypeOf(`ObjectType`, `ObjectType`) of `Project` which

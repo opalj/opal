@@ -349,23 +349,22 @@ object GenericContainer { // matches : List<Object>
     }
 }
 
-sealed trait VarianceIndicatorType
-
 /**
  * Facilitates matching the `ObjectType` that is defined within a `ProperTypeArgument`
- * without an VarianceIndicator (e.g the CovarianceIndicator (? extends)). This only matches
- * non-generic types.
+ * without a VarianceIndicator (e.g. the CovarianceIndicator (? extends)). This only matches
+ * non-generic types where the list of `TypeArguments` is `Nil`.
  *
  * @example
+ *      matches e.g.: List<Integer>
  * {{{
  *  val scts : SimpleClassTypeSignature = ...
  *  scts.typeArguments match {
- *      case ElementType(objectType) => ...
+ *      case VarianceFreeTypeArgument(objectType) => ...
  *      case _ => ...
  *  }
  * }}}
  */
-object ElementType extends VarianceIndicatorType {
+object VarianceFreeTypeArgument {
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = {
         pta match {
             case ProperTypeArgument(None, NonGeneric(ot)) ⇒ Some(ot)
@@ -376,18 +375,19 @@ object ElementType extends VarianceIndicatorType {
 
 /**
  * Facilitates matching the `ObjectType` that is defined within a `ProperTypeArgument`
- * with an CovarianceIndicator (? extends)). This only matches non-generic types.
+ * with a CovarianceIndicator (? extends)). This only matches non-generic types.
  *
  * @example
+ *      matches e.g.: List<? extends Number>
  * {{{
  *  val scts : SimpleClassTypeSignature = ...
  *  scts.typeArguments match {
- *      case ExtendedElementType(objectType) => ...
+ *      case UpperTypeBound(objectType) => ...
  *      case _ => ...
  *  }
  * }}}
  */
-object ExtendedElementType extends VarianceIndicatorType {
+object UpperTypeBound {
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = {
         pta match {
             case ProperTypeArgument(Some(CovariantIndicator), NonGeneric(ot)) ⇒ Some(ot)
@@ -398,18 +398,19 @@ object ExtendedElementType extends VarianceIndicatorType {
 
 /**
  * Facilitates matching the `ObjectType` that is defined within a `ProperTypeArgument`
- * with an ContravarianceIndicator (? super)). This only matches non-generic types.
+ * with a ContravarianceIndicator (? super)). This only matches non-generic types.
  *
  * @example
- * {{{
- *  val scts : SimpleClassTypeSignature = ...
+ *      matches e.g.: List<? super Integer>
+ *  {{{
+ *  val scts : SimpleClassTypeSignature = ... 
  *  scts.typeArguments match {
- *      case UpperElementType(objectType) => ...
+ *      case LowerTypeBound(objectType) => ...
  *      case _ => ...
  *  }
  * }}}
  */
-object UpperElementType extends VarianceIndicatorType {
+object LowerTypeBound {
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = {
         pta match {
             case ProperTypeArgument(Some(ContravariantIndicator), NonGeneric(ot)) ⇒ Some(ot)
@@ -421,18 +422,19 @@ object UpperElementType extends VarianceIndicatorType {
 /**
  * Facilitates matching the (`VarianceIndicator`, `ObjectType`) that is defined
  * within a `ProperTypeArgument`. It matches ProperTypeArguments which define a
- * generic type in the inner ClassTypeSignature.
+ * `TypeArguments` in the inner ClassTypeSignature.
  *
  * @example
+ *      matches e.g.: List<List<Integer>>
  * {{{
  *  val scts : SimpleClassTypeSignature = ...
  *  scts.typeArguments match {
- *      case ElementContainerType(varInd, objectType) => ...
+ *      case GenericTypeArgument(varInd, objectType) => ...
  *      case _ => ...
  *  }
  * }}}
  */
-object ElementContainerType extends VarianceIndicatorType {
+object GenericTypeArgument {
     def unapply(pta: ProperTypeArgument): Option[(Option[VarianceIndicator], ClassTypeSignature)] = {
         pta match {
             case ProperTypeArgument(varInd, cts @ ClassTypeSignature(_, _, _)) ⇒ Some((varInd, cts))
