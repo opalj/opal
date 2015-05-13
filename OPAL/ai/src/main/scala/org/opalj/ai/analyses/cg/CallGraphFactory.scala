@@ -56,7 +56,7 @@ object CallGraphFactory {
      *     should be called at the respective points in time. Such annotations may be
      *     used with private methods!
      */
-    @volatile var annotationsIndicatingImplicitUsage = Seq(
+    @volatile var annotationsIndicatingImplicitUsage = Set(
         ObjectType("javax/annotation/PostConstruct"),
         ObjectType("javax/annotation/PreDestroy")
     )
@@ -103,7 +103,13 @@ object CallGraphFactory {
             }
 
             @inline def isImplicitlyUsed: Boolean = {
-                method.annotations.exists { annotationsIndicatingImplicitUsage.contains(_) }
+                method.annotations.exists { annotation ⇒
+                    val annotationType = annotation.annotationType
+                    annotationType.isObjectType &&
+                        annotationsIndicatingImplicitUsage.contains(
+                            annotationType.asObjectType
+                        )
+                }
             }
 
             if (isNonPrivate || isPotentiallySerializationRelated || isImplicitlyUsed)
