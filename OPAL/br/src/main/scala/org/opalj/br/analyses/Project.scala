@@ -434,7 +434,7 @@ class Project[Source] private (
     }
 
     /*
-     * This is a helper method only. TypeArguments are just a part of a Gerneric ClassTypeSignature. Hence, it make no
+     * This is a helper method only. TypeArguments are just a part of a Generic ClassTypeSignature. Hence, it make no
      * sense to check subtype relation of incomplete information. 
      */
     private def isSubtypeOfByTypeArgument(subtype: TypeArgument, supertype: TypeArgument): Answer = {
@@ -508,11 +508,11 @@ class Project[Source] private (
                             if (classFile(containerType).get.classSignature.nonEmpty &&
                                 classFile(superContainerType).get.classSignature.nonEmpty) {
                                 val ftp = classFile(containerType).get.classSignature.get.formalTypeParameters
-                                val supFtp = classFile(superContainerType).get.classSignature.get.formalTypeParameters
+                                val superFtp = classFile(superContainerType).get.classSignature.get.formalTypeParameters
                                 var typeArgs = List.empty[TypeArgument]
                                 var supertypeArgs = List.empty[TypeArgument]
                                 for (i ← 0 to ftp.size - 1) {
-                                    val index = supFtp.indexOf(ftp(i))
+                                    val index = superFtp.indexOf(ftp(i))
                                     if (index >= 0) {
                                         typeArgs = typeArgs ++ List(elements(i))
                                         supertypeArgs = supertypeArgs ++ List(superElements(index))
