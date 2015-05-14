@@ -118,14 +118,14 @@ object AsQuadruples {
                 )
                 schedule(pcOfNextInstruction(pc), stack.tail)
             }
-            
+
             def unaryArithmeticOperation(operator: ArithmeticOperator): Unit = {
-              val value :: _ = stack
-              val cTpe = value.cTpe
-              statements(pc) = List(
-                  Assignment(pc, value, UnaryExpr(pc, cTpe, operator, value))
-              )
-              schedule(pcOfNextInstruction(pc), stack.tail)
+                val value :: _ = stack
+                val cTpe = value.cTpe
+                statements(pc) = List(
+                    Assignment(pc, value, UnaryExpr(pc, cTpe, operator, value))
+                )
+                schedule(pcOfNextInstruction(pc), stack.tail)
             }
 
             def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
@@ -207,51 +207,51 @@ object AsQuadruples {
                     )
                     schedule(pcOfNextInstruction(pc), newValue2 :: newValue1 :: rest)
 
-                case DADD.opcode ⇒ arithmeticOperation(Add)
-                case DDIV.opcode ⇒ arithmeticOperation(Divide)
+                case DADD.opcode  ⇒ arithmeticOperation(Add)
+                case DDIV.opcode  ⇒ arithmeticOperation(Divide)
                 case DCMPG.opcode ⇒ arithmeticOperation(Greater)
                 case DCMPL.opcode ⇒ arithmeticOperation(Greater)
-                case DNEG.opcode ⇒ unaryArithmeticOperation(Subtract)
-                case DMUL.opcode ⇒ arithmeticOperation(Multiply)
-                case DREM.opcode ⇒ arithmeticOperation(Modulo)
-                case DSUB.opcode ⇒ arithmeticOperation(Subtract) 
-                    
-                case FADD.opcode ⇒ arithmeticOperation(Add)
-                case FDIV.opcode ⇒ arithmeticOperation(Divide)
+                case DNEG.opcode  ⇒ unaryArithmeticOperation(Subtract)
+                case DMUL.opcode  ⇒ arithmeticOperation(Multiply)
+                case DREM.opcode  ⇒ arithmeticOperation(Modulo)
+                case DSUB.opcode  ⇒ arithmeticOperation(Subtract)
+
+                case FADD.opcode  ⇒ arithmeticOperation(Add)
+                case FDIV.opcode  ⇒ arithmeticOperation(Divide)
                 case FCMPG.opcode ⇒ arithmeticOperation(Greater)
                 case FCMPL.opcode ⇒ arithmeticOperation(Greater)
-                case FNEG.opcode ⇒ unaryArithmeticOperation(Subtract)
-                case FMUL.opcode ⇒ arithmeticOperation(Multiply)
-                case FREM.opcode ⇒ arithmeticOperation(Modulo)
-                case FSUB.opcode ⇒ arithmeticOperation(Subtract)
-                
-                case IADD.opcode ⇒ arithmeticOperation(Add)
-                case IAND.opcode ⇒ arithmeticOperation(And)
-                case IDIV.opcode ⇒ arithmeticOperation(Divide)
-//                case IINC.opcode ⇒ arithmeticOperation(Increment) /*unary, doesn't use stack*/
-                case INEG.opcode ⇒ unaryArithmeticOperation(Subtract)
-                case IMUL.opcode ⇒ arithmeticOperation(Multiply)
-                case IOR.opcode ⇒ arithmeticOperation(Or)
-                case IREM.opcode ⇒ arithmeticOperation(Modulo)
-                case ISHL.opcode ⇒ arithmeticOperation(LShift)
-                case ISHR.opcode ⇒ arithmeticOperation(RShift)
-                case ISUB.opcode ⇒ arithmeticOperation(Subtract)
+                case FNEG.opcode  ⇒ unaryArithmeticOperation(Subtract)
+                case FMUL.opcode  ⇒ arithmeticOperation(Multiply)
+                case FREM.opcode  ⇒ arithmeticOperation(Modulo)
+                case FSUB.opcode  ⇒ arithmeticOperation(Subtract)
+
+                case IADD.opcode  ⇒ arithmeticOperation(Add)
+                case IAND.opcode  ⇒ arithmeticOperation(And)
+                case IDIV.opcode  ⇒ arithmeticOperation(Divide)
+                //                case IINC.opcode ⇒ arithmeticOperation(Increment) /*unary, doesn't use stack*/
+                case INEG.opcode  ⇒ unaryArithmeticOperation(Subtract)
+                case IMUL.opcode  ⇒ arithmeticOperation(Multiply)
+                case IOR.opcode   ⇒ arithmeticOperation(Or)
+                case IREM.opcode  ⇒ arithmeticOperation(Modulo)
+                case ISHL.opcode  ⇒ arithmeticOperation(LShift)
+                case ISHR.opcode  ⇒ arithmeticOperation(RShift)
+                case ISUB.opcode  ⇒ arithmeticOperation(Subtract)
                 case IUSHR.opcode ⇒ arithmeticOperation(RShiftLog)
-                case IXOR.opcode ⇒ arithmeticOperation(XOr)
-                
-                case LADD.opcode ⇒ arithmeticOperation(Add)
-                case LAND.opcode ⇒ arithmeticOperation(And)
-                case LDIV.opcode ⇒ arithmeticOperation(Divide)
-                case LCMP.opcode ⇒ arithmeticOperation(Greater)
-                case LNEG.opcode ⇒ unaryArithmeticOperation(Subtract)
-                case LMUL.opcode ⇒ arithmeticOperation(Multiply)
-                case LOR.opcode ⇒ arithmeticOperation(Or)
-                case LREM.opcode ⇒ arithmeticOperation(Modulo)
-                case LSHL.opcode ⇒ arithmeticOperation(LShift)
-                case LSHR.opcode ⇒ arithmeticOperation(RShift)
-                case LSUB.opcode ⇒ arithmeticOperation(Subtract)
+                case IXOR.opcode  ⇒ arithmeticOperation(XOr)
+
+                case LADD.opcode  ⇒ arithmeticOperation(Add)
+                case LAND.opcode  ⇒ arithmeticOperation(And)
+                case LDIV.opcode  ⇒ arithmeticOperation(Divide)
+                case LCMP.opcode  ⇒ arithmeticOperation(Greater)
+                case LNEG.opcode  ⇒ unaryArithmeticOperation(Subtract)
+                case LMUL.opcode  ⇒ arithmeticOperation(Multiply)
+                case LOR.opcode   ⇒ arithmeticOperation(Or)
+                case LREM.opcode  ⇒ arithmeticOperation(Modulo)
+                case LSHL.opcode  ⇒ arithmeticOperation(LShift)
+                case LSHR.opcode  ⇒ arithmeticOperation(RShift)
+                case LSUB.opcode  ⇒ arithmeticOperation(Subtract)
                 case LUSHR.opcode ⇒ arithmeticOperation(RShiftLog)
-                case LXOR.opcode ⇒ arithmeticOperation(XOr)
+                case LXOR.opcode  ⇒ arithmeticOperation(XOr)
 
                 case ICONST_0.opcode | ICONST_1.opcode |
                     ICONST_2.opcode | ICONST_3.opcode |
