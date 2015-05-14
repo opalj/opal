@@ -55,6 +55,7 @@ import org.opalj.br.Code
 import org.opalj.br.Method
 import org.opalj.br.MethodSignature
 import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.InstantiableClassesKey
 import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.Project
@@ -159,15 +160,19 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
         //
         //
 
-        step(1, "[Pre-Analysis] Analyzing field declarations to derive more precise field value information") {
+        step(1, "[Pre-Analysis] Identifying non-instantiable classes") {
+            (theProject.get(InstantiableClassesKey), None)
+        }
+
+        step(2, "[Pre-Analysis] Analyzing field declarations to derive more precise field value information") {
             (theProject.get(FieldValuesKey), None)
         }
 
-        step(2, "[Pre-Analysis] Analyzing methods to get more precise return type information") {
+        step(3, "[Pre-Analysis] Analyzing methods to get more precise return type information") {
             (theProject.get(MethodReturnValuesKey), None)
         }
 
-        val callGraph = step(3, "[Pre-Analysis] Creating the call graph") {
+        val callGraph = step(4, "[Pre-Analysis] Creating the call graph") {
             (theProject.get(VTACallGraphKey), None)
         }
         val callGraphEntryPoints = callGraph.entryPoints().toSet
@@ -451,7 +456,11 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
  */
 object BugPickerAnalysis {
 
-    final val PreAnalysesCount = 3 // FieldValues analysis + MethodReturnValues analysis + Callgraph
+    // 1: InstantiableClasses analysis
+    // 2: FieldValues analysis
+    // 3: MethodReturnValues analysis
+    // 4: Callgraph
+    final val PreAnalysesCount = 4
 
     // We want to match expressions such as:
     // -maxEvalFactor=1
