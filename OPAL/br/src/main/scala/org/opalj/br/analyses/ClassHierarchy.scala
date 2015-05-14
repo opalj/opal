@@ -1157,7 +1157,7 @@ class ClassHierarchy private (
         methodName: String,
         methodDescriptor: MethodDescriptor,
         project: SomeProject,
-        classesFilter: ObjectType ⇒ Boolean = { _ ⇒ true }): Set[Method] = {
+        classesFilter: ObjectType ⇒ Boolean): Set[Method] = {
 
         val receiverIsInterface = isInterface(receiverType)
         // TODO [Improvement] Implement an "UnsafeListSet" that does not check for the set property if (by construction) it has to be clear that all elements are unique

@@ -346,7 +346,8 @@ class ClassHierarchyTest
             window,
             "draw",
             MethodDescriptor.NoArgsAndReturnVoid,
-            clusteringProject) should be('nonEmpty)
+            clusteringProject,
+            (cf) ⇒ true) should be('nonEmpty)
     }
 
     // -----------------------------------------------------------------------------------
@@ -455,7 +456,8 @@ class ClassHierarchyTest
                 superI,
                 "someMethod",
                 MethodDescriptor.NoArgsAndReturnVoid,
-                methodsProject)
+                methodsProject,
+                (cf) ⇒ true)
 
         implementingMethods.size should be(0)
     }
@@ -467,7 +469,8 @@ class ClassHierarchyTest
                 classType,
                 "publicMethod",
                 MethodDescriptor.NoArgsAndReturnVoid,
-                methodsProject)
+                methodsProject,
+                (cf) ⇒ true)
 
         implementingMethods.size should be(1)
         implementingMethods.head should have(
