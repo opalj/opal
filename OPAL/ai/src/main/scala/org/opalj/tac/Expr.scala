@@ -93,11 +93,7 @@ case class BinaryExpr(
     op: BinaryArithmeticOperator,
     left: Expr, right: Expr) extends Expr
 
-<<<<<<< HEAD:OPAL/ai/src/main/scala/org/opalj/br/quadruples/Expr.scala
-case class UnaryExpr(
-=======
 case class PrefixExpr(
->>>>>>> b23a234a77dbed23cc035028d2748064ae0041e6:OPAL/ai/src/main/scala/org/opalj/tac/Expr.scala
     pc: PC,
     cTpe: ComputationalType,
     op: UnaryArithmeticOperator,
