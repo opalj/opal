@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,26 +26,51 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
+package org.opalj.fp
+
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * The standard relational operators used by if instructions as well as compare
- * instructions.
+ * An information associated with an entity. Each property belongs to exactly one
+ * property kind and each entity has at most one property per property kind.
  *
  * @author Michael Eichberg
  */
-object RelationalOperators extends Enumeration {
-    final val LT = Value("<")
-    final val < = LT
-    final val GT = Value(">")
-    final val > = GT
-    final val LE = Value("<=")
-    final val <= = LE
-    final val GE = Value(">=")
-    final val >= = GE
-    final val EQ = Value("==")
-    final val == = EQ
-    final val NE = Value("!=")
-    final val != = NE
+trait Property {
+
+    /**
+     * The key uniquely identifies this property's category. All property objects
+     * that belong to the same category have to use the same key.
+     *
+     * In general each `Property` category is expected to have a companion object that
+     * stores the property key.
+     */
+    val key: PropertyKey
+
 }
+
+/**
+ * An object that identifies a specific category of properties. An element in
+ * the [[PropertyStore]] must be associated with at most one property per kind/key.
+ *
+ * To create a property key use the companion object's [[PropertyKey$.next]] method.
+ *
+ * @author Michael Eichberg
+ */
+class PropertyKey private ( final val id: Int) extends AnyVal {
+
+    override def toString: String = s"PropertyKey($id)"
+}
+
+/**
+ * Factory to create [[PropertyKey]] objects.
+ *
+ * @author Michael Eichberg
+ */
+object PropertyKey {
+
+    private[this] final val lastKeyId = new AtomicInteger(-1)
+
+    def next: PropertyKey = new PropertyKey(lastKeyId.incrementAndGet())
+}
+

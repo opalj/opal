@@ -488,6 +488,36 @@ class DefaultArraysTest extends FunSpec with Matchers with ParallelTestExecution
         }
     }
 
+    describe("array stores") {
+        it("should be able to analyze a method that updates a value stored in an array in a branch") {
+            evaluateMethod("setValInBranch", domain ⇒ {
+                import domain._
+
+                val returnIndex = 20
+                val varray = allReturnedValues(returnIndex)
+
+                allReturnedValues.size should be(1)
+
+                isValueSubtypeOf(varray, ArrayType(IntegerType)) should be(Yes)
+                arraylength(returnIndex, varray) should be(ComputedValue(IntegerValue(2)))
+
+                // after array initialization all values should be 0
+                val arrayRef3 = asArrayAbstraction(operandsArray(3).head)
+                arrayRef3.load(3, IntegerValue(origin = 3, 0)) should be(ComputedValue(IntegerValue(origin = 3, 0)))
+                arrayRef3.load(3, IntegerValue(origin = 3, 1)) should be(ComputedValue(IntegerValue(origin = 3, 0)))
+
+                val arrayRef12 = asArrayAbstraction(localsArray(12)(1))
+                arrayRef12.load(12, IntegerValue(origin = 9, 1)) should be(ComputedValue(IntegerValue(origin = 10, 1)))
+                arrayRef12.load(12, IntegerValue(origin = 9, 0)) should be(ComputedValue(IntegerValue(origin = 10, 0)))
+
+                val arrayRef19 = asArrayAbstraction(localsArray(19)(1))
+                arrayRef19.load(19, IntegerValue(origin = 16, 1)) should be(ComputedValue(IntegerRange(origin = 17, 1, 2)))
+                arrayRef19.load(19, IntegerValue(origin = 16, 0)) should be(ComputedValue(IntegerValue(origin = 17, 0)))
+
+            })
+        }
+    }
+
     describe("complex array operations") {
         it("should be able to analyze that every returned array is null") {
             evaluateMethod("setArrayNull", domain ⇒ {

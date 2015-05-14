@@ -531,13 +531,14 @@ object BugPickerAnalysis {
                 <div id="analysis_controls">
                     <div>
                         <span>Number of issues currently displayed:<span id="issues_displayed"> { methodsWithIssuesCount } </span>{ totalIssues }</span>
+                        <span id="search_box"><label for="search_field">Search:</label><input type="search" id="search_field" name="search" disabled="true"/></span>
                     </div>
                     <div>
                         Suppress issues with an estimated
                         <abbr title='The importance is calculated using the available context information. E.g., a dead "default case" in a switch statement is often the result of defensive programming and, hence, not important.'>importance</abbr>
                         less than:
                         <abbr title="The identified issue is probably not important or is just a technical artifact.">1</abbr>
-                        <input type="range" name="relevance" id="relevance" min="1" max="100" onchange="updateRelevance(this.valueAsNumber)"/>
+                        <input type="range" name="relevance" id="relevance" min="1" max="100"/>
                         <abbr title="The identified issue is probably very important.">100</abbr>
                     </div>
                     <div class="issue_filter">
@@ -568,11 +569,6 @@ object BugPickerAnalysis {
                 <div id="analysis_results">
                     { issuesNode }
                 </div>
-                <script type="text/javascript">
-                    document.getElementById('relevance').value=75;
-                    updateRelevance(75);
-                    openAllPackages();
-                </script>
             </body>
         </html>
     }
