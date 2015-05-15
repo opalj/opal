@@ -362,10 +362,16 @@ IssueFilter.register(
         return commonValue(actual, checked);
     });
 
+// quotes RegExp special character in a String
+RegExp.quote = function (str) {
+    return (str + '').replace(/[.?*+^$[\]\\(){}|-]/g, "\\$&");
+};
+
 // Filter: text search
-//
 function findTextInIssue(issue, text, category) {
+
     var erg = false;
+    var rx = new RegExp(RegExp.quote(text), "gi");
     var processDD = function (dd) {
         var attributes = dd.attributes;
         var i = 0;
@@ -374,22 +380,42 @@ function findTextInIssue(issue, text, category) {
             if (attr.name.startsWith("data-")) {
                 var attrText = attr.value.toLowerCase().replace(/\//g, ".");
                 if (attrText.indexOf(text.toLowerCase()) >= 0) {
-                    dd.classList.add("highlight_occurence");
                     erg = true;
                 }
             }
             i++;
         }
+        var highlight = [];
         var nodeIterator = document.createNodeIterator(dd, NodeFilter.SHOW_TEXT);
         var currentNode;
         while (currentNode = nodeIterator.nextNode()) {
             if (currentNode.textContent.toLowerCase().indexOf(text.toLowerCase()) >= 0) {
                 erg = true;
-                currentNode.parentNode.classList.add("highlight_occurence");
+                // we will change the DOM, nodes can be become detached, store the parent for this case
+                highlight.push([currentNode, currentNode.parentNode]);
             }
         }
+        highlight.forEach(function (pair) {
+            var node = pair[0];
+            var parent = pair[1];
+            var oldTextContent = node.textContent;
+            var newTextContent = oldTextContent.replace(rx, function (t) {
+                return "<mark>" + t + "</mark>";
+            });
+            parent.innerHTML = parent.innerHTML.replace(new RegExp(RegExp.quote(
+                oldTextContent)), newTextContent);
+
+        });
     };
     if (category === undefined) {
+        // highlight package summary
+        var package_summary = issue.parentNode.firstChild.nextSibling;
+        var oldPackageName = package_summary.firstChild.textContent;
+        var newPackageName = oldPackageName.replace(rx, function (t) {
+            return "<mark>" + t + "</mark>";
+        });
+        package_summary.innerHTML = package_summary.innerHTML.replace(new RegExp(RegExp.quote(
+            oldPackageName)), newPackageName);
         issue.querySelectorAll("dd:not(.issue_message)").forEach(processDD);
     } else {
         processDD(category);
@@ -418,8 +444,12 @@ IssueFilter.register(
         log("[TextSearchFilter] Initialized.");
     },
     function (issue) {
-        issue.querySelectorAll(".highlight_occurence").forEach(function (e) {
-            e.classList.remove("highlight_occurence");
+        var package_summary = issue.parentNode.firstChild.nextSibling;
+        package_summary.querySelectorAll("mark").forEach(function (e) {
+            e.outerHTML = e.innerHTML;
+        });
+        issue.querySelectorAll("mark").forEach(function (e) {
+            e.outerHTML = e.innerHTML;
         });
         var searchString = searchField.value;
         if (searchString.length === 0)
