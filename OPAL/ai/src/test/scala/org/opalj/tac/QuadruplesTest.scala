@@ -81,9 +81,9 @@ class QuadruplesTest extends FunSpec with Matchers {
             assert(statements.nonEmpty)
             assert(javaLikeCode.length() > 0)
 
-            //println(conditionalTwoReturnsMethod.body.get.instructions.mkString("\n"))
-            //println(statements.mkString("\n"))
-            //            println(javaLikeCode)
+            println(ConditionalTwoReturnsMethod.body.get.instructions.mkString("\n"))
+            println(statements.mkString("\n"))
+                        println(javaLikeCode)
 
             // TODO test that everything is as expected...
         }

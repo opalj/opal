@@ -238,11 +238,11 @@ object AsQuadruples {
                 case IDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
                 
                 case IINC.opcode ⇒ 
-                    val incInstr = as[IINC](instruction)
-                    val value = RegisterVar(ComputationalTypeInt, incInstr.lvIndex)
-                    val constant = IntConst(pc, incInstr.constValue)
+                    val IINC(index, const) = instruction
+                    val indexReg = RegisterVar(ComputationalTypeInt, index)
                     statements(pc) = List(
-                        Assignment(pc, value, BinaryExpr(pc, ComputationalTypeInt, Add, value, constant))
+                        Assignment(pc, indexReg, 
+                            BinaryExpr(pc, ComputationalTypeInt, Add, indexReg, IntConst(pc, const)))
                     )
                     schedule(pcOfNextInstruction(pc), stack)
                 
