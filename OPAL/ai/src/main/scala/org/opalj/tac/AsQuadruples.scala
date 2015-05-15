@@ -236,7 +236,16 @@ object AsQuadruples {
                 case IADD.opcode  ⇒ binaryArithmeticOperation(Add)
                 case IAND.opcode  ⇒ binaryArithmeticOperation(And)
                 case IDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
-                // FIXME case IINC.opcode ⇒ arithmeticOperation(Increment) /*unary, doesn't use stack*/
+                
+                case IINC.opcode ⇒ 
+                    val incInstr = as[IINC](instruction)
+                    val value = RegisterVar(ComputationalTypeInt, incInstr.lvIndex)
+                    val constant = IntConst(pc, incInstr.constValue)
+                    statements(pc) = List(
+                        Assignment(pc, value, BinaryExpr(pc, ComputationalTypeInt, Add, value, constant))
+                    )
+                    schedule(pcOfNextInstruction(pc), stack)
+                
                 case INEG.opcode  ⇒ prefixArithmeticOperation(Negate)
                 case IMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
                 case IOR.opcode   ⇒ binaryArithmeticOperation(Or)
