@@ -348,3 +348,153 @@ object GenericContainer { // matches : List<Object>
         }
     }
 }
+
+/**
+ * Facilitates matching the `ObjectType` that is defined within a `ProperTypeArgument`
+ * without a VarianceIndicator (e.g. the CovarianceIndicator (? extends)). This only matches
+ * non-generic types where the list of `TypeArguments` is `Nil`.
+ *
+ * @example
+ *      matches e.g.: List<Integer>
+ * {{{
+ *  val scts : SimpleClassTypeSignature = ...
+ *  scts.typeArguments match {
+ *      case VarianceFreeTypeArgument(objectType) => ...
+ *      case _ => ...
+ *  }
+ * }}}
+ */
+object VarianceFreeTypeArgument {
+    def unapply(pta: ProperTypeArgument): Option[ObjectType] = {
+        pta match {
+            case ProperTypeArgument(None, NonGeneric(ot)) ⇒ Some(ot)
+            case _                                        ⇒ None
+        }
+    }
+}
+
+/**
+ * Facilitates matching the `ObjectType` that is defined within a `ProperTypeArgument`
+ * with a CovarianceIndicator (? extends)). This only matches non-generic types.
+ *
+ * @example
+ *      matches e.g.: List<? extends Number>
+ * {{{
+ *  val scts : SimpleClassTypeSignature = ...
+ *  scts.typeArguments match {
+ *      case UpperTypeBound(objectType) => ...
+ *      case _ => ...
+ *  }
+ * }}}
+ */
+object UpperTypeBound {
+    def unapply(pta: ProperTypeArgument): Option[ObjectType] = {
+        pta match {
+            case ProperTypeArgument(Some(CovariantIndicator), NonGeneric(ot)) ⇒ Some(ot)
+            case _ ⇒ None
+        }
+    }
+}
+
+/**
+ * Facilitates matching the `ObjectType` that is defined within a `ProperTypeArgument`
+ * with a ContravarianceIndicator (? super)). This only matches non-generic types.
+ *
+ * @example
+ *      matches e.g.: List<? super Integer>
+ *  {{{
+ *  val scts : SimpleClassTypeSignature = ... 
+ *  scts.typeArguments match {
+ *      case LowerTypeBound(objectType) => ...
+ *      case _ => ...
+ *  }
+ * }}}
+ */
+object LowerTypeBound {
+    def unapply(pta: ProperTypeArgument): Option[ObjectType] = {
+        pta match {
+            case ProperTypeArgument(Some(ContravariantIndicator), NonGeneric(ot)) ⇒ Some(ot)
+            case _ ⇒ None
+        }
+    }
+}
+
+/**
+ * Facilitates matching the (`VarianceIndicator`, `ObjectType`) that is defined
+ * within a `ProperTypeArgument`. It matches ProperTypeArguments which define a
+ * `TypeArguments` in the inner ClassTypeSignature.
+ *
+ * @example
+ *      matches e.g.: List<List<Integer>>
+ * {{{
+ *  val scts : SimpleClassTypeSignature = ...
+ *  scts.typeArguments match {
+ *      case GenericTypeArgument(varInd, objectType) => ...
+ *      case _ => ...
+ *  }
+ * }}}
+ */
+object GenericTypeArgument {
+    def unapply(pta: ProperTypeArgument): Option[(Option[VarianceIndicator], ClassTypeSignature)] = {
+        pta match {
+            case ProperTypeArgument(varInd, cts @ ClassTypeSignature(_, _, _)) ⇒ Some((varInd, cts))
+            case _ ⇒ None
+        }
+    }
+}
+
+/**
+ * Facilitates matching the `ObjectType` that is defined
+ * within a `ClassTypeSignature`. It matches all ClassTypeSignatures which consists of
+ * a SimpleClassTypeSignature with a `Nil` List of TypeArguments (Wildcard or
+ * ProperTypeArguments)
+ *
+ * @note This matcher is not substitutable with the `BasicClassTypeSignature` since these is matching every
+ *       `ClassTypeSignature`. A NonGeneric ensures, that the TypeArguments of the contained
+ *       SimpleClassTypeSignature is Nil.
+ *
+ */
+object NonGeneric {
+    def unapply(cts: ClassTypeSignature): Option[ObjectType] = {
+        cts match {
+            case ClassTypeSignature(
+                Some(cpn),
+                SimpleClassTypeSignature(
+                    csn,
+                    Nil), Nil) ⇒ Some(ObjectType(cpn + csn))
+            case _ ⇒ None
+        }
+    }
+}
+
+/**
+ * Facilitates matching the Option[(`ObjectType`, `List[TypeArgument]`)] that is defined
+ * within a `ClassTypeSignature`. It matches all ClassTypeSignatures which consists of
+ * a SimpleClassTypeSignature with a non `Nil` List of TypeArguments (Wildcard or
+ * ProperTypeArguments)
+ *
+ * @note If you do not match a case of `GenericContainer` before this will also
+ *       match simple Generic Container types.
+ *
+ * @example
+ * {{{
+ *  val cts : ClassTypeSignature = ...
+ *  cts match {
+ *      case MultiContainer(varInd, objectType) => ...
+ *      case _ => ...
+ *  }
+ * }}}
+ */
+
+object MultiContainer {
+    def unapply(cts: ClassTypeSignature): Option[(ObjectType, List[TypeArgument])] = {
+        cts match {
+            case ClassTypeSignature(
+                Some(cpn),
+                SimpleClassTypeSignature(
+                    csn,
+                    containerInfo), Nil) ⇒ Some((ObjectType(cpn + csn), containerInfo))
+            case _ ⇒ None
+        }
+    }
+}

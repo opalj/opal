@@ -433,6 +433,101 @@ class Project[Source] private (
         }
     }
 
+    /*
+     * This is a helper method only. TypeArguments are just a part of a Generic ClassTypeSignature. Hence, it make no
+     * sense to check subtype relation of incomplete information. 
+     */
+    private def isSubtypeOfByTypeArgument(subtype: TypeArgument, supertype: TypeArgument): Answer = {
+        (subtype, supertype) match {
+            case (VarianceFreeTypeArgument(et), VarianceFreeTypeArgument(superEt))         ⇒ if (et eq superEt) Yes else No
+            case (VarianceFreeTypeArgument(et), UpperTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(et, superEt)
+            case (VarianceFreeTypeArgument(et), LowerTypeBound(superEt))    ⇒ classHierarchy.isSubtypeOf(superEt, et)
+            case (_, Wildcard) ⇒ Yes
+            case (GenericTypeArgument(varInd, cts), GenericTypeArgument(supVarInd, supCts)) ⇒ (varInd, supVarInd) match {
+                case (None, None) ⇒ if (cts.objectType eq supCts.objectType) isSubtypeOf(cts, supCts) else No
+                case (None, Some(CovariantIndicator)) ⇒ isSubtypeOf(cts, supCts)
+                case (None, Some(ContravariantIndicator)) ⇒ isSubtypeOf(supCts, cts)
+                case (Some(CovariantIndicator), Some(CovariantIndicator)) ⇒ isSubtypeOf(cts, supCts)
+                case (Some(ContravariantIndicator), Some(ContravariantIndicator)) ⇒ isSubtypeOf(supCts, cts)
+                case _ ⇒ No
+
+            }
+            case (UpperTypeBound(et), UpperTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(et, superEt)
+            case (LowerTypeBound(et), LowerTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(superEt, et)
+            case _ ⇒ No
+        }
+    }
+
+    @inline
+    private def evalTypeArguments(subtypeArgs: List[TypeArgument], supertypeArgs: List[TypeArgument]): Answer = {
+        (subtypeArgs, supertypeArgs) match {
+            case (arg :: Nil, supArg :: Nil)      ⇒ isSubtypeOfByTypeArgument(arg, supArg)
+            case (arg :: tail, supArg :: supTail) ⇒ isSubtypeOfByTypeArgument(arg, supArg).&(evalTypeArguments(tail, supTail))
+            case _                                ⇒ No
+        }
+    }
+
+    /**
+     * Determines if the given class or interface type encoded in a ClassTypeSignature `subtype` is actually a subtype
+     * of the class or interface type encoded in the ClassTypeSinature of the `supertype`.
+     *
+     *
+     * @note This method rely in case of comparison of non generic types on
+     *       isSubtypeOf(`ObjectType`, `ObjectType`) of `Project` which
+     *        performs an upwards search only. E.g., given the following
+     *      type hierarchy:
+     *      `class D inherits from C`
+     *      `class E inherits from D`
+     *      and the query isSubtypeOf(D,E) the answer will be `Unknown` if `C` is
+     *      `Unknown` and `No` otherwise.
+     *
+     * @param subtype Any `ClassTypeSignature`.
+     * @param theSupertype Any `ClassTypeSignature`.
+     * @return `Yes` if `subtype` is a subtype of the given `supertype`. `No`
+     *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
+     *      not conclusive. The latter can happen if the class hierarchy is not
+     *      complete and hence precise information about a type's supertypes
+     *      is not available.
+     */
+    def isSubtypeOf(subtype: ClassTypeSignature, supertype: ClassTypeSignature): Answer = {
+        if (subtype.objectType eq supertype.objectType) {
+            (subtype, supertype) match {
+                case (NonGeneric(ot), NonGeneric(superOt))        ⇒ Yes
+                case (MultiContainer(ot, _), NonGeneric(superOt)) ⇒ classHierarchy.isSubtypeOf(ot, superOt)
+                case (MultiContainer(_, elements), MultiContainer(_, superElements)) ⇒
+                    evalTypeArguments(elements, superElements)
+                case _ ⇒ No
+            }
+        } else {
+            val isSubtype = classHierarchy.isSubtypeOf(subtype.objectType, supertype.objectType)
+            if (isSubtype.isYes) {
+                (subtype, supertype) match {
+                    case (NonGeneric(ot), NonGeneric(superOt)) ⇒ Yes
+                    case (MultiContainer(containerType, elements), MultiContainer(superContainerType, superElements)) ⇒
+                        if (classFile(containerType).nonEmpty && classFile(superContainerType).nonEmpty)
+                            if (classFile(containerType).get.classSignature.nonEmpty &&
+                                classFile(superContainerType).get.classSignature.nonEmpty) {
+                                val ftp = classFile(containerType).get.classSignature.get.formalTypeParameters
+                                val superFtp = classFile(superContainerType).get.classSignature.get.formalTypeParameters
+                                var typeArgs = List.empty[TypeArgument]
+                                var supertypeArgs = List.empty[TypeArgument]
+                                for (i ← 0 to ftp.size - 1) {
+                                    val index = superFtp.indexOf(ftp(i))
+                                    if (index >= 0) {
+                                        typeArgs = typeArgs ++ List(elements(i))
+                                        supertypeArgs = supertypeArgs ++ List(superElements(index))
+                                    }
+                                }
+                                if (typeArgs.isEmpty) return Yes
+                                else return evalTypeArguments(typeArgs, supertypeArgs)
+                            }
+                        Unknown
+                    case _ ⇒ No
+                }
+            } else isSubtype
+        }
+    }
+
     override def toString: String = {
         val classDescriptions =
             sources map { (entry) ⇒
