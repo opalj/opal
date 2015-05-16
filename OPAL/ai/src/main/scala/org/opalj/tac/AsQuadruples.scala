@@ -56,6 +56,7 @@ object AsQuadruples {
 
         import BinaryArithmeticOperators._
         import UnaryArithmeticOperators._
+        import RelationalOperators._
 
         val code = method.body.get
         import code.pcOfNextInstruction
@@ -133,7 +134,7 @@ object AsQuadruples {
                 statements(pc) = List(
                     Assignment(pc, value, PrefixExpr(pc, cTpe, operator, value))
                 )
-                schedule(pcOfNextInstruction(pc), stack.tail)
+                schedule(pcOfNextInstruction(pc), stack)
             }
 
             def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
@@ -217,7 +218,21 @@ object AsQuadruples {
 
                 case DADD.opcode  ⇒ binaryArithmeticOperation(Add)
                 case DDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
-                // FIXME case DCMPG.opcode ⇒ arithmeticOperation(Greater)
+                
+                // FIXME 
+//                case DCMPG.opcode ⇒ 
+//                    val value2 :: value1 :: rest = stack
+//                    val nan = Double.NaN
+//                    val result = OperandVar(ComputationalTypeInt, stack)
+//                    statements(pc) = List(
+//                        If(pc, value1, GT, value2, retOnePC)
+////                        If(pc, value1, EQ, value2, retZeroPC)
+//                        If(pc, value1, LT, value2, retNegOnePC)
+//                        If(pc, value1, EQ, nan, retOnePC)
+//                        
+//                    )
+//                    schedule(pcOfNextInstruction(pc), result :: rest)
+                
                 // FIXME case DCMPL.opcode ⇒ arithmeticOperation(Greater)
                 case DNEG.opcode  ⇒ prefixArithmeticOperation(Negate)
                 case DMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
