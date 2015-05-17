@@ -50,44 +50,45 @@ import org.opalj.ai.domain.l1.DefaultDomain
 @RunWith(classOf[JUnitRunner])
 class QuadruplesTest extends FunSpec with Matchers {
 
-    //    val BoringCodeType = ObjectType("controlflow/BoringCode")
     val ArithmeticExpressionsType = ObjectType("tactest/ArithmeticExpressions")
 
-    //    val testResources = locateTestResources("classfiles/cfgtest8.jar", "br")
     val testResources = locateTestResources("classfiles/tactest.jar", "ai")
 
     val project = Project(testResources)
 
-    //    val BoringCodeClassFile = project.classFile(BoringCodeType).get
     val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
 
-    //    val SingleBlockMethod = BoringCodeClassFile.findMethod("singleBlock").get
-    //    val ConditionalTwoReturnsMethod = BoringCodeClassFile.findMethod("conditionalTwoReturns").get
     val IntegerAddMethod = ArithmeticExpressionsClassFile.findMethod("integerAdd").get
     val IntegerAndMethod = ArithmeticExpressionsClassFile.findMethod("integerAnd").get
     val IntegerDivMethod = ArithmeticExpressionsClassFile.findMethod("integerDiv").get
     val IntegerIncMethod = ArithmeticExpressionsClassFile.findMethod("integerInc").get
+    val IntegerNegMethod = ArithmeticExpressionsClassFile.findMethod("integerNeg").get
+    val IntegerMulMethod = ArithmeticExpressionsClassFile.findMethod("integerMul").get
+    val IntegerOrMethod = ArithmeticExpressionsClassFile.findMethod("integerOr").get
+    val IntegerRemMethod = ArithmeticExpressionsClassFile.findMethod("integerRem").get
+    val IntegerShRMethod = ArithmeticExpressionsClassFile.findMethod("integerShR").get
+    val IntegerShLMethod = ArithmeticExpressionsClassFile.findMethod("integerShL").get
+    val IntegerSubMethod = ArithmeticExpressionsClassFile.findMethod("integerSub").get
+    val IntegerAShMethod = ArithmeticExpressionsClassFile.findMethod("integerASh").get
+    val IntegerXOrMethod = ArithmeticExpressionsClassFile.findMethod("integerXOr").get
 
-    //    if (SingleBlockMethod.body.get.instructions.size == 0) fail()
     if (IntegerAddMethod.body.get.instructions.size == 0) fail()
     if (IntegerAndMethod.body.get.instructions.size == 0) fail()
     if (IntegerDivMethod.body.get.instructions.size == 0) fail()
     if (IntegerIncMethod.body.get.instructions.size == 0) fail()
+    if (IntegerNegMethod.body.get.instructions.size == 0) fail()
+    if (IntegerMulMethod.body.get.instructions.size == 0) fail()
+    if (IntegerOrMethod.body.get.instructions.size == 0) fail()
+    if (IntegerRemMethod.body.get.instructions.size == 0) fail()
+    if (IntegerShRMethod.body.get.instructions.size == 0) fail()
+    if (IntegerShLMethod.body.get.instructions.size == 0) fail()
+    if (IntegerSubMethod.body.get.instructions.size == 0) fail()
+    if (IntegerAShMethod.body.get.instructions.size == 0) fail()
+    if (IntegerXOrMethod.body.get.instructions.size == 0) fail()
+
+    val IntegerTestMethod = ArithmeticExpressionsClassFile.findMethod("integerTest").get
 
     describe("The quadruples representation") {
-
-        //        it("should correctly reflect mathematical operations (using no AI results)") {
-        //            val statements = AsQuadruples(SingleBlockMethod, None)
-        //            val javaLikeCode = ToJavaLike(statements)
-        //
-        //            assert(statements.nonEmpty)
-        //            assert(javaLikeCode.length() > 0)
-        //
-        //            //            println(statements.mkString("\n"))
-        //            //            println(javaLikeCode)
-        //
-        //            // TODO  test that everything is as expected...
-        //        }
 
         it("should correctly reflect integer addition (using no AI results)") {
             val statements = AsQuadruples(IntegerAddMethod, None)
@@ -95,10 +96,7 @@ class QuadruplesTest extends FunSpec with Matchers {
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length() > 0)
-
-            println(IntegerAddMethod.body.get.instructions.mkString("\n"))
-            println(statements.mkString("\n"))
-            println(javaLikeCode)
+            assert(javaLikeCode.equals(JLCMaker.intAddRes))
         }
 
         it("should correctly reflect integer logical and (using no AI results)") {
@@ -107,10 +105,6 @@ class QuadruplesTest extends FunSpec with Matchers {
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length() > 0)
-
-            println(IntegerAndMethod.body.get.instructions.mkString("\n"))
-            println(statements.mkString("\n"))
-            println(javaLikeCode)
         }
 
         it("should correctly reflect integer division (using no AI results)") {
@@ -119,10 +113,6 @@ class QuadruplesTest extends FunSpec with Matchers {
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length() > 0)
-
-            println(IntegerDivMethod.body.get.instructions.mkString("\n"))
-            println(statements.mkString("\n"))
-            println(javaLikeCode)
         }
 
         it("should correctly reflect integer incrementation by a constant (using no AI results)") {
@@ -131,56 +121,92 @@ class QuadruplesTest extends FunSpec with Matchers {
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length() > 0)
+        }
 
-            println(IntegerIncMethod.body.get.instructions.mkString("\n"))
+        it("should correctly reflect integer negation (using no AI results)") {
+            val statements = AsQuadruples(IntegerNegMethod, None)
+            val javaLikeCode = ToJavaLike(statements)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length() > 0)
+        }
+
+        it("should correctly reflect integer multiplication (using no AI results)") {
+            val statements = AsQuadruples(IntegerMulMethod, None)
+            val javaLikeCode = ToJavaLike(statements)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length() > 0)
+        }
+
+        it("should correctly reflect integer Or operation (using no AI results)") {
+            val statements = AsQuadruples(IntegerOrMethod, None)
+            val javaLikeCode = ToJavaLike(statements)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length() > 0)
+        }
+
+        it("should correctly reflect integer modulo operation (using no AI results)") {
+            val statements = AsQuadruples(IntegerRemMethod, None)
+            val javaLikeCode = ToJavaLike(statements)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length() > 0)
+        }
+
+        it("should correctly reflect integer shift right (using no AI results)") {
+            val statements = AsQuadruples(IntegerShRMethod, None)
+            val javaLikeCode = ToJavaLike(statements)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length() > 0)
+        }
+
+        it("should correctly reflect integer shift left (using no AI results)") {
+            val statements = AsQuadruples(IntegerShLMethod, None)
+            val javaLikeCode = ToJavaLike(statements)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length() > 0)
+        }
+
+        it("should correctly reflect integer subtraction (using no AI results)") {
+            val statements = AsQuadruples(IntegerSubMethod, None)
+            val javaLikeCode = ToJavaLike(statements)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length() > 0)
+        }
+
+        it("should correctly reflect integer arithmetic shift right (using no AI results)") {
+            val statements = AsQuadruples(IntegerAShMethod, None)
+            val javaLikeCode = ToJavaLike(statements)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length() > 0)
+        }
+
+        it("should correctly reflect integer XOr operation (using no AI results)") {
+            val statements = AsQuadruples(IntegerXOrMethod, None)
+            val javaLikeCode = ToJavaLike(statements)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length() > 0)
+        }
+
+        //TESTOUTPUT
+        it("should just print me some stuff for testing purposes") {
+            val statements = AsQuadruples(IntegerTestMethod, None)
+            val javaLikeCode = ToJavaLike(statements)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length() > 0)
+
+            println(IntegerTestMethod.body.get.instructions.mkString("\n"))
             println(statements.mkString("\n"))
             println(javaLikeCode)
         }
-
-        //        it("should have correct absoulte jump targets (using no AI results)") {
-        //            val statements = AsQuadruples(ConditionalTwoReturnsMethod, None)
-        //            val javaLikeCode = ToJavaLike(statements)
-        //
-        //            assert(statements.nonEmpty)
-        //            assert(javaLikeCode.length() > 0)
-        //
-        //            println(ConditionalTwoReturnsMethod.body.get.instructions.mkString("\n"))
-        //            println(statements.mkString("\n"))
-        //            println(javaLikeCode)
-        //
-        //            // TODO test that everything is as expected...
-        //        }
-
-        //        it("should correctly reflect mathematical operations (using AI results)") {
-        //            val domain = new DefaultDomain(project, BoringCodeClassFile, SingleBlockMethod)
-        //            val aiResult = BaseAI(BoringCodeClassFile, SingleBlockMethod, domain)
-        //            val statements = AsQuadruples(SingleBlockMethod, Some(aiResult))
-        //            val javaLikeCode = ToJavaLike(statements)
-        //
-        //            assert(statements.nonEmpty)
-        //            assert(javaLikeCode.length() > 0)
-        //
-        //            println(statements.mkString("\n"))
-        //            println(javaLikeCode)
-        //
-        //            //TODO  test that everything is as expected...
-        //        }
-
-        //        it("should have correct absoulte jump targets (using AI results)") {
-        //            val domain = new DefaultDomain(project, BoringCodeClassFile, ConditionalTwoReturnsMethod)
-        //            val aiResult = BaseAI(BoringCodeClassFile, ConditionalTwoReturnsMethod, domain)
-        //
-        //            val statements = AsQuadruples(ConditionalTwoReturnsMethod, Some(aiResult))
-        //            val javaLikeCode = ToJavaLike(statements)
-        //
-        //            assert(statements.nonEmpty)
-        //            assert(javaLikeCode.length() > 0)
-        //
-        //            println(ConditionalTwoReturnsMethod.body.get.instructions.mkString("\n"))
-        //            println(statements.mkString("\n"))
-        //            println(javaLikeCode)
-        //
-        //            // TODO test that everything is as expected...
-        //        }
+        //TESTOUTPUT
     }
 }

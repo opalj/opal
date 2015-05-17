@@ -26,83 +26,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package tactest;
+package org.opalj.tac
 
 /**
- * Class with simple methods containing arithmetic expressions.
+ * Helper class for building java like code.
  * 
  * @author Roberts Kolosovs
  *
  */
-public class ArithmeticExpressions {
+object JLCMaker {
 
-	int integerAdd(int a, int b){
-		return a + b;
-	}
-	
-	int integerAnd(int a, int b){
-		return a & b;
-	}
-	
-	int integerDiv(int a, int b){
-		return a / b;
-	}
-	
-	int integerInc(int a){
-		return a++;
-	}
-	
-	int integerNeg(int a){
-		return -a;
-	}
-	
-	int integerMul(int a, int b){
-		return a * b;
-	}
-	
-	int integerOr(int a, int b){
-		return a | b;
-	}
-	
-	int integerRem(int a, int b){
-		return a % b;
-	}
-	
-	int integerShR(int a, int b){
-		return a >> b;
-	}
-	
-	int integerShL(int a, int b){
-		return a << b;
-	}
-	
-	int integerSub(int a, int b){
-		return a - b;
-	}
-	
-	int integerASh(int a, int b){
-		return a >>> b;
-	}
-	
-	int integerXOr(int a, int b){
-		return a ^ b;
-	}
-	
-	int integerTest(int a, int b){
-		int c;
-		c = a + b;
-		c = a & b;
-		c = a / b;
-		a++;
-		c = -b;
-		c = a * b;
-		c = a | b;
-		c = a % b;
-		c = a >> b;
-		c = a << b;
-		c = a - b;
-		c = a >>> b;
-		c = a ^ b;
-		return c;
-	}
+    def intAddRes = {
+        new StringBuffer() append
+        "    0: r_0 = this; \n" append
+        "    1: r_1 = p_1; \n" append
+        "    2: r_2 = p_2; \n" append 
+        "    3: op_0 = r_1; \n" append
+        "    4: op_1 = r_2; \n" append
+        "    5: op_0 = op_0 + op_1; \n" append 
+        "    6: return op_0; \n" toString()
+    }
 }
