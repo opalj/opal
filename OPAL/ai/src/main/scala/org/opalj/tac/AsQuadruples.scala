@@ -226,7 +226,7 @@ object AsQuadruples {
                     val value2 :: value1 :: rest = stack
                     val result = OperandVar(ComputationalTypeInt, stack)
                     val nanCompRes = {
-                        if (instruction.opcode == DCMPG.opcode | instruction.opcode == FCMPG) IntConst(pc, 1)
+                        if (instruction.opcode == DCMPG.opcode | instruction.opcode == FCMPG.opcode) IntConst(pc, 1)
                         else IntConst(pc, -1)
                     }
                     statements(pc) = List(
