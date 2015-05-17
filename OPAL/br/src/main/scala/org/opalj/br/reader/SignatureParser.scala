@@ -47,14 +47,13 @@ object SignatureParser {
      * Parses Java class file signature strings.
      *
      * ==Thread-Safety==
-     * As of Scala 2.10 classes that inherit from `(Regex)Parsers` are not thread-safe.
+     * As of Scala 2.10/2.11 classes that inherit from `(Regex)Parsers` are not thread-safe.
      * However, the only class that can create instances of a `SignatureParsers` is
      * its companion object and that one implements the necessary abstractions for the
      * thread-safe use of `SignatureParsers`.
      *
      * @author Michael Eichberg
      */
-    // TODO [Scala 2.11 - Improvement] investigate if Combinator Parsers are now thread-safe; if so the wrapper object which currently implements the necessary logic for thread safety can be removed
     class SignatureParsers private[SignatureParser] () extends RegexParsers {
 
         def parseClassSignature(signature: String): ClassSignature = {
