@@ -42,82 +42,145 @@ import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomain
 
 /**
- * Tests the conversion to a quadruple representation
+ * Tests the conversion of parsed methods to a quadruple representation
  *
  * @author Michael Eichberg
+ * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
 class QuadruplesTest extends FunSpec with Matchers {
 
-    val BoringCodeType = ObjectType("controlflow/BoringCode")
+    //    val BoringCodeType = ObjectType("controlflow/BoringCode")
+    val ArithmeticExpressionsType = ObjectType("tactest/ArithmeticExpressions")
 
-    val testResources = locateTestResources("classfiles/cfgtest8.jar", "br")
+    //    val testResources = locateTestResources("classfiles/cfgtest8.jar", "br")
+    val testResources = locateTestResources("classfiles/tactest.jar", "ai")
+
     val project = Project(testResources)
-    val BoringCodeClassFile = project.classFile(BoringCodeType).get
-    val SingleBlockMethod = BoringCodeClassFile.findMethod("singleBlock").get
-    val ConditionalTwoReturnsMethod = BoringCodeClassFile.findMethod("conditionalTwoReturns").get
 
-    if (SingleBlockMethod.body.get.instructions.size == 0) fail()
+    //    val BoringCodeClassFile = project.classFile(BoringCodeType).get
+    val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
+
+    //    val SingleBlockMethod = BoringCodeClassFile.findMethod("singleBlock").get
+    //    val ConditionalTwoReturnsMethod = BoringCodeClassFile.findMethod("conditionalTwoReturns").get
+    val IntegerAddMethod = ArithmeticExpressionsClassFile.findMethod("integerAdd").get
+    val IntegerAndMethod = ArithmeticExpressionsClassFile.findMethod("integerAnd").get
+    val IntegerDivMethod = ArithmeticExpressionsClassFile.findMethod("integerDiv").get
+    val IntegerIncMethod = ArithmeticExpressionsClassFile.findMethod("integerInc").get
+
+    //    if (SingleBlockMethod.body.get.instructions.size == 0) fail()
+    if (IntegerAddMethod.body.get.instructions.size == 0) fail()
+    if (IntegerAndMethod.body.get.instructions.size == 0) fail()
+    if (IntegerDivMethod.body.get.instructions.size == 0) fail()
+    if (IntegerIncMethod.body.get.instructions.size == 0) fail()
 
     describe("The quadruples representation") {
 
-        it("should correctly reflect mathematical operations (using no AI results)") {
-            val statements = AsQuadruples(SingleBlockMethod, None)
+        //        it("should correctly reflect mathematical operations (using no AI results)") {
+        //            val statements = AsQuadruples(SingleBlockMethod, None)
+        //            val javaLikeCode = ToJavaLike(statements)
+        //
+        //            assert(statements.nonEmpty)
+        //            assert(javaLikeCode.length() > 0)
+        //
+        //            //            println(statements.mkString("\n"))
+        //            //            println(javaLikeCode)
+        //
+        //            // TODO  test that everything is as expected...
+        //        }
+
+        it("should correctly reflect integer addition (using no AI results)") {
+            val statements = AsQuadruples(IntegerAddMethod, None)
             val javaLikeCode = ToJavaLike(statements)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length() > 0)
 
-//            println(statements.mkString("\n"))
-//            println(javaLikeCode)
-
-            // TODO  test that everything is as expected...
-        }
-
-        it("should have correct absoulte jump targets (using no AI results)") {
-            val statements = AsQuadruples(ConditionalTwoReturnsMethod, None)
-            val javaLikeCode = ToJavaLike(statements)
-
-            assert(statements.nonEmpty)
-            assert(javaLikeCode.length() > 0)
-
-            println(ConditionalTwoReturnsMethod.body.get.instructions.mkString("\n"))
+            println(IntegerAddMethod.body.get.instructions.mkString("\n"))
             println(statements.mkString("\n"))
-                        println(javaLikeCode)
-
-            // TODO test that everything is as expected...
+            println(javaLikeCode)
         }
 
-        it("should correctly reflect mathematical operations (using AI results)") {
-            val domain = new DefaultDomain(project, BoringCodeClassFile, SingleBlockMethod)
-            val aiResult = BaseAI(BoringCodeClassFile, SingleBlockMethod, domain)
-            val statements = AsQuadruples(SingleBlockMethod, Some(aiResult))
+        it("should correctly reflect integer logical and (using no AI results)") {
+            val statements = AsQuadruples(IntegerAndMethod, None)
             val javaLikeCode = ToJavaLike(statements)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length() > 0)
 
-            // println(statements.mkString("\n"))
-            //            println(javaLikeCode)
-
-            // TODO  test that everything is as expected...
+            println(IntegerAndMethod.body.get.instructions.mkString("\n"))
+            println(statements.mkString("\n"))
+            println(javaLikeCode)
         }
 
-        it("should have correct absoulte jump targets (using AI results)") {
-            val domain = new DefaultDomain(project, BoringCodeClassFile, ConditionalTwoReturnsMethod)
-            val aiResult = BaseAI(BoringCodeClassFile, ConditionalTwoReturnsMethod, domain)
-
-            val statements = AsQuadruples(ConditionalTwoReturnsMethod, Some(aiResult))
+        it("should correctly reflect integer division (using no AI results)") {
+            val statements = AsQuadruples(IntegerDivMethod, None)
             val javaLikeCode = ToJavaLike(statements)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length() > 0)
 
-            //println(conditionalTwoReturnsMethod.body.get.instructions.mkString("\n"))
-            //println(statements.mkString("\n"))
-            //            println(javaLikeCode)
-
-            // TODO test that everything is as expected...
+            println(IntegerDivMethod.body.get.instructions.mkString("\n"))
+            println(statements.mkString("\n"))
+            println(javaLikeCode)
         }
+
+        it("should correctly reflect integer incrementation by a constant (using no AI results)") {
+            val statements = AsQuadruples(IntegerIncMethod, None)
+            val javaLikeCode = ToJavaLike(statements)
+
+            assert(statements.nonEmpty)
+            assert(javaLikeCode.length() > 0)
+
+            println(IntegerIncMethod.body.get.instructions.mkString("\n"))
+            println(statements.mkString("\n"))
+            println(javaLikeCode)
+        }
+
+        //        it("should have correct absoulte jump targets (using no AI results)") {
+        //            val statements = AsQuadruples(ConditionalTwoReturnsMethod, None)
+        //            val javaLikeCode = ToJavaLike(statements)
+        //
+        //            assert(statements.nonEmpty)
+        //            assert(javaLikeCode.length() > 0)
+        //
+        //            println(ConditionalTwoReturnsMethod.body.get.instructions.mkString("\n"))
+        //            println(statements.mkString("\n"))
+        //            println(javaLikeCode)
+        //
+        //            // TODO test that everything is as expected...
+        //        }
+
+        //        it("should correctly reflect mathematical operations (using AI results)") {
+        //            val domain = new DefaultDomain(project, BoringCodeClassFile, SingleBlockMethod)
+        //            val aiResult = BaseAI(BoringCodeClassFile, SingleBlockMethod, domain)
+        //            val statements = AsQuadruples(SingleBlockMethod, Some(aiResult))
+        //            val javaLikeCode = ToJavaLike(statements)
+        //
+        //            assert(statements.nonEmpty)
+        //            assert(javaLikeCode.length() > 0)
+        //
+        //            println(statements.mkString("\n"))
+        //            println(javaLikeCode)
+        //
+        //            //TODO  test that everything is as expected...
+        //        }
+
+        //        it("should have correct absoulte jump targets (using AI results)") {
+        //            val domain = new DefaultDomain(project, BoringCodeClassFile, ConditionalTwoReturnsMethod)
+        //            val aiResult = BaseAI(BoringCodeClassFile, ConditionalTwoReturnsMethod, domain)
+        //
+        //            val statements = AsQuadruples(ConditionalTwoReturnsMethod, Some(aiResult))
+        //            val javaLikeCode = ToJavaLike(statements)
+        //
+        //            assert(statements.nonEmpty)
+        //            assert(javaLikeCode.length() > 0)
+        //
+        //            println(ConditionalTwoReturnsMethod.body.get.instructions.mkString("\n"))
+        //            println(statements.mkString("\n"))
+        //            println(javaLikeCode)
+        //
+        //            // TODO test that everything is as expected...
+        //        }
     }
 }

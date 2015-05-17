@@ -56,7 +56,7 @@ object AsQuadruples {
 
         import BinaryArithmeticOperators._
         import UnaryArithmeticOperators._
-        import RelationalOperators._
+        //        import RelationalOperators._
 
         val code = method.body.get
         import code.pcOfNextInstruction
@@ -216,51 +216,51 @@ object AsQuadruples {
                     )
                     schedule(pcOfNextInstruction(pc), newValue2 :: newValue1 :: rest)
 
-                case DADD.opcode  ⇒ binaryArithmeticOperation(Add)
-                case DDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
-                
-                // FIXME 
-//                case DCMPG.opcode ⇒ 
-//                    val value2 :: value1 :: rest = stack
-//                    val nan = Double.NaN
-//                    val result = OperandVar(ComputationalTypeInt, stack)
-//                    statements(pc) = List(
-//                        If(pc, value1, GT, value2, retOnePC)
-////                        If(pc, value1, EQ, value2, retZeroPC)
-//                        If(pc, value1, LT, value2, retNegOnePC)
-//                        If(pc, value1, EQ, nan, retOnePC)
-//                        
-//                    )
-//                    schedule(pcOfNextInstruction(pc), result :: rest)
-                
-                // FIXME case DCMPL.opcode ⇒ arithmeticOperation(Greater)
-                case DNEG.opcode  ⇒ prefixArithmeticOperation(Negate)
-                case DMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
-                case DREM.opcode  ⇒ binaryArithmeticOperation(Modulo)
-                case DSUB.opcode  ⇒ binaryArithmeticOperation(Subtract)
+                case DADD.opcode ⇒ binaryArithmeticOperation(Add)
+                case DDIV.opcode ⇒ binaryArithmeticOperation(Divide)
 
-                case FADD.opcode  ⇒ binaryArithmeticOperation(Add)
-                case FDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
+                // FIXME 
+                //                case DCMPG.opcode ⇒ 
+                //                    val value2 :: value1 :: rest = stack
+                //                    val nan = Double.NaN
+                //                    val result = OperandVar(ComputationalTypeInt, stack)
+                //                    statements(pc) = List(
+                //                        If(pc, value1, GT, value2, retOnePC)
+                ////                        If(pc, value1, EQ, value2, retZeroPC)
+                //                        If(pc, value1, LT, value2, retNegOnePC)
+                //                        If(pc, value1, EQ, nan, retOnePC)
+                //                        
+                //                    )
+                //                    schedule(pcOfNextInstruction(pc), result :: rest)
+
+                // FIXME case DCMPL.opcode ⇒ arithmeticOperation(Greater)
+                case DNEG.opcode ⇒ prefixArithmeticOperation(Negate)
+                case DMUL.opcode ⇒ binaryArithmeticOperation(Multiply)
+                case DREM.opcode ⇒ binaryArithmeticOperation(Modulo)
+                case DSUB.opcode ⇒ binaryArithmeticOperation(Subtract)
+
+                case FADD.opcode ⇒ binaryArithmeticOperation(Add)
+                case FDIV.opcode ⇒ binaryArithmeticOperation(Divide)
                 // FIXME case FCMPG.opcode ⇒ arithmeticOperation(Greater)
                 // FIXME case FCMPL.opcode ⇒ arithmeticOperation(Greater)
-                case FNEG.opcode  ⇒ prefixArithmeticOperation(Negate)
-                case FMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
-                case FREM.opcode  ⇒ binaryArithmeticOperation(Modulo)
-                case FSUB.opcode  ⇒ binaryArithmeticOperation(Subtract)
+                case FNEG.opcode ⇒ prefixArithmeticOperation(Negate)
+                case FMUL.opcode ⇒ binaryArithmeticOperation(Multiply)
+                case FREM.opcode ⇒ binaryArithmeticOperation(Modulo)
+                case FSUB.opcode ⇒ binaryArithmeticOperation(Subtract)
 
-                case IADD.opcode  ⇒ binaryArithmeticOperation(Add)
-                case IAND.opcode  ⇒ binaryArithmeticOperation(And)
-                case IDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
-                
-                case IINC.opcode ⇒ 
+                case IADD.opcode ⇒ binaryArithmeticOperation(Add)
+                case IAND.opcode ⇒ binaryArithmeticOperation(And)
+                case IDIV.opcode ⇒ binaryArithmeticOperation(Divide)
+
+                case IINC.opcode ⇒
                     val IINC(index, const) = instruction
                     val indexReg = RegisterVar(ComputationalTypeInt, index)
                     statements(pc) = List(
-                        Assignment(pc, indexReg, 
+                        Assignment(pc, indexReg,
                             BinaryExpr(pc, ComputationalTypeInt, Add, indexReg, IntConst(pc, const)))
                     )
                     schedule(pcOfNextInstruction(pc), stack)
-                
+
                 case INEG.opcode  ⇒ prefixArithmeticOperation(Negate)
                 case IMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
                 case IOR.opcode   ⇒ binaryArithmeticOperation(Or)
