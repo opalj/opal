@@ -56,7 +56,7 @@ object AsQuadruples {
 
         import BinaryArithmeticOperators._
         import UnaryArithmeticOperators._
-        //        import RelationalOperators._
+        import RelationalOperators._
 
         val code = method.body.get
         import code.pcOfNextInstruction
@@ -216,41 +216,40 @@ object AsQuadruples {
                     )
                     schedule(pcOfNextInstruction(pc), newValue2 :: newValue1 :: rest)
 
-                case DADD.opcode ⇒ binaryArithmeticOperation(Add)
-                case DDIV.opcode ⇒ binaryArithmeticOperation(Divide)
+                case DADD.opcode | FADD.opcode |
+                    IADD.opcode | LADD.opcode ⇒ binaryArithmeticOperation(Add)
+                case DDIV.opcode | FDIV.opcode |
+                    IDIV.opcode | LDIV.opcode ⇒ binaryArithmeticOperation(Divide)
 
-                // FIXME 
-                //                case DCMPG.opcode ⇒ 
-                //                    val value2 :: value1 :: rest = stack
-                //                    val nan = Double.NaN
-                //                    val result = OperandVar(ComputationalTypeInt, stack)
-                //                    statements(pc) = List(
-                //                        If(pc, value1, GT, value2, retOnePC)
-                ////                        If(pc, value1, EQ, value2, retZeroPC)
-                //                        If(pc, value1, LT, value2, retNegOnePC)
-                //                        If(pc, value1, EQ, nan, retOnePC)
-                //                        
-                //                    )
-                //                    schedule(pcOfNextInstruction(pc), result :: rest)
+                case DCMPG.opcode | DCMPL.opcode |
+                    FCMPG.opcode | FCMPL.opcode ⇒
+                    val value2 :: value1 :: rest = stack
+                    val result = OperandVar(ComputationalTypeInt, stack)
+                    val nanCompRes = {
+                        if (instruction.opcode == DCMPG.opcode | instruction.opcode == FCMPG) IntConst(pc, 1)
+                        else IntConst(pc, -1)
+                    }
+                    statements(pc) = List(
+                        If(pc, value1, NE, DoubleConst(pc, Double.NaN), pc + 1),
+                        Assignment(pc, result, nanCompRes),
+                        If(pc + 1, value2, NE, DoubleConst(pc, Double.NaN), pc + 2),
+                        Assignment(pc, result, nanCompRes),
+                        If(pc + 2, value1, LE, value2, pc + 3),
+                        Assignment(pc, result, IntConst(pc, 1)),
+                        If(pc + 3, value1, NE, value2, pc + 4),
+                        Assignment(pc, result, IntConst(pc, 0)),
+                        Assignment(pc + 4, result, IntConst(pc, -1))
+                    )
+                    schedule(pcOfNextInstruction(pc), result :: rest)
 
-                // FIXME case DCMPL.opcode ⇒ arithmeticOperation(Greater)
-                case DNEG.opcode ⇒ prefixArithmeticOperation(Negate)
-                case DMUL.opcode ⇒ binaryArithmeticOperation(Multiply)
-                case DREM.opcode ⇒ binaryArithmeticOperation(Modulo)
-                case DSUB.opcode ⇒ binaryArithmeticOperation(Subtract)
-
-                case FADD.opcode ⇒ binaryArithmeticOperation(Add)
-                case FDIV.opcode ⇒ binaryArithmeticOperation(Divide)
-                // FIXME case FCMPG.opcode ⇒ arithmeticOperation(Greater)
-                // FIXME case FCMPL.opcode ⇒ arithmeticOperation(Greater)
-                case FNEG.opcode ⇒ prefixArithmeticOperation(Negate)
-                case FMUL.opcode ⇒ binaryArithmeticOperation(Multiply)
-                case FREM.opcode ⇒ binaryArithmeticOperation(Modulo)
-                case FSUB.opcode ⇒ binaryArithmeticOperation(Subtract)
-
-                case IADD.opcode ⇒ binaryArithmeticOperation(Add)
-                case IAND.opcode ⇒ binaryArithmeticOperation(And)
-                case IDIV.opcode ⇒ binaryArithmeticOperation(Divide)
+                case DNEG.opcode | FNEG.opcode |
+                    INEG.opcode | LNEG.opcode ⇒ prefixArithmeticOperation(Negate)
+                case DMUL.opcode | FMUL.opcode |
+                    IMUL.opcode | LMUL.opcode ⇒ binaryArithmeticOperation(Multiply)
+                case DREM.opcode | FREM.opcode |
+                    IREM.opcode | LREM.opcode ⇒ binaryArithmeticOperation(Modulo)
+                case DSUB.opcode | FSUB.opcode |
+                    ISUB.opcode | LSUB.opcode ⇒ binaryArithmeticOperation(Subtract)
 
                 case IINC.opcode ⇒
                     val IINC(index, const) = instruction
@@ -261,28 +260,12 @@ object AsQuadruples {
                     )
                     schedule(pcOfNextInstruction(pc), stack)
 
-                case INEG.opcode  ⇒ prefixArithmeticOperation(Negate)
-                case IMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
-                case IOR.opcode   ⇒ binaryArithmeticOperation(Or)
-                case IREM.opcode  ⇒ binaryArithmeticOperation(Modulo)
-                case ISHL.opcode  ⇒ binaryArithmeticOperation(ShiftLeft)
-                case ISHR.opcode  ⇒ binaryArithmeticOperation(ShiftRight)
-                case ISUB.opcode  ⇒ binaryArithmeticOperation(Subtract)
-                case IUSHR.opcode ⇒ binaryArithmeticOperation(UnsignedShiftRight)
-                case IXOR.opcode  ⇒ binaryArithmeticOperation(XOr)
-
-                case LADD.opcode  ⇒ binaryArithmeticOperation(Add)
-                case LAND.opcode  ⇒ binaryArithmeticOperation(And)
-                case LDIV.opcode  ⇒ binaryArithmeticOperation(Divide)
-                case LNEG.opcode  ⇒ prefixArithmeticOperation(Negate)
-                case LMUL.opcode  ⇒ binaryArithmeticOperation(Multiply)
-                case LOR.opcode   ⇒ binaryArithmeticOperation(Or)
-                case LREM.opcode  ⇒ binaryArithmeticOperation(Modulo)
-                case LSHL.opcode  ⇒ binaryArithmeticOperation(ShiftLeft)
-                case LSHR.opcode  ⇒ binaryArithmeticOperation(ShiftRight)
-                case LSUB.opcode  ⇒ binaryArithmeticOperation(Subtract)
-                case LUSHR.opcode ⇒ binaryArithmeticOperation(UnsignedShiftRight)
-                case LXOR.opcode  ⇒ binaryArithmeticOperation(XOr)
+                case IAND.opcode | LAND.opcode   ⇒ binaryArithmeticOperation(And)
+                case IOR.opcode | LOR.opcode     ⇒ binaryArithmeticOperation(Or)
+                case ISHL.opcode | LSHL.opcode   ⇒ binaryArithmeticOperation(ShiftLeft)
+                case ISHR.opcode | LSHR.opcode   ⇒ binaryArithmeticOperation(ShiftRight)
+                case IUSHR.opcode | LUSHR.opcode ⇒ binaryArithmeticOperation(UnsignedShiftRight)
+                case IXOR.opcode | LXOR.opcode   ⇒ binaryArithmeticOperation(XOr)
 
                 case ICONST_0.opcode | ICONST_1.opcode |
                     ICONST_2.opcode | ICONST_3.opcode |
