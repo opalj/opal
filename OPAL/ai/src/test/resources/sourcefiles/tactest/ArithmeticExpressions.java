@@ -89,7 +89,7 @@ public class ArithmeticExpressions {
 	}
 	
 	int integerTest(int a, int b){
-		int c;
+		int c = 0;
 		c = a + b;
 		c = a & b;
 		c = a / b;

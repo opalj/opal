@@ -96,7 +96,8 @@ class QuadruplesTest extends FunSpec with Matchers {
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length() > 0)
-            assert(javaLikeCode.equals(JLCMaker.intAddRes))
+            statements.shouldEqual(ASTMaker.intAddRes)
+            javaLikeCode.shouldEqual(JLCMaker.intAddRes)
         }
 
         it("should correctly reflect integer logical and (using no AI results)") {

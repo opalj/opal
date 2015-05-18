@@ -29,22 +29,24 @@
 package org.opalj
 package tac
 
+import org.opalj.br._
+import BinaryArithmeticOperators._
+
 /**
- * Helper object for building java like code.
+ * Helper object for building abstract syntax trees.
  *
  * @author Roberts Kolosovs
  *
  */
-object JLCMaker {
+object ASTMaker {
 
-    def intAddRes = {
-        new StringBuffer() append
-            "    0: r_0 = this; \n" append
-            "    1: r_1 = p_1; \n" append
-            "    2: r_2 = p_2; \n" append
-            "    3: op_0 = r_1; \n" append
-            "    4: op_1 = r_2; \n" append
-            "    5: op_0 = op_0 + op_1; \n" append
-            "    6: return op_0; \n" toString ()
-    }
+    def intAddRes: Array[Stmt] = Array(
+        Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+        Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
+        Assignment(-1, SimpleVar(-3, ComputationalTypeInt), Param(ComputationalTypeInt, "p_2")),
+        Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
+        Assignment(1, SimpleVar(1, ComputationalTypeInt), SimpleVar(-3, ComputationalTypeInt)),
+        Assignment(2, SimpleVar(0, ComputationalTypeInt), BinaryExpr(2, ComputationalTypeInt, Add, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt))),
+        ReturnValue(3, SimpleVar(0, ComputationalTypeInt))
+    )
 }
