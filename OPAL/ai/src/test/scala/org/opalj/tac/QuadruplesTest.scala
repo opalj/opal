@@ -87,6 +87,7 @@ class QuadruplesTest extends FunSpec with Matchers {
     if (IntegerXOrMethod.body.get.instructions.size == 0) fail()
 
     val IntegerTestMethod = ArithmeticExpressionsClassFile.findMethod("integerTest").get
+    val DoubleTestMethod = ArithmeticExpressionsClassFile.findMethod("doubleTest").get
 
     describe("The quadruples representation") {
 
@@ -196,18 +197,32 @@ class QuadruplesTest extends FunSpec with Matchers {
             assert(javaLikeCode.length() > 0)
         }
 
-        //TESTOUTPUT
-        it("should just print me some stuff for testing purposes") {
+        //TESTOUTPUT INT
+        it("should just print an integer method for testing purposes") {
             val statements = AsQuadruples(IntegerTestMethod, None)
             val javaLikeCode = ToJavaLike(statements)
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length() > 0)
 
-            println(IntegerTestMethod.body.get.instructions.mkString("\n"))
+//            println(IntegerTestMethod.body.get.instructions.mkString("\n"))
+//            println(statements.mkString("\n"))
+//            println(javaLikeCode)
+        }
+        //TESTOUTPUT INT
+        
+        //TESTOUTPUT DOUBLE
+        it("should just print a double method for testing purposes") {
+            println(DoubleTestMethod.body.get.instructions.mkString("\n"))
+            
+            val statements = AsQuadruples(DoubleTestMethod, None)
+            assert(statements.nonEmpty)
             println(statements.mkString("\n"))
+            
+            val javaLikeCode = ToJavaLike(statements)
+            assert(javaLikeCode.length() > 0)
             println(javaLikeCode)
         }
-        //TESTOUTPUT
+        //TESTOUTPUT DOUBLE
     }
 }

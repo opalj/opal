@@ -160,7 +160,49 @@ object AsQuadruples {
                 case ISTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeInt)
                 case ISTORE.opcode ⇒
                     storeInstruction(as[ISTORE](instruction).lvIndex, ComputationalTypeInt)
+                    
+                case DLOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeDouble)
+                case DLOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeDouble)
+                case DLOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeDouble)
+                case DLOAD_3.opcode ⇒ loadInstruction(3, ComputationalTypeDouble)
+                case DLOAD.opcode ⇒
+                    loadInstruction(as[DLOAD](instruction).lvIndex, ComputationalTypeDouble)
 
+                case DSTORE_0.opcode ⇒ storeInstruction(0, ComputationalTypeDouble)
+                case DSTORE_1.opcode ⇒ storeInstruction(1, ComputationalTypeDouble)
+                case DSTORE_2.opcode ⇒ storeInstruction(2, ComputationalTypeDouble)
+                case DSTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeDouble)
+                case DSTORE.opcode ⇒
+                    storeInstruction(as[DSTORE](instruction).lvIndex, ComputationalTypeDouble)
+
+                case FLOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeFloat)
+                case FLOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeFloat)
+                case FLOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeFloat)
+                case FLOAD_3.opcode ⇒ loadInstruction(3, ComputationalTypeFloat)
+                case FLOAD.opcode ⇒
+                    loadInstruction(as[FLOAD](instruction).lvIndex, ComputationalTypeFloat)
+
+                case FSTORE_0.opcode ⇒ storeInstruction(0, ComputationalTypeFloat)
+                case FSTORE_1.opcode ⇒ storeInstruction(1, ComputationalTypeFloat)
+                case FSTORE_2.opcode ⇒ storeInstruction(2, ComputationalTypeFloat)
+                case FSTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeFloat)
+                case FSTORE.opcode ⇒
+                    storeInstruction(as[FSTORE](instruction).lvIndex, ComputationalTypeFloat)
+                  
+                case LLOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeLong)
+                case LLOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeLong)
+                case LLOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeLong)
+                case LLOAD_3.opcode ⇒ loadInstruction(3, ComputationalTypeLong)
+                case LLOAD.opcode ⇒
+                    loadInstruction(as[LLOAD](instruction).lvIndex, ComputationalTypeLong)
+
+                case LSTORE_0.opcode ⇒ storeInstruction(0, ComputationalTypeLong)
+                case LSTORE_1.opcode ⇒ storeInstruction(1, ComputationalTypeLong)
+                case LSTORE_2.opcode ⇒ storeInstruction(2, ComputationalTypeLong)
+                case LSTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeLong)
+                case LSTORE.opcode ⇒
+                    storeInstruction(as[LSTORE](instruction).lvIndex, ComputationalTypeLong)  
+                    
                 case IRETURN.opcode ⇒
                     val returnedValue =
                         aiResult.flatMap { r ⇒
@@ -229,16 +271,21 @@ object AsQuadruples {
                         if (instruction.opcode == DCMPG.opcode | instruction.opcode == FCMPG.opcode) IntConst(pc, 1)
                         else IntConst(pc, -1)
                     }
+                        //TODO sort out the program counters
                     statements(pc) = List(
-                        If(pc, value1, NE, DoubleConst(pc, Double.NaN), pc + 1),
+                        If(pc, value1, NE, DoubleConst(pc, Double.NaN), pc),
                         Assignment(pc, result, nanCompRes),
-                        If(pc + 1, value2, NE, DoubleConst(pc, Double.NaN), pc + 2),
+                        Goto(pc, pc),
+                        If(pc, value2, NE, DoubleConst(pc, Double.NaN), pc),
                         Assignment(pc, result, nanCompRes),
-                        If(pc + 2, value1, LE, value2, pc + 3),
+                        Goto(pc, pc),
+                        If(pc, value1, LE, value2, pc),
                         Assignment(pc, result, IntConst(pc, 1)),
-                        If(pc + 3, value1, NE, value2, pc + 4),
+                        Goto(pc, pc),
+                        If(pc, value1, NE, value2, pc),
                         Assignment(pc, result, IntConst(pc, 0)),
-                        Assignment(pc + 4, result, IntConst(pc, -1))
+                        Goto(pc, pc),
+                        Assignment(pc, result, IntConst(pc, -1))
                     )
                     schedule(pcOfNextInstruction(pc), result :: rest)
 
@@ -275,8 +322,10 @@ object AsQuadruples {
                     statements(pc) = List(Assignment(pc, targetVar, IntConst(pc, value)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
+                case GOTO.opcode ⇒ Goto(pc, as[GOTO](instruction).branchoffset)
+               
                 // TODO Add support for all the other instructions!
-
+   
                 case opcode ⇒
                     throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
             }

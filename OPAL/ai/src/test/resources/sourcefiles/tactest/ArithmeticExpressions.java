@@ -105,4 +105,8 @@ public class ArithmeticExpressions {
 		c = a ^ b;
 		return c;
 	}
+	
+	boolean doubleTest(double a, double b){
+		return a < b;
+	}
 }
