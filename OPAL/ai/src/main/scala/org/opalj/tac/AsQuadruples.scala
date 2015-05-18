@@ -263,31 +263,31 @@ object AsQuadruples {
                 case DDIV.opcode | FDIV.opcode |
                     IDIV.opcode | LDIV.opcode ⇒ binaryArithmeticOperation(Divide)
 
-                case DCMPG.opcode | DCMPL.opcode |
-                    FCMPG.opcode | FCMPL.opcode ⇒
-                    val value2 :: value1 :: rest = stack
-                    val result = OperandVar(ComputationalTypeInt, stack)
-                    val nanCompRes = {
-                        if (instruction.opcode == DCMPG.opcode | instruction.opcode == FCMPG.opcode) IntConst(pc, 1)
-                        else IntConst(pc, -1)
-                    }
-                        //TODO sort out the program counters
-                    statements(pc) = List(
-                        If(pc, value1, NE, DoubleConst(pc, Double.NaN), pc),
-                        Assignment(pc, result, nanCompRes),
-                        Goto(pc, pc),
-                        If(pc, value2, NE, DoubleConst(pc, Double.NaN), pc),
-                        Assignment(pc, result, nanCompRes),
-                        Goto(pc, pc),
-                        If(pc, value1, LE, value2, pc),
-                        Assignment(pc, result, IntConst(pc, 1)),
-                        Goto(pc, pc),
-                        If(pc, value1, NE, value2, pc),
-                        Assignment(pc, result, IntConst(pc, 0)),
-                        Goto(pc, pc),
-                        Assignment(pc, result, IntConst(pc, -1))
-                    )
-                    schedule(pcOfNextInstruction(pc), result :: rest)
+//                case DCMPG.opcode | DCMPL.opcode |
+//                    FCMPG.opcode | FCMPL.opcode ⇒
+//                    val value2 :: value1 :: rest = stack
+//                    val result = OperandVar(ComputationalTypeInt, stack)
+//                    val nanCompRes = {
+//                        if (instruction.opcode == DCMPG.opcode | instruction.opcode == FCMPG.opcode) IntConst(pc, 1)
+//                        else IntConst(pc, -1)
+//                    }
+//                        //TODO sort out the program counters
+//                    statements(pc) = List(
+//                        If(pc, value1, NE, DoubleConst(pc, Double.NaN), pc),
+//                        Assignment(pc, result, nanCompRes),
+//                        Goto(pc, pc),
+//                        If(pc, value2, NE, DoubleConst(pc, Double.NaN), pc),
+//                        Assignment(pc, result, nanCompRes),
+//                        Goto(pc, pc),
+//                        If(pc, value1, LE, value2, pc),
+//                        Assignment(pc, result, IntConst(pc, 1)),
+//                        Goto(pc, pc),
+//                        If(pc, value1, NE, value2, pc),
+//                        Assignment(pc, result, IntConst(pc, 0)),
+//                        Goto(pc, pc),
+//                        Assignment(pc, result, IntConst(pc, -1))
+//                    )
+//                    schedule(pcOfNextInstruction(pc), result :: rest)
 
                 case DNEG.opcode | FNEG.opcode |
                     INEG.opcode | LNEG.opcode ⇒ prefixArithmeticOperation(Negate)
