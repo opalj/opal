@@ -7,7 +7,7 @@ version := "0.8.0-SNAPSHOT"
 // standard compiler settings!
 scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Representation") 
 
-libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3"
+libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
 
 libraryDependencies += "net.ceedubs" %% "ficus" % "1.1.2"
 

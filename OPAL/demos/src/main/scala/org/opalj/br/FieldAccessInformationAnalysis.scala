@@ -30,8 +30,7 @@ package org.opalj
 package br
 
 import java.net.URL
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
@@ -47,11 +46,7 @@ import org.opalj.util.NanoSeconds
  *
  * @author Michael Eichberg
  */
-object FieldAccessInformationAnalysis
-        extends OneStepAnalysis[URL, BasicReport]
-        with AnalysisExecutor {
-
-    val analysis = this
+object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
 
     override def description: String = "Provides information about field accesses."
 

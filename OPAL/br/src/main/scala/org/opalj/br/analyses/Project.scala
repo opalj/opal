@@ -435,13 +435,15 @@ class Project[Source] private (
 
     /*
      * This is a helper method only. TypeArguments are just a part of a Generic ClassTypeSignature. Hence, it make no
-     * sense to check subtype relation of incomplete information. 
+     * sense to check subtype relation of incomplete information.
      */
-    private def isSubtypeOfByTypeArgument(subtype: TypeArgument, supertype: TypeArgument): Answer = {
+    private def isSubtypeOfByTypeArgument(
+        subtype: TypeArgument,
+        supertype: TypeArgument): Answer = {
         (subtype, supertype) match {
-            case (VarianceFreeTypeArgument(et), VarianceFreeTypeArgument(superEt))         ⇒ if (et eq superEt) Yes else No
-            case (VarianceFreeTypeArgument(et), UpperTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(et, superEt)
-            case (VarianceFreeTypeArgument(et), LowerTypeBound(superEt))    ⇒ classHierarchy.isSubtypeOf(superEt, et)
+            case (ConcreteTypeArgument(et), ConcreteTypeArgument(superEt)) ⇒ if (et eq superEt) Yes else No
+            case (ConcreteTypeArgument(et), UpperTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(et, superEt)
+            case (ConcreteTypeArgument(et), LowerTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(superEt, et)
             case (_, Wildcard) ⇒ Yes
             case (GenericTypeArgument(varInd, cts), GenericTypeArgument(supVarInd, supCts)) ⇒ (varInd, supVarInd) match {
                 case (None, None) ⇒ if (cts.objectType eq supCts.objectType) isSubtypeOf(cts, supCts) else No
@@ -459,7 +461,9 @@ class Project[Source] private (
     }
 
     @inline
-    private def evalTypeArguments(subtypeArgs: List[TypeArgument], supertypeArgs: List[TypeArgument]): Answer = {
+    private def evalTypeArguments(
+        subtypeArgs: List[TypeArgument],
+        supertypeArgs: List[TypeArgument]): Answer = {
         (subtypeArgs, supertypeArgs) match {
             case (arg :: Nil, supArg :: Nil)      ⇒ isSubtypeOfByTypeArgument(arg, supArg)
             case (arg :: tail, supArg :: supTail) ⇒ isSubtypeOfByTypeArgument(arg, supArg).&(evalTypeArguments(tail, supTail))
@@ -492,18 +496,25 @@ class Project[Source] private (
     def isSubtypeOf(subtype: ClassTypeSignature, supertype: ClassTypeSignature): Answer = {
         if (subtype.objectType eq supertype.objectType) {
             (subtype, supertype) match {
-                case (NonGeneric(ot), NonGeneric(superOt))        ⇒ Yes
-                case (MultiContainer(ot, _), NonGeneric(superOt)) ⇒ classHierarchy.isSubtypeOf(ot, superOt)
-                case (MultiContainer(_, elements), MultiContainer(_, superElements)) ⇒
+                case (ConcreteType(ot), ConcreteType(superOt)) ⇒
+                    Yes
+
+                case (GenericType(ot, _), ConcreteType(superOt)) ⇒
+                    classHierarchy.isSubtypeOf(ot, superOt)
+
+                case (GenericType(_, elements), GenericType(_, superElements)) ⇒
                     evalTypeArguments(elements, superElements)
+
                 case _ ⇒ No
             }
         } else {
             val isSubtype = classHierarchy.isSubtypeOf(subtype.objectType, supertype.objectType)
             if (isSubtype.isYes) {
                 (subtype, supertype) match {
-                    case (NonGeneric(ot), NonGeneric(superOt)) ⇒ Yes
-                    case (MultiContainer(containerType, elements), MultiContainer(superContainerType, superElements)) ⇒
+
+                    case (ConcreteType(ot), ConcreteType(superOt)) ⇒ Yes
+
+                    case (GenericType(containerType, elements), GenericType(superContainerType, superElements)) ⇒
                         if (classFile(containerType).nonEmpty && classFile(superContainerType).nonEmpty)
                             if (classFile(containerType).get.classSignature.nonEmpty &&
                                 classFile(superContainerType).get.classSignature.nonEmpty) {
@@ -518,8 +529,10 @@ class Project[Source] private (
                                         supertypeArgs = supertypeArgs ++ List(superElements(index))
                                     }
                                 }
-                                if (typeArgs.isEmpty) return Yes
-                                else return evalTypeArguments(typeArgs, supertypeArgs)
+                                if (typeArgs.isEmpty)
+                                    return Yes
+                                else
+                                    return evalTypeArguments(typeArgs, supertypeArgs)
                             }
                         Unknown
                     case _ ⇒ No

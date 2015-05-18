@@ -51,7 +51,7 @@ object UnusedMethodsAnalysis {
     /**
      * Finds those methods that are never called.
      *
-     * If any of the following conditions is true, it will assume the method as being called.
+     * If any of the following conditions is true the method is considered as being called.
      * - The method is the target of a method call in the calculated call graph.
      * - The method is a private (empty) default constructor in a final class. Such constructors
      *      are usually defined to avoid instantiations of the respective class.
@@ -64,12 +64,13 @@ object UnusedMethodsAnalysis {
         theProject: SomeProject,
         callgraph: ComputedCallGraph, callgraphEntryPoints: Set[Method],
         classFile: ClassFile, method: Method): Option[StandardIssue] = {
+
         if (callgraphEntryPoints.contains(method))
             return None; // <=== early return
 
         def rateMethod(): Relevance = {
 
-            import method._
+            import method.{ isConstructor, isPrivate, parametersCount }
 
             // Let's check if it is a default constructor
             // which was defined to avoid instantiations of the
@@ -86,11 +87,14 @@ object UnusedMethodsAnalysis {
 
             val body = method.body.get
             val instructions = body.instructions
+            def justThrowsException: Boolean = {
+                !body.exists { (pc, i) ⇒ /* <= it just throws exceptions */
+                    ReturnInstruction.isReturnInstruction(i)
+                }
+            }
             if (instructions.size == 5 /* <= default empty constructor */ )
                 Relevance.TechnicalArtifact
-            else if (!body.exists { (pc, i) ⇒ /* <= it just throws exceptions */
-                ReturnInstruction.isReturnInstruction(i)
-            })
+            else if (justThrowsException)
                 Relevance.CommonIdiom
             else
                 Relevance.DefaultRelevance

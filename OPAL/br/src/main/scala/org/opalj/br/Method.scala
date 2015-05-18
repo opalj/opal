@@ -38,6 +38,7 @@ import bi.ACC_SYNCHRONIZED
 import bi.AccessFlagsContexts
 import bi.AccessFlags
 import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.VisibilityModifier
 
 /**
  * Represents a single method.
@@ -208,7 +209,9 @@ final class Method private (
         }
     }
 
-    def toJava(): String = descriptor.toJava(name)
+    def toJava(): String =
+        VisibilityModifier.get(accessFlags).map(_.javaName.get+" ").getOrElse("") +
+            descriptor.toJava(name)
 
     def toJava(declaringClass: ClassFile): String = toJava(declaringClass.thisType)
 

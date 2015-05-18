@@ -27,31 +27,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package ai
-package dataflow
+package br
+package analyses
 
 /**
- * Implements the infrastructure for solving a data-flow problem.
+ * The ''key'' object to get information about the classes that can be instantiated
+ * (either, directly or indirectly).
  *
- * @author Michael Eichberg and Ben Hermann
+ * @example
+ *      To get the index use the [[Project]]'s `get` method and pass in
+ *      `this` object.
+ *
+ * @author Michael Eichberg
  */
-trait DataFlowProblemSolver[Source, Params] extends DataFlowProblem[Source, Params] { solver ⇒
+object InstantiableClassesKey extends ProjectInformationKey[InstantiableClasses] {
 
-    /* ABSTRACT */ val theDomain: Domain
+    /**
+     * The [[InstantiableClasses]] has no special prerequisites.
+     *
+     * @return `Nil`.
+     */
+    override protected def requirements: Seq[ProjectInformationKey[Nothing]] = Nil
 
-    type DomainValue = theDomain.DomainValue
+    /**
+     * Computes the information which classes are (not) instantiable.
+     */
+    override protected def compute(project: SomeProject): InstantiableClasses = {
 
-    protected[this] class TaintedValue(
-        override val domainValue: DomainValue)
-            extends super.TaintedValue
-            with TaintInformation {
-
-        def typeInformation: TypeInformation = theDomain.typeOfValue(domainValue)
-
+        InstantiableClassesAnalysis.doAnalyze(
+            project, () ⇒ Thread.currentThread().isInterrupted()
+        )
     }
-
-    def ValueIsTainted: (DomainValue) ⇒ TaintInformation =
-        (value: DomainValue) ⇒ new TaintedValue(value)
-
 }
 
