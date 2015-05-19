@@ -165,22 +165,72 @@ sealed trait ThrowsSignature extends SignatureElement {
  *   Col<Object> co = null; // Signature: LCol<Ljava/lang/Object;>;
  *   Col<? super Serializable> cs = null; // Signature: LCol<-Ljava/io/Serializable;>;
  *   Col<? extends Comparable<?>> cc = null; // Signature: LCol<+Ljava/lang/Comparable<*>;>;
+ *
+ *   MyCol<java.util.List<Object>> mco = new MyCol<>();
+ *   MyCol<java.util.List<Object>>.MyInnerCol<Comparable<java.util.List<Object>>> mico = this.mco.new MyInnerCol<Comparable<java.util.List<Object>>>();
+ *   // Signature: LMyCol<Ljava/util/List<Ljava/lang/Object;>;>.MyInnerCol<Ljava/lang/Comparable<Ljava/util/List<Ljava/lang/Object;>;>;>;
  * }
+ * }}}
+ *
+ * AST of `mico`:
+ * {{{
+ *  ClassSignature(
+ *      typeParameters=List(),
+ *      superClass=ClassTypeSignature(
+ *              None,
+ *              SimpleClassTypeSignature(
+ *                  MyCol,
+ *                  List(ProperTypeArgument(
+ *                          variance=None,
+ *                          signature=ClassTypeSignature(
+ *                                  Some(java/util/),
+ *                                  SimpleClassTypeSignature(
+ *                                      List,
+ *                                      List(ProperTypeArgument(
+ *                                              variance=None,
+ *                                              signature=ClassTypeSignature(
+ *                                                      Some(java/lang/),
+ *                                                      SimpleClassTypeSignature(Object,List()),
+ *                                                      List())))),
+ *                                   List())))),
+ *              /*suffic=*/List(SimpleClassTypeSignature(
+ *                      MyInnerCol,
+ *                      List(ProperTypeArgument(
+ *                              variance=None,
+ *                              signature=ClassTypeSignature(
+ *                                  Some(java/lang/),
+ *                                  SimpleClassTypeSignature(
+ *                                      Comparable,
+ *                                      List(ProperTypeArgument(
+ *                                              variance=None,
+ *                                              signature=ClassTypeSignature(
+ *                                                      Some(java/util/),
+ *                                                      SimpleClassTypeSignature(
+ *                                                          List,
+ *                                                          List(ProperTypeArgument(
+ *                                                                  variance=None,
+ *                                                                  signature=ClassTypeSignature(
+ *                                                                          Some(java/lang/),
+ *                                                                          SimpleClassTypeSignature(Object,List()),
+ *                                                                          List())))),
+ *                                                      List())))),
+ *                                  List())))))),
+ *      superInterfaces=List())
  * }}}
  *
  * ==Matching Signatures==
  * '''Scala REPL''':
  * {{{
- * scala> val SignatureParser = org.opalj.br.reader.SignatureParser
- * scala> val GenericType = org.opalj.br.GenericType
- * scala> val SimpleGenericType = org.opalj.br.SimpleGenericType
- * scala> val BasicClassTypeSignature = org.opalj.br.BasicClassTypeSignature
+ * val SignatureParser = org.opalj.br.reader.SignatureParser
+ * val GenericType = org.opalj.br.GenericType
+ * val SimpleGenericType = org.opalj.br.SimpleGenericType
+ * val BasicClassTypeSignature = org.opalj.br.BasicClassTypeSignature
  *
- * scala> SignatureParser.parseClassSignature("<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;").superInterfacesSignature.head match { case BasicClassTypeSignature(ot) => ot.toJava; case _ => null}
- * res10: String = Col
+ * SignatureParser.parseClassSignature("<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;").superInterfacesSignature.head match { case BasicClassTypeSignature(ot) => ot.toJava; case _ => null}
+ * // res: String = Col
  *
- * scala> SignatureParser.parseClassSignature("<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;").superInterfacesSignature.head match { case SimpleGenericType(bt,gt) => bt.toJava+"<"+gt.toJava+">"; case _ => null}
- * res11: String = null
+ * SignatureParser.parseClassSignature("<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;").superInterfacesSignature.head match { case SimpleGenericType(bt,gt) => bt.toJava+"<"+gt.toJava+">"; case _ => null}
+ * //res11: String = null
  *
  * scala> SignatureParser.parseFieldTypeSignature("LCol<Ljava/lang/Object;>;") match { case SimpleGenericType(bt,ta) => bt.toJava+"<"+ta+">"; case _ => null}
  * res1: String = Col<ObjectType(java/lang/Object)>
@@ -515,12 +565,7 @@ object ConcreteType {
     def unapply(cts: ClassTypeSignature): Option[ObjectType] = {
         cts match {
 
-            case ClassTypeSignature(
-                cpn,
-                SimpleClassTypeSignature(
-                    csn,
-                    Nil),
-                Nil) ⇒
+            case ClassTypeSignature(cpn, SimpleClassTypeSignature(csn, Nil), Nil) ⇒
                 Some(ObjectType(cpn.getOrElse("") + csn))
 
             case _ ⇒
@@ -603,8 +648,8 @@ object LowerTypeBound {
 
 /**
  * Facilitates matching the (`VarianceIndicator`, `ObjectType`) that is defined
- * within a `ProperTypeArgument`. It matches ProperTypeArguments which define a
- * `TypeArguments` in the inner ClassTypeSignature.
+ * within a `ProperTypeArgument`. It matches ProperTypeArguments which define
+ * `TypeArgument`s in the inner ClassTypeSignature.
  *
  * @example
  *      matches e.g.: `List<List<Integer>>`
@@ -645,10 +690,9 @@ object GenericType {
 
             case ClassTypeSignature(
                 cpn,
-                SimpleClassTypeSignature(csn, containerInfo),
-                Nil
-                ) ⇒
-                Some((ObjectType(cpn.getOrElse("") + csn), containerInfo))
+                SimpleClassTypeSignature(csn, typeArgs),
+                Nil) if typeArgs.nonEmpty ⇒
+                Some((ObjectType(cpn.getOrElse("") + csn), typeArgs))
 
             case _ ⇒
                 None

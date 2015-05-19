@@ -80,6 +80,19 @@ import org.opalj.log.DefaultLogContext
  * ==Thread Safety==
  * This class is thread-safe.
  *
+ * ==Prototyping Analyses/Querying Projects==
+ * Projects can easily be created and queried using the Scala `REPL`. For example,
+ * to create a project, you can use:
+ * {{{
+ * val JRE = "/Library/Java/JavaVirtualMachines/jdk1.8.0_45.jdk/Contents/Home/jre/lib"
+ * val project = org.opalj.br.analyses.Project(new java.io.File(JRE))
+ * }}}
+ * Now, to determine the number of methods that have at least one parameter of type
+ * `int`, you can use:
+ * {{{
+ * p.methods.filter(_.parameterTypes.exists(_.isIntegerType)).size
+ * }}}
+ *
  * @tparam Source The type of the source of the class file. E.g., a `URL`, a `File`,
  *      a `String` or a Pair `(JarFile,JarEntry)`. This information is needed for, e.g.,
  *      presenting users meaningful messages w.r.t. the location of issues.
@@ -118,6 +131,9 @@ class Project[Source] private (
 
     OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
 
+    /**
+     * Creates a new `Project` which also includes the given class files.
+     */
     def extend(
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
         libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = Iterable.empty): Project[Source] = {
@@ -127,6 +143,10 @@ class Project[Source] private (
             libraryClassFilesWithSources)
     }
 
+    /**
+     * Creates a new `Project` which also includes this as well as the other project's
+     * class files.
+     */
     def extend(otherProject: Project[Source]): Project[Source] = {
         Project.extend[Source](
             this,
@@ -150,8 +170,16 @@ class Project[Source] private (
      */
     final val fieldsCount: Int = projectFieldsCount + libraryFieldsCount
 
+    /**
+     * The number of all source elements (fields, methods and class files).
+     */
     def sourceElementsCount = fieldsCount + methodsCount + classFilesCount
 
+    /**
+     * Returns a new `Iterable` over all source elements of the project. The set
+     * of all source elements consists of (in this order): all methods + all fields +
+     * all class files.
+     */
     def allSourceElements: Iterable[SourceElement] = methods() ++ fields() ++ allClassFiles
 
     val allProjectClassFiles: Iterable[ClassFile] = projectClassFiles
@@ -433,114 +461,6 @@ class Project[Source] private (
         }
     }
 
-    /*
-     * This is a helper method only. TypeArguments are just a part of a Generic ClassTypeSignature. Hence, it make no
-     * sense to check subtype relation of incomplete information.
-     */
-    private def isSubtypeOfByTypeArgument(
-        subtype: TypeArgument,
-        supertype: TypeArgument): Answer = {
-        (subtype, supertype) match {
-            case (ConcreteTypeArgument(et), ConcreteTypeArgument(superEt)) ⇒ if (et eq superEt) Yes else No
-            case (ConcreteTypeArgument(et), UpperTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(et, superEt)
-            case (ConcreteTypeArgument(et), LowerTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(superEt, et)
-            case (_, Wildcard) ⇒ Yes
-            case (GenericTypeArgument(varInd, cts), GenericTypeArgument(supVarInd, supCts)) ⇒ (varInd, supVarInd) match {
-                case (None, None) ⇒ if (cts.objectType eq supCts.objectType) isSubtypeOf(cts, supCts) else No
-                case (None, Some(CovariantIndicator)) ⇒ isSubtypeOf(cts, supCts)
-                case (None, Some(ContravariantIndicator)) ⇒ isSubtypeOf(supCts, cts)
-                case (Some(CovariantIndicator), Some(CovariantIndicator)) ⇒ isSubtypeOf(cts, supCts)
-                case (Some(ContravariantIndicator), Some(ContravariantIndicator)) ⇒ isSubtypeOf(supCts, cts)
-                case _ ⇒ No
-
-            }
-            case (UpperTypeBound(et), UpperTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(et, superEt)
-            case (LowerTypeBound(et), LowerTypeBound(superEt)) ⇒ classHierarchy.isSubtypeOf(superEt, et)
-            case _ ⇒ No
-        }
-    }
-
-    @inline
-    private def evalTypeArguments(
-        subtypeArgs: List[TypeArgument],
-        supertypeArgs: List[TypeArgument]): Answer = {
-        (subtypeArgs, supertypeArgs) match {
-            case (arg :: Nil, supArg :: Nil)      ⇒ isSubtypeOfByTypeArgument(arg, supArg)
-            case (arg :: tail, supArg :: supTail) ⇒ isSubtypeOfByTypeArgument(arg, supArg).&(evalTypeArguments(tail, supTail))
-            case _                                ⇒ No
-        }
-    }
-
-    /**
-     * Determines if the given class or interface type encoded in a ClassTypeSignature `subtype` is actually a subtype
-     * of the class or interface type encoded in the ClassTypeSinature of the `supertype`.
-     *
-     *
-     * @note This method rely in case of comparison of non generic types on
-     *       isSubtypeOf(`ObjectType`, `ObjectType`) of `Project` which
-     *        performs an upwards search only. E.g., given the following
-     *      type hierarchy:
-     *      `class D inherits from C`
-     *      `class E inherits from D`
-     *      and the query isSubtypeOf(D,E) the answer will be `Unknown` if `C` is
-     *      `Unknown` and `No` otherwise.
-     *
-     * @param subtype Any `ClassTypeSignature`.
-     * @param theSupertype Any `ClassTypeSignature`.
-     * @return `Yes` if `subtype` is a subtype of the given `supertype`. `No`
-     *      if `subtype` is not a subtype of `supertype` and `Unknown` if the analysis is
-     *      not conclusive. The latter can happen if the class hierarchy is not
-     *      complete and hence precise information about a type's supertypes
-     *      is not available.
-     */
-    def isSubtypeOf(subtype: ClassTypeSignature, supertype: ClassTypeSignature): Answer = {
-        if (subtype.objectType eq supertype.objectType) {
-            (subtype, supertype) match {
-                case (ConcreteType(ot), ConcreteType(superOt)) ⇒
-                    Yes
-
-                case (GenericType(ot, _), ConcreteType(superOt)) ⇒
-                    classHierarchy.isSubtypeOf(ot, superOt)
-
-                case (GenericType(_, elements), GenericType(_, superElements)) ⇒
-                    evalTypeArguments(elements, superElements)
-
-                case _ ⇒ No
-            }
-        } else {
-            val isSubtype = classHierarchy.isSubtypeOf(subtype.objectType, supertype.objectType)
-            if (isSubtype.isYes) {
-                (subtype, supertype) match {
-
-                    case (ConcreteType(ot), ConcreteType(superOt)) ⇒ Yes
-
-                    case (GenericType(containerType, elements), GenericType(superContainerType, superElements)) ⇒
-                        if (classFile(containerType).nonEmpty && classFile(superContainerType).nonEmpty)
-                            if (classFile(containerType).get.classSignature.nonEmpty &&
-                                classFile(superContainerType).get.classSignature.nonEmpty) {
-                                val ftp = classFile(containerType).get.classSignature.get.formalTypeParameters
-                                val superFtp = classFile(superContainerType).get.classSignature.get.formalTypeParameters
-                                var typeArgs = List.empty[TypeArgument]
-                                var supertypeArgs = List.empty[TypeArgument]
-                                for (i ← 0 to ftp.size - 1) {
-                                    val index = superFtp.indexOf(ftp(i))
-                                    if (index >= 0) {
-                                        typeArgs = typeArgs ++ List(elements(i))
-                                        supertypeArgs = supertypeArgs ++ List(superElements(index))
-                                    }
-                                }
-                                if (typeArgs.isEmpty)
-                                    return Yes
-                                else
-                                    return evalTypeArguments(typeArgs, supertypeArgs)
-                            }
-                        Unknown
-                    case _ ⇒ No
-                }
-            } else isSubtype
-        }
-    }
-
     override def toString: String = {
         val classDescriptions =
             sources map { (entry) ⇒
@@ -646,7 +566,7 @@ class Project[Source] private (
 
     /**
      * Tests if the information identified by the given [[ProjectInformationKey]]
-     * is available. If the information is not available, the information
+     * is available. If the information is not (yet) available, the information
      * will not be computed and `None` will be returned.
      *
      * @see [[ProjectInformationKey]] for further information.
@@ -660,6 +580,15 @@ class Project[Source] private (
             None
     }
 
+    // ----------------------------------------------------------------------------------
+    //
+    // FINALIZATION
+    //
+    // ----------------------------------------------------------------------------------
+
+    /**
+     * Unregisters this project from the OPALLogger and then calls `super.finalize`.
+     */
     override protected def finalize(): Unit = {
         OPALLogger.debug("project", "finalized ("+logContext+")")
         OPALLogger.unregister(logContext)
