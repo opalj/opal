@@ -932,8 +932,6 @@ class ClassHierarchy private (
         (subtypeArgs, supertypeArgs) match {
             case (Nil, Nil)          ⇒ Yes
             case (Nil, _) | (_, Nil) ⇒ No
-//            case (arg :: Nil, supArg :: Nil) ⇒
-//                isSubtypeOfByTypeArgument(arg, supArg)
             case (arg :: tail, supArg :: supTail) ⇒
                 val isSubtypeOf = isSubtypeOfByTypeArgument(arg, supArg)
                 if (isSubtypeOf.isNoOrUnknown)
