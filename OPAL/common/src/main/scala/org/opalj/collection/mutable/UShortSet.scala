@@ -39,7 +39,7 @@ import org.opalj.graphs.DefaultMutableNode
  *
  * @author Michael Eichberg
  */
-trait UShortSet extends collection.UShortSet {
+trait UShortSet extends org.opalj.collection.UShortSet {
 
     /**
      * Adds the given value to this set if it is not already contained in this set.

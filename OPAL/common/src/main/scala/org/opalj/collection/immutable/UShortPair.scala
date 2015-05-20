@@ -33,7 +33,13 @@ package immutable
 import org.opalj.UShort.{ MinValue, MaxValue }
 
 /**
- * A memory-efficient representation of a pair of UShortValues
+ * A memory-efficient representation of a pair of UShortValues.
+ *
+ * @example
+ * {{{
+ * scala> val p = org.opalj.collection.immutable.UShortPair(2323,332)
+ * p: org.opalj.collection.immutable.UShortPair = UShortPair(2323,332)
+ * }}}
  *
  * @author Michael Eichberg
  */
@@ -44,7 +50,12 @@ class UShortPair private (val pair: Int) extends AnyVal {
     def _2: UShort = pair >>> 16
     def value: UShort = _2
 
+    override def toString: String = s"UShortPair($key,$value)"
+
 }
+/**
+ * Factory to create `UShortPair` objects.
+ */
 object UShortPair {
 
     def apply(a: UShort, b: UShort): UShortPair = {
