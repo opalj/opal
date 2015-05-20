@@ -46,9 +46,11 @@ import org.opalj.UShort.{ MinValue, MaxValue }
 class UShortPair private (val pair: Int) extends AnyVal {
 
     def _1: UShort = pair & UShort.MaxValue
-    def key: UShort = _1
+    final def key: UShort = _1
+    final def minor: UShort = _1
     def _2: UShort = pair >>> 16
-    def value: UShort = _2
+    final def value: UShort = _2
+    final def major: UShort = _2
 
     override def toString: String = s"UShortPair($key,$value)"
 

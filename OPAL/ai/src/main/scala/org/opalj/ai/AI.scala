@@ -112,7 +112,7 @@ trait AI[D <: Domain] {
      * This method '''needs to be overridden in subclasses to identify situations
      * in which a running abstract interpretation should be interrupted'''.
      */
-    def isInterrupted: Boolean = false
+    protected def isInterrupted: Boolean = false
 
     /**
      * The tracer (default: `None`) that is called by OPAL while performing the abstract
