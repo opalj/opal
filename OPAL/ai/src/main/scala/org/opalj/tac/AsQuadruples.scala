@@ -56,7 +56,7 @@ object AsQuadruples {
 
         import BinaryArithmeticOperators._
         import UnaryArithmeticOperators._
-//        import RelationalOperators._
+        //        import RelationalOperators._
 
         val code = method.body.get
         import code.pcOfNextInstruction
@@ -160,7 +160,7 @@ object AsQuadruples {
                 case ISTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeInt)
                 case ISTORE.opcode ⇒
                     storeInstruction(as[ISTORE](instruction).lvIndex, ComputationalTypeInt)
-                    
+
                 case DLOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeDouble)
                 case DLOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeDouble)
                 case DLOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeDouble)
@@ -188,7 +188,7 @@ object AsQuadruples {
                 case FSTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeFloat)
                 case FSTORE.opcode ⇒
                     storeInstruction(as[FSTORE](instruction).lvIndex, ComputationalTypeFloat)
-                  
+
                 case LLOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeLong)
                 case LLOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeLong)
                 case LLOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeLong)
@@ -201,8 +201,8 @@ object AsQuadruples {
                 case LSTORE_2.opcode ⇒ storeInstruction(2, ComputationalTypeLong)
                 case LSTORE_3.opcode ⇒ storeInstruction(3, ComputationalTypeLong)
                 case LSTORE.opcode ⇒
-                    storeInstruction(as[LSTORE](instruction).lvIndex, ComputationalTypeLong)  
-                    
+                    storeInstruction(as[LSTORE](instruction).lvIndex, ComputationalTypeLong)
+
                 case IRETURN.opcode ⇒
                     val returnedValue =
                         aiResult.flatMap { r ⇒
@@ -263,31 +263,31 @@ object AsQuadruples {
                 case DDIV.opcode | FDIV.opcode |
                     IDIV.opcode | LDIV.opcode ⇒ binaryArithmeticOperation(Divide)
 
-//                case DCMPG.opcode | DCMPL.opcode |
-//                    FCMPG.opcode | FCMPL.opcode ⇒
-//                    val value2 :: value1 :: rest = stack
-//                    val result = OperandVar(ComputationalTypeInt, stack)
-//                    val nanCompRes = {
-//                        if (instruction.opcode == DCMPG.opcode | instruction.opcode == FCMPG.opcode) IntConst(pc, 1)
-//                        else IntConst(pc, -1)
-//                    }
-//                        //TODO sort out the program counters
-//                    statements(pc) = List(
-//                        If(pc, value1, NE, DoubleConst(pc, Double.NaN), pc),
-//                        Assignment(pc, result, nanCompRes),
-//                        Goto(pc, pc),
-//                        If(pc, value2, NE, DoubleConst(pc, Double.NaN), pc),
-//                        Assignment(pc, result, nanCompRes),
-//                        Goto(pc, pc),
-//                        If(pc, value1, LE, value2, pc),
-//                        Assignment(pc, result, IntConst(pc, 1)),
-//                        Goto(pc, pc),
-//                        If(pc, value1, NE, value2, pc),
-//                        Assignment(pc, result, IntConst(pc, 0)),
-//                        Goto(pc, pc),
-//                        Assignment(pc, result, IntConst(pc, -1))
-//                    )
-//                    schedule(pcOfNextInstruction(pc), result :: rest)
+                //                case DCMPG.opcode | DCMPL.opcode |
+                //                    FCMPG.opcode | FCMPL.opcode ⇒
+                //                    val value2 :: value1 :: rest = stack
+                //                    val result = OperandVar(ComputationalTypeInt, stack)
+                //                    val nanCompRes = {
+                //                        if (instruction.opcode == DCMPG.opcode | instruction.opcode == FCMPG.opcode) IntConst(pc, 1)
+                //                        else IntConst(pc, -1)
+                //                    }
+                //                        //TODO sort out the program counters
+                //                    statements(pc) = List(
+                //                        If(pc, value1, NE, DoubleConst(pc, Double.NaN), pc),
+                //                        Assignment(pc, result, nanCompRes),
+                //                        Goto(pc, pc),
+                //                        If(pc, value2, NE, DoubleConst(pc, Double.NaN), pc),
+                //                        Assignment(pc, result, nanCompRes),
+                //                        Goto(pc, pc),
+                //                        If(pc, value1, LE, value2, pc),
+                //                        Assignment(pc, result, IntConst(pc, 1)),
+                //                        Goto(pc, pc),
+                //                        If(pc, value1, NE, value2, pc),
+                //                        Assignment(pc, result, IntConst(pc, 0)),
+                //                        Goto(pc, pc),
+                //                        Assignment(pc, result, IntConst(pc, -1))
+                //                    )
+                //                    schedule(pcOfNextInstruction(pc), result :: rest)
 
                 case DNEG.opcode | FNEG.opcode |
                     INEG.opcode | LNEG.opcode ⇒ prefixArithmeticOperation(Negate)
@@ -323,9 +323,9 @@ object AsQuadruples {
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case GOTO.opcode ⇒ Goto(pc, pc + as[GOTO](instruction).branchoffset)
-               
+
                 // TODO Add support for all the other instructions!
-   
+
                 case opcode ⇒
                     throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
             }
