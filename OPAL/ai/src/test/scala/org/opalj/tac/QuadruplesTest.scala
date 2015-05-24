@@ -94,7 +94,8 @@ class QuadruplesTest extends FunSpec with Matchers {
         describe("of integer operations") {
 
             import BinaryArithmeticOperators._
-
+            import UnaryArithmeticOperators._
+            
             def binarySetupJLC = {
                 "    0: r_0 = this; \n"+
                     "    1: r_1 = p_1; \n"+
@@ -103,7 +104,15 @@ class QuadruplesTest extends FunSpec with Matchers {
                     "    4: op_1 = r_2; \n"
             }
 
+            def unarySetupJLC = {
+                "    0: r_0 = this; \n"+
+                    "    1: r_1 = p_1; \n"+
+                    "    2: op_0 = r_1; \n"
+            }
+
             def returnJLC = "    6: return op_0; \n"
+
+            def unaryReturnJLC = "    4: return op_0; \n"
 
             def binaryAST(stmt: Stmt): Array[Stmt] = Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
@@ -157,10 +166,14 @@ class QuadruplesTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
-//                statements.shouldEqual(binaryAST(
-//                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
-//                        BinaryExpr(2, ComputationalTypeInt, Add, SimpleVar(0, ComputationalTypeInt), IntConst(1, 1)))))
-//                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 + 1; \n"+returnJLC)
+                statements.shouldEqual(Array(
+                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
+                Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
+                Assignment(1, SimpleVar(-2, ComputationalTypeInt),
+                        BinaryExpr(1, ComputationalTypeInt, Add, SimpleVar(-2, ComputationalTypeInt), IntConst(1, 1))),
+                ReturnValue(4, SimpleVar(0, ComputationalTypeInt))))
+                javaLikeCode.shouldEqual(unarySetupJLC+"    3: r_1 = r_1 + 1; \n"+unaryReturnJLC)
             }
 
             it("should correctly reflect negation (using no AI results)") {
@@ -169,7 +182,14 @@ class QuadruplesTest extends FunSpec with Matchers {
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
-                //TODO
+                statements.shouldEqual(Array(
+                Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
+                Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
+                Assignment(0, SimpleVar(0, ComputationalTypeInt), SimpleVar(-2, ComputationalTypeInt)),
+                Assignment(1, SimpleVar(0, ComputationalTypeInt),
+                        PrefixExpr(1, ComputationalTypeInt, Negate, SimpleVar(0, ComputationalTypeInt))),
+                ReturnValue(2, SimpleVar(0, ComputationalTypeInt))))
+                javaLikeCode.shouldEqual(unarySetupJLC+"    3: op_0 = - op_0; \n"+unaryReturnJLC)
             }
 
             it("should correctly reflect multiplication (using no AI results)") {
@@ -276,9 +296,9 @@ class QuadruplesTest extends FunSpec with Matchers {
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
 
-                //            println(IntegerTestMethod.body.get.instructions.mkString("\n"))
-                //            println(statements.mkString("\n"))
-                //            println(javaLikeCode)
+                println(IntegerTestMethod.body.get.instructions.mkString("\n"))
+                println(statements.mkString("\n"))
+                println(javaLikeCode)
             }
             //TESTOUTPUT INT
         }
@@ -287,15 +307,15 @@ class QuadruplesTest extends FunSpec with Matchers {
 
             //TESTOUTPUT DOUBLE
             it("should just print a method for testing purposes") {
-                println(DoubleTestMethod.body.get.instructions.mkString("\n"))
+                //                println(DoubleTestMethod.body.get.instructions.mkString("\n"))
 
                 val statements = AsQuadruples(DoubleTestMethod, None)
                 assert(statements.nonEmpty)
-                println(statements.mkString("\n"))
+                //                println(statements.mkString("\n"))
 
                 val javaLikeCode = ToJavaLike(statements)
                 assert(javaLikeCode.length() > 0)
-                println(javaLikeCode)
+                //                println(javaLikeCode)
             }
             //TESTOUTPUT DOUBLE
         }
