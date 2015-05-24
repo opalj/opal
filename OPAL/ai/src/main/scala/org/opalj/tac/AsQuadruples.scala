@@ -56,7 +56,7 @@ object AsQuadruples {
 
         import BinaryArithmeticOperators._
         import UnaryArithmeticOperators._
-        import RelationalOperators._
+//        import RelationalOperators._
 
         val code = method.body.get
         import code.pcOfNextInstruction
