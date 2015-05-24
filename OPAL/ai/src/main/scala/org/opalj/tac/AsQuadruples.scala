@@ -322,7 +322,7 @@ object AsQuadruples {
                     statements(pc) = List(Assignment(pc, targetVar, IntConst(pc, value)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
-                case GOTO.opcode ⇒ Goto(pc, as[GOTO](instruction).branchoffset)
+                case GOTO.opcode ⇒ Goto(pc, pc + as[GOTO](instruction).branchoffset)
                
                 // TODO Add support for all the other instructions!
    
