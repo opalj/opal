@@ -91,7 +91,7 @@ class QuadruplesTest extends FunSpec with Matchers {
 
     describe("The quadruples representation") {
 
-        describe("Rewriting of integer operations") {
+        describe("of integer operations") {
 
             import BinaryArithmeticOperators._
 
@@ -115,7 +115,7 @@ class QuadruplesTest extends FunSpec with Matchers {
                 ReturnValue(3, SimpleVar(0, ComputationalTypeInt))
             )
 
-            it("should correctly reflect integer addition (using no AI results)") {
+            it("should correctly reflect addition (using no AI results)") {
                 val statements = AsQuadruples(IntegerAddMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
@@ -127,104 +127,149 @@ class QuadruplesTest extends FunSpec with Matchers {
                 javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 + op_1; \n"+returnJLC)
             }
 
-            it("should correctly reflect integer logical and (using no AI results)") {
+            it("should correctly reflect logical and (using no AI results)") {
                 val statements = AsQuadruples(IntegerAndMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(binaryAST(
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                        BinaryExpr(2, ComputationalTypeInt, And, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 & op_1; \n"+returnJLC)
             }
 
-            it("should correctly reflect integer division (using no AI results)") {
+            it("should correctly reflect division (using no AI results)") {
                 val statements = AsQuadruples(IntegerDivMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(binaryAST(
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                        BinaryExpr(2, ComputationalTypeInt, Divide, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 / op_1; \n"+returnJLC)
             }
 
-            it("should correctly reflect integer incrementation by a constant (using no AI results)") {
+            it("should correctly reflect incrementation by a constant (using no AI results)") {
                 val statements = AsQuadruples(IntegerIncMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
+//                statements.shouldEqual(binaryAST(
+//                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
+//                        BinaryExpr(2, ComputationalTypeInt, Add, SimpleVar(0, ComputationalTypeInt), IntConst(1, 1)))))
+//                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 + 1; \n"+returnJLC)
             }
 
-            it("should correctly reflect integer negation (using no AI results)") {
+            it("should correctly reflect negation (using no AI results)") {
                 val statements = AsQuadruples(IntegerNegMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
+                //TODO
             }
 
-            it("should correctly reflect integer multiplication (using no AI results)") {
+            it("should correctly reflect multiplication (using no AI results)") {
                 val statements = AsQuadruples(IntegerMulMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(binaryAST(
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                        BinaryExpr(2, ComputationalTypeInt, Multiply, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 * op_1; \n"+returnJLC)
             }
 
-            it("should correctly reflect integer Or operation (using no AI results)") {
+            it("should correctly reflect logical or (using no AI results)") {
                 val statements = AsQuadruples(IntegerOrMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(binaryAST(
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                        BinaryExpr(2, ComputationalTypeInt, Or, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 | op_1; \n"+returnJLC)
             }
 
-            it("should correctly reflect integer modulo operation (using no AI results)") {
+            it("should correctly reflect modulo (using no AI results)") {
                 val statements = AsQuadruples(IntegerRemMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(binaryAST(
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                        BinaryExpr(2, ComputationalTypeInt, Modulo, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 % op_1; \n"+returnJLC)
             }
 
-            it("should correctly reflect integer shift right (using no AI results)") {
+            it("should correctly reflect shift right (using no AI results)") {
                 val statements = AsQuadruples(IntegerShRMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(binaryAST(
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                        BinaryExpr(2, ComputationalTypeInt, ShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 >> op_1; \n"+returnJLC)
             }
 
-            it("should correctly reflect integer shift left (using no AI results)") {
+            it("should correctly reflect shift left (using no AI results)") {
                 val statements = AsQuadruples(IntegerShLMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(binaryAST(
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                        BinaryExpr(2, ComputationalTypeInt, ShiftLeft, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 << op_1; \n"+returnJLC)
             }
 
-            it("should correctly reflect integer subtraction (using no AI results)") {
+            it("should correctly reflect subtraction (using no AI results)") {
                 val statements = AsQuadruples(IntegerSubMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(binaryAST(
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                        BinaryExpr(2, ComputationalTypeInt, Subtract, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 - op_1; \n"+returnJLC)
             }
 
-            it("should correctly reflect integer arithmetic shift right (using no AI results)") {
+            it("should correctly reflect arithmetic shift right (using no AI results)") {
                 val statements = AsQuadruples(IntegerAShMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(binaryAST(
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                        BinaryExpr(2, ComputationalTypeInt, UnsignedShiftRight, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 >>> op_1; \n"+returnJLC)
             }
 
-            it("should correctly reflect integer XOr operation (using no AI results)") {
+            it("should correctly reflect logical xor (using no AI results)") {
                 val statements = AsQuadruples(IntegerXOrMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
                 assert(statements.nonEmpty)
                 assert(javaLikeCode.length() > 0)
+                statements.shouldEqual(binaryAST(
+                    Assignment(2, SimpleVar(0, ComputationalTypeInt),
+                        BinaryExpr(2, ComputationalTypeInt, XOr, SimpleVar(0, ComputationalTypeInt), SimpleVar(1, ComputationalTypeInt)))))
+                javaLikeCode.shouldEqual(binarySetupJLC+"    5: op_0 = op_0 ^ op_1; \n"+returnJLC)
             }
 
             //TESTOUTPUT INT
-            it("should just print an integer method for testing purposes") {
+            it("should just print a method for testing purposes") {
                 val statements = AsQuadruples(IntegerTestMethod, None)
                 val javaLikeCode = ToJavaLike(statements)
 
@@ -238,10 +283,10 @@ class QuadruplesTest extends FunSpec with Matchers {
             //TESTOUTPUT INT
         }
 
-        describe("Rewriting of double operations") {
+        describe("of double operations") {
 
             //TESTOUTPUT DOUBLE
-            it("should just print a double method for testing purposes") {
+            it("should just print a method for testing purposes") {
                 println(DoubleTestMethod.body.get.instructions.mkString("\n"))
 
                 val statements = AsQuadruples(DoubleTestMethod, None)
