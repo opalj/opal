@@ -36,6 +36,7 @@ package tactest;
  */
 public class ArithmeticExpressions {
 
+	//Integer operations
 	int integerAdd(int a, int b){
 		return a + b;
 	}
@@ -106,7 +107,114 @@ public class ArithmeticExpressions {
 		return c;
 	}
 	
+	//Double operations
+	double doubleAdd(double a, double b){
+		return a + b;
+	}
+	
+	double doubleDiv(double a, double b){
+		return a / b;
+	}
+	
+	boolean doubleCmp(double a, double b){
+		return a < b;
+	}
+	
+	double doubleNeg(double a){
+		return -a;
+	}
+	
+	double doubleMul(double a, double b){
+		return a * b;
+	}
+	
+	double doubleRem(double a, double b){
+		return a % b;
+	}
+	
+	double doubleSub(double a, double b){
+		return a - b;
+	}
+	
 	boolean doubleTest(double a, double b){
 		return a < b;
+	}
+	
+	//Float operations
+	float floatAdd(float a, float b){
+		return a + b;
+	}
+	
+	float floatDiv(float a, float b){
+		return a / b;
+	}
+	
+	boolean floatCmp(float a, float b){
+		return a < b;
+	}
+	
+	float floatNeg(float a){
+		return -a;
+	}
+	
+	float floatMul(float a, float b){
+		return a * b;
+	}
+	
+	float floatRem(float a, float b){
+		return a % b;
+	}
+	
+	float floatSub(float a, float b){
+		return a - b;
+	}
+	
+	//Long operations
+	long longAdd(long a, long b){
+		return a + b;
+	}
+	
+	long longAnd(long a, long b){
+		return a & b;
+	}
+	
+	long longDiv(long a, long b){
+		return a / b;
+	}
+	
+	long longNeg(long a){
+		return -a;
+	}
+	
+	long longMul(long a, long b){
+		return a * b;
+	}
+	
+	long longOr(long a, long b){
+		return a | b;
+	}
+	
+	long longRem(long a, long b){
+		return a % b;
+	}
+	
+	long longShR(long a, long b){
+		return a >> b;
+	}
+	
+	long longShL(long a, long b){
+		return a << b;
+	}
+	
+	long longSub(long a, long b){
+		return a - b;
+	}
+	
+	long longASh(long a, long b){
+		return a >>> b;
+	}
+	
+	long longXOr(long a, long b){
+		return a ^ b;
 	}
 }
