@@ -198,11 +198,11 @@ public class ArithmeticExpressions {
 		return a % b;
 	}
 	
-	long longShR(long a, long b){
+	long longShR(long a, int b){
 		return a >> b;
 	}
 	
-	long longShL(long a, long b){
+	long longShL(long a, int b){
 		return a << b;
 	}
 	
@@ -210,7 +210,7 @@ public class ArithmeticExpressions {
 		return a - b;
 	}
 	
-	long longASh(long a, long b){
+	long longASh(long a, int b){
 		return a >>> b;
 	}
 	
