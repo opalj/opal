@@ -27,58 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package graphs
-
-import scala.collection.Map
-import org.opalj.collection.UID
 
 /**
- * Represents a node of some graph.
- *
- * Two nodes are considered equal if they have the same unique id.
- *
- * @see [[org.opalj.br.analyses.ClassHierarchy]]'s `toGraph` method for
- *      an example usage.
+ * Defines helper values and methods related modeling constraints.
  *
  * @author Michael Eichberg
  */
-trait Node extends UID {
+package object constraints {
 
-    /**
-     * Returns a humane readable representation (HRR) of this node.
-     */
-    def toHRR: Option[String]
-
-    def visualProperties: Map[String, String] = Map.empty[String, String]
-
-    /**
-     * An identifier that uniquely identifies this node in the graph to which this
-     * node belongs. By default two nodes are considered equal if they have the same
-     * unique id.
-     */
-    override def id: Int
-
-    /**
-     * Returns `true` if this node has successor nodes.
-     */
-    def hasSuccessors: Boolean
-
-    /**
-     * Applies the given function for each successor node.
-     */
-    def foreachSuccessor(f: Node ⇒ Unit): Unit
-
-    /**
-     * The hash code of this node. By default the hash code is the unique id.
-     */
-    override def hashCode(): Int = id
-
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: Node ⇒ this.id == that.id
-            case _          ⇒ false
-        }
-    }
-
+    type NumericConstraint = NumericConstraints.Value
 }
-

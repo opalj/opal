@@ -29,7 +29,8 @@
 package org.opalj
 
 /**
- * The standard relational operators used by Java.
+ * The standard relational operators defined in the Java Virtual Machine Specification/
+ * Java Language Specification.
  *
  * @author Michael Eichberg
  */

@@ -63,14 +63,14 @@ package object graphs {
                     "label" -> nextNode.toHRR.get.replace("\"", "\\\"").replace("\n", "\\l")
                 )
                 s +=
-                    "\t"+nextNode.uniqueId +
+                    "\t"+nextNode.id +
                     visualProperties.map(e ⇒ "\""+e._1+"\"=\""+e._2+"\"").
                     mkString("[", ",", "];\n")
             }
 
             val f: (Node ⇒ Unit) = sn ⇒ {
                 if (nextNode.toHRR.isDefined)
-                    s += "\t"+nextNode.uniqueId+" -> "+sn.uniqueId+" [dir="+dir+"];\n"
+                    s += "\t"+nextNode.id+" -> "+sn.id+" [dir="+dir+"];\n"
 
                 if (!(processedNodes contains sn)) {
                     nodesToProcess += sn
