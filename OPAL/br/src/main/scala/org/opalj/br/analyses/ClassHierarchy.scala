@@ -45,6 +45,7 @@ import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import javax.lang.model.`type`.UnknownTypeException
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -910,7 +911,7 @@ class ClassHierarchy private (
             case (ConcreteTypeArgument(et), LowerTypeBound(superEt)) ⇒ isSubtypeOf(superEt, et)
             case (_, Wildcard) ⇒ Yes
             case (GenericTypeArgument(varInd, cts), GenericTypeArgument(supVarInd, supCts)) ⇒ (varInd, supVarInd) match {
-                case (None, None) ⇒ if (cts.objectType eq supCts.objectType) isSubtypeOf(cts, supCts) else No // It smells..: Answer(cts.objectType eq supCts.objectType)
+                case (None, None) ⇒ if (cts.objectType eq supCts.objectType) isSubtypeOf(cts, supCts) else No
                 case (None, Some(CovariantIndicator)) ⇒ isSubtypeOf(cts, supCts)
                 case (None, Some(ContravariantIndicator)) ⇒ isSubtypeOf(supCts, cts)
                 case (Some(CovariantIndicator), Some(CovariantIndicator)) ⇒ isSubtypeOf(cts, supCts)
@@ -932,8 +933,6 @@ class ClassHierarchy private (
         (subtypeArgs, supertypeArgs) match {
             case (Nil, Nil)          ⇒ Yes
             case (Nil, _) | (_, Nil) ⇒ No
-//            case (arg :: Nil, supArg :: Nil) ⇒
-//                isSubtypeOfByTypeArgument(arg, supArg)
             case (arg :: tail, supArg :: supTail) ⇒
                 val isSubtypeOf = isSubtypeOfByTypeArgument(arg, supArg)
                 if (isSubtypeOf.isNoOrUnknown)
@@ -941,6 +940,47 @@ class ClassHierarchy private (
                 else
                     evalTypeArguments(tail, supTail)
         }
+    }
+
+    /**
+     * Determines whether the given [[ClassSignature]] of the potential ´subtype´ does implement or extend
+     * the interface or class given with the parameter ´supertype´ of type [[ObjectType]]. In case that the
+     * ´subtype´ does implement or extend the ´supertype´, an [[Option]] of [[ClassTypeSignature]] is returned.
+     * Otherwise None will be returned.
+     * 
+     *
+     * @param subtype Any type or interface.
+     * @param supertype Any type or interface.
+     * 
+     * @return [[Option]] of [[ClassTypeSignature]] if the ´subtype´ extends or implements the given ´supertype´, [[None]] otherwise.
+     */
+    def getSupertypeDeclaration(subtype: ClassSignature, supertype: ObjectType)(implicit project: ClassFileRepository): Option[ClassTypeSignature] = {
+        import project.classFile
+        val signaturesToCheck = subtype.superClassSignature :: subtype.superInterfacesSignature
+        for (cts ← signaturesToCheck) {
+            if (cts.objectType eq supertype)
+                return Some(cts)
+        }
+        for (cts ← signaturesToCheck) {
+            val superCs = getClassSignature(cts.objectType)
+            if (superCs.nonEmpty) {
+                val matchingType = getSupertypeDeclaration(superCs.get, supertype)
+                if (matchingType.nonEmpty)
+                    return matchingType
+            }
+        }
+        None
+    }
+    
+    /*
+     * Returns an Option[ClassSignature] according to the given ObjectType. Is the
+     * given ObjectType not resolvable by the project, None is returned.
+     */
+    private[this] final def getClassSignature(ot: ObjectType)(
+        implicit project: ClassFileRepository): Option[ClassSignature] = {
+        import project.classFile
+        if (classFile(ot).isEmpty || classFile(ot).get.classSignature.isEmpty) None
+        else Some(classFile(ot).get.classSignature.get)
     }
 
     /**
@@ -964,13 +1004,13 @@ class ClassHierarchy private (
      *      complete and hence precise information about a type's supertypes
      *      is not available.
      */
-    // TODO Consider the Interface types...
     // TODO Consider Suffixes...
+    //TODO Consider intersection types
     def isSubtypeOf(
         subtype: ClassTypeSignature,
         supertype: ClassTypeSignature)(
             implicit project: ClassFileRepository): Answer = {
-        import project.classFile
+
         if (subtype.objectType eq supertype.objectType) {
             (subtype, supertype) match {
                 case (ConcreteType(ot), ConcreteType(superOt)) ⇒
@@ -987,31 +1027,44 @@ class ClassHierarchy private (
         } else {
             val isSubtype = isSubtypeOf(subtype.objectType, supertype.objectType)
             if (isSubtype.isYes) {
+                def checkConcreteTypeParameters(subtype: ObjectType, supertype: ObjectType,
+                                                superTypeArguments: List[TypeArgument]): Answer = {
+                    val cs = getClassSignature(subtype)
+                    if (cs.nonEmpty) {
+                        val matchingType = getSupertypeDeclaration(cs.get, supertype)
+                        if (matchingType.nonEmpty)
+                            evalTypeArguments(matchingType.get.simpleClassTypeSignature.typeArguments, superTypeArguments)
+                        else No
+                    } else Unknown
+                }
                 (subtype, supertype) match {
+                    case (ConcreteType(_), ConcreteType(_))                    ⇒ Yes
+                    case (GenericType(_, _), ConcreteType(_))                  ⇒ Yes
+                    case (ConcreteType(_), GenericType(_, superTypeArguments)) ⇒ checkConcreteTypeParameters(subtype.objectType, supertype.objectType, superTypeArguments)
+                    case (GenericType(containerType, elements), GenericType(superContainerType, superElements)) ⇒ {
 
-                    case (ConcreteType(ot), ConcreteType(superOt)) ⇒ Yes
-
-                    case (GenericType(containerType, elements), GenericType(superContainerType, superElements)) ⇒
-                        if (classFile(containerType).nonEmpty && classFile(superContainerType).nonEmpty)
-                            if (classFile(containerType).get.classSignature.nonEmpty &&
-                                classFile(superContainerType).get.classSignature.nonEmpty) {
-                                val ftp = classFile(containerType).get.classSignature.get.formalTypeParameters
-                                val superFtp = classFile(superContainerType).get.classSignature.get.formalTypeParameters
+                        def checkTypeParameters(subtype: ObjectType, supertype: ObjectType): Answer = {
+                            val cs = getClassSignature(subtype)
+                            val superCs = getClassSignature(supertype)
+                            if (cs.nonEmpty && superCs.nonEmpty) {
+                                val ftp = cs.get.formalTypeParameters
+                                val superFtp = superCs.get.formalTypeParameters
                                 var typeArgs = List.empty[TypeArgument]
                                 var supertypeArgs = List.empty[TypeArgument]
+                                
                                 for (i ← 0 to ftp.size - 1) {
                                     val index = superFtp.indexOf(ftp(i))
                                     if (index >= 0) {
-                                        typeArgs = typeArgs ++ List(elements(i))
-                                        supertypeArgs = supertypeArgs ++ List(superElements(index))
+                                        typeArgs = elements(i) :: typeArgs
+                                        supertypeArgs = superElements(index) :: supertypeArgs
                                     }
                                 }
-                                if (typeArgs.isEmpty)
-                                    return Yes
-                                else
-                                    return evalTypeArguments(typeArgs, supertypeArgs)
-                            }
-                        Unknown
+                                if (typeArgs.isEmpty) checkConcreteTypeParameters(containerType, superContainerType, superElements)
+                                else evalTypeArguments(typeArgs, supertypeArgs)
+                            } else Unknown
+                        }
+                        checkTypeParameters(containerType, superContainerType)
+                    }
                     case _ ⇒ No
                 }
             } else isSubtype
