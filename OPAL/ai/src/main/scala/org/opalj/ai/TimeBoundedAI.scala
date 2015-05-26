@@ -29,7 +29,8 @@
 package org.opalj
 package ai
 
-import org.opalj.util.NanoSeconds
+import org.opalj.util.Milliseconds
+import org.opalj.util.Nanoseconds
 
 /**
  * An abstract interpreter that interrupts itself after some configurable
@@ -41,7 +42,7 @@ import org.opalj.util.NanoSeconds
  * @author Michael Eichberg
  */
 class TimeBoundedAI[D <: Domain](
-        val maxEffortInNs: Long = 150l /*ms*/ * 1000l * 1000l) extends AI[D] {
+        val maxEffort: Nanoseconds = new Milliseconds(150l).toNanoseconds) extends AI[D] {
 
     private[this] final val CheckInterval = 100
 
@@ -53,7 +54,7 @@ class TimeBoundedAI[D <: Domain](
 
     private[this] var interruptTime: Long = 0
 
-    def abortedAfter: NanoSeconds = new NanoSeconds(interruptTime - startTime)
+    def abortedAfter: Nanoseconds = new Nanoseconds(interruptTime - startTime)
 
     // This method is only intended to be called during the Abstract Interpretation as
     // each call increases the evaluation count!
@@ -63,7 +64,7 @@ class TimeBoundedAI[D <: Domain](
             startTime = System.nanoTime()
             false
         } else if (evaluationCount % CheckInterval == 0 &&
-            (System.nanoTime() - startTime) > maxEffortInNs) {
+            (System.nanoTime() - startTime) > maxEffort.timeSpan) {
             interrupted = true
             interruptTime = System.nanoTime()
             true

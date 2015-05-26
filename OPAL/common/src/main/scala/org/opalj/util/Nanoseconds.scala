@@ -27,49 +27,43 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
-package br
-
-import java.net.URL
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Nanoseconds
+package util
 
 /**
- * Very primitive rating of the complexity of methods.
+ * Represents a time span of `n` nanoseconds.
  *
  * @author Michael Eichberg
  */
-object MethodComplexityAnalysis
-        extends OneStepAnalysis[URL, BasicReport]
-        with AnalysisExecutor {
+class Nanoseconds(val timeSpan: Long) extends AnyVal {
 
-    val analysis = this
+    final def +(other: Nanoseconds): Nanoseconds =
+        new Nanoseconds(this.timeSpan + other.timeSpan)
 
-    override def description: String = "Estimates the complexity of interpreting the method."
+    final def -(other: Nanoseconds): Nanoseconds =
+        new Nanoseconds(this.timeSpan - other.timeSpan)
 
-    def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
+    /**
+     * Converts the specified number of nanoseconds into seconds.
+     */
+    final def toSeconds: Seconds = new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
 
-        var executionTime = Nanoseconds.None
+    override def toString: String = timeSpan+" ns"
+}
+/**
+ * Defines factory methods and constants related to time spans in [[Nanoseconds]].
+ *
+ * @author Michael Eichberg
+ */
+object Nanoseconds {
 
-        val analysisResults = time {
+    final val None: Nanoseconds = new Nanoseconds(0l)
 
-            import org.opalj.br.analyses.{ MethodComplexityAnalysis ⇒ TheAnalysis }
-            TheAnalysis.doAnalyze(project, 100, isInterrupted)
+    /**
+     * Converts the specified time span and converts it into seconds.
+     */
+    final def TimeSpan(
+        startTimeInNanoseconds: Long,
+        endTimeInNanoseconds: Long): Nanoseconds =
+        new Nanoseconds(endTimeInNanoseconds - startTimeInNanoseconds)
 
-        } { t ⇒ executionTime += t }
-
-        BasicReport(
-            analysisResults.
-                toList.map(m ⇒ (m._2, m._1)).
-                sorted.map(m ⇒ m._1+":"+m._2.fullyQualifiedSignature(project.classFile(m._2).thisType)).
-                mkString("\n")+"\n"+
-                s"rated ${analysisResults.size} methods in ${executionTime.toSeconds}"
-        )
-    }
 }

@@ -30,40 +30,42 @@ package org.opalj
 package util
 
 /**
- * Represents a time span of `n` nanoseconds.
+ * Represents a time span of `n` milliseconds.
  *
  * @author Michael Eichberg
  */
-class NanoSeconds(val timeSpan: Long) extends AnyVal {
+class Milliseconds(val timeSpan: Long) extends AnyVal {
 
-    final def +(other: NanoSeconds): NanoSeconds =
-        new NanoSeconds(this.timeSpan + other.timeSpan)
+    final def +(other: Milliseconds): Milliseconds =
+        new Milliseconds(this.timeSpan + other.timeSpan)
 
-    final def -(other: NanoSeconds): NanoSeconds =
-        new NanoSeconds(this.timeSpan - other.timeSpan)
+    final def -(other: Milliseconds): Milliseconds =
+        new Milliseconds(this.timeSpan - other.timeSpan)
 
     /**
-     * Converts the specified number of nanoseconds into seconds.
+     * Converts the specified number of milliseconds into seconds.
      */
-    final def toSeconds: Seconds = new Seconds(timeSpan.toDouble / 1000.0d / 1000.0d / 1000.0d)
+    final def toSeconds: Seconds = new Seconds(timeSpan.toDouble / 1000.0d)
 
-    override def toString: String = timeSpan+" ns"
+    final def toNanoseconds: Nanoseconds = new Nanoseconds(timeSpan * 1000l * 1000l)
+
+    override def toString: String = timeSpan+" ms"
 }
 /**
- * Defines factory methods and constants related to time spans in [[NanoSeconds]].
+ * Defines factory methods and constants related to time spans in [[Milliseconds]].
  *
  * @author Michael Eichberg
  */
-object NanoSeconds {
+object Milliseconds {
 
-    final val None: NanoSeconds = new NanoSeconds(0)
+    final val None: Milliseconds = new Milliseconds(0l)
 
     /**
-     * Converts the specified time span and converts it into seconds.
+     * Converts the specified time span and converts it into milliseconds.
      */
     final def TimeSpan(
-        startTimeInNanoseconds: Long,
-        endTimeInNanoseconds: Long): NanoSeconds =
-        new NanoSeconds(endTimeInNanoseconds - startTimeInNanoseconds)
+        startTimeInMilliseconds: Long,
+        endTimeInMilliseconds: Long): Milliseconds =
+        new Milliseconds(startTimeInMilliseconds - endTimeInMilliseconds)
 
 }

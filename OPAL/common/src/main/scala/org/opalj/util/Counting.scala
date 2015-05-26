@@ -38,6 +38,9 @@ import scala.collection.mutable
  * to get detailed information: (1) how often the function given to `time` was evaluated
  * and (2) about the accumulated time.
  *
+ * ==Thread Safety==
+ * This class is thread safe.
+ *
  * @author Michael Eichberg
  */
 class Counting extends PerformanceEvaluation {
@@ -48,7 +51,7 @@ class Counting extends PerformanceEvaluation {
      * Times and counts the execution of `f` and associates the information with the
      * given symbol `s`.
      */
-    override protected[this] def doUpdateTimes(s: Symbol, duration: NanoSeconds): Unit = {
+    override protected[this] def doUpdateTimes(s: Symbol, duration: Nanoseconds): Unit = {
         super.doUpdateTimes(s, duration)
         count.update(s, count.getOrElseUpdate(s, 0) + 1)
     }
@@ -64,7 +67,7 @@ class Counting extends PerformanceEvaluation {
     }
 
     /**
-     * Returns how often some function `f` that was tagged using the given symbol
+     * Returns how often some function `f` that was tagged using the given symbol `s`
      * was executed.
      */
     def getCount(s: Symbol): Int = withReadLock { doGetCount(s) }
