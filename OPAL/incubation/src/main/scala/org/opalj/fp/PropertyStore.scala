@@ -29,10 +29,13 @@
 package org.opalj.fp
 
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{ ConcurrentHashMap ⇒ JCHMap }
 import java.util.{ IdentityHashMap ⇒ JIDMap }
+import java.util.{ Set ⇒ JSet }
 import scala.collection.mutable.{ HashMap ⇒ HMap }
 import scala.collection.mutable.{ ListBuffer ⇒ Buffer }
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import org.opalj.concurrent.Locking
 import org.opalj.concurrent.Locking.{ withReadLock, withWriteLock }
 import org.opalj.concurrent.ThreadPoolN
 import scala.concurrent.ExecutionContext
@@ -44,41 +47,81 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
 /**
  * The central store which manages the execution of all
- * analyses that provide information about the elements of the store.
+ * computations that provide information about the entities of the store.
+ *
+ * In general, we can distinguish two kinds of computations:
+ *  1. [Blocking Computations] which require information about a specific other element's properties
+ *      to be able to continue. (Mutual Dependency) For such computations it may happen that the computation
+ *      cannot proceed because the computation of a property p of an entity e1 depends
+ *      on the property p of an entity e2 that requires the property p of the entity e1.
+ *      The store implements an algorithm to detect dependencies and to report a
+ *      set of strongly connected computations to respective handler computations.
+ *  1. [Relaxed Computations] which may use information about a specific property of an entity e, but
+ *      which can still continue if the respective knowledge is not (yet) available and which
+ *      are able to refine the results, once the knowledge becomes available.
  *
  * ==Core Requirements==
- *  - A specific kind of property is always computed by only one PropertyComputation
- *      function.
- *  - Two property computation functions that operate on two different elements
- *      never computed properties related to the same elements.
+ *  - (One Function per Property Kind) A specific kind of property is always computed
+ *      by only one registered `PropertyComputation` function.
+ *  - (Thread-Safe) The PropertyComputation functions are thread-safe.
+ *  - (Non-Overlapping Results) If the same `PropertyComputation` function is invoked concurrently on different
+ *      entities then the set of entities for which results are computed must be disjoint.
+ *      For example, an analysis that performs a computation on class file entities and
+ *      that derives properties of specific kind relate to method entities must ensure
+ *      that no two analysis of two different class files derive information about
+ *      the same method.
+ *  - (Monoton) If a `PropertyComputation` function calculates (refines) a (new )property for
+ *      a specific element then the result must be more specific.
  *
  * ==Thread Safety==
  * The PropertyStore is thread-safe.
+ *
+ * @author Michael Eichberg
+ */
+/*
+ * The ProperStore prevents deadlocks by ensuring that updates of the store are always
+ * atomic and by preventing each computation from acquiring more than one (write and/or
+ * read) lock.
  */
 class PropertyStore private (
-        private[this] val data: JIDMap[AnyRef, PropertyStoreValue]) { store ⇒
+        private[this] val data: JIDMap[Entity, PropertyStoreValue]) { store ⇒
+
+    // COMMON ABBREVIATONS USED IN THE FOLLOWING:
+    // ==========================================
+    // e = ENTITY
+    // p = Property
+    // pk = PropertyKey
+    // pc = (Property)Computation
+    // c = Continuation
+    // o = (Property)Observer
+
+    // We want to be able
+    private[this] val storeLock = Locking()
+    import storeLock.{ withReadLock ⇒ accessEntity }
+    import storeLock.{ withWriteLock ⇒ accessStore }
 
     /**
      * The set of all stored elements.
      *
-     * This set is immutable.
+     * This set is not mutated.
      */
-    private[this] val keys = data.keySet()
+    private[this] final val keys: JSet[Entity] = data.keySet()
 
     /**
-     * Returns the property currently associated with the given element.
+     * Returns the property of the respective property kind currently associated
+     * with the given element.
      *
      * @param e A value in the store.
      * @param key The kind of property.
-     * @return `None` if no information about the respective property is available.
+     * @return `None` if no information about the respective property is (yet) available.
      *      `Some(Property)` otherwise.
      *      Note that the returned value may change over time but only such that it
      *      is strictly more precise.
      */
-    def apply(e: AnyRef, key: PropertyKey): Option[Property] = {
-        val (lock, (properties)) = data.get(e)
+    def apply(e: Entity, pk: PropertyKey): Option[Property] = accessEntity {
+        val (lock, properties) = data.get(e)
         withReadLock(lock) {
-            properties.get(key) match {
+            properties.get(pk) match {
                 case None | Some((null, _))             ⇒ None
                 case Some((property, _ /*observers*/ )) ⇒ Some(property)
             }
@@ -87,10 +130,8 @@ class PropertyStore private (
 
     /**
      * Returns all elements which have a property of the respective kind.
-     *
-     * '''This method is only to be called after all properties are computed!'''
      */
-    def apply(key: PropertyKey): Traversable[(AnyRef, Property)] = {
+    def apply(pk: PropertyKey): Traversable[(Entity, Property)] = accessStore {
 
         assert(Tasks.scheduled == 0, "all tasks have completed")
 
@@ -98,31 +139,31 @@ class PropertyStore private (
         val valuesWithProperty =
             data.entrySet() filter { v ⇒
                 val (_ /*lock*/ , properties) = v.getValue()
-                properties.get(key) match {
+                properties.get(pk) match {
                     case Some((null, _)) | None ⇒ false
                     case _                      ⇒ true
                 }
             }
-        valuesWithProperty map { v ⇒ (v.getKey, v.getValue._2(key)._1) }
+        valuesWithProperty map { v ⇒ (v.getKey, v.getValue._2(pk)._1) }
     }
 
     /**
      * Registers a function that calculates a property for all or some elements
      * of the store.
      *
-     * This store ensures that f is never invoked more than once for the
-     * same element at the same time. If f is invoked again for a specific element
+     * This store ensures that `f` is never invoked more than once for the
+     * same element at the same time. If `f` is invoked again for a specific element
      * then only because a dependee has changed!
      */
-    def <<=(f: PropertyComputation): Unit = {
+    def <<=(c: PropertyComputation): Unit = accessEntity {
         val it = keys.iterator()
         while (it.hasNext()) {
-            scheduleComputation(it.next(), f)
+            scheduleComputation(it.next(), c)
         }
     }
 
     /**
-     * Called by a client to await the completion of the computation of all
+     * Can be called by a client to await the completion of the computation of all
      * properties of all previously registered property computation functions.
      *
      * This function is only guaranteed to wait on the completion of the computation
@@ -130,8 +171,8 @@ class PropertyStore private (
      */
     def waitOnPropertyComputationCompletion(): Unit = Tasks.waitOnCompletion()
 
-    override def toString: String = {
-        s"PropertyStore(elementsCount= ${data.size()}, executedComputations= ${Tasks.executed}%n"
+    override def toString: String = accessStore {
+        s"PropertyStore(entitiesCount= ${data.size()}, executedComputations= ${Tasks.executed}"
     }
 
     //
@@ -147,21 +188,37 @@ class PropertyStore private (
      */
     private[this] object Tasks {
 
-        @volatile var executed = 0
+        //        // The key is the `AtomicInteger` object that counts the number of unchanged
+        //        // property dependencies
+        //        // The value tuple contains of the number of all
+        //        // dependencies and the property computation.
+        //        val restartableComputations = new JCHMap[AtomicInteger, (Int, PropertyComputation)](100)
+
+        // ALL ACCESSES ARE SYNCHRONIZED
+        var executed = 0
 
         /**
          * The number of scheduled tasks. I.e., the number of tasks that are running or
          * that will run in the future.
          */
-        @volatile var scheduled = 0
+        var scheduled = 0
 
-        def taskStarted() = synchronized { executed += 1; scheduled += 1 }
+        def taskStarted() = synchronized {
+            executed += 1
+            scheduled += 1
+        }
 
         def taskCompleted() = synchronized {
             assert(scheduled > 0)
             scheduled -= 1
+
+            // When all scheduled tasks are completed, we check if there are
+            // pending computations that now can be activated.
             if (scheduled == 0) {
-                // TODO Let's check if we have a cycle.
+                // Let's check if we have some potentially refineable intermediate results.
+
+                // Let's check if we have a cycle of property computations that
+                // all wait on come mutually dependent properties.
                 breakUpCycles()
 
                 // TODO Terminate the remaining observers...
@@ -172,21 +229,20 @@ class PropertyStore private (
             }
         }
 
-        def waitOnCompletion() = synchronized { while (scheduled > 0) { wait } }
+        def waitOnCompletion() = synchronized {
+            while (scheduled > 0) { wait }
+        }
 
-    }
-
-    private[this] def breakUpCycles(): Unit = {
-        import scala.collection.JavaConversions._
-        for {
-            entry ← data.entrySet()
-            e = entry.getKey()
-            properties = entry.getValue()._2
-            (propertyKey, (property, observers)) ← properties
-            if observers.nonEmpty
-        } {
-            println("finding observers..."+propertyKey+
-                " "+property + observers)
+        private[this] def breakUpCycles(): Unit = {
+            import scala.collection.JavaConversions._
+            for {
+                entry ← data.entrySet()
+                e = entry.getKey()
+                (propertyKey, (property, observers)) ← entry.getValue()._2
+                if observers.nonEmpty
+            } {
+                println("finding observers..."+propertyKey+" "+property + observers)
+            }
         }
     }
 
@@ -196,8 +252,8 @@ class PropertyStore private (
      * property change.
      */
     // Invariant: always only at most one function exists that will compute/update
-    // the property p of the element e.
-    private[this] def update(e: AnyRef, p: Property): Unit = {
+    // the property p belonging to property kind k of an element e.
+    private[this] def update(e: Entity, p: Property): Unit = accessEntity {
         val (lock, properties) = data.get(e)
         withWriteLock(lock) {
             properties.put(p.key, (p, Buffer.empty)) match {
@@ -212,50 +268,69 @@ class PropertyStore private (
         }
     }
 
-    //    /**
-    //     * Registers the observer, if the property is not yet known.
-    //     *
-    //     * @return The current property. None if the property is not yet known.
-    //     */
-    //    private[this] def registerObserver(
-    //        e: AnyRef,
-    //        pk: PropertyKey,
-    //        o: PropertyObserver): Option[Property] = {
-    //        // always only at most one function exists that will update the property p
-    //        // of the element e
-    //        val (lock, properties) = data.get(e)
-    //        withWriteLock(lock) {
-    //            val propertyAndObservers = properties.get(pk)
-    //            if (propertyAndObservers == None) {
-    //                properties.put(pk, (null, Buffer(o)))
-    //                None
-    //            } else {
-    //                val Some((property, observers)) = propertyAndObservers
-    //                if (property eq null) {
-    //                    observers += o
-    //                    None
-    //                } else {
-    //                    Some(property)
-    //                }
-    //            }
-    //        }
-    //    }
+    /**
+     * Registers the observer, if the property is not yet available or equal to the
+     * specified property value. If the property is already refined, the observer is
+     * immediately invoke and not registered.
+     *
+     * @return `true` if an observer was registered, `false` otherwise.
+     */
+    private[this] def handleDependency(
+        e: Entity,
+        pk: PropertyKey,
+        pOption: Option[Property],
+        o: PropertyObserver): Unit = {
+        // always only at most one function exists that will update the property p
+        // of the element e
+        val (lock, properties) = data.get(e)
+        withWriteLock(lock) {
+            val propertyAndObservers = properties.get(pk)
+            if (propertyAndObservers == None) {
+                properties.put(pk, (null, Buffer(o)))
+                true
+            } else {
+                val Some((p, observers)) = propertyAndObservers
+                if ((p eq null) || pOption.isEmpty || pOption.get == p) {
+                    observers += o
+                } else {
+                    // ... the value in the store is already a more refined value
+                    // than the value given by pOption
+                    o(e, p)
+                }
+            }
+        }
+    }
 
-    private[this] def handleResult(
-        e: AnyRef,
-        r: PropertyComputationResult): Unit = {
+    private[PropertyStore] def handleResult(r: PropertyComputationResult): Unit = {
         r match {
-            case NoResult         ⇒ // Nothing to do..
+            case NoResult ⇒
+            // Nothing to do..
 
-            case Result(property) ⇒ update(e, property)
+            case Result(results) ⇒
+                results foreach { result ⇒ val (e, p) = result; update(e, p) }
 
-            case IntermediateResult(property, dependingElements) ⇒
-                update(e, property)
-            // TODO register handler for updates on depending elements
+            case result @ IntermediateResult(results, dependingEntities) ⇒
 
-            case suspended @ Suspended((dependingElement, propertyKey)) ⇒
+                // 1) Store the results
+                results foreach { result ⇒ val (e, p) = result; update(e, p) }
 
-                // IDEA
+                // 2) Register the observers
+                dependingEntities foreach { dependingEntity ⇒
+                    val (e, pk, pOption, c) = dependingEntity
+                    val o = new PropertyObserver {
+                        def apply(e: Entity, p: Property): Unit = {
+                            // ... for each dependent property we have a refinement;
+                            // let's reschedule the computation
+                            scheduleContinuation(e, p, c)
+                        }
+                    }
+
+                    handleDependency(e, pk, pOption, o)
+                }
+
+            case suspended @ Suspended(e, dependingEntity, propertyKey) ⇒
+
+                // CONCEPT
                 // First, let's get the property, then...
                 //  - If we now have a property, let's immediately continue
                 //    the computation.
@@ -263,17 +338,17 @@ class PropertyStore private (
                 //    observer that will schedule the computation when the
                 //    property was computed.
 
-                val (lock, (properties)) = data.get(dependingElement)
+                val (lock, properties) = data.get(dependingEntity)
                 withWriteLock(lock) {
                     properties.get(propertyKey) match {
                         case Some((property, observers)) ⇒
                             if (property eq null) {
-                                // we have other analysis that are also waiting...
+                                // we have other analyses that are also waiting...
                                 observers += new PropertyObserver {
-                                    def apply(dependingElement: AnyRef, property: Property): Unit = {
+                                    def apply(dependingEntity: Entity, property: Property): Unit = {
                                         scheduleComputation(
                                             e,
-                                            (AnyRef) ⇒ suspended.continue(dependingElement, property)
+                                            (Entity) ⇒ suspended.continue(dependingEntity, property)
                                         )
                                     }
                                 }
@@ -281,16 +356,16 @@ class PropertyStore private (
                                 // the property was computed in the meantime
                                 scheduleComputation(
                                     e,
-                                    (AnyRef) ⇒ suspended.continue(dependingElement, property)
+                                    (Entity) ⇒ suspended.continue(dependingEntity, property)
                                 )
                             }
                         case _ ⇒
                             // this computation is the first who is interested in the property
                             properties.put(propertyKey, (null, Buffer(new PropertyObserver {
-                                def apply(dependingElement: AnyRef, property: Property): Unit = {
+                                def apply(dependingEntity: Entity, property: Property): Unit = {
                                     scheduleComputation(
                                         e,
-                                        (AnyRef) ⇒ suspended.continue(dependingElement, property)
+                                        (Entity) ⇒ suspended.continue(dependingEntity, property)
                                     )
                                 }
                             })))
@@ -300,17 +375,25 @@ class PropertyStore private (
     }
 
     /**
-     * Schedules the computation of a property w.r.t. the element e.
+     * Schedules the computation of a property w.r.t. the entity `e`.
      */
-    private[this] def scheduleComputation(
-        e: AnyRef,
-        f: PropertyComputation): Unit = {
+    private[this] def scheduleComputation(e: Entity, pc: PropertyComputation): Unit = {
+        scheduleTask(() ⇒ handleResult(pc(e)))
+    }
 
+    /**
+     * Schedules the continuation w.r.t. the entity `e`.
+     */
+    private[this] def scheduleContinuation(e: Entity, p: Property, c: Continuation): Unit = {
+        scheduleTask(() ⇒ handleResult(c(e, p)))
+    }
+
+    private[this] def scheduleTask(t: () ⇒ Unit): Unit = {
         Tasks.taskStarted()
         threadPool.submit(new Runnable {
             def run(): Unit = {
                 try {
-                    handleResult(e, f(e))
+                    t()
                 } catch {
                     case t: Throwable ⇒ uncaughtException(Thread.currentThread(), t)
                 } finally {
@@ -326,93 +409,14 @@ class PropertyStore private (
  */
 object PropertyStore {
 
-    def apply(elements: Traversable[AnyRef]): PropertyStore = {
-        val elementsCount = elements.size
-        val map = new JIDMap[AnyRef, PropertyStoreValue](elementsCount)
+    def apply(entities: Traversable[Entity]): PropertyStore = {
+        val entitiesCount = entities.size
+        val map = new JIDMap[Entity, PropertyStoreValue](entitiesCount)
 
-        elements.foreach { e ⇒ map.put(e, (new ReentrantReadWriteLock, HMap.empty)) }
+        entities.foreach { e ⇒ map.put(e, (new ReentrantReadWriteLock, HMap.empty)) }
 
         new PropertyStore(map)
     }
 
 }
 
-sealed trait PropertyComputationResult
-
-/**
- * Computing a property for the respective element is not possible.
- */
-case object NoResult extends PropertyComputationResult
-
-/**
- * Encapsulates the final result of the computation of the property.
- *
- * Result is only to be used if no further refinement is possible or may happen.
- */
-case class Result(property: Property) extends PropertyComputationResult
-
-/**
- * Encapsulates the result of the computation of a property.
- *
- * If the property of any depending element is changed, the function is called again.
- * In general, the framework tries to wait on the completion of the computation of
- * the relevant properties of as many dependees as possible before the
- * [[PropertyComputation]] is scheduled again.
- */
-case class IntermediateResult(
-    property: Property,
-    dependingElements: Traversable[(AnyRef, PropertyKey, PropertyComputation)])
-        extends PropertyComputationResult {
-
-    private[fp] var unsatisfiedDependencies = new AtomicInteger(dependingElements.size)
-
-}
-
-/**
- * @param dependingElements The elements and properties required by this computation before the computation
- * can be continued.
- */
-abstract class Suspended(
-    val e: AnyRef,
-    val dependingElement: AnyRef,
-    val dependingProperty: PropertyKey)
-        extends PropertyComputationResult {
-
-    /**
-     * Called by the framework if properties for all given elements are available.
-     */
-    def continue(dependingElement: AnyRef, dependingProperty: Property): PropertyComputationResult
-
-    /**
-     * Terminates this computation.
-     *
-     * This method is called by the framework if this computation is waiting on the results
-     * of computations of properties for elements for which no further computations
-     * are running.
-     */
-    def terminate(): Unit
-
-    /**
-     * The fallback [[Property]] associated with the computation. This method is
-     * called by the framework if it identifies a cycle and tries to continue the computation
-     * by using default properties for one or more elements of the cycle.
-     */
-    def fallback: Property
-}
-
-object Suspended {
-
-    def unapply(computation: Suspended): Some[(AnyRef, PropertyKey)] =
-        Some((computation.dependingElement, computation.dependingProperty))
-
-}
-
-/**
- * A PropertyObserver is a function that is called if the property associated
- * with the respective becomes available or changes.
- *
- * The parameters of the function are the observed element and its property.
- */
-abstract class PropertyObserver extends ((AnyRef, Property) ⇒ Unit) {
-
-}
