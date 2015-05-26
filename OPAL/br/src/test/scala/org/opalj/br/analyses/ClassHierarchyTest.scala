@@ -86,25 +86,23 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
 
     val SimpleCTS = SimpleClassTypeSignature
     val CTS = ClassTypeSignature
-    def CTS(cn: String, ptas: List[TypeArgument]) =
+    def CTS(cn: String, ptas: List[TypeArgument], suffix: List[ClassTypeSignature] = Nil) =
         ClassTypeSignature(pgk, SimpleCTS(cn, ptas), Nil)
 
     def elementType(cts: ClassTypeSignature) =
         ProperTypeArgument(None, cts)
 
-    def lowerBound(cts: ClassTypeSignature) =
+    def upperBoundType(cts: ClassTypeSignature) =
         ProperTypeArgument(Some(CovariantIndicator), cts)
 
-    def upperBound(cts: ClassTypeSignature) =
+    def lowerBoundType(cts: ClassTypeSignature) =
         ProperTypeArgument(Some(ContravariantIndicator), cts)
-
     /*SimpleClassTypeSignatures*/
     val baseSCTS = SimpleCTS("Base", Nil)
     val extBaseSCTS = SimpleCTS("ExtendedBase", Nil)
     val lvlTwoBaseSCTS = SimpleCTS("lvlTwoBase", Nil)
-    val altBaseSCTS = SimpleCTS("AlternativBase", Nil)
+    val altBaseSCTS = SimpleCTS("AlternativeBase", Nil)
     val genericSCTS = SimpleCTS("SimpleGeneric", Nil)
-
     /*Nested ClassTypeSignatures*/
     val baseCTS = CTS(pgk, baseSCTS, Nil)
     val extBaseCTS = CTS(pgk, extBaseSCTS, Nil)
@@ -112,96 +110,114 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
     val altBaseCTS = CTS(pgk, altBaseSCTS, Nil)
     val genericCTS = CTS(pgk, genericSCTS, Nil)
 
-    /* UContainer<UnknownType> */
-    val unknownContainer =
-        ClassTypeSignature(
-            pgk,
-            SimpleClassTypeSignature(
-                "UContainer",
-                List(
-                    elementType(ClassTypeSignature(Some("unknown/"),
-                        SimpleClassTypeSignature("UnkownType", Nil),
-                        Nil))
-                )),
-            Nil)
+    /** UContainer<UnknownType> */
+    val unknownContainer = CTS("UContainer", List(elementType(CTS(pgk, SimpleCTS("UnknownType", Nil), Nil))))
 
-    /* SimpleGeneric<Base> */
+    /** Interface<Base> */
+    val iContainerWithBase = CTS("Interface", List(elementType(baseCTS)))
+
+    /** Interface<AlternativeBase> */
+    val iContainerWithAltBase = CTS("Interface", List(elementType(altBaseCTS)))
+
+    /** BaseWithInterface<Base> // BaseWithInterface<E> implements Interface<E> */
+    val IBaseContainerWithBase = CTS("BaseWithInterface", List(elementType(baseCTS)))
+
+    /** BaseWithInterface<AlternativeBase> */
+    val IBaseContainerWithAltBase = CTS("BaseWithInterface", List(elementType(altBaseCTS)))
+
+    /** BaseWithConcreteInterface // BaseWithConcreteInterface implements Interface<Base> */
+    val concreteInterfaceWithBase = CTS("BaseWithConcreteInterface", Nil)
+
+    /** AltBaseWithConcreteInterface // AltBaseWithConcreteInterface implements Interface<AlternativeBase> */
+    val concreteInterfaceWithAltBase = CTS("AltBaseWithConcreteInterface", Nil)
+
+    /** SubclassWithInterface // SubclassWithInterface extends SubGeneric implements Interface<AlternativeBase> */
+    val subClassWithInterface = CTS("SubclassWithInterface", Nil)
+
+    /** SubGeneric // SubGeneric extends SimpleGeneric<Base> */
+    val concreteSubGeneric = CTS("SubGeneric", Nil)
+
+    /** SimpleGeneric<Base> */
     val baseContainer = CTS("SimpleGeneric", List(elementType(baseCTS)))
 
-    /*SimpleGeneric<AlternativeBase> */
+    /** SimpleGeneric<AlternativeBase> */
     val altContainer = CTS("SimpleGeneric", List(elementType(altBaseCTS)))
 
-    /* SimpleGeneric<lvlTwoBase>*/
+    /** SimpleGeneric<lvlTwoBase>*/
     val lvlTwoContainer = CTS("SimpleGeneric", List(elementType(lvlTwoBaseCTS)))
 
-    /* SimpleGeneric<Base> */
+    /** SimpleGeneric<Base> */
     val extBaseContainer = CTS("SimpleGeneric", List(elementType(extBaseCTS)))
 
-    /* ExtendedGeneric<Base> */
+    /** ExtendedGeneric<Base> */
     val extGenContainer = CTS("ExtendedGeneric", List(elementType(baseCTS)))
 
-    /* SimpleGeneric<*> */
+    /** SimpleGeneric<*> */
     val wildCardContainer = CTS("SimpleGeneric", List(Wildcard))
 
-    /*  SimpleGeneric<? extends Base>*/
-    val covariantContainer = CTS("SimpleGeneric", List(lowerBound(baseCTS)))
+    /**  SimpleGeneric<? extends Base>*/
+    val covariantContainer = CTS("SimpleGeneric", List(upperBoundType(baseCTS)))
 
-    /*  SimpleGeneric<? super Base>*/
-    val contravariantContainer = CTS("SimpleGeneric", List(upperBound(extBaseCTS)))
+    /**  SimpleGeneric<? super Base>*/
+    val contravariantContainer = CTS("SimpleGeneric", List(lowerBoundType(extBaseCTS)))
 
-    /*  SimpleGeneric<? super SimpleGenericBase>*/
+    /**  SimpleGeneric<? super SimpleGenericBase>*/
     val contravariantWithContainer =
-        CTS("SimpleGeneric", List(upperBound(baseContainer)))
+        CTS("SimpleGeneric", List(lowerBoundType(baseContainer)))
 
-    /*  SimpleGeneric<? super Base> */
+    /**  SimpleGeneric<? super Base> */
     val contravariantBaseContainer =
-        CTS("SimpleGeneric", List(upperBound(baseCTS)))
+        CTS("SimpleGeneric", List(lowerBoundType(baseCTS)))
 
-    /* SubGenericET<SimpleGeneric<Base>, SimpleGeneric<ExtendedBase>>*/
+    /** SubGenericET<SimpleGeneric<Base>, SimpleGeneric<ExtendedBase>>*/
     val doubleContainerET =
         CTS("SubGenericET", List(elementType(baseCTS), elementType(extBaseCTS)))
 
-    /* SubGenericTE<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
+    /** SubGenericTE<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
     val doubleContainerTE =
         CTS("SubGenericTE", List(elementType(extBaseCTS), elementType(baseCTS)))
 
-    /* IndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
+    /** IndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
     val doubleContainerBase =
         CTS("IndependentSubclass", List(elementType(extBaseCTS), elementType(baseCTS)))
 
-    /* SubGenericET<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
+    /** AltIndependentSubclass<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
+    val doubleContainerAltBase =
+        CTS("AltIndependentSubclass", List(elementType(extBaseCTS), elementType(baseCTS)))
+
+    /** SubGenericET<SimpleGeneric<ExtendedBaseBase>, SimpleGeneric<Base>>*/
     val wrongDoubleContainer =
         CTS("SubGenericET", List(elementType(extBaseCTS), elementType(baseCTS)))
 
-    /* SimpleGeneric<SimpleGeneric<Base>> */
+    /** SimpleGeneric<SimpleGeneric<Base>> */
     val nestedBase =
         CTS("SimpleGeneric", List(elementType(baseContainer)))
 
-    /* SimpleGeneric<SimpleGeneric<ExtendedBase>> */
+    /** SimpleGeneric<SimpleGeneric<ExtendedBase>> */
     val nestedExtBase =
         CTS("SimpleGeneric", List(elementType(extBaseContainer)))
 
-    /* SimpleGeneric<SimpleGeneric<lvlTwoContainer>> */
+    /** SimpleGeneric<SimpleGeneric<lvlTwoContainer>> */
     val nestedLvlTwoBase =
         CTS("SimpleGeneric", List(elementType(lvlTwoContainer)))
 
-    /* SimpleGeneric<SimpleGeneric<AlternativeBase>> */
+    /** SimpleGeneric<SimpleGeneric<AlternativeBase>> */
     val nestedAltBase =
         CTS("SimpleGeneric", List(elementType(altContainer)))
 
-    /* SimpleGeneric<ExtendedGeneric<Base>> */
+    /** SimpleGeneric<ExtendedGeneric<Base>> */
     val nestedSubGenBase =
         CTS("SimpleGeneric", List(elementType(extGenContainer)))
 
-    /* SimpleGeneric<SimpleGeneric<? extends Base>> */
+    /** SimpleGeneric<SimpleGeneric<? extends Base>> */
     val nestedInnerCovariantContainer =
         CTS("SimpleGeneric", List(elementType(covariantContainer)))
 
-    /* SimpleGeneric<? extends SimpleGeneric<Base>> */
+    /** SimpleGeneric<? extends SimpleGeneric<Base>> */
     val nestedOutterCovariantContainer =
-        CTS("SimpleGeneric", List(lowerBound(baseContainer)))
+        CTS("SimpleGeneric", List(upperBoundType(baseContainer)))
 
-    /* SimpleGeneric<? super SimpleGeneric<Base>> */
+    /** SimpleGeneric<? super SimpleGeneric<Base>> */
     val nestedContravariantContainer =
         CTS("SimpleGeneric", List(elementType(contravariantBaseContainer)))
 
@@ -417,6 +433,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
         import genericProject.classHierarchy.isSubtypeOf
         isSubtypeOf(baseContainer, baseContainer) should be(Yes)
         isSubtypeOf(baseContainer, wildCardContainer) should be(Yes)
+        isSubtypeOf(concreteSubGeneric, baseContainer) should be(Yes)
         isSubtypeOf(wildCardContainer, wildCardContainer) should be(Yes)
         isSubtypeOf(extBaseContainer, covariantContainer) should be(Yes)
         isSubtypeOf(baseContainer, covariantContainer) should be(Yes)
@@ -430,6 +447,7 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
         implicit val genericProject = ClassHierarchyTest.genericProject
         import genericProject.classHierarchy.isSubtypeOf
         isSubtypeOf(baseContainer, extBaseContainer) should be(No)
+        isSubtypeOf(concreteSubGeneric, altContainer) should be(No)
         isSubtypeOf(wildCardContainer, baseContainer) should be(No)
         isSubtypeOf(altContainer, contravariantContainer) should be(No)
         isSubtypeOf(extBaseContainer, contravariantBaseContainer) should be(No)
@@ -437,6 +455,37 @@ class ClassHierarchyTest extends FlatSpec with Matchers /*with BeforeAndAfterAll
         isSubtypeOf(baseContainer, doubleContainerET) should be(No)
         isSubtypeOf(baseContainer, doubleContainerTE) should be(No)
         isSubtypeOf(wrongDoubleContainer, baseContainer) should be(No)
+        isSubtypeOf(doubleContainerAltBase, baseContainer) should be(No)
+    }
+
+    it should "correctly reflect the type hierarchy related to interfaces with FormalTypeparameters should return YES" in {
+        implicit val genericProject = ClassHierarchyTest.genericProject
+        import genericProject.classHierarchy.isSubtypeOf
+        isSubtypeOf(concreteInterfaceWithBase, iContainerWithBase) should be(Yes)
+        isSubtypeOf(IBaseContainerWithBase, iContainerWithBase) should be(Yes)
+
+    }
+
+    it should "correctly reflect the type hierarchy related to interfaces with FormalTypeparameters should return No" in {
+        implicit val genericProject = ClassHierarchyTest.genericProject
+        import genericProject.classHierarchy.isSubtypeOf
+        isSubtypeOf(IBaseContainerWithAltBase, iContainerWithBase) should be(No)
+        isSubtypeOf(concreteInterfaceWithAltBase, IBaseContainerWithBase) should be(No)
+        isSubtypeOf(concreteInterfaceWithBase, concreteInterfaceWithAltBase) should be(No)
+    }
+
+    it should "correctly reflect the type hierarchy related to subclasses and interface implementations should return YES" in {
+        implicit val genericProject = ClassHierarchyTest.genericProject
+        import genericProject.classHierarchy.isSubtypeOf
+        isSubtypeOf(subClassWithInterface, iContainerWithAltBase) should be(Yes)
+        isSubtypeOf(subClassWithInterface, concreteSubGeneric) should be(Yes)
+        isSubtypeOf(subClassWithInterface, baseContainer) should be(Yes)
+    }
+
+    it should "correctly reflect the type hierarchy related to subclasses and interface implementations should return No" in {
+        implicit val genericProject = ClassHierarchyTest.genericProject
+        import genericProject.classHierarchy.isSubtypeOf
+        isSubtypeOf(subClassWithInterface, iContainerWithBase) should be(No)
     }
 
     it should "correctly reflect the type hierarchy related to primitve generics should return Unknown" in {
