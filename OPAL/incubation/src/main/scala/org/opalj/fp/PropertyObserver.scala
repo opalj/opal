@@ -26,65 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj.fp.analyses;
+package org.opalj.fp
 
-class Demo {
+/**
+ * A PropertyObserver is a function that is called if the property associated
+ * with the respective entity is computed or refined.
+ *
+ * The parameters of the function are the observed element (dependee) and its
+ * (then available/refined) property.
+ */
+trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
 
-    private Demo() {/* empty */
-    }
-
-    public static int simplyPure(int i, int j) {
-        return i % 3 == 0 ? i : j;
-    }
-
-    public static int impure(int i) {
-        return (int) (i * System.nanoTime());
-    }
-
-    //
-    // Both methods are actually pure but have a dependency on each other...
-    //
-    static int foo(int i) {
-        return i < 0 ? i : bar(i - 10);
-    }
-
-    static int bar(int i) {
-        return i % 2 == 0 ? i : foo(i - 1);
-    }
-    
-    // the following method is (conditionally) pure, but does not contribute to the 
-    // cyclic computation
-
-    static int fooBar(int i) {
-        return foo(i)+bar(i);
-    }
-    
-    //
-    // All three methods are actually pure but have a dependency on each other...
-    //
-    static int m1(int i) {
-        return i < 0 ? i : m2(i - 10);
-    }
-
-    static int m2(int i) {
-        return i % 2 == 0 ? i : m3(i - 1);
-    }
-
-    static int m3(int i) {
-        return i % 4 == 0 ? i : m1(i - 1);
-    }
-
-    //
-    // The following method is pure, but only if we know the pureness of the target method
-    // which we don't know if do not analyze the JDK!
-    //
-    
-    static int cpure(int i) {
-        return Math.abs(i) * 21;
-    }
-
-    static int cpureCallee(int i) {
-        return cpure(i / 21);
-    }
+    /**
+     * The entity and property key for which the property of the observed element
+     * is necessary.
+     *
+     * @return The return value should be [[None]] if the property of the dependee
+     *      is not strictly required by the depender. This is usually the case
+     *      for algorithms that may use some available information, but does not
+     *      strictly require it.
+     */
+    def depender: Option[EPK]
 
 }
+
+abstract class DefaultPropertyObserver(
+    final val depender: Option[EPK])
+        extends PropertyObserver

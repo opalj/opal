@@ -50,19 +50,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
  * The framework is generic enough to facilitate the implementation of
  * anytime algorithms.
  *
+ * @note “A depends on B” `===` “B is depended on by A” `===` “A is the depender, B is the dependee”.
+ *
  * @author Michael Eichberg
  */
 package object fp {
 
     type Entity = AnyRef
-
-    /**
-     * A PropertyObserver is a function that is called if the property associated
-     * with the respective becomes available or changes.
-     *
-     * The parameters of the function are the observed element and its property.
-     */
-    type PropertyObserver = ((Entity, Property) ⇒ Unit)
 
     /**
      * A function that takes an entity and returns a result. The result maybe:
@@ -87,6 +81,8 @@ package object fp {
      * Computing a property for the a specific element is not/never possible.
      */
     final val Impossible: NoResult.type = NoResult
+
+    final val Empty: NoResult.type = NoResult
 
     /**
      * The type of the observers that can be associated with a specific property

@@ -53,10 +53,10 @@ object Result {
 /**
  * Encapsulates the result of the computation of a property.
  *
- * If the property of any depending element is refined, the property computation
+ * If the property of any required element is refined, the property computation
  * function is called again.
  *
- * @param dependingEntities A `Traversable` of all entities on which the computation
+ * @param requiredEntities A `Traversable` of all entities on which the computation
  *      depended and – for which a refinement may yield a more precise result.
  *      The specified property (if any) is the value of the property which was used
  *      to perform the computation. I.e., the framework will only call the property
@@ -64,10 +64,10 @@ object Result {
  */
 case class IntermediateResult(
     properties: Traversable[(Entity, Property)],
-    dependingEntities: Traversable[(Entity, PropertyKey, Option[Property], Continuation)])
+    requiredEntities: Traversable[(Entity, PropertyKey, Option[Property], Continuation)])
         extends PropertyComputationResult {
 
-    assert(dependingEntities.size > 0, "intermediate results must have dependencies")
+    assert(requiredEntities.size > 0, "intermediate results must have dependencies")
 
     //private[fp] val dependenciesCount = dependingEntities.size
     //private[fp] val unrefinedDependencies = new AtomicInteger(dependenciesCount)
@@ -75,21 +75,22 @@ case class IntermediateResult(
 }
 
 /**
- * @param dependingElement The element and the property of it that is required by this
+ * @param requiredEntity The entity about which some knowledge is required by this
  *      computation before the computation can be continued.
  */
 abstract class Suspended(
     val e: Entity,
-    val dependingEntity: Entity,
-    val dependingProperty: PropertyKey)
+    val pk: PropertyKey,
+    val requiredEntity: Entity,
+    val requiredProperty: PropertyKey)
         extends PropertyComputationResult {
 
     /**
      * Called by the framework if the property for the respective element was computed
      */
     def continue(
-        dependingEntity: Entity,
-        dependingProperty: Property): PropertyComputationResult
+        requiredEntity: Entity,
+        requiredProperty: Property): PropertyComputationResult
 
     /**
      * Terminates this computation.
@@ -110,7 +111,7 @@ abstract class Suspended(
 
 object Suspended {
 
-    def unapply(computation: Suspended): Some[(Entity, Entity, PropertyKey)] =
-        Some((computation.e, computation.dependingEntity, computation.dependingProperty))
+    def unapply(c: Suspended): Some[(Entity, PropertyKey, Entity, PropertyKey)] =
+        Some((c.e, c.pk, c.requiredEntity, c.requiredProperty))
 
 }
