@@ -28,48 +28,33 @@
  */
 package org.opalj
 package br
-
-import java.net.URL
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Nanoseconds
+package analyses
 
 /**
- * Very primitive rating of the complexity of methods.
+ * Characterizes the type of an event related to a running analysis.
+ *
+ * @see [[ProgressManagement]] for further details.
  *
  * @author Michael Eichberg
  */
-object MethodComplexityAnalysis
-        extends OneStepAnalysis[URL, BasicReport]
-        with AnalysisExecutor {
+object ProgressEvents extends Enumeration {
 
-    val analysis = this
+    /**
+     * Used to signal the start of a (longer-running) computation.
+     * Each computation that signals a start must also signal an end of the computation.
+     */
+    val Start = Value("start")
 
-    override def description: String = "Estimates the complexity of interpreting the method."
+    /**
+     * Used to signal the end of a computation.
+     */
+    val End = Value("end")
 
-    def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
-
-        var executionTime = Nanoseconds.None
-
-        val analysisResults = time {
-
-            import org.opalj.br.analyses.{ MethodComplexityAnalysis ⇒ TheAnalysis }
-            TheAnalysis.doAnalyze(project, 100, isInterrupted)
-
-        } { t ⇒ executionTime += t }
-
-        BasicReport(
-            analysisResults.
-                toList.map(m ⇒ (m._2, m._1)).
-                sorted.map(m ⇒ m._1+":"+m._2.fullyQualifiedSignature(project.classFile(m._2).thisType)).
-                mkString("\n")+"\n"+
-                s"rated ${analysisResults.size} methods in ${executionTime.toSeconds}"
-        )
-    }
+    /**
+     * Use to signal that a computation was killed.
+     *
+     * '''After signaling a `Killed` event the underlying computation is not
+     * allowed to signal any further events.'''
+     */
+    val Killed = Value("killed")
 }

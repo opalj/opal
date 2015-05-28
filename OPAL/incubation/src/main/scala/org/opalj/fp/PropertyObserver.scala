@@ -1,5 +1,5 @@
 /* BSD 2-Clause License:
- * Copyright (c) 2009 - 2014
+ * Copyright (c) 2009 - 2015
  * Software Technology Group
  * Department of Computer Science
  * Technische Universität Darmstadt
@@ -26,50 +26,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package org.opalj
-package br
-
-import java.net.URL
-import org.opalj.br.analyses.AnalysisExecutor
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Nanoseconds
+package org.opalj.fp
 
 /**
- * Very primitive rating of the complexity of methods.
+ * A PropertyObserver is a function that is called if the property associated
+ * with the respective entity is computed or refined.
  *
- * @author Michael Eichberg
+ * The parameters of the function are the observed element (dependee) and its
+ * (then available/refined) property.
  */
-object MethodComplexityAnalysis
-        extends OneStepAnalysis[URL, BasicReport]
-        with AnalysisExecutor {
+trait PropertyObserver extends ((Entity, Property) ⇒ Unit) {
 
-    val analysis = this
+    /**
+     * The entity and property key for which the property of the observed element
+     * is necessary.
+     *
+     * @return The return value should be [[None]] if the property of the dependee
+     *      is not strictly required by the depender. This is usually the case
+     *      for algorithms that may use some available information, but does not
+     *      strictly require it.
+     */
+    def depender: Option[EPK]
 
-    override def description: String = "Estimates the complexity of interpreting the method."
-
-    def doAnalyze(
-        project: Project[URL],
-        parameters: Seq[String],
-        isInterrupted: () ⇒ Boolean) = {
-
-        var executionTime = Nanoseconds.None
-
-        val analysisResults = time {
-
-            import org.opalj.br.analyses.{ MethodComplexityAnalysis ⇒ TheAnalysis }
-            TheAnalysis.doAnalyze(project, 100, isInterrupted)
-
-        } { t ⇒ executionTime += t }
-
-        BasicReport(
-            analysisResults.
-                toList.map(m ⇒ (m._2, m._1)).
-                sorted.map(m ⇒ m._1+":"+m._2.fullyQualifiedSignature(project.classFile(m._2).thisType)).
-                mkString("\n")+"\n"+
-                s"rated ${analysisResults.size} methods in ${executionTime.toSeconds}"
-        )
-    }
 }
+
+abstract class DefaultPropertyObserver(
+    final val depender: Option[EPK])
+        extends PropertyObserver

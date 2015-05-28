@@ -845,7 +845,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     // the same domain value is used to potentially represent different objects at
     // runtime/this domain does not support the identification of aliases.
 
-    def refSetUpperBound(
+    def refSetUpperTypeBoundOfTopOperand(
         pc: PC,
         upperTypeBound: ReferenceType,
         operands: Operands,
@@ -853,7 +853,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         (ReferenceValue(pc, upperTypeBound) :: operands.tail, locals)
     }
 
-    override def refSetIsNull(
+    override def refTopOperandIsNull(
         pc: PC,
         operands: Operands,
         locals: Locals): (Operands, Locals) = {

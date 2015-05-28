@@ -53,7 +53,7 @@ import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.AnalysisExecutor
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProgressManagement
-import org.opalj.br.analyses.EventType
+import org.opalj.br.analyses.ProgressEvents
 import org.opalj.br.analyses.Project
 
 /**
@@ -138,7 +138,7 @@ object DependencyAnalysis extends AnalysisExecutor {
             initProgressManagement: (Int) ⇒ ProgressManagement) = {
 
             val pm = initProgressManagement(3)
-            pm.progress(1, EventType.Start, Some("setup"))
+            pm.progress(1, ProgressEvents.Start, Some("setup"))
 
             import scala.collection.mutable.{ HashSet, HashMap }
 
@@ -209,19 +209,19 @@ object DependencyAnalysis extends AnalysisExecutor {
             } // dependencyCount(source,target,anzahl)
             val dependencyExtractor = new DependencyExtractor(dependencyProcessor)
 
-            pm.progress(1, EventType.End, None)
+            pm.progress(1, ProgressEvents.End, None)
 
-            pm.progress(2, EventType.Start, Some("extracting dependencies"))
+            pm.progress(2, ProgressEvents.Start, Some("extracting dependencies"))
             for {
                 classFile ← project.allClassFiles
                 packageName = classFile.thisType.packageName
             } {
                 dependencyExtractor.process(classFile)
             }
-            pm.progress(2, EventType.End, None)
+            pm.progress(2, ProgressEvents.End, None)
 
             // create html file from template
-            pm.progress(3, EventType.Start, Some("creating HTML"))
+            pm.progress(3, ProgressEvents.Start, Some("creating HTML"))
 
             // get packages and sort them
             val packages = dependencyProcessor.currentPackages.toSeq.sorted
@@ -266,7 +266,7 @@ object DependencyAnalysis extends AnalysisExecutor {
                     s"""{ "name": "$name", "color": "${Random.shuffle(colors.toList).head}"},\n"""+json)+"]")
             writeAndOpen(checkDocument(htmlDocument), "DependencyAnalysis", ".html")
 
-            pm.progress(3, EventType.End, None)
+            pm.progress(3, ProgressEvents.End, None)
 
             BasicReport(packages)
         }
