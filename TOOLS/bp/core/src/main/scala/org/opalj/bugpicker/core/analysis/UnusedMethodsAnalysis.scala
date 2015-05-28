@@ -39,9 +39,7 @@ import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.br.instructions.ReturnInstruction
 
 /**
- * Identifies unused methods and constructors based on the call graph.
- *
- * Currently using the VTACallGraphAlgorithm.
+ * Identifies unused methods and constructors using the given call graph.
  *
  * @author Marco Jacobasch
  * @author Michael Eichberg
@@ -49,7 +47,9 @@ import org.opalj.br.instructions.ReturnInstruction
 object UnusedMethodsAnalysis {
 
     /**
-     * Finds those methods that are never called.
+     * Checks if the given method is used/potentially useable. If the method is not used
+     * and is also not potentially useable by future clients then an issue is created
+     * and returned.
      *
      * If any of the following conditions is true the method is considered as being called.
      * - The method is the target of a method call in the calculated call graph.
@@ -102,7 +102,11 @@ object UnusedMethodsAnalysis {
 
         val callers = callgraph.callGraph calledBy method
         if (callers.isEmpty) {
-            val description = methodOrConstructor(method)
+
+            val description =
+                methodOrConstructor(method) + (
+                    if (!method.isPrivate) "the class is not instantiable" else ""
+                )
             val relevance: Relevance = rateMethod()
             // the unused method or constructor issue
             Some(StandardIssue(

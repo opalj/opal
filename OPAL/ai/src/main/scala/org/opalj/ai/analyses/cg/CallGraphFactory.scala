@@ -87,10 +87,10 @@ object CallGraphFactory {
         val instantiableClasses = project.get(InstantiableClassesKey)
 
         /*  TODO Filter methods that are impossible entry points...
-     *  - No entry points:
-     *    - methods of a "private class" that is never instantiated (dead objects...)
-     *
-     */
+         *  - No entry points:
+         *    - methods of a "private class" that is never instantiated (dead objects...)
+         *
+         */
         val classHierarchy = project.classHierarchy
         val methods = new java.util.concurrent.ConcurrentLinkedQueue[Method]
         project.parForeachMethodWithBody(() ⇒ Thread.currentThread().isInterrupted()) { m ⇒

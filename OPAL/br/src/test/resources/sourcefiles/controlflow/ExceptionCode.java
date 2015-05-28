@@ -30,6 +30,11 @@ package controlflow;
 
 import java.io.IOException;
 
+/**
+ * Created to test the computation of control flow graphs.
+ * 
+ * @author Erich Wittenbeck
+ */
 public class ExceptionCode {
 
     int simpleException(int index) {

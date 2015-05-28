@@ -13,7 +13,7 @@
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -22,14 +22,17 @@
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 package org.opalj
 package de
 
-import br._
+import java.util.concurrent.{ ConcurrentHashMap ⇒ CMap }
+import scala.collection.mutable.Set
+import org.opalj.collection.{ asScala, putIfAbsentAndGet }
+import org.opalj.br._
 
 /**
  * Collects all dependencies extracted by a [[DependencyExtractor]].
@@ -48,10 +51,6 @@ import br._
  */
 class DependencyCollectingDependencyProcessor(
         val virtualSourceElementsCountHint: Option[Int]) extends DependencyProcessor {
-
-    import scala.collection.mutable.Set
-    import java.util.concurrent.{ ConcurrentHashMap ⇒ CMap }
-    import org.opalj.collection.{ convert, putIfAbsentAndGet }
 
     private[this] val deps = new CMap[VirtualSourceElement, CMap[VirtualSourceElement, Set[DependencyType]]](
         // we assume that every source element has roughly ten dependencies on other source elements
@@ -136,9 +135,9 @@ class DependencyCollectingDependencyProcessor(
      * Creates a [[DependencyStore]] using the extracted dependencies.
      */
     def toStore: DependencyStore = {
-        val theDeps = convert(deps)
-        val theDepsOnArrayTypes = convert(depsOnArrayTypes)
-        val theDepsOnBaseTypes = convert(depsOnBaseTypes)
+        val theDeps = asScala(deps)
+        val theDepsOnArrayTypes = asScala(depsOnArrayTypes)
+        val theDepsOnBaseTypes = asScala(depsOnBaseTypes)
 
         new DependencyStore(theDeps, theDepsOnArrayTypes, theDepsOnBaseTypes)
     }

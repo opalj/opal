@@ -106,7 +106,7 @@ sealed trait Answer {
 }
 
 /**
- * Factory for `Answer` objects.
+ * Factory for `Answer`s.
  *
  * @author Michael Eichberg
  */
@@ -120,7 +120,9 @@ object Answer {
 }
 
 /**
- * Represents a `Yes` answer to a question.
+ * Represents the answer to a question where the answer is `Yes`.
+ *
+ * @author Michael Eichberg
  */
 final case object Yes extends Answer {
     override def isYes: Boolean = true
@@ -134,8 +136,11 @@ final case object Yes extends Answer {
     override def negate = No
     override def &(other: Answer) = if (other eq this) this else Unknown
 }
+
 /**
- * Represents a `No` answer to a question.
+ * Represents the answer to a question where the answer is `No`.
+ *
+ * @author Michael Eichberg
  */
 final case object No extends Answer {
     override def isYes: Boolean = false
@@ -149,8 +154,11 @@ final case object No extends Answer {
     override def negate = Yes
     override def &(other: Answer) = if (other eq this) this else Unknown
 }
+
 /**
- * Represents an `Unknown` answer to a question.
+ * Represents the answer to a question where the answer is `Unknown`.
+ *
+ * @author Michael Eichberg
  */
 final case object Unknown extends Answer {
     override def isYes: Boolean = false

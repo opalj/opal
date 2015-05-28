@@ -29,7 +29,10 @@
 package org.opalj
 
 /**
- * All standard binary arithmetic operators.
+ * All standard binary arithmetic operators defined in the Java Virtual Machine/Java
+ * Language Specification.
+ *
+ * @note The type of a value of this enumeration is [[org.opalj.BinaryArithmeticOperator]].
  *
  * @author Michael Eichberg
  */
@@ -51,7 +54,10 @@ object BinaryArithmeticOperators extends Enumeration {
 }
 
 /**
- * All standard unary arithmetic operators.
+ * All standard unary arithmetic operators defined in the Java Virtual Machine/Java
+ * Language Specification.
+ *
+ * @note The type of a value of this enumeration is [[org.opalj.UnaryArithmeticOperator]].
  *
  * @author Michael Eichberg
  */
