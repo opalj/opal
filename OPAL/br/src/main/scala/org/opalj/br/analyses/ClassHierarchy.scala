@@ -45,7 +45,6 @@ import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import javax.lang.model.`type`.UnknownTypeException
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -900,6 +899,10 @@ class ClassHierarchy private (
      * This is a helper method only. TypeArguments are just a part of a generic
      * `ClassTypeSignature`. Hence, it makes no
      * sense to check subtype relation of incomplete information.
+     * 
+     * @note At the comparison of two [[GenericTypeArgument]]s without [[VarianceIndicator]]s
+     * we have to check two different things. First compare the [[ObjectType]]s, if they are equal
+     * we still have to care about the [[TypeArgument]]s since we are dealing with generics.
      */
     private[this] def isSubtypeOfByTypeArgument(
         subtype: TypeArgument,
@@ -925,7 +928,7 @@ class ClassHierarchy private (
         }
     }
 
-    @inline @tailrec private[this] final def evalTypeArguments(
+    @inline @tailrec private[this] final def compareTypeArguments(
         subtypeArgs: List[TypeArgument],
         supertypeArgs: List[TypeArgument])(
             implicit project: ClassFileRepository): Answer = {
@@ -938,7 +941,7 @@ class ClassHierarchy private (
                 if (isSubtypeOf.isNoOrUnknown)
                     No
                 else
-                    evalTypeArguments(tail, supTail)
+                    compareTypeArguments(tail, supTail)
         }
     }
 
@@ -947,14 +950,16 @@ class ClassHierarchy private (
      * the interface or class given with the parameter ´supertype´ of type [[ObjectType]]. In case that the
      * ´subtype´ does implement or extend the ´supertype´, an [[Option]] of [[ClassTypeSignature]] is returned.
      * Otherwise None will be returned.
-     * 
+     *
      *
      * @param subtype Any type or interface.
      * @param supertype Any type or interface.
-     * 
+     *
      * @return [[Option]] of [[ClassTypeSignature]] if the ´subtype´ extends or implements the given ´supertype´, [[None]] otherwise.
      */
-    def getSupertypeDeclaration(subtype: ClassSignature, supertype: ObjectType)(implicit project: ClassFileRepository): Option[ClassTypeSignature] = {
+    def getSupertypeDeclaration(subtype: ClassSignature,
+                                supertype: ObjectType)(
+                                    implicit project: ClassFileRepository): Option[ClassTypeSignature] = {
         import project.classFile
         val signaturesToCheck = subtype.superClassSignature :: subtype.superInterfacesSignature
         for (cts ← signaturesToCheck) {
@@ -971,16 +976,15 @@ class ClassHierarchy private (
         }
         None
     }
-    
+
     /*
      * Returns an Option[ClassSignature] according to the given ObjectType. Is the
      * given ObjectType not resolvable by the project, None is returned.
      */
-    private[this] final def getClassSignature(ot: ObjectType)(
+    @inline private[this] final def getClassSignature(ot: ObjectType)(
         implicit project: ClassFileRepository): Option[ClassSignature] = {
         import project.classFile
-        if (classFile(ot).isEmpty || classFile(ot).get.classSignature.isEmpty) None
-        else Some(classFile(ot).get.classSignature.get)
+        classFile(ot).flatMap(ot ⇒ ot.classSignature)
     }
 
     /**
@@ -1003,6 +1007,61 @@ class ClassHierarchy private (
      *      not conclusive. The latter can happen if the class hierarchy is not
      *      complete and hence precise information about a type's supertypes
      *      is not available.
+     *      
+     * @example =========  Introduction ==========
+     * 
+     *  Before looking in some examples, we have to set up the terminology.
+     *  
+     *  Type definition: List<String, ? extends Number, ?>
+     *  
+     *  ContainerType - A ContainerType is a type with parameters. In the previous type definition
+     *                  is ´List´ the ContainerType.
+     *  TypeArgument - A TypeArgument is one of the parameters of the ContainerType. The above type
+     *                  [[definition has three TypeArgument]]s. (String, Integer extends String and ?)
+     *  VarianceIndicator - A VarianceIndicator can be defined in the context of [[TypeArgument]]s. There
+     *                      is a [[CovariantIndicator]] which can be defined in the type definition by using the
+     *                      ´extends´ keyword. (? extends Number is a covariant [[TypeArgument]]). The other
+     *                      one is the [[ContravariantIndicator]] which could be defined using the ´super´ keyword.
+     *  
+     *      
+     * @example ========= 1 ==========
+     *      
+     *                instance // definition
+     *      subtype: List<String> // List<E>
+     *      supertype: List<String> // List<E>
+     *      
+     *      If the ContainerType of the ´subtype´ is equal to the ContainerType of the ´supertype´ and non of the
+     *      [[TypeArguments]] has a [[VarianceIndicator]] then exists a subtype relation if and only if all of the
+     *      [[TypeArgument]]s are equal.
+     *      
+     * @example ========= 2 =========
+     * 
+     * subtype:     SomeClass // SomeClass extends SomeInterface<String>
+     * supertype:   SomeInterface<String> // SomeInterface<E>
+     * 
+     * Is the ´subtype´ a [[ConcreteType]] without [[FormalTypeParameter]]s and the ´supertype´ is a [[GenericType]] then
+     * we first have to check whether the ´subtype´ is a subtype of the given ´supertype´. If not then is the ´subtype´ not a acctual
+     * subtype of the given ´supertype´. Otherwise we have to find the definition of the ´supertype´ in the type defintion
+     * or the type definiton of a super class or an super interface (interface definiton of SomeInterface<String>).
+     * Once found the ´supertype´ we can compare each [[TypeArgument]]s of the supertype defintion of the ´subtype´ and
+     * the given ´supertype´. If all of them are equal ´subtype´ is a acctual subtype of the ´supertype´.
+     * 
+     * @example ========= 3 =========
+     * 
+     * subtype:     Foo<Integer, String> // Foo<T,E> extends Bar<E>
+     * supertype:   Bar<String> // Bar<E> 
+     * 
+     * Does the ´subtype´ and ´supertype´ have [[FormalTypeParameter]]s and the ContainerType of the ´subtype´
+     * is a subtype of the ContainerType of the ´supertype´, we have to compare the shared [[TypeArgument]]s. In
+     * our example the subtype Foo has two [[FormalTypeParameter]] (T,E) and the supertype Bar has only one
+     * [[FormalTypeParameter]] (E). Since both of them specify E in the [[ClassSignature]] of Foo, they share E as
+     * [[FormalTypeParameter]]. So it is necessary to check whether the acctual bound [[TypeArgument]] at the
+     * postion of E is equal. At first we have to locate the shared parameter in the [[ClassSignature]], so it is possible
+     * to find the correct [[TypeArgument]]s. The above example shows that the shared parameter E is in the second postion
+     * of the [[FormalTypeParamter]]s of Foo and at the first postion of the [[FormalTypeParamter]]s of Bar. Second and last
+     * we know can compare the according [[TypeArgument]]s. All other parameters can be ignored because they are no important
+     * to decide the subtype relation.
+     * 
      */
     // TODO Consider Suffixes...
     //TODO Consider intersection types
@@ -1010,7 +1069,6 @@ class ClassHierarchy private (
         subtype: ClassTypeSignature,
         supertype: ClassTypeSignature)(
             implicit project: ClassFileRepository): Answer = {
-
         if (subtype.objectType eq supertype.objectType) {
             (subtype, supertype) match {
                 case (ConcreteType(ot), ConcreteType(superOt)) ⇒
@@ -1020,30 +1078,29 @@ class ClassHierarchy private (
                     isSubtypeOf(ot, superOt)
 
                 case (GenericType(_, elements), GenericType(_, superElements)) ⇒
-                    evalTypeArguments(elements, superElements)
+                    compareTypeArguments(elements, superElements)
 
                 case _ ⇒ No
             }
         } else {
             val isSubtype = isSubtypeOf(subtype.objectType, supertype.objectType)
             if (isSubtype.isYes) {
-                def checkConcreteTypeParameters(subtype: ObjectType, supertype: ObjectType,
-                                                superTypeArguments: List[TypeArgument]): Answer = {
-                    val cs = getClassSignature(subtype)
-                    if (cs.nonEmpty) {
-                        val matchingType = getSupertypeDeclaration(cs.get, supertype)
-                        if (matchingType.nonEmpty)
-                            evalTypeArguments(matchingType.get.simpleClassTypeSignature.typeArguments, superTypeArguments)
-                        else No
-                    } else Unknown
+                def haveSomeTypeBinding(subtype: ObjectType,
+                                        supertype: ObjectType,
+                                        superTypeArguments: List[TypeArgument]): Answer = {
+                    (getClassSignature(subtype).flatMap { cs ⇒
+                        getSupertypeDeclaration(cs, supertype).map { matchingType ⇒
+                            compareTypeArguments(matchingType.simpleClassTypeSignature.typeArguments, superTypeArguments)
+                        } orElse Some(No)
+                    } orElse Some(Unknown)).get
                 }
                 (subtype, supertype) match {
                     case (ConcreteType(_), ConcreteType(_))                    ⇒ Yes
                     case (GenericType(_, _), ConcreteType(_))                  ⇒ Yes
-                    case (ConcreteType(_), GenericType(_, superTypeArguments)) ⇒ checkConcreteTypeParameters(subtype.objectType, supertype.objectType, superTypeArguments)
+                    case (ConcreteType(_), GenericType(_, superTypeArguments)) ⇒ haveSomeTypeBinding(subtype.objectType, supertype.objectType, superTypeArguments)
                     case (GenericType(containerType, elements), GenericType(superContainerType, superElements)) ⇒ {
 
-                        def checkTypeParameters(subtype: ObjectType, supertype: ObjectType): Answer = {
+                        def compareSharedTypeArguments(subtype: ObjectType, supertype: ObjectType): Answer = {
                             val cs = getClassSignature(subtype)
                             val superCs = getClassSignature(supertype)
                             if (cs.nonEmpty && superCs.nonEmpty) {
@@ -1051,7 +1108,7 @@ class ClassHierarchy private (
                                 val superFtp = superCs.get.formalTypeParameters
                                 var typeArgs = List.empty[TypeArgument]
                                 var supertypeArgs = List.empty[TypeArgument]
-                                
+
                                 for (i ← 0 to ftp.size - 1) {
                                     val index = superFtp.indexOf(ftp(i))
                                     if (index >= 0) {
@@ -1059,11 +1116,11 @@ class ClassHierarchy private (
                                         supertypeArgs = superElements(index) :: supertypeArgs
                                     }
                                 }
-                                if (typeArgs.isEmpty) checkConcreteTypeParameters(containerType, superContainerType, superElements)
-                                else evalTypeArguments(typeArgs, supertypeArgs)
+                                if (typeArgs.isEmpty) haveSomeTypeBinding(containerType, superContainerType, superElements)
+                                else compareTypeArguments(typeArgs, supertypeArgs)
                             } else Unknown
                         }
-                        checkTypeParameters(containerType, superContainerType)
+                        compareSharedTypeArguments(containerType, superContainerType)
                     }
                     case _ ⇒ No
                 }
